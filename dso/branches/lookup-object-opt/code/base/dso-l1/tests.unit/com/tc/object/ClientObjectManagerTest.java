@@ -133,6 +133,80 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     assertEquals(clientObjectManager.getObjectLatchStateMap().size(), 0);
 
   }
+  
+  public void testSameObjectLookup() {
+    mutualRefBarrier = new CyclicBarrier(1);
+
+    remoteObjectManager = new TestRemoteObjectManager() {
+
+      public DNA retrieve(ObjectID id) {
+        try {
+          System.out.println("before barrier");
+          mutualRefBarrier.barrier();
+        } catch (BrokenBarrierException e) {
+          throw new AssertionError(e);
+        } catch (InterruptedException e) {
+          throw new AssertionError(e);
+        }
+        return new TestDNA(id);
+      }
+    };
+
+    // re-init manager
+    TestMutualReferenceObjectFactory testMutualReferenceObjectFactory = new TestMutualReferenceObjectFactory();
+    ClientObjectManagerImpl clientObjectManager = new ClientObjectManagerImpl(remoteObjectManager, clientConfiguration,
+                                                                              idProvider, cache, runtimeLogger,
+                                                                              new TestChannelIDProvider(),
+                                                                              classProvider, classFactory,
+                                                                              testMutualReferenceObjectFactory,
+                                                                              new PortabilityImpl(clientConfiguration),
+                                                                              null, null);
+    mgr = clientObjectManager;
+    MockTransactionManager mockTransactionManager = new MockTransactionManager();
+    mgr.setTransactionManager(mockTransactionManager);
+    testMutualReferenceObjectFactory.setObjectManager(mgr);
+
+    // run the threads now..
+    ObjectID objectID1 = new ObjectID(1);
+    ExceptionHolder exceptionHolder1 = new ExceptionHolder();
+    ExceptionHolder exceptionHolder2 = new ExceptionHolder();
+    ExceptionHolder exceptionHolder3 = new ExceptionHolder();
+    ExceptionHolder exceptionHolder4 = new ExceptionHolder();
+
+    LookupThread lookupThread1 = new LookupThread(objectID1, mgr, mockTransactionManager, exceptionHolder1);
+    LookupThread lookupThread2 = new LookupThread(objectID1, mgr, mockTransactionManager, exceptionHolder2);
+    LookupThread lookupThread3 = new LookupThread(objectID1, mgr, mockTransactionManager, exceptionHolder3);
+    LookupThread lookupThread4 = new LookupThread(objectID1, mgr, mockTransactionManager, exceptionHolder4);
+    //
+    Thread t1 = new Thread(lookupThread1);
+    t1.start();
+    Thread t2 = new Thread(lookupThread2);
+    t2.start();
+    Thread t3 = new Thread(lookupThread3);
+    t3.start();
+    Thread t4 = new Thread(lookupThread4);
+    t4.start();
+    try {
+      t1.join();
+      t2.join();
+      t3.join();
+      t4.join();
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
+
+    if (exceptionHolder1.getExceptionOccurred().get()) { throw new AssertionError(exceptionHolder1.getThreadException()); }
+
+    if (exceptionHolder2.getExceptionOccurred().get()) { throw new AssertionError(exceptionHolder2.getThreadException()); }
+
+    if (exceptionHolder3.getExceptionOccurred().get()) { throw new AssertionError(exceptionHolder3.getThreadException()); }
+  
+    if (exceptionHolder4.getExceptionOccurred().get()) { throw new AssertionError(exceptionHolder4.getThreadException()); }
+
+    assertEquals(mockTransactionManager.getLoggingCounter().get(), 0);
+    assertEquals(clientObjectManager.getObjectLatchStateMap().size(), 0);
+
+  }
 
   private static final class LookupThread implements Runnable {
 
