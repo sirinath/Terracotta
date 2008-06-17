@@ -33,6 +33,7 @@ public class ContainerHibernate325Test extends AbstractTwoServerDeploymentTest {
   }
 
   public ContainerHibernate325Test() {
+
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }
@@ -42,6 +43,7 @@ public class ContainerHibernate325Test extends AbstractTwoServerDeploymentTest {
     // MNK-287
     int id = appServerInfo().getId();
     boolean wasceOrWebSphere = (id == AppServerInfo.WASCE || id == AppServerInfo.WEBSPHERE);
+
     return super.shouldDisable() || wasceOrWebSphere;
   }
 

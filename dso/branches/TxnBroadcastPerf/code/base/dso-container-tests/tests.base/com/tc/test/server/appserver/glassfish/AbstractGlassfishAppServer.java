@@ -25,6 +25,7 @@ import com.tc.test.server.util.AppServerUtil;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.PortChooser;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Os;
 
 import java.io.ByteArrayOutputStream;
@@ -226,8 +227,15 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
       cmd.add("--port=" + adminPort);
       cmd.add(warFile.getAbsolutePath());
 
+
+      for (int i = 10; i > 0; i--) {
+        System.err.println("Deploying war file in " + i + " secs...");
+        ThreadUtil.reallySleep(1000);
+      }
+
       Result result = Exec.execute((String[]) cmd.toArray(new String[] {}));
       if (result.getExitCode() != 0) { throw new RuntimeException("Deploy failed for " + warName + ": " + result); }
+      System.err.println("Deployed war file successfully.");
     }
   }
 

@@ -34,6 +34,7 @@ import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.management.beans.object.ServerDBBackup;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
@@ -382,9 +383,7 @@ public class DistributedObjectServer implements TCDumper {
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     TCProperties objManagerProperties = l2Properties.getPropertiesFor("objectmanager");
 
-    l1ReconnectConfig = new L1ReconnectConfigImpl(TCPropertiesImpl.getProperties()
-        .getBoolean(TCPropertiesConsts.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS));
+    l1ReconnectConfig = new L1ReconnectConfigImpl();
 
     final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
     // it's broken
@@ -402,7 +401,7 @@ public class DistributedObjectServer implements TCDumper {
       System.exit(1);
     }
 
-    int maxStageSize = 5000;
+    int maxStageSize = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY);
 
     StageManager stageManager = seda.getStageManager();
     SessionManager sessionManager = new NullSessionManager();
@@ -432,7 +431,11 @@ public class DistributedObjectServer implements TCDumper {
       SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       persistor = new SleepycatPersistor(TCLogging.getLogger(SleepycatPersistor.class), dbenv,
                                          serializationAdapterFactory);
-
+      // Setting the DB environment for the bean which takes backup of the active server
+      if (persistent) {
+        ServerDBBackup mbean = l2Management.findServerDbBackupMBean();
+        mbean.setDbEnvironment(dbenv.getEnvironment(), dbenv.getEnvironmentHome());
+      }
       // DONT DELETE ::This commented code is for replacing SleepyCat with MemoryDataStore as an in-memory DB for
       // testing purpose. You need to include MemoryDataStore in tc.jar and enable with tc.properties
       // l2.memorystore.enabled=true.
@@ -497,9 +500,11 @@ public class DistributedObjectServer implements TCDumper {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     if (useOOOLayer) {
       final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      final int sendQueueCap = l1ReconnectConfig.getSendQueueCapacity();
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(), l1ReconnectConfig);
+                                                                     oooStage.getSink(), l1ReconnectConfig,
+                                                                     sendQueueCap);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
