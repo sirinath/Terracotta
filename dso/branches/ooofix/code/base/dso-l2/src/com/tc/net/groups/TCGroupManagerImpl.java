@@ -178,7 +178,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (isUseOOOLayer) {
       final Stage oooSendStage = stageManager.createStage("L2OOONetSendStage", new OOOEventHandler(), 1, maxStageSize);
-      final Stage oooReceiveStage = stageManager.createStage("L2OOONetSendStage", new OOOEventHandler(), 1,
+      final Stage oooReceiveStage = stageManager.createStage("L2OOONetReceiveStage", new OOOEventHandler(), 1,
                                                              maxStageSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
