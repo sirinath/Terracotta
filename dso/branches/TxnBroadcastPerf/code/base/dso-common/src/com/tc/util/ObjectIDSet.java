@@ -1,49 +1,86 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
+import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
+import com.tc.text.PrettyPrintable;
+import com.tc.text.PrettyPrinter;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.SortedSet;
 
 /**
- * TODO May 31, 2006: 1) Make this set special case things like addAll() removeAll() etc if the passed in collection is
- * also an ObjectIDSet 2) Make this set optimized for worst case scenario too. (like for storing ObjectIDs 1, 3, 5, 7, 9
- * etc.
+ * This class was build in an attempt to store a large set of ObjectIDs compressed in memory while giving the same
+ * characteristic of HashSet in terms of performance.
+ * <p>
+ * This is version 2 of the class, the older one version 1 has several shortcomings. Mainly the performance of adds and
+ * removes when the ObjectIDs are non-contiguous.
+ * <p>
+ * This one uses a balanced tree internally to store ranges instead of an ArrayList
  */
-public class ObjectIDSet extends AbstractSet implements Cloneable {
-  private final List ranges;
-  private int        size = 0;
+public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintable, Externalizable {
+
+  /**
+   * The number of times this HashMap has been structurally modified Structural modifications are those that change the
+   * number of mappings in the HashMap or otherwise modify its internal structure (e.g., rehash). This field is used to
+   * make iterators on Collection-views of the HashMap fail-fast. (See ConcurrentModificationException).
+   */
+  private transient volatile int modCount;
+
+  private final AATreeSet        ranges;
+  private int                    size = 0;
 
   public ObjectIDSet() {
-    ranges = new ArrayList();
-//    ranges = new LinkedList();
+    ranges = new AATreeSet();
   }
 
   public ObjectIDSet(Collection c) {
+    this();
     if (c instanceof ObjectIDSet) {
-      ObjectIDSet oidSet = (ObjectIDSet) c;
+      ObjectIDSet other = (ObjectIDSet) c;
       // fast way to clone
-      size = oidSet.size();
-      ranges = new ArrayList(oidSet.ranges.size());
-      for (int i = 0; i < oidSet.ranges.size(); i++) {
-        ranges.add(((Range) oidSet.ranges.get(i)).clone());
+      this.size = other.size();
+      for (Iterator i = other.ranges.iterator(); i.hasNext();) {
+        this.ranges.insert((Range) ((Range) i.next()).clone());
       }
       return;
     } else {
-      ranges = new ArrayList();
       addAll(c);
     }
   }
 
-  public Object clone() {
-    return new ObjectIDSet(this);
+  public void readExternal(ObjectInput in) throws IOException {
+    int _size = in.readInt();
+    this.size = _size;
+    while (_size > 0) {
+      long start = in.readLong();
+      long end = in.readLong();
+      Range r = new Range(start, end);
+      this.ranges.insert(r);
+      _size -= r.size();
+    }
+  }
+
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeInt(size);
+    for (Iterator i = ranges.iterator(); i.hasNext();) {
+      Range r = (Range) i.next();
+      out.writeLong(r.start);
+      out.writeLong(r.end);
+    }
   }
 
   public Iterator iterator() {
@@ -54,127 +91,99 @@ public class ObjectIDSet extends AbstractSet implements Cloneable {
     return size;
   }
 
-  public boolean remove(ObjectID id) {
+  public boolean contains(ObjectID id) {
     long lid = id.toLong();
-    int index = findIndex(lid);
-    if (index < 0) return false;
-    return removeObjectIDAt(lid, index);
+    return (ranges.find(new MyLong(lid)) != null);
   }
 
-  // THis is a private method and no checks are done
-  private boolean removeObjectIDAt(long lid, int index) {
+  public boolean remove(ObjectID id) {
+    long lid = id.toLong();
+
+    Range current = (Range) ranges.find(new MyLong(lid));
+    if (current == null) {
+      // Not found
+      return false;
+    }
+    Range newRange = current.remove(lid);
+    if (newRange != null) {
+      ranges.insert(newRange);
+    } else if (current.isNull()) {
+      ranges.remove(current);
+    }
     size--;
-    Range r = (Range) ranges.get(index);
-    if (r.start == lid && r.end == lid + 1) {
-      ranges.remove(index);
-      return true;
-    }
-
-    if (r.start == lid) {
-      r.start = r.start + 1;
-    } else if (r.end == lid + 1) {
-      r.end = r.end - 1;
-    } else if(r.start < lid && lid < r.end ) {
-      Range newRange = new Range(lid + 1, r.end);
-      r.end = lid;
-
-      Assert.eval(newRange.start != newRange.end);
-      ranges.add(index + 1, newRange);
-    } else {
-      Assert.failure("Called with the wrong the index : " + index + " for lid : " + lid);
-    }
-
+    modCount++;
     return true;
   }
 
   public boolean add(ObjectID id) {
     long lid = id.toLong();
 
-    int index = 0;
-    int low = 0;
-    int high = ranges.size() - 1;
-
-    // if it's empty add and retrun;
-    if (ranges.size() == 0) {
-      ranges.add(index, new Range(lid, lid + 1));
-      size++;
-      return true;
-    }
-
-    // If it's an add at the end;
-    Range lr = (Range) ranges.get(high);
-    if (lid == lr.end) {
-      lr.end++;
-      size++;
-      return true;
-    }
-
-    // if this thing goes on the end just add it
-    if (lr.end + 1 < lid) {
-      ranges.add(new Range(lid, lid + 1));
-      size++;
-      return true;
-    }
-
-    Range fr = (Range) ranges.get(0);
-    if (lid < fr.start - 1) {
-      ranges.add(index, new Range(lid, lid + 1));
-      size++;
-      return true;
-    }
-
-    while (low <= high) {
-      index = low + high >> 1;
-      Range r = (Range) ranges.get(index);
-
-      if (r.end < lid) {
-        low = index + 1;
-      } else {
-        high = index - 1;
-      }
-
-      if (r.contains(lid)) return false;// exists
-      if (r.end == lid) {
-        r.addToEnd();
-        while (++index < ranges.size()) {
-          Range n = (Range) ranges.get(index);
-          if (n.start == r.end) {
-            r.end = n.end;
-            ranges.remove(index);
-          } else {
-            break;
-          }
-        }
+    // Step 1 : Check if the previous number is present, if so add to the same Range.
+    Range prev = (Range) ranges.find(new MyLong(lid - 1));
+    if (prev != null) {
+      boolean isAdded = prev.add(lid);
+      if (isAdded) {
+        Range next = (Range) ranges.remove((new MyLong(lid + 1)));
+        if (next != null) prev.merge(next);
         size++;
-        return true;
+        modCount++;
       }
-      if (r.start - 1 == lid) {
-        r.addToStart();
+      return isAdded;
+    }
+
+    // Step 2 : Check if the next number is present, if so add to the same Range.
+    Range next = (Range) ranges.find((new MyLong(lid + 1)));
+    if (next != null) {
+      boolean isAdded = next.add(lid);
+      if (isAdded) {
         size++;
-        while (--index >= 0) {
-          Range pr = (Range) ranges.get(index);
-          if (pr.end == r.start) {
-            r.start = pr.start;
-            ranges.remove(index);
-          } else {
-            break;
-          }
-        }
-        return true;
+        modCount++;
       }
+      return isAdded;
     }
-    size++;
-    Range ir = (Range) ranges.get(index);
-    Range newRange = new Range(lid, lid + 1);
-    if (ir.end < lid) {
-      ranges.add(index + 1, newRange);
-    } else {
-      ranges.add(index, newRange);
+
+    // Step 3: Add a new range for just this number.
+    boolean isAdded = ranges.insert(new Range(lid, lid));
+    if (isAdded) {
+      size++;
+      modCount++;
     }
-    return true;
+    return isAdded;
   }
 
-  public static class Range implements Cloneable {
+  public String toString() {
+    StringBuffer sb = new StringBuffer("ObjectIDSet " + getCompressionDetails() + "[");
+    for (Iterator i = ranges.iterator(); i.hasNext();) {
+      sb.append(' ').append(i.next());
+    }
+    return sb.append(']').toString();
+  }
+
+  public String toShortString() {
+    StringBuffer sb = new StringBuffer("ObjectIDSet " + getCompressionDetails() + "[");
+    sb.append(" size  = ").append(size);
+    return sb.append(']').toString();
+  }
+
+  private String getCompressionDetails() {
+    return "{ (oids:ranges) = " + size + ":" + ranges.size() + " , compression ratio = " + getCompressionRatio()
+           + " } ";
+  }
+
+  // Range contains two longs instead of 1 long in ObjectID
+  private float getCompressionRatio() {
+    return (ranges.size() == 0 ? 1.0f : (size / (ranges.size() * 2)));
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println(toShortString());
+    return out;
+  }
+
+  /**
+   * Ranges store the elements stored in the tree. The range is inclusive.
+   */
+  private static class Range implements Cloneable, Comparable {
     public long start;
     public long end;
 
@@ -182,115 +191,218 @@ public class ObjectIDSet extends AbstractSet implements Cloneable {
       return "Range(" + start + "," + end + ")";
     }
 
+    public long size() {
+      return (isNull() ? 0 : end - start + 1); // since it is all inclusive
+    }
+
+    public boolean isNull() {
+      return start > end;
+    }
+
+    public Range remove(long lid) {
+      if (lid < start || lid > end) { throw new AssertionError("Ranges : Illegal value passed to remove : " + this
+                                                               + " remove called for : " + lid); }
+      if (start == lid) {
+        start++;
+        return null;
+      } else if (end == lid) {
+        end--;
+        return null;
+      } else {
+        Range newRange = new Range(lid + 1, end);
+        end = lid - 1;
+        return newRange;
+      }
+    }
+
+    public void merge(Range other) {
+      if (start == other.end + 1) {
+        start = other.start;
+      } else if (end == other.start - 1) {
+        end = other.end;
+      } else {
+        throw new AssertionError("Ranges : Merge is called on non contiguous value : " + this + " and other Range is "
+                                 + other);
+      }
+    }
+
+    public boolean add(long lid) {
+      if (lid == start - 1) {
+        start--;
+        return true;
+      } else if (lid == end + 1) {
+        end++;
+        return true;
+      } else if (lid >= start && lid <= end) {
+        return false;
+      } else {
+        throw new AssertionError("Ranges : Add is called on non contiguous value : " + this + " but trying to add "
+                                 + lid);
+      }
+    }
+
     public Range(long start, long end) {
       this.start = start;
       this.end = end;
     }
 
-    public void addToEnd() {
-      end++;
-    }
-
-    public void addToStart() {
-      start--;
-    }
-
-    public boolean contains(long id) {
-      return id >= start && id < end;
-    }
-
     public Object clone() {
       return new Range(start, end);
     }
-  }
 
-  private int findIndex(long lid) {
-
-    int index = 0;
-    int low = 0;
-    int high = ranges.size() - 1;
-
-    // if it's empty add and retrun;
-    if (ranges.size() == 0) { return -1; }
-
-    // if this thing goes on the end
-    Range lr = (Range) ranges.get(ranges.size() - 1);
-    if (lr.end <= lid) { return -1; }
-    if (lr.contains(lid)) { return high; }
-
-    Range fr = (Range) ranges.get(0);
-    if (lid < fr.start) { return -1; }
-    if (fr.contains(lid)) return 0;
-
-    while (low <= high) {
-      index = low + high >> 1;
-      Range r = (Range) ranges.get(index);
-
-      if (r.end < lid) {
-        low = index + 1;
+    public int compareTo(Object o) {
+      if (o instanceof Range) {
+        Range other = (Range) o;
+        if (start < other.start) return -1;
+        else if (start == other.start) return 0;
+        else return 1;
       } else {
-        high = index - 1;
+        long n = ((MyLong) o).longValue();
+        if (end < n) return -1;
+        else if (n < start) return 1;
+        else return 0;
       }
-
-      if (r.contains(lid)) return index;
     }
-    return -1;
   }
 
-  public class ObjectIDSetIterator implements Iterator {
-    private int      range;
-    private int      offset;
-    private ObjectID current;
-    public int       visited = 0;
+  // This class is used as a key for lookup.
+  private static final class MyLong implements Comparable {
+    final long number;
+
+    public MyLong(long number) {
+      this.number = number;
+    }
+
+    public long longValue() {
+      return number;
+    }
+
+    public int compareTo(Object o) {
+      if (o instanceof Range) {
+        Range r = (Range) o;
+        if (number < r.start) return -1;
+        else if (number > r.end) return 1;
+        else return 0;
+      } else {
+        long other = ((MyLong) o).longValue();
+        if (number < other) return -1;
+        else if (number > other) return 1;
+        else return 0;
+      }
+    }
+
+    public String toString() {
+      return "MyLong@" + System.identityHashCode(this) + "(" + number + ")";
+    }
+  }
+
+  private class ObjectIDSetIterator implements Iterator {
+
+    Iterator nodes;
+    Range    current;
+    ObjectID lastReturned;
+    int      idx;
+    int      expectedModCount;
+
+    public ObjectIDSetIterator() {
+      nodes = ranges.iterator();
+      expectedModCount = modCount;
+      idx = 0;
+      if (nodes.hasNext()) current = (Range) nodes.next();
+    }
 
     public boolean hasNext() {
-      return !(range >= ranges.size());
+      return nodes.hasNext() || (current != null && (current.start + idx) <= current.end);
     }
 
     public Object next() {
-      if (range >= ranges.size()) throw new NoSuchElementException();
-      visited++;
-      Range r = (Range) ranges.get(range);
-      current = new ObjectID(r.start + offset);
-      if (r.start + offset + 1 < r.end) {
-        offset++;
+      if (current == null) throw new NoSuchElementException();
+      if (expectedModCount != modCount) throw new ConcurrentModificationException();
+      ObjectID oid = new ObjectID(current.start + idx);
+      if (current.start + idx == current.end) {
+        idx = 0;
+        if (nodes.hasNext()) {
+          current = (Range) nodes.next();
+        } else {
+          current = null;
+        }
       } else {
-        offset = 0;
-        range++;
+        idx++;
       }
-
-      return current;
+      return (lastReturned = oid);
     }
 
     public void remove() {
-      if (current == null) throw new IllegalStateException();
-      int b4size = ranges.size();
-      // ObjectIDSet.this.remove(current);
-      ObjectIDSet.this.removeObjectIDAt(current.toLong(), (offset == 0 ? range -1 : range));
-      if (b4size > ranges.size()) {
-        // Case 1: Last returned ObjectID was the only one contained in that Range.
-        Assert.assertEquals(0, offset);
-        range--;
-      } else if (b4size == ranges.size()) {
-        // Case 2: Last returned ObjectID was either the first or the last of the range.
-        if (offset == 1) {
-          // It was the first
-          offset = 0;
-        } else {
-          // It was the last. So no change
-          Assert.assertEquals(0, offset);
-        }
+      // XXX::FIXME::This is broken still.
+      if (true) throw new ImplementMe();
+      if (lastReturned == null) throw new IllegalStateException();
+      if (expectedModCount != modCount) throw new ConcurrentModificationException();
+      ObjectIDSet.this.remove(lastReturned);
+      expectedModCount = modCount;
+      nodes = ranges.tailSetIterator(new MyLong(lastReturned.toLong()));
+      if (nodes.hasNext()) {
+        current = (Range) nodes.next();
+        idx = 0; // TODO:: verify ;; has to be
       } else {
-        // Case 3 : b4size < ranges.size(); Last returned ObjectIDSet was some where in the middle.
-        range++;
-        Assert.assertTrue(offset != 0);
-        offset = 0;
+        current = null;
       }
+      lastReturned = null;
     }
   }
 
+  /*
+   * Because of the short comings of the iterator (it can't perform remove), this method is overridden FIXME::Once
+   * remove is fixed
+   */
+  public boolean removeAll(Collection c) {
+    boolean modified = false;
+    if (size() > c.size()) {
+      for (Iterator i = c.iterator(); i.hasNext();)
+        modified |= remove(i.next());
+    } else {
+      // XXX :; yuck !!
+      ArrayList toRemove = new ArrayList();
+      for (Iterator i = iterator(); i.hasNext();) {
+        Object o = i.next();
+        if (c.contains(o)) {
+          toRemove.add(o);
+          modified = true;
+        }
+      }
+      for (Iterator i = toRemove.iterator(); i.hasNext();) {
+        remove(i.next());
+      }
+    }
+    return modified;
+  }
+
+  /*
+   * Because of the short comings of the iterator (it can't perform remove), this method is overridden FIXME::Once
+   * remove is fixed
+   */
+  public boolean retainAll(Collection c) {
+    boolean modified = false;
+    ObjectIDSet toRemove = new ObjectIDSet();
+    Iterator e = iterator();
+    while (e.hasNext()) {
+      Object o = e.next();
+      if (!c.contains(o)) {
+        toRemove.add(o);
+        modified = true;
+      }
+    }
+    for (Iterator i = toRemove.iterator(); i.hasNext();) {
+      remove(i.next());
+    }
+    return modified;
+  }
+
   public boolean contains(Object o) {
-    return findIndex(((ObjectID) o).toLong()) >= 0;
+    if (o instanceof ObjectID) {
+      return contains((ObjectID) o);
+    } else {
+      return false;
+    }
   }
 
   public boolean add(Object arg0) {
@@ -298,11 +410,46 @@ public class ObjectIDSet extends AbstractSet implements Cloneable {
   }
 
   public boolean remove(Object o) {
-    return remove((ObjectID) o);
+    if (o instanceof ObjectID) {
+      return remove((ObjectID) o);
+    } else {
+      return false;
+    }
   }
 
   public void clear() {
     this.size = 0;
+    modCount++;
     ranges.clear();
+  }
+
+  // =======================SortedSet Interface Methods==================================
+
+  public Comparator comparator() {
+    return null;
+  }
+
+  public Object first() {
+    if (size == 0) throw new NoSuchElementException();
+    Range min = (Range) ranges.findMin();
+    return new ObjectID(min.start);
+  }
+
+  public Object last() {
+    if (size == 0) throw new NoSuchElementException();
+    Range max = (Range) ranges.findMax();
+    return new ObjectID(max.end);
+  }
+
+  public SortedSet headSet(Object arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public SortedSet subSet(Object arg0, Object arg1) {
+    throw new UnsupportedOperationException();
+  }
+
+  public SortedSet tailSet(Object arg0) {
+    throw new UnsupportedOperationException();
   }
 }

@@ -11,8 +11,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.TCNetworkMessage;
-import com.tc.properties.TCPropertiesImpl;
-import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.ReconnectConfig;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
 
@@ -23,7 +22,7 @@ import java.util.ListIterator;
  * 
  */
 public class SendStateMachine extends AbstractStateMachine {
-  private static final int                 MAX_SEND_QUEUE_SIZE  = 1000;
+  private final int                        sendQueueCap;
   private final State                      ACK_WAIT_STATE       = new AckWaitState();
   private final State                      HANDSHAKE_WAIT_STATE = new HandshakeWaitState();
   private final State                      MESSAGE_WAIT_STATE   = new MessageWaitState();
@@ -41,13 +40,15 @@ public class SendStateMachine extends AbstractStateMachine {
 
   // changed by tc.properties
 
-  public SendStateMachine(OOOProtocolMessageDelivery delivery, boolean isClient) {
+  public SendStateMachine(OOOProtocolMessageDelivery delivery, ReconnectConfig reconnectConfig, boolean isClient) {
     super();
 
-    // set sendWindow from tc.properties if exist. 0 to disable window send.
-    sendWindow = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_NHA_OOO_SEND_WINDOW);
     this.delivery = delivery;
-    this.sendQueue = new BoundedLinkedQueue(MAX_SEND_QUEUE_SIZE);
+    // set sendWindow from tc.properties if exist. 0 to disable window send.
+    sendWindow = reconnectConfig.getSendWindow();
+    int queueCap = reconnectConfig.getSendQueueCapacity();
+    this.sendQueueCap = (queueCap == 0)? Integer.MAX_VALUE : queueCap;
+    this.sendQueue = new BoundedLinkedQueue(this.sendQueueCap);
     this.isClient = isClient;
     this.debugId = (this.isClient) ? "CLIENT" : "SERVER";
   }
@@ -99,13 +100,13 @@ public class SendStateMachine extends AbstractStateMachine {
 
     public void execute(OOOProtocolMessage msg) {
       if (msg == null) return;
-      // drop all msgs until handshake reply. 
+      // drop all msgs until handshake reply.
       // Happens when short network disruptions and both L1 & L2 still keep states.
-      if(!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail())  {
-        logger.warn("Due to handshake drops stale message:"+msg);
+      if (!msg.isHandshakeReplyOk() && !msg.isHandshakeReplyFail()) {
+        logger.warn("Due to handshake drops stale message:" + msg);
         return;
       }
-      
+
       if (msg.isHandshakeReplyFail()) {
         switchToState(MESSAGE_WAIT_STATE);
         return;
@@ -120,7 +121,7 @@ public class SendStateMachine extends AbstractStateMachine {
       }
       if (ackedSeq < acked.get()) {
         // this shall not, old ack
-        Assert.failure("Received bad ack: "+ackedSeq+ " expected >= "+acked.get());
+        Assert.failure("Received bad ack: " + ackedSeq + " expected >= " + acked.get());
       } else {
         while (ackedSeq > acked.get()) {
           acked.increment();
@@ -211,7 +212,7 @@ public class SendStateMachine extends AbstractStateMachine {
     outstandingMsgs.clear();
 
     BoundedLinkedQueue tmpQ = sendQueue;
-    sendQueue = new BoundedLinkedQueue(MAX_SEND_QUEUE_SIZE);
+    sendQueue = new BoundedLinkedQueue(sendQueueCap);
     synchronized (tmpQ) {
       while (!tmpQ.isEmpty()) {
         dequeue(tmpQ);

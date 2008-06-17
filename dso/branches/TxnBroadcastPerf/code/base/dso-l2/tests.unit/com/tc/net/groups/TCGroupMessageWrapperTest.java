@@ -42,7 +42,9 @@ import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.session.NullSessionManager;
-import com.tc.util.ObjectIDSet2;
+import com.tc.object.tx.ServerTransactionID;
+import com.tc.object.tx.TransactionID;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.UUID;
 
 import java.util.HashMap;
@@ -166,7 +168,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
   }
 
   public void testGCResultMessage() throws Exception {
-    ObjectIDSet2 oidSet = new ObjectIDSet2();
+    ObjectIDSet oidSet = new ObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       oidSet.add(new ObjectID(i));
     }
@@ -199,7 +201,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
   }
 
   public void testObjectSyncMessage() throws Exception {
-    Set dnaOids = new ObjectIDSet2();
+    Set dnaOids = new ObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       dnaOids.add(new ObjectID(i));
     }
@@ -209,7 +211,9 @@ public class TCGroupMessageWrapperTest extends TestCase {
     Map roots = new HashMap();
     long sID = 10;
     ObjectSyncMessage message = new ObjectSyncMessage(ObjectSyncMessage.MANAGED_OBJECT_SYNC_TYPE);
-    message.initialize(dnaOids, count, serializedDNAs, objectSerializer, roots, sID);
+    message.initialize(new ServerTransactionID(new NodeIDImpl("hello", new byte[] { 34, 33, (byte) 234 }),
+                                               new TransactionID(342)), dnaOids, count, serializedDNAs,
+                       objectSerializer, roots, sID);
     sendGroupMessage(message);
   }
 

@@ -47,7 +47,7 @@ import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.Counter;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.StoppableThread;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -157,7 +157,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       StringBuffer rootBuff = new StringBuffer();
       for (Iterator rootIter = getRootNames(); rootIter.hasNext();) {
         rootBuff.append(rootIter.next());
-        if(rootIter.hasNext()) {
+        if (rootIter.hasNext()) {
           rootBuff.append(",");
         }
       }
@@ -568,22 +568,22 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     for (Iterator i = toDelete.iterator(); i.hasNext();) {
       ObjectID id = (ObjectID) i.next();
       ManagedObjectReference ref = (ManagedObjectReference) references.remove(id);
-      if (ref != null) {
-        Assert.assertFalse(ref.isNew());
-        while (ref != null && ref.isReferenced()) {
-          // This is possible if the cache manager is evicting this *unreachable* object or somehow the admin console is
-          // looking up this object.
-          logger.warn("Reference : " + ref + " was referenced. So waiting to remove !");
-          // reconcile
-          references.put(id, ref);
-          try {
-            wait();
-          } catch (InterruptedException e) {
-            throw new AssertionError(e);
-          }
-          ref = (ManagedObjectReference) references.remove(id);
+      while (ref != null && ref.isReferenced()) {
+        // This is possible if the cache manager is evicting this *unreachable* object or somehow the admin console is
+        // looking up this object.
+        logger.warn("Reference : " + ref + " was referenced. So waiting to remove !");
+        // reconcile
+        references.put(id, ref);
+        try {
+          wait();
+        } catch (InterruptedException e) {
+          throw new AssertionError(e);
         }
-        if (ref != null) evictionPolicy.remove(ref);
+        ref = (ManagedObjectReference) references.remove(id);
+      }
+      if (ref != null) {
+        if (ref.isNew()) { throw new AssertionError("GCed Reference is still new : " + ref); }
+        evictionPolicy.remove(ref);
       }
     }
   }
@@ -600,7 +600,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return objectStore.getRootNamesToIDsMap();
   }
 
-  public ObjectIDSet2 getAllObjectIDs() {
+  public ObjectIDSet getAllObjectIDs() {
     return objectStore.getAllObjectIDs();
   }
 

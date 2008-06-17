@@ -9,4 +9,11 @@ public interface ReconnectConfig {
   public boolean getReconnectEnabled();
 
   public int getReconnectTimeout();
+  
+  public int getSendQueueCapacity();
+  
+  public int getMaxDelayAcks();
+  
+  public int getSendWindow();
+  
 }

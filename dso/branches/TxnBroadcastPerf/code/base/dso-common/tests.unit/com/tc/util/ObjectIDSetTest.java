@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ObjectIDSetTest extends TCTestCase {
 
@@ -31,28 +33,35 @@ public class ObjectIDSetTest extends TCTestCase {
     public Set create(Collection c);
   }
 
-  /**
-   * This test is disabled since it is too slow and times out in slow boxes.
-   */
-  public void DISABLEDtestObjectIDSet() {
-    SetCreator creator = new SetCreator() {
-      public Set create() {
-        return new ObjectIDSet();
-      }
-
-      public Set create(Collection c) {
-        return new ObjectIDSet(c);
-      }
-
-    };
-    basicTest(creator);
-    iteratorRemoveTest(creator);
-  }
-
   public void basicTest(SetCreator creator) {
     basicTest(creator, 100000, 100000);
     basicTest(creator, 500000, 100000);
     basicTest(creator, 100000, 1000000);
+  }
+  
+  public void testSortedSetObjectIDSet() throws Exception {
+    SecureRandom sr = new SecureRandom();
+    long seed = sr.nextLong();
+    System.err.println("SORTED TEST : Seed for Random is " + seed);
+    Random r = new Random(seed);
+    TreeSet ts = new TreeSet();
+    SortedSet oids = new ObjectIDSet();
+    for (int i = 0; i < 100000; i++) {
+      long l = r.nextLong();
+      ObjectID id = new ObjectID(l);
+      boolean b1 = ts.add(id);
+      boolean b2 = oids.add(id);
+      assertEquals(b1, b2);
+      assertEquals(ts.size(), oids.size());
+    }
+    
+    //verify sorted
+    Iterator i = ts.iterator();
+    for (Iterator j = oids.iterator(); j.hasNext();) {
+      ObjectID oid1 = (ObjectID) i.next();
+      ObjectID oid2 = (ObjectID) j.next();
+      assertEquals(oid1, oid2);
+    }
   }
 
   public void basicTest(SetCreator creator, int distRange, int iterationCount) {
@@ -151,22 +160,22 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   private void serializeAndVerify(Set s) throws Exception {
-    ObjectIDSet2 org = new ObjectIDSet2(s);
+    ObjectIDSet org = new ObjectIDSet(s);
     assertEquals(s, org);
 
-    ObjectIDSet2 ser = serializeAndRead(org);
+    ObjectIDSet ser = serializeAndRead(org);
     assertEquals(s, ser);
     assertEquals(org, ser);
   }
 
-  private ObjectIDSet2 serializeAndRead(ObjectIDSet2 org) throws Exception {
+  private ObjectIDSet serializeAndRead(ObjectIDSet org) throws Exception {
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
     ObjectOutput oo = new ObjectOutputStream(bo);
     oo.writeObject(org);
     System.err.println("Written ObjectIDSet2 size : " + org.size());
     ByteArrayInputStream bi = new ByteArrayInputStream(bo.toByteArray());
     ObjectInput oi = new ObjectInputStream(bi);
-    ObjectIDSet2 oids = (ObjectIDSet2) oi.readObject();
+    ObjectIDSet oids = (ObjectIDSet) oi.readObject();
     System.err.println("Read  ObjectIDSet2 size : " + oids.size());
     return oids;
   }
@@ -184,22 +193,22 @@ public class ObjectIDSetTest extends TCTestCase {
     return s;
   }
 
-  public void testObjectIDSet2() {
+  public void testObjectIDSet() {
     SetCreator creator = new SetCreator() {
       public Set create() {
-        return new ObjectIDSet2();
+        return new ObjectIDSet();
       }
 
       public Set create(Collection c) {
-        return new ObjectIDSet2(c);
+        return new ObjectIDSet(c);
       }
 
     };
     basicTest(creator);
   }
 
-  public void testObjectIDSet2Dump() {
-    ObjectIDSet2 s = new ObjectIDSet2();
+  public void testObjectIDSetDump() {
+    ObjectIDSet s = new ObjectIDSet();
     System.err.println(" toString() : " + s);
     
     for (int i = 0; i < 100; i++) {
@@ -245,22 +254,4 @@ public class ObjectIDSetTest extends TCTestCase {
     }
     Assert.eval(oidSet.size() == 0);
   }
-
-  // See the comment above
-  public void DISABLEDtestFailedCase() {
-    System.err.println("\nRunning testFailedCase()... ");
-    SetCreator creator = new SetCreator() {
-      public Set create() {
-        return new ObjectIDSet();
-      }
-
-      public Set create(Collection c) {
-        return new ObjectIDSet(c);
-      }
-
-    };
-    long seed = 1576555335886137186L;
-    iteratorRemoveTest(creator, seed);
-  }
-
 }
