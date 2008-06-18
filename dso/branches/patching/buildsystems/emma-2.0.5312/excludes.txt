@@ -1,3 +1,19 @@
+# Excludes rules for EMMA
+-java.*
+-java.util.*
+-com.tctest.*
+-com.tc.test.*
+-*Test*
+
+# classes that would become too big after instrumented
+-com.terracotta.session.SessionData
+-com.tcspring.DistributableBeanFactoryMixin
+-com.tcspring.ApplicationHelper
+-com.tcspring.BeanDefinitionProtocol
+-com.tcspring.ClassHierarchyWalker
+-com.tcspring.GetBeanProtocol
+-com.tcspring.*
+
 # classes found in our bootjar
 # this list is used by emma to exclude
 # these classes from its coverage
