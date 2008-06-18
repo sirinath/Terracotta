@@ -26,6 +26,15 @@ public class ProductInfoTest extends TestCase {
     verifyNoPatchInfo(info);
   }
   
+  public void testEnterpriseEditionWithPatch() {
+    InputStream buildStream = ProductInfo.class.getResourceAsStream("TestEnterpriseBuildData.txt");
+    InputStream patchStream = ProductInfo.class.getResourceAsStream("TestPatchData.txt");
+    ProductInfo info = new ProductInfo(buildStream, patchStream);
+    verifyEnterpriseBuildData(info);
+    verifyPatchInfo(info);
+  }
+
+  
   private void verifyOpenSourceBuildData(ProductInfo info) {
     assertEquals("thebranch", info.buildBranch());
     assertEquals("thehost", info.buildHost());
@@ -49,6 +58,32 @@ public class ProductInfoTest extends TestCase {
     assertEquals("Terracotta", info.moniker());
     assertEquals("Terracotta 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 12345 by theuser@thehost from thebranch)", info.toLongString());
     assertEquals("Terracotta 1.2.3-SNAPSHOT", info.toShortString());
+    assertEquals("1.2.3-SNAPSHOT", info.version());
+  }
+  
+  private void verifyEnterpriseBuildData(ProductInfo info) {
+    assertEquals("thebranch", info.buildBranch());
+    assertEquals("thehost", info.buildHost());
+    assertEquals("20080616-130651 (Revision 98765-12345 by theuser@thehost from thebranch)", info.buildID());
+    assertEquals("12345", info.buildRevision());
+    assertEquals("98765", info.buildRevisionFromEE());
+    assertEquals(toDate(2008, 5, 16, 13, 6, 51), info.buildTimestamp());
+    assertEquals("20080616-130651", info.buildTimestampAsString());
+    assertEquals("theuser", info.buildUser());
+    
+    String copyright = info.copyright();
+    assertNotNull(copyright);
+    assertTrue(copyright.indexOf("Copyright (c)") >= 0);
+    assertTrue(copyright.indexOf("Terracotta, Inc.") >= 0);
+    assertTrue(copyright.indexOf("All rights reserved.") >= 0);
+
+    assertEquals("Enterprise Edition", info.edition());
+    assertEquals("1.2", info.kitID());
+    assertEquals("Unlimited development", info.license());
+    assertEquals("1.2.3-SNAPSHOT", info.mavenArtifactsVersion());
+    assertEquals("Terracotta", info.moniker());
+    assertEquals("Terracotta Enterprise Edition 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 98765-12345 by theuser@thehost from thebranch)", info.toLongString());
+    assertEquals("Terracotta Enterprise Edition 1.2.3-SNAPSHOT", info.toShortString());
     assertEquals("1.2.3-SNAPSHOT", info.version());
   }
   
