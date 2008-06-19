@@ -248,8 +248,8 @@ public class DistributedObjectClient extends SEDA {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
-      final Stage oooSendStage = stageManager.createStage("OOONetSendStage", new OOOEventHandler(), 1, maxSize);
-      final Stage oooReceiveStage = stageManager.createStage("OOONetReceiveStage", new OOOEventHandler(), 1, maxSize);
+      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE, new OOOEventHandler(), 1, maxSize);
+      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE, new OOOEventHandler(), 1, maxSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
                                                                      oooSendStage.getSink(), oooReceiveStage.getSink(),

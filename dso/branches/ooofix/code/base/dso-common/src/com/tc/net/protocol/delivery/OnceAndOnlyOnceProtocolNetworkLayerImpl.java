@@ -111,7 +111,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
       debugLog("Got Handshake message...");
       if (msg.getSessionId() == -1) {
         debugLog("A brand new client is trying to connect - reply OK");
-        OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived().get());
+        OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived());
         sendMessage(reply);
         delivery.resume();
         delivery.receive(createHandshakeReplyOkMessage(-1));
@@ -123,7 +123,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         reconnectMode.set(false);
       } else if (msg.getSessionId() == getSessionId()) {
         debugLog("A same-session client is trying to connect - reply OK");
-        OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived().get());
+        OOOProtocolMessage reply = createHandshakeReplyOkMessage(delivery.getReceiver().getReceived());
         sendMessage(reply);
         handshakeMode.set(false);
         delivery.resume();
@@ -136,7 +136,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
         reconnectMode.set(false);
       } else {
         debugLog("A DIFF-session client is trying to connect - reply FAIL");
-        OOOProtocolMessage reply = createHandshakeReplyFailMessage(delivery.getReceiver().getReceived().get());
+        OOOProtocolMessage reply = createHandshakeReplyFailMessage(delivery.getReceiver().getReceived());
         sendMessage(reply);
         handshakeMode.set(false);
         if (channelConnected.get()) receiveLayer.notifyTransportDisconnected(this);
@@ -227,7 +227,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public void notifyTransportConnected(MessageTransport transport) {
     handshakeMode.set(true);
     if (isClient) {
-      OOOProtocolMessage handshake = createHandshakeMessage(delivery.getReceiver().getReceived().get());
+      OOOProtocolMessage handshake = createHandshakeMessage(delivery.getReceiver().getReceived());
       debugLog("Sending Handshake message...");
       sendMessage(handshake);
     } else {
