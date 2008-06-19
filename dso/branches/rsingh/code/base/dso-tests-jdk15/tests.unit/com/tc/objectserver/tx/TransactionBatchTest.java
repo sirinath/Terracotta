@@ -4,6 +4,7 @@
  */
 package com.tc.objectserver.tx;
 
+import com.tc.config.TcProperty;
 import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ApplicatorDNAEncodingImpl;
@@ -614,6 +615,10 @@ public class TransactionBatchTest extends TestCase {
     public long getLong(String key, long defaultValue) {
       throw new AssertionError();
    }
+
+    public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
+      throw new AssertionError();
+    }
 
   }
 

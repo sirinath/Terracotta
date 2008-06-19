@@ -4,6 +4,7 @@
  */
 package com.terracotta.session.util;
 
+import com.tc.config.TcProperty;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -279,6 +280,10 @@ public class ConfigPropertiesTest extends TestCase {
 
     public boolean getBoolean(String key, boolean defaultValue) {
       return getBoolean(key);
+    }
+
+    public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
+      //
     }
   }
 

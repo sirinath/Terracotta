@@ -4,6 +4,7 @@
  */
 package com.tc.properties;
 
+import com.tc.config.TcProperty;
 import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -19,8 +20,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Map.Entry;
 
 /**
  * This class is an easy way to read properties that will help tune DSO. It first loads properties from the
@@ -46,6 +47,8 @@ public class TCPropertiesImpl implements TCProperties {
   private static final TCPropertiesImpl INSTANCE;
 
   private final Properties              props                      = new Properties();
+
+  private final Properties              localTcProperties          = new Properties();
 
   static {
     INSTANCE = new TCPropertiesImpl();
@@ -85,7 +88,7 @@ public class TCPropertiesImpl implements TCProperties {
             .addLog(
                     "The property \""
                         + oldProperties[i]
-                        + "\" has been removed/renamed in the latest relases. Please update the tc.properties file or some of your settings might not work",
+                        + "\" has been removed/renamed in the latest release. Please update the tc.properties file or some of your settings might not work",
                     LogLevel.WARN);
       }
     }
@@ -105,6 +108,7 @@ public class TCPropertiesImpl implements TCProperties {
       Map.Entry entry = (Entry) i.next();
       String key = (String) entry.getKey();
       if (key.startsWith(SYSTEM_PROP_PREFIX)) {
+        localTcProperties.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), (String) entry.getValue());
         props.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), (String) entry.getValue());
       }
     }
@@ -112,6 +116,32 @@ public class TCPropertiesImpl implements TCProperties {
 
   public Properties addAllPropertiesTo(Properties properties) {
     return addAllPropertiesTo(properties, null);
+  }
+
+  public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
+    if (tcProperties == null) {
+      LOG_BUFFER.addLog("tc-config doesn't have any tc-property. No tc-property will be overridden", LogLevel.WARN);
+      return;
+    }
+
+    int noOfProperties = tcProperties.length;
+    String propertyName, propertyValue;
+
+    TCProperties tcProps = TCPropertiesImpl.getProperties();
+    for (int i = 0; i < noOfProperties; i++) {
+      propertyName = tcProperties[i].getPropertyName();
+      propertyValue = tcProperties[i].getPropertyValue();
+      if (this.localTcProperties.containsKey(propertyName)) {
+        LOG_BUFFER.addLog("The property \"" + propertyName
+                          + "\" has been set by the local settings(tc.properties/system) to "
+                          + tcProps.getProperty(propertyName) + "This will not be overridden to " + propertyValue
+                          + " from the tc-config file", LogLevel.WARN);
+      } else {
+        LOG_BUFFER.addLog("The property \"" + propertyName + "\" has been overridden to " + propertyValue + " from "
+                          + tcProps.getProperty(propertyName) + " through tc-config file", LogLevel.WARN);
+        setProperty(propertyName, propertyValue);
+      }
+    }
   }
 
   Properties addAllPropertiesTo(Properties properties, String filter) {
@@ -144,6 +174,9 @@ public class TCPropertiesImpl implements TCProperties {
       try {
         FileInputStream fin = new FileInputStream(file);
         LOG_BUFFER.addLog("Loading override properties from : " + file);
+        localTcProperties.load(fin);
+        fin.close();
+        fin = new FileInputStream(file);
         props.load(fin);
       } catch (FileNotFoundException e) {
         LOG_BUFFER.addLog("Couldnt find " + file + ". Ignoring it", e);
@@ -175,6 +208,10 @@ public class TCPropertiesImpl implements TCProperties {
 
   public static TCProperties getProperties() {
     return INSTANCE;
+  }
+
+  public Properties getLocalTcProperties() {
+    return localTcProperties;
   }
 
   public TCProperties getPropertiesFor(String category) {
@@ -243,7 +280,7 @@ public class TCPropertiesImpl implements TCProperties {
     String val = getProperty(key);
     return Long.valueOf(val).longValue();
   }
-  
+
   public long getLong(String key, long defValue) {
     String val = getProperty(key, true);
     if (val == null) return defValue;
