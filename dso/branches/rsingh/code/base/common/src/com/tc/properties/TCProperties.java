@@ -32,4 +32,6 @@ public interface TCProperties {
   Properties addAllPropertiesTo(Properties properties);
 
   public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties);
+  
+  public void setProperty(String key, String value);
 }

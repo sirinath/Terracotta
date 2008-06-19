@@ -73,5 +73,9 @@ class TCSubProperties implements TCProperties {
   public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
     properties.overwriteTcPropertiesFromConfig(tcProperties);
   }
+
+  public void setProperty(String key, String value) {
+    properties.setProperty(getActualKey(key), value);
+  }
   
 }
