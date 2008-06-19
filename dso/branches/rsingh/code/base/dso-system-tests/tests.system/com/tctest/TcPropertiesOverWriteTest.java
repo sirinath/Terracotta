@@ -61,7 +61,7 @@ public class TcPropertiesOverWriteTest extends TransparentTestBase {
     port = pc.chooseRandomPort();
     jmxPort = pc.chooseRandomPort();
     configFile = getTempFile("tc-config.xml");
-    // set the properties to be overwritten
+    // set the properties to be overwritten, these properties would be overwridden by the tc-config
     propertiesToTest[0] = new TcProperty(TCPropertiesConsts.L1_CACHEMANAGER_ENABLED, L1_CACHEMANAGER_ENABLED_VALUE);
     propertiesToTest[1] = new TcProperty(TCPropertiesConsts.L1_LOGGING_MAX_LOGFILE_SIZE,
                                          L1_LOGGING_MAX_LOGFILE_SIZE_VALUE);
@@ -70,7 +70,7 @@ public class TcPropertiesOverWriteTest extends TransparentTestBase {
     // this would not get overridden
     propertiesToTest[2] = new TcProperty(TCPropertiesConsts.L1_TRANSACTIONMANAGER_MAXPENDING_BATCHES, "2345");
 
-    // this property is also given by tc.properties filewhich has higher precedence to tc-config
+    // this property is also given by tc.properties file which has higher precedence to tc-config
     // this would not get overridden
     propertiesToTest[3] = new TcProperty(TCPropertiesConsts.L1_CACHEMANAGER_LEASTCOUNT, "9000");
     writeConfigFile();

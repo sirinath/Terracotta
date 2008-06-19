@@ -9,7 +9,7 @@ import com.terracottatech.config.TcConfigDocument.TcConfig.TcProperties.Property
 
 
 public class ConfigTCPropertiesFromObject implements ConfigTCProperties {
-  private TcProperty[] tcProperties = null;
+  private TcProperty[] tcProperties = new TcProperty[0];
 
   public ConfigTCPropertiesFromObject(TcProperties tcProps) {
     if(tcProps == null)

@@ -620,6 +620,10 @@ public class TransactionBatchTest extends TestCase {
       throw new AssertionError();
     }
 
+    public void setProperty(String key, String value) {
+      throw new AssertionError();      
+    }
+
   }
 
 }

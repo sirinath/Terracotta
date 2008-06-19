@@ -285,6 +285,10 @@ public class ConfigPropertiesTest extends TestCase {
     public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
       //
     }
+
+    public void setProperty(String key, String value) {
+      throw new ImplementMe();
+    }
   }
 
 }

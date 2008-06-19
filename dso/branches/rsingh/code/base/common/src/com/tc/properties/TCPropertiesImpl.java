@@ -50,6 +50,8 @@ public class TCPropertiesImpl implements TCProperties {
 
   private final Properties              localTcProperties          = new Properties();
 
+  private boolean                       tcPropertiesInitialized    = false;
+
   static {
     INSTANCE = new TCPropertiesImpl();
   }
@@ -119,12 +121,15 @@ public class TCPropertiesImpl implements TCProperties {
   }
 
   public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
-    if (tcProperties == null) {
+    // tc properties are now fully initialized
+    tcPropertiesInitialized = true;
+    int noOfProperties = tcProperties.length;
+
+    if (noOfProperties == 0) {
       LOG_BUFFER.addLog("tc-config doesn't have any tc-property. No tc-property will be overridden", LogLevel.WARN);
       return;
     }
 
-    int noOfProperties = tcProperties.length;
     String propertyName, propertyValue;
 
     TCProperties tcProps = TCPropertiesImpl.getProperties();
@@ -176,8 +181,7 @@ public class TCPropertiesImpl implements TCProperties {
         LOG_BUFFER.addLog("Loading override properties from : " + file);
         localTcProperties.load(fin);
         fin.close();
-        fin = new FileInputStream(file);
-        props.load(fin);
+        props.putAll(localTcProperties);
       } catch (FileNotFoundException e) {
         LOG_BUFFER.addLog("Couldnt find " + file + ". Ignoring it", e);
       } catch (IOException e) {
@@ -227,13 +231,17 @@ public class TCPropertiesImpl implements TCProperties {
     LoggingWorkaround.doLog();
     String val = props.getProperty(key);
     if (val == null && !missingOkay) { throw new AssertionError("TCProperties : Property not found for " + key); }
+    if (tcPropertiesInitialized == false) {
+      LOG_BUFFER.addLog("The property \"" + key + "\" has been read before the initialization is complete. \"" + key
+                        + "\" = " + val);
+    }
     return val;
   }
 
   /*
    * Used only in test
    */
-  public static void setProperty(String key, String value) {
+  public void setProperty(String key, String value) {
     INSTANCE.props.setProperty(key, value);
   }
 
