@@ -4,6 +4,8 @@
  */
 package com.tc.lang;
 
+import com.tc.exception.ImplementMe;
+import com.tc.logging.CallbackOnExitActionState;
 import com.tc.logging.CallbackOnExitHandler;
 import com.tc.logging.TCLogging;
 
@@ -21,7 +23,7 @@ public class ThrowableHandlerTest extends TestCase {
       }
 
     };
-    throwableHandler.addCallbackOnExitHandler(new TestCallbackOnExitHandler());
+    throwableHandler.addCallbackOnExitDefaultHandler(new TestCallbackOnExitHandler());
     try {
       throw new Exception(" force thread dump ");
     } catch (Exception e) {
@@ -32,8 +34,23 @@ public class ThrowableHandlerTest extends TestCase {
 
   private class TestCallbackOnExitHandler implements CallbackOnExitHandler {
 
+    private CallbackOnExitActionState actionState = new CallbackOnExitActionState();
+
     public void callbackOnExit() {
       invokedCallback = true;
+      actionState.actionSuccess();
+    }
+
+    public void callbackOnExit(Throwable t) {
+      throw new ImplementMe();
+    }
+
+    public CallbackOnExitActionState getCallbackOnExitActionState() {
+      return this.actionState;
+    }
+
+    public boolean isRestartNeeded() {
+      return false;
     }
 
   }
