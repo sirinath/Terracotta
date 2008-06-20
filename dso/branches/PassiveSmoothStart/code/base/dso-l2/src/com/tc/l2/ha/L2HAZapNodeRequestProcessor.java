@@ -103,7 +103,7 @@ public class L2HAZapNodeRequestProcessor implements ZapNodeRequestProcessor {
       NodeID activeNode = stateManager.getActiveNodeID();
       if (activeNode.isNull() || activeNode.equals(nodeID)) {
         String message = "Terminating due to Zap request from " + getFormatedError(nodeID, zapNodeType, reason);
-        logger.error(message, new Throwable());
+        logger.error(message);
         if (zapNodeType == NODE_JOINED_WITH_DIRTY_DB) {
           throw new ZapDirtyDbServerNodeException(message);
         } else {

@@ -11,9 +11,9 @@ import com.tc.exception.DatabaseException;
 import com.tc.exception.ExceptionHelperImpl;
 import com.tc.exception.MortbayMultiExceptionHelper;
 import com.tc.exception.RuntimeExceptionHelper;
-import com.tc.logging.CallbackOnExitActionState;
+import com.tc.handler.CallbackStartupExceptionLoggingAdapter;
 import com.tc.logging.CallbackOnExitHandler;
-import com.tc.logging.CallbackStartupExceptionLoggingAdapter;
+import com.tc.logging.CallbackOnExitState;
 import com.tc.logging.TCLogger;
 import com.tc.logging.ThreadDumpHandler;
 import com.tc.properties.TCPropertiesConsts;
@@ -90,29 +90,39 @@ public class ThrowableHandler {
     final Throwable proximateCause = helper.getProximateCause(t);
     final Throwable ultimateCause = helper.getUltimateCause(t);
 
-    Object registeredExitHandlerObject;
-
-    if ((registeredExitHandlerObject = callbackOnExitExceptionHandlers.get(proximateCause.getClass())) != null) {
-      ((CallbackOnExitHandler) registeredExitHandlerObject).callbackOnExit(t);
-    } else if ((registeredExitHandlerObject = callbackOnExitExceptionHandlers.get(ultimateCause.getClass())) != null) {
-      ((CallbackOnExitHandler) registeredExitHandlerObject).callbackOnExit(t);
-    } else {
-      handleDefaultException(thread, proximateCause);
+    Object registeredExitHandlerObject = null;
+    CallbackOnExitState throwableState = new CallbackOnExitState(t);
+    try {
+      if ((registeredExitHandlerObject = callbackOnExitExceptionHandlers.get(proximateCause.getClass())) != null) {
+        ((CallbackOnExitHandler) registeredExitHandlerObject).callbackOnExit(throwableState);
+      } else if ((registeredExitHandlerObject = callbackOnExitExceptionHandlers.get(ultimateCause.getClass())) != null) {
+        ((CallbackOnExitHandler) registeredExitHandlerObject).callbackOnExit(throwableState);
+      } else {
+        handleDefaultException(thread, throwableState);
+      }
+    } catch (Throwable throwable) {
+      logger.error("Error while handling uncaught expection" + t.getCause(), throwable);
     }
 
     boolean autoRestart = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_NHA_AUTORESTART);
 
-    if (autoRestart && (registeredExitHandlerObject != null)) {
-      CallbackOnExitActionState state = ((CallbackOnExitHandler) registeredExitHandlerObject)
-          .getCallbackOnExitActionState();
-      boolean restartNeeded = ((CallbackOnExitHandler) registeredExitHandlerObject).isRestartNeeded();
-      if (state.isSuccess() && restartNeeded) {
-        exit(EXITCODE_RESTART_REQUEST);
-      } else {
-        exit(EXITCODE_STARTUP_ERROR);
-      }
+    if (autoRestart && throwableState.isRestartNeeded()) {
+      exit(EXITCODE_RESTART_REQUEST);
     } else {
       exit(EXITCODE_STARTUP_ERROR);
+    }
+  }
+
+  private void handleDefaultException(Thread thread, CallbackOnExitState throwableState) {
+
+    // We need to make SURE that our stacktrace gets printed, when using just the logger sometimes the VM exits
+    // before the stacktrace prints
+    throwableState.getThrowable().printStackTrace(System.err);
+    System.err.flush();
+    logger.error("Thread:" + thread + " got an uncaught exception. calling CallbackOnExitDefaultHandlers.", throwableState.getThrowable());
+    for (Iterator iter = callbackOnExitDefaultHandlers.iterator(); iter.hasNext();) {
+      CallbackOnExitHandler callbackOnExitHandler = (CallbackOnExitHandler) iter.next();
+      callbackOnExitHandler.callbackOnExit(throwableState);
     }
   }
 
@@ -120,31 +130,6 @@ public class ThrowableHandler {
     // let all the logging finish
     ThreadUtil.reallySleep(2000);
     System.exit(status);
-  }
-
-  private void handleDefaultException(Thread thread, Throwable throwable) {
-
-    // We need to make SURE that our stacktrace gets printed, when using just the logger sometimes the VM exits
-    // before the stacktrace prints
-    try {
-      throwable.printStackTrace(System.err);
-      System.err.flush();
-
-      logger.error("Thread:" + thread + " got an uncaught exception. calling CallbackOnExitHandlers.", throwable);
-
-      try {
-        for (Iterator iter = callbackOnExitDefaultHandlers.iterator(); iter.hasNext();) {
-          CallbackOnExitHandler callbackOnExitHandler = (CallbackOnExitHandler) iter.next();
-          callbackOnExitHandler.callbackOnExit();
-        }
-      } catch (Throwable t) {
-        logger.error("Exception thrown in callbackOnExitHanders ", t);
-      }
-
-      logger.error("Thread:" + thread + " got an uncaught exception.  About to sleep then exit.", throwable);
-    } catch (Throwable t) {
-      logger.error(t);
-    }
   }
 
 }

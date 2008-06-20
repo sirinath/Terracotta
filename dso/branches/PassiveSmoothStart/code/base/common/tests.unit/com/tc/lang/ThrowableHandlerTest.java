@@ -4,9 +4,8 @@
  */
 package com.tc.lang;
 
-import com.tc.exception.ImplementMe;
-import com.tc.logging.CallbackOnExitActionState;
 import com.tc.logging.CallbackOnExitHandler;
+import com.tc.logging.CallbackOnExitState;
 import com.tc.logging.TCLogging;
 
 import junit.framework.TestCase;
@@ -34,25 +33,9 @@ public class ThrowableHandlerTest extends TestCase {
 
   private class TestCallbackOnExitHandler implements CallbackOnExitHandler {
 
-    private CallbackOnExitActionState actionState = new CallbackOnExitActionState();
-
-    public void callbackOnExit() {
+    public void callbackOnExit(CallbackOnExitState state) {
       invokedCallback = true;
-      actionState.actionSuccess();
     }
-
-    public void callbackOnExit(Throwable t) {
-      throw new ImplementMe();
-    }
-
-    public CallbackOnExitActionState getCallbackOnExitActionState() {
-      return this.actionState;
-    }
-
-    public boolean isRestartNeeded() {
-      return false;
-    }
-
   }
 
 }

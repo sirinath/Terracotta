@@ -10,8 +10,8 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.object.persistence.api.PersistentMapStore;
 import com.tc.objectserver.gtx.GlobalTransactionIDSequenceProvider;
-import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 import com.tc.util.State;
@@ -65,7 +65,7 @@ public class ClusterState {
                             + StateManager.ACTIVE_COORDINATOR.getName()
                             + " server is allowed "
                             + " to be restarted without cleaning up the data directory with persistence turned on.\n\n"
-                            + "If 'l2.nha.dirtydb.autoDelete = true' is enabled in tc.properties, data directory will be automatically "
+                            + "If 'l2.nha.dirtydb.autoDelete' is enabled in tc.properties, data directory will be automatically "
                             + "moved to a backup directory and Server will be restarted. Otherwise, Please clean up the "
                             + "data directory and make sure that the " + StateManager.ACTIVE_COORDINATOR.getName()
                             + " is up and running before starting this server. It is important that the "

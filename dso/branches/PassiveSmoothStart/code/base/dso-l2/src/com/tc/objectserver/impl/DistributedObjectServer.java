@@ -18,6 +18,9 @@ import com.tc.exception.CleanDirtyDatabaseException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.exception.ZapDirtyDbServerNodeException;
 import com.tc.exception.ZapServerNodeException;
+import com.tc.handler.CallbackDirtyDatabaseCleanUpAdapter;
+import com.tc.handler.CallbackDumpAdapter;
+import com.tc.handler.CallbackZapServerNodeAdapter;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
@@ -26,10 +29,7 @@ import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
-import com.tc.logging.CallbackDirtyDatabaseCleanUpAdapter;
-import com.tc.logging.CallbackDumpAdapter;
 import com.tc.logging.CallbackOnExitHandler;
-import com.tc.logging.CallbackZapServerNodeAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -407,16 +407,6 @@ public class DistributedObjectServer implements TCDumper {
       System.exit(1);
     }
 
-    CallbackOnExitHandler dirtydbExceptionHandler = new CallbackDirtyDatabaseCleanUpAdapter(logger,
-                                                                                            this.configSetupManager
-                                                                                                .commonl2Config()
-                                                                                                .dataPath().getFile());
-    threadGroup.addCallbackOnExitExceptionHandler(CleanDirtyDatabaseException.class, dirtydbExceptionHandler);
-    threadGroup.addCallbackOnExitExceptionHandler(ZapDirtyDbServerNodeException.class, dirtydbExceptionHandler);
-
-    CallbackOnExitHandler zapServerNodeHandler = new CallbackZapServerNodeAdapter(consoleLogger);
-    threadGroup.addCallbackOnExitExceptionHandler(ZapServerNodeException.class, zapServerNodeHandler);
-
     int maxStageSize = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY);
 
     StageManager stageManager = seda.getStageManager();
@@ -431,7 +421,7 @@ public class DistributedObjectServer implements TCDumper {
     logger.debug("server swap enabled: " + swapEnabled);
     final ManagedObjectChangeListenerProviderImpl managedObjectChangeListenerProvider = new ManagedObjectChangeListenerProviderImpl();
     if (swapEnabled) {
-      File dbhome = new File(configSetupManager.commonl2Config().dataPath().getFile(), "objectdb");
+      File dbhome = new File(configSetupManager.commonl2Config().dataPath().getFile(), NewL2DSOConfig.OBJECTDB_DIRNAME);
       logger.debug("persistent: " + persistent);
       if (!persistent) {
         if (dbhome.exists()) {
@@ -446,7 +436,8 @@ public class DistributedObjectServer implements TCDumper {
           .addAllPropertiesTo(new Properties()));
       SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       persistor = new SleepycatPersistor(TCLogging.getLogger(SleepycatPersistor.class), dbenv,
-                                         serializationAdapterFactory);
+                                         serializationAdapterFactory, this.configSetupManager.commonl2Config()
+                                             .dataPath().getFile());
       // Setting the DB environment for the bean which takes backup of the active server
       if (persistent) {
         ServerDBBackup mbean = l2Management.findServerDbBackupMBean();
@@ -485,6 +476,14 @@ public class DistributedObjectServer implements TCDumper {
       swapCache = new NullCache();
       objectStore = new InMemoryManagedObjectStore(new HashMap());
     }
+
+    CallbackOnExitHandler dirtydbExceptionHandler = new CallbackDirtyDatabaseCleanUpAdapter(logger, persistor
+        .getClusterStateStore());
+    threadGroup.addCallbackOnExitExceptionHandler(CleanDirtyDatabaseException.class, dirtydbExceptionHandler);
+    threadGroup.addCallbackOnExitExceptionHandler(ZapDirtyDbServerNodeException.class, dirtydbExceptionHandler);
+
+    CallbackOnExitHandler zapServerNodeHandler = new CallbackZapServerNodeAdapter(consoleLogger);
+    threadGroup.addCallbackOnExitExceptionHandler(ZapServerNodeException.class, zapServerNodeHandler);
 
     persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
     PersistenceTransactionProvider transactionStorePTP;
