@@ -4,28 +4,13 @@
  */
 package com.tc.logging;
 
-import com.tc.exception.ImplementMe;
 import com.tc.util.runtime.ThreadDumpUtil;
 
 public class ThreadDumpHandler implements CallbackOnExitHandler {
 
-  private static final TCLogger logger      = TCLogging.getLogger(ThreadDumpHandler.class);
-  private CallbackOnExitActionState   actionState = new CallbackOnExitActionState();
+  private static final TCLogger logger = TCLogging.getLogger(ThreadDumpHandler.class);
 
-  public void callbackOnExit() {
+  public void callbackOnExit(CallbackOnExitState state) {
     logger.error(ThreadDumpUtil.getThreadDump());
-    actionState.actionSuccess();
-  }
-
-  public void callbackOnExit(Throwable t) {
-    throw new ImplementMe();
-  }
-
-  public CallbackOnExitActionState getCallbackOnExitActionState() {
-    return this.actionState;
-  }
-
-  public boolean isRestartNeeded() {
-    return false;
   }
 }

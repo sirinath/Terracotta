@@ -5,13 +5,5 @@
 package com.tc.logging;
 
 public interface CallbackOnExitHandler {
-
-  void callbackOnExit();
-
-  void callbackOnExit(Throwable t);
-
-  CallbackOnExitActionState getCallbackOnExitActionState();
-
-  boolean isRestartNeeded();
-
+  void callbackOnExit(CallbackOnExitState state);
 }

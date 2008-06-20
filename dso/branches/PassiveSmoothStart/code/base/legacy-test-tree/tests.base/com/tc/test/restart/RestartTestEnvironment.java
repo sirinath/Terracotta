@@ -14,6 +14,7 @@ import com.tc.config.schema.test.L2SConfigBuilder;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.NullServerControl;
 import com.tc.objectserver.control.ServerControl;
@@ -86,7 +87,7 @@ public class RestartTestEnvironment {
     writeL2Config();
     initConfig();
 
-    dbhome = new File(this.tempDirectory, "l2-data/objectdb");
+    dbhome = new File(this.tempDirectory, "l2-data/" + NewL2DSOConfig.OBJECTDB_DIRNAME);
     System.err.println("DBHome: " + dbhome.getAbsolutePath());
     System.out.println("dbhome: " + dbhome);
     if (dbhome.exists()) FileUtils.cleanDirectory(dbhome);
@@ -227,15 +228,18 @@ public class RestartTestEnvironment {
     return (newExtraProcessServer(new ArrayList()));
   }
 
-  /*
-   * Commented out by jvoegele since this method is not called from anywhere and it creates a dependency on the deploy
-   * module. The following imports were also removed as a result of removing this method: import
-   * com.tc.config.schema.setup.ConfigurationSetupException; import
-   * com.tc.objectserver.control.IntraProcessServerControl; public ServerControl newIntraProcessServer() throws
-   * ConfigurationSetupException { assertServerOff(); this.server = new
-   * IntraProcessServerControl(this.config.createL2TVSConfigurationSetupManager(null), "localhost"); return
-   * serverWrapper; }
-   */
+/*
+Commented out by jvoegele since this method is not called from anywhere and it creates a dependency
+on the deploy module.  The following imports were also removed as a result of removing this method:
+import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.objectserver.control.IntraProcessServerControl;
+
+  public ServerControl newIntraProcessServer() throws ConfigurationSetupException {
+    assertServerOff();
+    this.server = new IntraProcessServerControl(this.config.createL2TVSConfigurationSetupManager(null), "localhost");
+    return serverWrapper;
+  }
+*/
 
   private void assertServerNotNull() {
     if (this.server == null) throw new AssertionError("Server is null.");

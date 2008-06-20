@@ -48,11 +48,11 @@ public class PassiveSmoothStartTestApp extends AbstractTransparentApp {
     checkClusterStates(0, 1);
 
     File dataHome0 = new File(appConfig.getAttribute(SERVER0_DATA_PATH));
-    File objectDB0 = new File(dataHome0, "objectdb");
+    File objectDB0 = new File(dataHome0, NewL2DSOConfig.OBJECTDB_DIRNAME);
     File dirtyObjectDB0 = new File(dataHome0, NewL2DSOConfig.DIRTY_OBJECTDB_BACKUP_DIRNAME);
 
     File dataHome1 = new File(appConfig.getAttribute(SERVER1_DATA_PATH));
-    File objectDB1 = new File(dataHome1, "objectdb");
+    File objectDB1 = new File(dataHome1, NewL2DSOConfig.OBJECTDB_DIRNAME);
     File dirtyObjectDB1 = new File(dataHome1, NewL2DSOConfig.DIRTY_OBJECTDB_BACKUP_DIRNAME);
 
     // Pre-test verifications
