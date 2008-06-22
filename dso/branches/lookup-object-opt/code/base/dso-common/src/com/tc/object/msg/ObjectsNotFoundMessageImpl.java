@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class ObjectsNotFoundMessage extends DSOMessageBase implements EventContext {
+public class ObjectsNotFoundMessageImpl extends DSOMessageBase implements EventContext {
 
   private final static byte BATCH_ID    = 0;
   private final static byte MISSING_OID = 1;
@@ -27,12 +27,12 @@ public class ObjectsNotFoundMessage extends DSOMessageBase implements EventConte
   private Set               missingOids;
   private long              batchID;
 
-  public ObjectsNotFoundMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+  public ObjectsNotFoundMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                 MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
-  public ObjectsNotFoundMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
+  public ObjectsNotFoundMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
                                 TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }

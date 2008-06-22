@@ -23,7 +23,7 @@ import java.util.Collections;
 /**
  * @author steve
  */
-public class RequestManagedObjectResponseMessage extends DSOMessageBase implements EventContext {
+public class RequestManagedObjectResponseMessageImpl extends DSOMessageBase implements EventContext {
 
   private final static byte      SERIALIZER_ID = 1;
   private final static byte      TOTAL_ID      = 2;
@@ -38,12 +38,12 @@ public class RequestManagedObjectResponseMessage extends DSOMessageBase implemen
   private TCByteBuffer[]         dnaData;
   private int                    dnaCount;
 
-  public RequestManagedObjectResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+  public RequestManagedObjectResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                              MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
-  public RequestManagedObjectResponseMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
+  public RequestManagedObjectResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
                                              TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }

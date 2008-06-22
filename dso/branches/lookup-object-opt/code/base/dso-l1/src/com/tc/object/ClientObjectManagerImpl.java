@@ -498,6 +498,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
                                                   + " Entry removed before reaper got the chance: " + objectID);
       } else {
         TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
+        System.out.println("tcobj is null: " + tcobj.isNull());
         if (tcobj.isNull()) {
           idToManaged.remove(objectID);
           cache.remove(tcobj);
@@ -545,6 +546,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
             return obj;
           } else if (ols != null && ols.isCreateState()) {
             // if the object is being created, add to the wait set and return the object
+            System.out.println(Thread.currentThread().getName() + " adding to wait set: ");
             lookupContext.getObjectLatchWaitSet().add(ols);
             return ols.getObject();
           } else if (ols != null && ols.isLookupState()) {
