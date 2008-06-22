@@ -30,6 +30,7 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.tx.ServerTransactionListener;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -163,12 +164,11 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         }
       }
     }
-
-    objectManager.lookupObjectsAndSubObjectsFor(clientID, new LookupContext(this, clientID, requestID, lookupIDs,
-                                                                            maxRequestDepth, requestingThreadName,
-                                                                            serverInitiated, respondObjectRequestSink),
-                                                maxRequestDepth);
-
+    if (lookupIDs.size() > 0) {
+      LookupContext lookupContext = new LookupContext(this, clientID, requestID, lookupIDs, maxRequestDepth,
+                                                      requestingThreadName, serverInitiated, respondObjectRequestSink);
+      objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
+    }
   }
 
   private void basicSendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs,
@@ -181,21 +181,15 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       long batchID = batchIDSequence.next();
 
       Set ids = new HashSet(Math.max((int) (objs.size() / .75f) + 1, 16));
+      Set clients = new HashSet();
       synchronized (this) {
         Set removeIDLists = new HashSet();
         for (Iterator i = objs.iterator(); i.hasNext();) {
           ManagedObject mo = (ManagedObject) i.next();
           ObjectID id = mo.getID();
 
-          // prepare channels
-          Set clients = objectRequestCache.clients(id);
+          clients.addAll(objectRequestCache.clients(id));
 
-          for (Iterator iter = clients.iterator(); iter.hasNext();) {
-            ClientID clientID = (ClientID) iter.next();
-            clientObjectIDMap.put(clientID, objectRequestCache.ids(clientID));
-            MessageChannel channel = channelManager.getActiveChannel(clientID);
-            messageMap.put(clientID, new MessageBatchAndSend(channel, batchID));
-          }
           removeIDLists.add(id);
           ids.add(id);
           if (requestedObjectIDs.contains(mo.getID())) {
@@ -204,10 +198,24 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             objectsInOrder.addFirst(mo);
           }
         }
+
+        for (Iterator iter = missingObjectIDs.iterator(); iter.hasNext();) {
+          ObjectID id = (ObjectID) iter.next();
+          clients.addAll(objectRequestCache.clients(id));
+        }
+
+        // prepare clients
+        for (Iterator iter = clients.iterator(); iter.hasNext();) {
+          ClientID clientID = (ClientID) iter.next();
+          clientObjectIDMap.put(clientID, objectRequestCache.ids(clientID));
+          MessageChannel channel = channelManager.getActiveChannel(clientID);
+          messageMap.put(clientID, new MessageBatchAndSend(channel, batchID));
+        }
+
         if (!missingObjectIDs.isEmpty()) {
           objectRequestCache.remove(missingObjectIDs);
         }
-        if(!removeIDLists.isEmpty()) {
+        if (!removeIDLists.isEmpty()) {
           objectRequestCache.remove(removeIDLists);
         }
 
@@ -274,10 +282,26 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
+  protected int getObjectRequestCacheSize() {
+    return objectRequestCache.cacheSize();
+  }
+
+  protected int getObjectRequestCacheClientSize() {
+    return objectRequestCache.clientSize();
+  }
+
   protected static class ObjectRequestCache {
 
     private Set objectRequestSet = new HashSet();
     private Map objectRequestMap = new HashMap();
+
+    protected int cacheSize() {
+      return objectRequestSet.size();
+    }
+
+    protected int clientSize() {
+      return objectRequestMap.size();
+    }
 
     public boolean add(ClientID clientID, ObjectID id) {
       // check already been requested.
@@ -306,7 +330,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public Set ids(ClientID id) {
       Set set = null;
-      return ( ( set = (Set) objectRequestMap.get(id)) == null) ? new HashSet() : set;
+      return ((set = (Set) objectRequestMap.get(id)) == null) ? new HashSet() : set;
     }
 
     public void remove(Set ids) {
@@ -316,7 +340,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
 
     private void remove(ObjectID id) {
-      
+
       Set removeClientList = new HashSet();
       for (Iterator i = objectRequestMap.keySet().iterator(); i.hasNext();) {
         ClientID clientID = (ClientID) i.next();
@@ -325,15 +349,15 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         if (ids.size() < 1) {
           removeClientList.add(clientID);
         }
-      }  
-      
-      for(Iterator c = removeClientList.iterator(); c.hasNext();) {
-        ClientID clientID = (ClientID)c.next();
+      }
+
+      for (Iterator c = removeClientList.iterator(); c.hasNext();) {
+        ClientID clientID = (ClientID) c.next();
         objectRequestMap.remove(clientID);
       }
-      
-      objectRequestSet.remove(id);     
-      
+
+      objectRequestSet.remove(id);
+
     }
   }
 
@@ -358,6 +382,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       this.batchID = batchID;
       responseMessage = (RequestManagedObjectResponseMessage) channel
           .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
+      Assert.assertNotNull(responseMessage);
       serializer = new ObjectStringSerializer();
       out = new TCByteBufferOutputStream();
       sendCount = 0;
@@ -382,20 +407,22 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       Set missingObjectsInClient = new HashSet();
       for (Iterator iter = missingObjectIDs.iterator(); iter.hasNext();) {
         ObjectID id = (ObjectID) iter.next();
-        if (ids.contains(id)) {
+        if (missingObjectIDs.contains(id)) {
           missingObjectsInClient.add(id);
         }
       }
-
-      ObjectsNotFoundMessage notFound = (ObjectsNotFoundMessage) channel
-          .createMessage(TCMessageType.OBJECTS_NOT_FOUND_RESPONSE_MESSAGE);
-      notFound.initialize(missingObjectsInClient, batchID);
-      notFound.send();
+      if (missingObjectsInClient.size() > 0) {
+        ObjectsNotFoundMessage notFound = (ObjectsNotFoundMessage) channel
+            .createMessage(TCMessageType.OBJECTS_NOT_FOUND_RESPONSE_MESSAGE);
+        notFound.initialize(missingObjectsInClient, batchID);
+        notFound.send();
+      }
     }
 
     public void flushMessage() {
       TCByteBuffer[] b = out.toArray();
       if (b.length > 0) {
+        Assert.assertNotNull(responseMessage);
         responseMessage.initialize(out.toArray(), sendCount, serializer, batchID, batches);
         responseMessage.send();
       }
@@ -413,10 +440,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   protected static class LookupContext implements ObjectManagerRequestContext {
 
-    private ClientID             clientID;
-    private ObjectRequestID      requestID;
-    private Set                  ids;
-    private Map                  objects;
+    private ClientID             clientID       = null;
+    private ObjectRequestID      requestID      = null;
+    private Set                  ids            = new HashSet();
+    private Map                  objects        = new HashMap();
     private Set                  missingObjects = new HashSet();
     private int                  maxRequestDepth;
     private String               requestingThreadName;
@@ -457,8 +484,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         objectRequestManager.requestObjects(this.clientID, this.requestID, results.getLookupPendingObjectIDs(), -1,
                                             true, this.requestingThreadName);
       }
-      respondObjectRequestSink.add(new ResponseContext(this.clientID, this.objects.values(), this.ids,
-                                                       this.missingObjects, this.serverInitiated));
+      ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.ids,
+                                                            this.missingObjects, this.serverInitiated);
+      respondObjectRequestSink.add(responseContext);
     }
 
     public ObjectRequestID getRequestID() {
@@ -483,6 +511,14 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public String getRequestingThreadName() {
       return requestingThreadName;
+    }
+
+    @Override
+    public String toString() {
+      return "Lookup Context [ clientID = " + clientID + " , requestID = " + requestID + " , ids.size = " + ids.size()
+             + " , objects.size = " + objects.size() + " , missingObjects.size  = " + missingObjects.size()
+             + " , maxRequestDepth = " + maxRequestDepth + " , requestingThreadName = " + requestingThreadName
+             + " , serverInitiated = " + serverInitiated + " , respondObjectRequestSink = " + respondObjectRequestSink;
     }
 
   }
@@ -526,6 +562,14 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public boolean isServerInitiated() {
       return serverInitiated;
+    }
+
+    @Override
+    public String toString() {
+
+      return "ResponseContext [ requestNodeID = " + requestedNodeID + " , objs.size = " + objs.size()
+             + " , requestedObjectIDs.size = " + requestedObjectIDs.size() + " , missingObjectIDs.size = "
+             + missingObjectIDs.size() + " , serverInitiated = " + serverInitiated;
     }
 
   }

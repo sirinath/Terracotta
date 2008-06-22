@@ -28,6 +28,7 @@ public class TestSink implements Sink {
   }
 
   public void add(EventContext context) {
+    System.out.println("add to sink:" + context);
     synchronized (queue) {
       queue.add(context);
       queue.notifyAll();
