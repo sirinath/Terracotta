@@ -5,7 +5,6 @@
 package com.tc.objectserver.impl;
 
 import com.tc.async.api.Sink;
-import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -30,7 +29,6 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.tx.ServerTransactionListener;
 import com.tc.objectserver.tx.ServerTransactionManager;
-import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -209,7 +207,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           ClientID clientID = (ClientID) iter.next();
           clientObjectIDMap.put(clientID, objectRequestCache.ids(clientID));
           MessageChannel channel = channelManager.getActiveChannel(clientID);
-          messageMap.put(clientID, new MessageBatchAndSend(channel, batchID));
+          messageMap.put(clientID, new BatchAndSend(channel, batchID));
         }
 
         if (!missingObjectIDs.isEmpty()) {
@@ -240,19 +238,13 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           ClientID clientID = (ClientID) cIter.next();
           Set newIds = (Set) clientNewIDsMap.get(clientID);
           if (newIds.contains(m.getID())) {
-            MessageBatchAndSend mbas = (MessageBatchAndSend) messageMap.get(clientID);
-            mbas.sendObject(m, i.hasNext());
+            BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
+            batchAndSend.sendObject(m, i.hasNext());
           } else if (requestedObjectIDs.contains(m.getID())) {
             // logger.info("Ignoring request for look up from " + morc.getChannelID() + " for " + m.getID());
           }
         }
         objectManager.releaseReadOnly(m);
-      }
-
-      // now flush all the messages left
-      for (Iterator flushIterator = messageMap.values().iterator(); flushIterator.hasNext();) {
-        MessageBatchAndSend mbas = (MessageBatchAndSend) flushIterator.next();
-        mbas.flushMessage();
       }
 
       if (!missingObjectIDs.isEmpty()) {
@@ -265,8 +257,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         } else {
           for (Iterator missingIterator = messageMap.keySet().iterator(); missingIterator.hasNext();) {
             ClientID clientID = (ClientID) missingIterator.next();
-            MessageBatchAndSend mbas = (MessageBatchAndSend) messageMap.get(clientID);
-            mbas.sendMissingObjects(missingObjectIDs, (Set) clientObjectIDMap.get(clientID));
+            BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
+            batchAndSend.sendMissingObjects(missingObjectIDs, (Set) clientObjectIDMap.get(clientID));
           }
           //
         }
@@ -361,49 +353,42 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  private static class MessageBatchAndSend {
+  private static class BatchAndSend {
 
-    private MessageChannel                      channel         = null;
+    private final MessageChannel     channel;
 
-    private RequestManagedObjectResponseMessage responseMessage = null;
+    private Integer                  sendCount  = 0;
 
-    private Integer                             sendCount       = null;
+    private Integer                  batches    = 0;
 
-    private Integer                             batches         = null;
+    private ObjectStringSerializer   serializer = new ObjectStringSerializer();
 
-    private ObjectStringSerializer              serializer      = null;
+    private TCByteBufferOutputStream out        = new TCByteBufferOutputStream();
 
-    private TCByteBufferOutputStream            out             = null;
+    private long                     batchID    = 0;
 
-    private long                                batchID         = 0;
-
-    public MessageBatchAndSend(MessageChannel channel, long batchID) {
+    public BatchAndSend(MessageChannel channel, long batchID) {
       this.channel = channel;
-      this.batchID = batchID;
-      responseMessage = (RequestManagedObjectResponseMessage) channel
-          .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
-      Assert.assertNotNull(responseMessage);
-      serializer = new ObjectStringSerializer();
-      out = new TCByteBufferOutputStream();
-      sendCount = 0;
-      batches = 0;
-
     }
 
-    public void sendObject(ManagedObject m, boolean hasNext) {
-      synchronized (this) {
+    public synchronized void sendObject(ManagedObject m, boolean hasNext) {
         m.toDNA(out, serializer);
         sendCount++;
-        if (sendCount > 1000) {
+        if (sendCount > 1000 || (sendCount > 0 && !hasNext)) {
           batches++;
+          RequestManagedObjectResponseMessage responseMessage = (RequestManagedObjectResponseMessage) channel
+              .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
           responseMessage.initialize(out.toArray(), sendCount, serializer, batchID, hasNext ? 0 : batches);
           responseMessage.send();
-          reinitializeMessage();
+          if (hasNext) {
+            sendCount = 0;
+            serializer = new ObjectStringSerializer();
+            out = new TCByteBufferOutputStream();
+          }
         }
-      }
     }
 
-    public void sendMissingObjects(Set missingObjectIDs, Set ids) {
+    public synchronized void sendMissingObjects(Set missingObjectIDs, Set ids) {
       Set missingObjectsInClient = new HashSet();
       for (Iterator iter = missingObjectIDs.iterator(); iter.hasNext();) {
         ObjectID id = (ObjectID) iter.next();
@@ -417,24 +402,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         notFound.initialize(missingObjectsInClient, batchID);
         notFound.send();
       }
-    }
-
-    public void flushMessage() {
-      TCByteBuffer[] b = out.toArray();
-      if (b.length > 0) {
-        Assert.assertNotNull(responseMessage);
-        responseMessage.initialize(out.toArray(), sendCount, serializer, batchID, batches);
-        responseMessage.send();
-      }
-    }
-
-    private void reinitializeMessage() {
-      sendCount = 0;
-      serializer = new ObjectStringSerializer();
-      out = new TCByteBufferOutputStream();
-      responseMessage = (RequestManagedObjectResponseMessage) channel
-          .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
-
     }
   }
 
@@ -518,7 +485,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       return "Lookup Context [ clientID = " + clientID + " , requestID = " + requestID + " , ids.size = " + ids.size()
              + " , objects.size = " + objects.size() + " , missingObjects.size  = " + missingObjects.size()
              + " , maxRequestDepth = " + maxRequestDepth + " , requestingThreadName = " + requestingThreadName
-             + " , serverInitiated = " + serverInitiated + " , respondObjectRequestSink = " + respondObjectRequestSink;
+             + " , serverInitiated = " + serverInitiated + " , respondObjectRequestSink = " + respondObjectRequestSink + " ] ";
     }
 
   }
@@ -569,7 +536,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
       return "ResponseContext [ requestNodeID = " + requestedNodeID + " , objs.size = " + objs.size()
              + " , requestedObjectIDs.size = " + requestedObjectIDs.size() + " , missingObjectIDs.size = "
-             + missingObjectIDs.size() + " , serverInitiated = " + serverInitiated;
+             + missingObjectIDs.size() + " , serverInitiated = " + serverInitiated + " ] ";
     }
 
   }
