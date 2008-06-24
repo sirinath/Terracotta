@@ -38,7 +38,6 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
   private ClientStateManager       clientStateManager;
   private ServerTransactionManager transactionManager;
   private ObjectRequestManager     objectRequestManager;
-
   private SampledCounter           broadcastCounter;
   private SampledCounter           changeCounter;
 
@@ -77,7 +76,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
         transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
         if (lookupObjectIDs.size() > 0) {
           // this used to be createAndManagedObjectRequestContextTo
-          objectRequestManager.requestObjects(clientID, ObjectRequestID.NULL_ID, lookupObjectIDs, -1, false, Thread
+          objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, ObjectRequestID.NULL_ID, lookupObjectIDs, -1, true, Thread
               .currentThread().getName());
         }
         final DmiDescriptor[] dmi = (includeDmi) ? prunedDmis : DmiDescriptor.EMPTY_ARRAY;

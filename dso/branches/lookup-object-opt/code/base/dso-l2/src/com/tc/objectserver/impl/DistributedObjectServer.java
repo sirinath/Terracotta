@@ -640,7 +640,7 @@ public class DistributedObjectServer implements TCDumper {
     threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(transactionManager));
 
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
-   
+
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
                              maxStageSize);
 
@@ -682,18 +682,20 @@ public class DistributedObjectServer implements TCDumper {
     stageManager.createStage(ServerConfigurationContext.CHANNEL_LIFE_CYCLE_STAGE, channelLifeCycleHandler, 1,
                              maxStageSize);
     channelManager.addEventListener(channelLifeCycleHandler);
-    
-    Stage respondToObjectRequestStage = stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
-                                                                 new RespondToObjectRequestHandler(), 4, maxStageSize);
-                                      
-    
-    objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager, clientStateManager, transactionManager, respondToObjectRequestStage.getSink());
 
+    Stage respondToObjectRequestStage = stageManager
+        .createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, new RespondToObjectRequestHandler(),
+                     4, maxStageSize);
 
-    Stage objectRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE,
-                                                   new ManagedObjectRequestHandler(globalObjectFaultCounter,
-                                                                                   globalObjectFlushCounter), 1,
-                                                   maxStageSize);
+    Stage objectRequestStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE,
+                                                        new ManagedObjectRequestHandler(globalObjectFaultCounter,
+                                                                                        globalObjectFlushCounter), 1,
+                                                        maxStageSize);
+
+    objectRequestManager = new ObjectRequestManagerImpl(objectRequestStage.getSink(), objectManager, channelManager,
+                                                        clientStateManager, transactionManager,
+                                                        respondToObjectRequestStage.getSink());
+
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
@@ -757,7 +759,8 @@ public class DistributedObjectServer implements TCDumper {
     l1Listener.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.LOCK_REQUEST_MESSAGE, requestLock.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.REQUEST_ROOT_MESSAGE, rootRequest.getSink(), hydrateSink);
-    l1Listener.routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequest.getSink(), hydrateSink);
+    l1Listener
+        .routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequestStage.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.OBJECT_ID_BATCH_REQUEST_MESSAGE, oidRequest.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE, transactionAck.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.CLIENT_HANDSHAKE_MESSAGE, clientHandshake.getSink(), hydrateSink);
@@ -808,9 +811,9 @@ public class DistributedObjectServer implements TCDumper {
       l2Coordinator = new L2HADisabledCooridinator();
     }
 
-    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore, lockManager, channelManager,
-                                                 clientStateManager, transactionManager, txnObjectManager,
-                                                 clientHandshakeManager, channelStats, l2Coordinator,
+    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
+                                                 lockManager, channelManager, clientStateManager, transactionManager,
+                                                 txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader(gtxm));
 
     stageManager.startAll(context);
