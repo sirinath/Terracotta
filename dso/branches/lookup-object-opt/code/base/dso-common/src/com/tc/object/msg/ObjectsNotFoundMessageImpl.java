@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class ObjectsNotFoundMessageImpl extends DSOMessageBase implements EventContext {
+public class ObjectsNotFoundMessageImpl extends DSOMessageBase implements EventContext, ObjectsNotFoundMessage {
 
   private final static byte BATCH_ID    = 0;
   private final static byte MISSING_OID = 1;

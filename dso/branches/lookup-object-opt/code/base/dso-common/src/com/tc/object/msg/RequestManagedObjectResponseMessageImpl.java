@@ -23,7 +23,7 @@ import java.util.Collections;
 /**
  * @author steve
  */
-public class RequestManagedObjectResponseMessageImpl extends DSOMessageBase implements EventContext {
+public class RequestManagedObjectResponseMessageImpl extends DSOMessageBase implements EventContext, RequestManagedObjectResponseMessage {
 
   private final static byte      SERIALIZER_ID = 1;
   private final static byte      TOTAL_ID      = 2;

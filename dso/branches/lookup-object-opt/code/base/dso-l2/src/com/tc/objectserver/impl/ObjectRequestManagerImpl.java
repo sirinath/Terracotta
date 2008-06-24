@@ -353,7 +353,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  private static class BatchAndSend {
+  protected static class BatchAndSend {
 
     private final MessageChannel     channel;
 
@@ -369,6 +369,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public BatchAndSend(MessageChannel channel, long batchID) {
       this.channel = channel;
+      this.batchID = batchID;
     }
 
     public synchronized void sendObject(ManagedObject m, boolean hasNext) {
@@ -403,6 +404,23 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         notFound.send();
       }
     }
+
+    protected int getSendCount() {
+      return sendCount;
+    }
+
+    protected int getBatches() {
+      return batches;
+    }
+
+    protected ObjectStringSerializer getSerializer() {
+      return serializer;
+    }
+
+    protected TCByteBufferOutputStream getOut() {
+      return out;
+    }
+    
   }
 
   protected static class LookupContext implements ObjectManagerRequestContext {
