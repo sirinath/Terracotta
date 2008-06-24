@@ -8,11 +8,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
-import org.dijon.Button;
 import org.dijon.CheckBox;
 import org.dijon.Container;
 import org.dijon.Dialog;
-import org.dijon.DialogResource;
 import org.dijon.FrameResource;
 import org.dijon.Label;
 import org.dijon.ScrollPane;
@@ -21,6 +19,7 @@ import org.dijon.TextArea;
 import org.dijon.TextPane;
 import org.dijon.UndoMonger;
 
+import com.tc.admin.common.AboutDialog;
 import com.tc.admin.common.BrowserLauncher;
 import com.tc.admin.common.ComponentNode;
 import com.tc.admin.common.ContactTerracottaAction;
@@ -1082,29 +1081,13 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     }
 
     public void actionPerformed(ActionEvent ae) {
+      Frame frame = getFrame();
       if (m_aboutDialog == null) {
-        AdminClientContext acc = AdminClient.getContext();
-
-        m_aboutDialog = new Dialog(getFrame(), true);
-        m_aboutDialog.load((DialogResource) acc.topRes.child("AboutDialog"));
-
-        AdminClientInfoPanel info;
-        String title = getBundleString("title");
-        info = (AdminClientInfoPanel) m_aboutDialog.findComponent("AdminClientInfoPanel");
-        info.init(title, ProductInfo.getInstance());
-        Label monikerLabel = (Label) m_aboutDialog.findComponent("MonikerLabel");
-        monikerLabel.setText(title);
-        Button okButton = (Button) m_aboutDialog.findComponent("OKButton");
-        m_aboutDialog.getRootPane().setDefaultButton(okButton);
-        okButton.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent ae2) {
-            m_aboutDialog.setVisible(false);
-          }
-        });
+        m_aboutDialog = new AboutDialog(frame);
       }
 
       m_aboutDialog.pack();
-      m_aboutDialog.center(AdminClientPanel.this);
+      m_aboutDialog.center(frame);
       m_aboutDialog.setVisible(true);
     }
   }
