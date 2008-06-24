@@ -45,6 +45,7 @@ import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.TestDNA;
 import com.tc.objectserver.core.api.TestDNACursor;
+import com.tc.objectserver.impl.ObjectRequestManagerImpl.BatchAndSend;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.LookupContext;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.ObjectRequestCache;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.ResponseContext;
@@ -66,6 +67,8 @@ import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet2;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
+import com.tc.util.sequence.Sequence;
+import com.tc.util.sequence.SimpleSequence;
 
 import java.io.File;
 import java.io.Writer;
@@ -107,7 +110,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
     ManagedObjectStateFactory factory = ManagedObjectStateFactory.createInstance(moclp, persistor);
     ManagedObjectStateFactory.setInstance(factory);
-    
+
     TestRequestManagedObjectResponseMessage.sendSet = new TreeSet();
     TestObjectsNotFoundMessage.sendSet = new TreeSet();
 
@@ -123,10 +126,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink sink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
-                                                                                 clientStateManager,
-                                                                                 serverTransactionManager, sink);
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
 
     Set ids = createObjectIDSet();
     objectRequestManager.transactionManagerStarted(new HashSet());
@@ -158,14 +162,14 @@ public class ObjectRequestManagerTest extends TestCase {
         throw new AssertionError(e);
       }
     }
-    
-    //assert that there is only one request in the sink.
-    assertEquals(sink.size(), 1);
+
+    // assert that there is only one request in the sink.
+    assertEquals(respondSink.size(), 1);
 
     RespondToObjectRequestContext respondToObjectRequestContext = null;
 
     try {
-      respondToObjectRequestContext = (RespondToObjectRequestContext) sink.take();
+      respondToObjectRequestContext = (RespondToObjectRequestContext) respondSink.take();
     } catch (InterruptedException e) {
       throw new AssertionError(e);
     }
@@ -177,16 +181,53 @@ public class ObjectRequestManagerTest extends TestCase {
     assertEquals(ids.size(), respondToObjectRequestContext.getObjs().size());
 
   }
+  
+  public void testCreateAndAddManagedObjectRequestContextsTo() {
+    TestObjectManager objectManager = new TestObjectManager();
+    TestDSOChannelManager channelManager = new TestDSOChannelManager();
+    TestClientStateManager clientStateManager = new TestClientStateManager();
+    TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
+    ClientID clientID = new ClientID(new ChannelID(1));
+    ObjectRequestID requestID = new ObjectRequestID(1);
+    Set ids = createObjectIDSet();
+    objectRequestManager.transactionManagerStarted(new HashSet());
+    objectRequestManager.clearAllTransactionsFor(clientID);
+
+    objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, requestID, ids, -1, false, Thread.currentThread().getName());
+    
+    assertEquals(2, requestSink.size());
+    
+    for(int i =0; i < 2; i++) {
+      LookupContext lookupContext;
+      try {
+        lookupContext = (LookupContext)requestSink.take();
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
+      }
+      assertEquals(lookupContext.getLookupIDs().size(), ids.size());
+      assertEquals(-1, lookupContext.getMaxRequestDepth());
+      assertEquals(clientID, lookupContext.getRequestedNodeID());
+      assertEquals(requestID, lookupContext.getRequestID());
+      assertEquals(true, lookupContext.isServerInitiated());
+    }
+
+  }
 
   public void testMultipleRequestResponseObjects() {
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink sink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
-                                                                                 clientStateManager,
-                                                                                 serverTransactionManager, sink);
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
 
     Set ids = createObjectIDSet();
     objectRequestManager.transactionManagerStarted(new HashSet());
@@ -218,13 +259,11 @@ public class ObjectRequestManagerTest extends TestCase {
         throw new AssertionError(e);
       }
     }
-  
 
     System.out.println("done doing requests.");
-    assertEquals(sink.size(), 1);
+    assertEquals(respondSink.size(), 1);
     assertEquals(objectRequestManager.getObjectRequestCacheSize(), 100);
     assertEquals(objectRequestManager.getObjectRequestCacheClientSize(), 10);
-    
 
     List objectResponseThreadList = new ArrayList();
     int numberOfResponseThreads = 1;
@@ -233,7 +272,8 @@ public class ObjectRequestManagerTest extends TestCase {
     for (int i = 0; i < numberOfResponseThreads; i++) {
       ClientID clientID = new ClientID(new ChannelID(i));
       objectRequestManager.clearAllTransactionsFor(clientID);
-      ObjectResponseThread objectResponseThread = new ObjectResponseThread(responseBarrier, objectRequestManager, sink);
+      ObjectResponseThread objectResponseThread = new ObjectResponseThread(responseBarrier, objectRequestManager,
+                                                                           respondSink);
       objectResponseThreadList.add(objectResponseThread);
     }
 
@@ -252,28 +292,27 @@ public class ObjectRequestManagerTest extends TestCase {
         throw new AssertionError(e);
       }
     }
-    
+
     Set sendSet = TestRequestManagedObjectResponseMessage.sendSet;
     assertEquals(sendSet.size(), 10);
-    
-    
+
     int i = 0;
-    for(Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
-      TestRequestManagedObjectResponseMessage message = (TestRequestManagedObjectResponseMessage)iter.next();
+    for (Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
+      TestRequestManagedObjectResponseMessage message = (TestRequestManagedObjectResponseMessage) iter.next();
       System.out.println("ChannelID: " + message.getChannelID().toLong());
       assertEquals(message.getChannelID().toLong(), i);
-      
+
     }
-    
+
     assertEquals(objectRequestManager.getObjectRequestCacheSize(), 0);
     assertEquals(objectRequestManager.getObjectRequestCacheClientSize(), 0);
 
   }
-  
+
   public void testMissingObjects() {
-    
+
     TestObjectManager objectManager = new TestObjectManager() {
-      
+
       public boolean lookupObjectsAndSubObjectsFor(NodeID nodeID, ObjectManagerResultsContext responseContext,
                                                    int maxCount) {
 
@@ -293,10 +332,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink sink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
-                                                                                 clientStateManager,
-                                                                                 serverTransactionManager, sink);
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
 
     Set ids = createObjectIDSet();
     objectRequestManager.transactionManagerStarted(new HashSet());
@@ -328,13 +368,11 @@ public class ObjectRequestManagerTest extends TestCase {
         throw new AssertionError(e);
       }
     }
-  
 
     System.out.println("done doing requests.");
-    assertEquals(sink.size(), 1);
+    assertEquals(respondSink.size(), 1);
     assertEquals(objectRequestManager.getObjectRequestCacheSize(), 100);
     assertEquals(objectRequestManager.getObjectRequestCacheClientSize(), 10);
-    
 
     List objectResponseThreadList = new ArrayList();
     int numberOfResponseThreads = 1;
@@ -343,7 +381,8 @@ public class ObjectRequestManagerTest extends TestCase {
     for (int i = 0; i < numberOfResponseThreads; i++) {
       ClientID clientID = new ClientID(new ChannelID(i));
       objectRequestManager.clearAllTransactionsFor(clientID);
-      ObjectResponseThread objectResponseThread = new ObjectResponseThread(responseBarrier, objectRequestManager, sink);
+      ObjectResponseThread objectResponseThread = new ObjectResponseThread(responseBarrier, objectRequestManager,
+                                                                           respondSink);
       objectResponseThreadList.add(objectResponseThread);
     }
 
@@ -362,24 +401,42 @@ public class ObjectRequestManagerTest extends TestCase {
         throw new AssertionError(e);
       }
     }
-    
+
     Set sendSet = TestObjectsNotFoundMessage.sendSet;
     assertEquals(sendSet.size(), 10);
-    
-    
+
     int i = 0;
-    for(Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
-      TestObjectsNotFoundMessage message = (TestObjectsNotFoundMessage)iter.next();
+    for (Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
+      TestObjectsNotFoundMessage message = (TestObjectsNotFoundMessage) iter.next();
       System.out.println("ChannelID: " + message.getChannelID().toLong());
       assertEquals(message.getChannelID().toLong(), i);
-      
+
     }
-    
+
     assertEquals(objectRequestManager.getObjectRequestCacheSize(), 0);
     assertEquals(objectRequestManager.getObjectRequestCacheClientSize(), 0);
 
   }
-    
+
+  public void testBatchAndSend() {
+
+    TestMessageChannel messageChannel = new TestMessageChannel(new ChannelID(1));
+    Sequence batchIDSequence = new SimpleSequence();
+    BatchAndSend batchAndSend = new BatchAndSend(messageChannel, batchIDSequence.next());
+
+    // let's test send objects
+    for (int i = 0; i < 5000; i++) {
+      ObjectID id = new ObjectID(i);
+      ManagedObjectImpl mo = new ManagedObjectImpl(id);
+      mo.apply(new TestDNA(new TestDNACursor()), new TransactionID(id.toLong()), new BackReferences(),
+               new NullObjectInstanceMonitor(), true);
+      batchAndSend.sendObject(mo, i < 5000);
+
+    }
+
+    // let's test missing objects
+
+  }
 
   public void testRequestObjects() {
 
@@ -387,17 +444,14 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink sink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
-                                                                                 clientStateManager,
-                                                                                 serverTransactionManager, sink);
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
-    Set ids = new HashSet();
-    ids.add(new ObjectID(1));
-    ids.add(new ObjectID(2));
-    ids.add(new ObjectID(3));
-    ids.add(new ObjectID(4));
+    Set ids = createObjectIDSet();
     objectRequestManager.transactionManagerStarted(new HashSet());
     objectRequestManager.clearAllTransactionsFor(clientID);
 
@@ -405,7 +459,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
     RespondToObjectRequestContext respondToObjectRequestContext = null;
     try {
-      respondToObjectRequestContext = (RespondToObjectRequestContext) sink.take();
+      respondToObjectRequestContext = (RespondToObjectRequestContext) respondSink.take();
     } catch (InterruptedException e) {
       throw new AssertionError(e);
     }
@@ -424,17 +478,14 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink sink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
-                                                                                 clientStateManager,
-                                                                                 serverTransactionManager, sink);
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
-    Set ids = new HashSet();
-    ids.add(new ObjectID(1));
-    ids.add(new ObjectID(2));
-    ids.add(new ObjectID(3));
-    ids.add(new ObjectID(4));
+    Set ids = createObjectIDSet();
     objectRequestManager.transactionManagerStarted(new HashSet());
     objectRequestManager.clearAllTransactionsFor(clientID);
 
@@ -442,7 +493,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
     RespondToObjectRequestContext respondToObjectRequestContext = null;
     try {
-      respondToObjectRequestContext = (RespondToObjectRequestContext) sink.take();
+      respondToObjectRequestContext = (RespondToObjectRequestContext) respondSink.take();
     } catch (InterruptedException e) {
       throw new AssertionError(e);
     }
@@ -960,7 +1011,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
     public List                   createMessageContexts = new ArrayList();
     public NoExceptionLinkedQueue sendQueue             = new NoExceptionLinkedQueue();
-    public ChannelID              channelID;
+    private ChannelID             channelID;
 
     public TestMessageChannel(ChannelID channelID) {
       this.channelID = channelID;
@@ -993,7 +1044,7 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public ChannelID getChannelID() {
-      return null;
+      return channelID;
     }
 
     public TCSocketAddress getLocalAddress() {
@@ -1030,20 +1081,21 @@ public class ObjectRequestManagerTest extends TestCase {
 
   }
 
-  private static class TestRequestManagedObjectResponseMessage implements RequestManagedObjectResponseMessage, Comparable {
+  private static class TestRequestManagedObjectResponseMessage implements RequestManagedObjectResponseMessage,
+      Comparable {
 
     protected static Set sendSet = new TreeSet();
 
-    private ChannelID channelID;
-    
+    private ChannelID    channelID;
+
     public TestRequestManagedObjectResponseMessage(ChannelID channelID) {
       this.channelID = channelID;
     }
-    
+
     public ChannelID getChannelID() {
       return channelID;
     }
-    
+
     public long getBatchID() {
       return 0;
     }
@@ -1098,7 +1150,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
     public int compareTo(Object o) {
       Long value1 = getChannelID().toLong();
-      Long value2 = ((TestRequestManagedObjectResponseMessage)o).getChannelID().toLong();
+      Long value2 = ((TestRequestManagedObjectResponseMessage) o).getChannelID().toLong();
       return value1.compareTo(value2);
     }
 
@@ -1107,13 +1159,13 @@ public class ObjectRequestManagerTest extends TestCase {
   private static class TestObjectsNotFoundMessage implements ObjectsNotFoundMessage, Comparable {
 
     protected static Set sendSet = new TreeSet();
-    
-    private ChannelID channelID;
-    
+
+    private ChannelID    channelID;
+
     public TestObjectsNotFoundMessage(ChannelID channelID) {
       this.channelID = channelID;
     }
-    
+
     public ChannelID getChannelID() {
       return channelID;
     }
@@ -1161,10 +1213,10 @@ public class ObjectRequestManagerTest extends TestCase {
     public void send() {
       sendSet.add(this);
     }
-    
+
     public int compareTo(Object o) {
       Long value1 = getChannelID().toLong();
-      Long value2 = ((TestObjectsNotFoundMessage)o).getChannelID().toLong();
+      Long value2 = ((TestObjectsNotFoundMessage) o).getChannelID().toLong();
       return value1.compareTo(value2);
     }
 
@@ -1200,7 +1252,13 @@ public class ObjectRequestManagerTest extends TestCase {
     public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
                             boolean isServerInitiated) {
 
-      //    
+      throw new NotImplementedException(TestObjectRequestManager.class);
+    }
+
+    public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
+                                                           int maxRequestDepth, boolean serverInitiated,
+                                                           String requestingThreadName) {
+      throw new NotImplementedException(TestObjectRequestManager.class);
     }
 
   }

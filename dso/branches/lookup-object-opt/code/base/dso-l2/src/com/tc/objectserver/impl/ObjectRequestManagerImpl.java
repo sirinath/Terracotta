@@ -45,32 +45,36 @@ import java.util.Set;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  private final static TCLogger          logger               = TCLogging.getLogger(ObjectRequestManagerImpl.class);
+  private static final int               MAX_OBJECTS_TO_LOOKUP = 50;
 
-  private final static State             INIT                 = new State("INITIAL");
-  private final static State             STARTING             = new State("STARTING");
-  private final static State             STARTED              = new State("STARTED");
+  private final static TCLogger          logger                = TCLogging.getLogger(ObjectRequestManagerImpl.class);
+
+  private final static State             INIT                  = new State("INITIAL");
+  private final static State             STARTING              = new State("STARTING");
+  private final static State             STARTED               = new State("STARTED");
 
   private final ObjectManager            objectManager;
   private final ServerTransactionManager transactionManager;
 
-  private final List                     pendingRequests      = new LinkedList();
-  private final Set                      resentTransactionIDs = new HashSet();
-  private volatile State                 state                = INIT;
-  private Sink                           respondObjectRequestSink;
+  private final List                     pendingRequests       = new LinkedList();
+  private final Set                      resentTransactionIDs  = new HashSet();
+  private final Sink                     managedObjectRequestSink;
+  private final Sink                     respondObjectRequestSink;
+  private volatile State                 state                 = INIT;
   private DSOChannelManager              channelManager;
   private ClientStateManager             stateManager;
-  private Sequence                       batchIDSequence      = new SimpleSequence();
+  private Sequence                       batchIDSequence       = new SimpleSequence();
 
-  private ObjectRequestCache             objectRequestCache   = new ObjectRequestCache();
+  private ObjectRequestCache             objectRequestCache    = new ObjectRequestCache();
 
-  public ObjectRequestManagerImpl(ObjectManager objectManager, DSOChannelManager channelManager,
+  public ObjectRequestManagerImpl(Sink managedObjectRequestSink, ObjectManager objectManager, DSOChannelManager channelManager,
                                   ClientStateManager stateManager, ServerTransactionManager transactionManager,
                                   Sink respondObjectRequestSink) {
     this.objectManager = objectManager;
     this.channelManager = channelManager;
     this.stateManager = stateManager;
     this.transactionManager = transactionManager;
+    this.managedObjectRequestSink = managedObjectRequestSink;
     this.respondObjectRequestSink = respondObjectRequestSink;
     transactionManager.addTransactionListener(this);
 
@@ -148,6 +152,27 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
   public synchronized void transactionApplied(ServerTransactionID stxID) {
     resentTransactionIDs.remove(stxID);
     moveToStartedIfPossible();
+  }
+
+  // Utility method to create 1 or more server initiated requests.
+  public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
+                                                         int maxRequestDepth, boolean serverInitiated,
+                                                         String requestingThreadName) {
+    if (ids.size() <= MAX_OBJECTS_TO_LOOKUP) {
+      managedObjectRequestSink.add(new LookupContext(this, clientID, requestID, ids, -1, requestingThreadName, true,
+                                  respondObjectRequestSink));
+    } else {
+      String threadName = Thread.currentThread().getName();
+      // split into multiple request
+      Set split = new HashSet(MAX_OBJECTS_TO_LOOKUP);
+      for (Iterator i = ids.iterator(); i.hasNext();) {
+        split.add(i.next());
+        if (split.size() >= MAX_OBJECTS_TO_LOOKUP) {
+          managedObjectRequestSink.add(new LookupContext(this, clientID, requestID, ids, -1, threadName, true, respondObjectRequestSink));
+          if (i.hasNext()) split = new HashSet(MAX_OBJECTS_TO_LOOKUP);
+        }
+      }
+    }
   }
 
   private void basicRequestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
@@ -373,20 +398,20 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
 
     public synchronized void sendObject(ManagedObject m, boolean hasNext) {
-        m.toDNA(out, serializer);
-        sendCount++;
-        if (sendCount > 1000 || (sendCount > 0 && !hasNext)) {
-          batches++;
-          RequestManagedObjectResponseMessage responseMessage = (RequestManagedObjectResponseMessage) channel
-              .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
-          responseMessage.initialize(out.toArray(), sendCount, serializer, batchID, hasNext ? 0 : batches);
-          responseMessage.send();
-          if (hasNext) {
-            sendCount = 0;
-            serializer = new ObjectStringSerializer();
-            out = new TCByteBufferOutputStream();
-          }
+      m.toDNA(out, serializer);
+      sendCount++;
+      if (sendCount > 1000 || (sendCount > 0 && !hasNext)) {
+        batches++;
+        RequestManagedObjectResponseMessage responseMessage = (RequestManagedObjectResponseMessage) channel
+            .createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE);
+        responseMessage.initialize(out.toArray(), sendCount, serializer, batchID, hasNext ? 0 : batches);
+        responseMessage.send();
+        if (hasNext) {
+          sendCount = 0;
+          serializer = new ObjectStringSerializer();
+          out = new TCByteBufferOutputStream();
         }
+      }
     }
 
     public synchronized void sendMissingObjects(Set missingObjectIDs, Set ids) {
@@ -420,7 +445,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     protected TCByteBufferOutputStream getOut() {
       return out;
     }
-    
+
   }
 
   protected static class LookupContext implements ObjectManagerRequestContext {
@@ -466,7 +491,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     public void setResults(ObjectManagerLookupResults results) {
       objects = results.getObjects();
       if (results.getLookupPendingObjectIDs().size() > 0) {
-        objectRequestManager.requestObjects(this.clientID, this.requestID, results.getLookupPendingObjectIDs(), -1,
+        objectRequestManager.createAndAddManagedObjectRequestContextsTo(this.clientID, this.requestID, results.getLookupPendingObjectIDs(), -1,
                                             true, this.requestingThreadName);
       }
       ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.ids,
@@ -503,7 +528,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       return "Lookup Context [ clientID = " + clientID + " , requestID = " + requestID + " , ids.size = " + ids.size()
              + " , objects.size = " + objects.size() + " , missingObjects.size  = " + missingObjects.size()
              + " , maxRequestDepth = " + maxRequestDepth + " , requestingThreadName = " + requestingThreadName
-             + " , serverInitiated = " + serverInitiated + " , respondObjectRequestSink = " + respondObjectRequestSink + " ] ";
+             + " , serverInitiated = " + serverInitiated + " , respondObjectRequestSink = " + respondObjectRequestSink
+             + " ] ";
     }
 
   }
