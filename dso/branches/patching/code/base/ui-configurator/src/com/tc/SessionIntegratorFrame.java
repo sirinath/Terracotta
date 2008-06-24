@@ -26,6 +26,7 @@ import org.dijon.TabbedPane;
 import com.tc.admin.ConnectionContext;
 import com.tc.admin.ConnectionListener;
 import com.tc.admin.ServerConnectionManager;
+import com.tc.admin.common.AboutDialog;
 import com.tc.admin.common.BrowserLauncher;
 import com.tc.admin.common.ContactTerracottaAction;
 import com.tc.admin.common.OutputStreamListener;
@@ -36,7 +37,6 @@ import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.appevent.NonPortableObjectEvent;
 import com.tc.servers.ServerSelection;
 import com.tc.servers.ServersDialog;
-import com.tc.util.ProductInfo;
 import com.tc.util.runtime.Os;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
@@ -644,7 +644,7 @@ public class SessionIntegratorFrame extends Frame {
   }
 
   class AboutAction extends XAbstractAction {
-    Dialog m_aboutDialog;
+    AboutDialog m_aboutDialog;
 
     AboutAction() {
       super(getBundleString("about.action.label"));
@@ -652,24 +652,7 @@ public class SessionIntegratorFrame extends Frame {
 
     public void actionPerformed(ActionEvent ae) {
       if (m_aboutDialog == null) {
-        SessionIntegratorContext cntx = SessionIntegrator.getContext();
-
-        m_aboutDialog = new Dialog(SessionIntegratorFrame.this, true);
-        m_aboutDialog.load((DialogResource) cntx.topRes.child("AboutDialog"));
-
-        ConfiguratorInfoPanel info;
-        String title = SessionIntegratorFrame.this.getTitle();
-        info = (ConfiguratorInfoPanel) m_aboutDialog.findComponent("ConfiguratorInfoPanel");
-        info.init(title, ProductInfo.getInstance());
-        Label monikerLabel = (Label) m_aboutDialog.findComponent("MonikerLabel");
-        monikerLabel.setText(title);
-        Button okButton = (Button) m_aboutDialog.findComponent("OKButton");
-        m_aboutDialog.getRootPane().setDefaultButton(okButton);
-        okButton.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent ae2) {
-            m_aboutDialog.setVisible(false);
-          }
-        });
+        m_aboutDialog = new AboutDialog(SessionIntegratorFrame.this);
       }
 
       m_aboutDialog.pack();

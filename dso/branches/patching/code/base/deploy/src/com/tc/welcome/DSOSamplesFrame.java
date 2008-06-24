@@ -61,15 +61,13 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
 
 public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener, PropertyChangeListener {
-  private ResourceBundleHelper m_bundleHelper;
-  private TextPane             m_textPane;
-  private TextPane             m_outputPane;
-  private ArrayList            m_processList;
+  private static ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(DSOSamplesFrame.class);
+  private TextPane                    m_textPane;
+  private TextPane                    m_outputPane;
+  private ArrayList                   m_processList;
 
   public DSOSamplesFrame() {
-    super();
-
-    setTitle(getResourceBundleHelper().getString("frame.title"));
+    super(m_bundleHelper.getString("frame.title"));
 
     Container cp = getContentPane();
     cp.setLayout(new BorderLayout());
@@ -98,13 +96,6 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
     }
   }
 
-  private ResourceBundleHelper getResourceBundleHelper() {
-    if (m_bundleHelper == null) {
-      m_bundleHelper = new ResourceBundleHelper(DSOSamplesFrame.class);
-    }
-    return m_bundleHelper;
-  }
-
   protected void initFileMenu(Menu fileMenu) {
     fileMenu.add(new ServersAction());
     super.initFileMenu(fileMenu);
@@ -116,7 +107,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
     JTextField    m_serversListField;
 
     ServersAction() {
-      super(getResourceBundleHelper().getString("servers.action.name"));
+      super(m_bundleHelper.getString("servers.action.name"));
     }
 
     private JPanel createPanel() {
@@ -324,7 +315,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
       m_processList.add(p);
       startFakeWaitPeriod();
 
-      Frame frame = new SampleFrame(this, getResourceBundleHelper().getString("jvm.coordination"));
+      Frame frame = new SampleFrame(this, m_bundleHelper.getString("jvm.coordination"));
       frame.getContentPane().add(new ScrollPane(textPane));
       frame.setSize(new Dimension(500, 300));
       frame.setVisible(true);
@@ -383,7 +374,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
       m_processList.add(p);
       startFakeWaitPeriod();
 
-      Frame frame = new SampleFrame(this, getResourceBundleHelper().getString("shared.work.queue"));
+      Frame frame = new SampleFrame(this, m_bundleHelper.getString("shared.work.queue"));
       frame.getContentPane().add(new ScrollPane(textPane));
       frame.setSize(new Dimension(500, 300));
       frame.setVisible(true);
@@ -512,8 +503,8 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
 class SampleFrame extends Frame {
   public SampleFrame(Frame parentFrame, String title) {
     super(title);
-    
-    if(Os.isMac()) {
+
+    if (Os.isMac()) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
       System.setProperty("apple.awt.showGrowBox", "true");
