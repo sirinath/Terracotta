@@ -15,8 +15,6 @@ import com.tc.util.Assert;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -27,8 +25,8 @@ public class TreeSetManagedObjectState extends SetManagedObjectState {
 
   private ObjectID            comparator           = null;
 
-  public TreeSetManagedObjectState(long classID) {
-    super(classID);
+  public TreeSetManagedObjectState(long classID, Set set) {
+    super(classID, set);
   }
 
   protected TreeSetManagedObjectState(ObjectInput in) throws IOException {
@@ -86,10 +84,6 @@ public class TreeSetManagedObjectState extends SetManagedObjectState {
       out.writeBoolean(true);
       out.writeLong(comparator.toLong());
     }
-    out.writeInt(references.size());
-    for (Iterator i = references.iterator(); i.hasNext();) {
-      out.writeObject(i.next());
-    }
   }
 
   protected boolean basicEquals(Object other) {
@@ -98,7 +92,11 @@ public class TreeSetManagedObjectState extends SetManagedObjectState {
            && references.equals(mo.references);
   }
 
-  static SetManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
+  static TreeSetManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
+    if (false) {
+      // to remove the warning
+      throw new ClassNotFoundException();
+    }
     TreeSetManagedObjectState tsm = new TreeSetManagedObjectState(in);
     ObjectID comparator;
     if (in.readBoolean()) {
@@ -106,13 +104,7 @@ public class TreeSetManagedObjectState extends SetManagedObjectState {
     } else {
       comparator = null;
     }
-    int size = in.readInt();
-    Set set = new LinkedHashSet(size, 0.75f);
-    for (int i = 0; i < size; i++) {
-      set.add(in.readObject());
-    }
     tsm.comparator = comparator;
-    tsm.references = set;
     return tsm;
   }
 
