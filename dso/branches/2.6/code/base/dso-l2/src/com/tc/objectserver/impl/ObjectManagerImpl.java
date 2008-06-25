@@ -157,7 +157,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       StringBuffer rootBuff = new StringBuffer();
       for (Iterator rootIter = getRootNames(); rootIter.hasNext();) {
         rootBuff.append(rootIter.next());
-        if(rootIter.hasNext()) {
+        if (rootIter.hasNext()) {
           rootBuff.append(",");
         }
       }
@@ -458,8 +458,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       } else if (available && (reference.isReferenced() || (reference.isNew() && !newObjectIDs.contains(id)))) {
         available = false;
         if (!reference.isReferenced() && reference.isNew()) {
-          logger.warn("Making " + context + " pending since reference " + reference + " is new and not in "
-                      + newObjectIDs);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Making " + context + " pending since reference " + reference + " is new and not in "
+                         + newObjectIDs);
+          }
         }
         // Setting only the first referenced object to process Pending. If objects are being faulted in, then this
         // will ensure that we don't run processPending multiple times unnecessarily.
