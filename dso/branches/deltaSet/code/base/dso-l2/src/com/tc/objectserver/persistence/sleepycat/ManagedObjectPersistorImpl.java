@@ -263,10 +263,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       TCDatabaseException {
     ManagedObjectState state = mo.getManagedObjectState();
     if (PersistentCollectionsUtil.isPersistableCollectionType(state.getType())) {
-      MapManagedObjectState mapState = (MapManagedObjectState) state;
-      Assert.assertNull(mapState.getMap());
       try {
-        mapState.setMap(collectionsPersistor.loadMap(tx, mo.getID()));
+        collectionsPersistor.loadCollectionsToManagedState(tx, mo.getID(), state);
       } catch (DatabaseException e) {
         throw new TCDatabaseException(e);
       }
@@ -379,7 +377,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       MapManagedObjectState mapState = (MapManagedObjectState) state;
       SleepycatPersistableMap map = (SleepycatPersistableMap) mapState.getMap();
       try {
-        return collectionsPersistor.saveMap(tx, map);
+        return collectionsPersistor.saveCollections(tx, map);
       } catch (DatabaseException e) {
         throw new TCDatabaseException(e);
       }
