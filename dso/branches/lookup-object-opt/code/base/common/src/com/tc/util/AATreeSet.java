@@ -153,6 +153,13 @@ public class AATreeSet {
   }
 
   /**
+   * Returns an iterator for the tail set greater than or equal to comparable
+   */
+  public Iterator tailSetIterator(Comparable c) {
+    return new AATreeSetIterator(c);
+  }
+
+  /**
    * Internal method to insert into a subtree.
    * 
    * @param x the item to insert.
@@ -312,6 +319,38 @@ public class AATreeSet {
     AANode next = root;
     // Contains elements while traversing
     Stack  s    = new Stack();
+
+    public AATreeSetIterator() {
+      //
+    }
+
+    /**
+     * creates an iterator for the tail set greater than or equal to c
+     */
+    public AATreeSetIterator(Comparable c) {
+      int result = 0;
+      while (next != nullNode) {
+        result = c.compareTo(next.element);
+        if (result < 0) {
+          s.push(next);
+          next = next.left;
+        } else if (result == 0) {
+
+          // We are suppose to retain a Tree { elements >= c} . So, put a
+          // "take diversion board" in the left subtree. We need to push the next
+          // element here, so that iterator.next can pop and start traversing
+          // from the right child
+          s.push(next);
+          next = nullNode;
+          break;
+        } else if (result > 0) {
+          next = next.right;
+        }
+      }
+
+      // next (which has already been pushed to the stack) points to Tree Node
+      // which is next greater element or null
+    }
 
     public boolean hasNext() {
       if (next == nullNode && s.size() == 0) return false;

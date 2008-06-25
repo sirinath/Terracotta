@@ -32,6 +32,7 @@ public class ContinuationsTest extends AbstractTwoServerDeploymentTest {
   }
 
   public ContinuationsTest() {
+
     if (shouldDisable()) {
       disableAllUntil(new Date(Long.MAX_VALUE));
     }

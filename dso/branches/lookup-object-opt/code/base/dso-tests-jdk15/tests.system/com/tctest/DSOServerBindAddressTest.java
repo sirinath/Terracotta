@@ -37,7 +37,7 @@ public class DSOServerBindAddressTest extends BaseDSOTestCase {
                                                 .getLogger(DistributedObjectServer.class)));
   private static final String[]   bindAddrs = { "0.0.0.0", "127.0.0.1", localAddr() };
   private DistributedObjectServer server;
-
+  
   static String localAddr() {
     try {
       return InetAddress.getLocalHost().getHostAddress();

@@ -9,21 +9,27 @@ import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Transaction;
 import com.tc.io.serializer.api.StringIndex;
+import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.object.persistence.api.PersistentMapStore;
 import com.tc.objectserver.persistence.api.ClassPersistor;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
-import com.tc.objectserver.persistence.api.PersistentMapStore;
 import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.objectserver.persistence.api.StringIndexPersistor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.impl.StringIndexImpl;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
+import com.tc.text.Banner;
+import com.tc.util.Assert;
 import com.tc.util.sequence.MutableSequence;
 
+import java.io.File;
 import java.io.IOException;
 
 public class SleepycatPersistor implements Persistor {
@@ -34,7 +40,7 @@ public class SleepycatPersistor implements Persistor {
   private final ManagedObjectPersistorImpl     managedObjectPersistor;
   private final ClientStatePersistor           clientStatePersistor;
   private final TransactionPersistor           transactionPerisistor;
-  private final MutableSequence             globalTransactionIDSequence;
+  private final MutableSequence                globalTransactionIDSequence;
   private final ClassPersistor                 classPersistor;
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final DBEnvironment                  env;
@@ -43,18 +49,20 @@ public class SleepycatPersistor implements Persistor {
 
   private SleepycatCollectionsPersistor        sleepycatCollectionsPersistor;
 
+  // only for tests
   public SleepycatPersistor(TCLogger logger, DBEnvironment env, SerializationAdapterFactory serializationAdapterFactory)
       throws TCDatabaseException {
-    DatabaseOpenResult result = env.open();
-    if (!result.isClean()) {
-      //
-      throw new DatabaseDirtyException("Attempt to open a dirty database.  "
-                                       + "This may be because a previous instance of the server didn't exit cleanly."
-                                       + "  Since the integrity of the data cannot be assured, "
-                                       + "the server is refusing to start."
-                                       + "  Please remove the database files in the following directory and restart "
-                                       + "the server: " + env.getEnvironmentHome());
-    }
+    this(logger, env, serializationAdapterFactory, null);
+  }
+
+  public SleepycatPersistor(TCLogger logger, DBEnvironment env,
+                            SerializationAdapterFactory serializationAdapterFactory, File l2DataPath)
+      throws TCDatabaseException {
+
+    open(env, logger);
+    this.env = env;
+
+    sanityCheckAndClean(env, l2DataPath, logger);
 
     CursorConfig dbCursorConfig = new CursorConfig();
     dbCursorConfig.setReadCommitted(true);
@@ -62,7 +70,6 @@ public class SleepycatPersistor implements Persistor {
     rootDBCursorConfig.setReadCommitted(true);
     CursorConfig stringIndexCursorConfig = new CursorConfig();
     stringIndexCursorConfig.setReadCommitted(true);
-    this.env = env;
     this.persistenceTransactionProvider = new SleepycatPersistenceTransactionProvider(env.getEnvironment());
     this.stringIndexPersistor = new SleepycatStringIndexPersistor(persistenceTransactionProvider, env
         .getStringIndexDatabase(), stringIndexCursorConfig, env.getClassCatalogWrapper().getClassCatalog());
@@ -85,8 +92,8 @@ public class SleepycatPersistor implements Persistor {
                                                                                            .getObjectIDDB()), env
                                                                      .getRootDatabase(), rootDBCursorConfig,
                                                                  this.persistenceTransactionProvider,
-                                                                 this.sleepycatCollectionsPersistor,
-                                                                 env.isParanoidMode());
+                                                                 this.sleepycatCollectionsPersistor, env
+                                                                     .isParanoidMode());
     this.clientStatePersistor = new ClientStatePersistorImpl(logger, this.persistenceTransactionProvider,
                                                              new SleepycatSequence(this.persistenceTransactionProvider,
                                                                                    logger, 1, 0, env
@@ -99,10 +106,54 @@ public class SleepycatPersistor implements Persistor {
     this.classPersistor = new ClassPersistorImpl(this.persistenceTransactionProvider, logger, env.getClassDatabase());
     this.clusterStateStore = new SleepycatMapStore(this.persistenceTransactionProvider, logger, env
         .getClusterStateStoreDatabase());
-    
-    //check for DBversion mismatch
-    DBVersionChecker dbVersionChecker = new DBVersionChecker(this.clusterStateStore);
+
+  }
+
+  private void open(DBEnvironment dbenv, TCLogger logger) throws TCDatabaseException {
+    Assert.eval(!dbenv.isOpen());
+    DatabaseOpenResult result = dbenv.open();
+    if (!result.isClean()) { throw new DatabaseDirtyException(
+                                                              "Attempt to open a dirty database.  "
+                                                                  + "This may be because a previous instance of the server didn't exit cleanly."
+                                                                  + "  Since the integrity of the data cannot be assured, "
+                                                                  + "the server is refusing to start."
+                                                                  + "  Please remove the database files in the following directory and restart "
+                                                                  + "the server: " + env.getEnvironmentHome()); }
+  }
+
+  private void sanityCheckAndClean(DBEnvironment dbenv, File l2DataPath, TCLogger logger) throws TCDatabaseException {
+    PersistenceTransactionProvider persistentTxProvider = new SleepycatPersistenceTransactionProvider(dbenv
+        .getEnvironment());
+    PersistentMapStore persistentMapStore = new SleepycatMapStore(persistentTxProvider, logger, dbenv
+        .getClusterStateStoreDatabase());
+
+    // check for DBversion mismatch
+    DBVersionChecker dbVersionChecker = new DBVersionChecker(persistentMapStore);
     dbVersionChecker.versionCheck();
+
+    // RMP-309 : Allow passive L2s with dirty database come up automatically
+    DirtyObjectDbCleaner dirtyObjectDbCleaner = new DirtyObjectDbCleaner(persistentMapStore, l2DataPath, logger);
+    if (dirtyObjectDbCleaner.isObjectDbDirty()) {
+      boolean dirtyDbAutoDelete = TCPropertiesImpl.getProperties()
+          .getBoolean(TCPropertiesConsts.L2_NHA_DIRTYDB_AUTODELETE);
+
+      if (!dirtyDbAutoDelete) {
+        String errorMessage = Banner
+            .makeBanner("Detected Dirty Objectdb. Auto-delete(l2.nha.dirtydb.autoDelete) not enabled. "
+                        + "Please clean up the data directory and make sure that the "
+                        + StateManager.ACTIVE_COORDINATOR.getName()
+                        + " is up and running before starting this server. It is important that the "
+                        + StateManager.ACTIVE_COORDINATOR.getName()
+                        + " is up and running before starting this server else you might end up losing data", "ERROR");
+        throw new TCDatabaseException(errorMessage);
+      } else {
+        logger.info("Dirty Objectdb Auto-delete requested.");
+      }
+
+      close();
+      dirtyObjectDbCleaner.backupDirtyObjectDb();
+      open(dbenv, logger);
+    }
   }
 
   public StringIndex getStringIndex() {

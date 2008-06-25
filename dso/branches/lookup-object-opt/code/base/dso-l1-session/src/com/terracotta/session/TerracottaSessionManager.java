@@ -21,6 +21,7 @@ import com.terracotta.session.util.SessionIdGenerator;
 import com.terracotta.session.util.Timestamp;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -47,7 +48,9 @@ public class TerracottaSessionManager implements SessionManager {
   private final boolean                debugSessions;
   private final String                 sessionCookieName;
   private final String                 sessionUrlPathParamTag;
+  private final boolean                      usesStandardUrlPathParam;
   private int                          serverHopsDetected = 0;
+
 
   private static final Set             excludedVHosts     = loadExcludedVHosts();
 
@@ -109,7 +112,9 @@ public class TerracottaSessionManager implements SessionManager {
     this.debugSessions = cp.isDebugSessions();
     this.sessionCookieName = this.cookieWriter.getCookieName();
     this.sessionUrlPathParamTag = this.cookieWriter.getPathParameterTag();
-
+    this.usesStandardUrlPathParam = this.sessionUrlPathParamTag.equalsIgnoreCase(";"
+                                                                                 + ConfigProperties.defaultCookieName
+                                                                                 + "=");
   }
 
   private static Set loadExcludedVHosts() {
@@ -190,6 +195,11 @@ public class TerracottaSessionManager implements SessionManager {
   }
 
   private String findSessionInURL(HttpServletRequest req) {
+    if (usesStandardUrlPathParam && req.isRequestedSessionIdFromURL()) {
+      // let the container take care of finding the sessionid in this case
+      return req.getRequestedSessionId();
+    }
+
     String rv = null;
 
     String requestURI = req.getRequestURI();
@@ -481,11 +491,17 @@ public class TerracottaSessionManager implements SessionManager {
       while (true) {
         sleep(sleepMillis);
         if (Thread.interrupted()) {
+          logger.warn("invalidator thread interrupted -- exiting");
           break;
         } else {
           try {
             final Lock lock = new Lock(invalidatorLock);
-            if (!lock.tryWriteLock()) continue;
+            if (!lock.tryWriteLock()) {
+              if (debugInvalidate) {
+                logger.info("did not obtain the invalidator lock (" + invalidatorLock + ")");
+              }
+              continue;
+            }
             try {
               invalidateSessions();
             } finally {
@@ -516,12 +532,27 @@ public class TerracottaSessionManager implements SessionManager {
         try {
           final SessionId id = idGenerator.makeInstanceFromInternalKey(key);
           final Timestamp dtm = store.findTimestampUnlocked(id);
-          if (dtm == null) continue;
+          if (dtm == null) {
+            if (debugInvalidate) {
+              logger.info("null timestamp for " + key);
+            }
+            continue;
+          }
           totalCnt++;
-          if (dtm.getMillis() < System.currentTimeMillis()) {
+
+          final long dtmMillis = dtm.getMillis();
+          final long now = System.currentTimeMillis();
+
+          if (dtmMillis < now) {
+            if (debugInvalidate) {
+              logger.info("evaluating session " + key + " with timestamp " + dtmMillis);
+            }
             evaled++;
             if (evaluateSession(dtm, id)) invalCnt++;
           } else {
+            if (debugInvalidate) {
+              logger.info("not evaluting session " + key + " with timestamp " + dtmMillis + ", now=" + now);
+            }
             notEvaled++;
           }
         } catch (Throwable t) {
@@ -542,15 +573,38 @@ public class TerracottaSessionManager implements SessionManager {
 
       boolean rv = false;
 
-      if (!id.tryWriteLock()) { return rv; }
+      if (debugInvalidate) {
+        logger.info("starting tryLock() for " + id.getKey());
+      }
+      if (!id.tryWriteLock()) {
+        if (debugInvalidate) {
+          logger.info("tryLock() returned false for " + id.getKey());
+        }
+        return rv;
+      }
+
+      if (debugInvalidate) {
+        logger.info("tryLock() obtained for " + id.getKey());
+      }
 
       try {
         final SessionData sd = store.findSessionDataUnlocked(id);
-        if (sd == null) return rv;
-        if (!sd.isValid()) {
+        if (sd == null) {
+          if (debugInvalidate) {
+            logger.info("null session data for " + id.getKey());
+          }
+          return rv;
+        }
+        if (!sd.isValid(debugInvalidate, logger)) {
+          if (debugInvalidate) {
+            logger.info(id.getKey() + " IS invalid");
+          }
           expire(id, sd);
           rv = true;
         } else {
+          if (debugInvalidate) {
+            logger.info(id.getKey() + " IS NOT invalid, updating timestamp");
+          }
           store.updateTimestampIfNeeded(sd);
         }
       } finally {
@@ -559,11 +613,17 @@ public class TerracottaSessionManager implements SessionManager {
       return rv;
     }
 
-    private void sleep(long l) {
+    private void sleep(long time) {
+      String prevName = Thread.currentThread().getName();
+      Thread.currentThread().setName(
+                                     prevName + " (sleeping for " + time + " milliseconds, starting from " + new Date()
+                                         + ")");
       try {
-        Thread.sleep(l);
+        Thread.sleep(time);
       } catch (InterruptedException ignore) {
         // nothing to do
+      } finally {
+        Thread.currentThread().setName(prevName);
       }
     }
   }

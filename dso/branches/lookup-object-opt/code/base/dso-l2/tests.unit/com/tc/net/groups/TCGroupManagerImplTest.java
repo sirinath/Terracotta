@@ -30,8 +30,10 @@ import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.session.NullSessionManager;
+import com.tc.object.tx.ServerTransactionID;
+import com.tc.object.tx.TransactionID;
 import com.tc.test.TCTestCase;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.PortChooser;
 import com.tc.util.UUID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
@@ -203,7 +205,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
   }
 
   private ObjectSyncMessage createTestObjectSyncMessage() {
-    Set dnaOids = new ObjectIDSet2();
+    Set dnaOids = new ObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       dnaOids.add(new ObjectID(i));
     }
@@ -213,14 +215,17 @@ public class TCGroupManagerImplTest extends TCTestCase {
     Map roots = new HashMap();
     long sID = 10;
     ObjectSyncMessage message = new ObjectSyncMessage(ObjectSyncMessage.MANAGED_OBJECT_SYNC_TYPE);
-    message.initialize(dnaOids, count, serializedDNAs, objectSerializer, roots, sID);
+    message.initialize(new ServerTransactionID(new NodeIDImpl("hello", new byte[] { 34, 33, (byte) 234 }),
+                                               new TransactionID(342)), dnaOids, count, serializedDNAs,
+                       objectSerializer, roots, sID);
     return (message);
   }
 
   private boolean cmpObjectSyncMessage(ObjectSyncMessage o1, ObjectSyncMessage o2) {
     return ((o1.getDnaCount() == o2.getDnaCount()) && o1.getOids().equals(o2.getOids())
-            && o1.getRootsMap().equals(o2.getRootsMap()) && (o1.getType() == o2.getType()) && o1.getMessageID()
-        .equals(o2.getMessageID()));
+            && o1.getRootsMap().equals(o2.getRootsMap()) && (o1.getType() == o2.getType())
+            && o1.getMessageID().equals(o2.getMessageID()) && o1.getServerTransactionID()
+        .equals(o2.getServerTransactionID()));
   }
 
   private TCGroupMember getMember(TCGroupManagerImpl mgr, int idx) {
@@ -256,7 +261,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
   }
 
   private GCResultMessage createGCResultMessage() {
-    ObjectIDSet2 oidSet = new ObjectIDSet2();
+    ObjectIDSet oidSet = new ObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       oidSet.add(new ObjectID(i));
     }
@@ -265,8 +270,9 @@ public class TCGroupManagerImplTest extends TCTestCase {
   }
 
   private boolean cmpGCResultMessage(GCResultMessage o1, GCResultMessage o2) {
-    return (o1.getType() == o2.getType() && o1.getMessageID().equals(o2.getMessageID()) && o1.getGCedObjectIDs()
-        .equals(o2.getGCedObjectIDs()) && o1.getGCIterationCount() == o2.getGCIterationCount());
+    return (o1.getType() == o2.getType() && o1.getMessageID().equals(o2.getMessageID())
+            && o1.getGCedObjectIDs().equals(o2.getGCedObjectIDs()) && o1.getGCIterationCount() == o2
+        .getGCIterationCount());
   }
 
   public void testSendToAll() throws Exception {

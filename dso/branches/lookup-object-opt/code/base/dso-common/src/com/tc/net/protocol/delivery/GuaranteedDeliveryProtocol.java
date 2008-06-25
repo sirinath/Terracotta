@@ -6,6 +6,7 @@ package com.tc.net.protocol.delivery;
 
 import com.tc.async.api.Sink;
 import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.properties.ReconnectConfig;
 import com.tc.util.Assert;
 
 /**
@@ -18,11 +19,11 @@ class GuaranteedDeliveryProtocol {
   private final SendStateMachine    sender;
   private final ReceiveStateMachine receiver;
 
-  public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink workSink, boolean isClient) {
-    this.sender = new SendStateMachine(delivery, isClient);
-    this.send = new StateMachineRunner(sender, workSink);
-    this.receiver = new ReceiveStateMachine(delivery);
-    this.receive = new StateMachineRunner(receiver, workSink);
+  public GuaranteedDeliveryProtocol(OOOProtocolMessageDelivery delivery, Sink sendSink, Sink receiveSink, ReconnectConfig reconnectConfig, boolean isClient) {
+    this.sender = new SendStateMachine(delivery, reconnectConfig, isClient);
+    this.send = new StateMachineRunner(sender, sendSink);
+    this.receiver = new ReceiveStateMachine(delivery, reconnectConfig);
+    this.receive = new StateMachineRunner(receiver, receiveSink);
     receiver.setRunner(receive);
   }
 

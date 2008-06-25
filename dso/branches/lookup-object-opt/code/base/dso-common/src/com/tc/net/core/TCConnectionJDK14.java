@@ -454,7 +454,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       if (remoteSocketAddress.isSet()) {
         buf.append(((TCSocketAddress) remoteSocketAddress.get()).getStringForm());
       } else {
-        buf.append("[unknown");
+        buf.append("[unknown]");
       }
     }
 
@@ -578,6 +578,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     try {
       protocolAdaptor.addReadData(this, data, length);
     } catch (Exception e) {
+      logger.error(this.toString() + " " + e.getMessage());
       eventCaller.fireErrorEvent(eventListeners, this, e, null);
       return;
     }

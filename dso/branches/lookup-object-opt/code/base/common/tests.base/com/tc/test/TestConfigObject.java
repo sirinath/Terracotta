@@ -100,11 +100,14 @@ public class TestConfigObject {
   public static final String      L2_STARTUP_MODE                  = L2_STARTUP_PREFIX + "mode";
   public static final String      L2_STARTUP_JAVA_HOME             = L2_STARTUP_PREFIX + "jvm";
 
+  private static final String     EMMA_LIB                         = DYNAMIC_PROPERTIES_PREFIX + "emma.lib";
+
   private static TestConfigObject INSTANCE;
 
   private final Properties        properties;
   private final AppServerInfo     appServerInfo;
   private String                  extraClassPathForAppServer;
+  private boolean                 springTest                       = false;
 
   private TestConfigObject() throws IOException {
     this.properties = new Properties();
@@ -147,10 +150,15 @@ public class TestConfigObject {
     if (filesRead > 0) loadedFrom.append(", ");
     loadedFrom.append("system properties");
 
-    this.properties.putAll(System.getProperties());
-
-    this.appServerInfo = createAppServerInfo();
+    properties.putAll(System.getProperties());
+    appServerInfo = createAppServerInfo();
     extraClassPathForAppServer = linkedChildProcessPath();
+    
+    // if Emma is enabled, add it to app server classpath
+    String emmaLib = properties.getProperty(EMMA_LIB);
+    if (emmaLib != null) {
+      extraClassPathForAppServer += File.pathSeparator + emmaLib;
+    }
 
     logger.info("Loaded test configuration from " + loadedFrom.toString());
   }
@@ -382,7 +390,7 @@ public class TestConfigObject {
   public void addToAppServerClassPath(String cp) {
     extraClassPathForAppServer += File.pathSeparator + cp;
   }
-  
+
   public String linkedChildProcessPath() {
     String out = this.properties.getProperty(LINKED_CHILD_PROCESS_CLASSPATH);
     Assert.assertNotBlank(out);
@@ -423,5 +431,13 @@ public class TestConfigObject {
   private void assertFileExists(String out) {
     File file = new File(out);
     Assert.assertTrue("not a file: " + out, file.isFile());
+  }
+
+  public boolean isSpringTest() {
+    return springTest;
+  }
+
+  public void setSpringTest(boolean springTest) {
+    this.springTest = springTest;
   }
 }

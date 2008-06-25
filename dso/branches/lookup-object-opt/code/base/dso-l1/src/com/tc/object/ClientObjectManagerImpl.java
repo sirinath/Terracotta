@@ -498,7 +498,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
                                                   + " Entry removed before reaper got the chance: " + objectID);
       } else {
         TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
-        System.out.println("tcobj is null: " + tcobj.isNull());
         if (tcobj.isNull()) {
           idToManaged.remove(objectID);
           cache.remove(tcobj);

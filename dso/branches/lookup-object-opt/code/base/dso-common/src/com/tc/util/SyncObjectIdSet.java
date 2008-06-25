@@ -4,12 +4,14 @@
  */
 package com.tc.util;
 
+import com.tc.text.PrettyPrintable;
+
 import java.util.Set;
 
-public interface SyncObjectIdSet extends Set {
+public interface SyncObjectIdSet extends Set, PrettyPrintable {
   public void startPopulating();
 
-  public void stopPopulating(ObjectIDSet2 fullSet);
+  public void stopPopulating(ObjectIDSet fullSet);
 
-  public ObjectIDSet2 snapshot();
+  public ObjectIDSet snapshot();
 }

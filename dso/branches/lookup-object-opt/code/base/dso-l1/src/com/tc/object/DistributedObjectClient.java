@@ -12,8 +12,8 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.cluster.Cluster;
 import com.tc.config.schema.dynamic.ConfigItem;
+import com.tc.handler.CallbackDumpAdapter;
 import com.tc.lang.TCThreadGroup;
-import com.tc.logging.CallbackDumpAdapter;
 import com.tc.logging.ChannelIDLogger;
 import com.tc.logging.ChannelIDLoggerProvider;
 import com.tc.logging.CustomerLogging;
@@ -110,8 +110,8 @@ import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchAccounting;
 import com.tc.object.tx.TransactionBatchFactory;
-import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.object.tx.TransactionBatchWriterFactory;
+import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
@@ -231,7 +231,7 @@ public class DistributedObjectClient extends SEDA {
   public synchronized void start() {
     TCProperties tcProperties = TCPropertiesImpl.getProperties();
     l1Properties = tcProperties.getPropertiesFor("l1");
-    int maxSize = 50000;
+    int maxSize = tcProperties.getInt(TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY);
     int faultCount = config.getFaultCount();
 
     final Sequence sessionSequence = new SimpleSequence();
@@ -248,10 +248,12 @@ public class DistributedObjectClient extends SEDA {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
-      final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxSize);
+      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE, new OOOEventHandler(), 1, maxSize);
+      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE, new OOOEventHandler(), 1, maxSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(), l1ReconnectConfig);
+                                                                     oooSendStage.getSink(), oooReceiveStage.getSink(),
+                                                                     l1ReconnectConfig);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
@@ -318,10 +320,10 @@ public class DistributedObjectClient extends SEDA {
 
     lockManager = new ClientLockManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
         .getLogger(ClientLockManager.class)), new RemoteLockManagerImpl(channel.getLockRequestMessageFactory(),
-                                                                        gtxManager), sessionManager, lockStatManager, 
-                                                                        new ClientLockManagerConfigImpl(l1Properties
-                                                                                                        .getPropertiesFor("lockmanager")));
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
+                                                                        gtxManager), sessionManager, lockStatManager,
+                                            new ClientLockManagerConfigImpl(l1Properties
+                                                .getPropertiesFor("lockmanager")));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
     RemoteObjectManager remoteObjectManager = new RemoteObjectManagerImpl(new ChannelIDLogger(channel
         .getChannelIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), clientIDProvider, channel
         .getRequestRootMessageFactory(), channel.getRequestManagedObjectMessageFactory(),
@@ -352,7 +354,7 @@ public class DistributedObjectClient extends SEDA {
                                                 runtimeLogger, channel.getChannelIDProvider(), classProvider,
                                                 classFactory, objectFactory, config.getPortability(), channel,
                                                 toggleRefMgr);
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(objectManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(objectManager));
     TCProperties cacheManagerProperties = l1Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
       this.cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties),
@@ -374,7 +376,7 @@ public class DistributedObjectClient extends SEDA {
                                                  new ThreadLockManagerImpl(lockManager), txFactory, rtxManager,
                                                  runtimeLogger, l1Management.findClientTxMonitorMBean());
 
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(txManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(txManager));
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
                                                   new LockResponseHandler(sessionManager), 1, maxSize);
     Stage receiveRootID = stageManager.createStage(ClientConfigurationContext.RECEIVE_ROOT_ID_STAGE,
@@ -424,7 +426,7 @@ public class DistributedObjectClient extends SEDA {
                                                         objectManager, remoteObjectManager, lockManager, rtxManager,
                                                         gtxManager, stagesToPauseOnDisconnect, pauseStage.getSink(),
                                                         sessionManager, pauseListener, sequence, cluster, pInfo
-                                                            .buildVersion());
+                                                            .version());
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,
@@ -528,12 +530,9 @@ public class DistributedObjectClient extends SEDA {
   }
 
   /**
-   * Note that this method shuts down the manager that is associated with this
-   * client, this is only used in tests.
-   *
-   * To properly shut down resources of this client for production, the
-   * code should be added to {@link ClientShutdownManager} and not to this
-   * method.
+   * Note that this method shuts down the manager that is associated with this client, this is only used in tests. To
+   * properly shut down resources of this client for production, the code should be added to
+   * {@link ClientShutdownManager} and not to this method.
    */
   public synchronized void stopForTests() {
     manager.stop();

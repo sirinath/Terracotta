@@ -41,10 +41,11 @@ public final class ProductInfo {
   private static final String               BUILD_DATA_REVISION_KEY      = "revision";
   private static final String               BUILD_DATA_EE_REVISION_KEY   = "ee.revision";
   private static final String               BUILD_DATA_BRANCH_KEY        = "branch";
-  private static final String               UNKNOWN_VALUE                = "[unknown]";
+  public static final String                UNKNOWN_VALUE                = "[unknown]";
+  public static final String                DEFAULT_LICENSE              = "Unlimited development";
+  private static ProductInfo                PRODUCTINFO                  = null;
 
   private final String                      moniker;
-  private final String                      version;
   private final String                      maven_version;
   private final Date                        timestamp;
   private final String                      host;
@@ -54,6 +55,28 @@ public final class ProductInfo {
   private final String                      revision;
   private final String                      ee_revision;
   private final String                      kitID;
+
+  private String                            version;
+  private String                            buildID;
+  private String                            copyright;
+  private String                            license                      = DEFAULT_LICENSE;
+
+  public ProductInfo(String version, String buildID, String license, String copyright) {
+    this.version = version;
+    this.buildID = buildID;
+    this.license = license;
+    this.copyright = copyright;
+    moniker = UNKNOWN_VALUE;
+    maven_version = UNKNOWN_VALUE;
+    timestamp = null;
+    host = UNKNOWN_VALUE;
+    user = UNKNOWN_VALUE;
+    branch = UNKNOWN_VALUE;
+    edition = UNKNOWN_VALUE;
+    revision = UNKNOWN_VALUE;
+    ee_revision = UNKNOWN_VALUE;
+    kitID = UNKNOWN_VALUE;
+  }
 
   private ProductInfo(InputStream in, String fromWhere) {
     Properties properties = new Properties();
@@ -100,14 +123,6 @@ public final class ProductInfo {
     }
   }
 
-  private String getProperty(Properties properties, String name, String defaultValue) {
-    String out = properties.getProperty(BUILD_DATA_ROOT_KEY + name);
-    if (StringUtils.isBlank(out)) out = defaultValue;
-    return out;
-  }
-
-  private static ProductInfo PRODUCTINFO = null;
-
   public static synchronized ProductInfo getInstance() {
     if (PRODUCTINFO == null) {
       InputStream in = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
@@ -115,6 +130,12 @@ public final class ProductInfo {
     }
 
     return PRODUCTINFO;
+  }
+
+  private String getProperty(Properties properties, String name, String defaultValue) {
+    String out = properties.getProperty(BUILD_DATA_ROOT_KEY + name);
+    if (StringUtils.isBlank(out)) out = defaultValue;
+    return out;
   }
 
   public static void printRawData() throws IOException {
@@ -127,31 +148,27 @@ public final class ProductInfo {
   }
 
   public String moniker() {
-    return this.moniker;
+    return moniker;
   }
 
   public String edition() {
-    return this.edition;
+    return edition;
   }
 
-  public String rawVersion() {
-    return this.version;
-  }
-
-  public String buildVersion() {
-    return this.version;
+  public String version() {
+    return version;
   }
 
   public String mavenArtifactsVersion() {
-    return this.maven_version;
+    return maven_version;
   }
 
   public String kitID() {
-    return this.kitID;
+    return kitID;
   }
 
   public Date buildTimestamp() {
-    return this.timestamp;
+    return timestamp;
   }
 
   public String buildTimestampAsString() {
@@ -160,31 +177,38 @@ public final class ProductInfo {
   }
 
   public String buildHost() {
-    return this.host;
+    return host;
   }
 
   public String buildUser() {
-    return this.user;
+    return user;
   }
 
   public String buildBranch() {
-    return this.branch;
+    return branch;
   }
 
   public String copyright() {
-    return bundleHelper.getString("copyright");
+    if (copyright == null) {
+      copyright = bundleHelper.getString("copyright");
+    }
+    return copyright;
+  }
+
+  public String license() {
+    return license;
   }
 
   public String buildRevision() {
-    return this.revision;
+    return revision;
   }
 
   public String buildRevisionFromEE() {
-    return this.ee_revision;
+    return ee_revision;
   }
 
   public String toShortString() {
-    return this.moniker + " " + ("opensource".equals(edition) ? "" : (edition + " ")) + buildVersion();
+    return moniker + " " + ("opensource".equals(edition) ? "" : (edition + " ")) + version;
   }
 
   public String toLongString() {
@@ -192,12 +216,14 @@ public final class ProductInfo {
   }
 
   public String buildID() {
-    String rev = this.revision;
-    if (edition.indexOf("Enterprise") >= 0) {
-      rev = this.ee_revision + "-" + this.revision;
+    if (buildID == null) {
+      String rev = revision;
+      if (edition.indexOf("Enterprise") >= 0) {
+        rev = ee_revision + "-" + revision;
+      }
+      buildID = buildTimestampAsString() + " (Revision " + rev + " by " + user + "@" + host + " from " + branch + ")";
     }
-    return buildTimestampAsString() + " (Revision " + rev + " by " + buildUser() + "@" + buildHost() + " from "
-           + buildBranch() + ")";
+    return buildID;
   }
 
   public String toString() {

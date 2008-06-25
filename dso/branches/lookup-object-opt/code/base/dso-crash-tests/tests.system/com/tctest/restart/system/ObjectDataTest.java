@@ -14,7 +14,7 @@ import com.tctest.TransparentTestIface;
 
 public class ObjectDataTest extends TransparentTestBase implements TestConfigurator {
 
-  private int clientCount = 2;
+  private int clientCount = 3;
 
   protected Class<ObjectDataTestApp> getApplicationClass() {
     return ObjectDataTestApp.class;
