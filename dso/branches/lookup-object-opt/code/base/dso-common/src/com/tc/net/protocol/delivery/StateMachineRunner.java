@@ -27,17 +27,17 @@ public class StateMachineRunner implements EventContext {
     return (events.size());
   }
 
-  public synchronized void start() {
+  public void start() {
     stateMachine.start();
   }
 
-  public synchronized void pause() {
+  public void pause() {
     if (!stateMachine.isPaused()) {
       stateMachine.pause();
     }
   }
   
-  public synchronized boolean isPaused() {
+  public boolean isPaused() {
     return stateMachine.isPaused();
   }
 
@@ -50,12 +50,10 @@ public class StateMachineRunner implements EventContext {
   public void run() {
     OOOProtocolEvent pe = null;
     synchronized (this) {
-      // NOTE: in some cases, our message q gets out of synch with this event q.
-      // in this case check if empty.
-      // this should simplified.
       if (events.isEmpty()) return;
       pe = (OOOProtocolEvent) events.removeFirst();
     }
+    // prevent deadlock with TransactionBatchWriter, MNK-579
     pe.execute(stateMachine);
     synchronized (this) {
       scheduled = false;
@@ -68,7 +66,7 @@ public class StateMachineRunner implements EventContext {
     scheduleIfNeeded();
   }
 
-  private synchronized void scheduleIfNeeded() {
+  private void scheduleIfNeeded() {
     if (!scheduled && !events.isEmpty() && !stateMachine.isPaused()) {
       scheduled = true;
       sink.add(this);

@@ -4,6 +4,8 @@
  */
 package com.tc.util;
 
+import com.tc.text.PrettyPrinter;
+
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
@@ -12,7 +14,7 @@ import java.util.Set;
 public class SyncObjectIdSetImpl extends AbstractSet implements SyncObjectIdSet {
 
   private final Object lock       = new Object();
-  private ObjectIDSet2 set        = new ObjectIDSet2();
+  private ObjectIDSet  set        = new ObjectIDSet();
   private boolean      isBlocking = false;
 
   public void startPopulating() {
@@ -21,10 +23,10 @@ public class SyncObjectIdSetImpl extends AbstractSet implements SyncObjectIdSet 
     }
   }
 
-  public void stopPopulating(ObjectIDSet2 fullSet) {
+  public void stopPopulating(ObjectIDSet fullSet) {
     synchronized (lock) {
-      ObjectIDSet2 large = (fullSet.size() > set.size()) ? fullSet : set;
-      ObjectIDSet2 small = (set == large) ? fullSet : set;
+      ObjectIDSet large = (fullSet.size() > set.size()) ? fullSet : set;
+      ObjectIDSet small = (set == large) ? fullSet : set;
       large.addAll(small);
       set = large;
       isBlocking = false;
@@ -92,10 +94,10 @@ public class SyncObjectIdSetImpl extends AbstractSet implements SyncObjectIdSet 
     return rv;
   }
 
-  public ObjectIDSet2 snapshot() {
+  public ObjectIDSet snapshot() {
     synchronized (lock) {
       waitWhileBlocked();
-      return new ObjectIDSet2(set);
+      return new ObjectIDSet(set);
     }
   }
 
@@ -107,5 +109,14 @@ public class SyncObjectIdSetImpl extends AbstractSet implements SyncObjectIdSet 
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println(getClass().getName());
+    synchronized (lock) {
+      out.indent().print("blocking : ").print(new Boolean(isBlocking));
+      out.indent().print("id set   : ").visit(set);
+    }
+    return out;
   }
 }

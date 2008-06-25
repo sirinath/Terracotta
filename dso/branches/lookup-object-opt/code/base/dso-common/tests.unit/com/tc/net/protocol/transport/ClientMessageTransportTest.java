@@ -24,6 +24,8 @@ import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.object.session.NullSessionManager;
 import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.TCTimeoutException;
 
@@ -40,9 +42,11 @@ public class ClientMessageTransportTest extends TCTestCase {
   private MockTCConnection                   connection;
   private TransportHandshakeMessageFactory   transportMessageFactory;
   private TestTransportHandshakeErrorHandler handshakeErrorHandler;
-  private final int                          maxRetries = 10;
+  private final int                          maxRetries   = 10;
   private MessageTransportFactory            transportFactory;
-  private final int                          timeout    = 3000;
+  private final int                          timeout      = 3000;
+  private final int                          sendQueueCap = TCPropertiesImpl.getProperties()
+                                                              .getInt(TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP);
 
   public void setUp() {
     DefaultConnectionIdFactory connectionIDProvider = new DefaultConnectionIdFactory();
@@ -144,6 +148,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                          new OOONetworkStackHarnessFactory(
                                                                                                            new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
                                                                                                            null,
+                                                                                                           null,
                                                                                                            new L1ReconnectConfigImpl()),
                                                                          new NullConnectionPolicy(), 0);
 
@@ -169,7 +174,8 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                    new NullMessageMonitor(),
                                                    new OOONetworkStackHarnessFactory(
                                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                                     null, new L1ReconnectConfigImpl()),
+                                                                                     null, null,
+                                                                                     new L1ReconnectConfigImpl()),
                                                    new NullConnectionPolicy(), 0);
 
     try {

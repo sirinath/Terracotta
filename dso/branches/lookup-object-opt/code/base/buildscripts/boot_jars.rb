@@ -15,18 +15,18 @@ class BuildSubtree
   # for the given subtree. This will be _module_/_subtree_.boot-jar-config.xml if it exists,
   # or static_resources.dso_boot_jar_config_file otherwise.
   def boot_jar_config_file(static_resources)
-	jdktype = @build_module.jdk.actual_type
-	jdkrelease = @build_module.jdk.release
-	out = FilePath.new(build_module.root, "#{name}.#{jdktype}-#{jdkrelease}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
-	if !FileTest.file?(out.to_s)
-		out = FilePath.new(build_module.root, "#{name}.#{jdktype}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
- 		if !FileTest.file?(out.to_s)
-   			out = FilePath.new(build_module.root, "#{name}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
-			if !FileTest.file?(out.to_s)
-				out = static_resources.dso_boot_jar_config_file unless FileTest.file?(out.to_s)
-			end
-		end
-	end
+    jdktype = @build_module.jdk.actual_type
+    jdkrelease = @build_module.jdk.release
+    out = FilePath.new(build_module.root, "#{name}.#{jdktype}-#{jdkrelease}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
+    if !FileTest.file?(out.to_s)
+      out = FilePath.new(build_module.root, "#{name}.#{jdktype}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
+      if !FileTest.file?(out.to_s)
+        out = FilePath.new(build_module.root, "#{name}#{BOOT_JAR_CONFIG_FILE_BASENAME}")
+        if !FileTest.file?(out.to_s)
+          out = static_resources.dso_boot_jar_config_file unless FileTest.file?(out.to_s)
+        end
+      end
+    end
     out
   end
 end
@@ -67,13 +67,15 @@ class BootJar
     # what this should be.
     unless @path
       outputproperty, errorproperty = @platform.next_output_properties
+      classpath = @module_set['dso-l1'].subtree('src').classpath(@build_results, :full, :runtime).to_s
+      classpath = PathSet.new(classpath, Registry[:emma_lib]).to_s if Registry[:emma]
       @ant.java(:classname   => 'com.tc.object.tools.BootJarSignature',
-                :classpath   => @module_set['dso-l1'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
-                :jvm         => @jvm.java,
-                :fork        => true,
-                :failonerror => true,
-                :dir         => @build_results.tools_home.to_s) do
-          @ant.redirector(:outputproperty => outputproperty, :alwayslog => true)
+        :classpath   => classpath,
+        :jvm         => @jvm.java,
+        :fork        => true,
+        :failonerror => true,
+        :dir         => @build_results.tools_home.to_s) do
+        @ant.redirector(:outputproperty => outputproperty, :alwayslog => true)
       end
 
       # Parse the output in case the JVM prints out additional messages, only the line
@@ -103,6 +105,7 @@ class BootJar
     File.delete(path.to_s) if options[:delete_existing] && exist?
     unless exist?
       classpath = @module_set['dso-tests-jdk15'].subtree('src').classpath(@build_results, :full, :runtime)
+      classpath = PathSet.new(classpath, Registry[:emma_lib]).to_s if Registry[:emma]
       puts("Creating boot JAR with: #{@jvm} and config file: #{@config_file}")
 
       sysproperties = {
@@ -112,15 +115,15 @@ class BootJar
 
       begin
         @ant.java(:classname   => 'com.tc.object.tools.BootJarTool',
-                  :classpath   => classpath.to_s,
-                  :jvm         => @jvm.java,
-                  :fork        => true,
-                  :failonerror => true,
-                  :dir         => @build_results.tools_home.to_s) do
+          :classpath   => classpath.to_s,
+          :jvm         => @jvm.java,
+          :fork        => true,
+          :failonerror => true,
+          :dir         => @build_results.tools_home.to_s) do
 
           sysproperties.each do |name, value|
             @ant.sysproperty(:key => name.xml_escape(true),
-                             :value => value.xml_escape(true))
+              :value => value.xml_escape(true))
           end
 
           @ant.arg(:value => 'make')

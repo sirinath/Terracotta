@@ -34,23 +34,22 @@ public class SetMapPerformanceTest extends TCTestCase {
     testResult = new TestResults(); // null
     Collection c = createSequencialData(2000);
     performTest(new ObjectIDSet(), c);
-    performTest(new ObjectIDSet2(), c);
     performTest(new HashSet(), c);
-    performTest(new ObjectIDSet2(), c);
+    performTest(new ObjectIDSet(), c);
     performTest(new HashSet(), c);
-    performTest(new ObjectIDSet2(), c);
+    performTest(new ObjectIDSet(), c);
     performTest(new HashSet(), c);
 
     testResult = new TestResults();
 
-    // real test begins - sequencial
+    // real test begins - sequential
     c = createSequencialData(ADD_LENGTH);
     println();
     println("---------------------------------------------------------------------------------------");
     println("Sequential ObjectIDs");
     println("---------------------------------------------------------------------------------------");
     // performTest(new ObjectIDSet(), c);
-    performTest(new ObjectIDSet2(), c);
+    performTest(new ObjectIDSet(), c);
     performTest(new HashSet(), c);
     performTest(new THashSet(), c);
 
@@ -65,7 +64,7 @@ public class SetMapPerformanceTest extends TCTestCase {
     println("Random ObjectIDs");
     println("---------------------------------------------------------------------------------------");
     // performTest(new ObjectIDSet(), c);
-    performTest(new ObjectIDSet2(), c);
+    performTest(new ObjectIDSet(), c);
     performTest(new HashSet(), c);
     performTest(new THashSet(), c);
 

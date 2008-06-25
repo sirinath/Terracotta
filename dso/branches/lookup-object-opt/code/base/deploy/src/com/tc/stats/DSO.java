@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -255,7 +256,7 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
       }
 
       try {
-        final DSOClient client = new DSOClient(mbeanServer, channel, channelStats);
+        final DSOClient client = new DSOClient(mbeanServer, channel, channelStats, channelMgr.getClientIDFor(channel.getChannelID()) );
         mbeanServer.registerMBean(client, clientName);
         clientObjectNames.add(clientName);
         sendNotification(CLIENT_ATTACHED, clientName);
@@ -318,7 +319,7 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
   }
 
   private class ObjectManagerListener implements ObjectManagerEventListener {
-    public void garbageCollectionComplete(GCStats stats, Set deleted) {
+    public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
       sendNotification(GC_COMPLETED, stats);
     }
   }

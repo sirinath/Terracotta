@@ -45,6 +45,7 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
    }
 
   public void handleEvent(EventContext context) {
+    System.out.println("");
     if (context instanceof RequestManagedObjectMessage) {
       handleEventFromClient((RequestManagedObjectMessage) context);
     } else if (context instanceof ObjectManagerRequestContext) {

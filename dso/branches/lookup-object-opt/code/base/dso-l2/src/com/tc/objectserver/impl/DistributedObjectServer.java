@@ -14,7 +14,12 @@ import com.tc.async.api.StageManager;
 import com.tc.async.impl.NullSink;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.exception.CleanDirtyDatabaseException;
 import com.tc.exception.TCRuntimeException;
+import com.tc.exception.ZapDirtyDbServerNodeException;
+import com.tc.exception.ZapServerNodeException;
+import com.tc.handler.CallbackDirtyDatabaseCleanUpAdapter;
+import com.tc.handler.CallbackDumpAdapter;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
@@ -23,7 +28,7 @@ import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
-import com.tc.logging.CallbackDumpAdapter;
+import com.tc.logging.CallbackOnExitHandler;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -34,6 +39,7 @@ import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.management.beans.object.ServerDBBackup;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
@@ -170,8 +176,8 @@ import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
 import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
@@ -325,6 +331,7 @@ public class DistributedObjectServer implements TCDumper {
       FileNotCreatedException {
 
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
+
     try {
       this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
     } catch (NotCompliantMBeanException ncmbe) {
@@ -382,9 +389,7 @@ public class DistributedObjectServer implements TCDumper {
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
     TCProperties objManagerProperties = l2Properties.getPropertiesFor("objectmanager");
 
-    l1ReconnectConfig = new L1ReconnectConfigImpl(TCPropertiesImpl.getProperties()
-        .getBoolean(TCPropertiesConsts.L2_L1RECONNECT_ENABLED), TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS));
+    l1ReconnectConfig = new L1ReconnectConfigImpl();
 
     final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
     // it's broken
@@ -402,7 +407,7 @@ public class DistributedObjectServer implements TCDumper {
       System.exit(1);
     }
 
-    int maxStageSize = 5000;
+    int maxStageSize = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY);
 
     StageManager stageManager = seda.getStageManager();
     SessionManager sessionManager = new NullSessionManager();
@@ -416,7 +421,7 @@ public class DistributedObjectServer implements TCDumper {
     logger.debug("server swap enabled: " + swapEnabled);
     final ManagedObjectChangeListenerProviderImpl managedObjectChangeListenerProvider = new ManagedObjectChangeListenerProviderImpl();
     if (swapEnabled) {
-      File dbhome = new File(configSetupManager.commonl2Config().dataPath().getFile(), "objectdb");
+      File dbhome = new File(configSetupManager.commonl2Config().dataPath().getFile(), NewL2DSOConfig.OBJECTDB_DIRNAME);
       logger.debug("persistent: " + persistent);
       if (!persistent) {
         if (dbhome.exists()) {
@@ -431,8 +436,13 @@ public class DistributedObjectServer implements TCDumper {
           .addAllPropertiesTo(new Properties()));
       SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       persistor = new SleepycatPersistor(TCLogging.getLogger(SleepycatPersistor.class), dbenv,
-                                         serializationAdapterFactory);
-
+                                         serializationAdapterFactory, this.configSetupManager.commonl2Config()
+                                             .dataPath().getFile());
+      // Setting the DB environment for the bean which takes backup of the active server
+      if (persistent) {
+        ServerDBBackup mbean = l2Management.findServerDbBackupMBean();
+        mbean.setDbEnvironment(dbenv.getEnvironment(), dbenv.getEnvironmentHome());
+      }
       // DONT DELETE ::This commented code is for replacing SleepyCat with MemoryDataStore as an in-memory DB for
       // testing purpose. You need to include MemoryDataStore in tc.jar and enable with tc.properties
       // l2.memorystore.enabled=true.
@@ -467,6 +477,16 @@ public class DistributedObjectServer implements TCDumper {
       objectStore = new InMemoryManagedObjectStore(new HashMap());
     }
 
+    CallbackOnExitHandler dirtydbExceptionHandler = new CallbackDirtyDatabaseCleanUpAdapter(logger, persistor
+        .getClusterStateStore());
+    threadGroup.addCallbackOnExitExceptionHandler(CleanDirtyDatabaseException.class, dirtydbExceptionHandler);
+    threadGroup.addCallbackOnExitExceptionHandler(ZapDirtyDbServerNodeException.class, dirtydbExceptionHandler);
+
+    /**
+     * using same CallbackOnExitHandler as in dirtyDb problems for Splitbrain and other Zap-Node events
+     */
+    threadGroup.addCallbackOnExitExceptionHandler(ZapServerNodeException.class, dirtydbExceptionHandler);
+
     persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
     PersistenceTransactionProvider transactionStorePTP;
     MutableSequence gidSequence;
@@ -493,18 +513,22 @@ public class DistributedObjectServer implements TCDumper {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
 
+    int numCommWorkers = getCommWorkerCount(l2Properties);
+
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     if (useOOOLayer) {
-      final Stage oooStage = stageManager.createStage("OOONetStage", new OOOEventHandler(), 1, maxStageSize);
+      final Stage oooSendStage = stageManager.createStage(ServerConfigurationContext.OOO_NET_SEND_STAGE,
+                                                          new OOOEventHandler(), numCommWorkers, maxStageSize);
+      final Stage oooReceiveStage = stageManager.createStage(ServerConfigurationContext.OOO_NET_RECEIVE_STAGE,
+                                                             new OOOEventHandler(), numCommWorkers, maxStageSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
-                                                                     oooStage.getSink(), l1ReconnectConfig);
+                                                                     oooSendStage.getSink(), oooReceiveStage.getSink(),
+                                                                     l1ReconnectConfig);
     } else {
       networkStackHarnessFactory = new PlainNetworkStackHarnessFactory();
     }
-
-    int numCommWorkers = getCommWorkerCount(l2Properties);
 
     MessageMonitor mm = MessageMonitorImpl.createMonitor(TCPropertiesImpl.getProperties(), logger);
 
@@ -588,7 +612,7 @@ public class DistributedObjectServer implements TCDumper {
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
     ProductInfo pInfo = ProductInfo.getInstance();
-    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager(), pInfo.buildVersion());
+    DSOChannelManager channelManager = new DSOChannelManagerImpl(l1Listener.getChannelManager(), pInfo.version());
     channelManager.addEventListener(cteh);
     channelManager.addEventListener(connectionIdFactory);
 
@@ -596,7 +620,7 @@ public class DistributedObjectServer implements TCDumper {
     channelManager.addEventListener(channelStats);
 
     lockManager = new LockManagerImpl(channelManager, lockStatsManager);
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(lockManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
     TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
     TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager);
@@ -630,14 +654,14 @@ public class DistributedObjectServer implements TCDumper {
     ServerTransactionSequencerImpl serverTransactionSequencerImpl = new ServerTransactionSequencerImpl();
     txnObjectManager = new TransactionalObjectManagerImpl(objectManager, serverTransactionSequencerImpl, gtxm,
                                                           txnStageCoordinator);
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(txnObjectManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(txnObjectManager));
     objectManager.setTransactionalObjectManager(txnObjectManager);
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(objectManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(objectManager));
     transactionManager = new ServerTransactionManagerImpl(gtxm, transactionStore, lockManager, clientStateManager,
                                                           objectManager, txnObjectManager, taa, globalTxnCounter,
                                                           channelStats, new ServerTransactionManagerConfig(l2Properties
                                                               .getPropertiesFor("transactionmanager")));
-    threadGroup.addCallbackOnExitHandler(new CallbackDumpAdapter(transactionManager));
+    threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(transactionManager));
 
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
 
