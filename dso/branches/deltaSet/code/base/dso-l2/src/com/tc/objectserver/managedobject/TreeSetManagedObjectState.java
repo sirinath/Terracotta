@@ -86,14 +86,9 @@ public class TreeSetManagedObjectState extends SetManagedObjectState {
     }
   }
 
-  protected boolean basicEquals(Object other) {
+  protected boolean basicEquals(LogicalManagedObjectState other) {
     TreeSetManagedObjectState mo = (TreeSetManagedObjectState) other;
-    
-    System.out.println("************************************ NIHIT ***********************************");
-    System.out.println(" comprator " + (comparator == mo.comparator));
-    System.out.println(" references : " + references + " 2nd one " + mo.references);
-    
-    
+        
     return (comparator == mo.comparator || (comparator != null && comparator.equals(mo.comparator)))
            && references.equals(mo.references);
   }

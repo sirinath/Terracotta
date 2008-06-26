@@ -11,6 +11,8 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 
 import java.io.IOException;
 import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 public class SleepycatPersistableSet extends AbstractSet implements PersistableCollection {
@@ -36,6 +38,18 @@ public class SleepycatPersistableSet extends AbstractSet implements PersistableC
 
   public boolean isEmpty() {
     return map.isEmpty();
+  }
+
+  public boolean retainAll(Collection c) {
+    int initialSize = size();
+    ArrayList list = new ArrayList();
+    for (Iterator iter = iterator(); iter.hasNext();) {
+      Object next = iter.next();
+      if (!c.contains(next)) list.add(next);
+    }
+    removeAll(list);
+
+    return size() != initialSize;
   }
 
   public Iterator iterator() {
