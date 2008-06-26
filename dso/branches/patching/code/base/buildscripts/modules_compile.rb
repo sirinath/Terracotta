@@ -8,8 +8,6 @@
 # ability to compile themselves.
 
 class BuildSubtree
-  include BuildData
-  
   # Compiles the given subtree. jvm_set is the set of JVMs available; the
   # subtree will look for one named 'compile-<version>', where <version> is
   # the value passed as :compiler_version in the options hash of the BuildSubtree
@@ -18,9 +16,6 @@ class BuildSubtree
   #
   # This method also copies all resources from the resources directory for this
   # subtree into the compiled-classes directory, if there are any resources.
-  # It further creates a 'build-data.txt' file in the root of the compiled-
-  # classes directory that contains information about when and where the
-  # compiled classes were created.
   #
   # If this subtree doesn't really exist -- i.e., there's no source for it --
   # this method does nothing.
@@ -104,8 +99,6 @@ class BuildSubtree
         end
         
       end
-
-      create_build_data(config_source, build_results, build_environment)
     end
 
     if @resources_exists
