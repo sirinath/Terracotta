@@ -112,10 +112,12 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   protected void basicWriteTo(ObjectOutput out) throws IOException {
-    out.writeInt(references.size());
-    for (Iterator i = references.iterator(); i.hasNext();) {
-      out.writeObject(i.next());
-    }
+//    out.writeInt(references.size());
+//    for (Iterator i = references.iterator(); i.hasNext();) {
+//      out.writeObject(i.next());
+//    }
+    //for removing warning
+    if(false) throw new IOException();
   }
 
   protected boolean basicEquals(LogicalManagedObjectState o) {
