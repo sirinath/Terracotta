@@ -29,7 +29,7 @@ public class SetManagedObjectStateTest extends AbstractTestManagedObjectState {
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
 
-    basicTestUnit(className, ManagedObjectState.TREE_SET_TYPE, cursor, 3);
+    basicTestUnit(className, ManagedObjectState.TREE_SET_TYPE, cursor, 3, true);
   }
   
   public void testObjectTreeSet2() throws Exception {
@@ -41,7 +41,8 @@ public class SetManagedObjectStateTest extends AbstractTestManagedObjectState {
     }
     cursor.addLogicalAction(SerializationUtil.CLEAR, null);
 
-    basicTestUnit(className, ManagedObjectState.TREE_SET_TYPE, cursor, 0);
+    basicTestUnit(className, ManagedObjectState.TREE_SET_TYPE, cursor, 0, false);
+    
   }
 
 }
