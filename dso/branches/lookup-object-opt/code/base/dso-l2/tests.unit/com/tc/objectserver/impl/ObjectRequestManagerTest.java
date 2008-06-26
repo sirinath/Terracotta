@@ -30,6 +30,7 @@ import com.tc.object.msg.RequestManagedObjectResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.object.session.SessionID;
+import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.NullObjectInstanceMonitor;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
@@ -65,7 +66,7 @@ import com.tc.objectserver.tx.ServerTransactionListener;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
 import com.tc.text.PrettyPrinter;
-import com.tc.util.ObjectIDSet2;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -543,14 +544,6 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     synchronized (cache) {
-      for (Iterator i = objectIDSet.iterator(); i.hasNext();) {
-        ObjectID id = (ObjectID) i.next();
-        Set clients = cache.clients(id);
-        assertEquals(0, clients.size());
-      }
-    }
-
-    synchronized (cache) {
       assertEquals(0, cache.ids(new ClientID(new ChannelID(1))).size());
       assertEquals(0, cache.ids(new ClientID(new ChannelID(2))).size());
 
@@ -769,6 +762,10 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestServerTransactionManager.class);
     }
 
+    public void objectsSynched(NodeID node, ServerTransactionID tid) {
+      throw new NotImplementedException(TestServerTransactionManager.class); 
+    }
+
   }
 
   /**
@@ -898,7 +895,7 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
-    public ObjectIDSet2 getAllObjectIDs() {
+    public ObjectIDSet getAllObjectIDs() {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
