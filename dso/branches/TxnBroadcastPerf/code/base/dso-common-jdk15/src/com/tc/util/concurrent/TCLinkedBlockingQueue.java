@@ -8,10 +8,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class TCLinkedBlockingQueue implements TCQueue {
-  private LinkedBlockingQueue queue = null;
+  private final LinkedBlockingQueue queue;
 
-  public TCLinkedBlockingQueue(){
+  public TCLinkedBlockingQueue() {
     queue = new LinkedBlockingQueue();
+  }
+
+  public TCLinkedBlockingQueue(int capacity) {
+    queue = new LinkedBlockingQueue(capacity);
   }
 
   public boolean offer(Object obj, long timeout) throws InterruptedException {
@@ -26,20 +30,16 @@ public class TCLinkedBlockingQueue implements TCQueue {
     return queue.poll(timeout, TimeUnit.MILLISECONDS);
   }
 
-  public void put(Object obj) {
-    queue.add(obj);
+  public void put(Object obj) throws InterruptedException {
+    queue.put(obj);
   }
 
-  public Object take() {
-    return queue.remove();
+  public Object take() throws InterruptedException {
+    return queue.take();
   }
 
   public int size() {
     return queue.size();
-  }
-
-  public void setCapacity(int capacity) {
-    //do nothing
   }
 
   public boolean isEmpty() {
