@@ -1,26 +1,63 @@
 module BuildData
+  BUILD_DATA_FILE_NAME = 'build-data.txt'
+  PATCH_DATA_FILE_NAME = 'patch-data.txt'
+
+  # Directory where build-data and patch-data files are placed
+  def build_data_dir
+    FilePath.new(Registry[:build_results].classes_directory(self)).ensure_directory
+  end
+
   # Where should we put our build-data file?
-  def build_data_file(build_results)
-    FilePath.new(build_results.classes_directory(self))
+  def build_data_file
+    FilePath.new(self.build_data_dir, BUILD_DATA_FILE_NAME)
+  end
+
+  # Where should we put our patch-data file?
+  def patch_data_file
+    FilePath.new(self.build_data_dir, PATCH_DATA_FILE_NAME)
   end
 
   # Creates a 'build data' file at the given location, putting into it a number
   # of properties that specify when, where, and how the code in it was compiled.
-  def create_build_data(config_source, build_results, build_environment, destdir=build_data_file(build_results))
-    File.open(FilePath.new(destdir, "build-data.txt").to_s, "w") do |file|
-      file.puts("terracotta.build.productname=terracotta")
-      file.puts("terracotta.build.version=#{build_environment.version}")
-      file.puts("terracotta.build.maven.artifacts.version=#{build_environment.maven_version}")
-      file.puts("terracotta.build.host=#{build_environment.build_hostname}")
-      file.puts("terracotta.build.user=#{build_environment.build_username}")
-      file.puts("terracotta.build.timestamp=#{build_environment.build_timestamp.strftime('%Y%m%d-%H%m%S')}")
-      file.puts("terracotta.build.revision=#{build_environment.current_revision}")
-      file.puts("terracotta.build.branch=#{build_environment.current_branch}")
-      file.puts("terracotta.build.edition=#{build_environment.edition}")
+  def create_build_data(config_source, destdir = self.build_data_dir)
+    create_data_file(config_source, destdir, :build_data)
+  end
+
+  # Creates a 'patch data' file at the given location, putting into it a number
+  # of properties that specify when, where, and how the patch in it was compiled.
+  def create_patch_data(config_source, destdir = self.build_data_dir)
+    create_data_file(config_source, destdir, :patch_data)
+  end
+
+  private
+
+  def create_data_file(config_source, destdir, type)
+    if type == :build_data
+      keyspace    = "terracotta.build"
+      output_file = FilePath.new(destdir, BUILD_DATA_FILE_NAME)
+    elsif type == :patch_data
+      keyspace    = "terracotta.patch"
+      output_file = FilePath.new(destdir, PATCH_DATA_FILE_NAME)
+    end
+
+    build_environment = Registry[:build_environment]
+
+    File.open(output_file.to_s, "w") do |file|
+      file.puts("#{keyspace}.level=#{config_source['patch']}") if type == :patch_data
+
+      file.puts("#{keyspace}.productname=terracotta")
+      file.puts("#{keyspace}.edition=#{build_environment.edition}")
+      file.puts("#{keyspace}.version=#{build_environment.version}")
+      file.puts("#{keyspace}.maven.artifacts.version=#{build_environment.maven_version}")
+      file.puts("#{keyspace}.host=#{build_environment.build_hostname}")
+      file.puts("#{keyspace}.user=#{build_environment.build_username}")
+      file.puts("#{keyspace}.timestamp=#{build_environment.build_timestamp.strftime('%Y%m%d-%H%m%S')}")
+      file.puts("#{keyspace}.revision=#{build_environment.current_revision}")
+      file.puts("#{keyspace}.branch=#{build_environment.current_branch}")
 
       # extra info if built under EE branch
       if build_environment.ee_svninfo
-        file.puts("terracotta.build.ee.revision=#{build_environment.ee_svninfo.current_revision}")
+        file.puts("#{keyspace}.ee.revision=#{build_environment.ee_svninfo.current_revision}")
       end
     end
   end
