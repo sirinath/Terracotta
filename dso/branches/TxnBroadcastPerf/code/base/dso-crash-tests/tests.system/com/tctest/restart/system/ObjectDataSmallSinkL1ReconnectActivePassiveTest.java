@@ -4,6 +4,7 @@
  */
 package com.tctest.restart.system;
 
+import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
@@ -18,12 +19,13 @@ import java.util.ArrayList;
 
 public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends TransparentTestBase implements TestConfigurator {
 
-  private int clientCount = 6;
-  private String smallSink = "250";
-  
+  private int    clientCount    = 6;
+  private String smallL2Sink    = "50";
+  private String smallSendQueue = "50";
+
   public ObjectDataSmallSinkL1ReconnectActivePassiveTest() {
     // MNK-568
-    disableAllUntil("2008-07-15");
+    // disableAllUntil("2008-07-15");
   }
 
   protected Class getApplicationClass() {
@@ -34,17 +36,18 @@ public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends Transparent
     t.getTransparentAppConfig().setClientCount(clientCount).setIntensity(2);
     t.initializeTestRunner();
   }
-  
+
   protected void setExtraJvmArgs(final ArrayList jvmArgs) {
-    System.setProperty("com.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    TCPropertiesImpl.setProperty(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY + "="+smallSink);
+    TCProperties tcProps = TCPropertiesImpl.getProperties();
+    
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallL2Sink);
+    tcProps.setProperty(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY, smallL2Sink);
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY + "="+smallL2Sink);
 
-    System.setProperty("com.tc." + TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    TCPropertiesImpl.setProperty(TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY, smallSink);
-    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY + "="+smallSink);
+    System.setProperty("com.tc." + TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP, smallSendQueue);
+    tcProps.setProperty(TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP, smallSendQueue);
+    jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_L1RECONNECT_SENDQUEUE_CAP + "=" + smallSendQueue);
   }
-
 
   protected boolean enableL1Reconnect() {
     return true;
