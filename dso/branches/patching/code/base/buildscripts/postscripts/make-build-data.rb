@@ -9,7 +9,8 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   include BuildData
 
   def postscript(ant, build_environment, product_directory, *args)
-    destdir = FilePath.new(product_directory, args.first)
-    create_build_data(@config_source, @build_results, build_environment, destdir.ensure_directory)
+    destdir = FilePath.new(product_directory, args.first).ensure_directory
+    create_build_data(@config_source, destdir)
+    create_patch_data(@config_source, destdir) if @config_source['patch']
   end
 end
