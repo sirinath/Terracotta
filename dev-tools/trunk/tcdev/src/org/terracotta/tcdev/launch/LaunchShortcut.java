@@ -2,7 +2,33 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package launch;
+package org.terracotta.tcdev.launch;
+
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.ISafeRunnable;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.SafeRunner;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.junit.launcher.JUnitLaunchShortcut;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
+import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstall2;
+import org.eclipse.jdt.launching.IVMInstallType;
+import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.ui.IEditorPart;
+import org.terracotta.tcdev.refreshall.Activator;
+import org.terracotta.tcdev.refreshall.Activator.ConsoleStream;
+import org.terracotta.tcdev.util.DirectoryCleaner;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,80 +45,51 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.ISafeRunnable;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.SafeRunner;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.junit.launcher.JUnitLaunchShortcut;
-import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
-import org.eclipse.jdt.launching.IVMInstall;
-import org.eclipse.jdt.launching.IVMInstall2;
-import org.eclipse.jdt.launching.IVMInstallType;
-import org.eclipse.jdt.launching.JavaRuntime;
-import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.ui.IEditorPart;
+public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchConfigurationConstants {
 
-import refreshall.Activator;
-import refreshall.Activator.ConsoleStream;
-import util.DirectoryCleaner;
+  private static final String J2SE_14               = JDKEnvironment.J2SE_1_4.getJavaHome().getAbsolutePath();
+  private static final String J2SE_15               = JDKEnvironment.J2SE_1_5.getJavaHome().getAbsolutePath();
+  private static final String JavaSE_16             = JDKEnvironment.JavaSE_1_6.getJavaHome().getAbsolutePath();
 
-public class LaunchShortcut extends JUnitLaunchShortcut implements
-    IJavaLaunchConfigurationConstants {
-
-  private static final String J2SE_14               = JDKEnvironment.J2SE_1_4
-                                                        .getJavaHome()
-                                                        .getAbsolutePath();
-  private static final String J2SE_15               = JDKEnvironment.J2SE_1_5
-                                                        .getJavaHome()
-                                                        .getAbsolutePath();
-  private static final String JavaSE_16             = JDKEnvironment.JavaSE_1_6
-                                                        .getJavaHome()
-                                                        .getAbsolutePath();
-
-  private static final String TESTS_PREP_PROP_LOC   = "common"
-                                                        + File.separator
-                                                        + "build.eclipse"
-                                                        + File.separator
-                                                        + "tests.base.classes"
-                                                        + File.separator
-                                                        + "tests-prepared.properties";
+  private static final String TESTS_PREP_PROP_LOC   = "common" + File.separator + "build.eclipse" + File.separator
+                                                      + "tests.base.classes" + File.separator
+                                                      + "tests-prepared.properties";
   // private static final String BUILD_PATH = "";
   private static final String VM_ARGS_COUNT         = "tcbuild.prepared.jvmargs";
   private static final String VM_ARG                = "tcbuild.prepared.jvmarg_";
   private static final String SYS_PROP_PREFIX       = "tcbuild.prepared.system-property.";
   private static final String JVM_VERSION           = "tcbuild.prepared.jvm.version";
-  private static final String TESTS_INFO_PROP_FILES = SYS_PROP_PREFIX
-                                                        + "tc.tests.info.property-files";
+  private static final String TESTS_INFO_PROP_FILES = SYS_PROP_PREFIX + "tc.tests.info.property-files";
   private static final String TCBUILD               = "tcbuild";
   private static final byte[] NEWLINE               = "\n".getBytes();
 
   private Properties          argTypes;
   private File                prepProps;
 
+  @Override
   public void launch(IEditorPart editor, String mode) {
-    IJavaElement element = JavaUI.getEditorInputJavaElement(editor
-        .getEditorInput());
+    prepEditor(editor);
+    super.launch(editor, mode);
+  }
+
+  private void prepEditor(IEditorPart editor) {
+    IJavaElement element = JavaUI.getEditorInputJavaElement(editor.getEditorInput());
     if (element != null) {
       try {
         checkPrep(element);
       } catch (Exception e) {
         e.printStackTrace();
-        return;
       }
     }
-    super.launch(editor, mode);
   }
 
+  @Override
   public void launch(ISelection selection, String mode) {
+    prepSelection(selection);
+    super.launch(selection, mode);
+  }
+
+  private void prepSelection(ISelection selection) {
     if (selection instanceof StructuredSelection) {
       Object[] elems = ((IStructuredSelection) selection).toArray();
       if (elems.length > 0 && elems[0] instanceof IJavaElement) {
@@ -100,21 +97,27 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
           checkPrep((IJavaElement) elems[0]);
         } catch (Exception e) {
           e.printStackTrace();
-          return;
         }
       }
     }
-
-    super.launch(selection, mode);
   }
 
-  
-  
+  @Override
+  public ILaunchConfiguration[] getLaunchConfigurations(IEditorPart editor) {
+    prepEditor(editor);
+    return super.getLaunchConfigurations(editor);
+  }
+
+  @Override
+  public ILaunchConfiguration[] getLaunchConfigurations(ISelection selection) {
+    prepSelection(selection);
+    return super.getLaunchConfigurations(selection);
+  }
+
   public void checkPrep(final IJavaElement element) throws Exception {
     String relativePath = element.getPath().toString();
     String absolutePath = element.getResource().getLocation().toString();
-    String basePath = absolutePath.substring(0, absolutePath.length()
-        - relativePath.length() + 1);
+    String basePath = absolutePath.substring(0, absolutePath.length() - relativePath.length() + 1);
     prepProps = new File(basePath + TESTS_PREP_PROP_LOC);
     String[] parts = relativePath.split("/");
     String module = parts[1];
@@ -126,49 +129,40 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     cleanTempAndDataDirectories();
   }
 
-  private void loadProperties(File prepProps, String module, String subtree,
-      File wkDir, String basePath) throws Exception {
+  private void loadProperties(File props, String module, String subtree, File wkDir, String basePath) throws Exception {
     Properties properties = new Properties();
-    properties.load(new FileInputStream(prepProps));
+    properties.load(new FileInputStream(props));
     if (!validatePrep(properties, module, subtree)) {
       runCheckPrep(wkDir, module, subtree, basePath);
-      loadProperties(prepProps, module, subtree, wkDir, basePath);
+      loadProperties(props, module, subtree, wkDir, basePath);
     } else {
       argTypes = properties;
     }
   }
 
-  protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(
-      IJavaElement element) throws CoreException {
-    if (argTypes == null) {
-      RuntimeException re = new RuntimeException(
-          "vmArgs null, this should never happen. JUnit impl must have changed.");
-      throw re;
-    }
+  @Override
+  protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(IJavaElement element) {
+    if (argTypes == null) { return null; }
 
     try {
-      ILaunchConfigurationWorkingCopy wc = super
-          .createLaunchConfiguration(element);
+      ILaunchConfigurationWorkingCopy wc = super.createLaunchConfiguration(element);
 
       setInstalledJRE(argTypes.getProperty(JVM_VERSION), wc);
 
       final StringBuffer vmArgs = new StringBuffer();
-      int argsCount = new Integer(argTypes.getProperty(VM_ARGS_COUNT))
-          .intValue();
+      int argsCount = new Integer(argTypes.getProperty(VM_ARGS_COUNT)).intValue();
       for (int i = 0; i < argsCount; i++) {
         vmArgs.append(argTypes.getProperty(VM_ARG + i) + " ");
       }
-      Enumeration enumx = argTypes.propertyNames();
+      Enumeration<?> enumx = argTypes.propertyNames();
       while (enumx.hasMoreElements()) {
         String key = (String) enumx.nextElement();
         if (key.startsWith(SYS_PROP_PREFIX)) {
-          String value = (String) argTypes.getProperty(key);
+          String value = argTypes.getProperty(key);
           if (value.indexOf(' ') > 0) {
             value = "\"" + value + "\"";
           }
-          vmArgs.append("-D"
-              + key.substring(SYS_PROP_PREFIX.length(), key.length()) + "="
-              + value + " ");
+          vmArgs.append("-D" + key.substring(SYS_PROP_PREFIX.length(), key.length()) + "=" + value + " ");
         }
       }
       if (vmArgs.length() > 0) {
@@ -187,15 +181,14 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     throw new RuntimeException();
   }
 
-  private void runCheckPrep(final File workingDirectory, final String module,
-      final String subtree, final String basePath) throws Exception {
-    if (!subtree.startsWith("tests.")) {
-      throw new IllegalArgumentException("Subtree[" + subtree
-          + "] must start with \"tests.\"");
-    }
+  @SuppressWarnings("deprecation")
+  private void runCheckPrep(final File workingDirectory, final String module, final String subtree,
+                            final String basePath) throws Exception {
+    if (!subtree.startsWith("tests.")) { throw new IllegalArgumentException("Subtree[" + subtree
+                                                                            + "] must start with \"tests.\""); }
     if (!(subtree.endsWith("unit") || subtree.endsWith("system"))) {
-      final IllegalArgumentException iae = new IllegalArgumentException(
-          "Subtree[" + subtree + "] must end with \"unit\" or \"system\"");
+      final IllegalArgumentException iae = new IllegalArgumentException("Subtree[" + subtree
+                                                                        + "] must end with \"unit\" or \"system\"");
       throw iae;
     }
     final String testType = subtree.replaceFirst("tests\\.", "");
@@ -231,8 +224,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     environmentList.toArray(environment);
 
     info("Running check prep: " + commandLineList + "\n");
-    final ExternalJob tcbuild = new ExternalJob(TCBUILD, commandLine,
-        environment, workingDirectory);
+    final ExternalJob tcbuild = new ExternalJob(TCBUILD, commandLine, environment, workingDirectory);
     tcbuild.setPriority(Job.BUILD);
     tcbuild.setUser(true);
     tcbuild.schedule();
@@ -243,8 +235,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     tcbuild.join();
   }
 
-  private void setInstalledJRE(String jreVersion,
-      ILaunchConfigurationWorkingCopy wc) throws CoreException {
+  private void setInstalledJRE(String jreVersion, ILaunchConfigurationWorkingCopy wc) throws CoreException {
     boolean jreAvailable = false;
     IVMInstallType[] installTypes = JavaRuntime.getVMInstallTypes();
     for (int i = 0; i < installTypes.length; i++) {
@@ -253,27 +244,23 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
         if (installs[j] instanceof IVMInstall2) {
           IVMInstall2 install2 = (IVMInstall2) installs[j];
           if (jreVersion.startsWith(install2.getJavaVersion())) {
-            wc.setAttribute(ATTR_JRE_CONTAINER_PATH, JavaRuntime
-                .newJREContainerPath(installs[j]).toPortableString());
+            wc.setAttribute(ATTR_JRE_CONTAINER_PATH, JavaRuntime.newJREContainerPath(installs[j]).toPortableString());
             jreAvailable = true;
           }
         }
       }
     }
     if (!jreAvailable) {
-      String msg = "Java Version: " + jreVersion
-          + " not available as an installed JRE in Eclipse.";
+      String msg = "Java Version: " + jreVersion + " not available as an installed JRE in Eclipse.";
       info(msg);
-      Status status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, msg,
-          null);
+      Status status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, msg, null);
       throw new CoreException(status);
     } else {
       info("Using JRE Version: " + jreVersion);
     }
   }
 
-  private boolean validatePrep(Properties properties, String module,
-      String subtree) {
+  private boolean validatePrep(Properties properties, String module, String subtree) {
     if (!properties.getProperty("tcbuild.prepared.module", "").equals(module)) {
       removeProps();
       return false;
@@ -286,31 +273,25 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
   }
 
   /**
-   * For some reason tests fail when the temp-root and data-root directories are
-   * not clean. I don't care why, I just want them clean so we can run tests in
-   * Eclipse more than once between check_prep calls.
+   * For some reason tests fail when the temp-root and data-root directories are not clean. I don't care why, I just
+   * want them clean so we can run tests in Eclipse more than once between check_prep calls.
    * 
    * @throws FileNotFoundException
    * @throws IOException
    */
-  private void cleanTempAndDataDirectories() throws FileNotFoundException,
-      IOException {
-    final String testInfoPropertiesLocation = argTypes != null ? argTypes
-        .getProperty(TESTS_INFO_PROP_FILES) : null;
+  private void cleanTempAndDataDirectories() throws FileNotFoundException, IOException {
+    final String testInfoPropertiesLocation = argTypes != null ? argTypes.getProperty(TESTS_INFO_PROP_FILES) : null;
     if (testInfoPropertiesLocation != null) {
       final File testInfoPropertiesFile = new File(testInfoPropertiesLocation);
       if (testInfoPropertiesFile.exists() && testInfoPropertiesFile.canRead()) {
-        final String[] keysForDirectoriesToClean = new String[] {
-            "tc.tests.info.temp-root", "tc.tests.info.data-root" };
+        final String[] keysForDirectoriesToClean = new String[] { "tc.tests.info.temp-root", "tc.tests.info.data-root" };
         final Properties testInfoProps = new Properties();
         testInfoProps.load(new FileInputStream(testInfoPropertiesFile));
         for (int pos = 0; pos < keysForDirectoriesToClean.length; ++pos) {
-          final String dirToCleanLocation = testInfoProps
-              .getProperty(keysForDirectoriesToClean[pos]);
+          final String dirToCleanLocation = testInfoProps.getProperty(keysForDirectoriesToClean[pos]);
           if (dirToCleanLocation != null) {
             final File dirToClean = new File(dirToCleanLocation);
-            if (dirToClean.exists() && dirToClean.isDirectory()
-                && dirToClean.canWrite()) {
+            if (dirToClean.exists() && dirToClean.isDirectory() && dirToClean.canWrite()) {
               info("Cleaning directory: " + dirToCleanLocation);
               DirectoryCleaner.cleanDirectory(dirToClean);
             }
@@ -322,8 +303,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
 
   // there is a race condition here but it will never occur
   private void removeProps() {
-    if (prepProps.exists())
-      prepProps.delete();
+    if (prepProps.exists()) prepProps.delete();
   }
 
   private void info(final String line) {
@@ -364,15 +344,13 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
       private final InputStream   stream;
       private final ConsoleStream consoleStream;
 
-      StreamToConsoleRunner(final InputStream stream,
-          final ConsoleStream consoleStream) {
+      StreamToConsoleRunner(final InputStream stream, final ConsoleStream consoleStream) {
         this.stream = stream;
         this.consoleStream = consoleStream;
       }
 
       public void run() {
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(
-            stream));
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
         try {
           String line;
           while ((line = reader.readLine()) != null) {
@@ -399,57 +377,50 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements
     private final String[] environment;
     private final File     workingDirectory;
 
-    ExternalJob(final String name, final String[] commandLine,
-        final String[] environment, final File workingDirectory) {
+    ExternalJob(final String name, final String[] commandLine, final String[] environment, final File workingDirectory) {
       super("External command[" + name + "]");
       this.commandLine = commandLine;
       this.environment = environment;
       this.workingDirectory = workingDirectory;
     }
 
+    @Override
     public boolean belongsTo(final Object family) {
       return family == TCBUILD ? true : super.belongsTo(family);
     }
 
+    @Override
     protected IStatus run(final IProgressMonitor monitor) {
       monitor.beginTask(getName(), 2);
       final Process process;
       try {
-        process = Runtime.getRuntime().exec(commandLine, environment,
-            workingDirectory);
+        process = Runtime.getRuntime().exec(commandLine, environment, workingDirectory);
         monitor.worked(1);
-        copyStreamsToConsoleInBackground(process.getInputStream(), process
-            .getErrorStream());
+        copyStreamsToConsoleInBackground(process.getInputStream(), process.getErrorStream());
         final int exitCode = process.waitFor();
         monitor.worked(1);
         monitor.done();
-        return exitCode == 0 ? Status.OK_STATUS : new Status(IStatus.ERROR,
-            Activator.PLUGIN_ID, exitCode, "External command failed", null);
+        return exitCode == 0 ? Status.OK_STATUS : new Status(IStatus.ERROR, Activator.PLUGIN_ID, exitCode,
+                                                             "External command failed", null);
       } catch (IOException ioe) {
-        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1,
-            "I/O exception when executing external command", ioe);
+        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1, "I/O exception when executing external command", ioe);
       } catch (InterruptedException ie) {
-        return new Status(
-            IStatus.ERROR,
-            Activator.PLUGIN_ID,
-            1,
-            "Interrupted while waiting for executing external command to finish",
-            ie);
+        return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 1,
+                          "Interrupted while waiting for executing external command to finish", ie);
       }
     }
 
-    private void copyStreamsToConsoleInBackground(final InputStream out,
-        final InputStream err) {
-      // We can't afford to schedule these as normal jobs, as pipe buffers fill
-      // up we must guarantee that the output is
-      // being read so we don't block the external program so we use normal
-      // background threads here
+    private void copyStreamsToConsoleInBackground(final InputStream out, final InputStream err) {
+      // We can't afford to schedule these as normal jobs, as pipe buffers fill up we must guarantee that the output is
+      // being read so we don't block the external program so we use normal background threads here
       final Thread outWriter = new Thread() {
+        @Override
         public void run() {
           SafeRunner.run(new StreamToConsoleRunner(out, ConsoleStream.STDOUT));
         }
       };
       final Thread errWriter = new Thread() {
+        @Override
         public void run() {
           SafeRunner.run(new StreamToConsoleRunner(err, ConsoleStream.STDERR));
         }
