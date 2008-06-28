@@ -2,9 +2,7 @@
  * All content copyright (c) 2003-2007 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package refreshall;
-
-import java.io.IOException;
+package org.terracotta.tcdev.refreshall;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Color;
@@ -17,6 +15,8 @@ import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+
+import java.io.IOException;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -52,6 +52,7 @@ public class Activator extends AbstractUIPlugin {
     plugin = this;
   }
 
+  @Override
   public void start(BundleContext context) throws Exception {
     console = new MessageConsole("Terracotta build system", null);
     final Device device = console.getFont() != null ? console.getFont().getDevice() : null;
@@ -63,6 +64,7 @@ public class Activator extends AbstractUIPlugin {
     super.start(context);
   }
 
+  @Override
   public void stop(BundleContext context) throws Exception {
     plugin = null;
     final IConsoleManager mgr = ConsolePlugin.getDefault().getConsoleManager();

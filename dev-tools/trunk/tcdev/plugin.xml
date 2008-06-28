@@ -28,7 +28,7 @@
          <action
                label="&amp;Refresh All"
                icon="icons/sample.gif"
-               class="refreshall.actions.RefreshAllAction"
+               class="org.terracotta.tcdev.refreshall.actions.RefreshAllAction"
                tooltip="Refreshes all projects"
                menubarPath="TCDev/refreshAllGroup"
                toolbarPath="refreshAllGroup"
@@ -37,30 +37,29 @@
          </action>
       </actionSet>
    </extension>
-   
-	<extension point="org.eclipse.ui.commands">
+
+  <extension point="org.eclipse.ui.commands">
      <command
            name="RefreshAllProjects"
            description="Refresh All Projects"
            categoryId="org.eclipse.ui.category.project"
            id="refreshall.actions.RefreshAllAction">
      </command>
-	</extension>      
-	<extension point="org.eclipse.ui.bindings">
+  </extension>
+  <extension point="org.eclipse.ui.bindings">
      <key
           sequence="Ctrl+F5"
           commandId="refreshall.actions.RefreshAllAction"
-          schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-          contextId="org.eclipse.ui.globalScope"/>
-	</extension>
-   
+          schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+  </extension>
+
    <extension point="org.eclipse.debug.ui.launchShortcuts">
       <shortcut
             label="Terracotta test"
-            icon="icons/logo16.gif"	
+            icon="icons/logo16.gif"
             helpContextId="com.tc.debug.ui.shortcut_dso_application"
             modes="run,debug"
-            class="launch.LaunchShortcut"
+            class="org.terracotta.tcdev.launch.LaunchShortcut"
             id="com.tc.debug.ui.dsoApplicationShortcut">
          <contextualLaunch>
            <enablement>
@@ -68,18 +67,18 @@
                <count value="1"/>
                <iterate>
                  <adapt type="org.eclipse.jdt.core.IJavaElement">
-	                <test property="org.eclipse.jdt.core.isInJavaProject"/>
-	                <test property="org.eclipse.jdt.core.hasTypeOnClasspath" value="junit.framework.Test"/>
-	                <test property="org.eclipse.jdt.junit.canLaunchAsJUnit" forcePluginActivation="true"/>
-	             </adapt>
+                  <test property="org.eclipse.jdt.core.isInJavaProject"/>
+                  <test property="org.eclipse.jdt.core.hasTypeOnClasspath" value="junit.framework.Test"/>
+                  <test property="org.eclipse.jdt.junit.canLaunchAsJUnit" forcePluginActivation="true"/>
+               </adapt>
                </iterate>
              </with>
            </enablement>
         </contextualLaunch>
       </shortcut>
-   </extension>  
-   
-	<extension point="org.eclipse.ui.commands">
+   </extension>
+
+  <extension point="org.eclipse.ui.commands">
       <command
             categoryId="org.eclipse.debug.ui.category.run"
             description="Run As Terrracotta Test"
@@ -92,18 +91,16 @@
             id="com.tc.debug.ui.dsoApplicationShortcut.debug"
             name="Debug As Terracotta Test">
       </command>
-   </extension>      
+   </extension>
 
    <extension point="org.eclipse.ui.bindings">
       <key
-  		sequence="M3+M2+X D"
-  		commandId="com.tc.debug.ui.dsoApplicationShortcut.run"
-  		schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-  		contextId="org.eclipse.ui.globalScope"/>
-  	  <key
-  		sequence="M3+M2+D D"
-  		commandId="com.tc.debug.ui.dsoApplicationShortcut.debug"
-  		schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-  		contextId="org.eclipse.ui.globalScope"/>
+      sequence="M3+M2+X D"
+      commandId="com.tc.debug.ui.dsoApplicationShortcut.run"
+      schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+      sequence="M3+M2+D D"
+      commandId="com.tc.debug.ui.dsoApplicationShortcut.debug"
+      schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
    </extension>
 </plugin>

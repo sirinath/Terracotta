@@ -2,8 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Terracotta development
 Bundle-SymbolicName: org.terracotta.tcdev;singleton:=true
-Bundle-Activator: refreshall.Activator
-Bundle-Localization: plugin
+Bundle-Activator: org.terracotta.tcdev.refreshall.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.core.resources,
@@ -17,13 +16,13 @@ Require-Bundle: org.eclipse.ui,
  org.junit,
  org.eclipse.pde.junit.runtime,
  org.eclipse.jdt.ui
-Eclipse-LazyStart: true
+Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-Vendor: Terracotta, Inc.
-Bundle-Version: 1.5.3.2
+Bundle-Version: 1.6.0
 Bundle-ClassPath: .
-Export-Package: launch,
- launch.actions,
- refreshall,
- refreshall.actions,
- util
+Export-Package: org.terracotta.tcdev.launch,
+ org.terracotta.tcdev.launch.actions,
+ org.terracotta.tcdev.refreshall,
+ org.terracotta.tcdev.refreshall.actions,
+ org.terracotta.tcdev.util

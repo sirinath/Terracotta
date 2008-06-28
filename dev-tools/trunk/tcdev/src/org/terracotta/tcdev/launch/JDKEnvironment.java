@@ -1,31 +1,27 @@
 /*
- * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2006 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
-package launch;
+package org.terracotta.tcdev.launch;
 
-
-import java.io.File;
-import java.io.PrintStream;
-
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.environments.IExecutionEnvironment;
 import org.eclipse.jdt.launching.environments.IExecutionEnvironmentsManager;
+import org.terracotta.tcdev.refreshall.Activator;
+
+import java.io.File;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class JDKEnvironment {
 
-  public static final JDKEnvironment OSGi_MIN_1_0 = new JDKEnvironment("OSGi/Minimum-1.0");
-  public static final JDKEnvironment OSGi_MIN_1_1 = new JDKEnvironment("OSGi/Minimum-1.1");
-
-  public static final JDKEnvironment CDC_1_0      = new JDKEnvironment("CDC-1.0/Foundation-1.0");
-  public static final JDKEnvironment CDC_1_1      = new JDKEnvironment("CDC-1.1/Foundation-1.1");
-
-  public static final JDKEnvironment JRE_1_1      = new JDKEnvironment("JRE-1.1");
-  public static final JDKEnvironment J2SE_1_2     = new JDKEnvironment("J2SE-1.2");
-  public static final JDKEnvironment J2SE_1_3     = new JDKEnvironment("J2SE-1.3");
-  public static final JDKEnvironment J2SE_1_4     = new JDKEnvironment("J2SE-1.4");
-  public static final JDKEnvironment J2SE_1_5     = new JDKEnvironment("J2SE-1.5");
-  public static final JDKEnvironment JavaSE_1_6   = new JDKEnvironment("JavaSE-1.6");
+  public static final JDKEnvironment J2SE_1_4   = new JDKEnvironment("J2SE-1.4");
+  public static final JDKEnvironment J2SE_1_5   = new JDKEnvironment("J2SE-1.5");
+  public static final JDKEnvironment JavaSE_1_6 = new JDKEnvironment("JavaSE-1.6");
 
   private final String               environment;
 
@@ -36,6 +32,7 @@ public final class JDKEnvironment {
   public File getJavaHome() {
     final IExecutionEnvironmentsManager envManager = JavaRuntime.getExecutionEnvironmentsManager();
     final IExecutionEnvironment jdkEnv = envManager.getEnvironment(environment);
+
     if (jdkEnv == null) {
       return null;
     } else {
@@ -45,12 +42,51 @@ public final class JDKEnvironment {
         if (allInstalls == null || allInstalls.length == 0) {
           return null;
         } else {
-          return allInstalls[0].getInstallLocation().getAbsoluteFile();
+          return guessProperVM(jdkEnv, allInstalls);
         }
       } else {
         return jdk.getInstallLocation().getAbsoluteFile();
       }
     }
+  }
+
+  private File guessProperVM(IExecutionEnvironment jdkEnv, IVMInstall[] allInstalls) {
+    List<IVMInstall> possible = new ArrayList<IVMInstall>();
+
+    for (int i = 0; i < allInstalls.length; i++) {
+      IVMInstall install = allInstalls[i];
+      if (jdkEnv.isStrictlyCompatible(install)) {
+        possible.add(install);
+      }
+    }
+
+    File rv = null;
+
+    if (possible.size() > 1) {
+      List<String> vmLocations = new ArrayList<String>();
+      IVMInstall[] vms = possible.toArray(new IVMInstall[] {});
+      for (int i = 0; i < vms.length; i++) {
+        IVMInstall vm = vms[i];
+        vmLocations.add(vm.getInstallLocation().getAbsolutePath());
+      }
+
+      Status status = new Status(IStatus.WARNING, "tcdev", "multiple compatible VMs available " + vmLocations
+                                                           + " using the first one");
+      Activator.getDefault().getLog().log(status);
+    }
+
+    if (possible.size() >= 1) {
+      rv = possible.get(0).getInstallLocation().getAbsoluteFile();
+    }
+
+    return rv;
+
+  }
+
+  public static void dumpTCJDKs() {
+    System.err.println(J2SE_1_4.getJavaHome().getAbsolutePath());
+    System.err.println(J2SE_1_5.getJavaHome().getAbsolutePath());
+    System.err.println(JavaSE_1_6.getJavaHome().getAbsolutePath());
   }
 
   public static void dumpJDKs(final PrintStream output) {

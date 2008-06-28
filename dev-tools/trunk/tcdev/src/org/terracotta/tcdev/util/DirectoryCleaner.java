@@ -1,4 +1,4 @@
-package util;
+package org.terracotta.tcdev.util;
 
 import java.io.File;
 
