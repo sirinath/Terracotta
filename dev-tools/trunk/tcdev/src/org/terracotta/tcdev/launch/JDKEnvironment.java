@@ -79,6 +79,11 @@ public final class JDKEnvironment {
       rv = possible.get(0).getInstallLocation().getAbsoluteFile();
     }
 
+    if (rv == null) {
+      Status status = new Status(IStatus.ERROR, "tcdev", "no suitable VM found for " + jdkEnv.getDescription());
+      Activator.getDefault().getLog().log(status);
+    }
+
     return rv;
 
   }
