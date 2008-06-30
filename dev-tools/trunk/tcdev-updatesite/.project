@@ -3,8 +3,6 @@
 	<name>tcdev-updatesite</name>
 	<comment></comment>
 	<projects>
-		<project>tcdev</project>
-		<project>tcdev-feature</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
