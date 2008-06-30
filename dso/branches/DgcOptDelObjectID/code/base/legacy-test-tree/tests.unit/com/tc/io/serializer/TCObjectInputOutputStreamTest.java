@@ -23,8 +23,7 @@ import java.util.Random;
 public class TCObjectInputOutputStreamTest extends TCTestCase {
   
   public TCObjectInputOutputStreamTest() {
-    // MNK-587
-    disableAllUntil("2008-07-30");
+    //
   }
 
   public void testBasic() throws IOException, ClassNotFoundException {
@@ -55,14 +54,14 @@ public class TCObjectInputOutputStreamTest extends TCTestCase {
     try {
       os.writeObject(new Object());
       failed = true;
-    } catch (Exception ex) {
+    } catch (AssertionError ae) {
       // this is normal
     }
     Assert.assertFalse(failed);
     try {
       os.writeObject(l);
       failed = true;
-    } catch (Exception ex) {
+    } catch (AssertionError ae) {
       // this is normal
     }
     Assert.assertFalse(failed);
