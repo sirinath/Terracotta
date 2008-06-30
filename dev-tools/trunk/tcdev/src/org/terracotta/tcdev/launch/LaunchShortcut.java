@@ -104,14 +104,12 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
 
   @Override
   public ILaunchConfiguration[] getLaunchConfigurations(IEditorPart editor) {
-    prepEditor(editor);
-    return super.getLaunchConfigurations(editor);
+    return null;
   }
 
   @Override
   public ILaunchConfiguration[] getLaunchConfigurations(ISelection selection) {
-    prepSelection(selection);
-    return super.getLaunchConfigurations(selection);
+    return null;
   }
 
   public void checkPrep(final IJavaElement element) throws Exception {
@@ -142,7 +140,7 @@ public class LaunchShortcut extends JUnitLaunchShortcut implements IJavaLaunchCo
 
   @Override
   protected ILaunchConfigurationWorkingCopy createLaunchConfiguration(IJavaElement element) {
-    if (argTypes == null) { return null; }
+    if (argTypes == null) { throw new RuntimeException("argTypes is null -- something changed in the parent class"); }
 
     try {
       ILaunchConfigurationWorkingCopy wc = super.createLaunchConfiguration(element);
