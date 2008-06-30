@@ -2,11 +2,11 @@
 <feature
       id="org.terracotta.tcdev"
       label="Terracotta development"
-      version="1.5.3.2"
+      version="1.6.0"
       provider-name="Terracotta, Inc.">
 
    <description url="http://intranet.terracotta.lan/xwiki/bin/view/Main/TCDev+Plugin">
-      Test run integration with tcbuild (Eclipse 3.3).
+      Test run integration with tcbuild (Eclipse 3.4).
    </description>
 
    <copyright>
@@ -41,7 +41,7 @@
          id="org.terracotta.tcdev"
          download-size="0"
          install-size="0"
-         version="1.5.3.2"
+         version="1.6.0"
          unpack="false"/>
 
 </feature>
