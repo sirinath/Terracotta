@@ -25,13 +25,13 @@ module BuildData
 
   # Creates a 'patch data' file at the given location, putting into it a number
   # of properties that specify when, where, and how the patch in it was compiled.
-  def create_patch_data(config_source, destdir = self.build_data_dir)
-    create_data_file(config_source, destdir, :patch_data)
+  def create_patch_data(level, config_source, destdir = self.build_data_dir)
+    create_data_file(config_source, destdir, :patch_data, level)
   end
 
   private
 
-  def create_data_file(config_source, destdir, type)
+  def create_data_file(config_source, destdir, type, level = nil)
     if type == :build_data
       keyspace    = "terracotta.build"
       output_file = FilePath.new(destdir, BUILD_DATA_FILE_NAME)
@@ -43,7 +43,7 @@ module BuildData
     build_environment = Registry[:build_environment]
 
     File.open(output_file.to_s, "w") do |file|
-      file.puts("#{keyspace}.level=#{config_source['patch']}") if type == :patch_data
+      file.puts("#{keyspace}.level=#{level}") if type == :patch_data
 
       file.puts("#{keyspace}.productname=terracotta")
       file.puts("#{keyspace}.edition=#{build_environment.edition}")
@@ -60,5 +60,7 @@ module BuildData
         file.puts("#{keyspace}.ee.revision=#{build_environment.ee_svninfo.current_revision}")
       end
     end
+
+    output_file
   end
 end
