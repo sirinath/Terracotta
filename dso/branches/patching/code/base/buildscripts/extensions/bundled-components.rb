@@ -44,12 +44,8 @@ module BundledComponents
     if File.exist?(libdir.to_s)
       ant.chmod(:dir => libdir.to_s, :perm => "a+x", :includes => "**/*.dll")
       ant.jar(:destfile => jarfile.to_s, :basedir => runtime_classes_dir.to_s) do
-        classpath = ''
-        libfiles  = Dir.entries(libdir.to_s).delete_if { |item| /\.jar$/ !~ item }
-        classpath << "#{libfiles.first} "
-        libfiles[1..-2].each { |item| classpath << "#{item} " }
-        classpath << "#{libfiles.last}"
-        ant.manifest { ant.attribute(:name => 'Class-Path', :value => classpath) }
+        libfiles  = Dir.entries(libdir.to_s).delete_if { |item| /\.jar$/ !~ item } << "resources/"
+        ant.manifest { ant.attribute(:name => 'Class-Path', :value => libfiles.sort.join(' ')) }
       end
     end
     runtime_classes_dir.delete

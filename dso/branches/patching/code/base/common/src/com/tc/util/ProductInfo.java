@@ -12,6 +12,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -71,11 +75,15 @@ public final class ProductInfo {
   private String                            copyright;
   private String                            license                      = DEFAULT_LICENSE;
 
+  private static final TCLogger             logger                       = TCLogging.getLogger(ProductInfo.class);
+  private static final TCLogger             consoleLogger                = CustomerLogging.getConsoleLogger();
+
   public ProductInfo(String version, String buildID, String license, String copyright) {
     this.version = version;
     this.buildID = buildID;
     this.license = license;
     this.copyright = copyright;
+
     moniker = UNKNOWN_VALUE;
     maven_version = UNKNOWN_VALUE;
     timestamp = null;
@@ -86,7 +94,7 @@ public final class ProductInfo {
     revision = UNKNOWN_VALUE;
     ee_revision = UNKNOWN_VALUE;
     kitID = UNKNOWN_VALUE;
-    
+
     patchLevel = UNKNOWN_VALUE;
     patchHost = UNKNOWN_VALUE;
     patchUser = UNKNOWN_VALUE;
@@ -100,23 +108,19 @@ public final class ProductInfo {
    * from the classpath). If an IOException occurs while loading the build or patch streams, the System will exit. These
    * resources are always expected to be in the path and are necessary to do version compatibility checks.
    * 
-   * @param buildStream Build properties in stream conforming to Java Properties file format, null if none
-   * @param patchStream Patch properties in stream conforming to Java Properties file format, null if none
+   * @param buildData Build properties in stream conforming to Java Properties file format, null if none
+   * @param patchData Patch properties in stream conforming to Java Properties file format, null if none
    */
-  ProductInfo(InputStream buildStream, InputStream patchStream) {
+  ProductInfo(InputStream buildData, InputStream patchData) {
     Properties properties = new Properties();
-
     moniker = bundleHelper.getString("moniker");
-
     try {
-      if (buildStream != null) {
-        properties.load(buildStream);
-      }
-      if (patchStream != null) {
-        properties.load(patchStream);
-      }
-    } catch (IOException ioe) {
-      ioe.printStackTrace();
+      Assert.assertNotNull("build data stream cannot be null", buildData);
+      properties.load(buildData);
+      if (patchData != null) properties.load(patchData);
+    } catch (IOException e) {
+      consoleLogger.fatal(e.getMessage() + ". Check the log for details.");
+      logger.fatal(e.getMessage());
       System.exit(1);
     }
 
@@ -149,26 +153,27 @@ public final class ProductInfo {
   }
 
   static Date parseTimestamp(String timestampString) {
-    if (timestampString != null) {
-      try {
-        return new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
-      } catch (ParseException pe) {
-        pe.printStackTrace();
-        System.exit(1);
-      }
+    if (timestampString == null) return null;
+    try {
+      return new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
+    } catch (ParseException e) {
+      consoleLogger.error(e.getMessage() + ". Check the log for details.");
+      logger.error(e.getMessage());
+      return null;
     }
-
-    return null;
   }
 
-  public static synchronized ProductInfo getInstance() {
+  public static synchronized ProductInfo getInstance(ClassLoader classLoader) {
     if (PRODUCTINFO == null) {
       InputStream buildStream = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
       InputStream patchStream = ProductInfo.class.getResourceAsStream(PATCH_DATA_RESOURCE_NAME);
       PRODUCTINFO = new ProductInfo(buildStream, patchStream);
     }
-
     return PRODUCTINFO;
+  }
+
+  public static synchronized ProductInfo getInstance() {
+    return getInstance(ClassLoader.getSystemClassLoader());
   }
 
   private String getBuildProperty(Properties properties, String name, String defaultValue) {
@@ -186,11 +191,12 @@ public final class ProductInfo {
   }
 
   public static void printRawData() throws IOException {
-    InputStream in = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
-    IOUtils.copy(in, System.out);
+    InputStream buildData = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
+    Assert.assertNotNull("build data stream cannot be null", buildData);
+    IOUtils.copy(buildData, System.out);
 
-    in = ProductInfo.class.getResourceAsStream(PATCH_DATA_RESOURCE_NAME);
-    IOUtils.copy(in, System.out);
+    InputStream patchData = ProductInfo.class.getResourceAsStream(PATCH_DATA_RESOURCE_NAME);
+    if (patchData != null) IOUtils.copy(patchData, System.out);
   }
 
   public boolean isDevMode() {
@@ -256,15 +262,15 @@ public final class ProductInfo {
   public String buildRevisionFromEE() {
     return ee_revision;
   }
-  
+
   public boolean hasPatchInfo() {
-    return ! UNKNOWN_VALUE.equals(patchLevel);
+    return !UNKNOWN_VALUE.equals(patchLevel);
   }
-  
+
   public String patchLevel() {
     return patchLevel;
   }
-  
+
   public String patchHost() {
     return patchHost;
   }
@@ -272,11 +278,11 @@ public final class ProductInfo {
   public String patchUser() {
     return patchUser;
   }
-  
+
   public Date patchTimestamp() {
     return patchTimestamp;
   }
-  
+
   public String patchTimestampAsString() {
     if (this.patchTimestamp == null) return UNKNOWN_VALUE;
     else return new SimpleDateFormat(DATE_FORMAT).format(this.patchTimestamp);
@@ -297,28 +303,27 @@ public final class ProductInfo {
   public String toLongString() {
     return toShortString() + ", as of " + buildID();
   }
-  
+
   public String buildID() {
     if (buildID == null) {
       String rev = revision;
-      if (edition.indexOf("Enterprise") >= 0) {
-        rev = ee_revision + "-" + revision;
-      }
+      if (edition.indexOf("Enterprise") >= 0) rev = ee_revision + "-" + revision;
       buildID = buildTimestampAsString() + " (Revision " + rev + " by " + user + "@" + host + " from " + branch + ")";
     }
     return buildID;
   }
-  
+
   public String toLongPatchString() {
-    return toShortPatchString() + ", as of " + patchBuildID();  
+    return toShortPatchString() + ", as of " + patchBuildID();
   }
-  
+
   public String toShortPatchString() {
     return "Patch Level " + patchLevel;
   }
 
   public String patchBuildID() {
-    return patchTimestampAsString() + " (Revision " + patchRevision + " by " + patchUser + "@" + patchHost + " from " + patchBranch + ")";
+    return patchTimestampAsString() + " (Revision " + patchRevision + " by " + patchUser + "@" + patchHost + " from "
+           + patchBranch + ")";
   }
 
   public String toString() {
@@ -336,17 +341,20 @@ public final class ProductInfo {
 
     if (cli.hasOption("h")) {
       new HelpFormatter().printHelp("java " + ProductInfo.class.getName(), options);
+      System.exit(0);
     }
 
     if (cli.hasOption("v")) {
       System.out.println(getInstance().toLongString());
-      if(getInstance().hasPatchInfo()) {
-        System.out.println(getInstance().toLongPatchString());
-      }
-    } else if (cli.hasOption("r")) {
-      printRawData();
-    } else {
-      System.out.println(getInstance().toShortString());
+      if (getInstance().hasPatchInfo()) System.out.println(getInstance().toLongPatchString());
+      System.exit(0);
     }
+
+    if (cli.hasOption("r")) {
+      printRawData();
+      System.exit(0);
+    }
+
+    System.out.println(getInstance().toShortString());
   }
 }
