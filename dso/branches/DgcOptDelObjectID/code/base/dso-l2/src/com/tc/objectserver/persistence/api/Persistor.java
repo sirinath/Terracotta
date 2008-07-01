@@ -5,6 +5,7 @@ package com.tc.objectserver.persistence.api;
 
 import com.tc.io.serializer.api.StringIndex;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfo;
 import com.tc.util.sequence.MutableSequence;
 
 
@@ -28,4 +29,6 @@ public interface Persistor {
   public PersistentCollectionFactory getPersistentCollectionFactory();
   
   public PersistentMapStore getClusterStateStore();
+  
+  public ObjectIDPersistentMapInfo getObjectIDPersistentMapInfo();
 }

@@ -10,24 +10,30 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.core.api.TestDNACursor;
 import com.tc.objectserver.core.impl.TestManagedObject;
 import com.tc.objectserver.impl.PersistentManagedObjectStore;
+import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
+import com.tc.objectserver.managedobject.NullManagedObjectChangeListenerProvider;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
+import com.tc.objectserver.persistence.api.Persistor;
+import com.tc.objectserver.persistence.impl.InMemoryPersistor;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
-import com.tc.objectserver.persistence.sleepycat.FastObjectIDManagerImpl.OidBitsArrayMap;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.SyncObjectIdSet;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class ManagedObjectPersistorImplTest extends TCTestCase {
@@ -64,7 +70,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
                                                             dbCursorConfig, new TestMutableSequence(), env
                                                                 .getRootDatabase(), rootDBCursorConfig,
                                                             persistenceTransactionProvider,
-                                                            sleepycatCollectionsPersistor, env.isParanoidMode());
+                                                            sleepycatCollectionsPersistor, env.isParanoidMode(),
+                                                            new NullObjectIDPersistentMapInfo());
     objectStore = new PersistentManagedObjectStore(managedObjectPersistor, new MockSink());
     oidManager = (FastObjectIDManagerImpl) managedObjectPersistor.getOibjectIDManager();
   }
@@ -208,4 +215,34 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     verify(objects);
   }
 
+  public void testObjectIDPersistentMapInfo() throws Exception {
+    ObjectID id;
+    TestDNACursor cursor = new TestDNACursor();
+    Persistor persistor = new InMemoryPersistor();
+    ObjectIDPersistentMapInfo objectIDPersistentMapInfo = persistor.getObjectIDPersistentMapInfo();
+    ManagedObjectStateFactory.createInstance(new NullManagedObjectChangeListenerProvider(), persistor);
+
+    // test mapped object
+    id = new ObjectID(1);
+    ManagedObjectStateFactory.getInstance().createState(id, ObjectID.NULL_ID, HashMap.class.getName(), "Test",
+                                                                cursor);
+    assertTrue(objectIDPersistentMapInfo.isPersistMapped(id));
+    
+    // test un-mapped object
+    id = new ObjectID(2);
+    ManagedObjectStateFactory.getInstance().createState(id, ObjectID.NULL_ID, Object.class.getName(), "Test",
+                                                                cursor);
+    assertFalse(objectIDPersistentMapInfo.isPersistMapped(id));
+
+    // test mapped object
+    id = new ObjectID(3);
+    ManagedObjectStateFactory.getInstance().createState(id, ObjectID.NULL_ID, TreeMap.class.getName(), "Test",
+                                                                cursor);
+    assertTrue(objectIDPersistentMapInfo.isPersistMapped(id));
+    
+    // test delete
+    objectIDPersistentMapInfo.clrPersistent(id);
+    assertFalse(objectIDPersistentMapInfo.isPersistMapped(id));
+
+  }
 }

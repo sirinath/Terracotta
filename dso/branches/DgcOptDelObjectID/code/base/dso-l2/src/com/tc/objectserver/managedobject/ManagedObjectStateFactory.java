@@ -15,6 +15,7 @@ import com.tc.object.loaders.Namespace;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
 import com.tc.objectserver.persistence.api.Persistor;
+import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfo;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ public class ManagedObjectStateFactory {
   private final ManagedObjectChangeListenerProvider listenerProvider;
   private final StringIndex                         stringIndex;
   private final PhysicalManagedObjectStateFactory   physicalMOFactory;
+  private final ObjectIDPersistentMapInfo           objectIDPersistentMapInfo;
 
   /**
    * I know singletons are BAD, but this way we save about 16 bytes for every shared object we store in the server and
@@ -78,11 +80,13 @@ public class ManagedObjectStateFactory {
 
   private ManagedObjectStateFactory(ManagedObjectChangeListenerProvider listenerProvider, StringIndex stringIndex,
                                     PhysicalManagedObjectStateFactory physicalMOFactory,
-                                    PersistentCollectionFactory factory) {
+                                    PersistentCollectionFactory factory,
+                                    ObjectIDPersistentMapInfo objectIDPersistentMapInfo) {
     this.listenerProvider = listenerProvider;
     this.stringIndex = stringIndex;
     this.physicalMOFactory = physicalMOFactory;
     this.persistentCollectionFactory = factory;
+    this.objectIDPersistentMapInfo = objectIDPersistentMapInfo;
   }
 
   /*
@@ -97,7 +101,8 @@ public class ManagedObjectStateFactory {
     }
     singleton = new ManagedObjectStateFactory(listenerProvider, persistor.getStringIndex(),
                                               new PhysicalManagedObjectStateFactory(persistor.getClassPersistor()),
-                                              persistor.getPersistentCollectionFactory());
+                                              persistor.getPersistentCollectionFactory(), persistor
+                                                  .getObjectIDPersistentMapInfo());
     return singleton;
   }
 
@@ -143,12 +148,15 @@ public class ManagedObjectStateFactory {
       case ManagedObjectState.ARRAY_TYPE:
         return new ArrayManagedObjectState(classID);
       case ManagedObjectState.MAP_TYPE:
+        objectIDPersistentMapInfo.setPersistent(oid);
         return new MapManagedObjectState(classID, persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.PARTIAL_MAP_TYPE:
+        objectIDPersistentMapInfo.setPersistent(oid);
         return new PartialMapManagedObjectState(classID, persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.LINKED_HASHMAP_TYPE:
         return new LinkedHashMapManagedObjectState(classID);
       case ManagedObjectState.TREE_MAP_TYPE:
+        objectIDPersistentMapInfo.setPersistent(oid);
         return new TreeMapManagedObjectState(classID, persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.SET_TYPE:
         return new SetManagedObjectState(classID);
@@ -161,6 +169,7 @@ public class ManagedObjectStateFactory {
       case ManagedObjectState.DATE_TYPE:
         return new DateManagedObjectState(classID);
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
+        objectIDPersistentMapInfo.setPersistent(oid);
         return new ConcurrentHashMapManagedObjectState(classID, persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.URL_TYPE:
         return new URLManagedObjectState(classID);

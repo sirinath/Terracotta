@@ -16,6 +16,8 @@ import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
 import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
+import com.tc.objectserver.persistence.sleepycat.NullObjectIDPersistentMapInfo;
+import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfo;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.sequence.MutableSequence;
 
@@ -36,6 +38,7 @@ public class MemoryStorePersistor implements Persistor {
   private final PersistenceTransactionProvider  persistenceTransactionProvider;
   private final MemoryStoreCollectionFactory    memoryStoreCollectionFactory;
   private final MemoryStoreCollectionsPersistor memoryStoreCollectionsPersistor;
+  private final ObjectIDPersistentMapInfo       objectIDPersistentMapInfo;
 
   private final String                          PropertyMemoryStoreHost = "l2.memorystore.host";
   private final String                          PropertyMemoryStorePort = "l2.memorystore.port";
@@ -73,6 +76,7 @@ public class MemoryStorePersistor implements Persistor {
     MemoryDataStoreClient clusterStateDB = new MemoryDataStoreClient(CLUSTER_STATE_STORE, memoryStoreHost,
                                                                      memoryStorePort);
     this.clusterStateStore = new MemoryStorePersistentMapStore(clusterStateDB);
+    this.objectIDPersistentMapInfo = new NullObjectIDPersistentMapInfo();
   }
 
   public void close() {
@@ -113,6 +117,10 @@ public class MemoryStorePersistor implements Persistor {
 
   public PersistentMapStore getClusterStateStore() {
     return clusterStateStore;
+  }
+
+  public ObjectIDPersistentMapInfo getObjectIDPersistentMapInfo() {
+    return objectIDPersistentMapInfo;
   }
 
 }

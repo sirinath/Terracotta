@@ -24,8 +24,8 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
@@ -91,6 +91,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private SerializationAdapter                 serializationAdapter;
   private final SleepycatCollectionsPersistor  collectionsPersistor;
   private final ObjectIDManager                objectIDManager;
+  private final ObjectIDPersistentMapInfo      objectIDPersistentMapInfo;
   private final ConcurrentHashMap              statsRecords          = new ConcurrentHashMap();
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
@@ -98,7 +99,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
                                     Database oidDB, Database oidLogDB, Database oidLogSeqDB,
                                     CursorConfig dBCursorConfig, MutableSequence objectIDSequence, Database rootDB,
                                     CursorConfig rootDBCursorConfig, PersistenceTransactionProvider ptp,
-                                    SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid) {
+                                    SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid,
+                                    ObjectIDPersistentMapInfo objectIDPersistentMapInfo) {
     this.logger = logger;
     this.classCatalog = classCatalog;
     this.saf = serializationAdapterFactory;
@@ -108,8 +110,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     this.rootDBCursorConfig = rootDBCursorConfig;
     this.ptp = ptp;
     this.collectionsPersistor = collectionsPersistor;
+    this.objectIDPersistentMapInfo = objectIDPersistentMapInfo;
 
-    boolean oidFastLoad = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD);
+    boolean oidFastLoad = TCPropertiesImpl.getProperties()
+        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD);
     if (!paranoid) {
       this.objectIDManager = new NullObjectIDManager();
     } else if (oidFastLoad) {
@@ -267,6 +271,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       Assert.assertNull(mapState.getMap());
       try {
         mapState.setMap(collectionsPersistor.loadMap(tx, mo.getID()));
+        objectIDPersistentMapInfo.setPersistent(mo.getID());
       } catch (DatabaseException e) {
         throw new TCDatabaseException(e);
       }
@@ -459,7 +464,13 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         // make the formatter happy
         throw new DBException("Unable to remove ManagedObject for object id: " + id + ", status: " + status);
       } else {
-        collectionsPersistor.deleteCollection(tx, id);
+        if (objectIDPersistentMapInfo.isPersistMapped(id)) {
+          if (!collectionsPersistor.deleteCollection(tx, id)) {
+            // XXX to make sure DGC optimization does job, no reduntant call
+            throw new RuntimeException("collectionsPersistor.deleteCollection must returns true");
+          }
+          objectIDPersistentMapInfo.clrPersistent(id);
+        } 
       }
     } catch (DatabaseException t) {
       throw new DBException(t);
@@ -467,9 +478,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   }
 
   /*
-   *  This method takes a SortedSet of Object ID to delete for two reasons.
-   *  1) to maintain lock ordering - check saveAllObjects
-   *  2) for performance reason
+   * This method takes a SortedSet of Object ID to delete for two reasons. 1) to maintain lock ordering - check
+   * saveAllObjects 2) for performance reason
    */
   public void deleteAllObjectsByID(PersistenceTransaction tx, SortedSet<ObjectID> sortedOids) {
     for (Iterator i = sortedOids.iterator(); i.hasNext();) {
