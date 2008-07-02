@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
@@ -12,29 +13,40 @@ import junit.framework.TestCase;
 public class ProductInfoTest extends TestCase {
 
   public void testOpenSourceEditionWithPatch() {
-    InputStream buildStream = ProductInfo.class.getResourceAsStream("TestBuildData.txt");
-    InputStream patchStream = ProductInfo.class.getResourceAsStream("TestPatchData.txt");
-    ProductInfo info = new ProductInfo(buildStream, patchStream);
-    verifyOpenSourceBuildData(info);
-    verifyPatchInfo(info);
-  }
-  
-  public void testOpenSourceEditionWithoutPatch() {
-    InputStream buildStream = ProductInfo.class.getResourceAsStream("TestBuildData.txt");
-    ProductInfo info = new ProductInfo(buildStream, null);
-    verifyOpenSourceBuildData(info);
-    verifyNoPatchInfo(info);
-  }
-  
-  public void testEnterpriseEditionWithPatch() {
-    InputStream buildStream = ProductInfo.class.getResourceAsStream("TestEnterpriseBuildData.txt");
-    InputStream patchStream = ProductInfo.class.getResourceAsStream("TestPatchData.txt");
-    ProductInfo info = new ProductInfo(buildStream, patchStream);
-    verifyEnterpriseBuildData(info);
-    verifyPatchInfo(info);
+    try {
+      InputStream buildData = ProductInfo.getData("TestBuildData.txt");
+      InputStream patchData = ProductInfo.getData("TestPatchData.txt");
+      ProductInfo info = new ProductInfo(buildData, patchData);
+      verifyOpenSourceBuildData(info);
+      verifyPatchInfo(info);
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
   }
 
-  
+  public void testOpenSourceEditionWithoutPatch() {
+    try {
+      InputStream buildData = ProductInfo.getData("TestBuildData.txt");
+      ProductInfo info = new ProductInfo(buildData, null);
+      verifyOpenSourceBuildData(info);
+      verifyNoPatchInfo(info);
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  public void testEnterpriseEditionWithPatch() {
+    try {
+      InputStream buildData = ProductInfo.getData("TestEnterpriseBuildData.txt");
+      InputStream patchData = ProductInfo.getData("TestPatchData.txt");
+      ProductInfo info = new ProductInfo(buildData, patchData);
+      verifyEnterpriseBuildData(info);
+      verifyPatchInfo(info);
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
   private void verifyOpenSourceBuildData(ProductInfo info) {
     assertEquals("thebranch", info.buildBranch());
     assertEquals("thehost", info.buildHost());
@@ -44,7 +56,7 @@ public class ProductInfoTest extends TestCase {
     assertEquals(toDate(2008, 5, 16, 13, 6, 51), info.buildTimestamp());
     assertEquals("20080616-130651", info.buildTimestampAsString());
     assertEquals("theuser", info.buildUser());
-    
+
     String copyright = info.copyright();
     assertNotNull(copyright);
     assertTrue(copyright.indexOf("Copyright (c)") >= 0);
@@ -56,11 +68,12 @@ public class ProductInfoTest extends TestCase {
     assertEquals("Unlimited development", info.license());
     assertEquals("1.2.3-SNAPSHOT", info.mavenArtifactsVersion());
     assertEquals("Terracotta", info.moniker());
-    assertEquals("Terracotta 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 12345 by theuser@thehost from thebranch)", info.toLongString());
+    assertEquals("Terracotta 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 12345 by theuser@thehost from thebranch)",
+                 info.toLongString());
     assertEquals("Terracotta 1.2.3-SNAPSHOT", info.toShortString());
     assertEquals("1.2.3-SNAPSHOT", info.version());
   }
-  
+
   private void verifyEnterpriseBuildData(ProductInfo info) {
     assertEquals("thebranch", info.buildBranch());
     assertEquals("thehost", info.buildHost());
@@ -70,7 +83,7 @@ public class ProductInfoTest extends TestCase {
     assertEquals(toDate(2008, 5, 16, 13, 6, 51), info.buildTimestamp());
     assertEquals("20080616-130651", info.buildTimestampAsString());
     assertEquals("theuser", info.buildUser());
-    
+
     String copyright = info.copyright();
     assertNotNull(copyright);
     assertTrue(copyright.indexOf("Copyright (c)") >= 0);
@@ -82,25 +95,30 @@ public class ProductInfoTest extends TestCase {
     assertEquals("Unlimited development", info.license());
     assertEquals("1.2.3-SNAPSHOT", info.mavenArtifactsVersion());
     assertEquals("Terracotta", info.moniker());
-    assertEquals("Terracotta Enterprise Edition 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 98765-12345 by theuser@thehost from thebranch)", info.toLongString());
+    assertEquals(
+                 "Terracotta Enterprise Edition 1.2.3-SNAPSHOT, as of 20080616-130651 (Revision 98765-12345 by theuser@thehost from thebranch)",
+                 info.toLongString());
     assertEquals("Terracotta Enterprise Edition 1.2.3-SNAPSHOT", info.toShortString());
     assertEquals("1.2.3-SNAPSHOT", info.version());
   }
-  
+
   private void verifyPatchInfo(ProductInfo info) {
     assertEquals(true, info.hasPatchInfo());
     assertEquals("thepatchbranch", info.patchBranch());
-    assertEquals("20080620-235959 (Revision 12112 by thepatchuser@thepatchhost from thepatchbranch)", info.patchBuildID());
+    assertEquals("20080620-235959 (Revision 12112 by thepatchuser@thepatchhost from thepatchbranch)", info
+        .patchBuildID());
     assertEquals("thepatchhost", info.patchHost());
     assertEquals("5", info.patchLevel());
     assertEquals("12112", info.patchRevision());
     assertEquals(toDate(2008, 5, 20, 23, 59, 59), info.patchTimestamp());
     assertEquals("20080620-235959", info.patchTimestampAsString());
     assertEquals("thepatchuser", info.patchUser());
-    assertEquals("Patch Level 5, as of 20080620-235959 (Revision 12112 by thepatchuser@thepatchhost from thepatchbranch)", info.toLongPatchString());
+    assertEquals(
+                 "Patch Level 5, as of 20080620-235959 (Revision 12112 by thepatchuser@thepatchhost from thepatchbranch)",
+                 info.toLongPatchString());
     assertEquals("Patch Level 5", info.toShortPatchString());
   }
-  
+
   private void verifyNoPatchInfo(ProductInfo info) {
     assertEquals(false, info.hasPatchInfo());
     assertEquals(ProductInfo.UNKNOWN_VALUE, info.patchBranch());
@@ -111,7 +129,8 @@ public class ProductInfoTest extends TestCase {
     assertEquals(null, info.patchTimestamp());
     assertEquals(ProductInfo.UNKNOWN_VALUE, info.patchTimestampAsString());
     assertEquals(ProductInfo.UNKNOWN_VALUE, info.patchUser());
-    assertEquals("Patch Level [unknown], as of [unknown] (Revision [unknown] by [unknown]@[unknown] from [unknown])", info.toLongPatchString());
+    assertEquals("Patch Level [unknown], as of [unknown] (Revision [unknown] by [unknown]@[unknown] from [unknown])",
+                 info.toLongPatchString());
     assertEquals("Patch Level [unknown]", info.toShortPatchString());
   }
 
