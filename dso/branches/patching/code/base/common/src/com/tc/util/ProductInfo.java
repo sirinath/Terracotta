@@ -12,9 +12,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
-import com.tc.logging.CustomerLogging;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
+//import com.tc.logging.CustomerLogging;
+//import com.tc.logging.TCLogger;
+//import com.tc.logging.TCLogging;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,8 +75,9 @@ public final class ProductInfo {
   private String                            copyright;
   private String                            license                      = DEFAULT_LICENSE;
 
-  private static final TCLogger             logger                       = TCLogging.getLogger(ProductInfo.class);
-  private static final TCLogger             consoleLogger                = CustomerLogging.getConsoleLogger();
+  // XXX: Can't have a logger in this class...
+  //private static final TCLogger             logger                       = TCLogging.getLogger(ProductInfo.class);
+  //private static final TCLogger             consoleLogger                = CustomerLogging.getConsoleLogger();
 
   public ProductInfo(String version, String buildID, String license, String copyright) {
     this.version = version;
@@ -119,8 +120,9 @@ public final class ProductInfo {
       properties.load(buildData);
       if (patchData != null) properties.load(patchData);
     } catch (IOException e) {
-      consoleLogger.fatal(e.getMessage() + ". Check the log for details.");
-      logger.fatal(e.getMessage());
+      System.err.println("FATAL: " + e.getMessage());
+      //consoleLogger.fatal(e.getMessage() + ". Check the log for details.");
+      //logger.fatal(e.getMessage());
       System.exit(1);
     }
 
@@ -145,11 +147,7 @@ public final class ProductInfo {
     this.patchBranch = getPatchProperty(properties, BUILD_DATA_BRANCH_KEY, UNKNOWN_VALUE);
 
     Matcher matcher = KITIDPATTERN.matcher(maven_version);
-    if (matcher.matches()) {
-      kitID = matcher.group(1);
-    } else {
-      kitID = UNKNOWN_VALUE;
-    }
+    kitID = matcher.matches() ? matcher.group(1) : UNKNOWN_VALUE;
   }
 
   static Date parseTimestamp(String timestampString) {
@@ -157,8 +155,9 @@ public final class ProductInfo {
     try {
       return new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
     } catch (ParseException e) {
-      consoleLogger.error(e.getMessage() + ". Check the log for details.");
-      logger.error(e.getMessage());
+      System.err.println("ERROR: " + e.getMessage());
+      //consoleLogger.error(e.getMessage() + ". Check the log for details.");
+      //logger.error(e.getMessage());
       return null;
     }
   }
