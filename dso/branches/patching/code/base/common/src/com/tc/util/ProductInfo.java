@@ -9,16 +9,12 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
-//import com.tc.logging.CustomerLogging;
-//import com.tc.logging.TCLogger;
-//import com.tc.logging.TCLogging;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
@@ -50,7 +46,11 @@ public final class ProductInfo {
   private static final String               PATCH_DATA_LEVEL_KEY         = "level";
   public static final String                UNKNOWN_VALUE                = "[unknown]";
   public static final String                DEFAULT_LICENSE              = "Unlimited development";
-  private static ProductInfo                PRODUCTINFO                  = null;
+
+  private static ProductInfo                instance                     = null;
+
+  private final InputStream                 buildData;
+  private final InputStream                 patchData;
 
   private final String                      moniker;
   private final String                      maven_version;
@@ -76,14 +76,17 @@ public final class ProductInfo {
   private String                            license                      = DEFAULT_LICENSE;
 
   // XXX: Can't have a logger in this class...
-  //private static final TCLogger             logger                       = TCLogging.getLogger(ProductInfo.class);
-  //private static final TCLogger             consoleLogger                = CustomerLogging.getConsoleLogger();
+  // private static final TCLogger logger = TCLogging.getLogger(ProductInfo.class);
+  // private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
   public ProductInfo(String version, String buildID, String license, String copyright) {
     this.version = version;
     this.buildID = buildID;
     this.license = license;
     this.copyright = copyright;
+
+    buildData = null;
+    patchData = null;
 
     moniker = UNKNOWN_VALUE;
     maven_version = UNKNOWN_VALUE;
@@ -112,19 +115,16 @@ public final class ProductInfo {
    * @param buildData Build properties in stream conforming to Java Properties file format, null if none
    * @param patchData Patch properties in stream conforming to Java Properties file format, null if none
    */
-  ProductInfo(InputStream buildData, InputStream patchData) {
+  ProductInfo(InputStream buildData, InputStream patchData) throws Exception {
+    Assert.assertNotNull("buildData", buildData);
+
+    this.buildData = buildData;
+    this.patchData = patchData;
+
     Properties properties = new Properties();
     moniker = bundleHelper.getString("moniker");
-    try {
-      Assert.assertNotNull("build data stream cannot be null", buildData);
-      properties.load(buildData);
-      if (patchData != null) properties.load(patchData);
-    } catch (IOException e) {
-      System.err.println("FATAL: " + e.getMessage());
-      //consoleLogger.fatal(e.getMessage() + ". Check the log for details.");
-      //logger.fatal(e.getMessage());
-      System.exit(1);
-    }
+    properties.load(this.buildData);
+    if (this.patchData != null) properties.load(this.patchData);
 
     // Get all release build properties
     this.version = getBuildProperty(properties, BUILD_DATA_VERSION_KEY, UNKNOWN_VALUE);
@@ -150,29 +150,33 @@ public final class ProductInfo {
     kitID = matcher.matches() ? matcher.group(1) : UNKNOWN_VALUE;
   }
 
-  static Date parseTimestamp(String timestampString) {
-    if (timestampString == null) return null;
-    try {
-      return new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
-    } catch (ParseException e) {
-      System.err.println("ERROR: " + e.getMessage());
-      //consoleLogger.error(e.getMessage() + ". Check the log for details.");
-      //logger.error(e.getMessage());
-      return null;
-    }
-  }
-
-  public static synchronized ProductInfo getInstance(ClassLoader classLoader) {
-    if (PRODUCTINFO == null) {
-      InputStream buildStream = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
-      InputStream patchStream = ProductInfo.class.getResourceAsStream(PATCH_DATA_RESOURCE_NAME);
-      PRODUCTINFO = new ProductInfo(buildStream, patchStream);
-    }
-    return PRODUCTINFO;
+  static Date parseTimestamp(String timestampString) throws java.text.ParseException {
+    return (timestampString == null) ? null : new SimpleDateFormat(DATE_FORMAT).parse(timestampString);
   }
 
   public static synchronized ProductInfo getInstance() {
-    return getInstance(ClassLoader.getSystemClassLoader());
+    if (instance == null) {
+      try {
+        InputStream buildData = getData(BUILD_DATA_RESOURCE_NAME);
+        InputStream patchData = getData(PATCH_DATA_RESOURCE_NAME);
+        instance = new ProductInfo(buildData, patchData);
+      } catch (Exception e) {
+        throw new RuntimeException(e.getMessage());
+      }
+    }
+    return instance;
+  }
+
+  static InputStream getData(String name) {
+    return ProductInfo.class.getResourceAsStream(name);
+  }
+
+  InputStream getBuildData() {
+    return buildData;
+  }
+
+  InputStream getPatchData() {
+    return patchData;
   }
 
   private String getBuildProperty(Properties properties, String name, String defaultValue) {
@@ -189,13 +193,16 @@ public final class ProductInfo {
     return out;
   }
 
-  public static void printRawData() throws IOException {
-    InputStream buildData = ProductInfo.class.getResourceAsStream(BUILD_DATA_RESOURCE_NAME);
-    Assert.assertNotNull("build data stream cannot be null", buildData);
-    IOUtils.copy(buildData, System.out);
-
-    InputStream patchData = ProductInfo.class.getResourceAsStream(PATCH_DATA_RESOURCE_NAME);
-    if (patchData != null) IOUtils.copy(patchData, System.out);
+  public static void printRawData() {
+    try {
+      InputStream buildData = getData(BUILD_DATA_RESOURCE_NAME);
+      if (buildData != null) IOUtils.copy(buildData, System.out);
+      
+      InputStream patchData = getData(PATCH_DATA_RESOURCE_NAME);
+      if (patchData != null) IOUtils.copy(patchData, System.out);
+    } catch (IOException e) {
+      throw new RuntimeException(e.getMessage());
+    }
   }
 
   public boolean isDevMode() {
@@ -223,12 +230,11 @@ public final class ProductInfo {
   }
 
   public Date buildTimestamp() {
-    return timestamp;
+    return (timestamp == null) ? null : (Date) timestamp.clone();
   }
 
   public String buildTimestampAsString() {
-    if (this.timestamp == null) return UNKNOWN_VALUE;
-    else return new SimpleDateFormat(DATE_FORMAT).format(this.timestamp);
+    return (timestamp == null) ? UNKNOWN_VALUE : new SimpleDateFormat(DATE_FORMAT).format(timestamp);
   }
 
   public String buildHost() {
@@ -279,12 +285,11 @@ public final class ProductInfo {
   }
 
   public Date patchTimestamp() {
-    return patchTimestamp;
+    return (patchTimestamp == null) ? null : (Date) patchTimestamp.clone();
   }
 
   public String patchTimestampAsString() {
-    if (this.patchTimestamp == null) return UNKNOWN_VALUE;
-    else return new SimpleDateFormat(DATE_FORMAT).format(this.patchTimestamp);
+    return (patchTimestamp == null) ? UNKNOWN_VALUE : new SimpleDateFormat(DATE_FORMAT).format(patchTimestamp);
   }
 
   public String patchRevision() {
@@ -329,31 +334,42 @@ public final class ProductInfo {
     return toShortString();
   }
 
-  public static void main(String[] args) throws Exception {
+  private static void printHelp(Options options) {
+    new HelpFormatter().printHelp("java " + ProductInfo.class.getName(), options);
+  }
+  
+  public static void main(String[] args) {
     Options options = new Options();
     options.addOption("v", "verbose", false, bundleHelper.getString("option.verbose"));
     options.addOption("r", "raw", false, bundleHelper.getString("option.raw"));
     options.addOption("h", "help", false, bundleHelper.getString("option.help"));
 
     CommandLineParser parser = new GnuParser();
-    CommandLine cli = parser.parse(options, args);
+    try {
+      CommandLine cli = parser.parse(options, args);
 
-    if (cli.hasOption("h")) {
-      new HelpFormatter().printHelp("java " + ProductInfo.class.getName(), options);
-      System.exit(0);
+      if (cli.hasOption("h")) {
+        printHelp(options);
+        System.exit(0);
+      }
+
+      if (cli.hasOption("v")) {
+        System.out.println(getInstance().toLongString());
+        if (getInstance().hasPatchInfo()) System.out.println(getInstance().toLongPatchString());
+        System.exit(0);
+      }
+
+      if (cli.hasOption("r")) {
+        printRawData();
+        System.exit(0);
+      }
+
+      System.out.println(getInstance().toShortString());
+    } catch (ParseException e) {
+      System.out.println(e.getMessage());
+      System.out.println();
+      printHelp(options);
+      System.exit(1);
     }
-
-    if (cli.hasOption("v")) {
-      System.out.println(getInstance().toLongString());
-      if (getInstance().hasPatchInfo()) System.out.println(getInstance().toLongPatchString());
-      System.exit(0);
-    }
-
-    if (cli.hasOption("r")) {
-      printRawData();
-      System.exit(0);
-    }
-
-    System.out.println(getInstance().toShortString());
   }
 }
