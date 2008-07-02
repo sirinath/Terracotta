@@ -34,6 +34,14 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
 
     depends :dist
 
+    begin
+      # Warn if patch level is not a positive integer
+      i = Integer(patch_level)
+      raise("not a positive integer") if i < 0
+    rescue
+      loud_message("WARNING: patch level is not a positive integer")
+    end
+
     puts("Building patch level #{patch_level}")
 
     patch_files = Array.new
