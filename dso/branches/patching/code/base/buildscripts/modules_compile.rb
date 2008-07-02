@@ -8,6 +8,8 @@
 # ability to compile themselves.
 
 class BuildSubtree
+  include BuildData
+  
   # Compiles the given subtree. jvm_set is the set of JVMs available; the
   # subtree will look for one named 'compile-<version>', where <version> is
   # the value passed as :compiler_version in the options hash of the BuildSubtree
@@ -107,6 +109,8 @@ class BuildSubtree
         ant.fileset(:dir => resource_root.to_s, :includes => '**/*')
       }
     end
+    
+    create_data_file(config_source, build_results.classes_directory(self).to_s, :build_data)
   end
 
   private
