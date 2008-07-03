@@ -49,9 +49,6 @@ public final class ProductInfo {
 
   private static ProductInfo                instance                     = null;
 
-  private final InputStream                 buildData;
-  private final InputStream                 patchData;
-
   private final String                      moniker;
   private final String                      maven_version;
   private final Date                        timestamp;
@@ -85,9 +82,6 @@ public final class ProductInfo {
     this.license = license;
     this.copyright = copyright;
 
-    buildData = null;
-    patchData = null;
-
     moniker = UNKNOWN_VALUE;
     maven_version = UNKNOWN_VALUE;
     timestamp = null;
@@ -118,13 +112,10 @@ public final class ProductInfo {
   ProductInfo(InputStream buildData, InputStream patchData) throws Exception {
     Assert.assertNotNull("buildData", buildData);
 
-    this.buildData = buildData;
-    this.patchData = patchData;
-
     Properties properties = new Properties();
     moniker = bundleHelper.getString("moniker");
-    properties.load(this.buildData);
-    if (this.patchData != null) properties.load(this.patchData);
+    properties.load(buildData);
+    if (patchData != null) properties.load(patchData);
 
     // Get all release build properties
     this.version = getBuildProperty(properties, BUILD_DATA_VERSION_KEY, UNKNOWN_VALUE);
@@ -171,12 +162,12 @@ public final class ProductInfo {
     return ProductInfo.class.getResourceAsStream(name);
   }
 
-  InputStream getBuildData() {
-    return buildData;
+  static InputStream getBuildData() {
+    return getData(BUILD_DATA_RESOURCE_NAME);
   }
 
-  InputStream getPatchData() {
-    return patchData;
+  static InputStream getPatchData() {
+    return getData(PATCH_DATA_RESOURCE_NAME);
   }
 
   private String getBuildProperty(Properties properties, String name, String defaultValue) {
@@ -195,10 +186,10 @@ public final class ProductInfo {
 
   public static void printRawData() {
     try {
-      InputStream buildData = getData(BUILD_DATA_RESOURCE_NAME);
+      InputStream buildData = getBuildData();
       if (buildData != null) IOUtils.copy(buildData, System.out);
       
-      InputStream patchData = getData(PATCH_DATA_RESOURCE_NAME);
+      InputStream patchData = getPatchData();
       if (patchData != null) IOUtils.copy(patchData, System.out);
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage());
@@ -268,10 +259,10 @@ public final class ProductInfo {
     return ee_revision;
   }
 
-  public boolean hasPatchInfo() {
+  public boolean isPatched() {
     return !UNKNOWN_VALUE.equals(patchLevel);
   }
-
+  
   public String patchLevel() {
     return patchLevel;
   }
@@ -355,7 +346,7 @@ public final class ProductInfo {
 
       if (cli.hasOption("v")) {
         System.out.println(getInstance().toLongString());
-        if (getInstance().hasPatchInfo()) System.out.println(getInstance().toLongPatchString());
+        if (getInstance().isPatched()) System.out.println(getInstance().toLongPatchString());
         System.exit(0);
       }
 

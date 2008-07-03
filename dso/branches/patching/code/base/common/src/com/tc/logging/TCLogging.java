@@ -448,7 +448,7 @@ public class TCLogging {
     classLogger.info(longProductString);
     
     // Write patch info, if any
-    if(info.hasPatchInfo()) {
+    if(info.isPatched()) {
       String longPatchString = info.toLongPatchString();
       consoleLogger.info(longPatchString);
       classLogger.info(longPatchString);
