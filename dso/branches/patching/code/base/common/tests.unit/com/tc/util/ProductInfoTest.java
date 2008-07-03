@@ -103,7 +103,7 @@ public class ProductInfoTest extends TestCase {
   }
 
   private void verifyPatchInfo(ProductInfo info) {
-    assertEquals(true, info.hasPatchInfo());
+    assertEquals(true, info.isPatched());
     assertEquals("thepatchbranch", info.patchBranch());
     assertEquals("20080620-235959 (Revision 12112 by thepatchuser@thepatchhost from thepatchbranch)", info
         .patchBuildID());
@@ -120,7 +120,7 @@ public class ProductInfoTest extends TestCase {
   }
 
   private void verifyNoPatchInfo(ProductInfo info) {
-    assertEquals(false, info.hasPatchInfo());
+    assertEquals(false, info.isPatched());
     assertEquals(ProductInfo.UNKNOWN_VALUE, info.patchBranch());
     assertEquals("[unknown] (Revision [unknown] by [unknown]@[unknown] from [unknown])", info.patchBuildID());
     assertEquals(ProductInfo.UNKNOWN_VALUE, info.patchHost());

@@ -40,7 +40,7 @@ public class AboutDialog extends Dialog implements ActionListener {
   private String versionText(ProductInfo productInfo) {
     StringBuffer sb = new StringBuffer("<html><p>");
     sb.append(productInfo.toLongString());
-    if (productInfo.hasPatchInfo()) {
+    if (productInfo.isPatched()) {
       sb.append("<p style=\"text-align:center\">");
       sb.append(productInfo.toLongPatchString());
     }

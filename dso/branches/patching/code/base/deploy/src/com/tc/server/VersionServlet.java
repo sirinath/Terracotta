@@ -19,7 +19,7 @@ public class VersionServlet extends HttpServlet {
     PrintWriter writer = response.getWriter();
     writer.println("<html><title>Version Information</title><body><pre>");
     writer.println(productInfo.toLongString());
-    if(productInfo.hasPatchInfo()) {
+    if(productInfo.isPatched()) {
       writer.println("<br>");
       writer.println(productInfo.toLongPatchString());
     }
