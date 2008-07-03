@@ -55,8 +55,8 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
 
     URL url;
     String iconPath = "/com/tc/admin/icons/logo_small.png";
-
-    if ((url = getClass().getResource(iconPath)) != null) {
+    
+    if((url = HyperlinkFrame.class.getResource(iconPath)) != null) {
       setIconImage(new Image(url));
     }
 
@@ -78,7 +78,7 @@ public abstract class HyperlinkFrame extends Frame implements HyperlinkListener 
   }
 
   protected void quit() {
-    System.exit(0);
+    Runtime.getRuntime().exit(0);
   }
 
   protected File getInstallRoot() {
