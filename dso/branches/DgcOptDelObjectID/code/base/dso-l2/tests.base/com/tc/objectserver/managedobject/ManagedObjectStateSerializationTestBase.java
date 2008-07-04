@@ -26,8 +26,6 @@ import com.tc.objectserver.persistence.impl.TestMutableSequence;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.ManagedObjectPersistorImpl;
-import com.tc.objectserver.persistence.sleepycat.NullObjectIDPersistentMapInfo;
-import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfo;
 import com.tc.objectserver.persistence.sleepycat.SleepycatCollectionFactory;
 import com.tc.objectserver.persistence.sleepycat.SleepycatCollectionsPersistor;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor;
@@ -61,7 +59,6 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
     ptp = new TestPersistenceTransactionProvider();
     CursorConfig rootDBCursorConfig = new CursorConfig();
     SleepycatCollectionFactory sleepycatCollectionFactory = new SleepycatCollectionFactory();
-    ObjectIDPersistentMapInfo objectIDPersistentMapInfo = new NullObjectIDPersistentMapInfo();
     SleepycatCollectionsPersistor sleepycatCollectionsPersistor = new SleepycatCollectionsPersistor(logger, env
         .getMapsDatabase(), sleepycatCollectionFactory);
 
