@@ -31,6 +31,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
@@ -89,7 +90,7 @@ public class LocksPanel extends XContainer implements NotificationListener {
   private static Collection<LockSpec> EMPTY_LOCK_SPEC_COLLECTION = new HashSet<LockSpec>();
 
   private static final int            STATUS_TIMEOUT_SECONDS     = 3;
-  private static final int            REFRESH_TIMEOUT_SECONDS    = 5;
+  private static final int            REFRESH_TIMEOUT_SECONDS    = 10;
 
   public LocksPanel(LocksNode locksNode) {
     super();
@@ -351,7 +352,7 @@ public class LocksPanel extends XContainer implements NotificationListener {
     Toolkit.getDefaultToolkit().beep();
   }
 
-  class TraceDepthSpinnerChangeListener implements ChangeListener {
+  class TraceDepthSpinnerChangeListener implements ChangeListener, Serializable {
     public void stateChanged(ChangeEvent e) {
       fTraceDepthChangeTimer.stop();
       fTraceDepthChangeTimer.start();
