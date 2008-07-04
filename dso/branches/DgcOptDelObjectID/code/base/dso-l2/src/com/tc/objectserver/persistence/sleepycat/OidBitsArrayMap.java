@@ -11,6 +11,7 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.Transaction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
@@ -18,6 +19,7 @@ import com.tc.util.Conversion;
 import com.tc.util.OidLongArray;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 public class OidBitsArrayMap {
@@ -27,16 +29,26 @@ public class OidBitsArrayMap {
   private final HashMap         map;
   private final int             bitsLength;
   private final int             longsPerDiskUnit;
+  private final int             auxKey;
 
   OidBitsArrayMap(int longsPerDiskUnit, Database oidDB) {
+    this(longsPerDiskUnit, oidDB, 0);
+  }
+
+  OidBitsArrayMap(int longsPerDiskUnit, Database oidDB, int auxKey) {
     this.oidDB = oidDB;
     this.longsPerDiskUnit = longsPerDiskUnit;
     this.bitsLength = longsPerDiskUnit * OidLongArray.BITS_PER_LONG;
     map = new HashMap();
+    this.auxKey = auxKey;
   }
 
   public void clear() {
     map.clear();
+  }
+
+  public int getAuxKey() {
+    return auxKey;
   }
 
   public Long oidIndex(long oid) {
@@ -61,7 +73,14 @@ public class OidBitsArrayMap {
       if (map.containsKey(mapIndex)) {
         longAry = (OidLongArray) map.get(mapIndex);
       } else {
-        longAry = (oidDB != null) ? readDiskEntry(oid) : null;
+        longAry = null;
+        if (oidDB != null) {
+          try {
+            longAry = readDiskEntry(null, oid);
+          } catch (DatabaseException e) {
+            logger.error("Reading object ID " + oid + ":" + e);
+          }
+        }
         if (longAry == null) longAry = new OidLongArray(longsPerDiskUnit, mapIndex.longValue());
         map.put(mapIndex, longAry);
       }
@@ -69,17 +88,36 @@ public class OidBitsArrayMap {
     return longAry;
   }
 
-  private OidLongArray readDiskEntry(long oid) {
+  public OidLongArray readDiskEntry(Transaction txn, long oid) throws DatabaseException {
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
-    key.setData(Conversion.long2Bytes(oidIndex(oid)));
-    try {
-      OperationStatus status = oidDB.get(null, key, value, LockMode.DEFAULT);
-      if (OperationStatus.SUCCESS.equals(status)) { return new OidLongArray(key.getData(), value.getData()); }
-    } catch (DatabaseException e) {
-      logger.error("Reading object ID " + oid + ":" + e);
-    }
+    long aryIndex = oidIndex(oid);
+    key.setData(Conversion.long2Bytes(aryIndex + auxKey));
+    OperationStatus status = oidDB.get(txn, key, value, LockMode.DEFAULT);
+    if (OperationStatus.SUCCESS.equals(status)) { return new OidLongArray(aryIndex, value.getData()); }
     return null;
+  }
+
+  public void writeDiskEntry(Transaction txn, OidLongArray bits) throws DatabaseException {
+    DatabaseEntry key = new DatabaseEntry();
+    DatabaseEntry value = new DatabaseEntry();
+    key.setData(bits.keyToBytes(auxKey));
+
+    if (!bits.isZero()) {
+      value.setData(bits.arrayToBytes());
+      if (!OperationStatus.SUCCESS.equals(this.oidDB.put(txn, key, value))) {
+        //
+        throw new DatabaseException("Failed to update oidDB at " + bits.getKey());
+      }
+    } else {
+      OperationStatus status = this.oidDB.delete(txn, key);
+      // OperationStatus.NOTFOUND happened if added and then deleted in the same batch
+      if (!OperationStatus.SUCCESS.equals(status) && !OperationStatus.NOTFOUND.equals(status)) {
+        //
+        throw new DatabaseException("Failed to delete oidDB at " + bits.getKey());
+      }
+    }
+
   }
 
   private OidLongArray getAndModify(long oid, boolean doSet) {
@@ -111,33 +149,7 @@ public class OidBitsArrayMap {
     }
   }
 
-  // for testing
-  void loadBitsArrayFromDisk() {
-    clear();
-    Cursor cursor = null;
-    try {
-      cursor = oidDB.openCursor(null, CursorConfig.READ_COMMITTED);
-      DatabaseEntry key = new DatabaseEntry();
-      DatabaseEntry value = new DatabaseEntry();
-      while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
-        OidLongArray bitsArray = new OidLongArray(key.getData(), value.getData());
-        map.put(new Long(bitsArray.getKey()), bitsArray);
-      }
-      cursor.close();
-      cursor = null;
-    } catch (DatabaseException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        if (cursor != null) cursor.close();
-      } catch (DatabaseException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  // for testing
-  boolean contains(ObjectID id) {
+  public boolean contains(ObjectID id) {
     long oid = id.toLong();
     Long mapIndex = oidIndex(oid);
     synchronized (map) {
@@ -147,6 +159,53 @@ public class OidBitsArrayMap {
       }
     }
     return (false);
+  }
+
+  // for testing
+  void loadAllFromDisk() {
+    synchronized (map) {
+      clear();
+      Cursor cursor = null;
+      try {
+        cursor = oidDB.openCursor(null, CursorConfig.READ_COMMITTED);
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
+          // load its only records indicated by auxKey
+          long index = Conversion.bytes2Long(key.getData());
+          if (index == (oidIndex(index) + auxKey)) {
+            index -= auxKey;
+            OidLongArray bitsArray = new OidLongArray(index, value.getData());
+            map.put(new Long(index), bitsArray);
+          }
+        }
+        cursor.close();
+        cursor = null;
+      } catch (DatabaseException e) {
+        throw new RuntimeException(e);
+      } finally {
+        try {
+          if (cursor != null) cursor.close();
+        } catch (DatabaseException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
+  // for testing
+  void saveAllToDisk() {
+    synchronized (map) {
+      Iterator i = map.keySet().iterator();
+      while (i.hasNext()) {
+        OidLongArray bitsArray = (OidLongArray) map.get(i.next());
+        try {
+          writeDiskEntry(null, bitsArray);
+        } catch (DatabaseException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
   }
 
   // for testing
