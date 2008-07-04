@@ -116,6 +116,7 @@ public class OidBitsArrayMap {
         //
         throw new DatabaseException("Failed to delete oidDB at " + bits.getKey());
       }
+      removeIfEmpty(bits);
     }
 
   }

@@ -224,6 +224,9 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
                 }
               } else {
                 oidBitsArrayMap.getAndClr(objectID);
+                if (persistableMap.contains(objectID)) {
+                  persistableMap.getAndClr(objectID);
+                }
               }
               sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(oidValue)));
               offset += OidLongArray.BYTES_PER_LONG + 1;
@@ -254,8 +257,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
           OidLongArray bits = oidBitsArrayMap.getBitsArray(onDiskIndex);
           oidBitsArrayMap.writeDiskEntry(pt2nt(tx), bits);
 
-          bits = persistableMap.getBitsArray(onDiskIndex);
-          if (bits != null) persistableMap.writeDiskEntry(pt2nt(tx), bits);
+          OidLongArray auxBits = persistableMap.getBitsArray(onDiskIndex);
+          if (auxBits != null) {
+            persistableMap.writeDiskEntry(pt2nt(tx), auxBits);
+          }
         }
 
         tx.commit();
