@@ -71,8 +71,7 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
                                                                 .getOidLogDatabase(), env.getOidLogSequeneceDB(),
                                                             dbCursorConfig, new TestMutableSequence(), env
                                                                 .getRootDatabase(), rootDBCursorConfig, ptp,
-                                                            sleepycatCollectionsPersistor, env.isParanoidMode(),
-                                                            objectIDPersistentMapInfo);
+                                                            sleepycatCollectionsPersistor, env.isParanoidMode());
 
     NullManagedObjectChangeListenerProvider listenerProvider = new NullManagedObjectChangeListenerProvider();
     ManagedObjectStateFactory.disableSingleton(true);

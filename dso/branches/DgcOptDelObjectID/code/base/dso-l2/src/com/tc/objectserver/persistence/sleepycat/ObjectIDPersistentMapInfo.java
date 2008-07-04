@@ -13,4 +13,6 @@ public interface ObjectIDPersistentMapInfo {
   public void setPersistent(ObjectID id);
 
   public void clrPersistent(ObjectID id);
+  
+  public void clear();
 }

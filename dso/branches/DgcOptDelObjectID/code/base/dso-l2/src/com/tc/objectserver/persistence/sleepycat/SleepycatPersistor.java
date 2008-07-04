@@ -46,7 +46,6 @@ public class SleepycatPersistor implements Persistor {
   private final DBEnvironment                  env;
   private final SleepycatCollectionFactory     sleepycatCollectionFactory;
   private final PersistentMapStore             clusterStateStore;
-  private final ObjectIDPersistentMapInfo      objectIDPersistentMapInfo;
 
   private SleepycatCollectionsPersistor        sleepycatCollectionsPersistor;
 
@@ -75,7 +74,6 @@ public class SleepycatPersistor implements Persistor {
     this.stringIndexPersistor = new SleepycatStringIndexPersistor(persistenceTransactionProvider, env
         .getStringIndexDatabase(), stringIndexCursorConfig, env.getClassCatalogWrapper().getClassCatalog());
     this.stringIndex = new StringIndexImpl(this.stringIndexPersistor, DEFAULT_CAPACITY);
-    this.objectIDPersistentMapInfo = new ObjectIDPersistentMapInfoImpl();
     this.sleepycatCollectionFactory = new SleepycatCollectionFactory();
     this.sleepycatCollectionsPersistor = new SleepycatCollectionsPersistor(logger, env.getMapsDatabase(),
                                                                            sleepycatCollectionFactory);
@@ -95,7 +93,7 @@ public class SleepycatPersistor implements Persistor {
                                                                      .getRootDatabase(), rootDBCursorConfig,
                                                                  this.persistenceTransactionProvider,
                                                                  this.sleepycatCollectionsPersistor, env
-                                                                     .isParanoidMode(), objectIDPersistentMapInfo);
+                                                                     .isParanoidMode());
     this.clientStatePersistor = new ClientStatePersistorImpl(logger, this.persistenceTransactionProvider,
                                                              new SleepycatSequence(this.persistenceTransactionProvider,
                                                                                    logger, 1, 0, env
@@ -245,10 +243,6 @@ public class SleepycatPersistor implements Persistor {
       abortOnError(tx);
     }
 
-  }
-
-  public ObjectIDPersistentMapInfo getObjectIDPersistentMapInfo() {
-    return objectIDPersistentMapInfo;
   }
 
   /**

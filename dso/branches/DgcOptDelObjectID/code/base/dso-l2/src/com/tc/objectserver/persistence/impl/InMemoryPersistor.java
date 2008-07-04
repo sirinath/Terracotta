@@ -14,8 +14,6 @@ import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
 import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
-import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfo;
-import com.tc.objectserver.persistence.sleepycat.ObjectIDPersistentMapInfoImpl;
 import com.tc.util.sequence.MutableSequence;
 
 public class InMemoryPersistor implements Persistor {
@@ -26,7 +24,6 @@ public class InMemoryPersistor implements Persistor {
   private final ClassPersistor                 clazzPersistor;
   private final PersistentCollectionFactory    persistentCollectionFactory;
   private final PersistentMapStore             clusterStateStore;
-  private final ObjectIDPersistentMapInfo      objectIDPersistentMapInfo;
 
   public InMemoryPersistor() {
     this.persistenceTransactionProvider = new NullPersistenceTransactionProvider();
@@ -35,7 +32,6 @@ public class InMemoryPersistor implements Persistor {
     this.clazzPersistor = new InMemoryClassPersistor();
     this.persistentCollectionFactory = new InMemoryCollectionFactory();
     this.clusterStateStore = new InMemoryPersistentMapStore();
-    this.objectIDPersistentMapInfo = new ObjectIDPersistentMapInfoImpl();
 
   }
 
@@ -77,10 +73,6 @@ public class InMemoryPersistor implements Persistor {
 
   public PersistentMapStore getClusterStateStore() {
     return clusterStateStore;
-  }
-
-  public ObjectIDPersistentMapInfo getObjectIDPersistentMapInfo() {
-    return objectIDPersistentMapInfo;
   }
 
 }

@@ -7,7 +7,7 @@ package com.tc.objectserver.persistence.sleepycat;
 import com.tc.object.ObjectID;
 
 public class ObjectIDPersistentMapInfoImpl implements ObjectIDPersistentMapInfo {
-  private final int             longsPerDiskEntry = 16;
+  private final int             longsPerDiskEntry = 8;
   private final OidBitsArrayMap bitsArray;
 
   public ObjectIDPersistentMapInfoImpl() {
@@ -24,5 +24,9 @@ public class ObjectIDPersistentMapInfoImpl implements ObjectIDPersistentMapInfo 
 
   public void clrPersistent(ObjectID id) {
     bitsArray.removeIfEmpty(bitsArray.getAndClr(id));
+  }
+  
+  public void clear() {
+    bitsArray.clear();
   }
 }
