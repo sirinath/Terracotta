@@ -19,6 +19,7 @@ import com.tc.util.Conversion;
 import com.tc.util.OidLongArray;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -197,7 +198,10 @@ public class OidBitsArrayMap {
   // for testing
   void saveAllToDisk() {
     synchronized (map) {
-      Iterator i = map.keySet().iterator();
+      // use another set to avoid ConcurrentModificationException
+      Set dupKeySet = new HashSet();
+      dupKeySet.addAll(map.keySet());
+      Iterator i = dupKeySet.iterator();
       while (i.hasNext()) {
         OidLongArray bitsArray = (OidLongArray) map.get(i.next());
         try {
