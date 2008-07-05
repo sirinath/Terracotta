@@ -40,8 +40,8 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.tx.NullTransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -49,6 +49,7 @@ import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.StoppableThread;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
