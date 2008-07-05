@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
   private static final TCLogger                logger                = TCLogging
@@ -46,17 +45,16 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final byte                           DEL_OBJECT_ID         = (byte) 1;
   private final int                            AUXDB_KEY             = 1;
   // property
-  private final int                            checkpointChanges;
   private final int                            checkpointMaxLimit;
   private final int                            checkpointPeriod;
   private final int                            longsPerDiskEntry;
+  private final boolean                        isAdaptive;
   private final boolean                        isMeasurePerf;
 
   private final Database                       oidDB;
   private final Database                       oidLogDB;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   oidDBCursorConfig;
-  private final AtomicInteger                  changesCount          = new AtomicInteger(0);
   private final CheckpointRunner               checkpointThread;
   private final Object                         checkpointSyncObj     = new Object();
   private final Object                         objectIDUpdateSyncObj = new Object();
@@ -73,8 +71,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.ptp = ptp;
     this.oidDBCursorConfig = oidDBCursorConfig;
 
-    checkpointChanges = TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES);
+    isAdaptive = TCPropertiesImpl.getProperties()
+        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_ADAPTIVE, true);
     checkpointMaxLimit = TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT);
     checkpointPeriod = TCPropertiesImpl.getProperties()
@@ -104,27 +102,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
 
   public void stopCheckpointRunner() {
     checkpointThread.quit();
-  }
-
-  /*
-   * changesCount: the amount of changes to trigger checkpoint.
-   */
-  private void incChangesCount(int n) {
-    if (changesCount.addAndGet(n) > checkpointChanges) {
-      synchronized (checkpointSyncObj) {
-        checkpointSyncObj.notifyAll();
-      }
-      logger.debug("Checkpoint waked up by " + changesCount.get() + " changes");
-      resetChangesCount();
-    }
-  }
-
-  private void incChangesCount() {
-    incChangesCount(1);
-  }
-
-  private void resetChangesCount() {
-    changesCount.set(0);
   }
 
   private synchronized long nextSeqID() {
@@ -177,16 +154,16 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
 
   private OperationStatus logAddObjectID(PersistenceTransaction tx, ManagedObject mo) throws DatabaseException {
     OperationStatus status = logObjectID(tx, makeLogValue(mo), true);
-    if (OperationStatus.SUCCESS.equals(status)) incChangesCount();
     return (status);
   }
 
   /*
    * Flush out oidLogDB to bitsArray on disk.
    */
-  private void oidFlushLogToBitsArray(StoppedFlag stoppedFlag, boolean isNoLimit) {
+  private boolean oidFlushLogToBitsArray(StoppedFlag stoppedFlag, int maxProcessLimit) {
+    boolean isAllFlushed = true;
     synchronized (objectIDUpdateSyncObj) {
-      if (stoppedFlag.isStopped()) return;
+      if (stoppedFlag.isStopped()) return isAllFlushed;
       OidBitsArrayMap oidBitsArrayMap = new OidBitsArrayMap(longsPerDiskEntry, this.oidDB);
       OidBitsArrayMap persistableMap = new OidBitsArrayMap(longsPerDiskEntry, this.oidDB, AUXDB_KEY);
       SortedSet<Long> sortedOnDiskIndexSet = new TreeSet<Long>();
@@ -204,7 +181,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
               cursor.close();
               cursor = null;
               abortOnError(tx);
-              return;
+              return isAllFlushed;
             }
 
             boolean isAddOper = isAddOper(key.getData());
@@ -232,9 +209,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
             }
             cursor.delete();
 
-            if (!isNoLimit && (changes >= checkpointMaxLimit)) {
+            if (changes >= maxProcessLimit) {
               cursor.close();
               cursor = null;
+              isAllFlushed = false;
               break;
             }
           }
@@ -245,12 +223,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
           cursor = null;
         }
 
-        resetChangesCount();
-
         for (Long onDiskIndex : sortedOnDiskIndexSet) {
           if (stoppedFlag.isStopped()) {
             abortOnError(tx);
-            return;
+            return isAllFlushed;
           }
           OidLongArray bits = oidBitsArrayMap.getBitsArray(onDiskIndex);
           oidBitsArrayMap.writeDiskEntry(pt2nt(tx), bits);
@@ -270,14 +246,15 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
         oidBitsArrayMap.clear();
       }
     }
+    return isAllFlushed;
   }
 
   private void processPreviousRunOidLog() {
-    oidFlushLogToBitsArray(new StoppedFlag(), true);
+    oidFlushLogToBitsArray(new StoppedFlag(), Integer.MAX_VALUE);
   }
 
-  private void processCheckpoint(StoppedFlag stoppedFlag) {
-    oidFlushLogToBitsArray(stoppedFlag, false);
+  private boolean processCheckpoint(StoppedFlag stoppedFlag, int maxProcessLimit) {
+    return oidFlushLogToBitsArray(stoppedFlag, maxProcessLimit);
   }
 
   private static class StoppedFlag {
@@ -309,17 +286,39 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     }
 
     public void run() {
+      int currentwait = timeperiod;
+      int maxProcessLimit = checkpointMaxLimit;
       while (!stoppedFlag.isStopped()) {
         // Wait for enough changes or specified time-period
         synchronized (checkpointSyncObj) {
           try {
-            checkpointSyncObj.wait(timeperiod);
+            checkpointSyncObj.wait(currentwait);
           } catch (InterruptedException e) {
             //
           }
         }
         if (stoppedFlag.isStopped()) break;
-        processCheckpoint(stoppedFlag);
+        boolean isAllFlushed = processCheckpoint(stoppedFlag, maxProcessLimit);
+        
+        if (isAdaptive) {
+          if (isAllFlushed) {
+            // All flushed, wait longer for next time
+            currentwait += currentwait;
+            if (currentwait > timeperiod) {
+              currentwait = timeperiod;
+              maxProcessLimit = checkpointMaxLimit;
+            }
+          } else {
+            // reduce wait time to catch up
+            currentwait = currentwait / 2;
+            // at least wait 1 second
+            if (currentwait < 1000) {
+              currentwait = 1000;
+              // increase process limit
+              if (maxProcessLimit < (Integer.MAX_VALUE / 2)) maxProcessLimit += maxProcessLimit;
+            }
+          }
+        }
       }
     }
   }
@@ -472,7 +471,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     } catch (DatabaseException de) {
       throw new TCDatabaseException(de);
     }
-    incChangesCount(size);
     return (status);
   }
 
