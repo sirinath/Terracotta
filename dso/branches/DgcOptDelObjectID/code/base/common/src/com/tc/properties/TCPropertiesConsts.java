@@ -68,6 +68,8 @@ public interface TCPropertiesConsts {
   public static final String L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED             = "l2.objectmanager.persistor.logging.enabled";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                 = "l2.objectmanager.loadObjectID.fastLoad";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY       = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
+  public static final String L2_OBJECTMANAGER_LOADOBJECTID_STATE_LONGS_PERDISKENTRY = "l2.objectmanager.loadObjectID.state.longsPerDiskEntry";
+  public static final String L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF             = "l2.objectmanager.loadObjectID.measure.performance";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES       = "l2.objectmanager.loadObjectID.checkpoint.changes";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT      = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD    = "l2.objectmanager.loadObjectID.checkpoint.timeperiod";

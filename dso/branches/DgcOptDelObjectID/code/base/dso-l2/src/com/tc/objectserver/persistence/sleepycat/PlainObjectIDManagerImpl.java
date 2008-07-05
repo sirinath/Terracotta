@@ -17,7 +17,7 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
-import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet;
@@ -38,9 +38,9 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
     this.ptp = ptp;
     this.dBCursorConfig = dBCursorConfig;
 
-    TCProperties loadObjProp = TCPropertiesImpl.getProperties()
-        .getPropertiesFor(FastObjectIDManagerImpl.LOAD_OBJECTID_PROPERTIES);
-    isMeasurePerf = loadObjProp.getBoolean(FastObjectIDManagerImpl.MEASURE_PERF, false);
+    isMeasurePerf = TCPropertiesImpl.getProperties()
+        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF, false);
+
   }
 
   public Runnable getObjectIDReader(SyncObjectIdSet rv) {

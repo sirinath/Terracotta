@@ -19,7 +19,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
-import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
@@ -37,21 +37,15 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implements ObjectIDManager {
-  private static final TCLogger                logger                   = TCLogging
-                                                                            .getTestingLogger(FastObjectIDManagerImpl.class);
-  private final static int                     SEQUENCE_BATCH_SIZE      = 50000;
-  private final byte                           PERSIST_COLL             = (byte) 1;
-  private final byte                           NOT_PERSIST_COLL         = (byte) 0;
-  private final byte                           ADD_OBJECT_ID            = (byte) 0;
-  private final byte                           DEL_OBJECT_ID            = (byte) 1;
-  private final int                            AUXDB_KEY                = 1;
+  private static final TCLogger                logger                = TCLogging
+                                                                         .getTestingLogger(FastObjectIDManagerImpl.class);
+  private final static int                     SEQUENCE_BATCH_SIZE   = 50000;
+  private final byte                           PERSIST_COLL          = (byte) 1;
+  private final byte                           NOT_PERSIST_COLL      = (byte) 0;
+  private final byte                           ADD_OBJECT_ID         = (byte) 0;
+  private final byte                           DEL_OBJECT_ID         = (byte) 1;
+  private final int                            AUXDB_KEY             = 1;
   // property
-  public final static String                   LOAD_OBJECTID_PROPERTIES = "l2.objectmanager.loadObjectID";
-  private final static String                  LONGS_PER_DISK_ENTRY     = "longsPerDiskEntry";
-  public final static String                   MEASURE_PERF             = "measure.performance";                             // hidden
-  private final static String                  CHCKPOINT_CHANGES        = "checkpoint.changes";
-  private final static String                  CHCKPOINT_TIMEPERIOD     = "checkpoint.timeperiod";
-  private final static String                  CHCKPOINT_MAXLIMIT       = "checkpoint.maxlimit";
   private final int                            checkpointChanges;
   private final int                            checkpointMaxLimit;
   private final int                            checkpointPeriod;
@@ -62,10 +56,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final Database                       oidLogDB;
   private final PersistenceTransactionProvider ptp;
   private final CursorConfig                   oidDBCursorConfig;
-  private final AtomicInteger                  changesCount             = new AtomicInteger(0);
+  private final AtomicInteger                  changesCount          = new AtomicInteger(0);
   private final CheckpointRunner               checkpointThread;
-  private final Object                         checkpointSyncObj        = new Object();
-  private final Object                         objectIDUpdateSyncObj    = new Object();
+  private final Object                         checkpointSyncObj     = new Object();
+  private final Object                         objectIDUpdateSyncObj = new Object();
   private final MutableSequence                sequence;
   private final ObjectIDPersistentMapInfo      objectIDPersistentMapInfo;
   private long                                 nextSequence;
@@ -79,12 +73,16 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.ptp = ptp;
     this.oidDBCursorConfig = oidDBCursorConfig;
 
-    TCProperties loadObjProp = TCPropertiesImpl.getProperties().getPropertiesFor(LOAD_OBJECTID_PROPERTIES);
-    checkpointChanges = loadObjProp.getInt(CHCKPOINT_CHANGES);
-    checkpointMaxLimit = loadObjProp.getInt(CHCKPOINT_MAXLIMIT);
-    checkpointPeriod = loadObjProp.getInt(CHCKPOINT_TIMEPERIOD);
-    longsPerDiskEntry = loadObjProp.getInt(LONGS_PER_DISK_ENTRY);
-    isMeasurePerf = loadObjProp.getBoolean(MEASURE_PERF, false);
+    checkpointChanges = TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES);
+    checkpointMaxLimit = TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT);
+    checkpointPeriod = TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD);
+    longsPerDiskEntry = TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY);
+    isMeasurePerf = TCPropertiesImpl.getProperties()
+        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF, false);
 
     this.sequence = sequence;
     nextSequence = this.sequence.nextBatch(SEQUENCE_BATCH_SIZE);
