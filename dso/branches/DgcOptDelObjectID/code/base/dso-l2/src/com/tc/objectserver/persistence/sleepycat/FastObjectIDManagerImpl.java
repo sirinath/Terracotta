@@ -39,6 +39,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private static final TCLogger                logger                = TCLogging
                                                                          .getTestingLogger(FastObjectIDManagerImpl.class);
   private final static int                     SEQUENCE_BATCH_SIZE   = 50000;
+  private final static int                     MINIMUM_WAIT_TIME     = 1000;
   private final byte                           PERSIST_COLL          = (byte) 1;
   private final byte                           NOT_PERSIST_COLL      = (byte) 0;
   private final byte                           ADD_OBJECT_ID         = (byte) 0;
@@ -299,7 +300,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
         }
         if (stoppedFlag.isStopped()) break;
         boolean isAllFlushed = processCheckpoint(stoppedFlag, maxProcessLimit);
-        
+
         if (isAdaptive) {
           if (isAllFlushed) {
             // All flushed, wait longer for next time
@@ -312,9 +313,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
             // reduce wait time to catch up
             currentwait = currentwait / 2;
             // at least wait 1 second
-            if (currentwait < 1000) {
-              currentwait = 1000;
-              // increase process limit
+            if (currentwait < MINIMUM_WAIT_TIME) {
+              currentwait = MINIMUM_WAIT_TIME;
               if (maxProcessLimit < (Integer.MAX_VALUE / 2)) maxProcessLimit += maxProcessLimit;
             }
           }
