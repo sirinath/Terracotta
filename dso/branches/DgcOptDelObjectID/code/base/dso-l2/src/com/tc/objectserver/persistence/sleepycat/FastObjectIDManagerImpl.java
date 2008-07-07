@@ -315,7 +315,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
             // at least wait 1 second
             if (currentwait < MINIMUM_WAIT_TIME) {
               currentwait = MINIMUM_WAIT_TIME;
-              if (maxProcessLimit < (Integer.MAX_VALUE / 2)) maxProcessLimit += maxProcessLimit;
             }
           }
         }
