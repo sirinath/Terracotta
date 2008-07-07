@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decorators defaultdir="">
+	<decorator name="main" page="decorators/layout.ftl">
+		<pattern>/*</pattern>
+	</decorator>
+</decorators>
