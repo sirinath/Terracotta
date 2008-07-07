@@ -47,7 +47,7 @@ public final class ProductInfo {
   public static final String                UNKNOWN_VALUE                = "[unknown]";
   public static final String                DEFAULT_LICENSE              = "Unlimited development";
 
-  private static ProductInfo                instance                     = null;
+  private static ProductInfo                INSTANCE                     = null;
 
   private final String                      moniker;
   private final String                      maven_version;
@@ -106,10 +106,13 @@ public final class ProductInfo {
    * from the classpath). If an IOException occurs while loading the build or patch streams, the System will exit. These
    * resources are always expected to be in the path and are necessary to do version compatibility checks.
    * 
-   * @param buildData Build properties in stream conforming to Java Properties file format, null if none
+   * @param buildData Build properties in stream conforming to Java Properties file format, must not be null
    * @param patchData Patch properties in stream conforming to Java Properties file format, null if none
+   * @throws NullPointerException If buildData is null and assertions are enabled
+   * @throws IOException If there is an error reading the build or patch data streams
+   * @throws ParseException If there is an error reading the timestamp format in build or patch data streams
    */
-  ProductInfo(InputStream buildData, InputStream patchData) throws Exception {
+  ProductInfo(InputStream buildData, InputStream patchData) throws IOException, java.text.ParseException {
     Assert.assertNotNull("buildData", buildData);
 
     Properties properties = new Properties();
@@ -146,16 +149,16 @@ public final class ProductInfo {
   }
 
   public static synchronized ProductInfo getInstance() {
-    if (instance == null) {
+    if (INSTANCE == null) {
       try {
         InputStream buildData = getData(BUILD_DATA_RESOURCE_NAME);
         InputStream patchData = getData(PATCH_DATA_RESOURCE_NAME);
-        instance = new ProductInfo(buildData, patchData);
+        INSTANCE = new ProductInfo(buildData, patchData);
       } catch (Exception e) {
         throw new RuntimeException(e.getMessage());
       }
     }
-    return instance;
+    return INSTANCE;
   }
 
   static InputStream getData(String name) {
@@ -188,7 +191,7 @@ public final class ProductInfo {
     try {
       InputStream buildData = getBuildData();
       if (buildData != null) IOUtils.copy(buildData, System.out);
-      
+
       InputStream patchData = getPatchData();
       if (patchData != null) IOUtils.copy(patchData, System.out);
     } catch (IOException e) {
@@ -262,7 +265,7 @@ public final class ProductInfo {
   public boolean isPatched() {
     return !UNKNOWN_VALUE.equals(patchLevel);
   }
-  
+
   public String patchLevel() {
     return patchLevel;
   }
@@ -302,7 +305,9 @@ public final class ProductInfo {
   public String buildID() {
     if (buildID == null) {
       String rev = revision;
-      if (edition.indexOf("Enterprise") >= 0) rev = ee_revision + "-" + revision;
+      if (edition.indexOf("Enterprise") >= 0) {
+        rev = ee_revision + "-" + revision;
+      }
       buildID = buildTimestampAsString() + " (Revision " + rev + " by " + user + "@" + host + " from " + branch + ")";
     }
     return buildID;
@@ -328,7 +333,7 @@ public final class ProductInfo {
   private static void printHelp(Options options) {
     new HelpFormatter().printHelp("java " + ProductInfo.class.getName(), options);
   }
-  
+
   public static void main(String[] args) {
     Options options = new Options();
     options.addOption("v", "verbose", false, bundleHelper.getString("option.verbose"));
