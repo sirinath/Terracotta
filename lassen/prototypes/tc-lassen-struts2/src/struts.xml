@@ -1,0 +1,34 @@
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+<struts>
+	<constant name="struts.objectFactory" value="guice"/>
+	<constant name="guice.module" value="org.terracotta.lassen.modules.LassenModule"/>
+	
+    <package name="default" extends="struts-default">
+        
+        <action name="index">
+            <result name="success" type="freemarker">welcome.ftl</result>
+        </action>
+
+        <action name="listUsers" class="org.terracotta.lassen.actions.ListUsersAction">
+            <result name="success" type="freemarker">users/list.ftl</result>
+        </action>
+
+        <action name="editUser" class="org.terracotta.lassen.actions.EditUserAction">
+            <interceptor-ref name="paramsPrepareParamsStack"/>
+        	<result name="none" type="redirectAction">index</result>
+            <result name="input" type="freemarker">users/edit.ftl</result>
+            <result name="success" type="redirectAction">listUsers</result>
+        </action>
+
+        <action name="registration">
+            <result name="success" type="freemarker">registration/form.ftl</result>
+        </action>
+
+        <action name="register" class="org.terracotta.lassen.actions.RegisterAction">
+            <result name="success" type="freemarker">registration/success.ftl</result>
+            <result name="input" type="freemarker">registration/form.ftl</result>
+        </action>
+    </package>
+</struts>
