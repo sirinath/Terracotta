@@ -57,8 +57,7 @@ public class TestClientStateManager implements ClientStateManager {
   }
 
   public void addAllReferencedIdsTo(Set rescueIds) {
-    throw new ImplementMe();
-
+    //
   }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {

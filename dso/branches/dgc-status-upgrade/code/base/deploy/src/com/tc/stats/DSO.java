@@ -256,7 +256,8 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
       }
 
       try {
-        final DSOClient client = new DSOClient(mbeanServer, channel, channelStats, channelMgr.getClientIDFor(channel.getChannelID()) );
+        final DSOClient client = new DSOClient(mbeanServer, channel, channelStats, channelMgr.getClientIDFor(channel
+            .getChannelID()));
         mbeanServer.registerMBean(client, clientName);
         clientObjectNames.add(clientName);
         sendNotification(CLIENT_ATTACHED, clientName);
@@ -319,9 +320,15 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
   }
 
   private class ObjectManagerListener implements ObjectManagerEventListener {
-    public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
-      sendNotification(GC_COMPLETED, stats);
+
+    public void updateGCStatus(GCStats stats) {
+      sendNotification(GC_STATUS_UPDATE, stats);
     }
+
+    public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
+      sendNotification(GC_STATUS_UPDATE, stats);
+    }
+
   }
 
   private class ChannelManagerListener implements DSOChannelManagerEventListener {

@@ -6,8 +6,12 @@ package com.tc.objectserver.api;
 public interface GCStats {
   
   int getIteration();
+  
+  String getType();
 
-  long getStartTime();
+  String getStatus();
+  
+  long getStartTime(); 
 
   long getElapsedTime();
 
@@ -17,8 +21,8 @@ public interface GCStats {
 
   long getActualGarbageCount();
 
-  long getPausedTime();
+  long getPausedStageTime();
   
-  long getDeleteTime();
+  long getDeleteStageTime();
 
 }

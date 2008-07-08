@@ -25,7 +25,7 @@ public interface DSOMBean extends DSOStats, TerracottaMBean {
 
   DSOStats getStats();
 
-  static final String GC_COMPLETED = "dso.gc.completed";
+  static final String GC_STATUS_UPDATE = "dso.gc.status.update";
 
   static final String ROOT_ADDED   = "dso.root.added";
 
