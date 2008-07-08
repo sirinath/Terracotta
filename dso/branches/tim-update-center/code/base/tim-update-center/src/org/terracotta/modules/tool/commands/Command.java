@@ -17,6 +17,8 @@ public interface Command {
 
   /**
    * Execute whatever actions that this command performs.
+   *
+   * @param Any arguments that need to be passed to this command.
    */
-  public void execute();
+  public void execute(String[] args);
 }
