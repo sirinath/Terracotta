@@ -5,27 +5,16 @@ package org.terracotta.modules.tool.commands;
 
 import org.terracotta.modules.tool.TimRepositoryStub;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import junit.framework.TestCase;
+import com.tc.util.ProductInfo;
 
 /**
  * Test case for {@link ListCommand}.
  */
-public class ListCommandTest extends TestCase {
-  protected AbstractCommand command;
-  protected StringWriter out;
-  protected StringWriter err;
+public class ListCommandTest extends AbstractCommandTestCase {
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    command = new ListCommand(new TimRepositoryStub());
-    this.out = new StringWriter();
-    this.err = new StringWriter();
-    command.setOut(new PrintWriter(this.out));
-    command.setErr(new PrintWriter(this.err));
   }
 
   /**
@@ -33,7 +22,13 @@ public class ListCommandTest extends TestCase {
    */
   public final void testExecute() {
     command.execute();
-    assertTrue(out.toString().length() > 0);
+    assertOutMatches("TIM packages for Terracotta " + ProductInfo.getInstance().version());
+    assertEquals(0, commandErr.toString().length());
+  }
+
+  @Override
+  protected AbstractCommand createCommand() {
+    return new ListCommand(new TimRepositoryStub());
   }
 
 }
