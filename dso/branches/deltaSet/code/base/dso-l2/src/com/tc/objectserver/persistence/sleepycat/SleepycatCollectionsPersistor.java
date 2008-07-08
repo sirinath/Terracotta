@@ -48,9 +48,10 @@ public class SleepycatCollectionsPersistor extends SleepycatPersistorBase {
     this.oo = new TCObjectOutputStream(bao);
   }
 
-  public int saveCollections(PersistenceTransaction tx, PersistableCollection map) throws IOException,
-      DatabaseException {
-    return map.commit(this, tx, database);
+  public int saveCollections(PersistenceTransaction tx, ManagedObjectState state) throws IOException, DatabaseException {
+    PersistableObjectState persistabeState = (PersistableObjectState) state;
+    PersistableCollection collection = persistabeState.getPersistentCollection();
+    return collection.commit(this, tx, database);
   }
 
   public synchronized byte[] serialize(long id, Object o) throws IOException {

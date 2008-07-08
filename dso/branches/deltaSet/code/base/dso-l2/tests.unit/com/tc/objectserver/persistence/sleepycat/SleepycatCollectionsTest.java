@@ -183,7 +183,7 @@ public class SleepycatCollectionsTest extends TCTestCase {
       SleepycatPersistableMap sMap = (SleepycatPersistableMap) collectionsFactory.createPersistentMap(id);
       addToMap(sMap);
       PersistenceTransaction tx = ptp.newTransaction();
-      collectionsPersistor.saveCollections(tx, sMap);
+      //collectionsPersistor.saveCollections(tx, sMap);
       tx.commit();
     }
   }
