@@ -56,13 +56,13 @@ public class SleepycatPersistableSetTest extends TCTestCase {
 
   private void assertContains(int start, int length) {
     for (int i = start; i < start + length; i++)
-      assertTrue(set.contains(new Number(i)));
+      assertTrue(set.contains(new Node(i)));
   }
 
   private void assertContainsAllAndEquals(int start, int length) {
     HashSet tempSet = new HashSet();
     for (int i = start; i < start + length; i++)
-      tempSet.add(new Number(i));
+      tempSet.add(new Node(i));
 
     assertContainsAll(tempSet);
     assertEquals(tempSet);
@@ -83,7 +83,7 @@ public class SleepycatPersistableSetTest extends TCTestCase {
   public void checkIterator(int start, int length) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
-      vector.add(new Number(i));
+      vector.add(new Node(i));
 
     Iterator iter = set.iterator();
     assertNotNull(iter);
@@ -95,14 +95,14 @@ public class SleepycatPersistableSetTest extends TCTestCase {
 
   private void checkRemove(int start, int length, int expectedLeft) {
     for (int i = start; i < start + length; i++)
-      set.remove(new Number(i));
+      set.remove(new Node(i));
     assertSize(expectedLeft);
   }
 
   private void checkRemoveAll(int start, int length, int expectedLeft) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
-      vector.add(new Number(i));
+      vector.add(new Node(i));
 
     set.removeAll(vector);
     assertSize(expectedLeft);
@@ -111,7 +111,7 @@ public class SleepycatPersistableSetTest extends TCTestCase {
   private void checkRetainAll(int start, int length, int expectedLeft) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
-      vector.add(new Number(i));
+      vector.add(new Node(i));
 
     set.retainAll(vector);
     assertSize(expectedLeft);
@@ -124,7 +124,7 @@ public class SleepycatPersistableSetTest extends TCTestCase {
   private void checkToArray(int start, int length) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
-      vector.add(new Number(i));
+      vector.add(new Node(i));
 
     Object[] objArray = set.toArray();
     assertEquals(length, objArray.length);
@@ -135,22 +135,22 @@ public class SleepycatPersistableSetTest extends TCTestCase {
 
   private void addNumbers(int start, int numbersToBeAdded) {
     for (int i = start; i < start + numbersToBeAdded; i++) {
-      set.add(new Number(i));
+      set.add(new Node(i));
     }
   }
 
   private void addAllFromCollection(int start, int numbersToBeAdded) {
     ArrayList list = new ArrayList(numbersToBeAdded);
     for (int i = start; i < start + numbersToBeAdded; i++)
-      list.add(new Number(i));
+      list.add(new Node(i));
 
     set.addAll(list);
   }
 
-  private class Number {
+  private class Node {
     private int i;
 
-    public Number(int i) {
+    public Node(int i) {
       this.i = i;
     }
 
@@ -160,7 +160,7 @@ public class SleepycatPersistableSetTest extends TCTestCase {
 
     @Override
     public boolean equals(Object obj) {
-      Number number = (Number) obj;
+      Node number = (Node) obj;
       return number.i == this.i;
     }
 
