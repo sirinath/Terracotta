@@ -1,0 +1,22 @@
+/*
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ */
+package org.terracotta.modules.tool.commands;
+
+/**
+ * Base interface implemented by all commands.
+ *
+ * @author Jason Voegele (jvoegele@terracotta.org)
+ */
+public interface Command {
+  
+  /**
+   * Descriptive help text for this command.
+   */
+  public String help();
+
+  /**
+   * Execute whatever actions that this command performs.
+   */
+  public void execute();
+}
