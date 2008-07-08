@@ -125,7 +125,7 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
   public void handleNotification(Notification notice, Object notUsed) {
     String type = notice.getType();
 
-    if (DSOMBean.GC_COMPLETED.equals(type)) {
+    if (DSOMBean.GC_STATUS_UPDATE.equals(type)) {
       GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
       model.addGCStats((GCStats) notice.getSource());
     }
