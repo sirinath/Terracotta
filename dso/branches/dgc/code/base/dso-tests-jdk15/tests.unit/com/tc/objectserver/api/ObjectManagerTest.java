@@ -2321,11 +2321,11 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     public boolean paranoid;
 
     public TestObjectManagerConfig() {
-      super(10000, true, true, true);
+      super(10000, true, true, true, false, 60000);
     }
 
     TestObjectManagerConfig(long gcThreadSleepTime, boolean doGC) {
-      super(gcThreadSleepTime, doGC, true, true);
+      super(gcThreadSleepTime, doGC, true, true, false, 60000);
       throw new RuntimeException("Don't use me.");
     }
 
