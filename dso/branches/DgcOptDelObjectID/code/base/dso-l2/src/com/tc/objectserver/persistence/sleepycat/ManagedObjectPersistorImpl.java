@@ -436,7 +436,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     } catch (Throwable t) {
       throw new DBException(t);
     }
-    
+
     if (failureContext != null) throw new DBException(failureContext.toString());
 
     long delta = System.currentTimeMillis() - t0;
@@ -471,10 +471,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         throw new DBException("Unable to remove ManagedObject for object id: " + id + ", status: " + status);
       } else {
         if (objectIDPersistentMapInfo.isPersistMapped(id)) {
-          if (!collectionsPersistor.deleteCollection(tx, id)) {
-            // XXX to make sure DGC optimization does job, no reduntant call
-            throw new RuntimeException("collectionsPersistor.deleteCollection must return true");
-          }
+          // may return false if ManagedObject persistent state empty
+          collectionsPersistor.deleteCollection(tx, id);
           objectIDPersistentMapInfo.clrPersistent(id);
         }
       }
