@@ -8,10 +8,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -21,10 +18,7 @@
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.0.0/tim-annotations-1.0.0.jar
           </repoUrl>
@@ -37,20 +31,20 @@
           <type>binary</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>bc4f3933c15a4809720f7ac9b49f7a3a</md5>
+          <size>3944</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.0/tim-annotations-1.0.0-bin.zip
           </url>
-          <size>3944</size>
           <filename>tim-annotations-1.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>452c3a406221ecf33ea413e2e79481ef</md5>
+          <size>15644</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.0/tim-annotations-1.0.0-src.zip
           </url>
-          <size>15644</size>
           <filename>tim-annotations-1.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -64,10 +58,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -77,10 +68,7 @@
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.0.1/tim-annotations-1.0.1.jar
           </repoUrl>
@@ -93,20 +81,20 @@
           <type>binary</type>
           <timestamp>07/07/08 10:45:57 PDT</timestamp>
           <md5>2b8e7e84a3dc55b4a33a51ca9ef5674d</md5>
+          <size>3949</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.1/tim-annotations-1.0.1-bin.zip
           </url>
-          <size>3949</size>
           <filename>tim-annotations-1.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:57 PDT</timestamp>
           <md5>d0f86b22fc15958ace869e84b3f3ac83</md5>
+          <size>15643</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.1/tim-annotations-1.0.1-src.zip
           </url>
-          <size>15643</size>
           <filename>tim-annotations-1.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -120,10 +108,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -133,10 +118,7 @@
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.0.2/tim-annotations-1.0.2.jar
           </repoUrl>
@@ -149,20 +131,20 @@
           <type>binary</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>331ac3d78f7e66e364433fc6907847a0</md5>
+          <size>4096</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.2/tim-annotations-1.0.2-bin.zip
           </url>
-          <size>4096</size>
           <filename>tim-annotations-1.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>198c502ef3151c20609adac6ce86d8bc</md5>
+          <size>14670</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.2/tim-annotations-1.0.2-src.zip
           </url>
-          <size>14670</size>
           <filename>tim-annotations-1.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -176,10 +158,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -189,10 +168,7 @@
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.0.3/tim-annotations-1.0.3.jar
           </repoUrl>
@@ -205,20 +181,20 @@
           <type>binary</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>bdab2816dad1992ee86bb458bc115606</md5>
+          <size>4102</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.3/tim-annotations-1.0.3-bin.zip
           </url>
-          <size>4102</size>
           <filename>tim-annotations-1.0.3-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>f045ed450f409b3486f1b59e67438367</md5>
+          <size>14672</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.0.3/tim-annotations-1.0.3-src.zip
           </url>
-          <size>14672</size>
           <filename>tim-annotations-1.0.3-src.zip</filename>
         </artifact>
       </artifacts>
@@ -232,10 +208,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -245,10 +218,7 @@
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.1.0/tim-annotations-1.1.0.jar
           </repoUrl>
@@ -261,20 +231,20 @@
           <type>binary</type>
           <timestamp>07/07/08 10:45:57 PDT</timestamp>
           <md5>dc9223859678535019c64d98dc6c46f8</md5>
+          <size>3975</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.1.0/tim-annotations-1.1.0-bin.zip
           </url>
-          <size>3975</size>
           <filename>tim-annotations-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:57 PDT</timestamp>
           <md5>9c693417ef82bf1159481d26c0dbb908</md5>
+          <size>15430</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.1.0/tim-annotations-1.1.0-src.zip
           </url>
-          <size>15430</size>
           <filename>tim-annotations-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -288,10 +258,7 @@
     <category>Terracotta Integration Module</category>
     <description>Annotations package for Terracotta projects</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -305,10 +272,7 @@
 Terracotta projects.]]>
       </readme>
       <bundles>
-        <bundle>
-          <artifactId>tim-annotations</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-annotations' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-annotations/1.1.1/tim-annotations-1.1.1.jar
           </repoUrl>
@@ -321,20 +285,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>0e5c81037f7e79c0c340d0bc4e2ceb94</md5>
+          <size>4753</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.1.1/tim-annotations-1.1.1-bin.zip
           </url>
-          <size>4753</size>
           <filename>tim-annotations-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:56 PDT</timestamp>
           <md5>c38bcfbe80bda727c44775dc03db404f</md5>
+          <size>15758</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-annotations/tags/release-1.1.1/tim-annotations-1.1.1-src.zip
           </url>
-          <size>15758</size>
           <filename>tim-annotations-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -348,10 +312,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -361,10 +322,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.0.0/tim-apache-struts-1.1-1.0.0.jar
           </repoUrl>
@@ -377,20 +335,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>38f118cfed5bcac00b65a27e62c01803</md5>
+          <size>5104</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.0/tim-apache-struts-1.1-1.0.0-bin.zip
           </url>
-          <size>5104</size>
           <filename>tim-apache-struts-1.1-1.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>1d021f5fa433669f2bbe01bc4fb76b32</md5>
+          <size>12994</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.0/tim-apache-struts-1.1-1.0.0-src.zip
           </url>
-          <size>12994</size>
           <filename>tim-apache-struts-1.1-1.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -404,10 +362,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -417,10 +372,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.0.1/tim-apache-struts-1.1-1.0.1.jar
           </repoUrl>
@@ -433,20 +385,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>429b5d478881ff6f709af4423b46f169</md5>
+          <size>4975</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.1/tim-apache-struts-1.1-1.0.1-bin.zip
           </url>
-          <size>4975</size>
           <filename>tim-apache-struts-1.1-1.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>0fafd374411ae7108b7c91fc1180d77a</md5>
+          <size>12864</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.1/tim-apache-struts-1.1-1.0.1-src.zip
           </url>
-          <size>12864</size>
           <filename>tim-apache-struts-1.1-1.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -460,10 +412,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -473,10 +422,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.0.2/tim-apache-struts-1.1-1.0.2.jar
           </repoUrl>
@@ -489,20 +435,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>a646d8fd95a9b179af2a3417e77fb675</md5>
+          <size>4970</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.2/tim-apache-struts-1.1-1.0.2-bin.zip
           </url>
-          <size>4970</size>
           <filename>tim-apache-struts-1.1-1.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>4a7068ed4ca2c2d334dcd0d860ef3658</md5>
+          <size>12863</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.0.2/tim-apache-struts-1.1-1.0.2-src.zip
           </url>
-          <size>12863</size>
           <filename>tim-apache-struts-1.1-1.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -516,10 +462,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
@@ -529,10 +472,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.1.0/tim-apache-struts-1.1-1.1.0.jar
           </repoUrl>
@@ -545,20 +485,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>f5ef6c089969410f76e73104c605e41e</md5>
+          <size>4962</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.0/tim-apache-struts-1.1-1.1.0-bin.zip
           </url>
-          <size>4962</size>
           <filename>tim-apache-struts-1.1-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>a55cf4179a69e88f2ac034353d5a67da</md5>
+          <size>12857</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.0/tim-apache-struts-1.1-1.1.0-src.zip
           </url>
-          <size>12857</size>
           <filename>tim-apache-struts-1.1-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -572,10 +512,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -585,10 +522,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.1.1/tim-apache-struts-1.1-1.1.1.jar
           </repoUrl>
@@ -601,20 +535,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>63e1f93303ce87ae232725c4ed912d70</md5>
+          <size>4965</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.1/tim-apache-struts-1.1-1.1.1-bin.zip
           </url>
-          <size>4965</size>
           <filename>tim-apache-struts-1.1-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>c1530ad5307d0ca7b44c346e79425996</md5>
+          <size>12859</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.1/tim-apache-struts-1.1-1.1.1-src.zip
           </url>
-          <size>12859</size>
           <filename>tim-apache-struts-1.1-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -628,10 +562,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Apache Struts 1.1</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -641,10 +572,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-apache-struts-1.1</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-apache-struts-1.1' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-apache-struts-1.1/1.1.2/tim-apache-struts-1.1-1.1.2.jar
           </repoUrl>
@@ -657,20 +585,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>b29572b061ab59e0b56d6651ad8b86db</md5>
+          <size>4963</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.2/tim-apache-struts-1.1-1.1.2-bin.zip
           </url>
-          <size>4963</size>
           <filename>tim-apache-struts-1.1-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:48 PDT</timestamp>
           <md5>1b10acd3179b525457d9d04ed789d10b</md5>
+          <size>12857</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-apache-struts-1.1/tags/release-1.1.2/tim-apache-struts-1.1-1.1.2-src.zip
           </url>
-          <size>12857</size>
           <filename>tim-apache-struts-1.1-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -684,10 +612,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -697,10 +622,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.0.0/tim-cglib-2.1.3-1.0.0.jar
           </repoUrl>
@@ -713,20 +635,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>2311a2490a0e430226997f5447e7fafd</md5>
+          <size>1355256</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.0/tim-cglib-2.1.3-1.0.0-bin.zip
           </url>
-          <size>1355256</size>
           <filename>tim-cglib-2.1.3-1.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>43e94a8a25fcde67392bc39c2507ea58</md5>
+          <size>21227</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.0/tim-cglib-2.1.3-1.0.0-src.zip
           </url>
-          <size>21227</size>
           <filename>tim-cglib-2.1.3-1.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -740,10 +662,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -753,10 +672,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.0.1/tim-cglib-2.1.3-1.0.1.jar
           </repoUrl>
@@ -769,20 +685,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>20a54c9470a13f993a58dee9fd8830cf</md5>
+          <size>1355820</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.1/tim-cglib-2.1.3-1.0.1-bin.zip
           </url>
-          <size>1355820</size>
           <filename>tim-cglib-2.1.3-1.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>6af95af19383d576c309a92363ecf0aa</md5>
+          <size>21241</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.1/tim-cglib-2.1.3-1.0.1-src.zip
           </url>
-          <size>21241</size>
           <filename>tim-cglib-2.1.3-1.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -796,10 +712,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -809,10 +722,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.0.2/tim-cglib-2.1.3-1.0.2.jar
           </repoUrl>
@@ -825,20 +735,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>32b81a9c983838b71454249afc163c5c</md5>
+          <size>1355180</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.2/tim-cglib-2.1.3-1.0.2-bin.zip
           </url>
-          <size>1355180</size>
           <filename>tim-cglib-2.1.3-1.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>56645e39a1ea1704502043d0757601b8</md5>
+          <size>21240</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.2/tim-cglib-2.1.3-1.0.2-src.zip
           </url>
-          <size>21240</size>
           <filename>tim-cglib-2.1.3-1.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -852,10 +762,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -865,10 +772,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.0.3/tim-cglib-2.1.3-1.0.3.jar
           </repoUrl>
@@ -881,20 +785,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>245287ec15c91da05fac0f49dea22d18</md5>
+          <size>1355024</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.3/tim-cglib-2.1.3-1.0.3-bin.zip
           </url>
-          <size>1355024</size>
           <filename>tim-cglib-2.1.3-1.0.3-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>bbbdd09115b1fb456f57241ee335851d</md5>
+          <size>21241</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.0.3/tim-cglib-2.1.3-1.0.3-src.zip
           </url>
-          <size>21241</size>
           <filename>tim-cglib-2.1.3-1.0.3-src.zip</filename>
         </artifact>
       </artifacts>
@@ -908,10 +812,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
@@ -921,10 +822,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.1.0/tim-cglib-2.1.3-1.1.0.jar
           </repoUrl>
@@ -937,20 +835,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>35689664c1b6401ec90758cdadff7861</md5>
+          <size>1358684</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.0/tim-cglib-2.1.3-1.1.0-bin.zip
           </url>
-          <size>1358684</size>
           <filename>tim-cglib-2.1.3-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:50 PDT</timestamp>
           <md5>5af4f9143956212c4c01909d74018dd0</md5>
+          <size>21096</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.0/tim-cglib-2.1.3-1.1.0-src.zip
           </url>
-          <size>21096</size>
           <filename>tim-cglib-2.1.3-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -964,10 +862,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -977,10 +872,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.1.1/tim-cglib-2.1.3-1.1.1.jar
           </repoUrl>
@@ -993,20 +885,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>a90a749f8ad6a3e7ccd79641bcfda5a7</md5>
+          <size>1359159</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.1/tim-cglib-2.1.3-1.1.1-bin.zip
           </url>
-          <size>1359159</size>
           <filename>tim-cglib-2.1.3-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>ab61e655aada94bf8211ad2379cbbd6a</md5>
+          <size>21099</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.1/tim-cglib-2.1.3-1.1.1-src.zip
           </url>
-          <size>21099</size>
           <filename>tim-cglib-2.1.3-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1020,10 +912,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta configuration for clustering CGLib 2.1.3</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -1033,10 +922,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-cglib-2.1.3</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-cglib-2.1.3' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-cglib-2.1.3/1.1.2/tim-cglib-2.1.3-1.1.2.jar
           </repoUrl>
@@ -1049,20 +935,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>d0d87a078a94b19783e72f872da3b2c7</md5>
+          <size>15618</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.2/tim-cglib-2.1.3-1.1.2-bin.zip
           </url>
-          <size>15618</size>
           <filename>tim-cglib-2.1.3-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:49 PDT</timestamp>
           <md5>55036f055cb42be6c51cca76228cc7ee</md5>
+          <size>21062</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-cglib-2.1.3/tags/release-1.1.2/tim-cglib-2.1.3-1.1.2-src.zip
           </url>
-          <size>21062</size>
           <filename>tim-cglib-2.1.3-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1076,10 +962,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -1089,80 +972,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.0.0/tim-collections-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.0.0</installPath>
           <filename>tim-collections-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.0.0/tim-hashtable-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.0.0</installPath>
           <filename>tim-hashtable-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.0.0/tim-synchronizedcollection-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.0.0</installPath>
           <filename>tim-synchronizedcollection-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.0.0/tim-synchronizedmap-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.0.0</installPath>
           <filename>tim-synchronizedmap-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.0.0/tim-synchronizedset-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.0.0</installPath>
           <filename>tim-synchronizedset-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.0.0/tim-synchronizedsortedmap-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.0.0</installPath>
           <filename>tim-synchronizedsortedmap-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.0.0/tim-synchronizedsortedset-2.0.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.0.0</installPath>
           <filename>tim-synchronizedsortedset-2.0.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.0.0/tim-vector-2.0.0.jar
           </repoUrl>
@@ -1175,20 +1034,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>97ebc3a121c29751440100ffe2f35cc3</md5>
+          <size>13954</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.0/tim-collections-2.0.0-bin.zip
           </url>
-          <size>13954</size>
           <filename>tim-collections-2.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>4b4e78f51f44cc23097a80c85410e7b6</md5>
+          <size>31044</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.0/tim-collections-2.0.0-src.zip
           </url>
-          <size>31044</size>
           <filename>tim-collections-2.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1202,10 +1061,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -1215,80 +1071,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.0.1/tim-collections-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.0.1</installPath>
           <filename>tim-collections-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.0.1/tim-hashtable-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.0.1</installPath>
           <filename>tim-hashtable-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.0.1/tim-synchronizedcollection-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.0.1</installPath>
           <filename>tim-synchronizedcollection-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.0.1/tim-synchronizedmap-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.0.1</installPath>
           <filename>tim-synchronizedmap-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.0.1/tim-synchronizedset-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.0.1</installPath>
           <filename>tim-synchronizedset-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.0.1/tim-synchronizedsortedmap-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.0.1</installPath>
           <filename>tim-synchronizedsortedmap-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.0.1/tim-synchronizedsortedset-2.0.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.0.1</installPath>
           <filename>tim-synchronizedsortedset-2.0.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.0.1/tim-vector-2.0.1.jar
           </repoUrl>
@@ -1301,20 +1133,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>91fdbaa51c502d5775b1120ae4236c5c</md5>
+          <size>13996</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.1/tim-collections-2.0.1-bin.zip
           </url>
-          <size>13996</size>
           <filename>tim-collections-2.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>bc5311ac3c891c7bb70c005e31b7f586</md5>
+          <size>31058</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.1/tim-collections-2.0.1-src.zip
           </url>
-          <size>31058</size>
           <filename>tim-collections-2.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1328,10 +1160,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -1341,80 +1170,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.0.2/tim-collections-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.0.2</installPath>
           <filename>tim-collections-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.0.2/tim-hashtable-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.0.2</installPath>
           <filename>tim-hashtable-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.0.2/tim-synchronizedcollection-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.0.2</installPath>
           <filename>tim-synchronizedcollection-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.0.2/tim-synchronizedmap-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.0.2</installPath>
           <filename>tim-synchronizedmap-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.0.2/tim-synchronizedset-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.0.2</installPath>
           <filename>tim-synchronizedset-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.0.2/tim-synchronizedsortedmap-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.0.2</installPath>
           <filename>tim-synchronizedsortedmap-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.0.2/tim-synchronizedsortedset-2.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.0.2</installPath>
           <filename>tim-synchronizedsortedset-2.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.0.2/tim-vector-2.0.2.jar
           </repoUrl>
@@ -1427,20 +1232,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>2c76c2c7fa01065a144efcedc943d00f</md5>
+          <size>14105</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.2/tim-collections-2.0.2-bin.zip
           </url>
-          <size>14105</size>
           <filename>tim-collections-2.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>035b68f6397f9d355054d63968e0f08a</md5>
+          <size>31188</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.2/tim-collections-2.0.2-src.zip
           </url>
-          <size>31188</size>
           <filename>tim-collections-2.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1454,10 +1259,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -1467,80 +1269,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.0.3/tim-collections-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.0.3</installPath>
           <filename>tim-collections-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.0.3/tim-hashtable-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.0.3</installPath>
           <filename>tim-hashtable-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.0.3/tim-synchronizedcollection-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.0.3</installPath>
           <filename>tim-synchronizedcollection-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.0.3/tim-synchronizedmap-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.0.3</installPath>
           <filename>tim-synchronizedmap-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.0.3/tim-synchronizedset-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.0.3</installPath>
           <filename>tim-synchronizedset-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.0.3/tim-synchronizedsortedmap-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.0.3</installPath>
           <filename>tim-synchronizedsortedmap-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.0.3/tim-synchronizedsortedset-2.0.3.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.0.3</installPath>
           <filename>tim-synchronizedsortedset-2.0.3.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.0.3/tim-vector-2.0.3.jar
           </repoUrl>
@@ -1553,20 +1331,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>66318d18fe07c684df4f3d987d3208cf</md5>
+          <size>14222</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.3/tim-collections-2.0.3-bin.zip
           </url>
-          <size>14222</size>
           <filename>tim-collections-2.0.3-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>d2a0d5e39929e6b5c6f5582d836c81aa</md5>
+          <size>31302</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.3/tim-collections-2.0.3-src.zip
           </url>
-          <size>31302</size>
           <filename>tim-collections-2.0.3-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1580,10 +1358,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
         </repoUrl>
@@ -1593,80 +1368,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.0.4/tim-collections-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.0.4</installPath>
           <filename>tim-collections-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.0.4/tim-hashtable-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.0.4</installPath>
           <filename>tim-hashtable-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.0.4/tim-synchronizedcollection-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.0.4</installPath>
           <filename>tim-synchronizedcollection-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.0.4/tim-synchronizedmap-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.0.4</installPath>
           <filename>tim-synchronizedmap-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.0.4/tim-synchronizedset-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.0.4</installPath>
           <filename>tim-synchronizedset-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.0.4/tim-synchronizedsortedmap-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.0.4</installPath>
           <filename>tim-synchronizedsortedmap-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.0.4/tim-synchronizedsortedset-2.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.0.4</installPath>
           <filename>tim-synchronizedsortedset-2.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.0.4/tim-vector-2.0.4.jar
           </repoUrl>
@@ -1679,20 +1430,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>b646a27e2757cfe85136256d140a0067</md5>
+          <size>14225</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.4/tim-collections-2.0.4-bin.zip
           </url>
-          <size>14225</size>
           <filename>tim-collections-2.0.4-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>c7f40101c4aa8241804c296fd7613241</md5>
+          <size>31302</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.0.4/tim-collections-2.0.4-src.zip
           </url>
-          <size>31302</size>
           <filename>tim-collections-2.0.4-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1706,10 +1457,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
@@ -1719,80 +1467,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.2.0/tim-collections-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.2.0</installPath>
           <filename>tim-collections-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.2.0/tim-hashtable-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.2.0</installPath>
           <filename>tim-hashtable-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.2.0/tim-synchronizedcollection-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.2.0</installPath>
           <filename>tim-synchronizedcollection-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.2.0/tim-synchronizedmap-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.2.0</installPath>
           <filename>tim-synchronizedmap-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.2.0/tim-synchronizedset-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.2.0</installPath>
           <filename>tim-synchronizedset-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.2.0/tim-synchronizedsortedmap-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.2.0</installPath>
           <filename>tim-synchronizedsortedmap-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.2.0/tim-synchronizedsortedset-2.2.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.2.0</installPath>
           <filename>tim-synchronizedsortedset-2.2.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.2.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.2.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.2.0/tim-vector-2.2.0.jar
           </repoUrl>
@@ -1805,20 +1529,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:46 PDT</timestamp>
           <md5>15b5c92ad4190af2829e0e518acdb99b</md5>
+          <size>14516</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.0/tim-collections-2.2.0-bin.zip
           </url>
-          <size>14516</size>
           <filename>tim-collections-2.2.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:46 PDT</timestamp>
           <md5>a22752452249366415ac09e403ed7b0a</md5>
+          <size>31797</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.0/tim-collections-2.2.0-src.zip
           </url>
-          <size>31797</size>
           <filename>tim-collections-2.2.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1832,10 +1556,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -1845,80 +1566,56 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.2.1/tim-collections-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.2.1</installPath>
           <filename>tim-collections-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.2.1/tim-hashtable-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.2.1</installPath>
           <filename>tim-hashtable-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.2.1/tim-synchronizedcollection-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.2.1</installPath>
           <filename>tim-synchronizedcollection-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.2.1/tim-synchronizedmap-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.2.1</installPath>
           <filename>tim-synchronizedmap-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.2.1/tim-synchronizedset-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.2.1</installPath>
           <filename>tim-synchronizedset-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.2.1/tim-synchronizedsortedmap-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.2.1</installPath>
           <filename>tim-synchronizedsortedmap-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.2.1/tim-synchronizedsortedset-2.2.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.2.1</installPath>
           <filename>tim-synchronizedsortedset-2.2.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.2.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.2.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.2.1/tim-vector-2.2.1.jar
           </repoUrl>
@@ -1931,20 +1628,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>8e6e9305bbd97938561a1ec0af480fda</md5>
+          <size>14527</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.1/tim-collections-2.2.1-bin.zip
           </url>
-          <size>14527</size>
           <filename>tim-collections-2.2.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>8840bfaf2c40fc626d59278080eef9c4</md5>
+          <size>31805</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.1/tim-collections-2.2.1-src.zip
           </url>
-          <size>31805</size>
           <filename>tim-collections-2.2.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -1958,10 +1655,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for auto-locked Collections.</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -1972,80 +1666,56 @@ Terracotta projects.]]>
     <contents>
       <readme><![CDATA[Terracotta Integration Module for auto-locked Collections.]]></readme>
       <bundles>
-        <bundle>
-          <artifactId>tim-collections</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-collections' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-collections/2.2.2/tim-collections-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-collections/2.2.2</installPath>
           <filename>tim-collections-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hashtable</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hashtable' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hashtable/2.2.2/tim-hashtable-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hashtable/2.2.2</installPath>
           <filename>tim-hashtable-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedcollection</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedcollection' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedcollection/2.2.2/tim-synchronizedcollection-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedcollection/2.2.2</installPath>
           <filename>tim-synchronizedcollection-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedmap</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedmap' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedmap/2.2.2/tim-synchronizedmap-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedmap/2.2.2</installPath>
           <filename>tim-synchronizedmap-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedset</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedset' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedset/2.2.2/tim-synchronizedset-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedset/2.2.2</installPath>
           <filename>tim-synchronizedset-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedmap</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedmap' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedmap/2.2.2/tim-synchronizedsortedmap-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedmap/2.2.2</installPath>
           <filename>tim-synchronizedsortedmap-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-synchronizedsortedset</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-synchronizedsortedset' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-synchronizedsortedset/2.2.2/tim-synchronizedsortedset-2.2.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-synchronizedsortedset/2.2.2</installPath>
           <filename>tim-synchronizedsortedset-2.2.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-vector</artifactId>
-          <version>2.2.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-vector' version='2.2.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-vector/2.2.2/tim-vector-2.2.2.jar
           </repoUrl>
@@ -2058,20 +1728,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>b0d6d249b4b4c92c0c719799dac5beff</md5>
+          <size>14545</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.2/tim-collections-2.2.2-bin.zip
           </url>
-          <size>14545</size>
           <filename>tim-collections-2.2.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:45 PDT</timestamp>
           <md5>ea2de7a2ec4cff76b892e4fc4c2fb33a</md5>
+          <size>31826</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-collections/tags/release-2.2.2/tim-collections-2.2.2-src.zip
           </url>
-          <size>31826</size>
           <filename>tim-collections-2.2.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2085,10 +1755,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -2098,10 +1765,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache' version='1.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.0/tim-ehcache-1.0.0.jar
           </repoUrl>
@@ -2114,20 +1778,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>07ba2e120b9fe2405d0c0e957cda09be</md5>
+          <size>2375</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.0/tim-ehcache-1.0.0-bin.zip
           </url>
-          <size>2375</size>
           <filename>tim-ehcache-1.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>154db420239c1142bfda03dde7227c45</md5>
+          <size>1541</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.0/tim-ehcache-1.0.0-src.zip
           </url>
-          <size>1541</size>
           <filename>tim-ehcache-1.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2141,10 +1805,7 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
         </repoUrl>
@@ -2154,10 +1815,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache' version='1.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.1/tim-ehcache-1.0.1.jar
           </repoUrl>
@@ -2170,20 +1828,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>a30488756d0be72f84e23568d6fdb757</md5>
+          <size>2372</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.1/tim-ehcache-1.0.1-bin.zip
           </url>
-          <size>2372</size>
           <filename>tim-ehcache-1.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>e15e92ae52c30e94ed35d31b8b0de21d</md5>
+          <size>10212</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.1/tim-ehcache-1.0.1-src.zip
           </url>
-          <size>10212</size>
           <filename>tim-ehcache-1.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2197,68 +1855,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.5.2</installPath>
-        <filename>modules-common-2.5.2.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.5.2/clustered-commons-collections-3.1-2.5.2.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.5.2</installPath>
         <filename>clustered-commons-collections-3.1-2.5.2.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.5.2</installPath>
+        <filename>modules-common-2.5.2.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.2/tim-ehcache-1.0.2.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.0.2</installPath>
-          <filename>tim-ehcache-1.0.2.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.0.2/tim-ehcache-1.2.4-1.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.0.2</installPath>
           <filename>tim-ehcache-1.2.4-1.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.0.2/tim-ehcache-1.3-1.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.0.2</installPath>
           <filename>tim-ehcache-1.3-1.0.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.0.2/tim-ehcache-commons-1.0.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.0.2</installPath>
           <filename>tim-ehcache-commons-1.0.2.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.0.2' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.2/tim-ehcache-1.0.2.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.0.2</installPath>
+          <filename>tim-ehcache-1.0.2.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2266,20 +1906,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>a0c536f981ea10d23006d2a2ddd15d2f</md5>
+          <size>47193</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.2/tim-ehcache-1.0.2-bin.zip
           </url>
-          <size>47193</size>
           <filename>tim-ehcache-1.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>893c7cd243c2c78d80c805f664101217</md5>
+          <size>105059</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.2/tim-ehcache-1.0.2-src.zip
           </url>
-          <size>105059</size>
           <filename>tim-ehcache-1.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2293,68 +1933,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.5.2</installPath>
-        <filename>modules-common-2.5.2.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.5.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.5.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.5.2/clustered-commons-collections-3.1-2.5.2.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.5.2</installPath>
         <filename>clustered-commons-collections-3.1-2.5.2.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.5.2' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.2/modules-common-2.5.2.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.5.2</installPath>
+        <filename>modules-common-2.5.2.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.4/tim-ehcache-1.0.4.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.0.4</installPath>
-          <filename>tim-ehcache-1.0.4.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.0.4/tim-ehcache-1.2.4-1.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.0.4</installPath>
           <filename>tim-ehcache-1.2.4-1.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.0.4/tim-ehcache-1.3-1.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.0.4</installPath>
           <filename>tim-ehcache-1.3-1.0.4.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.0.4</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.0.4' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.0.4/tim-ehcache-commons-1.0.4.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.0.4</installPath>
           <filename>tim-ehcache-commons-1.0.4.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.0.4' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.4/tim-ehcache-1.0.4.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.0.4</installPath>
+          <filename>tim-ehcache-1.0.4.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2362,20 +1984,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>c088450e4a9a44a4a317fdc31afdd0f3</md5>
+          <size>78406</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.4/tim-ehcache-1.0.4-bin.zip
           </url>
-          <size>78406</size>
           <filename>tim-ehcache-1.0.4-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>bd852bf3bd4501a614c0cf5c95435502</md5>
+          <size>102017</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.4/tim-ehcache-1.0.4-src.zip
           </url>
-          <size>102017</size>
           <filename>tim-ehcache-1.0.4-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2389,68 +2011,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
-        <filename>modules-common-2.5.4.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.5.4/clustered-commons-collections-3.1-2.5.4.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.5.4</installPath>
         <filename>clustered-commons-collections-3.1-2.5.4.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
+        <filename>modules-common-2.5.4.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.5</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.5/tim-ehcache-1.0.5.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.0.5</installPath>
-          <filename>tim-ehcache-1.0.5.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.0.5</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.0.5' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.0.5/tim-ehcache-1.2.4-1.0.5.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.0.5</installPath>
           <filename>tim-ehcache-1.2.4-1.0.5.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.0.5</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.0.5' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.0.5/tim-ehcache-1.3-1.0.5.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.0.5</installPath>
           <filename>tim-ehcache-1.3-1.0.5.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.0.5</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.0.5' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.0.5/tim-ehcache-commons-1.0.5.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.0.5</installPath>
           <filename>tim-ehcache-commons-1.0.5.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.0.5' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.5/tim-ehcache-1.0.5.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.0.5</installPath>
+          <filename>tim-ehcache-1.0.5.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2458,20 +2062,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>8b53cfe6d97b54b17ceff298d7c43a94</md5>
+          <size>78276</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.5/tim-ehcache-1.0.5-bin.zip
           </url>
-          <size>78276</size>
           <filename>tim-ehcache-1.0.5-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>fa54c1b689e747339ccdfad98021c210</md5>
+          <size>101884</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.5/tim-ehcache-1.0.5-src.zip
           </url>
-          <size>101884</size>
           <filename>tim-ehcache-1.0.5-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2485,68 +2089,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
-        <filename>modules-common-2.5.4.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.5.4/clustered-commons-collections-3.1-2.5.4.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.5.4</installPath>
         <filename>clustered-commons-collections-3.1-2.5.4.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
+        <filename>modules-common-2.5.4.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.6</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.6/tim-ehcache-1.0.6.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.0.6</installPath>
-          <filename>tim-ehcache-1.0.6.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.0.6</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.0.6' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.0.6/tim-ehcache-1.2.4-1.0.6.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.0.6</installPath>
           <filename>tim-ehcache-1.2.4-1.0.6.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.0.6</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.0.6' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.0.6/tim-ehcache-1.3-1.0.6.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.0.6</installPath>
           <filename>tim-ehcache-1.3-1.0.6.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.0.6</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.0.6' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.0.6/tim-ehcache-commons-1.0.6.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.0.6</installPath>
           <filename>tim-ehcache-commons-1.0.6.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.0.6' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.6/tim-ehcache-1.0.6.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.0.6</installPath>
+          <filename>tim-ehcache-1.0.6.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2554,20 +2140,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>7f1f6d2aa0851768ceed6caab09c8f47</md5>
+          <size>78535</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.6/tim-ehcache-1.0.6-bin.zip
           </url>
-          <size>78535</size>
           <filename>tim-ehcache-1.0.6-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>a304b8ab7a29edb9f74ffb150428eb1b</md5>
+          <size>102003</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.6/tim-ehcache-1.0.6-src.zip
           </url>
-          <size>102003</size>
           <filename>tim-ehcache-1.0.6-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2581,68 +2167,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
-        <filename>modules-common-2.5.4.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.5.4</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.5.4' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.5.4/clustered-commons-collections-3.1-2.5.4.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.5.4</installPath>
         <filename>clustered-commons-collections-3.1-2.5.4.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.5.4' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.4/modules-common-2.5.4.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.5.4</installPath>
+        <filename>modules-common-2.5.4.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.0.7</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.7/tim-ehcache-1.0.7.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.0.7</installPath>
-          <filename>tim-ehcache-1.0.7.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.0.7</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.0.7' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.0.7/tim-ehcache-1.2.4-1.0.7.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.0.7</installPath>
           <filename>tim-ehcache-1.2.4-1.0.7.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.0.7</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.0.7' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.0.7/tim-ehcache-1.3-1.0.7.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.0.7</installPath>
           <filename>tim-ehcache-1.3-1.0.7.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.0.7</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.0.7' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.0.7/tim-ehcache-commons-1.0.7.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.0.7</installPath>
           <filename>tim-ehcache-commons-1.0.7.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.0.7' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.0.7/tim-ehcache-1.0.7.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.0.7</installPath>
+          <filename>tim-ehcache-1.0.7.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2650,20 +2218,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>13915f642c5d4d05361574feb26fc9d1</md5>
+          <size>78540</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.7/tim-ehcache-1.0.7-bin.zip
           </url>
-          <size>78540</size>
           <filename>tim-ehcache-1.0.7-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>76ced2515bc36f4de32c06c4b816bda0</md5>
+          <size>102006</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.0.7/tim-ehcache-1.0.7-src.zip
           </url>
-          <size>102006</size>
           <filename>tim-ehcache-1.0.7-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2677,68 +2245,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.6.0</installPath>
-        <filename>modules-common-2.6.0.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.6.0/clustered-commons-collections-3.1-2.6.0.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.6.0</installPath>
         <filename>clustered-commons-collections-3.1-2.6.0.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.6.0</installPath>
+        <filename>modules-common-2.6.0.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.0/tim-ehcache-1.1.0.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.1.0</installPath>
-          <filename>tim-ehcache-1.1.0.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.1.0/tim-ehcache-1.2.4-1.1.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.1.0</installPath>
           <filename>tim-ehcache-1.2.4-1.1.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.1.0/tim-ehcache-1.3-1.1.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.1.0</installPath>
           <filename>tim-ehcache-1.3-1.1.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.1.0/tim-ehcache-commons-1.1.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.1.0</installPath>
           <filename>tim-ehcache-commons-1.1.0.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.1.0' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.0/tim-ehcache-1.1.0.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.1.0</installPath>
+          <filename>tim-ehcache-1.1.0.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2746,20 +2296,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>9b4ecb9cdf696a831a331a8bdeff7303</md5>
+          <size>77798</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.0/tim-ehcache-1.1.0-bin.zip
           </url>
-          <size>77798</size>
           <filename>tim-ehcache-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:52 PDT</timestamp>
           <md5>451d717a29759717726f183b64f2c56b</md5>
+          <size>102346</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.0/tim-ehcache-1.1.0-src.zip
           </url>
-          <size>102346</size>
           <filename>tim-ehcache-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2773,68 +2323,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.6.1</installPath>
-        <filename>modules-common-2.6.1.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.6.1/clustered-commons-collections-3.1-2.6.1.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.6.1</installPath>
         <filename>clustered-commons-collections-3.1-2.6.1.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.6.1</installPath>
+        <filename>modules-common-2.6.1.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.1/tim-ehcache-1.1.1.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.1.1</installPath>
-          <filename>tim-ehcache-1.1.1.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.1.1/tim-ehcache-1.2.4-1.1.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.1.1</installPath>
           <filename>tim-ehcache-1.2.4-1.1.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.1.1/tim-ehcache-1.3-1.1.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.1.1</installPath>
           <filename>tim-ehcache-1.3-1.1.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.1.1/tim-ehcache-commons-1.1.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.1.1</installPath>
           <filename>tim-ehcache-commons-1.1.1.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.1.1' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.1/tim-ehcache-1.1.1.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.1.1</installPath>
+          <filename>tim-ehcache-1.1.1.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2842,20 +2374,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>f1ffc7f9b69238ce7f34f152b92ab715</md5>
+          <size>77779</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.1/tim-ehcache-1.1.1-bin.zip
           </url>
-          <size>77779</size>
           <filename>tim-ehcache-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>4e362b43d3df237f66eded21ac010e9e</md5>
+          <size>102354</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.1/tim-ehcache-1.1.1-src.zip
           </url>
-          <size>102354</size>
           <filename>tim-ehcache-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2869,68 +2401,50 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Ehcache</description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
-        <repoUrl>
-          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
-        </repoUrl>
-        <installPath>org/terracotta/modules/modules-common/2.6.2</installPath>
-        <filename>modules-common-2.6.2.jar</filename>
-      </bundle>
-      <bundle>
-        <artifactId>clustered-commons-collections-3.1</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='clustered-commons-collections-3.1' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/clustered-commons-collections-3.1/2.6.2/clustered-commons-collections-3.1-2.6.2.jar
         </repoUrl>
         <installPath>org/terracotta/modules/clustered-commons-collections-3.1/2.6.2</installPath>
         <filename>clustered-commons-collections-3.1-2.6.2.jar</filename>
       </bundle>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
+        <repoUrl>
+          http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
+        </repoUrl>
+        <installPath>org/terracotta/modules/modules-common/2.6.2</installPath>
+        <filename>modules-common-2.6.2.jar</filename>
+      </bundle>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-ehcache</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.2/tim-ehcache-1.1.2.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-ehcache/1.1.2</installPath>
-          <filename>tim-ehcache-1.1.2.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.2.4</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.2.4' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.2.4/1.1.2/tim-ehcache-1.2.4-1.1.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.2.4/1.1.2</installPath>
           <filename>tim-ehcache-1.2.4-1.1.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-1.3</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-1.3' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-1.3/1.1.2/tim-ehcache-1.3-1.1.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-1.3/1.1.2</installPath>
           <filename>tim-ehcache-1.3-1.1.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-ehcache-commons</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-ehcache-commons' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache-commons/1.1.2/tim-ehcache-commons-1.1.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-ehcache-commons/1.1.2</installPath>
           <filename>tim-ehcache-commons-1.1.2.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-ehcache' version='1.1.2' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-ehcache/1.1.2/tim-ehcache-1.1.2.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-ehcache/1.1.2</installPath>
+          <filename>tim-ehcache-1.1.2.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -2938,20 +2452,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>e9586495bc08a7fa91b3ccaf634ff755</md5>
+          <size>77777</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.2/tim-ehcache-1.1.2-bin.zip
           </url>
-          <size>77777</size>
           <filename>tim-ehcache-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:51 PDT</timestamp>
           <md5>00fe845f0716aee400630c35ad12518b</md5>
+          <size>102347</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-ehcache/tags/release-1.1.2/tim-ehcache-1.1.2-src.zip
           </url>
-          <size>102347</size>
           <filename>tim-ehcache-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -2965,50 +2479,38 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Hibernate</description>
     <dependencies>
-      <packageRef name='tim-cglib-2.1.3' version='1.0.0'/>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
         <installPath>org/terracotta/modules/modules-common/2.6.0</installPath>
         <filename>modules-common-2.6.0.jar</filename>
       </bundle>
-      <packageRef name='tim-ehcache' version='1.0.2'/>
+      <packageRef name='tim-cglib-2.1.3' version='1.1.0'/>
+      <packageRef name='tim-ehcache' version='1.1.0'/>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-hibernate</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.0/tim-hibernate-1.1.0.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-hibernate/1.1.0</installPath>
-          <filename>tim-hibernate-1.1.0.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.1.2</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.1.2' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.1.2/1.1.0/tim-hibernate-3.1.2-1.1.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.1.2/1.1.0</installPath>
           <filename>tim-hibernate-3.1.2-1.1.0.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.2.5</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.2.5' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.2.5/1.1.0/tim-hibernate-3.2.5-1.1.0.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.2.5/1.1.0</installPath>
           <filename>tim-hibernate-3.2.5-1.1.0.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-hibernate' version='1.1.0' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.0/tim-hibernate-1.1.0.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-hibernate/1.1.0</installPath>
+          <filename>tim-hibernate-1.1.0.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -3016,20 +2518,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>2b047132e4a53954aa77cad7f49d6ac8</md5>
+          <size>29238</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.0/tim-hibernate-1.1.0-bin.zip
           </url>
-          <size>29238</size>
           <filename>tim-hibernate-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>3098f8705a89e46d430238e819a41254</md5>
+          <size>40178</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.0/tim-hibernate-1.1.0-src.zip
           </url>
-          <size>40178</size>
           <filename>tim-hibernate-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3043,50 +2545,38 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Hibernate</description>
     <dependencies>
-      <packageRef name='tim-cglib-2.1.3' version='1.0.0'/>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
         <installPath>org/terracotta/modules/modules-common/2.6.1</installPath>
         <filename>modules-common-2.6.1.jar</filename>
       </bundle>
-      <packageRef name='tim-ehcache' version='1.0.2'/>
+      <packageRef name='tim-cglib-2.1.3' version='1.1.1'/>
+      <packageRef name='tim-ehcache' version='1.1.1'/>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-hibernate</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.1/tim-hibernate-1.1.1.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-hibernate/1.1.1</installPath>
-          <filename>tim-hibernate-1.1.1.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.1.2</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.1.2' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.1.2/1.1.1/tim-hibernate-3.1.2-1.1.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.1.2/1.1.1</installPath>
           <filename>tim-hibernate-3.1.2-1.1.1.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.2.5</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.2.5' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.2.5/1.1.1/tim-hibernate-3.2.5-1.1.1.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.2.5/1.1.1</installPath>
           <filename>tim-hibernate-3.2.5-1.1.1.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-hibernate' version='1.1.1' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.1/tim-hibernate-1.1.1.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-hibernate/1.1.1</installPath>
+          <filename>tim-hibernate-1.1.1.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -3094,20 +2584,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>177d8fb593440cc833538f56213cb506</md5>
+          <size>29248</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.1/tim-hibernate-1.1.1-bin.zip
           </url>
-          <size>29248</size>
           <filename>tim-hibernate-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>ac6c027323eca2bee9080831a4bf6db2</md5>
+          <size>40182</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.1/tim-hibernate-1.1.1-src.zip
           </url>
-          <size>40182</size>
           <filename>tim-hibernate-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3121,50 +2611,38 @@ Terracotta projects.]]>
     <category>Terracotta Integration Module</category>
     <description>Terracotta Integration Module for clustering Hibernate</description>
     <dependencies>
-      <packageRef name='tim-cglib-2.1.3' version='1.0.0'/>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
         <installPath>org/terracotta/modules/modules-common/2.6.2</installPath>
         <filename>modules-common-2.6.2.jar</filename>
       </bundle>
-      <packageRef name='tim-ehcache' version='1.0.2'/>
+      <packageRef name='tim-cglib-2.1.3' version='1.1.2'/>
+      <packageRef name='tim-ehcache' version='1.1.2'/>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-hibernate</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
-          <repoUrl>
-            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.2/tim-hibernate-1.1.2.jar
-          </repoUrl>
-          <installPath>org/terracotta/modules/tim-hibernate/1.1.2</installPath>
-          <filename>tim-hibernate-1.1.2.jar</filename>
-        </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.1.2</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.1.2' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.1.2/1.1.2/tim-hibernate-3.1.2-1.1.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.1.2/1.1.2</installPath>
           <filename>tim-hibernate-3.1.2-1.1.2.jar</filename>
         </bundle>
-        <bundle>
-          <artifactId>tim-hibernate-3.2.5</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-hibernate-3.2.5' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.2.5/1.1.2/tim-hibernate-3.2.5-1.1.2.jar
           </repoUrl>
           <installPath>org/terracotta/modules/tim-hibernate-3.2.5/1.1.2</installPath>
           <filename>tim-hibernate-3.2.5-1.1.2.jar</filename>
+        </bundle>
+        <bundle artifactId='tim-hibernate' version='1.1.2' groupId='org.terracotta.modules'>
+          <repoUrl>
+            http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate/1.1.2/tim-hibernate-1.1.2.jar
+          </repoUrl>
+          <installPath>org/terracotta/modules/tim-hibernate/1.1.2</installPath>
+          <filename>tim-hibernate-1.1.2.jar</filename>
         </bundle>
       </bundles>
       <artifacts>
@@ -3172,20 +2650,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>6d025ed2f188f0d2022c4b9849e77a2a</md5>
+          <size>29242</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.2/tim-hibernate-1.1.2-bin.zip
           </url>
-          <size>29242</size>
           <filename>tim-hibernate-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:31 PDT</timestamp>
           <md5>ef05bd5a89deb24b4f3a4fed57d31196</md5>
+          <size>40176</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-hibernate/tags/release-1.1.2/tim-hibernate-1.1.2-src.zip
           </url>
-          <size>40176</size>
           <filename>tim-hibernate-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3203,10 +2681,7 @@ Terracotta projects.]]>
       session state clustering.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
@@ -3225,10 +2700,7 @@ Terracotta projects.]]>
 </clients>]]>
       </readme>
       <bundles>
-        <bundle>
-          <artifactId>tim-jetty-6.1.4</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.mortbay.jetty</groupId>
+        <bundle artifactId='tim-jetty-6.1.4' version='1.1.0' groupId='org.mortbay.jetty'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/mortbay/jetty/tim-jetty-6.1.4/1.1.0/tim-jetty-6.1.4-1.1.0.jar
           </repoUrl>
@@ -3241,20 +2713,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>64c5cd9cf71a36e12895e593c7bf8ed3</md5>
+          <size>24217</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.0/tim-jetty-6.1.4-1.1.0-bin.zip
           </url>
-          <size>24217</size>
           <filename>tim-jetty-6.1.4-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>12a377202579a292f9ceffe9aeaa8018</md5>
+          <size>24167</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.0/tim-jetty-6.1.4-1.1.0-src.zip
           </url>
-          <size>24167</size>
           <filename>tim-jetty-6.1.4-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3272,10 +2744,7 @@ Terracotta projects.]]>
       session state clustering.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -3294,10 +2763,7 @@ Terracotta projects.]]>
 </clients>]]>
       </readme>
       <bundles>
-        <bundle>
-          <artifactId>tim-jetty-6.1.4</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.mortbay.jetty</groupId>
+        <bundle artifactId='tim-jetty-6.1.4' version='1.1.1' groupId='org.mortbay.jetty'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/mortbay/jetty/tim-jetty-6.1.4/1.1.1/tim-jetty-6.1.4-1.1.1.jar
           </repoUrl>
@@ -3310,20 +2776,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>f6991a80c9574e61a42087971fdb5348</md5>
+          <size>24220</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.1/tim-jetty-6.1.4-1.1.1-bin.zip
           </url>
-          <size>24220</size>
           <filename>tim-jetty-6.1.4-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>787f4b031229cfd9aea337a31a6f54fa</md5>
+          <size>24168</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.1/tim-jetty-6.1.4-1.1.1-src.zip
           </url>
-          <size>24168</size>
           <filename>tim-jetty-6.1.4-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3341,10 +2807,7 @@ Terracotta projects.]]>
       session state clustering.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -3363,10 +2826,7 @@ Terracotta projects.]]>
 </clients>]]>
       </readme>
       <bundles>
-        <bundle>
-          <artifactId>tim-jetty-6.1.4</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.mortbay.jetty</groupId>
+        <bundle artifactId='tim-jetty-6.1.4' version='1.1.2' groupId='org.mortbay.jetty'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/mortbay/jetty/tim-jetty-6.1.4/1.1.2/tim-jetty-6.1.4-1.1.2.jar
           </repoUrl>
@@ -3379,20 +2839,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>0d4968cfdf20ce227f0dfe20136e5369</md5>
+          <size>24218</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.2/tim-jetty-6.1.4-1.1.2-bin.zip
           </url>
-          <size>24218</size>
           <filename>tim-jetty-6.1.4-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:53 PDT</timestamp>
           <md5>50a10f9801d5209e965cdcca566bb924</md5>
+          <size>24168</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-jetty-6.1.4/tags/release-1.1.2/tim-jetty-6.1.4-1.1.2-src.zip
           </url>
-          <size>24168</size>
           <filename>tim-jetty-6.1.4-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3413,10 +2873,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -3426,10 +2883,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.0.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.0.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.0.0/tim-terracotta-cache-1.0.0.jar
           </repoUrl>
@@ -3442,20 +2896,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>fcb32150690adb912649b072e6e6461c</md5>
+          <size>28991</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.0/tim-terracotta-cache-1.0.0-bin.zip
           </url>
-          <size>28991</size>
           <filename>tim-terracotta-cache-1.0.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>1143de6dfb57c5be7c9be29dec06cb9a</md5>
+          <size>36750</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.0/tim-terracotta-cache-1.0.0-src.zip
           </url>
-          <size>36750</size>
           <filename>tim-terracotta-cache-1.0.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3476,10 +2930,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -3489,10 +2940,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.0.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.0.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.0.1/tim-terracotta-cache-1.0.1.jar
           </repoUrl>
@@ -3505,20 +2953,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>095278e8c748a041f5b317b139d63b63</md5>
+          <size>28983</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.1/tim-terracotta-cache-1.0.1-bin.zip
           </url>
-          <size>28983</size>
           <filename>tim-terracotta-cache-1.0.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>5f12c5bc8a417570b78f6cb45350f7ab</md5>
+          <size>36747</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.1/tim-terracotta-cache-1.0.1-src.zip
           </url>
-          <size>36747</size>
           <filename>tim-terracotta-cache-1.0.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3539,10 +2987,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -3552,10 +2997,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.0.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.0.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.0.2/tim-terracotta-cache-1.0.2.jar
           </repoUrl>
@@ -3568,20 +3010,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>bbd158217c1a702b2fa91e01baaddf83</md5>
+          <size>29139</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.2/tim-terracotta-cache-1.0.2-bin.zip
           </url>
-          <size>29139</size>
           <filename>tim-terracotta-cache-1.0.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>923917bc19d4b8bb27a1f078bf4e59c0</md5>
+          <size>36911</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.2/tim-terracotta-cache-1.0.2-src.zip
           </url>
-          <size>36911</size>
           <filename>tim-terracotta-cache-1.0.2-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3602,10 +3044,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.5.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.5.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.5.0/modules-common-2.5.0.jar
         </repoUrl>
@@ -3615,10 +3054,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.0.3</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.0.3' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.0.3/tim-terracotta-cache-1.0.3.jar
           </repoUrl>
@@ -3631,20 +3067,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>33e8beaa713a45e3ef4232d2bd037105</md5>
+          <size>29330</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.3/tim-terracotta-cache-1.0.3-bin.zip
           </url>
-          <size>29330</size>
           <filename>tim-terracotta-cache-1.0.3-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>ebc4f8422bd1b86acb882bb473bede42</md5>
+          <size>37055</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.0.3/tim-terracotta-cache-1.0.3-src.zip
           </url>
-          <size>37055</size>
           <filename>tim-terracotta-cache-1.0.3-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3665,10 +3101,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.0</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.0' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.0/modules-common-2.6.0.jar
         </repoUrl>
@@ -3678,10 +3111,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.1.0</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.1.0' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.1.0/tim-terracotta-cache-1.1.0.jar
           </repoUrl>
@@ -3694,20 +3124,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>f5b340d0967422a2cbca8110de19a7f3</md5>
+          <size>29235</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.0/tim-terracotta-cache-1.1.0-bin.zip
           </url>
-          <size>29235</size>
           <filename>tim-terracotta-cache-1.1.0-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:33 PDT</timestamp>
           <md5>846659739f50dcddeccc6ef86d033023</md5>
+          <size>37044</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.0/tim-terracotta-cache-1.1.0-src.zip
           </url>
-          <size>37044</size>
           <filename>tim-terracotta-cache-1.1.0-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3728,10 +3158,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.1</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.1' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.1/modules-common-2.6.1.jar
         </repoUrl>
@@ -3741,10 +3168,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.1.1</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.1.1' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.1.1/tim-terracotta-cache-1.1.1.jar
           </repoUrl>
@@ -3757,20 +3181,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>ca03463c7915b4e460c1b5b0dfee92ad</md5>
+          <size>29238</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.1/tim-terracotta-cache-1.1.1-bin.zip
           </url>
-          <size>29238</size>
           <filename>tim-terracotta-cache-1.1.1-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>d442d4e3b13294f9ab54f10bb8716279</md5>
+          <size>37046</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.1/tim-terracotta-cache-1.1.1-src.zip
           </url>
-          <size>37046</size>
           <filename>tim-terracotta-cache-1.1.1-src.zip</filename>
         </artifact>
       </artifacts>
@@ -3791,10 +3215,7 @@ Terracotta projects.]]>
       Cache and only minimal code changes.
     </description>
     <dependencies>
-      <bundle>
-        <artifactId>modules-common</artifactId>
-        <version>2.6.2</version>
-        <groupId>org.terracotta.modules</groupId>
+      <bundle artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
         <repoUrl>
           http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
         </repoUrl>
@@ -3804,10 +3225,7 @@ Terracotta projects.]]>
     </dependencies>
     <contents>
       <bundles>
-        <bundle>
-          <artifactId>tim-terracotta-cache</artifactId>
-          <version>1.1.2</version>
-          <groupId>org.terracotta.modules</groupId>
+        <bundle artifactId='tim-terracotta-cache' version='1.1.2' groupId='org.terracotta.modules'>
           <repoUrl>
             http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-terracotta-cache/1.1.2/tim-terracotta-cache-1.1.2.jar
           </repoUrl>
@@ -3820,20 +3238,20 @@ Terracotta projects.]]>
           <type>binary</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>4d5bd8c2022773b6f19e965f9e71b54d</md5>
+          <size>29255</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.2/tim-terracotta-cache-1.1.2-bin.zip
           </url>
-          <size>29255</size>
           <filename>tim-terracotta-cache-1.1.2-bin.zip</filename>
         </artifact>
         <artifact>
           <type>source</type>
           <timestamp>07/07/08 10:45:32 PDT</timestamp>
           <md5>cc07c444e02fecb8ea1ddf83740c01df</md5>
+          <size>37046</size>
           <url>
             http://forge-dev.terracotta.lan/releases/downloads/tim-terracotta-cache/tags/release-1.1.2/tim-terracotta-cache-1.1.2-src.zip
           </url>
-          <size>37046</size>
           <filename>tim-terracotta-cache-1.1.2-src.zip</filename>
         </artifact>
       </artifacts>
