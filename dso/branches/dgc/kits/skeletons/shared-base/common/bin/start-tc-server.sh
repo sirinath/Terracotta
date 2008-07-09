@@ -30,13 +30,6 @@ if $cygwin; then
   [ -n "$TC_INSTALL_DIR" ] && TC_INSTALL_DIR=`cygpath --windows "$TC_INSTALL_DIR"`
 fi
 
-trap 'signalHandler' SIGHUP SIGINT SIGABRT SIGTERM
-
-function signalHandler()
-{
-	kill "-s" KILL $PID;
-}
-
 start=true
 while "$start"
 do
@@ -45,14 +38,12 @@ do
    -Dtc.install-root="${TC_INSTALL_DIR}" \
    ${JAVA_OPTS} \
    -cp "${TC_INSTALL_DIR}/lib/tc.jar" \
-   com.tc.server.TCServerMain "$@" &
- PID=$!
- wait $PID
+   com.tc.server.TCServerMain "$@"
  exitValue=$?
  start=false;
  if [ "$exitValue" == 11 ]
  then
    start=true;
-   echo "Restarting the Server ...";
+   echo "start-tc-server: Restarting the server..."
  fi
 done
