@@ -109,7 +109,7 @@ public class NullGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  public boolean deleteGarbage(GCResultContext resultContext) {
+  public boolean sweepGarbage(GCResultContext resultContext) {
     return true;
   }
 

@@ -10,28 +10,29 @@ import com.tc.objectserver.api.GCStats;
 import com.tc.util.State;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 
 public class GCStatsImpl implements GCStats, Serializable {
-  private static final long     serialVersionUID      = -4177683133067698672L;
-  private static final TCLogger logger                = TCLogging.getLogger(GCStatsImpl.class);
-  private static final long     NOT_INITIALIZED       = -1L;
-  private static final String   YOUNG_GENERATION      = "Young";
-  private static final String   FULL_GENERATION       = "Full";
-  private final int             number;
-  private long                  startTime             = NOT_INITIALIZED;
-  private long                  elapsedTime           = NOT_INITIALIZED;
-  private long                  beginObjectCount      = NOT_INITIALIZED;
-  private long                  candidateGarbageCount = NOT_INITIALIZED;
-  private long                  actualGarbageCount    = NOT_INITIALIZED;
-  private long                  pausedStageTime       = NOT_INITIALIZED;
-  private long                  deleteStageTime       = NOT_INITIALIZED;
-  private State                 state;
-  private boolean               young;
+  private static final long             serialVersionUID      = -4177683133067698672L;
+  private static final TCLogger         logger                = TCLogging.getLogger(GCStatsImpl.class);
+  private static final SimpleDateFormat printFormat           = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss z");
+  private static final long             NOT_INITIALIZED       = -1L;
+  private static final String           YOUNG_GENERATION      = "Young";
+  private static final String           FULL_GENERATION       = "Full";
+  private final int                     number;
+  private long                          startTime             = NOT_INITIALIZED;
+  private long                          elapsedTime           = NOT_INITIALIZED;
+  private long                          beginObjectCount      = NOT_INITIALIZED;
+  private long                          candidateGarbageCount = NOT_INITIALIZED;
+  private long                          actualGarbageCount    = NOT_INITIALIZED;
+  private long                          pausedStageTime       = NOT_INITIALIZED;
+  private long                          deleteStageTime       = NOT_INITIALIZED;
+  private State                         state;
+  private boolean                       young;
 
-  public GCStatsImpl(int number, State aState, boolean aYoung) {
+  public GCStatsImpl(int number, State aState) {
     this.number = number;
     this.state = aState;
-    this.young = aYoung;
   }
 
   public synchronized boolean isYoung() {
@@ -130,14 +131,13 @@ public class GCStatsImpl implements GCStats, Serializable {
     this.young = true;
   }
 
-  public synchronized void markOldGen() {
+  public synchronized void markFullGen() {
     this.young = false;
   }
 
   private void validate(long value) {
     if (value < 0L) { throw new IllegalArgumentException("Value must be greater than or equal to zero"); }
   }
-
 
   protected void initialize(long aStartTime, long aElapsedTime, long aBeginObjectCount, long aCandidateGarbageCount,
                             long aActualGarbageCount, long aPausedStageTime, long aDeleteStageTime) {
@@ -150,12 +150,25 @@ public class GCStatsImpl implements GCStats, Serializable {
     this.deleteStageTime = aDeleteStageTime;
   }
 
+  private String formatAsDate(long date) {
+    return printFormat.format(date);
+  }
+
+  private String formatTime(long time) {
+    if (time == NOT_INITIALIZED) {
+      return "N/A";
+    } else {
+      return time + "ms";
+    }
+  }
+
   public String toString() {
     return "GCStats[ iteration: " + getIteration() + " type: " + getType() + " status: " + getStatus()
-           + " ] : startTime = " + this.startTime + "ms; elapsedTime = " + this.elapsedTime + "ms; pausedStageTime = "
-           + this.pausedStageTime + "ms; deleteStageTime = " + this.deleteStageTime + "ms; beginObjectCount = "
-           + this.beginObjectCount + "; candidateGarbageCount = " + this.candidateGarbageCount
-           + "; actualGarbageCount = " + this.actualGarbageCount;
+           + " ] : startTime = " + formatAsDate(this.startTime) + "; elapsedTime = " + formatTime(this.elapsedTime)
+           + "; pausedStageTime = " + formatTime(this.pausedStageTime) + "; deleteStageTime = "
+           + formatTime(this.deleteStageTime) + "; beginObjectCount = " + this.beginObjectCount
+           + "; candidateGarbageCount = " + this.candidateGarbageCount + "; actualGarbageCount = "
+           + this.actualGarbageCount;
   }
 
 }
