@@ -17,6 +17,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -33,12 +34,22 @@ public class ObjectIDSetTest extends TCTestCase {
     public Set create(Collection c);
   }
 
+  private class SetCreatorImpl implements SetCreator {
+    public Set create() {
+      return new ObjectIDSet();
+    }
+
+    public Set create(Collection c) {
+      return new ObjectIDSet(c);
+    }
+  }
+
   public void basicTest(SetCreator creator) {
     basicTest(creator, 100000, 100000);
     basicTest(creator, 500000, 100000);
     basicTest(creator, 100000, 1000000);
   }
-  
+
   public void testSortedSetObjectIDSet() throws Exception {
     SecureRandom sr = new SecureRandom();
     long seed = sr.nextLong();
@@ -54,8 +65,8 @@ public class ObjectIDSetTest extends TCTestCase {
       assertEquals(b1, b2);
       assertEquals(ts.size(), oids.size());
     }
-    
-    //verify sorted
+
+    // verify sorted
     Iterator i = ts.iterator();
     for (Iterator j = oids.iterator(); j.hasNext();) {
       ObjectID oid1 = (ObjectID) i.next();
@@ -194,53 +205,91 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   public void testObjectIDSet() {
-    SetCreator creator = new SetCreator() {
-      public Set create() {
-        return new ObjectIDSet();
-      }
-
-      public Set create(Collection c) {
-        return new ObjectIDSet(c);
-      }
-
-    };
-    basicTest(creator);
+    basicTest(new SetCreatorImpl());
   }
 
   public void testObjectIDSetDump() {
     ObjectIDSet s = new ObjectIDSet();
     System.err.println(" toString() : " + s);
-    
+
     for (int i = 0; i < 100; i++) {
       s.add(new ObjectID(i));
     }
     System.err.println(" toString() : " + s);
-    
-    for (int i = 0; i < 100; i+=2) {
+
+    for (int i = 0; i < 100; i += 2) {
       s.remove(new ObjectID(i));
     }
     System.err.println(" toString() : " + s);
-    
-  }
-  
-  
-  public void iteratorRemoveTest(SetCreator creator) {
-    SecureRandom sr = new SecureRandom();
-    long seed = sr.nextLong();
-    iteratorRemoveTest(creator, seed);
+
   }
 
-  private void iteratorRemoveTest(SetCreator creator, long seed) {
+  public void testObjectIdSetConcurrentModification() {
+    ObjectIDSet objIdSet = new ObjectIDSet();
+    int num = 0;
+    for (num = 0; num < 50; num++) {
+      objIdSet.add(new ObjectID(num));
+    }
+
+    Iterator iterator = objIdSet.iterator();
+    objIdSet.add(new ObjectID(num));
+    try {
+      iterateElements(iterator);
+      throw new AssertionError("We should have got the ConcurrentModificationException");
+    } catch (ConcurrentModificationException cme) {
+      System.out.println("Caught Expected Exception " + cme.getClass().getName());
+    }
+
+    iterator = objIdSet.iterator();
+    objIdSet.remove(new ObjectID(0));
+    try {
+      iterateElements(iterator);
+      throw new AssertionError("We should have got the ConcurrentModificationException");
+    } catch (ConcurrentModificationException cme) {
+      System.out.println("Caught Expected Exception " + cme.getClass().getName());
+    }
+
+    iterator = objIdSet.iterator();
+    objIdSet.clear();
+    try {
+      iterateElements(iterator);
+      throw new AssertionError("We should have got the ConcurrentModificationException");
+    } catch (ConcurrentModificationException cme) {
+      System.out.println("Caught Expected Exception " + cme.getClass().getName());
+    }
+
+  }
+
+  private long iterateElements(Iterator iterator) throws ConcurrentModificationException {
+    return iterateElements(iterator, -1);
+  }
+
+  private long iterateElements(Iterator iterator, long count) throws ConcurrentModificationException {
+    long itrCount = 0;
+    while ((iterator.hasNext()) && (count < 0 || itrCount < count)) {
+      itrCount++;
+      System.out.print(((ObjectID) iterator.next()).toLong() + ", ");
+    }
+    System.out.print("\n\n");
+    return itrCount;
+  }
+
+  public void testObjectIDSetIteratorFullRemove() {
+    SetCreator creator = new SetCreatorImpl();
+    SecureRandom sr = new SecureRandom();
+    long seed = sr.nextLong();
+
     Set all = new HashSet();
     Set oidSet = creator.create();
     System.err.println("Running iteratorRemoveTest for " + oidSet.getClass().getName() + " and seed is " + seed);
     Random r = new Random(seed);
-    for (int i = 0; i < 50000; i++) {
+    for (int i = 0; i < 5000; i++) {
       long l = r.nextInt(100000);
       ObjectID id = new ObjectID(l);
       all.add(id);
       oidSet.add(id);
     }
+
     for (Iterator i = all.iterator(); i.hasNext();) {
       ObjectID rid = (ObjectID) i.next();
       Assert.eval(oidSet.contains(rid));
@@ -253,5 +302,59 @@ public class ObjectIDSetTest extends TCTestCase {
       }
     }
     Assert.eval(oidSet.size() == 0);
+  }
+
+  public void testObjectIDSetIteratorSparseRemove() {
+    SetCreator creator = new SetCreatorImpl();
+    SecureRandom sr = new SecureRandom();
+    long seed = sr.nextLong();
+    Set oidSet = creator.create();
+    System.err.println("Running iteratorRemoveTest for " + oidSet.getClass().getName() + " and seed is " + seed);
+    Random r = new Random(seed);
+    for (int i = 0; i < 1000; i++) {
+      ObjectID id;
+      do {
+        long l = r.nextInt(20000);
+        id = new ObjectID(l);
+      } while (oidSet.contains(id));
+      oidSet.add(id);
+    }
+
+    // check if ObjectIDSet has been inited with 1000 elements
+    Iterator oidSetIterator = oidSet.iterator();
+    assertEquals(1000, iterateElements(oidSetIterator));
+
+    long visitedCount = 0;
+    long removedCount = 0;
+    oidSetIterator = oidSet.iterator();
+
+    // visit first 100 elements
+    visitedCount += iterateElements(oidSetIterator, 100);
+    assertEquals(100, visitedCount);
+
+    // remove the 100th element
+    oidSetIterator.remove();
+    removedCount += 1;
+
+    // visit next 100 elements
+    visitedCount += iterateElements(oidSetIterator, 100);
+    assertEquals(100 + 100, visitedCount);
+
+    // remove the 200th element
+    oidSetIterator.remove();
+    removedCount += 1;
+
+    // visit next 100 elements
+    visitedCount += iterateElements(oidSetIterator, 100);
+    assertEquals(100 + 100 + 100, visitedCount);
+
+    // visit rest of the elements
+    visitedCount += iterateElements(oidSetIterator);
+    assertEquals(1000, visitedCount);
+
+    // check the backing Set for removed elements
+    oidSetIterator = oidSet.iterator();
+    long totalElements = iterateElements(oidSetIterator);
+    assertEquals((visitedCount - removedCount), totalElements);
   }
 }
