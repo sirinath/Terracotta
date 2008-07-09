@@ -572,9 +572,13 @@ public class DistributedObjectServer implements TCDumper {
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
                                                              managedObjectFlushHandler, (persistent ? 1 : l2Properties
                                                                  .getInt("seda.flushstage.threads")), -1);
+    TCProperties youngDGCProperties = objManagerProperties.getPropertiesFor("dgc").getPropertiesFor("young");
+    boolean enableYoungGenDGC = youngDGCProperties.getBoolean("enabled");
+    long youngGenDGCFrequency = youngDGCProperties.getLong("frequencyInMillis");
 
     ObjectManagerConfig objectManagerConfig = new ObjectManagerConfig(gcInterval * 1000, gcEnabled, verboseGC,
-                                                                      persistent);
+                                                                      persistent, enableYoungGenDGC,
+                                                                      youngGenDGCFrequency);
     objectManager = new ObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore, swapCache,
                                           persistenceTransactionProvider, faultManagedObjectStage.getSink(),
                                           flushManagedObjectStage.getSink());
