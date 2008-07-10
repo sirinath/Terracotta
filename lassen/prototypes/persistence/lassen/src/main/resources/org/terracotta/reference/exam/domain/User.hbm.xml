@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="org.terracotta.reference.exam.domain.User" table="USERS">	
+		<id name="id" column="USER_ID">
+			<generator class="increment"/>
+		</id>
+		
+		<property name="firstName" column="FIRST_NAME"/>
+		<property name="lastName" column="LAST_NAME"/>
+		<property name="email" column="EMAIL"/>
+		<property name="password" column="PASSWORD"/>
+	</class>
+</hibernate-mapping>
+	
+	
