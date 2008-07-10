@@ -91,25 +91,23 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private SerializationAdapter                 serializationAdapter;
   private final SleepycatCollectionsPersistor  collectionsPersistor;
   private final ObjectIDManager                objectIDManager;
-  private final ObjectIDPersistentMapInfo      objectIDPersistentMapInfo;
   private final ConcurrentHashMap              statsRecords          = new ConcurrentHashMap();
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
-                                    SerializationAdapterFactory serializationAdapterFactory, Database objectDB,
-                                    Database oidDB, Database oidLogDB, Database oidLogSeqDB,
-                                    CursorConfig dBCursorConfig, MutableSequence objectIDSequence, Database rootDB,
-                                    CursorConfig rootDBCursorConfig, PersistenceTransactionProvider ptp,
-                                    SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid) {
+                                    SerializationAdapterFactory serializationAdapterFactory, DBEnvironment env,
+                                    MutableSequence objectIDSequence, Database rootDB, CursorConfig rootDBCursorConfig,
+                                    PersistenceTransactionProvider ptp,
+                                    SleepycatCollectionsPersistor collectionsPersistor, boolean paranoid)
+      throws TCDatabaseException {
     this.logger = logger;
     this.classCatalog = classCatalog;
     this.saf = serializationAdapterFactory;
-    this.objectDB = objectDB;
+    this.objectDB = env.getObjectDatabase();
     this.objectIDSequence = objectIDSequence;
     this.rootDB = rootDB;
     this.rootDBCursorConfig = rootDBCursorConfig;
     this.ptp = ptp;
     this.collectionsPersistor = collectionsPersistor;
-    this.objectIDPersistentMapInfo = new ObjectIDPersistentMapInfoImpl();
 
     boolean oidFastLoad = TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD);
@@ -117,12 +115,11 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       this.objectIDManager = new NullObjectIDManager();
     } else if (oidFastLoad) {
       // read objectIDs from compressed DB
-      MutableSequence sequence = new SleepycatSequence(this.ptp, logger, 1, 1000, oidLogSeqDB);
-      this.objectIDManager = new FastObjectIDManagerImpl(oidDB, oidLogDB, ptp, dBCursorConfig, sequence,
-                                                         objectIDPersistentMapInfo);
+      MutableSequence sequence = new SleepycatSequence(this.ptp, logger, 1, 1000, env.getOidLogSequeneceDB());
+      this.objectIDManager = new FastObjectIDManagerImpl(env, ptp, sequence);
     } else {
       // read objectIDs from object DB
-      this.objectIDManager = new PlainObjectIDManagerImpl(objectDB, ptp, dBCursorConfig);
+      this.objectIDManager = new PlainObjectIDManagerImpl(objectDB, ptp);
     }
 
     if (STATS_LOGGING_ENABLED) startStatsPrinter();
@@ -271,7 +268,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       Assert.assertNull(mapState.getMap());
       try {
         mapState.setMap(collectionsPersistor.loadMap(tx, mo.getID()));
-        objectIDPersistentMapInfo.setPersistent(mo.getID());
+        objectIDManager.setPersistent(mo.getID());
       } catch (DatabaseException e) {
         throw new TCDatabaseException(e);
       }
@@ -288,7 +285,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         status = objectIDManager.put(persistenceTransaction, managedObject);
         if (OperationStatus.SUCCESS.equals(status)
             && PersistentCollectionsUtil.isPersistableCollectionType(managedObject.getManagedObjectState().getType())) {
-          objectIDPersistentMapInfo.setPersistent(managedObject.getID());
+          objectIDManager.setPersistent(managedObject.getID());
         }
       }
     } catch (DBException e) {
@@ -470,10 +467,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         // make the formatter happy
         throw new DBException("Unable to remove ManagedObject for object id: " + id + ", status: " + status);
       } else {
-        if (objectIDPersistentMapInfo.isPersistMapped(id)) {
+        if (objectIDManager.isPersistMapped(id)) {
           // may return false if ManagedObject persistent state empty
           collectionsPersistor.deleteCollection(tx, id);
-          objectIDPersistentMapInfo.clrPersistent(id);
+          objectIDManager.clrPersistent(id);
         }
       }
     } catch (DatabaseException t) {
@@ -550,11 +547,6 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   // for testing purpose only
   ObjectIDManager getOibjectIDManager() {
     return objectIDManager;
-  }
-
-  // for testing purpose only
-  ObjectIDPersistentMapInfo getObjectIDPersistentMapInfo() {
-    return objectIDPersistentMapInfo;
   }
 
   private static final class StatsRecord {
