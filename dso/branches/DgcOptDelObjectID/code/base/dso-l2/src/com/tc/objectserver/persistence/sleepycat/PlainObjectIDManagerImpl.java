@@ -33,10 +33,11 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
   private final CursorConfig                   dBCursorConfig;
   private final boolean                        isMeasurePerf;
 
-  public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp, CursorConfig dBCursorConfig) {
+  public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp) {
     this.objectDB = objectDB;
     this.ptp = ptp;
-    this.dBCursorConfig = dBCursorConfig;
+    this.dBCursorConfig = new CursorConfig();
+    this.dBCursorConfig.setReadCommitted(true);
 
     isMeasurePerf = TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF, false);
@@ -125,6 +126,19 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
         logger.error("Error closing cursor", e);
       }
     }
+  }
+
+  public void clrPersistent(ObjectID id) {
+    return;
+
+  }
+
+  public boolean isPersistMapped(ObjectID id) {
+    return false;
+  }
+
+  public void setPersistent(ObjectID id) {
+    return;
   }
 
 }

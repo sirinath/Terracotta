@@ -66,16 +66,16 @@ public class OidBitsArrayMapTest extends TCTestCase {
     return idList;
   }
 
-  private void verifyObjectIDInList(List<ObjectID> idList, OidBitsArrayMap oids) {
+  private void verifyObjectIDInList(List<ObjectID> idList, OidBitsArrayMapImpl oids) {
     for (int i = 0; i < idList.size(); ++i) {
-      Assert.assertTrue("Not found index=" + oids.oidIndex((idList.get(i)).toLong()), oids.contains(idList.get(i)));
+      Assert.assertTrue("Not found index=" + oids.oidIndex(idList.get(i)), oids.contains(idList.get(i)));
     }
   }
 
   public void testReadWriteDB() {
     List<ObjectID> idList = populateObjectIDList();
 
-    OidBitsArrayMap oids = new OidBitsArrayMap(LongPerDiskUnit, oidDB);
+    OidBitsArrayMapImpl oids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB);
 
     for (ObjectID id : idList) {
       oids.getAndSet(id);
@@ -87,7 +87,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     verifyObjectIDInList(idList, oids);
 
     // load to a new OidBitsArrayMap
-    OidBitsArrayMap secOids = new OidBitsArrayMap(LongPerDiskUnit, oidDB);
+    OidBitsArrayMapImpl secOids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB);
     secOids.loadAllFromDisk();
     verifyObjectIDInList(idList, secOids);
 
@@ -114,7 +114,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     int auxDB = 1;
     List<ObjectID> idList = populateObjectIDList();
 
-    OidBitsArrayMap oids = new OidBitsArrayMap(LongPerDiskUnit, oidDB, auxDB);
+    OidBitsArrayMapImpl oids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB, auxDB);
 
     for (ObjectID id : idList) {
       oids.getAndSet(id);
@@ -126,7 +126,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     verifyObjectIDInList(idList, oids);
 
     // load to a new OidBitsArrayMap
-    OidBitsArrayMap secOids = new OidBitsArrayMap(LongPerDiskUnit, oidDB, auxDB);
+    OidBitsArrayMapImpl secOids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB, auxDB);
     secOids.loadAllFromDisk();
     verifyObjectIDInList(idList, secOids);
 
@@ -157,8 +157,8 @@ public class OidBitsArrayMapTest extends TCTestCase {
       if ((i % 3) == 0) auxList.add(idList.get(i));
     }
 
-    OidBitsArrayMap oids = new OidBitsArrayMap(LongPerDiskUnit, oidDB);
-    OidBitsArrayMap oidAux = new OidBitsArrayMap(LongPerDiskUnit, oidDB, auxDB);
+    OidBitsArrayMapImpl oids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB);
+    OidBitsArrayMapImpl oidAux = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB, auxDB);
 
     for (ObjectID id : idList) {
       oids.getAndSet(id);
@@ -176,10 +176,10 @@ public class OidBitsArrayMapTest extends TCTestCase {
     verifyObjectIDInList(auxList, oidAux);
 
     // load to a new OidBitsArrayMap
-    OidBitsArrayMap secOids = new OidBitsArrayMap(LongPerDiskUnit, oidDB);
+    OidBitsArrayMapImpl secOids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB);
     secOids.loadAllFromDisk();
     verifyObjectIDInList(idList, secOids);
-    OidBitsArrayMap secAux = new OidBitsArrayMap(LongPerDiskUnit, oidDB, auxDB);
+    OidBitsArrayMapImpl secAux = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB, auxDB);
     secAux.loadAllFromDisk();
     verifyObjectIDInList(auxList, secAux);
 
@@ -219,12 +219,12 @@ public class OidBitsArrayMapTest extends TCTestCase {
     Set<Long> indexSet = new HashSet<Long>();
     Map<Long, OidLongArray> map = new HashMap<Long, OidLongArray>();
 
-    OidBitsArrayMap oids = new OidBitsArrayMap(LongPerDiskUnit, oidDB, auxDB);
+    OidBitsArrayMapImpl oids = new OidBitsArrayMapImpl(LongPerDiskUnit, oidDB, auxDB);
 
     for (ObjectID id : idList) {
       oids.getAndSet(id);
       Assert.assertTrue(oids.contains(id));
-      indexSet.add(oids.oidIndex(id.toLong()));
+      indexSet.add(oids.oidIndex(id));
     }
 
     oids.saveAllToDisk();
@@ -242,14 +242,14 @@ public class OidBitsArrayMapTest extends TCTestCase {
 
     // verify
     for (ObjectID id : idList) {
-      long index = oids.oidIndex(id.toLong());
+      long index = oids.oidIndex(id);
       int offset = (int) (id.toLong() - index);
       OidLongArray ary = map.get(index);
       Assert.assertTrue("" + id + " index=" + index + " offset=" + offset, ary.isSet(offset));
     }
     // clear bits
     for (ObjectID id : idList) {
-      long index = oids.oidIndex(id.toLong());
+      long index = oids.oidIndex(id);
       int offset = (int) (id.toLong() - index);
       OidLongArray ary = map.get(index);
       ary.clrBit(offset);

@@ -24,5 +24,12 @@ public interface ObjectIDManager {
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException;
 
   public Runnable getObjectIDReader(SyncObjectIdSet rv);
+  
+  public boolean isPersistMapped(ObjectID id);
+
+  public void setPersistent(ObjectID id);
+
+  public void clrPersistent(ObjectID id);
+
 
 }

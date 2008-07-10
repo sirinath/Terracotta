@@ -32,13 +32,25 @@ public class NullObjectIDManager implements ObjectIDManager {
   public OperationStatus put(PersistenceTransaction tx, ManagedObject mo) {
     return OperationStatus.SUCCESS;
   }
-  
+
   public void prePutAll(Set<ObjectID> oidSet, ManagedObject mo) {
     return;
   }
 
   public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
+  }
+
+  public void clrPersistent(ObjectID id) {
+    return;
+  }
+
+  public boolean isPersistMapped(ObjectID id) {
+    return false;
+  }
+
+  public void setPersistent(ObjectID id) {
+    return;
   }
 
 }
