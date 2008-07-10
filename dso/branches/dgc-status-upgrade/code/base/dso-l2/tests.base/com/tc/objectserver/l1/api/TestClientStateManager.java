@@ -59,6 +59,10 @@ public class TestClientStateManager implements ClientStateManager {
   public void addAllReferencedIdsTo(Set rescueIds) {
     //
   }
+  
+  public int getReferenceCount(NodeID node) {
+    return 0;
+  }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
     return out.print(getClass().getName());

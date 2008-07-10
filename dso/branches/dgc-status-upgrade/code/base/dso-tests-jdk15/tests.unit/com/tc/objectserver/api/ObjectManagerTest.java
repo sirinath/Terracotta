@@ -81,8 +81,8 @@ import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor;
 import com.tc.objectserver.persistence.sleepycat.SleepycatSerializationAdapterFactory;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionImpl;
-import com.tc.objectserver.tx.TestTransactionalStageCoordinator;
 import com.tc.objectserver.tx.ServerTransactionSequencerImpl;
+import com.tc.objectserver.tx.TestTransactionalStageCoordinator;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.statistics.mock.NullStatisticsAgentSubSystem;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -144,6 +144,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     super(arg0);
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     this.logger = TCLogging.getLogger(getClass());
@@ -444,7 +445,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     // test that limit is working okay
     facade = objectManager.lookupFacade(id, 1);
-    assertEquals(1, facade.getArrayLength());
+    assertEquals(1, facade.getFields().length);
+    assertEquals(3, facade.getArrayLength()); // array length is still 3 even if limit is 1
     assertEquals("tim", facade.getFieldValue("0"));
 
     facade = objectManager.lookupFacade(id, 19212);
@@ -884,6 +886,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     gotIt[0] = false;
 
     Thread t = new Thread() {
+      @Override
       public void run() {
         objectManager.getObjectByID(id);
         gotIt[0] = true;
@@ -1451,6 +1454,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // Doing in a separate thread since this will block
     final CyclicBarrier cb = new CyclicBarrier(2);
     Thread t = new Thread("GC Thread - testRecallNewObjects") {
+      @Override
       public void run() {
         objectManager.waitUntilReadyToGC();
         try {
@@ -1546,9 +1550,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     private static int     _version;
 
     private final ObjectID id;
-    private int            version;
+    private final int      version;
 
-    private boolean        delta;
+    private final boolean  delta;
 
     public TestArrayDNA(ObjectID id) {
       this(id, false);
@@ -1728,8 +1732,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
   private static class TestMapDNA implements DNA {
 
-    final ObjectID  objectID;
-    private boolean isDelta;
+    final ObjectID        objectID;
+    private final boolean isDelta;
 
     TestMapDNA(ObjectID id) {
       this(id, false);
@@ -2296,6 +2300,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       this.exceptionQueue = exceptionQueue;
     }
 
+    @Override
     public void uncaughtException(Thread t, Throwable e) {
       try {
         exceptionQueue.put(e);
@@ -2316,6 +2321,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   /*
    * @see TestCase#tearDown()
    */
+  @Override
   protected void tearDown() throws Exception {
     super.tearDown();
   }
@@ -2334,10 +2340,12 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       throw new RuntimeException("Don't use me.");
     }
 
+    @Override
     public long gcThreadSleepTime() {
       return myGCThreadSleepTime;
     }
 
+    @Override
     public boolean paranoid() {
       return paranoid;
     }
@@ -2360,6 +2368,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       setDaemon(true);
     }
 
+    @Override
     public void run() {
       while (true) {
         try {
@@ -2388,6 +2397,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       setDaemon(true);
     }
 
+    @Override
     public void run() {
       while (true) {
         try {
@@ -2402,9 +2412,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   }
 
   private static class TestSinkContext implements SinkContext {
-    private Counter sinkCountDownCounter = new Counter(0);
-    private Counter sinkCountUpCounter   = new Counter(0);
-    int             maximumCountUpValue  = 0;
+    private final Counter sinkCountDownCounter = new Counter(0);
+    private Counter       sinkCountUpCounter   = new Counter(0);
+    int                   maximumCountUpValue  = 0;
 
     public void expectedSinkCountDownFrom(int aSinkCount) {
       this.sinkCountDownCounter.increment(aSinkCount);
