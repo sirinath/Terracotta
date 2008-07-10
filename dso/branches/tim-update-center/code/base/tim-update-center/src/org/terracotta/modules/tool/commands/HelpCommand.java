@@ -6,9 +6,17 @@ package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.CommandLine;
 
+import com.google.inject.Inject;
+
 import java.util.List;
 
-class HelpCommand extends AbstractCommand {
+public class HelpCommand extends AbstractCommand {
+  private CommandRegistry commandRegistry;
+
+  @Inject
+  public HelpCommand(CommandRegistry registry) {
+    this.commandRegistry = registry;
+  }
 
   public void execute(CommandLine cli) {
     List<String> topics = cli.getArgList();
@@ -20,10 +28,11 @@ class HelpCommand extends AbstractCommand {
     }
 
     for (String topic : topics) {
-      try {
-        Command cmd = create(topic);
+      Command cmd = commandRegistry.getCommand(topic);
+      if (cmd != null) {
         System.out.println(cmd.help());
-      } catch (CommandException e) {
+      }
+      else {
         System.out.println("Command not supported: " + topic);
       }
       System.out.println();

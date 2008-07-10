@@ -14,7 +14,7 @@ public class Loader {
 
   public Loader(String cmdname, String[] args) throws CommandException, ParseException {
     AbstractCommand cmd = AbstractCommand.create(cmdname);
-    Options options = cmd.getOptions();
+    Options options = cmd.options();
 
     CommandLineParser parser = new GnuParser();
     CommandLine cli = parser.parse(options, args);

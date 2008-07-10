@@ -7,21 +7,22 @@ import org.apache.commons.cli.CommandLine;
 import org.terracotta.modules.tool.Tim;
 import org.terracotta.modules.tool.TimRepository;
 
+import com.google.inject.Inject;
+
 import java.util.List;
 
 /**
  * Command class implementing the <code>list</code> command.
  */
-class ListCommand extends AbstractCommand {
+public class ListCommand extends AbstractCommand {
   
   private final TimRepository repository;
 
-  public ListCommand() {
-    this.repository = null;
-  }
-  
+  @Inject
   public ListCommand(TimRepository repository) {
     this.repository = repository;
+    assert repository != null;
+    options.addOption("v", "details", false, "Display detailed information");
   }
 
   public String help() {

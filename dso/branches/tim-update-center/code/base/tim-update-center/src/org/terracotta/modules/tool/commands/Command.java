@@ -5,6 +5,7 @@
 package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 
 /**
  * Base interface implemented by all commands.
@@ -13,15 +14,28 @@ import org.apache.commons.cli.CommandLine;
  */
 public interface Command {
 
+  /** The name of this command. */
+  public String name();
+
   /**
-   * Descriptive help text for this command.
+   * The command-line options that this command accepts.
+   */
+  public Options options();
+
+  /**
+   * Descriptive help text for this command.  The help text should only contain
+   * descriptive information about the command and general usage, and should not
+   * contain any information about the available command-line options since that
+   * information will be derived from the information obtained from the
+   * {@link #options()} method.
    */
   public String help();
 
   /**
    * Execute whatever actions that this command performs.
    * 
-   * @param Any arguments that need to be passed to this command.
+   * @param commandLine The {@link CommandLine} object containing the parsed
+   *        options and any remaining command-line arguments.
    */
-  public void execute(CommandLine cli);
+  public void execute(CommandLine commandLine);
 }

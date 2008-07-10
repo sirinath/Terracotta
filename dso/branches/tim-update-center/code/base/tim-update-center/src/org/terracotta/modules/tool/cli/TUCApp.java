@@ -8,8 +8,13 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
-import org.terracotta.modules.tool.commands.Loader;
+import org.terracotta.modules.tool.GuiceModule;
+import org.terracotta.modules.tool.commands.CommandRegistry;
+import org.terracotta.modules.tool.commands.HelpCommand;
+import org.terracotta.modules.tool.commands.ListCommand;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.tc.util.ResourceBundleHelper;
 
 import java.util.Arrays;
@@ -20,6 +25,11 @@ public class TUCApp {
   private static final ResourceBundleHelper bundleHelper = new ResourceBundleHelper(TUCApp.class);
 
   public static void main(String args[]) {
+    Injector injector = Guice.createInjector(new GuiceModule());
+    CommandRegistry commandRegistry = injector.getInstance(CommandRegistry.class);
+    commandRegistry.addCommand(injector.getInstance(ListCommand.class));
+    commandRegistry.addCommand(injector.getInstance(HelpCommand.class));
+
     Options options = new Options();
     options.addOption("h", "help", false, bundleHelper.getString("options.help"));
     try {
@@ -31,8 +41,8 @@ public class TUCApp {
 
       List<String> cmdargs = Arrays.asList(args);
       if (!cmdargs.isEmpty()) cmdargs = cmdargs.subList(1, cmdargs.size());
-      
-      new Loader(cmdname, cmdargs.toArray(new String[0]));      
+
+      commandRegistry.executeCommand(cmdname, cmdargs);
     } catch (Exception e) {
       System.err.println(e.getMessage());
       e.printStackTrace();
