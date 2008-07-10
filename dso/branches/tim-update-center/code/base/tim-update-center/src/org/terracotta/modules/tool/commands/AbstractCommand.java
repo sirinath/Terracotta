@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Convenience base class for commands that offers common facilities used by
@@ -21,8 +23,37 @@ import java.util.List;
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public abstract class AbstractCommand implements Command {
+  protected Options options = createOptions();
+
   private PrintWriter out = new PrintWriter(System.out);
   private PrintWriter err = new PrintWriter(System.err);
+
+  protected final Options createOptions() {
+    return new Options();
+  }
+
+  public String help() {
+    return name() + "[options] [arguments]";
+  }
+
+  private static final Pattern classNamePattern = Pattern.compile("([A-Za-z0-9_]+)Command");
+
+  /**
+   * Default implementation that returns the name of the class (in lowercase)
+   * minus the "Command" suffix if it has one,
+   */
+  public String name() {
+    String commandName = getClass().getSimpleName();
+    Matcher matcher = classNamePattern.matcher(commandName);
+    if (matcher.matches()) {
+      commandName = matcher.group(1);
+    }
+    return commandName.toLowerCase();
+  }
+
+  public Options options() {
+    return options;
+  }
 
   static AbstractCommand create(String name) throws CommandException {
     try {
@@ -53,14 +84,7 @@ public abstract class AbstractCommand implements Command {
       return "unable to load resource: " + resourceName;
     }
   }
-  
 
-  protected Options getOptions() {
-    Options options = new Options();
-    options.addOption("h", "help", false, "Help");
-    return options;
-  }
-  
   protected String getTerracottaVersion() {
     return ProductInfo.getInstance().version();
   }

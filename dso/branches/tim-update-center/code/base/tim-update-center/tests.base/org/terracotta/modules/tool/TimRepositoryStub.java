@@ -14,6 +14,14 @@ import java.util.Set;
  */
 public class TimRepositoryStub implements TimRepository {
 
+  public Set<TimPackage> findAllPackages(String terracottaVersion) {
+    return null;
+  }
+
+  public Set<TimPackage> findNamedPackages(String terracottaVersion, String name) {
+    return null;
+  }
+
   public List<Tim> listAllCompatibleTims(String tcVersion) {
     List<Tim> result = new ArrayList<Tim>();
     return result;
