@@ -15,14 +15,11 @@ import org.terracotta.modules.tool.commands.ListCommand;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.tc.util.ResourceBundleHelper;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class TUCApp {
-
-  private static final ResourceBundleHelper bundleHelper = new ResourceBundleHelper(TUCApp.class);
 
   public static void main(String args[]) {
     Injector injector = Guice.createInjector(new GuiceModule());
@@ -32,7 +29,7 @@ public class TUCApp {
     commandRegistry.addCommand(injector.getInstance(HelpCommand.class));
 
     Options options = new Options();
-    options.addOption("h", "help", false, bundleHelper.getString("options.help"));
+    options.addOption("h", "help", false, "Display help information.");
     try {
       CommandLineParser parser = new GnuParser();
       CommandLine cli = parser.parse(options, args);
