@@ -26,6 +26,7 @@ public class TUCApp {
 
   public static void main(String args[]) {
     Injector injector = Guice.createInjector(new GuiceModule());
+
     CommandRegistry commandRegistry = injector.getInstance(CommandRegistry.class);
     commandRegistry.addCommand(injector.getInstance(ListCommand.class));
     commandRegistry.addCommand(injector.getInstance(HelpCommand.class));
