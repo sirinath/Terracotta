@@ -5,7 +5,6 @@ package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 
 import com.tc.util.ProductInfo;
 
@@ -53,19 +52,6 @@ public abstract class AbstractCommand implements Command {
 
   public Options options() {
     return options;
-  }
-
-  static AbstractCommand create(String name) throws CommandException {
-    try {
-      Class klazz = Class.forName("org.terracotta.modules.tool.commands." + StringUtils.capitalize(name) + "Command");
-      return (AbstractCommand) klazz.newInstance();
-    } catch (ClassNotFoundException e) {
-      throw new CommandException("Unknown command: " + name);
-    } catch (InstantiationException e) {
-      throw new CommandException("Unable to create command: " + name, e);
-    } catch (IllegalAccessException e) {
-      throw new CommandException("Unable to access command: " + name, e);
-    }
   }
 
   static String loadHelp(String topic) {
