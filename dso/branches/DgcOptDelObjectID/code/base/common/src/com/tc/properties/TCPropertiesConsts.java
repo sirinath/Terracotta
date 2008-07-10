@@ -68,6 +68,7 @@ public interface TCPropertiesConsts {
   public static final String L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING          = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
   public static final String L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                 = "l2.objectmanager.fault.logging.enabled";
   public static final String L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED             = "l2.objectmanager.persistor.logging.enabled";
+  public static final String L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF                = "l2.objectmanager.persistor.measure.performance";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                 = "l2.objectmanager.loadObjectID.fastLoad";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY       = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_STATE_LONGS_PERDISKENTRY = "l2.objectmanager.loadObjectID.state.longsPerDiskEntry";
