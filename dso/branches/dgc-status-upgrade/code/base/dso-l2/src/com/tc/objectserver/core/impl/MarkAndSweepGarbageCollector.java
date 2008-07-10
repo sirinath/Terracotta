@@ -80,10 +80,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private static final State             GC_SLEEP                  = new State("GC_SLEEP");
   private static final State             GC_PAUSING                = new State("GC_PAUSING");
   private static final State             GC_PAUSED                 = new State("GC_PAUSED");
-  private static final State             GC_MARK                   = new State("GC_MARK");
-  private static final State             GC_RESCUE_1               = new State("GC_RESCUE_1");
-  private static final State             GC_RESCUE_2               = new State("GC_RESCUE_2");
-  private static final State             GC_SWEEP                  = new State("GC_SWEEP");
+  private static final State             GC_DELETE                  = new State("GC_DELETE");
 
   private final GCLogger                 gcLogger;
   private final List                     eventListeners            = new CopyOnWriteArrayList();
@@ -134,7 +131,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   /**
-   * GC_SLEEP --> GC_RUNNING --> GC_MARKING --> GC_RESCUE_1 --> GC_PAUSING --> GC_PAUSED --> GC_RESCUE_2 --> GC_SWEEP
+   * GC_SLEEP --> GC_RUNNING  --> GC_PAUSING --> GC_PAUSED --> GC_SWEEP
    */
   public void gc() {
 
@@ -163,8 +160,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     if (gcState.isStopRequested()) { return; }
 
     gcLogger.log_markStart(managedIDs);
-    requestGCMark();
-
+  
     ObjectIDSet gcResults = collect(NULL_FILTER, rootIDs, managedIDs, gcState);
     gcLogger.log_markResults(gcResults);
 
@@ -173,8 +169,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     List rescueTimes = new ArrayList();
 
     gcLogger.log_rescue(1, gcResults);
-    requestGCRescue1();
-
+   
     gcResults = rescue(gcResults, rescueTimes);
 
     requestGCPause();
@@ -193,8 +188,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     // Assert.eval("No pending lookups allowed during GC pause.", pending.size() == 0);
 
     gcLogger.log_rescue(2, gcResults);
-    requestGCRescue2();
-
+   
     gcStats.setCandidateGarbageCount(gcResults.size());
     SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
 
@@ -208,7 +202,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     long deleteStartMillis = System.currentTimeMillis();
     gcStats.setPausedStageTime(deleteStartMillis - pauseStartMillis);
     // Delete Garbage
-    sweepGarbage(new GCResultContext(gcIteration, toDelete));
+    deleteGarbage(new GCResultContext(gcIteration, toDelete));
 
     gcStats.setActualGarbageCount(toDelete.size());
     long endMillis = System.currentTimeMillis();
@@ -224,8 +218,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
   }
 
-  public boolean sweepGarbage(GCResultContext gcResult) {
-    if (requestGCSweepStart()) {
+  public boolean deleteGarbage(GCResultContext gcResult) {
+    if (requestGCDeleteStart()) {
       objectManager.notifyGCComplete(gcResult);
       notifyGCComplete();
       return true;
@@ -378,9 +372,9 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
    * In Active server, state transitions from GC_PAUSED to GC_DELETE and in the passive server, state transitions from
    * GC_SLEEP to GC_DELETE.
    */
-  private synchronized boolean requestGCSweepStart() {
-    if (state == GC_SLEEP || state == GC_PAUSED || state == GC_RESCUE_2) {
-      state = GC_SWEEP;
+  private synchronized boolean requestGCDeleteStart() {
+    if (state == GC_SLEEP || state == GC_PAUSED) {
+      state = GC_DELETE;
       fireGCStatusUpdateEvent();
       return true;
     }
@@ -389,21 +383,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
   public synchronized void requestGCPause() {
     state = GC_PAUSING;
-    fireGCStatusUpdateEvent();
-  }
-
-  public synchronized void requestGCMark() {
-    state = GC_MARK;
-    fireGCStatusUpdateEvent();
-  }
-
-  public synchronized void requestGCRescue1() {
-    state = GC_RESCUE_1;
-    fireGCStatusUpdateEvent();
-  }
-
-  public synchronized void requestGCRescue2() {
-    state = GC_RESCUE_2;
     fireGCStatusUpdateEvent();
   }
 

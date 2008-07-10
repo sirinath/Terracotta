@@ -136,7 +136,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
 
     boolean deleted = objectManager.getGarbageCollector()
-        .sweepGarbage(new GCResultContext(gcMsg.getGCIterationCount(), gcedOids));
+        .deleteGarbage(new GCResultContext(gcMsg.getGCIterationCount(), gcedOids));
     if (deleted) {
       logger.info("Removed " + gcedOids.size() + " objects from passive ObjectManager from last GC from Active");
     } else {
