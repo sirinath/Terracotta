@@ -28,7 +28,9 @@ public abstract class AbstractCommand implements Command {
   private PrintWriter err = new PrintWriter(System.err);
 
   protected final Options createOptions() {
-    return new Options();
+    Options opts = new Options();
+    opts.addOption("h", "help", false, "Display help information.");
+    return opts;
   }
 
   public String help() {
