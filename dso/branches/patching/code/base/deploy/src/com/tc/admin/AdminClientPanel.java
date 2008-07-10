@@ -35,6 +35,7 @@ import com.tc.admin.common.XTextField;
 import com.tc.admin.common.XTreeModel;
 import com.tc.admin.common.XTreeNode;
 import com.tc.admin.model.IServer;
+import com.tc.admin.model.ServerVersion;
 import com.tc.util.ProductInfo;
 
 import java.awt.BorderLayout;
@@ -659,7 +660,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
     ProductInfo consoleInfo = ProductInfo.getInstance();
     String consoleVersion = consoleInfo.version();
-    ProductInfo serverInfo = clusterNode.getProductInfo();
+    ServerVersion serverInfo = clusterNode.getProductInfo();
     if (serverInfo == null) return true; // something went wrong, move on
     String serverVersion = serverInfo.version();
     int spaceIndex = serverVersion.lastIndexOf(" ");

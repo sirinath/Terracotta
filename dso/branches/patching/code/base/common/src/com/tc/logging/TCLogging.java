@@ -440,18 +440,15 @@ public class TCLogging {
   private static void writeVersion() {
     ProductInfo info = ProductInfo.getInstance();    
     TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
-    TCLogger classLogger = getLogger(TCLogging.class);
 
     // Write build info always
     String longProductString = info.toLongString();
     consoleLogger.info(longProductString);
-    classLogger.info(longProductString);
     
     // Write patch info, if any
     if(info.isPatched()) {
       String longPatchString = info.toLongPatchString();
       consoleLogger.info(longPatchString);
-      classLogger.info(longPatchString);
     }
   }
 
