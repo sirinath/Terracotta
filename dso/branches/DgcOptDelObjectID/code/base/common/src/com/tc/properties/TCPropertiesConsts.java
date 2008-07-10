@@ -15,7 +15,8 @@ public interface TCPropertiesConsts {
                                                                                        "l1.reconnect.timeout.millis",
                                                                                        "l2.nha.ooo.maxDelayedAcks",
                                                                                        "l2.nha.ooo.sendWindow",
-                                                                                       "l2.objectmanager.loadObjectID.checkpoint.changes"};
+                                                                                       "l2.objectmanager.loadObjectID.checkpoint.changes",
+                                                                                       "l2.objectmanager.loadObjectID.checkpoint.timeperiod"};
   
   /*********************************************************************************************************************
    * Section : L2 Cache Manager Properties Description : This section contains the defaults for the cache manager for
@@ -71,9 +72,8 @@ public interface TCPropertiesConsts {
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY       = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_STATE_LONGS_PERDISKENTRY = "l2.objectmanager.loadObjectID.state.longsPerDiskEntry";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF             = "l2.objectmanager.loadObjectID.measure.performance";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_ADAPTIVE      = "l2.objectmanager.loadObjectID.checkpoint.adaptive";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT      = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD    = "l2.objectmanager.loadObjectID.checkpoint.timeperiod";
+  public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP      = "l2.objectmanager.loadObjectID.checkpoint.maxsleep";
   public static final String L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE               = "l2.objectmanager.passive.sync.batch.size";
   public static final String L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_TIME            = "l2.objectmanager.passive.sync.throttle.timeInMillis";
   public static final String L2_DATA_BACKUP_THROTTLE_TIME                           = "l2.data.backup.throttle.timeInMillis";

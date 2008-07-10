@@ -47,9 +47,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final int                            AUXDB_KEY             = 1;
   // property
   private final int                            checkpointMaxLimit;
-  private final int                            checkpointPeriod;
+  private final int                            checkpointMaxSleep;
   private final int                            longsPerDiskEntry;
-  private final boolean                        isAdaptive;
   private final boolean                        isMeasurePerf;
 
   private final Database                       oidDB;
@@ -72,12 +71,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.ptp = ptp;
     this.oidDBCursorConfig = oidDBCursorConfig;
 
-    isAdaptive = TCPropertiesImpl.getProperties()
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_ADAPTIVE, true);
     checkpointMaxLimit = TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT);
-    checkpointPeriod = TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD);
+    checkpointMaxSleep = TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP);
     longsPerDiskEntry = TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY);
     isMeasurePerf = TCPropertiesImpl.getProperties()
@@ -89,7 +86,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.objectIDPersistentMapInfo = objectIDPersistentMapInfo;
 
     // start checkpoint thread
-    checkpointThread = new CheckpointRunner(checkpointPeriod);
+    checkpointThread = new CheckpointRunner(checkpointMaxSleep);
     checkpointThread.setDaemon(true);
     checkpointThread.start();
   }
@@ -210,7 +207,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
             }
             cursor.delete();
 
-            if (changes >= maxProcessLimit) {
+            if (maxProcessLimit > 0 && changes >= maxProcessLimit) {
               cursor.close();
               cursor = null;
               isAllFlushed = false;
@@ -274,12 +271,12 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
    * Periodically flush oid from oidLogDB to oidDB
    */
   private class CheckpointRunner extends Thread {
-    private final int         timeperiod;
+    private final int         maxSleep;
     private final StoppedFlag stoppedFlag = new StoppedFlag();
 
-    public CheckpointRunner(int timeperiod) {
+    public CheckpointRunner(int maxSleep) {
       super("ObjectID-Checkpoint");
-      this.timeperiod = timeperiod;
+      this.maxSleep = maxSleep;
     }
 
     public void quit() {
@@ -287,7 +284,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     }
 
     public void run() {
-      int currentwait = timeperiod;
+      int currentwait = maxSleep;
       int maxProcessLimit = checkpointMaxLimit;
       while (!stoppedFlag.isStopped()) {
         // Wait for enough changes or specified time-period
@@ -301,21 +298,20 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
         if (stoppedFlag.isStopped()) break;
         boolean isAllFlushed = processCheckpoint(stoppedFlag, maxProcessLimit);
 
-        if (isAdaptive) {
-          if (isAllFlushed) {
-            // All flushed, wait longer for next time
-            currentwait += currentwait;
-            if (currentwait > timeperiod) {
-              currentwait = timeperiod;
-              maxProcessLimit = checkpointMaxLimit;
-            }
-          } else {
-            // reduce wait time to catch up
-            currentwait = currentwait / 2;
-            // at least wait 1 second
-            if (currentwait < MINIMUM_WAIT_TIME) {
-              currentwait = MINIMUM_WAIT_TIME;
-            }
+        if (isAllFlushed) {
+          // All flushed, wait longer for next time
+          currentwait += currentwait;
+          if (currentwait > maxSleep) {
+            currentwait = maxSleep;
+            maxProcessLimit = checkpointMaxLimit;
+          }
+        } else {
+          // reduce wait time to catch up
+          currentwait = currentwait / 2;
+          // at least wait 1 second
+          if (currentwait < MINIMUM_WAIT_TIME) {
+            currentwait = MINIMUM_WAIT_TIME;
+            maxProcessLimit = -1; // unlimited
           }
         }
       }
