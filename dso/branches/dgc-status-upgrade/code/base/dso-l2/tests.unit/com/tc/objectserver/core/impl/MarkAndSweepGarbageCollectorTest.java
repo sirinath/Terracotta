@@ -94,7 +94,7 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     collector.addListener(listener);
     collector.gc();
     collector.stop();
-    assertEquals(8, listener.getUpdateGCStatusList().size());
+    assertEquals(5, listener.getUpdateGCStatusList().size());
     assertEquals(1, listener.getGarbageCollectionCompleteList().size());
   }
 

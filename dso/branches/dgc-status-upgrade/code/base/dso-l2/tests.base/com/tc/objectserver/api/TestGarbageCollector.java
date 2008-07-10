@@ -247,7 +247,7 @@ public class TestGarbageCollector implements GarbageCollector {
     collect(null, objectProvider.getRootIDs(), objectProvider.getAllObjectIDs(), new NullLifeCycleState());
     this.requestGCPause();
     this.blockUntilReadyToGC();
-    this.sweepGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
+    this.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
   }
 
   public void addNewReferencesTo(Set rescueIds) {
@@ -295,7 +295,7 @@ public class TestGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  public boolean sweepGarbage(GCResultContext resultContext) {
+  public boolean deleteGarbage(GCResultContext resultContext) {
     this.objectProvider.notifyGCComplete(resultContext);
     this.notifyGCComplete();
     return true;

@@ -1176,7 +1176,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectManager.getGarbageCollector().gc();
 
     assertEquals(1, objectManager.getGarbageCollectorStats().length);
-    assertEquals(9, listener.gcEvents.size());
+    assertEquals(6, listener.gcEvents.size());
 
     GCStats stats1 = (GCStats) listener.gcEvents.get(0);
     final int firstIterationNumber = stats1.getIteration();
@@ -1190,7 +1190,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     listener.gcEvents.clear();
     objectManager.getGarbageCollector().gc();
     assertEquals(2, objectManager.getGarbageCollectorStats().length);
-    assertEquals(9, listener.gcEvents.size());
+    assertEquals(6, listener.gcEvents.size());
     assertEquals(firstIterationNumber + 1, objectManager.getGarbageCollectorStats()[0].getIteration());
 
     listener.gcEvents.clear();
@@ -1200,7 +1200,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     mo2.setReferences(new ObjectID[] {});
     objectManager.getGarbageCollector().gc();
     assertEquals(3, objectManager.getGarbageCollectorStats().length);
-    assertEquals(9, listener.gcEvents.size());
+    assertEquals(6, listener.gcEvents.size());
     GCStats stats3 = (GCStats) listener.gcEvents.get(0);
     assertEquals(4, stats3.getBeginObjectCount());
     assertEquals(1, stats3.getActualGarbageCount());
@@ -1483,7 +1483,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(gc.isPaused());
 
     // Complete gc
-    gc.sweepGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
+    gc.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.take();
@@ -2281,7 +2281,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       return false;
     }
 
-    public boolean sweepGarbage(GCResultContext resultContext) {
+    public boolean deleteGarbage(GCResultContext resultContext) {
       return true;
     }
 
