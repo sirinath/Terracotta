@@ -78,6 +78,11 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
                                                                          .getProperties()
                                                                          .getBoolean(
                                                                                      TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED);
+  private static final boolean                 measurePerf           = TCPropertiesImpl
+                                                                         .getProperties()
+                                                                         .getBoolean(
+                                                                                     TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF,
+                                                                                     false);
 
   private final Database                       objectDB;
   private final SerializationAdapterFactory    saf;
@@ -92,6 +97,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private final SleepycatCollectionsPersistor  collectionsPersistor;
   private final ObjectIDManager                objectIDManager;
   private final ConcurrentHashMap              statsRecords          = new ConcurrentHashMap();
+  private int                                  deleteCounter;
+  private int                                  deletePersistentStateCounter;
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, DBEnvironment env,
@@ -123,6 +130,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     }
 
     if (STATS_LOGGING_ENABLED) startStatsPrinter();
+    if (measurePerf) startDeleteOperPrinter();
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -360,6 +368,19 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     t.start();
   }
 
+  private void startDeleteOperPrinter() {
+    Thread t = new Thread(new Runnable() {
+      public void run() {
+        while (true) {
+          ThreadUtil.reallySleep(60000);
+          logger.info("Deletes count:" + deleteCounter + " delete state count:" + deletePersistentStateCounter);
+        }
+      }
+    }, "Delete Statistics printer");
+    t.setDaemon(true);
+    t.start();
+  }
+
   private static String createLogString(String className, long written, int count, int newCount) {
     StringBuilder sb = new StringBuilder();
     appendFixedSpaceString(sb, className, 50);
@@ -467,7 +488,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         // make the formatter happy
         throw new DBException("Unable to remove ManagedObject for object id: " + id + ", status: " + status);
       } else {
+        if (measurePerf) ++deleteCounter;
         if (objectIDManager.isPersistMapped(id)) {
+          if (measurePerf) ++deletePersistentStateCounter;
           // may return false if ManagedObject persistent state empty
           collectionsPersistor.deleteCollection(tx, id);
           objectIDManager.clrPersistent(id);
