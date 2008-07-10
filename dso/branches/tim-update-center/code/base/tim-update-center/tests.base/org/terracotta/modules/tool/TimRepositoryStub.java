@@ -4,31 +4,14 @@
 package org.terracotta.modules.tool;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Stub implementation of the {@link TimRepository} interface used by tests.
  */
 public class TimRepositoryStub implements TimRepository {
 
-  public Set<TimPackage> findAllPackages(String terracottaVersion) {
-    return null;
+  public List<Tim> listAllCompatibleTims(String terracottaVersion) {
+    return new ArrayList<Tim>();
   }
-
-  public Set<TimPackage> findNamedPackages(String terracottaVersion, String name) {
-    return null;
-  }
-
-  public List<Tim> listAllCompatibleTims(String tcVersion) {
-    List<Tim> result = new ArrayList<Tim>();
-    return result;
-  }
-
-  public Set<Tim> search(Map<String, String> searchCriteria) {
-    return new HashSet<Tim>();
-  }
-
 }
