@@ -21,7 +21,7 @@ public class ListCommandTest extends AbstractCommandTestCase {
    * Test method for {@link org.terracotta.modules.tool.commands.ListCommand#execute()}.
    */
   public final void testExecute() {
-    command.execute(new String[] {});
+    command.execute(null);
     assertOutMatches("TIM packages for Terracotta " + ProductInfo.getInstance().version());
     assertEquals(0, commandErr.toString().length());
   }
