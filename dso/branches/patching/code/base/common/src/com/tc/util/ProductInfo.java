@@ -76,31 +76,6 @@ public final class ProductInfo {
   // private static final TCLogger logger = TCLogging.getLogger(ProductInfo.class);
   // private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
 
-  public ProductInfo(String version, String buildID, String license, String copyright) {
-    this.version = version;
-    this.buildID = buildID;
-    this.license = license;
-    this.copyright = copyright;
-
-    moniker = UNKNOWN_VALUE;
-    maven_version = UNKNOWN_VALUE;
-    timestamp = null;
-    host = UNKNOWN_VALUE;
-    user = UNKNOWN_VALUE;
-    branch = UNKNOWN_VALUE;
-    edition = UNKNOWN_VALUE;
-    revision = UNKNOWN_VALUE;
-    ee_revision = UNKNOWN_VALUE;
-    kitID = UNKNOWN_VALUE;
-
-    patchLevel = UNKNOWN_VALUE;
-    patchHost = UNKNOWN_VALUE;
-    patchUser = UNKNOWN_VALUE;
-    patchTimestamp = null;
-    patchRevision = UNKNOWN_VALUE;
-    patchBranch = UNKNOWN_VALUE;
-  }
-
   /**
    * Construct a ProductInfo by reading properties from streams (most commonly by loading properties files as resources
    * from the classpath). If an IOException occurs while loading the build or patch streams, the System will exit. These

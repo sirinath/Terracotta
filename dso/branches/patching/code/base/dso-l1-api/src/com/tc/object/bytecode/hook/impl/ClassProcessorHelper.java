@@ -811,7 +811,7 @@ public class ClassProcessorHelper {
    */
   public static class TcCommonLibQualifier implements FileFilter {
     public boolean accept(File pathname) {
-      return (pathname.isDirectory() && pathname.getAbsolutePath().toLowerCase().endsWith("resources"))
+      return (pathname.isDirectory() && pathname.getName().equals("resources"))
              || (pathname.isFile() && pathname.getAbsolutePath().toLowerCase().endsWith(".jar"));
     }
   }
