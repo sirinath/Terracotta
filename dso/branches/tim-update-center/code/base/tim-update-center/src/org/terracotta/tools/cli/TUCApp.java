@@ -53,7 +53,6 @@ public class TUCApp {
       System.exit(1);
     } catch (Exception e) {
       System.err.println(e.getMessage());
-      e.printStackTrace();
       System.exit(2);
     }
   }
