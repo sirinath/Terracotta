@@ -31,7 +31,7 @@ public class GuiceModule implements Module {
         }
       }
     });
-    binder.bind(Modules.class).to(CachedXmlModules.class).in(Scopes.SINGLETON);
+    //binder.bind(Modules.class).to(CachedXmlModules.class).in(Scopes.SINGLETON);
     binder.bind(CommandRegistry.class).in(Scopes.SINGLETON);
   }
 
