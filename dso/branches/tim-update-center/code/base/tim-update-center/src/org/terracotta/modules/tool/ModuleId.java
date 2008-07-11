@@ -8,7 +8,7 @@ package org.terracotta.modules.tool;
  *
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
-public class ModuleId {
+public class ModuleId implements Comparable {
   private final String groupId;
   private final String artifactId;
   private final String version;
@@ -40,12 +40,21 @@ public class ModuleId {
   public String toString() {
     return groupId + "." + artifactId + "-" + version;
   }
-  
+
+  public String toSortableString() {
+    return groupId + "." + artifactId + "-" + pad(version);
+  }
+
   /**
    * Sibling Modules are Modules with matching groupId and artifactId.
    */
   public boolean isSibling(ModuleId id) {
     return this.groupId.equals(id.getGroupId()) && this.artifactId.equals(id.getArtifactId());
+  }
+
+  public int compareTo(Object o) {
+    ModuleId other = (ModuleId) o;
+    return this.toSortableString().compareTo(other.toSortableString());
   }
 
   @Override
@@ -74,5 +83,9 @@ public class ModuleId {
       if (other.version != null) return false;
     } else if (!version.equals(other.version)) return false;
     return true;
+  }
+
+  private String pad(String versionString) {
+    return versionString;
   }
 }
