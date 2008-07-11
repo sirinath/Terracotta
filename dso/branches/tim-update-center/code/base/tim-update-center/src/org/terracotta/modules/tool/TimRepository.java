@@ -14,6 +14,11 @@ import java.util.List;
 public interface TimRepository {
 
   /**
+   * Returns a {@link Tim} object for the TIM with the given ID.
+   */
+  public Tim getTimById(TimIdentifier timId);
+
+  /**
    * Returns a list of all TIMs available from this repository that are
    * compatible with the given Terracotta version.
    */
