@@ -22,17 +22,23 @@ public class ModuleId implements Comparable {
     this.version = version;
   }
 
-  /** The TIM groupId. */
+  /** 
+   * The TIM groupId. 
+   */
   public String getGroupId() {
     return groupId;
   }
 
-  /** The TIM artifactId. */
+  /** 
+   * The TIM artifactId. 
+   */
   public String getArtifactId() {
     return artifactId;
   }
 
-  /** The TIM version. */
+  /** 
+   * The TIM version. 
+   */
   public String getVersion() {
     return version;
   }

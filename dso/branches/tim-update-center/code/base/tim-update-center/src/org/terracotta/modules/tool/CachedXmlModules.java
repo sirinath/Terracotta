@@ -9,6 +9,7 @@ import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 
+import com.google.inject.Inject;
 import com.tc.util.ProductInfo;
 
 import java.io.File;
@@ -28,6 +29,7 @@ public class CachedXmlModules implements Modules {
 
   private final Map<ModuleId, Module> modules;
 
+  @Inject
   public CachedXmlModules(File data) throws JDOMException, IOException {
     SAXBuilder builder = new SAXBuilder();
     Document document = builder.build(data);
