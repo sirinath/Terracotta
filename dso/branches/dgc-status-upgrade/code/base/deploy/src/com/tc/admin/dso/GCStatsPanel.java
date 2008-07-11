@@ -25,13 +25,14 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.Callable;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class GCStatsPanel extends XContainer implements DGCListener {
-  private AdminClientContext     m_acc;
-  private GCStatsNode            m_gcStatsNode;
-  private XObjectTable           m_table;
-  private PopupMenu              m_popupMenu;
-  private RunGCAction            m_gcAction;
+  private AdminClientContext m_acc;
+  private GCStatsNode        m_gcStatsNode;
+  private XObjectTable       m_table;
+  private PopupMenu          m_popupMenu;
+  private RunGCAction        m_gcAction;
 
   public GCStatsPanel(GCStatsNode gcStatsNode) {
     super();
@@ -104,8 +105,19 @@ public class GCStatsPanel extends XContainer implements DGCListener {
   }
 
   public void statusUpdate(GCStats gcStats) {
-    GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
-    model.addGCStats(gcStats);
+    SwingUtilities.invokeLater(new ModelUpdater(gcStats));
+  }
+
+  private class ModelUpdater implements Runnable {
+    private GCStats m_gcStats;
+
+    private ModelUpdater(GCStats gcStats) {
+      m_gcStats = gcStats;
+    }
+
+    public void run() {
+      ((GCStatsTableModel) m_table.getModel()).addGCStats(m_gcStats);
+    }
   }
 
   private class RunGCWorker extends BasicWorker<Void> {
@@ -137,7 +149,7 @@ public class GCStatsPanel extends XContainer implements DGCListener {
 
   public void tearDown() {
     m_gcStatsNode.getClusterModel().removeDGCListener(this);
-    
+
     super.tearDown();
 
     m_acc = null;
