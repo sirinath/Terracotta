@@ -26,7 +26,7 @@ public class ListCommand extends AbstractCommand {
   }
 
   public void execute(CommandLine cli) {
-    List<Module> tims = repository.listAllCompatibleTims(getTerracottaVersion());
+    List<Module> tims = repository.list();
     out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
     for (Module tim : tims) {
       out().println(tim.getId());

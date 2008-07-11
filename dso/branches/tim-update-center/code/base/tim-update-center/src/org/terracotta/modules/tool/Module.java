@@ -112,6 +112,10 @@ public class Module {
     return new Module(module);
   }
   
+  public boolean isCompatible(String with) {
+    return this.tcVersion.equals("*") || this.tcVersion.equals(with);
+  }
+  
   Module(Element root) {
     this.id = createId(root);
     this.tcVersion = getChildText(root, "tc-version");
