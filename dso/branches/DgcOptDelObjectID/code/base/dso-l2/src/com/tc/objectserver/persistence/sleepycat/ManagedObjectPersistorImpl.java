@@ -294,6 +294,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         if (OperationStatus.SUCCESS.equals(status)
             && PersistentCollectionsUtil.isPersistableCollectionType(managedObject.getManagedObjectState().getType())) {
           objectIDManager.setPersistent(managedObject.getID());
+          objectIDManager.flushPersistentEntryToDisk(persistenceTransaction, managedObject.getID());
         }
       }
     } catch (DBException e) {
@@ -493,7 +494,6 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
           if (measurePerf) ++deletePersistentStateCounter;
           // may return false if ManagedObject persistent state empty
           collectionsPersistor.deleteCollection(tx, id);
-          objectIDManager.clrPersistent(id);
         }
       }
     } catch (DatabaseException t) {
