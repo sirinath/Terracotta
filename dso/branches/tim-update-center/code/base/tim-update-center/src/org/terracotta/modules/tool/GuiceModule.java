@@ -15,7 +15,7 @@ import com.google.inject.Scopes;
 public class GuiceModule implements Module {
 
   public void configure(Binder binder) {
-    binder.bind(Modules.class).to(CachedXmlTimRepository.class).in(Scopes.SINGLETON);
+    binder.bind(Modules.class).to(CachedXmlModules.class).in(Scopes.SINGLETON);
     binder.bind(CommandRegistry.class).in(Scopes.SINGLETON);
   }
 

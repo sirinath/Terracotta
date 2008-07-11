@@ -29,7 +29,7 @@ public class ListCommand extends AbstractCommand {
     List<Module> tims = repository.listAllCompatibleTims(getTerracottaVersion());
     out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
     for (Module tim : tims) {
-      out().println(tim.getTimId());
+      out().println(tim.getId());
     }
   }
 }

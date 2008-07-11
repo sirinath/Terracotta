@@ -3,7 +3,15 @@
  */
 package org.terracotta.modules.tool;
 
-import java.net.URL;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,7 +52,7 @@ import java.util.List;
  */
 public class Module {
   private final ModuleId id;
-  private final String terracottaVersion;
+  private final String tcVersion;
   private final String webSite;
   private final String vendor;
   private final String copyright;
@@ -53,20 +61,93 @@ public class Module {
   private final String repoUrl;
   private final String installPath;
   private final String fileName;
+  
+  public String getTcVersion() {
+    return tcVersion;
+  }
+
+  public String getWebSite() {
+    return webSite;
+  }
+
+  public String getVendor() {
+    return vendor;
+  }
+
+  public String getCopyright() {
+    return copyright;
+  }
+
+  public String getCategory() {
+    return category;
+  }
+
+  public String getRepoUrl() {
+    return repoUrl;
+  }
+
+  public String getInstallPath() {
+    return installPath;
+  }
+
+  public String getFileName() {
+    return fileName;
+  }
+
+  public List<ModuleId> getDependencies() {
+    return dependencies;
+  }
+
   private final List<ModuleId> dependencies;
 
-  public static Module parse(String xml) {
-    return null;
+  public static Module parse(String xml) throws JDOMException, IOException {
+    SAXBuilder builder = new SAXBuilder();
+    Reader characterStream = new StringReader(xml);
+    Document document = builder.build(characterStream);
+    Element root = document.getRootElement();
+    return new Module(root);
+  }
+  
+  public static Module create(Element module) {
+    return new Module(module);
+  }
+  
+  Module(Element root) {
+    this.id = createId(root);
+    this.tcVersion = getChildText(root, "tc-version");
+    this.webSite = getChildText(root, "website");
+    this.vendor = getChildText(root, "vendor");
+    this.copyright = getChildText(root, "copyright");
+    this.category = getChildText(root, "category");
+    this.description = getChildText(root, "description");
+    this.repoUrl = getChildText(root, "repoUrl");
+    this.installPath = getChildText(root, "installPath");
+    this.fileName = getChildText(root, "filename");
+    this.dependencies = new ArrayList<ModuleId>();
+    List<Element> moduleRefs = root.getChild("dependencies").getChildren();
+    for (Element ref : moduleRefs) {
+      this.dependencies.add(createId(ref));
+    }
   }
 
+  private ModuleId createId(Element element) {
+    String artifactId = element.getAttributeValue("artifactId");
+    String groupId = element.getAttributeValue("groupId");
+    String version = element.getAttributeValue("version");
+    return new ModuleId(groupId, artifactId, version);
+  }
+  
+  private String getChildText(Element element, String name) {
+    return getChildText(element, name, "");
+  }
+  
+  private String getChildText(Element element, String name, String defaultValue) {
+    return element.getChildText(name) == null ? defaultValue : element.getChildText(name);
+  }
+  
   /** Returns the composite unique identifier for this TIM. */
-  public ModuleId getTimId() {
+  public ModuleId getId() {
     return id;
-  }
-
-  /** The URL from which the TIM JAR file can be downloaded. */
-  public URL getDownloadUrl() {
-    return repoUrl;
   }
 
   /** Returns the description of this TIM. */
