@@ -3,6 +3,9 @@
  */
 package org.terracotta.modules.tool;
 
+import org.apache.commons.lang.StringUtils;
+
+
 /**
  * Composite unique identifier for TIMs.
  *
@@ -42,7 +45,13 @@ public class ModuleId implements Comparable {
   }
 
   public String toSortableString() {
-    return groupId + "." + artifactId + "-" + pad(version);
+    String v       = version.replaceAll("-.+$", "");
+    String q       = version.replaceFirst(v + "-", "");
+    String[] cv    = v.split("\\.");
+    for(String pcv : cv) {
+      pcv = StringUtils.leftPad(pcv, 3, '0');
+    }
+    return groupId + "." + artifactId + "-" + StringUtils.join(cv) + "-" + q;
   }
 
   /**
@@ -83,9 +92,5 @@ public class ModuleId implements Comparable {
       if (other.version != null) return false;
     } else if (!version.equals(other.version)) return false;
     return true;
-  }
-
-  private String pad(String versionString) {
-    return versionString;
   }
 }
