@@ -172,6 +172,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
    
     gcResults = rescue(gcResults, rescueTimes);
 
+    gcStats.setMarkStageTime( System.currentTimeMillis() - startMillis);
+    
     requestGCPause();
 
     gcLogger.log_quiescing();

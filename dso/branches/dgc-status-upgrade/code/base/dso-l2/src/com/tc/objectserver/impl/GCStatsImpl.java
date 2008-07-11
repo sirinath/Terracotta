@@ -25,6 +25,7 @@ public class GCStatsImpl implements GCStats, Serializable {
   private long                          beginObjectCount      = NOT_INITIALIZED;
   private long                          candidateGarbageCount = NOT_INITIALIZED;
   private long                          actualGarbageCount    = NOT_INITIALIZED;
+  private long                          markStageTime         = NOT_INITIALIZED;
   private long                          pausedStageTime       = NOT_INITIALIZED;
   private long                          deleteStageTime       = NOT_INITIALIZED;
   private State                         state;
@@ -62,6 +63,10 @@ public class GCStatsImpl implements GCStats, Serializable {
   public synchronized long getActualGarbageCount() {
     return this.actualGarbageCount;
   }
+  
+  public synchronized long getMarkStageTime() {
+    return this.markStageTime;
+  }
 
   public synchronized long getPausedStageTime() {
     return this.pausedStageTime;
@@ -96,6 +101,14 @@ public class GCStatsImpl implements GCStats, Serializable {
   public synchronized void setCandidateGarbageCount(long count) {
     validate(count);
     this.candidateGarbageCount = count;
+  }
+  
+  public synchronized void setMarkStageTime(long time) {
+    if (time < 0L) {
+      logger.warn("System timer moved backward, setting GC MarkStageTime to 0");
+      time = 0;
+    }
+    this.markStageTime = time;
   }
 
   public synchronized void setPausedStageTime(long time) {
@@ -139,17 +152,6 @@ public class GCStatsImpl implements GCStats, Serializable {
     if (value < 0L) { throw new IllegalArgumentException("Value must be greater than or equal to zero"); }
   }
 
-  protected void initialize(long aStartTime, long aElapsedTime, long aBeginObjectCount, long aCandidateGarbageCount,
-                            long aActualGarbageCount, long aPausedStageTime, long aDeleteStageTime) {
-    this.startTime = aStartTime;
-    this.elapsedTime = aElapsedTime;
-    this.beginObjectCount = aBeginObjectCount;
-    this.candidateGarbageCount = aCandidateGarbageCount;
-    this.actualGarbageCount = aActualGarbageCount;
-    this.pausedStageTime = aPausedStageTime;
-    this.deleteStageTime = aDeleteStageTime;
-  }
-
   private String formatAsDate(long date) {
     return printFormat.format(date);
   }
@@ -163,9 +165,9 @@ public class GCStatsImpl implements GCStats, Serializable {
   }
 
   public String toString() {
-    return "GCStats[ iteration: " + getIteration() + " type: " + getType() + " status: " + getStatus()
+    return "GCStats[ iteration: " + getIteration() + "; type: " + getType() + "; status: " + getStatus()
            + " ] : startTime = " + formatAsDate(this.startTime) + "; elapsedTime = " + formatTime(this.elapsedTime)
-           + "; pausedStageTime = " + formatTime(this.pausedStageTime) + "; deleteStageTime = "
+           + "; markStageTime = " + formatTime(markStageTime) + "; pausedStageTime = " + formatTime(this.pausedStageTime) + "; deleteStageTime = "
            + formatTime(this.deleteStageTime) + "; beginObjectCount = " + this.beginObjectCount
            + "; candidateGarbageCount = " + this.candidateGarbageCount + "; actualGarbageCount = "
            + this.actualGarbageCount;
