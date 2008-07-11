@@ -3,8 +3,6 @@
  */
 package org.terracotta.modules.tool.commands;
 
-import org.terracotta.modules.tool.TimRepositoryStub;
-
 import com.tc.util.ProductInfo;
 
 /**
@@ -28,7 +26,7 @@ public class ListCommandTest extends AbstractCommandTestCase {
 
   @Override
   protected AbstractCommand createCommand() {
-    return new ListCommand(new TimRepositoryStub());
+    return null;
   }
 
 }
