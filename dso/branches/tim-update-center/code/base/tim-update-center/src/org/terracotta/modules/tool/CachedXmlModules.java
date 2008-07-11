@@ -14,9 +14,12 @@ import com.tc.util.ProductInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of {@link Modules} that uses a cached XML file as its data source.
@@ -24,29 +27,6 @@ import java.util.Map;
 public class CachedXmlModules implements Modules {
 
   private final Map<ModuleId, Module> modules;
-
-  public List<Module> list() {
-    return new ArrayList<Module>(this.modules.values());
-  }
-
-  public Module getModuleById(ModuleId id) {
-    return this.modules.get(id);
-  }
-
-  public List<Module> getSiblingModules(ModuleId id) {
-    List<Module> result = new ArrayList<Module>();
-    for (ModuleId moduleId : this.modules.keySet()) {
-      if (moduleId.isSibling(id)) {
-        result.add(this.modules.get(id));
-      }
-    }
-    return result;
-  }
-
-  public List<Module> listLatest() {
-    List<Module> list = this.list();
-    return null;
-  }
 
   public CachedXmlModules(File data) throws JDOMException, IOException {
     SAXBuilder builder = new SAXBuilder();
@@ -61,6 +41,48 @@ public class CachedXmlModules implements Modules {
         this.modules.put(module.getId(), module);
       }
     }
+  }
+
+  public Set<ModuleId> getModuleFamilies() {
+    Set<ModuleId> families = new HashSet<ModuleId>();
+    for (ModuleId id : this.modules.keySet()) {
+      ModuleId familyId = new ModuleId(id.getGroupId(), id.getArtifactId(), null);
+      families.add(familyId);
+    }
+    return families;
+  }
+
+  public List<Module> list() {
+    return new ArrayList<Module>(this.modules.values());
+  }
+
+  public Module getModuleById(ModuleId id) {
+    return this.modules.get(id);
+  }
+
+  public List<ModuleId> getModuleIdsInFamily(ModuleId familyId) {
+    List<ModuleId> result = new ArrayList<ModuleId>();
+    for (ModuleId moduleId : this.modules.keySet()) {
+      if (moduleId.isSibling(familyId)) {
+        result.add(familyId);
+      }
+    }
+    return result;
+  }
+
+  public List<Module> listLatest() {
+    Set<ModuleId> families = this.getModuleFamilies();
+    List<Module> latest = new ArrayList();
+    for (ModuleId id : families) {
+      latest.add(this.getLatestInFamily(id));
+    }
+    return latest;
+  }
+
+  public Module getLatestInFamily(ModuleId family) {
+    List<ModuleId> siblings = this.getModuleIdsInFamily(family);
+    Collections.sort(siblings);
+    return this.getModuleById(siblings.get(siblings.size() - 1));
   }
 
   private String tcVersion() {
