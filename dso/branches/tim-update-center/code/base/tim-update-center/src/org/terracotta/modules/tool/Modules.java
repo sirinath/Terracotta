@@ -16,7 +16,7 @@ public interface Modules {
   /**
    * Returns a {@link Module} object for the TIM with the given ID.
    */
-  public Module getTimById(ModuleId timId);
+  public Module getModuleById(ModuleId id);
 
   /**
    * Returns a list of all TIMs available from this repository that are
