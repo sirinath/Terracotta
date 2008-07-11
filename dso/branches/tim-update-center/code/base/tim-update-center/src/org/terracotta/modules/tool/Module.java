@@ -11,7 +11,7 @@ import java.util.List;
  * A single Terracotta Integration Module (TIM) artifact.
  *
  * A TIM has a composite unique identifier consisting of groupId, artifactId,
- * and version, which is represented by the {@link TimIdentifier} class.
+ * and version, which is represented by the {@link ModuleId} class.
  *
  * Note that TIMs that are packaged together into an archive are still
  * represented as separate Tim objects.
@@ -42,8 +42,8 @@ import java.util.List;
     <moduleRef artifactId='tim-ehcache-1.3' version='1.1.2' groupId='org.terracotta.modules'/>
   </dependencies> 
  */
-public class Tim {
-  private final TimIdentifier id;
+public class Module {
+  private final ModuleId id;
   private final String terracottaVersion;
   private final String webSite;
   private final String vendor;
@@ -53,14 +53,14 @@ public class Tim {
   private final String repoUrl;
   private final String installPath;
   private final String fileName;
-  private final List<TimIdentifier> dependencies;
+  private final List<ModuleId> dependencies;
 
-  public static Tim parse(String xml) {
+  public static Module parse(String xml) {
     return null;
   }
 
   /** Returns the composite unique identifier for this TIM. */
-  public TimIdentifier getTimId() {
+  public ModuleId getTimId() {
     return id;
   }
 
@@ -77,7 +77,7 @@ public class Tim {
   /**
    * A list of this TIM's direct dependencies.
    */
-  public List<TimIdentifier> dependencies() {
+  public List<ModuleId> dependencies() {
     return Collections.unmodifiableList(dependencies);
   }
 

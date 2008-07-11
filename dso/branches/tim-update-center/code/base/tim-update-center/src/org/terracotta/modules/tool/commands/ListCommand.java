@@ -4,8 +4,8 @@
 package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.CommandLine;
-import org.terracotta.modules.tool.Tim;
-import org.terracotta.modules.tool.TimRepository;
+import org.terracotta.modules.tool.Module;
+import org.terracotta.modules.tool.Modules;
 
 import com.google.inject.Inject;
 
@@ -16,19 +16,19 @@ import java.util.List;
  */
 public class ListCommand extends AbstractCommand {
   
-  private final TimRepository repository;
+  private final Modules repository;
 
   @Inject
-  public ListCommand(TimRepository repository) {
+  public ListCommand(Modules repository) {
     this.repository = repository;
     assert repository != null;
     options.addOption("v", "details", false, "Display detailed information");
   }
 
   public void execute(CommandLine cli) {
-    List<Tim> tims = repository.listAllCompatibleTims(getTerracottaVersion());
+    List<Module> tims = repository.listAllCompatibleTims(getTerracottaVersion());
     out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
-    for (Tim tim : tims) {
+    for (Module tim : tims) {
       out().println(tim.getTimId());
     }
   }

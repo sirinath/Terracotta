@@ -11,16 +11,16 @@ import java.util.List;
  * Implementations of this interface may query a remote service for each request
  * or cache information for a period of time.
  */
-public interface TimRepository {
+public interface Modules {
 
   /**
-   * Returns a {@link Tim} object for the TIM with the given ID.
+   * Returns a {@link Module} object for the TIM with the given ID.
    */
-  public Tim getTimById(TimIdentifier timId);
+  public Module getTimById(ModuleId timId);
 
   /**
    * Returns a list of all TIMs available from this repository that are
    * compatible with the given Terracotta version.
    */
-  public List<Tim> listAllCompatibleTims(String terracottaVersion);
+  public List<Module> listAllCompatibleTims(String terracottaVersion);
 }
