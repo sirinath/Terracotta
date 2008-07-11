@@ -9,6 +9,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
 import org.terracotta.modules.tool.GuiceModule;
+import org.terracotta.modules.tool.commands.CommandException;
 import org.terracotta.modules.tool.commands.CommandRegistry;
 import org.terracotta.modules.tool.commands.HelpCommand;
 import org.terracotta.modules.tool.commands.InfoCommand;
@@ -47,10 +48,13 @@ public class TUCApp {
       if (!cmdargs.isEmpty()) cmdargs = cmdargs.subList(1, cmdargs.size());
 
       commandRegistry.executeCommand(cmdname, cmdargs);
+    } catch (CommandException e) {
+      System.err.println(e.getMessage());
+      System.exit(1);
     } catch (Exception e) {
       System.err.println(e.getMessage());
       e.printStackTrace();
-      System.exit(1);
+      System.exit(2);
     }
   }
 

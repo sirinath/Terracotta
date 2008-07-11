@@ -38,6 +38,9 @@ public class CommandRegistry {
 
   public void executeCommand(String commandName, String[] args) throws CommandException {
     Command cmd = getCommand(commandName);
+    if (cmd == null) {
+      throw new CommandException("Unknown command: " + commandName);
+    }
     CommandLineParser parser = new GnuParser();
 
     try {
