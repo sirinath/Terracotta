@@ -56,7 +56,6 @@ public interface TCPropertiesConsts {
    *                                        Object-Ids loading at restart but some overhead occurred at regular operations. You can go from enable to disable but need 
    *                                        a fresh start if change from disable to enable for building up compressed object-Id. 
    * loadObjectID.longsPerDiskEntry       - Size of long array entry to store object IDs in persistent store. One bit for each ID. 
-   * loadObjectID.checkpoint.adaptive     - adaptively adjust checkpoint maxlimit and timeperiod. 
    * loadObjectID.checkpoint.maxlimit     - max number of changes to process in one run checkpoint. 
    * loadObjectID.checkpoint.timeperiod   - time period in milliseconds between checkpoints
    ********************************************************************************************************************/

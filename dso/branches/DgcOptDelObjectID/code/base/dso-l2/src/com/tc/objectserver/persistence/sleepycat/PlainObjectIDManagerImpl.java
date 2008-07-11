@@ -128,11 +128,6 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
     }
   }
 
-  public void clrPersistent(ObjectID id) {
-    return;
-
-  }
-
   public boolean isPersistMapped(ObjectID id) {
     return false;
   }
@@ -141,4 +136,7 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
     return;
   }
 
+  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) {
+    return;
+  }
 }

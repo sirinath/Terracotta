@@ -41,15 +41,15 @@ public class NullObjectIDManager implements ObjectIDManager {
     return OperationStatus.SUCCESS;
   }
 
-  public void clrPersistent(ObjectID id) {
-    return;
-  }
-
   public boolean isPersistMapped(ObjectID id) {
     return false;
   }
 
   public void setPersistent(ObjectID id) {
+    return;
+  }
+
+  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) {
     return;
   }
 

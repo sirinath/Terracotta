@@ -29,7 +29,6 @@ public interface ObjectIDManager {
 
   public void setPersistent(ObjectID id);
 
-  public void clrPersistent(ObjectID id);
-
+  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) throws DatabaseException;
 
 }

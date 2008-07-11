@@ -157,8 +157,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     persistableMap.getAndSet(id);
   }
 
-  public void clrPersistent(ObjectID id) {
-    persistableMap.getAndClr(id);
+  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) throws DatabaseException {
+    persistableMap.updateToDiskEntry(pt2nt(tx), persistableMap.oidIndex(id));
   }
 
   /*
@@ -220,11 +220,12 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
                 }
               } else {
                 oidBitsArrayMap.getAndClr(objectID);
-                if (persistableMap.contains(objectID)) {
+                if (oids[offset + OidLongArray.BYTES_PER_LONG] == PERSIST_COLL) {
                   persistableMap.getAndClr(objectID);
                   sortedStateMapIndexSet.add(new Long(persistableMap.oidIndex(objectID)));
                 }
               }
+
               sortedOnDiskIndexSet.add(new Long(oidBitsArrayMap.oidIndex(objectID)));
               offset += OidLongArray.BYTES_PER_LONG + 1;
               ++changes;
