@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package org.terracotta.modules.tool.cli;
+package org.terracotta.tools.cli;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -22,7 +22,7 @@ import com.google.inject.Injector;
 import java.util.Arrays;
 import java.util.List;
 
-public class App {
+public class TUCApp {
 
   public static void main(String args[]) {
     Injector injector = Guice.createInjector(new GuiceModule());
