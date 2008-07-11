@@ -3,12 +3,10 @@
  */
 package org.terracotta.modules.tool.commands;
 
-import org.apache.commons.cli.CommandLine;
+public class UnknownCommandException extends CommandException {
 
-public class UpdateCommand extends AbstractCommand {
-
-  public void execute(CommandLine cli) {
-    //
+  public UnknownCommandException(String commandName) {
+    super("Unknown command: " + commandName);
   }
-
+  
 }

@@ -38,4 +38,9 @@ public interface Command {
    *        options and any remaining command-line arguments.
    */
   public void execute(CommandLine commandLine);
+
+  /**
+   * Print the help text for this command.
+   */
+  public void printHelp();
 }

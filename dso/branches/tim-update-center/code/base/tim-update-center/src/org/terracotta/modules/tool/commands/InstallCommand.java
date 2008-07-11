@@ -11,8 +11,4 @@ public class InstallCommand extends AbstractCommand {
     //
   }
 
-  public String help() {
-    return null;
-  }
-
 }

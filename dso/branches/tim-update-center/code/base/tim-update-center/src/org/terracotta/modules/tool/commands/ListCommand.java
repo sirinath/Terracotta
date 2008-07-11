@@ -25,10 +25,6 @@ public class ListCommand extends AbstractCommand {
     options.addOption("v", "details", false, "Display detailed information");
   }
 
-  public String help() {
-    return loadHelp(ListCommand.class.getSimpleName());
-  }
-
   public void execute(CommandLine cli) {
     List<Tim> tims = repository.listAllCompatibleTims(getTerracottaVersion());
     out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
