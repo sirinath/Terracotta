@@ -3,5 +3,6 @@
   <info organisation="ibiblio" module="tim-update-center"/>
   <dependencies>
     <dependency name="guice" rev="1.0" org="terracotta"/>
+    <dependency name="jdom" rev="1.0"/>
   </dependencies>
 </ivy-module>
