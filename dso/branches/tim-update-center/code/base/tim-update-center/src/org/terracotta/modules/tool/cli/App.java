@@ -22,7 +22,7 @@ import com.google.inject.Injector;
 import java.util.Arrays;
 import java.util.List;
 
-public class TUCApp {
+public class App {
 
   public static void main(String args[]) {
     Injector injector = Guice.createInjector(new GuiceModule());
