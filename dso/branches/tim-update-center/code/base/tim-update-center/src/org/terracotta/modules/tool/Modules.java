@@ -4,6 +4,7 @@
 package org.terracotta.modules.tool;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Repository from which information about TIMs can be queried.
@@ -18,7 +19,24 @@ public interface Modules {
    */
   public Module getModuleById(ModuleId id);
 
-  public List<Module> getSiblingModules(ModuleId id);
+  /**
+   * Returns a set of {@link ModuleId}s for each distinct family of modules.
+   * A family is the set of modules that have the same groupId and artifactId.
+   * Note that the version attribute of the returned ModuleId objects will be
+   * null.
+   */
+  public Set<ModuleId> getModuleFamilies();
+
+  /**
+   * Returns the {@link Module} in the given family that has the highest version
+   * number.
+   */
+  public Module getLatestInFamily(ModuleId family);
+
+  /**
+   * All the ModuleId that are in the given family.
+   */
+  public List<ModuleId> getModuleIdsInFamily(ModuleId familyId);
 
   /**
    * Returns a list of all TIMs available from this repository that are
@@ -31,9 +49,4 @@ public interface Modules {
    * that only the latest versions are included in the list.  
    */
   public List<Module> listLatest();
-  
-  /**
-   * Return a list of modules having the same groupId and artifactId
-   */
-  public List<Module> getModulesByName(String groupId, String artifactId);
 }
