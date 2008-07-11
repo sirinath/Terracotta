@@ -40,6 +40,13 @@ public class ModuleId {
   public String toString() {
     return groupId + "." + artifactId + "-" + version;
   }
+  
+  /**
+   * Sibling Modules are Modules with matching groupId and artifactId.
+   */
+  public boolean isSibling(ModuleId id) {
+    return this.groupId.equals(id.getGroupId()) && this.artifactId.equals(id.getArtifactId());
+  }
 
   @Override
   public int hashCode() {

@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class TimRepositoryStub implements Modules {
 
-  public List<Module> listAllCompatibleTims(String terracottaVersion) {
+  public List<Module> list() {
     return new ArrayList<Module>();
   }
 }
