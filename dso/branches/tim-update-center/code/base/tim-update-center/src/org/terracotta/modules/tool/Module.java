@@ -3,14 +3,8 @@
  */
 package org.terracotta.modules.tool;
 
-import org.jdom.Document;
 import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -100,14 +94,6 @@ public class Module {
 
   private final List<ModuleId> dependencies;
 
-  public static Module parse(String xml) throws JDOMException, IOException {
-    SAXBuilder builder = new SAXBuilder();
-    Reader characterStream = new StringReader(xml);
-    Document document = builder.build(characterStream);
-    Element root = document.getRootElement();
-    return new Module(root);
-  }
-  
   public static Module create(Element module) {
     return new Module(module);
   }
