@@ -8,12 +8,12 @@ package org.terracotta.modules.tool;
  *
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
-public class TimIdentifier {
+public class ModuleId {
   private final String groupId;
   private final String artifactId;
   private final String version;
 
-  public TimIdentifier(String groupId, String artifactId, String version) {
+  public ModuleId(String groupId, String artifactId, String version) {
     this.groupId = groupId;
     this.artifactId = artifactId;
     this.version = version;
@@ -56,7 +56,7 @@ public class TimIdentifier {
     if (this == obj) return true;
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
-    final TimIdentifier other = (TimIdentifier) obj;
+    final ModuleId other = (ModuleId) obj;
     if (artifactId == null) {
       if (other.artifactId != null) return false;
     } else if (!artifactId.equals(other.artifactId)) return false;

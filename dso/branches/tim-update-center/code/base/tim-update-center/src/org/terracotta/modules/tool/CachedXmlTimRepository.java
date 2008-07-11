@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation of {@link TimRepository} that uses a cached XML file as its
+ * Implementation of {@link Modules} that uses a cached XML file as its
  * data source.
  */
-public class CachedXmlTimRepository implements TimRepository {
+public class CachedXmlTimRepository implements Modules {
 
-  public List<Tim> listAllCompatibleTims(String terracottaVersion) {
+  public List<Module> listAllCompatibleTims(String terracottaVersion) {
     // TODO: implement me
-    return new ArrayList<Tim>();
+    return new ArrayList<Module>();
   }
 }

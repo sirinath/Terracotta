@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stub implementation of the {@link TimRepository} interface used by tests.
+ * Stub implementation of the {@link Modules} interface used by tests.
  */
-public class TimRepositoryStub implements TimRepository {
+public class TimRepositoryStub implements Modules {
 
-  public List<Tim> listAllCompatibleTims(String terracottaVersion) {
-    return new ArrayList<Tim>();
+  public List<Module> listAllCompatibleTims(String terracottaVersion) {
+    return new ArrayList<Module>();
   }
 }
