@@ -686,6 +686,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     objectStore.removeAllObjectsByID(gcResult);
   }
+  
+  public void notifyGCDeleteComplete(long deleteStartMillis) {
+    collector.notifyGCDeleteComplete(deleteStartMillis);
+  }
+  
 
   private void flushAndCommit(PersistenceTransaction persistenceTransaction, ManagedObject managedObject) {
     objectStore.commitObject(persistenceTransaction, managedObject);

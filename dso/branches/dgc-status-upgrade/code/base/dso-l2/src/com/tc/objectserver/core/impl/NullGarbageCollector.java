@@ -113,4 +113,8 @@ public class NullGarbageCollector implements GarbageCollector {
     return true;
   }
 
+  public void notifyGCDeleteComplete(long deleteStartTime) {
+    return;
+  }
+
 }
