@@ -9,5 +9,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common-api"/>
 	<classpathentry kind="lib" path="/dependencies/lib/guice-1.0.jar"/>
+	<classpathentry kind="lib" path="/dependencies/lib/jdom-1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
