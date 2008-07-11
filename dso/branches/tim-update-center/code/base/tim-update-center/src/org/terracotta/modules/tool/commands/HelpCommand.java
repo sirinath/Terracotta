@@ -20,27 +20,20 @@ public class HelpCommand extends AbstractCommand {
 
   public void execute(CommandLine cli) {
     List<String> topics = cli.getArgList();
-    
+
     if (topics.isEmpty()) {
-      System.out.println(loadHelp("GenericHelp"));
-      System.out.println();
+      out().println(loadHelp("GenericHelp"));
       return;
     }
 
-    for (String topic : topics) {
-      Command cmd = commandRegistry.getCommand(topic);
-      if (cmd != null) {
-        System.out.println(cmd.help());
+    for (String cmdname : topics) {
+      try {
+        Command cmd = commandRegistry.getCommand(cmdname);
+        cmd.printHelp();
+      } catch (UnknownCommandException e) {
+        out().println("Command not supported: " + cmdname);
       }
-      else {
-        System.out.println("Command not supported: " + topic);
-      }
-      System.out.println();
     }
-  }
-
-  public String help() {
-    return loadHelp(HelpCommand.class.getSimpleName());
   }
 
 }

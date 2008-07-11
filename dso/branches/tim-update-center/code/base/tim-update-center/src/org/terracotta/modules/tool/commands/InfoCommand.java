@@ -11,8 +11,4 @@ public class InfoCommand extends AbstractCommand {
     //
   }
 
-  public String help() {
-    return null;
-  }
-
 }

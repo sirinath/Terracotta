@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.modules.tool.commands;
 
@@ -16,16 +17,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Convenience base class for commands that offers common facilities used by
- * many command implementations.
- *
+ * Convenience base class for commands that offers common facilities used by many command implementations.
+ * 
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public abstract class AbstractCommand implements Command {
-  protected Options options = createOptions();
+  protected Options   options = createOptions();
 
-  private PrintWriter out = new PrintWriter(System.out);
-  private PrintWriter err = new PrintWriter(System.err);
+  private PrintWriter out     = new PrintWriter(System.out);
+  private PrintWriter err     = new PrintWriter(System.err);
 
   protected final Options createOptions() {
     Options opts = new Options();
@@ -34,14 +34,24 @@ public abstract class AbstractCommand implements Command {
   }
 
   public String help() {
-    return name() + "[options] [arguments]";
+    String text = loadHelp();
+    return (text.length() == 0) ? name() + " [options] [arguments]" : text;
   }
 
-  private static final Pattern classNamePattern = Pattern.compile("([A-Za-z0-9_]+)Command");
+  private static final String  EMPTY_HELP_STRING = "";
+
+  protected String loadHelp() {
+    return loadHelp(getClass().getSimpleName());
+  }
+  
+  public void printHelp() {
+    out().println(help());
+  }
+
+  private static final Pattern classNamePattern  = Pattern.compile("([A-Za-z0-9_]+)Command");
 
   /**
-   * Default implementation that returns the name of the class (in lowercase)
-   * minus the "Command" suffix if it has one,
+   * Default implementation that returns the name of the class (in lowercase) minus the "Command" suffix if it has one,
    */
   public String name() {
     String commandName = getClass().getSimpleName();
@@ -56,20 +66,21 @@ public abstract class AbstractCommand implements Command {
     return options;
   }
 
-  static String loadHelp(String topic) {
-    String resourceName = topic + ".help";
+  protected String loadHelp(String topic) {
+    String resourceName = "/" + getClass().getPackage().getName().replace('.', '/') + "/" + topic + ".help";
     InputStream in = AbstractCommand.class.getResourceAsStream(resourceName);
     try {
-      if (in == null) return "missing resource: " + resourceName;
+      if (in == null) return EMPTY_HELP_STRING;
       List<String> lines = IOUtils.readLines(in);
       StringBuffer buffer = new StringBuffer();
-      for (String line : lines) { 
+      for (String line : lines) {
         buffer.append(line);
         buffer.append(System.getProperty("line.separator"));
       }
       return buffer.toString();
     } catch (IOException e) {
-      return "unable to load resource: " + resourceName;
+      this.err().println("Unable to load resource: " + resourceName);
+      return EMPTY_HELP_STRING;
     }
   }
 

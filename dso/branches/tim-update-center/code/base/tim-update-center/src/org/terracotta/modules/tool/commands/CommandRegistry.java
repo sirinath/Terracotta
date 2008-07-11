@@ -1,12 +1,12 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.util.HashMap;
@@ -16,7 +16,7 @@ import java.util.Set;
 
 /**
  * Registry of {@link Command} objects.
- *
+ * 
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public class CommandRegistry {
@@ -26,30 +26,35 @@ public class CommandRegistry {
     commands.put(command.name(), command);
   }
 
-  public Command getCommand(String commandName) {
-    return commands.get(commandName);
+  public Command getCommand(String commandName) throws UnknownCommandException {
+    Command command = commands.get(commandName);
+    if (command == null) throw new UnknownCommandException(commandName);
+    return command;
   }
 
   public Set<String> commandNames() {
     return commands.keySet();
   }
 
-  public void executeCommand(String commandName, String[] args) throws ParseException {
+  public void executeCommand(String commandName, String[] args) throws CommandException {
     Command cmd = getCommand(commandName);
-    Options options = cmd.options();
-
     CommandLineParser parser = new GnuParser();
-    CommandLine cli = parser.parse(options, args);
 
-    if (cli.hasOption('h') || cli.hasOption("help")) {
-      System.out.println(cmd.help());
-      return;
+    try {
+      CommandLine cli = parser.parse(cmd.options(), args);
+
+      if (cli.hasOption('h') || cli.hasOption("help")) {
+        cmd.printHelp();
+        return;
+      }
+
+      cmd.execute(cli);
+    } catch (ParseException e) {
+      throw new CommandException(e.getMessage(), e);
     }
-
-    cmd.execute(cli);
   }
 
-  public void executeCommand(String commandName, List<String> args) throws ParseException {
+  public void executeCommand(String commandName, List<String> args) throws CommandException {
     executeCommand(commandName, args.toArray(new String[args.size()]));
   }
 }
