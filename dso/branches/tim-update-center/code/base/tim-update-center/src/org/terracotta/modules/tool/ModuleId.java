@@ -45,9 +45,9 @@ public class ModuleId implements Comparable {
   }
 
   public String toSortableString() {
-    String v       = version.replaceAll("-.+$", "");
-    String q       = version.replaceFirst(v + "-", "");
-    String[] cv    = v.split("\\.");
+    String v    = version.replaceAll("-.+$", "");
+    String q    = version.replaceFirst(v + "-", "");
+    String[] cv = v.split("\\.");
     for(String pcv : cv) {
       pcv = StringUtils.leftPad(pcv, 3, '0');
     }
