@@ -47,21 +47,21 @@ import java.util.List;
 public class Module {
   private final ModuleId id;
   private final String tcVersion;
-  private final String webSite;
+  private final String website;
   private final String vendor;
   private final String copyright;
   private final String category;
   private final String description;
   private final String repoUrl;
   private final String installPath;
-  private final String fileName;
+  private final String filename;
   
   public String getTcVersion() {
     return tcVersion;
   }
 
-  public String getWebSite() {
-    return webSite;
+  public String getWebsite() {
+    return website;
   }
 
   public String getVendor() {
@@ -84,8 +84,8 @@ public class Module {
     return installPath;
   }
 
-  public String getFileName() {
-    return fileName;
+  public String getFilename() {
+    return filename;
   }
 
   public List<ModuleId> getDependencies() {
@@ -105,14 +105,14 @@ public class Module {
   Module(Element root) {
     this.id = createId(root);
     this.tcVersion = getChildText(root, "tc-version");
-    this.webSite = getChildText(root, "website");
+    this.website = getChildText(root, "website");
     this.vendor = getChildText(root, "vendor");
     this.copyright = getChildText(root, "copyright");
     this.category = getChildText(root, "category");
     this.description = getChildText(root, "description");
     this.repoUrl = getChildText(root, "repoUrl");
     this.installPath = getChildText(root, "installPath");
-    this.fileName = getChildText(root, "filename");
+    this.filename = getChildText(root, "filename");
     this.dependencies = new ArrayList<ModuleId>();
     List<Element> moduleRefs = root.getChild("dependencies").getChildren();
     for (Element ref : moduleRefs) {
