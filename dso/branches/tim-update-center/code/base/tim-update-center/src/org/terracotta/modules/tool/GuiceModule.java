@@ -23,7 +23,7 @@ public class GuiceModule implements Module {
     binder.bind(Modules.class).toProvider(new Provider<CachedXmlModules>() {
       public CachedXmlModules get() {
         try {
-          return new CachedXmlModules(new File("modules.xml"));
+          return new CachedXmlModules(new File("tuc-modules.xml"));
         } catch (JDOMException e) {
           throw new RuntimeException(e);
         } catch (IOException e) {

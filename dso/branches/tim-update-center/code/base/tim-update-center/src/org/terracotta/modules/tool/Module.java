@@ -18,32 +18,7 @@ import java.util.List;
  * Note that TIMs that are packaged together into an archive are still
  * represented as separate Tim objects.
  */
-/*
- * <module artifactId='tim-hibernate-3.1.2' version='1.1.2' groupId='org.terracotta.modules'>
-  <tc-version>2.6.2</tc-version>
-  <website>http://forge-dev.terracotta.lan/releases/projects/tim-hibernate/</website>
-  <vendor>Terracotta, Inc.</vendor>
-  <copyright>Copyright (c) 2007 Terracotta, Inc.</copyright>
-  <category>Terracotta Integration Module</category>
-  <description>Terracotta Integration Module for clustering Hibernate</description>
-  <repoUrl>
-    http://forge-dev.terracotta.lan/repo/org/terracotta/modules/tim-hibernate-3.1.2/1.1.2/tim-hibernate-3.1.2-1.1.2.jar
-  </repoUrl>
-  <installPath>org/terracotta/modules/tim-hibernate-3.1.2/1.1.2</installPath>
-  <filename>tim-hibernate-3.1.2-1.1.2.jar</filename>
-  <dependencies>
-    <module artifactId='modules-common' version='2.6.2' groupId='org.terracotta.modules'>
-      <repoUrl>
-        http://forge-dev.terracotta.lan/repo/org/terracotta/modules/modules-common/2.6.2/modules-common-2.6.2.jar
-      </repoUrl>
-      <installPath>org/terracotta/modules/modules-common/2.6.2</installPath>
-      <filename>modules-common-2.6.2.jar</filename>
-    </module>
-    <moduleRef artifactId='tim-cglib-2.1.3' version='1.1.2' groupId='org.terracotta.modules'/>
-    <moduleRef artifactId='tim-ehcache-commons' version='1.1.2' groupId='org.terracotta.modules'/>
-    <moduleRef artifactId='tim-ehcache-1.3' version='1.1.2' groupId='org.terracotta.modules'/>
-  </dependencies> 
- */
+
 public class Module {
   private final ModuleId id;
   private final String tcVersion;
@@ -114,6 +89,7 @@ public class Module {
     this.installPath = getChildText(root, "installPath");
     this.filename = getChildText(root, "filename");
     this.dependencies = new ArrayList<ModuleId>();
+    if (root.getChild("dependencies") == null) return;
     List<Element> moduleRefs = root.getChild("dependencies").getChildren();
     for (Element ref : moduleRefs) {
       this.dependencies.add(createId(ref));
