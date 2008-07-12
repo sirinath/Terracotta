@@ -63,7 +63,9 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final MutableSequence                sequence;
   private long                                 nextSequence;
   private long                                 endSequence;
+  private final long                           firstSequenceThisRun;
   private final OidBitsArrayMap                persistableMap;
+  private volatile boolean                     isObjectIDLoadingDone = false;
 
   public FastObjectIDManagerImpl(DBEnvironment env, PersistenceTransactionProvider ptp, MutableSequence sequence)
       throws TCDatabaseException {
@@ -90,6 +92,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.sequence = sequence;
     nextSequence = this.sequence.nextBatch(SEQUENCE_BATCH_SIZE);
     endSequence = nextSequence + SEQUENCE_BATCH_SIZE;
+    firstSequenceThisRun = nextSequence;
 
     persistableMap = new OidBitsArrayMapImpl(longsPerStateEntry, this.oidStateDB);
 
@@ -110,6 +113,14 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     checkpointThread.quit();
   }
 
+  boolean isReadObjectIDDone() {
+    return isObjectIDLoadingDone;
+  }
+
+  void setReadObjectIDDone(boolean done) {
+    isObjectIDLoadingDone = done;
+  }
+
   private synchronized long nextSeqID() {
     if (nextSequence == endSequence) {
       nextSequence = this.sequence.nextBatch(SEQUENCE_BATCH_SIZE);
@@ -117,7 +128,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     }
     return (nextSequence++);
   }
-
+  
   /*
    * Log key to make log records ordered in time sequenece
    */
@@ -144,6 +155,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
 
   private boolean isAddOper(byte[] logKey) {
     return (logKey[OidLongArray.BYTES_PER_LONG] == ADD_OBJECT_ID);
+  }
+  
+  private boolean isLogOfPreviousRun(byte[] logKey) {
+    return (firstSequenceThisRun > Conversion.bytes2Long(logKey));
   }
 
   /*
@@ -181,7 +196,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   /*
    * Flush out oidLogDB to bitsArray on disk.
    */
-  private boolean oidFlushLogToBitsArray(StoppedFlag stoppedFlag, int maxProcessLimit) {
+  private boolean oidFlushLogToBitsArray(StoppedFlag stoppedFlag, int maxProcessLimit, boolean previousRunLogOnly) {
     boolean isAllFlushed = true;
     synchronized (objectIDUpdateSyncObj) {
       if (stoppedFlag.isStopped()) return isAllFlushed;
@@ -203,6 +218,10 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
               cursor = null;
               abortOnError(tx);
               return isAllFlushed;
+            }
+            
+            if (previousRunLogOnly && !isLogOfPreviousRun(key.getData())) {
+              break;
             }
 
             boolean isAddOper = isAddOper(key.getData());
@@ -275,11 +294,11 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   }
 
   private void processPreviousRunOidLog() {
-    oidFlushLogToBitsArray(new StoppedFlag(), Integer.MAX_VALUE);
+    oidFlushLogToBitsArray(new StoppedFlag(), Integer.MAX_VALUE, true);
   }
 
   private boolean processCheckpoint(StoppedFlag stoppedFlag, int maxProcessLimit) {
-    return oidFlushLogToBitsArray(stoppedFlag, maxProcessLimit);
+    return oidFlushLogToBitsArray(stoppedFlag, maxProcessLimit, false);
   }
 
   private static class StoppedFlag {
@@ -323,6 +342,8 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
           }
         }
         if (stoppedFlag.isStopped()) break;
+        // run only after done with ObjectID reading
+        if (!isReadObjectIDDone()) continue;
         boolean isAllFlushed = processCheckpoint(stoppedFlag, maxProcessLimit);
 
         if (isAllFlushed) {
@@ -399,6 +420,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
       } finally {
         safeClose(cursor);
         set.stopPopulating(tmp);
+        setReadObjectIDDone(true);
       }
     }
 
