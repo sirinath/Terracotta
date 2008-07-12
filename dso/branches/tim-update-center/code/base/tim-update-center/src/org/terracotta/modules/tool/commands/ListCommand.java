@@ -27,7 +27,7 @@ public class ListCommand extends AbstractCommand {
     //List<Module> modules = modules.list();
     //out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
     System.out.println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
-    for (Module module : this.modules.listLatest()) {
+    for (Module module : this.modules.list()) {
       //out().println(tim.getId());
       System.out.println(module.getId());
     }
