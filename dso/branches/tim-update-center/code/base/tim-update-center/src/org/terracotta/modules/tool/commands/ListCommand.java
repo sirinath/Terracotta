@@ -9,27 +9,27 @@ import org.terracotta.modules.tool.Modules;
 
 import com.google.inject.Inject;
 
-import java.util.List;
-
 /**
  * Command class implementing the <code>list</code> command.
  */
 public class ListCommand extends AbstractCommand {
   
-  private final Modules repository;
+  private final Modules modules;
 
   @Inject
-  public ListCommand(Modules repository) {
-    this.repository = repository;
-    assert repository != null;
+  public ListCommand(Modules modules) {
+    this.modules = modules;
+    assert modules != null;
     options.addOption("v", "details", false, "Display detailed information");
   }
 
   public void execute(CommandLine cli) {
-    List<Module> tims = repository.list();
-    out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
-    for (Module tim : tims) {
-      out().println(tim.getId());
+    //List<Module> modules = modules.list();
+    //out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
+    System.out.println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
+    for (Module module : this.modules.listLatest()) {
+      //out().println(tim.getId());
+      System.out.println(module.getId());
     }
   }
 }

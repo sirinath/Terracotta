@@ -10,7 +10,7 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 
 import com.google.inject.Inject;
-import com.tc.util.ProductInfo;
+//import com.tc.util.ProductInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,6 +88,7 @@ public class CachedXmlModules implements Modules {
   }
 
   private String tcVersion() {
-    return ProductInfo.getInstance().version();
+    //return ProductInfo.getInstance().version();
+    return "2.6.2";
   }
 }
