@@ -56,11 +56,13 @@ public class CachedModulesTest extends TestCase {
     assertFalse(list.isEmpty());
     assertTrue(list.get(0).getId().getVersion().equals("1.0.0"));
     assertTrue(list.get(1).getId().getVersion().equals("1.0.1"));
+    assertTrue(list.get(1).isLatest());
     
     List<Module> latest = modules.listLatest();
     assertNotNull(latest);
     assertFalse(latest.isEmpty());
     assertEquals(1, latest.size());
+    assertTrue(latest.get(0).getId().getVersion().equals("1.0.1"));
     assertTrue(latest.get(0).isLatest());
   }
   

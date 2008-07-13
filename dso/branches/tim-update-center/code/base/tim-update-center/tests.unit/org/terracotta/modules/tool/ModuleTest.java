@@ -11,6 +11,27 @@ import junit.framework.TestCase;
 
 public class ModuleTest extends TestCase {
 
+  public void testIsOlder() {
+    Modules modules = getModules("2.5.4", "/testList.xml");
+    assertNotNull(modules);
+    assertFalse(modules.list().isEmpty());
+    assertEquals(4, modules.list().size());
+
+    ModuleId id = ModuleId.create("org.terracotta.modules", "tim-apache-struts-1.1", "1.0.1");
+    Module module = modules.get(id);
+    assertNotNull(module);
+    List<Module> siblings = module.getSiblings();
+    assertNotNull(siblings);
+    assertFalse(siblings.isEmpty());
+    assertEquals(2, siblings.size());
+    assertTrue(module.isOlder(siblings.get(0)));
+    assertTrue(module.isOlder(siblings.get(1)));
+    module = siblings.get(0);
+    assertTrue(module.isOlder(siblings.get(1)));
+    module = siblings.get(1);
+    assertTrue(module.isLatest());
+  }
+  
   public void testGetSiblings() {
     Modules modules = getModules("2.5.4", "/testList.xml");
     assertNotNull(modules);

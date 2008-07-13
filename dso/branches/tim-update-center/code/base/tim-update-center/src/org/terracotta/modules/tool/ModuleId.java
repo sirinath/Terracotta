@@ -4,6 +4,7 @@
  */
 package org.terracotta.modules.tool;
 
+import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
 
 /**
@@ -11,7 +12,7 @@ import org.jdom.Element;
  * 
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
-public class ModuleId {
+public class ModuleId implements Comparable {
   private final String groupId;
   private final String artifactId;
   private final String version;
@@ -42,6 +43,16 @@ public class ModuleId {
    */
   public boolean isSibling(ModuleId id) {
     return this.groupId.equals(id.getGroupId()) && this.artifactId.equals(id.getArtifactId());
+  }
+  
+  String sortableVersion() {
+    String v = version.replaceAll("-.+$", "");
+    String q = version.replaceFirst(v, "").replaceFirst("-", "");
+    String[] cv = v.split("\\.");
+    for (int i = 0; i < cv.length; i++) {
+      cv[i] = StringUtils.leftPad(cv[i], 3, '0');
+    }
+    return StringUtils.join(cv, '.') + "-" + q;
   }
 
   @Override
@@ -88,6 +99,16 @@ public class ModuleId {
     if (groupId.length() > 0) buffer.append(groupId).append(".");
     buffer.append(artifactId);
     return buffer.toString();
+  }
+
+  public int compareTo(Object obj) {
+    assert obj instanceof ModuleId;
+    ModuleId other = (ModuleId) obj;
+    return toSortableString().compareTo(other.toSortableString());
+  }
+
+  private String toSortableString() {
+    return ModuleId.computeSymbolicName(groupId, artifactId) + "-" + sortableVersion();
   }
 
 }
