@@ -104,7 +104,7 @@ public class ModuleTest extends TestCase {
     try {
       InputStream data = this.getClass().getResourceAsStream(file);
       assertNotNull(data);
-      return new CachedXmlModules(data, tcversion);
+      return new CachedModules(data, tcversion);
     } catch (Exception e) {
       return null;
     }

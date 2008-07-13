@@ -8,7 +8,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-public class CachedXmlModulesTest extends TestCase {
+public class CachedModulesTest extends TestCase {
 
   public void testList() {
     Modules modules = getModules("9.9.9", "/testList.xml");
@@ -99,7 +99,7 @@ public class CachedXmlModulesTest extends TestCase {
     try {
       InputStream data = this.getClass().getResourceAsStream(file);
       assertNotNull(data);
-      return new CachedXmlModules(data, tcversion);
+      return new CachedModules(data, tcversion);
     } catch (Exception e) {
       return null;
     }
