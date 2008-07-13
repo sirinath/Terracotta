@@ -12,12 +12,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-class ModulesProvider implements Provider<CachedXmlModules> {
+class ModulesProvider implements Provider<CachedModules> {
 
-  public CachedXmlModules get() {
+  public CachedModules get() {
     try {
       InputStream data = new FileInputStream(new File("tuc-data.xml"));
-      return new CachedXmlModules(data, "2.6.2");
+      return new CachedModules(data, "2.6.2");
     } catch (JDOMException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {

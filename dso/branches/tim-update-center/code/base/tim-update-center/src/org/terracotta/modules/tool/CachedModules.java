@@ -20,13 +20,13 @@ import java.util.Map;
 /**
  * Implementation of {@link Modules} that uses a cached XML file as its data source.
  */
-class CachedXmlModules implements Modules {
+class CachedModules implements Modules {
 
   private final Map<ModuleId, Module> modules;
 
   private final String                tcVersion;
 
-  public CachedXmlModules(InputStream data, String tcVersion) throws JDOMException, IOException {
+  public CachedModules(InputStream data, String tcVersion) throws JDOMException, IOException {
     this.tcVersion = tcVersion;
 
     SAXBuilder builder = new SAXBuilder();
