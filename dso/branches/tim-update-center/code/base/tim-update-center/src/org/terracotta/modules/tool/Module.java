@@ -1,8 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.modules.tool;
 
+import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
 
 import java.util.ArrayList;
@@ -10,27 +12,47 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A single Terracotta Integration Module (TIM) artifact.
- *
- * A TIM has a composite unique identifier consisting of groupId, artifactId,
- * and version, which is represented by the {@link ModuleId} class.
- *
- * Note that TIMs that are packaged together into an archive are still
- * represented as separate Tim objects.
+ * A single Terracotta Integration Module (TIM) artifact. A TIM has a composite unique identifier consisting of groupId,
+ * artifactId, and version, which is represented by the {@link ModuleId} class. Note that TIMs that are packaged
+ * together into an archive are still represented as separate Tim objects.
  */
 
-public class Module {
-  private final ModuleId id;
-  private final String tcVersion;
-  private final String website;
-  private final String vendor;
-  private final String copyright;
-  private final String category;
-  private final String description;
-  private final String repoUrl;
-  private final String installPath;
-  private final String filename;
-  
+public class Module implements Comparable {
+  private final ModuleId         id;
+  private final String           repoUrl;
+  private final String           installPath;
+  private final String           filename;
+
+  private final String           tcVersion;
+  private final String           website;
+  private final String           vendor;
+  private final String           copyright;
+  private final String           category;
+  private final String           description;
+  private final List<Dependency> dependencies;
+
+  private final Modules          modules;
+
+  public ModuleId getId() {
+    return id;
+  }
+
+  public String getRepoUrl() {
+    return repoUrl;
+  }
+
+  public String getInstallPath() {
+    return installPath;
+  }
+
+  public String getFilename() {
+    return filename;
+  }
+
+  public List<Dependency> dependencies() {
+    return Collections.unmodifiableList(dependencies);
+  }
+
   public String getTcVersion() {
     return tcVersion;
   }
@@ -51,34 +73,24 @@ public class Module {
     return category;
   }
 
-  public String getRepoUrl() {
-    return repoUrl;
+  public String getDescription() {
+    return description;
   }
 
-  public String getInstallPath() {
-    return installPath;
-  }
-
-  public String getFilename() {
-    return filename;
-  }
-
-  public List<ModuleId> getDependencies() {
+  /**
+   * Return the list of direct dependencies of this module.
+   */
+  public List<Dependency> getDependencies() {
     return dependencies;
   }
 
-  private final List<ModuleId> dependencies;
+  public static Module create(Modules modules, Element module) {
+    return new Module(modules, module);
+  }
 
-  public static Module create(Element module) {
-    return new Module(module);
-  }
-  
-  public boolean isCompatible(String with) {
-    return this.tcVersion.equals("*") || this.tcVersion.equals(with);
-  }
-  
-  Module(Element root) {
-    this.id = createId(root);
+  Module(Modules modules, Element root) {
+    this.modules = modules;
+    this.id = ModuleId.create(root);
     this.tcVersion = getChildText(root, "tc-version");
     this.website = getChildText(root, "website");
     this.vendor = getChildText(root, "vendor");
@@ -88,48 +100,142 @@ public class Module {
     this.repoUrl = getChildText(root, "repoUrl");
     this.installPath = getChildText(root, "installPath");
     this.filename = getChildText(root, "filename");
-    this.dependencies = new ArrayList<ModuleId>();
-    if (root.getChild("dependencies") == null) return;
-    List<Element> moduleRefs = root.getChild("dependencies").getChildren();
-    for (Element ref : moduleRefs) {
-      this.dependencies.add(createId(ref));
+    this.dependencies = new ArrayList<Dependency>();
+    if (root.getChild("dependencies") != null) {
+      List<Element> children = root.getChild("dependencies").getChildren();
+      for (Element child : children) {
+        this.dependencies.add(new Dependency(child));
+      }
     }
   }
 
-  private ModuleId createId(Element element) {
-    String artifactId = element.getAttributeValue("artifactId");
-    String groupId = element.getAttributeValue("groupId");
-    String version = element.getAttributeValue("version");
-    return new ModuleId(groupId, artifactId, version);
-  }
-  
   private String getChildText(Element element, String name) {
     return getChildText(element, name, "");
   }
-  
+
   private String getChildText(Element element, String name, String defaultValue) {
-    return element.getChildText(name) == null ? defaultValue : element.getChildText(name);
-  }
-  
-  /** Returns the composite unique identifier for this TIM. */
-  public ModuleId getId() {
-    return id;
+    return (element.getChildText(name) == null ? defaultValue : element.getChildText(name)).trim();
   }
 
-  /** Returns the description of this TIM. */
-  public String getDescription() {
-    return description;
+  public int compareTo(Object obj) {
+    assert obj instanceof Module;
+    Module other = (Module) obj;
+    return this.toSortableString().compareTo(other.toSortableString());
+  }
+
+  @Override
+  public int hashCode() {
+    return id.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) return false;
+    if (obj == this) return true;
+    if (getClass() != obj.getClass()) return false;
+    Module other = (Module) obj;
+    return toString().equals(other.toString());
+  }
+
+  private String toSortableString() {
+    return getSymbolicName() + "-" + sortableVersion();
+  }
+
+  public String getSymbolicName() {
+    return ModuleId.computeSymbolicName(id.getGroupId(), id.getArtifactId());
+  }
+
+  private String sortableVersion() {
+    String v = this.id.getVersion().replaceAll("-.+$", "");
+    String q = this.id.getVersion().replaceFirst(v, "").replaceFirst("-", "");
+    String[] cv = v.split("\\.");
+    for (int i = 0; i < cv.length; i++) {
+      cv[i] = StringUtils.leftPad(cv[i], 3, '0');
+    }
+    return StringUtils.join(cv, '.') + "-" + q;
+  }
+
+  public boolean isOlder(Module o) {
+    assert getSymbolicName().equals(o.getSymbolicName());
+    return sortableVersion().compareTo(o.sortableVersion()) > 0;
+  }
+
+  public String toString() {
+    return getSymbolicName() + " " + id.getVersion();
   }
 
   /**
-   * A list of this TIM's direct dependencies.
+   * Returns a list of all available version for this module. The list returned does not include this module's version.
    */
-  public List<ModuleId> dependencies() {
-    return Collections.unmodifiableList(dependencies);
+  public List<String> getVersions() {
+    return getVersions(false);
   }
 
   /**
-   * A flattened list of transitive dependencies for this TIM.
+   * Returns a list of all available version for this module.
+   * 
+   * @param inclusive If true the list will include this module's version.
    */
-  //public List<Tim> transitiveDependencies();
+  private List<String> getVersions(boolean inclusive) {
+    List<String> versions = new ArrayList<String>();
+    for (Module module : this.modules.list()) {
+      if (!module.isSibling(this)) continue;
+      if (!inclusive && (module == this)) continue;
+      versions.add(module.getId().getVersion());
+    }
+    return versions;
+  }
+
+  public boolean isSibling(Module other) {
+    return this.getSymbolicName().equals(other.getSymbolicName());
+  }
+
+  /**
+   * Returns the siblings of this module. A sibling is another module with the matching symbolicName but a different
+   * version. The list returned will not include this module.
+   */
+  public List<Module> getSiblings() {
+    List<Module> siblings = new ArrayList<Module>();
+    List<String> versions = getVersions();
+    for (String version : versions) {
+      Module sibling = this.modules.get(ModuleId.create(id.getGroupId(), id.getArtifactId(), version));
+      siblings.add(sibling);
+    }
+    return siblings;
+  }
+
+  /**
+   * Indicates if this module is the latest version among its siblings.
+   */
+  public boolean isLatest() {
+    List<String> versions = getVersions(true);
+    return versions.indexOf(this.getId().getVersion()) == (versions.size() - 1);
+  }
+
+  /**
+   * Install this module.
+   */
+  public void install() {
+    List<Dependency> manifest = computeManifest();
+    for (Dependency entry : manifest) {
+      System.out.println(" - " + entry.getFilename());
+      System.out.println("   " + entry.getRepoUrl());
+    }
+  }
+
+  private List<Dependency> computeManifest() {
+    List<Dependency> manifest = new ArrayList<Dependency>();
+    manifest.add(new Dependency(this));
+    for (Dependency dependency : this.dependencies) {
+      if (dependency.isReference()) {
+        Module module = this.modules.get(dependency.getId());
+        assert module != null;
+        manifest.addAll(module.computeManifest());
+        continue;
+      }
+      manifest.add(dependency);
+    }
+    return manifest;
+  }
+
 }

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.modules.tool.commands;
 
@@ -13,7 +14,7 @@ import com.google.inject.Inject;
  * Command class implementing the <code>list</code> command.
  */
 public class ListCommand extends AbstractCommand {
-  
+
   private final Modules modules;
 
   @Inject
@@ -24,12 +25,24 @@ public class ListCommand extends AbstractCommand {
   }
 
   public void execute(CommandLine cli) {
-    //List<Module> modules = modules.list();
-    //out().println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
-    System.out.println("*** TIM packages for Terracotta " + getTerracottaVersion() + " ***");
     for (Module module : this.modules.list()) {
-      //out().println(tim.getId());
-      System.out.println(module.getId());
+      System.out.println(module + " " + (module.isLatest() ? "*" : ""));
+    }
+
+    System.out.println("---");
+
+    for (Module module : this.modules.listLatest()) {
+      System.out.println(module);
+      for (String version : module.getVersions()) {
+        System.out.println("- " + version);
+      }
+    }
+    
+    System.out.println("---");
+    
+    for (Module module : this.modules.listLatest()) {
+      System.out.println(module);
+      module.install();
     }
   }
 }

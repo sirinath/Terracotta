@@ -9,24 +9,26 @@ import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Implementation of {@link Modules} that uses a cached XML file as its data source.
  */
-public class CachedXmlModules implements Modules {
+class CachedXmlModules implements Modules {
 
   private final Map<ModuleId, Module> modules;
 
-  public CachedXmlModules(File data) throws JDOMException, IOException {
+  private final String                tcVersion;
+
+  public CachedXmlModules(InputStream data, String tcVersion) throws JDOMException, IOException {
+    this.tcVersion = tcVersion;
+
     SAXBuilder builder = new SAXBuilder();
     Document document = builder.build(data);
     Element root = document.getRootElement();
@@ -34,57 +36,61 @@ public class CachedXmlModules implements Modules {
 
     List<Element> children = root.getChildren();
     for (Element child : children) {
-      Module module = Module.create(child);
-      if (module.isCompatible(tcVersion())) {
-        this.modules.put(module.getId(), module);
-      }
+      Module module = Module.create(this, child);
+      if (!qualify(module)) continue;
+      this.modules.put(module.getId(), module);
     }
   }
 
-  public Set<ModuleId> getModuleFamilies() {
-    Set<ModuleId> families = new HashSet<ModuleId>();
-    for (ModuleId id : this.modules.keySet()) {
-      ModuleId familyId = new ModuleId(id.getGroupId(), id.getArtifactId(), null);
-      families.add(familyId);
-    }
-    return families;
+  private boolean qualify(Module module) {
+    return module.getTcVersion().equals("*") || module.getTcVersion().equals(this.tcVersion);
   }
 
-  public List<Module> list() {
-    return new ArrayList<Module>(this.modules.values());
+  public String tcVersion() {
+    return tcVersion;
   }
 
-  public Module getModuleById(ModuleId id) {
+  public Module get(ModuleId id) {
     return this.modules.get(id);
   }
 
-  public List<ModuleId> getModuleIdsInFamily(ModuleId familyId) {
-    List<ModuleId> result = new ArrayList<ModuleId>();
-    for (ModuleId moduleId : this.modules.keySet()) {
-      if (moduleId.isSibling(familyId)) {
-        result.add(familyId);
-      }
-    }
-    return result;
+  public List<Module> list() {
+    List<Module> list = new ArrayList<Module>(this.modules.values());
+    Collections.sort(list);
+    return list;
   }
 
   public List<Module> listLatest() {
-    Set<ModuleId> families = this.getModuleFamilies();
-    List<Module> latest = new ArrayList();
-    for (ModuleId id : families) {
-      latest.add(this.getLatestInFamily(id));
+    List<Module> list = list();
+    Map<String, Module> group = new HashMap<String, Module>();
+    for (Module module : list) {
+      Module other = group.get(module.getSymbolicName());
+      if (other == null) {
+        group.put(module.getSymbolicName(), module);
+        continue;
+      }
+      if (other.isOlder(module)) continue;
+      group.put(module.getSymbolicName(), module);
     }
-    return latest;
+    list = new ArrayList<Module>(group.values());
+    Collections.sort(list);
+    return list;
   }
 
-  public Module getLatestInFamily(ModuleId family) {
-    List<ModuleId> siblings = this.getModuleIdsInFamily(family);
-    Collections.sort(siblings);
-    return this.getModuleById(siblings.get(siblings.size() - 1));
+  /**
+   * Return a list of modules matching the groupId and artifactId.
+   * 
+   * @param groupId
+   * @param artifactId
+   */
+  public List<Module> get(String groupId, String artifactId) {
+    List<Module> list = new ArrayList<Module>();
+    for (Module module : list()) {
+      if (!module.getSymbolicName().equals(ModuleId.computeSymbolicName(groupId, artifactId))) continue;
+      list.add(module);
+    }
+    Collections.sort(list);
+    return list;
   }
 
-  private String tcVersion() {
-    //return ProductInfo.getInstance().version();
-    return "2.6.2";
-  }
 }

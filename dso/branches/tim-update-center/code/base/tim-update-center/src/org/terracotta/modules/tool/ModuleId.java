@@ -1,63 +1,40 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package org.terracotta.modules.tool;
 
-import org.apache.commons.lang.StringUtils;
-
+import org.jdom.Element;
 
 /**
  * Composite unique identifier for TIMs.
- *
+ * 
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
-public class ModuleId implements Comparable {
+public class ModuleId {
   private final String groupId;
   private final String artifactId;
   private final String version;
 
-  public ModuleId(String groupId, String artifactId, String version) {
-    this.groupId = groupId;
-    this.artifactId = artifactId;
-    this.version = version;
+  ModuleId(String groupId, String artifactId, String version) {
+    assert groupId != null;
+    assert artifactId != null;
+    assert version != null;
+    this.groupId = groupId.trim();
+    this.artifactId = artifactId.trim();
+    this.version = version.trim();
   }
 
-  /** 
-   * The TIM groupId. 
-   */
   public String getGroupId() {
     return groupId;
   }
 
-  /** 
-   * The TIM artifactId. 
-   */
   public String getArtifactId() {
     return artifactId;
   }
 
-  /** 
-   * The TIM version. 
-   */
   public String getVersion() {
     return version;
-  }
-
-  /**
-   * Converts this TimIdentifier to a String of the form groupId.artifactId-version.
-   */
-  public String toString() {
-    return groupId + "." + artifactId + "-" + version;
-  }
-
-  public String toSortableString() {
-    String v    = version.replaceAll("-.+$", "");
-    String q    = version.replaceFirst(v + "-", "");
-    String[] cv = v.split("\\.");
-    for(String pcv : cv) {
-      pcv = StringUtils.leftPad(pcv, 3, '0');
-    }
-    return groupId + "." + artifactId + "-" + StringUtils.join(cv) + "-" + q;
   }
 
   /**
@@ -65,11 +42,6 @@ public class ModuleId implements Comparable {
    */
   public boolean isSibling(ModuleId id) {
     return this.groupId.equals(id.getGroupId()) && this.artifactId.equals(id.getArtifactId());
-  }
-
-  public int compareTo(Object o) {
-    ModuleId other = (ModuleId) o;
-    return this.toSortableString().compareTo(other.toSortableString());
   }
 
   @Override
@@ -99,4 +71,23 @@ public class ModuleId implements Comparable {
     } else if (!version.equals(other.version)) return false;
     return true;
   }
+
+  public static ModuleId create(String groupId, String artifactId, String version) {
+    return new ModuleId(groupId, artifactId, version);
+  }
+
+  public static ModuleId create(Element element) {
+    String groupId = element.getAttributeValue("groupId");
+    String artifactId = element.getAttributeValue("artifactId");
+    String version = element.getAttributeValue("version");
+    return new ModuleId(groupId, artifactId, version);
+  }
+
+  public static String computeSymbolicName(String groupId, String artifactId) {
+    StringBuffer buffer = new StringBuffer();
+    if (groupId.length() > 0) buffer.append(groupId).append(".");
+    buffer.append(artifactId);
+    return buffer.toString();
+  }
+
 }

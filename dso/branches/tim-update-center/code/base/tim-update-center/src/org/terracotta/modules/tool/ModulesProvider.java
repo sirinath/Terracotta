@@ -8,13 +8,16 @@ import org.jdom.JDOMException;
 import com.google.inject.Provider;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 class ModulesProvider implements Provider<CachedXmlModules> {
 
   public CachedXmlModules get() {
     try {
-      return new CachedXmlModules(new File("tuc-data.xml"));
+      InputStream data = new FileInputStream(new File("tuc-data.xml"));
+      return new CachedXmlModules(data, "2.6.2");
     } catch (JDOMException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {
