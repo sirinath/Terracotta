@@ -17,7 +17,7 @@ class ModulesProvider implements Provider<CachedModules> {
   public CachedModules get() {
     try {
       InputStream data = new FileInputStream(new File("tuc-data.xml"));
-      return new CachedModules(data, "2.6.2");
+      return new CachedModules(data, "2.5.0");
     } catch (JDOMException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {

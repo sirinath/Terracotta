@@ -69,7 +69,7 @@ class CachedModules implements Modules {
         group.put(module.getSymbolicName(), module);
         continue;
       }
-      if (other.isOlder(module)) continue;
+      if (module.isOlder(other)) continue;
       group.put(module.getSymbolicName(), module);
     }
     list = new ArrayList<Module>(group.values());

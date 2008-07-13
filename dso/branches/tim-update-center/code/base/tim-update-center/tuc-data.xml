@@ -22,6 +22,7 @@
       </module>
     </dependencies>
   </module>
+
   <module artifactId='tim-annotations' version='1.0.1' groupId='org.terracotta.modules'>
     <tc-version>2.5.0</tc-version>
     <website>http://forge-dev.terracotta.lan/releases/projects/tim-annotations/</website>
@@ -44,6 +45,7 @@
       </module>
     </dependencies>
   </module>
+  
   <module artifactId='tim-annotations' version='1.0.2' groupId='org.terracotta.modules'>
     <tc-version>2.5.2</tc-version>
     <website>http://forge-dev.terracotta.lan/releases/projects/tim-annotations/</website>

@@ -4,7 +4,6 @@
  */
 package org.terracotta.modules.tool;
 
-import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
 
 import java.util.ArrayList;
@@ -120,7 +119,7 @@ public class Module implements Comparable {
   public int compareTo(Object obj) {
     assert obj instanceof Module;
     Module other = (Module) obj;
-    return this.toSortableString().compareTo(other.toSortableString());
+    return id.compareTo(other.getId());
   }
 
   @Override
@@ -137,27 +136,13 @@ public class Module implements Comparable {
     return toString().equals(other.toString());
   }
 
-  private String toSortableString() {
-    return getSymbolicName() + "-" + sortableVersion();
-  }
-
   public String getSymbolicName() {
     return ModuleId.computeSymbolicName(id.getGroupId(), id.getArtifactId());
   }
 
-  private String sortableVersion() {
-    String v = this.id.getVersion().replaceAll("-.+$", "");
-    String q = this.id.getVersion().replaceFirst(v, "").replaceFirst("-", "");
-    String[] cv = v.split("\\.");
-    for (int i = 0; i < cv.length; i++) {
-      cv[i] = StringUtils.leftPad(cv[i], 3, '0');
-    }
-    return StringUtils.join(cv, '.') + "-" + q;
-  }
-
   public boolean isOlder(Module o) {
     assert getSymbolicName().equals(o.getSymbolicName());
-    return sortableVersion().compareTo(o.sortableVersion()) > 0;
+    return id.sortableVersion().compareTo(o.getId().sortableVersion()) < 0;
   }
 
   public String toString() {
@@ -177,11 +162,16 @@ public class Module implements Comparable {
    * @param inclusive If true the list will include this module's version.
    */
   private List<String> getVersions(boolean inclusive) {
-    List<String> versions = new ArrayList<String>();
+    List<ModuleId> idlist = new ArrayList<ModuleId>();
     for (Module module : this.modules.list()) {
       if (!module.isSibling(this)) continue;
       if (!inclusive && (module == this)) continue;
-      versions.add(module.getId().getVersion());
+      idlist.add(module.getId());
+    }
+    Collections.sort(idlist);
+    List<String> versions = new ArrayList<String>();
+    for (ModuleId mid : idlist) {
+      versions.add(mid.getVersion());
     }
     return versions;
   }
