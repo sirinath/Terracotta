@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 public abstract class AbstractCommand implements Command {
   protected Options   options = createOptions();
 
-  private PrintWriter out     = new PrintWriter(System.out);
-  private PrintWriter err     = new PrintWriter(System.err);
+  private PrintWriter out     = new PrintWriter(System.out, true);
+  private PrintWriter err     = new PrintWriter(System.err, true);
 
   protected final Options createOptions() {
     Options opts = new Options();

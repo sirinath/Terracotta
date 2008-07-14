@@ -52,7 +52,7 @@ public class CachedModulesTest extends TestCase {
     assertFalse(modules.list().isEmpty());
     assertEquals(2, modules.list().size());
     
-    List<Module> list = modules.get("org.terracotta.modules", "tim-annotations");
+    List<Module> list = modules.get("org.foo.bar", "tim-annotations");
     assertFalse(list.isEmpty());
     assertTrue(list.get(0).getId().getVersion().equals("1.0.0"));
     assertTrue(list.get(1).getId().getVersion().equals("1.0.1"));
@@ -72,12 +72,12 @@ public class CachedModulesTest extends TestCase {
     assertFalse(modules.list().isEmpty());
     assertEquals(2, modules.list().size());
     
-    ModuleId id = ModuleId.create("org.terracotta.modules", "tim-annotations", "1.0.0");
+    ModuleId id = ModuleId.create("org.foo.bar", "tim-annotations", "1.0.0");
     Module module = modules.get(id);
     assertNotNull(module);
     assertTrue(module.getId().equals(id));
     
-    id = ModuleId.create("org.terracotta.modules", "tim-annotations", "1.0.1");
+    id = ModuleId.create("org.foo.bar", "tim-annotations", "1.0.1");
     module = modules.get(id);
     assertNotNull(module);
     assertTrue(module.getId().equals(id));
@@ -89,11 +89,11 @@ public class CachedModulesTest extends TestCase {
     assertFalse(modules.list().isEmpty());
     assertEquals(2, modules.list().size());
     
-    List<Module> list = modules.get("org.terracotta.modules", "tim-annotations");
+    List<Module> list = modules.get("org.foo.bar", "tim-annotations");
     assertNotNull(list);
     assertEquals(2, list.size());
     for (Module module : list) {
-      assertTrue(module.getSymbolicName().equals(ModuleId.computeSymbolicName("org.terracotta.modules", "tim-annotations")));
+      assertTrue(module.getSymbolicName().equals(ModuleId.computeSymbolicName("org.foo.bar", "tim-annotations")));
     }
   }
   

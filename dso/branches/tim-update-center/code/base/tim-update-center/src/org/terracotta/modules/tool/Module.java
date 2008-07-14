@@ -150,17 +150,17 @@ public class Module implements Comparable {
   }
 
   /**
-   * Returns a list of all available version for this module. The list returned does not include this module's version.
+   * Returns a list of all available version for this module.
+   * The list returned does not include the version of this module. 
    */
   public List<String> getVersions() {
     return getVersions(false);
   }
-
-  /**
-   * Returns a list of all available version for this module.
-   * 
-   * @param inclusive If true the list will include this module's version.
-   */
+  
+  public List<String> getAllVersions() {
+    return getVersions(true);
+  }
+  
   private List<String> getVersions(boolean inclusive) {
     List<ModuleId> idlist = new ArrayList<ModuleId>();
     for (Module module : this.modules.list()) {
@@ -206,26 +206,34 @@ public class Module implements Comparable {
    * Install this module.
    */
   public void install() {
-    List<Dependency> manifest = computeManifest();
-    for (Dependency entry : manifest) {
-      System.out.println(" - " + entry.getFilename());
-      System.out.println("   " + entry.getRepoUrl());
+    List<ModuleId> manifest = computeManifest();
+    for (ModuleId entry : manifest) {
+      System.out.println(" - " + entry.toString());
     }
   }
 
-  private List<Dependency> computeManifest() {
-    List<Dependency> manifest = new ArrayList<Dependency>();
-    manifest.add(new Dependency(this));
-    for (Dependency dependency : this.dependencies) {
-      if (dependency.isReference()) {
-        Module module = this.modules.get(dependency.getId());
-        assert module != null;
-        manifest.addAll(module.computeManifest());
-        continue;
+  List<ModuleId> computeManifest() {
+    try {
+      List<ModuleId> manifest = new ArrayList<ModuleId>();
+      manifest.add(this.id);
+      assert this.dependencies != null;
+      for (Dependency dependency : this.dependencies) {
+        if (dependency.isReference()) {
+          Module module = this.modules.get(dependency.getId());
+          assert module != null;
+          for (ModuleId entry : module.computeManifest()) {
+            if (manifest.contains(entry)) continue;
+            manifest.add(entry);
+          }
+          continue;
+        }
+        manifest.add(dependency.getId());
       }
-      manifest.add(dependency);
+      return manifest;
+    } catch (NullPointerException e) {
+      e.printStackTrace();
+      throw e;
     }
-    return manifest;
   }
 
 }

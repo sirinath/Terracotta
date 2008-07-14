@@ -4,7 +4,6 @@
  */
 package org.terracotta.tools.cli;
 
-import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
@@ -20,6 +19,7 @@ import org.terracotta.modules.tool.commands.UpdateCommand;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,18 +35,21 @@ public class TUCApp {
     commandRegistry.addCommand(injector.getInstance(ListCommand.class));
     commandRegistry.addCommand(injector.getInstance(UpdateCommand.class));
 
-    Options options = new Options();
-    options.addOption("h", "help", false, "Display help information.");
     try {
-      CommandLineParser parser = new GnuParser();
-      CommandLine cli = parser.parse(options, args);
-
-      List<String> argList = cli.getArgList();
-      String cmdname = argList.isEmpty() ? "help" : (String) argList.remove(0);
-
-      List<String> cmdargs = Arrays.asList(args);
-      if (!cmdargs.isEmpty()) cmdargs = cmdargs.subList(1, cmdargs.size());
-
+      String cmdname = "help";
+      List<String> cmdargs = new ArrayList<String>();
+      if (args.length != 0) {
+        if (args[0].startsWith("-")) {
+          Options options = new Options();
+          options.addOption("h", "help", false, "Display help information.");
+          CommandLineParser parser = new GnuParser();    
+          parser.parse(options, args);
+        } else {
+          cmdname = args[0];
+          cmdargs = new ArrayList<String>(Arrays.asList(args));
+          cmdargs.remove(0);
+        }
+      } 
       commandRegistry.executeCommand(cmdname, cmdargs);
     } catch (CommandException e) {
       System.err.println(e.getMessage());
