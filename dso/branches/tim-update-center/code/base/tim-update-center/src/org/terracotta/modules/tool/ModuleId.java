@@ -37,6 +37,10 @@ public class ModuleId implements Comparable {
   public String getVersion() {
     return version;
   }
+  
+  public String getSymbolicName() {
+    return ModuleId.computeSymbolicName(groupId, artifactId);
+  }
 
   /**
    * Sibling Modules are Modules with matching groupId and artifactId.
@@ -111,4 +115,7 @@ public class ModuleId implements Comparable {
     return ModuleId.computeSymbolicName(groupId, artifactId) + "-" + sortableVersion();
   }
 
+  public String toString() {
+    return getClass().getSimpleName() + ": " + getSymbolicName() + " [" + version + "]";
+  }
 }

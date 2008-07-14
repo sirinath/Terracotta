@@ -41,16 +41,14 @@ public class CommandRegistry {
     if (cmd == null) {
       throw new CommandException("Unknown command: " + commandName);
     }
-    CommandLineParser parser = new GnuParser();
 
+    CommandLineParser parser = new GnuParser();
     try {
       CommandLine cli = parser.parse(cmd.options(), args);
-
       if (cli.hasOption('h') || cli.hasOption("help")) {
         cmd.printHelp();
         return;
       }
-
       cmd.execute(cli);
     } catch (ParseException e) {
       throw new CommandException(e.getMessage(), e);

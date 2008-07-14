@@ -36,10 +36,17 @@ public class Dependency {
 
   Dependency(Element element) {
     this.id = ModuleId.create(element);
+    this.isReference = element.getName().equals("moduleRef");
+    if (this.isReference) {
+      this.repoUrl = null;
+      this.installPath = null;
+      this.filename = null;
+      return;
+    }
     this.repoUrl = element.getChildText("repoUrl");
     this.installPath = element.getChildText("installPath");
     this.filename = element.getChildText("filename");
-    this.isReference = (this.repoUrl == null) || (this.installPath == null) || (this.filename == null);
+    //this.isReference = (this.repoUrl == null) || (this.installPath == null) || (this.filename == null);
   }
 
   Dependency(Module module) {
@@ -49,5 +56,8 @@ public class Dependency {
     this.filename = module.getFilename();
     this.isReference = false;
   }
-  
+
+  public String toString() {
+    return getClass().getSimpleName() + (isReference ? "Ref" : "") + ": " + id.getSymbolicName() + " [" + id.getVersion() + "]";
+  }
 }
