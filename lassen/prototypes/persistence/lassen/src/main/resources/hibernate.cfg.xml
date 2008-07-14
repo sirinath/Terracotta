@@ -4,7 +4,8 @@
 	<session-factory>
 	 	<!-- Properties -->
 		<property name="hibernate.connection.driver_class">org.apache.derby.jdbc.EmbeddedDriver</property>
-		<property name="hibernate.connection.url">jdbc:derby:db/exam;create=true</property>
+		<property name="hibernate.connection.url">jdbc:derby:db/exam</property>
+		<!-- <property name="hibernate.connection.url">jdbc:derby:db/exam;create=true</property> -->
 		<!-- <property name="hibernate.connection.username">...</property> -->
 		<!-- <property name="hibernate.connection.password">...</property> -->
 		<property name="hibernate.dialect">org.hibernate.dialect.DerbyDialect</property>
