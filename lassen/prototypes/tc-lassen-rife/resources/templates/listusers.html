@@ -1,0 +1,14 @@
+<r:i name="common.blueprint"/>
+<r:bv name="page_title">Users</r:bv>
+<r:bv name="page_body">
+	<h1>These are the available users</h1>
+   	<ul>
+   		<r:v name="users"></r:v>
+   		<r:b name="user">
+			<li>
+				<a href="${v EXIT:QUERY:edit/}"><r:v name="username"/> - <r:v name="email"/></a>
+			</li>
+   		</r:b>
+	</ul>
+	<p><a href="${v EXIT:QUERY:index/}">back to index</a></p>
+</r:bv>

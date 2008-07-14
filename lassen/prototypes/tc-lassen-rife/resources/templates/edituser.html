@@ -1,0 +1,18 @@
+<r:i name="common.blueprint"/>
+<r:bv name="page_title">Edit user</r:bv>
+<r:bv name="page_body">
+   	<r:v name="content"/>
+   	<r:bv name="content">
+		<h1>Edit the user details</h1>
+		<form action="${v SUBMISSION:FORM:edit/}" method="post">
+			<r:v name="SUBMISSION:PARAMS:edit"/>
+			<r:i name="userform"/>
+			<input type="submit" />
+		</form>
+		<div><a href="${v EXIT:QUERY:index/}">Cancel edit</a></div>
+	</r:bv>
+	<r:b name="success">
+		<h1>Congrats <r:v name="PARAM:username"/>, your edit was successful!</h1>
+		<div><a href="${v EXIT:QUERY:index/}">Back to index</a></div>
+	</r:b>
+</r:bv>
