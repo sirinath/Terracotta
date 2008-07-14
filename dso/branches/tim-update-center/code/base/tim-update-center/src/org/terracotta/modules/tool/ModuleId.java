@@ -13,6 +13,9 @@ import org.jdom.Element;
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public class ModuleId implements Comparable {
+
+  public static final String DEFAULT_GROUPID = "org.terracotta.modules";
+  
   private final String groupId;
   private final String artifactId;
   private final String version;
@@ -24,6 +27,10 @@ public class ModuleId implements Comparable {
     this.groupId = groupId.trim();
     this.artifactId = artifactId.trim();
     this.version = version.trim();
+  }
+  
+  public boolean isDefaultGroupId() {
+    return DEFAULT_GROUPID.equals(groupId);
   }
 
   public String getGroupId() {

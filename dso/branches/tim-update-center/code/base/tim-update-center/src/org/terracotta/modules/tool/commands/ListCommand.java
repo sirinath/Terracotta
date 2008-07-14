@@ -50,6 +50,8 @@ public class ListCommand extends AbstractCommand {
         if (!matcher.find()) continue;
       }
 
+      String groupId = id.getGroupId().equals("org.terracotta.modules") ? "" : " [" + id.getGroupId() + "]";
+      
       if (cli.hasOption('v') || cli.hasOption("details")) {
         String versions = module.getId().getVersion();
         List<String> allversions = module.getVersions();
@@ -57,7 +59,7 @@ public class ListCommand extends AbstractCommand {
           Collections.reverse(allversions);
           versions = versions.concat("*, ").concat(StringUtils.join(allversions.iterator(), ", "));
         }
-        out().println(id.getSymbolicName() + " (" + versions + ")");
+        out().println(id.getArtifactId() + groupId + " (" + versions + ")");
         out().println("   Author   : " + module.getVendor());
         out().println("   Copyright: " + module.getCopyright());
         out().println("   Homepage : " + module.getWebsite());
@@ -66,7 +68,7 @@ public class ListCommand extends AbstractCommand {
         out().println("   " + module.getDescription().replaceAll("  ", " "));
         out().println();
       } else {
-        out().println(id.getSymbolicName() + " (" + id.getVersion() + ")");
+        out().println(id.getArtifactId() + groupId + " (" + id.getVersion() + ")");
       }
     }
   }

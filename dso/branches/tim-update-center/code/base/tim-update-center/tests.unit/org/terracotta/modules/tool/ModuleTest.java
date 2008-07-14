@@ -43,7 +43,6 @@ public class ModuleTest extends TestCase {
     assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
     assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
     
-    
     id = ModuleId.create("org.foo.bar", "with-one-direct-and-many-referenced-dependency", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);

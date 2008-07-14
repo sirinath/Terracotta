@@ -36,6 +36,11 @@ public interface Modules {
   public List<Module> get(String groupId, String artifactId);
 
   /**
+   * Return a the latest module matching the groupId and artifactId.
+   */
+  public Module getLatest(String groupId, String artifactId);
+  
+  /**
    * The TC version that binds this list of modules.
    */
   public String tcVersion();

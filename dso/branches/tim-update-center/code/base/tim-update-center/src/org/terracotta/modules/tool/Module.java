@@ -48,8 +48,10 @@ public class Module implements Comparable {
     return filename;
   }
 
-  public List<Dependency> dependencies() {
-    return Collections.unmodifiableList(dependencies);
+  public List<ModuleId> dependencies() {
+    List<ModuleId> list = computeManifest();
+    list.remove(id);
+    return list;
   }
 
   public String getTcVersion() {
@@ -80,7 +82,7 @@ public class Module implements Comparable {
    * Return the list of direct dependencies of this module.
    */
   public List<Dependency> getDependencies() {
-    return dependencies;
+    return Collections.unmodifiableList(dependencies);
   }
 
   public static Module create(Modules modules, Element module) {
@@ -213,27 +215,22 @@ public class Module implements Comparable {
   }
 
   List<ModuleId> computeManifest() {
-    try {
-      List<ModuleId> manifest = new ArrayList<ModuleId>();
-      manifest.add(this.id);
-      assert this.dependencies != null;
-      for (Dependency dependency : this.dependencies) {
-        if (dependency.isReference()) {
-          Module module = this.modules.get(dependency.getId());
-          assert module != null;
-          for (ModuleId entry : module.computeManifest()) {
-            if (manifest.contains(entry)) continue;
-            manifest.add(entry);
-          }
-          continue;
+    List<ModuleId> manifest = new ArrayList<ModuleId>();
+    manifest.add(this.id);
+    assert this.dependencies != null;
+    for (Dependency dependency : this.dependencies) {
+      if (dependency.isReference()) {
+        Module module = this.modules.get(dependency.getId());
+        assert module != null;
+        for (ModuleId entry : module.computeManifest()) {
+          if (manifest.contains(entry)) continue;
+          manifest.add(entry);
         }
-        manifest.add(dependency.getId());
+        continue;
       }
-      return manifest;
-    } catch (NullPointerException e) {
-      e.printStackTrace();
-      throw e;
+      manifest.add(dependency.getId());
     }
+    return manifest;
   }
 
 }
