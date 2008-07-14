@@ -1,0 +1,297 @@
+<project default="package" basedir="." name="Lassen">
+
+	<property name="name" value="lassen"/>
+	<property name="screenname" value="Lassen"/>
+	<property name="year" value="2008"/>
+
+	<property environment="env"/>
+
+	<property name="fork" value="no"/>
+	<property name="executable" value="javac"/>
+	<property name="debug" value="on"/>
+	<property name="optimize" value="off"/>
+	<property name="deprecation" value="on"/>
+
+	<property name="lib.dir" value="${basedir}/lib"/>
+	<property name="src.dir" value="${basedir}/src"/>
+	<property name="tests.dir" value="${basedir}/tests"/>
+	<property name="resources.dir" value="${basedir}/resources"/>
+	<property name="templates.dir" value="${resources.dir}/templates"/>
+	<property name="web.dir" value="${basedir}/web"/>
+	<property name="jetty.dir" value="${basedir}/jetty-5.1.4"/>
+
+	<property name="build.dir" value="${basedir}/build"/>
+	<property name="build.classes" value="${build.dir}/classes"/>
+	<property name="build.debug" value="${build.dir}/debug"/>
+	<property name="build.release" value="${build.dir}/release"/>
+	<property name="build.dist" value="${build.dir}/dist"/>
+	<property name="build.tests" value="${build.dir}/tests"/>
+
+	<path id="application.classpath">
+		<pathelement location="${build.java}"/>
+		<pathelement location="${src.dir}"/>
+		<pathelement location="${resources.dir}"/>
+	</path>
+
+	<path id="lib.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="jetty.classpath">
+		<fileset dir="${jetty.dir}/lib">
+			<include name="*.jar"/>
+		</fileset>
+		<fileset dir="${jetty.dir}/ext">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="lib.tests.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="run.classpath">
+		<path refid="jetty.classpath"/>
+		<path refid="lib.classpath"/>
+		<pathelement location="${src.dir}"/>
+		<pathelement location="${resources.dir}"/>
+		<pathelement location="${build.classes}"/>
+	</path>
+
+	<path id="test.classpath">
+		<path refid="jetty.classpath"/>
+		<path refid="lib.tests.classpath"/>
+		<pathelement location="${src.dir}"/>
+		<pathelement location="${resources.dir}"/>
+		<pathelement location="${build.tests}"/>
+	</path>
+
+	<!-- =================================================================== -->
+	<!-- Initialization target                                               -->
+	<!-- =================================================================== -->
+
+	<target name="init">
+		<tstamp/>
+		<loadfile property="version" srcFile="${resources.dir}/VERSION">
+			<filterchain>
+				<striplinebreaks/>
+			</filterchain>
+		</loadfile>
+
+		<echo message="=== ${screenname} ${version} [${year}] ==="/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Help on usage                                                       -->
+	<!-- =================================================================== -->
+	<target name="usage">
+		<echo message=""/>
+		<echo message=""/>
+		<echo message="${screenname} Build file"/>
+		<echo message="-------------------------------------------------------------"/>
+		<echo message=""/>
+		<echo message=" available targets are:"/>
+		<echo message=""/>
+		<echo message="   run     --&gt; runs the web application"/>
+		<echo message="   test    --&gt; tests the web application"/>
+		<echo message="   package --&gt; generates the war file"/>
+		<echo message="   clean   --&gt; cleans up the directory"/>
+		<echo message=""/>
+		<echo message=" See the comments inside the build.xml file for more details."/>
+		<echo message="-------------------------------------------------------------"/>
+		<echo message=""/>
+		<echo message=""/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Clean targets                                                       -->
+	<!-- =================================================================== -->
+	<target name="clean" depends="init">
+		<delete failonerror="false">
+			<fileset dir="${build.classes}" includes="*omnicore*.class"/>
+		</delete>
+		<delete failonerror="false" dir="${build.classes}"/>
+		<delete failonerror="false" dir="${build.release}"/>
+		<delete failonerror="false" dir="${build.debug}"/>
+		<delete failonerror="false" dir="${build.dist}"/>
+		<delete failonerror="false" dir="${build.tests}"/>
+		<delete failonerror="false" dir="${web.dir}/WEB-INF/classes/com/uwyn/rife"/>
+		<delete failonerror="false">
+			<fileset dir="${jetty.dir}/logs" includes="*.log"/>
+		</delete>
+	</target> 
+
+	<!-- =================================================================== -->
+	<!-- Prepares the build directory                                        -->
+	<!-- =================================================================== -->
+	<target name="prepare" depends="init">
+		<mkdir dir="${build.dir}"/>
+		<mkdir dir="${build.classes}"/>
+		<mkdir dir="${build.tests}"/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Compiles the java sources                                           -->
+	<!-- =================================================================== -->
+	<target name="compile" depends="prepare">
+		<javac destdir="${build.classes}"
+				fork="${fork}"
+				debug="${debug}"
+				executable="${executable}">
+			<src path="${src.dir}"/>
+			<compilerarg value="-g"/>
+			<compilerarg value="-encoding"/>
+			<compilerarg value="UTF-8"/>
+			<classpath refid="application.classpath"/>
+			<classpath refid="lib.classpath"/>
+		</javac>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Pre-compiles the templates                                          -->
+	<!-- =================================================================== -->
+	<target name="precompile" depends="prepare">
+		<echo message="Precompiling html templates:"/>
+		<java classname="com.uwyn.rife.template.TemplateDeployer"
+				failonerror="true"
+				fork="true">
+			<arg value="-verbose"/>
+			<arg value="-t"/>
+			<arg value="enginehtml"/>
+			<arg value="-d"/>
+			<arg value="${build.classes}"/>
+			<arg value="-encoding"/>
+			<arg value="UTF-8"/>
+			<arg value="${templates.dir}"/>
+			<classpath refid="application.classpath"/>
+			<classpath refid="lib.classpath"/>
+		</java>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Compiles the test sources                                           -->
+	<!-- =================================================================== -->
+	<target name="compiletests" depends="prepare">
+		<javac destdir="${build.tests}"
+				fork="${fork}"
+				debug="${debug}"
+				executable="${executable}">
+			<src path="${tests.dir}"/>
+			<compilerarg value="-g"/>
+			<compilerarg value="-encoding"/>
+			<compilerarg value="UTF-8"/>
+			<classpath refid="application.classpath"/>
+			<classpath refid="lib.tests.classpath"/>
+		</javac>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Creates the JAR packages                                            -->
+	<!-- =================================================================== -->
+	<target name="jar" depends="compile,precompile">
+		<mkdir dir="${build.dist}"/>
+		<jar jarfile="${build.dist}/${name}-${version}.jar">
+			<fileset dir="${build.classes}" includes="**"/>
+			<fileset dir="${resources.dir}">
+				<include name="**"/>
+				<exclude name="templates/**"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Creates the WAR package                                             -->
+	<!-- =================================================================== -->
+	<target name="war" depends="jar">
+		<war warfile="${build.dist}/${name}-${version}.war"
+				webxml="${web.dir}/WEB-INF/web.xml"
+				manifest="${web.dir}/META-INF/MANIFEST.MF">
+			<fileset dir="${web.dir}">
+				<include name="**"/>
+				<exclude name="WEB-INF/**"/>
+				<exclude name="META-INF/**"/>
+			</fileset>
+			<lib dir="${lib.dir}">
+				<include name="*.jar"/>
+				<exclude name="junit*.jar"/>
+				<exclude name="nekohtml*.jar"/>
+				<exclude name="resolver*.jar"/>
+				<exclude name="xerces*.jar"/>
+				<exclude name="xml-apis*.jar"/>
+			</lib>
+			<lib dir="${build.dist}">
+				<include name="${name}-${version}.jar"/>
+			</lib>
+		</war>
+
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Package the application                                             -->
+	<!-- =================================================================== -->
+	<target name="package" depends="war"/>
+
+	<!-- =================================================================== -->
+	<!-- Runs the application                                                -->
+	<!-- =================================================================== -->
+	<target name="run" depends="compile">
+		<java classname="org.mortbay.jetty.Server"
+			dir="${jetty.dir}"
+			fork="yes"
+			failonerror="yes">
+			<jvmarg line="-Djetty.home=${jetty.dir}"/>
+			<jvmarg line="-Drife.webapp.path=../src:../build/classes:../lib"/>
+			<arg line="${jetty.dir}/etc/jetty.xml"/>
+			<classpath refid="run.classpath"/>
+		</java>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Tests the application                                               -->
+	<!-- =================================================================== -->
+	<target name="test" depends="jar,compiletests">
+		<java classname="com.uwyn.rife.test.RunWithEngineClassLoader"
+			dir="${tests.dir}"
+			fork="yes"
+			failonerror="yes">
+			<jvmarg line="-Drife.webapp.path=../src:../tests:../build/classes:../build/tests:../lib:../build/dist"/>
+			<arg line="junit.textui.TestRunner"/>
+			<arg line="org.terracotta.lassen.TestApplication"/>
+			<classpath refid="test.classpath"/>
+			<classpath>
+				<pathelement location="${build.dist}/${name}-${version}.jar"/>
+			</classpath>
+		</java>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Debug task for debugging in Netbeans                                -->
+	<!-- =================================================================== -->
+        <target name="debug" depends="compile" description="Debug Project">
+            <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+            <nbjpdastart name="RIFE-Jumpstart" addressproperty="jpda.address" transport="dt_socket">
+                <classpath refid="run.classpath"/>
+                <!-- Optional - If source roots are properly declared in project, should
+                work without setting source path.
+                <sourcepath path="debug.sourcepath"/> -->
+            </nbjpdastart>
+            <java classname="org.mortbay.jetty.Server"
+                dir="${jetty.dir}"
+                fork="yes"
+                failonerror="yes">
+                <jvmarg value="-Xdebug"/>
+                <jvmarg value="-Xnoagent"/>
+                <jvmarg value="-Djava.compiler=none"/>
+                <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+                <jvmarg line="-Djetty.home=${jetty.dir}"/>
+                <jvmarg line="-Drife.webapp.path=../src:../build/classes:../lib"/>
+                <arg line="etc/jetty.xml"/>
+                <classpath refid="run.classpath"/>
+            </java>
+        </target>
+	
+</project>

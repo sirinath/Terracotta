@@ -1,0 +1,18 @@
+<r:i name="common.blueprint"/>
+<r:bv name="page_title">Registration</r:bv>
+<r:bv name="page_body">
+   	<r:v name="content"/>
+   	<r:bv name="content">
+		<h1>Please provide your personal details</h1>
+		<form action="${v SUBMISSION:FORM:register/}" method="post">
+			<r:v name="SUBMISSION:PARAMS:register"/>
+			<r:i name="userform"/>
+			<input type="submit" />
+		</form>
+		<div><a href="${v EXIT:QUERY:index/}">Cancel registration</a></div>
+	</r:bv>
+	<r:b name="success">
+		<h1>Welcome <r:v name="PARAM:username"/>, your registration was successful!</h1>
+		<div><a href="${v EXIT:QUERY:index/}">Back to index</a></div>
+	</r:b>
+</r:bv>
