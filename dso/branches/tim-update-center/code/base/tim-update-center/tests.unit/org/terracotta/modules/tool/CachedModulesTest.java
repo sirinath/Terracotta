@@ -97,6 +97,21 @@ public class CachedModulesTest extends TestCase {
     }
   }
   
+  public void testGetLatest() {
+    Modules modules = getModules("2.5.4", "/testList.xml");
+    assertNotNull(modules);
+    assertFalse(modules.list().isEmpty());
+    assertEquals(4, modules.list().size());
+    List<Module> list = modules.get("org.foo.bar", "tim-apache-struts-1.1");
+    assertNotNull(list);
+    assertFalse(list.isEmpty());
+    assertEquals(3, list.size());
+    Module latest = modules.getLatest("org.foo.bar", "tim-apache-struts-1.1");
+    assertNotNull(latest);
+    assertTrue(latest.isLatest());
+    assertTrue(latest.getId().getVersion().equals("1.0.3"));
+  }
+  
   private Modules getModules(String tcversion, String file) {
     try {
       InputStream data = this.getClass().getResourceAsStream(file);

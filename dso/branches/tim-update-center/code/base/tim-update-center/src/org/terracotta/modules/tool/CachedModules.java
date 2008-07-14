@@ -93,4 +93,13 @@ class CachedModules implements Modules {
     return list;
   }
 
+  /**
+   * Return a the latest module matching the groupId and artifactId.
+   */
+  public Module getLatest(String groupId, String artifactId) {
+    List<Module> list = get(groupId, artifactId);
+    Collections.reverse(list);
+    return list.isEmpty() ? null : list.get(0);
+  }
+
 }

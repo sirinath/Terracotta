@@ -37,7 +37,7 @@ public interface Command {
    * @param commandLine The {@link CommandLine} object containing the parsed
    *        options and any remaining command-line arguments.
    */
-  public void execute(CommandLine commandLine);
+  public void execute(CommandLine commandLine) throws CommandException;
 
   /**
    * Print the help text for this command.
