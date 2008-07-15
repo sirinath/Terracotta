@@ -11,7 +11,7 @@ import junit.framework.TestCase;
 
 public class ModuleTest extends TestCase {
 
-  public void testInstall() {
+  public void testDependencies() {
     Modules modules = getModules("9.9.9", "/testInstall.xml");
     assertNotNull(modules);
     assertFalse(modules.list().isEmpty());
@@ -20,95 +20,87 @@ public class ModuleTest extends TestCase {
     ModuleId id = ModuleId.create("org.foo.bar", "with-no-dependencies", "1.0.0");
     Module module = modules.get(id);
     assertNotNull(module);
-    List<ModuleId> manifest = module.computeManifest();
-    assertFalse(manifest.isEmpty());
-    assertTrue(manifest.get(0).equals(id));
+    List<ModuleId> manifest = module.dependencies();
+    assertTrue(manifest.isEmpty());
     
     id = ModuleId.create("org.foo.bar", "with-one-direct-dependency", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(2, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertEquals(1, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
 
     id = ModuleId.create("org.foo.bar", "with-one-direct-and-one-referenced-dependency", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(3, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
+    assertEquals(2, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
     
     id = ModuleId.create("org.foo.bar", "with-one-direct-and-many-referenced-dependency", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(6, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
-    assertTrue(manifest.get(5).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.3")));
+    assertEquals(5, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
+    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.3")));
 
     id = ModuleId.create("org.foo.bar", "with-many-direct-and-many-referenced-dependency", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(8, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.1")));
-    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.2")));
-    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(5).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(6).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
-    assertTrue(manifest.get(7).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.3")));
+    assertEquals(7, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.1")));
+    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.2")));
+    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(5).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
+    assertTrue(manifest.get(6).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.3")));
 
     id = ModuleId.create("org.foo.bar", "with-direct-and-deep-referenced-dependencies", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(5, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
+    assertEquals(4, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
+    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
 
     id = ModuleId.create("org.foo.bar", "with-deep-referenced-dependencies", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(5, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
-    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertEquals(4, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
+    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
 
     id = ModuleId.create("org.foo.bar", "with-direct-deep-and-shallow-referenced-dependencies", "1.0.0");
     module = modules.get(id);
     assertNotNull(module);
-    manifest = module.computeManifest();
+    manifest = module.dependencies();
     assertFalse(manifest.isEmpty());
-    assertEquals(8, manifest.size());
-    assertTrue(manifest.get(0).equals(id));
-    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
-    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
-    assertTrue(manifest.get(5).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
-    assertTrue(manifest.get(6).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
-    assertTrue(manifest.get(7).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
+    assertEquals(7, manifest.size());
+    assertTrue(manifest.get(0).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(1).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(2).equals(ModuleId.create("org.foo.bar", "deep-referenced-dependency", "1.0.2")));
+    assertTrue(manifest.get(3).equals(ModuleId.create("org.foo.bar", "direct-dependency", "1.0.0")));
+    assertTrue(manifest.get(4).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.0")));
+    assertTrue(manifest.get(5).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.1")));
+    assertTrue(manifest.get(6).equals(ModuleId.create("org.foo.bar", "referenced-dependency", "1.0.2")));
   }
   
   public void testIsOlder() {
