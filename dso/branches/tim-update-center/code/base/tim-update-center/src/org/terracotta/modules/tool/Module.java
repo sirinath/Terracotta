@@ -4,11 +4,25 @@
  */
 package org.terracotta.modules.tool;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * A single Terracotta Integration Module (TIM) artifact. A TIM has a composite unique identifier consisting of groupId,
@@ -49,8 +63,10 @@ public class Module implements Comparable {
   }
 
   public List<ModuleId> dependencies() {
-    List<ModuleId> list = computeManifest();
+    List<ModuleId> list = new ArrayList<ModuleId>();
+    list.addAll(computeManifest().keySet());
     list.remove(id);
+    Collections.sort(list);
     return list;
   }
 
@@ -152,17 +168,17 @@ public class Module implements Comparable {
   }
 
   /**
-   * Returns a list of all available version for this module.
-   * The list returned does not include the version of this module. 
+   * Returns a list of all available version for this module. The list returned does not include the version of this
+   * module.
    */
   public List<String> getVersions() {
     return getVersions(false);
   }
-  
+
   public List<String> getAllVersions() {
     return getVersions(true);
   }
-  
+
   private List<String> getVersions(boolean inclusive) {
     List<ModuleId> idlist = new ArrayList<ModuleId>();
     for (Module module : this.modules.list()) {
@@ -206,29 +222,166 @@ public class Module implements Comparable {
 
   /**
    * Install this module.
+   * 
+   * @throws IOException
    */
-  public void install() {
-    List<ModuleId> manifest = computeManifest();
-    for (ModuleId entry : manifest) {
-      System.out.println(" - " + entry.toString());
+  public void install(boolean overwrite, boolean pretend, PrintWriter out) {
+    Map<ModuleId, Dependency> manifest = computeManifest();
+    List<ModuleId> list = new ArrayList<ModuleId>(manifest.keySet());
+    for (ModuleId key : list) {
+      Dependency dependency = manifest.get(key);
+
+      File destdir = new File(installDirectory(), dependency.getInstallPath());
+      File destfile = new File(destdir, dependency.getFilename());
+      if (isInstalled(dependency) && !overwrite) {
+        out.println("Skipped: " + destfile.getName());
+        continue;
+      }
+
+      if (!pretend) {
+        File srcfile = null;
+        try {
+          srcfile = File.createTempFile("tuc", null);
+          download(dependency.getRepoUrl(), srcfile.getCanonicalPath());
+        } catch (IOException e) {
+          out.println("Unable to download: " + e.getMessage());
+          continue;
+        }
+
+        try {
+          FileUtils.forceMkdir(destdir);
+          FileUtils.copyFile(srcfile, destfile);
+        } catch (IOException e) {
+          out.println("Unable to install: " + e.getMessage());
+          continue;
+        }
+      }
+      out.println("Installed: " + destfile);
     }
   }
 
-  List<ModuleId> computeManifest() {
-    List<ModuleId> manifest = new ArrayList<ModuleId>();
-    manifest.add(this.id);
+  static void download(String address, String destpath) throws IOException {
+    OutputStream out = null;
+    URLConnection conn = null;
+    InputStream in = null;
+    try {
+      URL url = new URL(address);
+      out = new BufferedOutputStream(new FileOutputStream(destpath));
+      conn = url.openConnection();
+      in = conn.getInputStream();
+      byte[] buffer = new byte[1024];
+      int bytesread = 0;
+      long byteswritten = 0;
+      while ((bytesread = in.read(buffer)) != -1) {
+        out.write(buffer, 0, bytesread);
+        byteswritten += bytesread;
+      }
+    } finally {
+      try {
+        if (in != null) in.close();
+        if (out != null) out.close();
+      } catch (IOException ioe) {
+        //
+      }
+    }
+  }
+
+  private File installPath(String path, String name) {
+    return new File(new File(installDirectory(), path), name);
+  }
+
+  private File installPath() {
+    return installPath(installPath, filename);
+  }
+
+  private File installDirectory() {
+    String rootdir = System.getProperty("tc.install-root", System.getProperty("java.io.tmpdir"));
+    return new File(rootdir, "modules");
+  }
+
+  public boolean isInstalled(Dependency dependency) {
+    return installPath(dependency.getInstallPath(), dependency.getFilename()).exists();
+  }
+
+  public boolean isInstalled() {
+    return installPath().exists();
+  }
+
+  private void printNotes(PrintWriter out, boolean printDigest) {
+    if (printDigest) printLongDigest(out);
+    out.println("   Compatible with " + (tcVersion.equals("*") ? "any Terracotta version." : "TC " + tcVersion));
+    if (isInstalled()) out.println("   Installed at " + installDirectory());
+  }
+
+  public void printDetails(PrintWriter out) {
+    printLongDigest(out);
+    out.println();
+    out.println("   groupId   : " + id.getGroupId());
+    out.println("   artifactId: " + id.getArtifactId());
+    out.println("   version   : " + id.getVersion());
+    out.println();
+    List<ModuleId> requires = dependencies();
+    if (!requires.isEmpty()) {
+      out.print("   Requires  : ");
+      Collections.sort(requires);
+      for (ModuleId m : requires) {
+        out.print(m.getArtifactId());
+        if (!m.isDefaultGroupId()) out.print(" [" + m.getGroupId() + "]");
+        out.println(" (" + m.getVersion() + ")");
+        out.print("               ");
+      }
+    }
+    out.println();
+    printSummary(out, false);
+  }
+
+  private void printSummary(PrintWriter out, boolean printDigest) {
+    if (printDigest) printLongDigest(out);
+    out.println("   Author    : " + vendor);
+    out.println("   Copyright : " + copyright);
+    out.println("   Homepage  : " + website);
+    out.println("   Download  : " + repoUrl);
+    out.println();
+    out.println("   " + description.replaceAll("  ", " "));
+    out.println();
+    printNotes(out, false);
+  }
+
+  public void printSummary(PrintWriter out) {
+    printSummary(out, true);
+  }
+
+  private void printLongDigest(PrintWriter out) {
+    String groupId = id.isDefaultGroupId() ? "" : " [" + id.getGroupId() + "]";
+    String versions = id.getVersion();
+    List<String> allversions = getVersions();
+    if (!allversions.isEmpty()) {
+      Collections.reverse(allversions);
+      versions = versions.concat("*, ").concat(StringUtils.join(allversions.iterator(), ", "));
+    }
+    out.println(id.getArtifactId() + groupId + " (" + versions + ")");
+  }
+
+  public void printDigest(PrintWriter out) {
+    String groupId = id.isDefaultGroupId() ? "" : " [" + id.getGroupId() + "]";
+    out.println(id.getArtifactId() + groupId + " (" + id.getVersion() + ")");
+  }
+
+  private Map<ModuleId, Dependency> computeManifest() {
+    Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
+    manifest.put(this.id, new Dependency(this));
     assert this.dependencies != null;
     for (Dependency dependency : this.dependencies) {
       if (dependency.isReference()) {
         Module module = this.modules.get(dependency.getId());
         assert module != null;
-        for (ModuleId entry : module.computeManifest()) {
-          if (manifest.contains(entry)) continue;
-          manifest.add(entry);
+        for (Entry<ModuleId, Dependency> entry : module.computeManifest().entrySet()) {
+          if (manifest.containsKey(entry.getKey())) continue;
+          manifest.put(entry.getKey(), entry.getValue());
         }
         continue;
       }
-      manifest.add(dependency.getId());
+      manifest.put(dependency.getId(), dependency);
     }
     return manifest;
   }
