@@ -234,6 +234,7 @@ public class Module implements Comparable {
       File destdir = new File(installDirectory(), dependency.getInstallPath());
       File destfile = new File(destdir, dependency.getFilename());
       if (isInstalled(dependency) && !overwrite) {
+        //TODO: display module info instead of jar filename
         out.println("Skipped: " + destfile.getName());
         continue;
       }
@@ -242,9 +243,9 @@ public class Module implements Comparable {
         File srcfile = null;
         try {
           srcfile = File.createTempFile("tuc", null);
-          download(dependency.getRepoUrl(), srcfile.getCanonicalPath());
+          download(dependency.getRepoUrl(), canonicalize(srcfile));
         } catch (IOException e) {
-          out.println("Unable to download: " + e.getMessage());
+          out.println("Unable to download from URL: " + e.getMessage());
           continue;
         }
 
@@ -252,14 +253,23 @@ public class Module implements Comparable {
           FileUtils.forceMkdir(destdir);
           FileUtils.copyFile(srcfile, destfile);
         } catch (IOException e) {
-          out.println("Unable to install: " + e.getMessage());
+          //TODO: display module info instead of jar filename
+          out.println("Unable to install: " + destfile.getName());
           continue;
         }
       }
-      out.println("Installed: " + destfile);
+      //TODO: display module info instead of jar filename
+      out.println("Installed: " + canonicalize(destfile));
     }
   }
 
+  private static String canonicalize(File path) {
+    try {
+      return path.getCanonicalPath();
+    } catch (IOException e) {
+      return path.toString();
+    }
+  }
   static void download(String address, String destpath) throws IOException {
     OutputStream out = null;
     URLConnection conn = null;

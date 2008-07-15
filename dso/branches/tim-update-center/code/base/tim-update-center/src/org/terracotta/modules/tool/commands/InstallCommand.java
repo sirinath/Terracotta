@@ -42,10 +42,10 @@ public class InstallCommand extends AbstractCommand {
   
   private void install(String groupId, String artifactId, String version, boolean overwrite, boolean pretend) {
     Module module = null;
-
+    
     if (version == null) module = modules.getLatest(groupId, artifactId);
     else module = modules.get(ModuleId.create(groupId, artifactId, version));
-  
+
     if (module == null) {
       out().println();
       out().println("Unable to locate the Terracotta Integration Module named '" + artifactId + "'");
@@ -68,14 +68,13 @@ public class InstallCommand extends AbstractCommand {
     boolean overwrite = cli.hasOption("overwrite");
     boolean pretend = cli.hasOption("pretend");
     
-    out().println();
     if (cli.hasOption("all")) {
       installAll(overwrite, pretend);
       return;
     } 
     
     List<String> args = cli.getArgList();
-    if (args.isEmpty()) throw new CommandException("You need to at least specify the name of the Integration Module.");
+    if (args.isEmpty()) throw new CommandException("\nYou need to at least specify the name of the Integration Module.");
     String artifactId = args.remove(0);
     String version = args.isEmpty() ? null : args.remove(0);
     String groupId = cli.getOptionValue("groupid", ModuleId.DEFAULT_GROUPID);
