@@ -1,0 +1,5 @@
+mvn exec:java -Dexec.mainClass=org.terracotta.reference.exam.domain.Main
+
+mvn hibernate3:hbm2ddl
+
+

@@ -1,7 +1,7 @@
 package org.terracotta.reference.exam.domain;
 
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.AnnotationConfiguration;
 
 public class HibernateUtil {
 
@@ -9,7 +9,7 @@ public class HibernateUtil {
   
   static { 
     try { 
-      sessionFactory = new Configuration().configure().buildSessionFactory();
+      sessionFactory = new AnnotationConfiguration().configure().buildSessionFactory();
     } catch(Throwable t) {
       throw new ExceptionInInitializerError(t);
     }
