@@ -4,6 +4,8 @@
 package org.terracotta.modules.tool.util;
 
 
+import org.terracotta.modules.tool.util.DownloadUtil.DownloadOption;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.Proxy;
@@ -87,6 +89,9 @@ public class DataLoader {
     if (!localDataFile.exists())
       return false;
 
+    if (remoteDataUrl == null)
+      return true;
+
     switch (this.cacheRefreshPolicy) {
       case NEVER:
         return true;
@@ -122,6 +127,8 @@ public class DataLoader {
 
   public void loadDataFile() throws IOException {
     DownloadUtil downloader = new DownloadUtil(this.proxy);
-    downloader.download(this.remoteDataUrl, localDataFile);
+    downloader.download(this.remoteDataUrl, localDataFile,
+                        DownloadOption.CREATE_INTERVENING_DIRECTORIES,
+                        DownloadOption.OVERWRITE_EXISTING);
   }
 }
