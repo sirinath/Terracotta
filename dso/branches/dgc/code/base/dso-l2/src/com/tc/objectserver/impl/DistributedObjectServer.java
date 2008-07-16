@@ -583,7 +583,7 @@ public class DistributedObjectServer implements TCDumper {
                                           persistenceTransactionProvider, faultManagedObjectStage.getSink(),
                                           flushManagedObjectStage.getSink());
     objectManager.setStatsListener(objMgrStats);
-    objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, verboseGC,
+    objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, objectManagerConfig,
                                                                        statisticsAgentSubSystem));
     managedObjectChangeListenerProvider.setListener(objectManager);
 
