@@ -69,6 +69,15 @@ public class DataLoader {
     this.proxy = proxy;
   }
 
+  public CacheRefreshPolicy getCacheRefreshPolicy() {
+    return cacheRefreshPolicy;
+  }
+
+  @Inject
+  public void setCacheRefreshPolicy(CacheRefreshPolicy cacheRefreshPolicy) {
+    this.cacheRefreshPolicy = cacheRefreshPolicy;
+  }
+
   /**
    * Returns a <code>File<code> object referring to the local data file, loading
    * from the remote data URL if {@link #isLocalDataFresh()} returns false.
@@ -77,8 +86,18 @@ public class DataLoader {
    * to refer to a file that {@link File#exists()}.
    */
   public File getDataFile() throws IOException {
-    if (!isLocalDataFresh()) {
-      loadDataFile();
+    try {
+      if (!isLocalDataFresh()) {
+        loadDataFile();
+      }
+    } catch (IOException e) {
+      if (this.localDataFile.exists()) {
+        // TODO: use logging instead of or in addition to System.err
+        System.err.println("WARNING: Failed to download remote data file.  Using cached copy.");
+      }
+      else {
+        throw e;
+      }
     }
     return localDataFile;
   }
