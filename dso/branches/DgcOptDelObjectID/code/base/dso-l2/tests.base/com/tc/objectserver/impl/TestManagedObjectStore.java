@@ -31,10 +31,6 @@ public class TestManagedObjectStore implements ManagedObjectStore {
     return containsKey;
   }
   
-  public boolean containsPersistableCollectionType(ObjectID id) {
-    throw new UnsupportedOperationException();
-  }
-
   public void addNewObject(ManagedObject managed) {
     addNewWasCalled = true;
     count++;

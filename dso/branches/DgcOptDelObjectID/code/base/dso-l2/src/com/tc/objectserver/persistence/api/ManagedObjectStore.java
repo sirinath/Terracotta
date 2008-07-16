@@ -42,8 +42,6 @@ public interface ManagedObjectStore extends ManagedObjectProvider, ObjectIDSeque
 
   public boolean containsObject(ObjectID id);
   
-  public boolean containsPersistableCollectionType(ObjectID id);
-
   public ObjectID getRootID(String name);
 
   public Set getRoots();

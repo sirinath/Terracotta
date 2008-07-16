@@ -7,7 +7,6 @@ package com.tc.objectserver.persistence.sleepycat;
 import com.sleepycat.je.OperationStatus;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
@@ -41,7 +40,5 @@ public class NullObjectIDManager implements ObjectIDManager {
   public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
-    return;
-  }
+
 }

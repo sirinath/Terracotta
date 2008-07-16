@@ -6,7 +6,6 @@ package com.tc.objectserver.persistence.api;
 
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.util.Collection;
@@ -30,7 +29,7 @@ public interface ManagedObjectPersistor {
 
   public void setNextAvailableObjectID(long startID);
 
-  public SyncObjectIdSet getAllObjectIDs(ObjectIDSet persistableCollectionTypeOidSet);
+  public SyncObjectIdSet getAllObjectIDs();
 
   public void saveObject(PersistenceTransaction tx, ManagedObject managedObject);
 
@@ -39,7 +38,11 @@ public interface ManagedObjectPersistor {
   public void deleteAllObjectsByID(PersistenceTransaction tx, SortedSet<ObjectID> ids);
 
   public Map loadRootNamesToIDs();
+  
+  public boolean containsPersistableCollectionType(ObjectID id);
 
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore);
+  public boolean addPersistableCollectionTypeObject(ObjectID id);
+
+  public void removePersistableCollectionTypeObject(Collection ids);
 
 }

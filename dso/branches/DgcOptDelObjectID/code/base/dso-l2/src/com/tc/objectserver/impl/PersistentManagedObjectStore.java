@@ -30,7 +30,6 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
   private final static TCLogger        logger = TCLogging.getLogger(PersistentManagedObjectStore.class);
 
   private final SyncObjectIdSet        extantObjectIDs;
-  private final ObjectIDSet            extantPersistableCollectionTypeOidSet;
   private final ManagedObjectPersistor objectPersistor;
   private final Sink                   gcDisposerSink;
   private boolean                      inShutdown;
@@ -38,9 +37,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
   public PersistentManagedObjectStore(ManagedObjectPersistor persistor, Sink gcDisposerSink) {
     this.objectPersistor = persistor;
     this.gcDisposerSink = gcDisposerSink;
-    this.extantPersistableCollectionTypeOidSet = new ObjectIDSet();
-    this.extantObjectIDs = objectPersistor.getAllObjectIDs(this.extantPersistableCollectionTypeOidSet);
-    persistor.setManagedObjectStore(this);
+    this.extantObjectIDs = objectPersistor.getAllObjectIDs();
   }
 
   public synchronized int getObjectCount() {
@@ -81,17 +78,12 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     return extantObjectIDs.contains(id);
   }
 
-  public boolean containsPersistableCollectionType(ObjectID id) {
-    assertNotInShutdown();
-    return extantPersistableCollectionTypeOidSet.contains(id);
-  }
-
   public void addNewObject(ManagedObject managed) {
     assertNotInShutdown();
     boolean result = extantObjectIDs.add(managed.getID());
     Assert.eval(result);
     if (PersistentCollectionsUtil.isPersistableCollectionType(managed.getManagedObjectState().getType())) {
-      result = extantPersistableCollectionTypeOidSet.add(managed.getID());
+      result = this.objectPersistor.addPersistableCollectionTypeObject(managed.getID());
       Assert.eval(result);
     }
   }
@@ -110,7 +102,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     assertNotInShutdown();
     this.objectPersistor.deleteAllObjectsByID(tx, ids);
     this.extantObjectIDs.removeAll(ids);
-    this.extantPersistableCollectionTypeOidSet.removeAll(ids);
+    this.objectPersistor.removePersistableCollectionTypeObject(ids);
   }
 
   /**
@@ -120,7 +112,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     assertNotInShutdown();
     SortedSet<ObjectID> ids = gcResult.getGCedObjectIDs();
     this.extantObjectIDs.removeAll(ids);
-    this.extantPersistableCollectionTypeOidSet.removeAll(ids);
+    this.objectPersistor.removePersistableCollectionTypeObject(ids);
     logger.info("Scheduling gc results " + gcResult + " to be deleted in the background");
     gcDisposerSink.add(gcResult);
   }
@@ -153,8 +145,6 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     PrettyPrinter rv = out;
     out = out.println(getClass().getName()).duplicateAndIndent();
     out.indent().print("extantObjectIDs: ").visit(extantObjectIDs).println();
-    out.indent().print("extantPersistableCollectionTypeOidSet: ").visit(extantPersistableCollectionTypeOidSet)
-        .println();
     return rv;
   }
 
