@@ -40,6 +40,14 @@ public class TUCApp {
     return Config.createConfig(props);
   }
 
+  private static Throwable rootCause(Throwable throwable) {
+    Throwable rootCause = throwable;
+    while (rootCause.getCause() != null) {
+      rootCause = rootCause.getCause();
+    }
+    return rootCause;
+  }
+
   public static void main(String args[]) {
     Config config = null;
     try {
@@ -50,14 +58,22 @@ public class TUCApp {
       System.exit(1);
     }
 
-    Injector injector = Guice.createInjector(new GuiceModule(config));
+    Injector injector = null;
+    CommandRegistry commandRegistry = null;
+    try {
+      injector = Guice.createInjector(new GuiceModule(config));
 
-    CommandRegistry commandRegistry = injector.getInstance(CommandRegistry.class);
-    commandRegistry.addCommand(injector.getInstance(HelpCommand.class));
-    commandRegistry.addCommand(injector.getInstance(InfoCommand.class));
-    commandRegistry.addCommand(injector.getInstance(InstallCommand.class));
-    commandRegistry.addCommand(injector.getInstance(ListCommand.class));
-    commandRegistry.addCommand(injector.getInstance(UpdateCommand.class));
+      commandRegistry = injector.getInstance(CommandRegistry.class);
+      commandRegistry.addCommand(injector.getInstance(HelpCommand.class));
+      commandRegistry.addCommand(injector.getInstance(InfoCommand.class));
+      commandRegistry.addCommand(injector.getInstance(InstallCommand.class));
+      commandRegistry.addCommand(injector.getInstance(ListCommand.class));
+      commandRegistry.addCommand(injector.getInstance(UpdateCommand.class));
+    } catch (Exception e) {
+      Throwable rootCause = rootCause(e);
+      System.err.println("Initialization error: " + rootCause.getClass() + ": " + rootCause.getMessage());
+      System.exit(2);
+    }
 
     try {
       String commandName = "help";
