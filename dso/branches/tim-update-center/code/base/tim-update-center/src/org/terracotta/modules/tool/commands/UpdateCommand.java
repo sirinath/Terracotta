@@ -26,11 +26,11 @@ import java.util.jar.Manifest;
 
 public class UpdateCommand extends AbstractCommand {
 
-  private static final String OPTION_ALL             = "all";
-  private static final String OPTION_OVERWRITE       = "overwrite";
-  private static final String OPTION_FORCE           = "force";
-  private static final String OPTION_PRETEND         = "pretend";
-  private static final String OPTION_GROUPID         = "groupid";
+  private static final String LONGOPT_ALL      = "all";
+  private static final String LONGOPT_OVERWRITE = "overwrite";
+  private static final String LONGOPT_FORCE    = "force";
+  private static final String LONGOPT_PRETEND  = "pretend";
+  private static final String LONGOPT_GROUPID  = "group-id";
 
   private final Modules       modules;
 
@@ -42,14 +42,14 @@ public class UpdateCommand extends AbstractCommand {
   public UpdateCommand(Modules modules) {
     this.modules = modules;
     assert modules != null : "modules is null";
-    options.addOption(OPTION_ALL, false,
-                      "Update all installed TIMs, ignores the name and version arguments if specified");
-    options.addOption(OPTION_FORCE, false, "Update anyway, even if update is alrady installed");
-    options.addOption(OPTION_OVERWRITE, false, "Overwrite if already installed");
-    options.addOption(OPTION_PRETEND, false, "Do not perform actual installation");
-    options.addOption(OPTION_GROUPID, true,
-                      "Use this option to qualify the name of the TIM you are looking for. Ignored if the "
-                          + OPTION_ALL + " option is specified");
+    options.addOption(buildOption(LONGOPT_ALL,
+                                  "Update all installed TIMs, ignoring the name and version arguments if specified"));
+    options.addOption(buildOption(LONGOPT_FORCE, "Update anyway, even if update is already installed"));
+    options.addOption(buildOption(LONGOPT_OVERWRITE, "Overwrite if already installed"));
+    options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
+    options.addOption(buildOption(LONGOPT_GROUPID,
+                                  "Use this option to qualify the name of the TIM you are looking for. Ignored if the "
+                                      + LONGOPT_ALL + " option is specified", String.class));
   }
 
   private Attributes readAttributes(File jarfile) {
@@ -124,11 +124,11 @@ public class UpdateCommand extends AbstractCommand {
 
   public void execute(CommandLine cli) throws CommandException {
     List<String> args = cli.getArgList();
-    force = cli.hasOption(OPTION_FORCE);
-    overwrite = cli.hasOption(OPTION_OVERWRITE) || force;
-    pretend = cli.hasOption(OPTION_PRETEND);
+    force = cli.hasOption(LONGOPT_FORCE);
+    overwrite = cli.hasOption(LONGOPT_OVERWRITE) || force;
+    pretend = cli.hasOption(LONGOPT_PRETEND);
 
-    if (cli.hasOption(OPTION_ALL)) {
+    if (cli.hasOption(LONGOPT_ALL)) {
       updateAll();
       return;
     }
@@ -139,7 +139,7 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     String artifactId = args.remove(0);
-    String groupId = cli.getOptionValue(OPTION_GROUPID, ModuleId.DEFAULT_GROUPID);
+    String groupId = cli.getOptionValue(LONGOPT_GROUPID, ModuleId.DEFAULT_GROUPID);
     update(groupId, artifactId, true);
   }
 

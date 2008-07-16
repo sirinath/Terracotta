@@ -5,10 +5,10 @@
 package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
-
-import com.tc.util.ProductInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,25 +24,30 @@ import java.util.regex.Pattern;
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public abstract class AbstractCommand implements Command {
-  private static final String OPTION_HELP_SHORT = "h";
-  private static final String OPTION_HELP       = "help";
+  private static final String OPTION_HELP  = "h";
+  private static final String LONGOPT_HELP = "help";
 
-  protected Options           options           = createOptions();
+  protected Options           options      = createOptions();
 
-  protected PrintWriter       out               = new PrintWriter(System.out, true);
-  protected PrintWriter       err               = new PrintWriter(System.err, true);
+  protected PrintWriter       out          = new PrintWriter(System.out, true);
+  protected PrintWriter       err          = new PrintWriter(System.err, true);
 
   protected final Options createOptions() {
     Options opts = new Options();
-    opts.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "Display help information");
+    opts.addOption(OPTION_HELP, LONGOPT_HELP, false, "Display help information");
     return opts;
   }
 
+  protected String getName() {
+    return getClass().getSimpleName().replaceFirst("Command", "").toLowerCase();
+  }
+  
   public String help() {
+    String cmdLineSyntax = name() + " [arguments]";
     StringWriter writer = new StringWriter();
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp(new PrintWriter(writer), formatter.defaultWidth, "cmdLineSyntax", "\nheader\n", options,
-                        formatter.defaultLeftPad, formatter.defaultDescPad, "\nfooter\n", true);
+    formatter.printHelp(new PrintWriter(writer), formatter.getWidth(), cmdLineSyntax, "\nheader\n", options,
+                        formatter.getLeftPadding(), formatter.getDescPadding(), "\nfooter\n", true);
     return writer.toString();
   }
 
@@ -92,36 +97,18 @@ public abstract class AbstractCommand implements Command {
     }
   }
 
-  protected String getTerracottaVersion() {
-    return ProductInfo.getInstance().version();
+  static Option buildOption(String optname, String description) {
+    OptionBuilder.withLongOpt(optname);
+    OptionBuilder.withDescription(description);
+    return OptionBuilder.create();
   }
 
-  // /**
-  // * Returns the <code>PrintWriter</code> to which commands should print standard output.
-  // */
-  // protected PrintWriter out() {
-  // return this.out;
-  // }
-  //
-  // /**
-  // * Sets the <code>PrintWriter</code> that commands will use for standard output.
-  // */
-  // protected void setOut(PrintWriter out) {
-  // this.out = out;
-  // }
-  //
-  // /**
-  // * Returns the <code>PrintWriter</code> to which commands should print error output.
-  // */
-  // protected PrintWriter err() {
-  // return this.err;
-  // }
-  //
-  // /**
-  // * Sets the <code>PrintWriter</code> that commands will use for error output.
-  // */
-  // protected void setErr(PrintWriter err) {
-  // this.err = err;
-  // }
-
+  static Option buildOption(String optname, String description, Object type) {
+    OptionBuilder.hasArg();
+    OptionBuilder.withArgName(optname);
+    OptionBuilder.withType(type);
+    OptionBuilder.withLongOpt(optname);
+    OptionBuilder.withDescription(description);
+    return OptionBuilder.create();
+  }
 }

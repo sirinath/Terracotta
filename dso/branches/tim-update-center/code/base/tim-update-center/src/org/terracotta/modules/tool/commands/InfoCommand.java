@@ -15,7 +15,7 @@ import java.util.List;
 
 public class InfoCommand extends AbstractCommand {
 
-  private static final String OPTION_GROUPID = "groupid";
+  private static final String LONGOPT_GROUPID = "group-id";
 
   private final Modules       modules;
 
@@ -23,7 +23,8 @@ public class InfoCommand extends AbstractCommand {
   public InfoCommand(Modules modules) {
     this.modules = modules;
     assert modules != null : "modules is null";
-    options.addOption(OPTION_GROUPID, true, "Use this option to qualify the name of the TIM you are looking for");
+    options.addOption(buildOption(LONGOPT_GROUPID,
+                                  "Use this option to qualify the name of the TIM you are looking for", String.class));
   }
 
   public void execute(CommandLine cli) throws CommandException {
@@ -35,7 +36,7 @@ public class InfoCommand extends AbstractCommand {
 
     String artifactId = args.remove(0);
     String version = args.isEmpty() ? null : args.remove(0);
-    String groupId = cli.getOptionValue(OPTION_GROUPID, ModuleId.DEFAULT_GROUPID);
+    String groupId = cli.getOptionValue(LONGOPT_GROUPID, ModuleId.DEFAULT_GROUPID);
     Module module = (version == null) ? modules.getLatest(groupId, artifactId) : modules.get(ModuleId
         .create(groupId, artifactId, version));
     if (module == null) {

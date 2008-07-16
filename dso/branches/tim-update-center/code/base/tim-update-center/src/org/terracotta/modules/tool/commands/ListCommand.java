@@ -20,16 +20,16 @@ import java.util.regex.Pattern;
  */
 public class ListCommand extends AbstractCommand {
 
-  private static final String OPTION_DETAILS_SHORT = "v";
-  private static final String OPTION_DETAILS       = "details";
-  
+  private static final String OPTION_DETAILS  = "v";
+  private static final String LONGOPT_DETAILS = "details";
+
   private final Modules       modules;
 
   @Inject
   public ListCommand(Modules modules) {
     this.modules = modules;
     assert modules != null : "modules is null";
-    options.addOption(OPTION_DETAILS_SHORT, OPTION_DETAILS, false, "Display detailed information");
+    options.addOption(OPTION_DETAILS, LONGOPT_DETAILS, false, "Display detailed information");
   }
 
   private void displayWithDetails(List<Module> list) {
@@ -38,12 +38,13 @@ public class ListCommand extends AbstractCommand {
       module.printSummary(out);
     }
   }
-  
+
   private void display(List<Module> list) {
     out.println();
-    for (Module module : list) module.printLongDigest(out);
+    for (Module module : list)
+      module.printLongDigest(out);
   }
-  
+
   private boolean isQualified(List<String> keywords, String text) {
     if (keywords.isEmpty()) return true;
     for (String keyword : keywords) {
@@ -53,19 +54,19 @@ public class ListCommand extends AbstractCommand {
     }
     return false;
   }
-  
+
   public void execute(CommandLine cli) {
     List<Module> latest = modules.listLatest();
     List<String> keywords = cli.getArgList();
-    
+
     List<Module> list = new ArrayList<Module>();
     for (Module module : latest) {
       if (!isQualified(keywords, module.getSymbolicName())) continue;
       list.add(module);
     }
-    
+
     out.println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
-    if (cli.hasOption('v') || cli.hasOption(OPTION_DETAILS)) displayWithDetails(list);
+    if (cli.hasOption('v') || cli.hasOption(LONGOPT_DETAILS)) displayWithDetails(list);
     else display(list);
   }
 }
