@@ -14,7 +14,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
@@ -127,10 +126,6 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
         logger.error("Error closing cursor", e);
       }
     }
-  }
-
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
-    throw new UnsupportedOperationException();
   }
 
 }

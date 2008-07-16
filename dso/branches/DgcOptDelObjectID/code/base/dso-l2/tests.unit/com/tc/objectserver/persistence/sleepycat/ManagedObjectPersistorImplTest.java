@@ -27,7 +27,6 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
-import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.io.File;
@@ -127,8 +126,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     assertTrue("Wrong bits in memory were set", originalIds.containsAll(inMemoryIds));
 
     // verify on disk object IDs
-    ObjectIDSet persistentStateObjectSet = new ObjectIDSet();
-    SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs(persistentStateObjectSet);
+    SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs();
     idSet.snapshot(); // blocked while reading from disk
     assertTrue("Wrong object IDs on disk", idSet.containsAll(inMemoryIds));
     assertTrue("Wrong object IDs on disk", inMemoryIds.containsAll(idSet));

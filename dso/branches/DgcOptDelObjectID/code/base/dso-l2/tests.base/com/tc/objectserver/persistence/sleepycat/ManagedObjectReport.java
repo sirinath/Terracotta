@@ -15,7 +15,6 @@ import com.tc.objectserver.managedobject.NullManagedObjectChangeListener;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Counter;
-import com.tc.util.ObjectIDSet;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -61,7 +60,7 @@ public class ManagedObjectReport {
   public void report() {
 
   
-    Set objectIDSet = persistor.getManagedObjectPersistor().getAllObjectIDs(new ObjectIDSet());
+    Set objectIDSet = persistor.getManagedObjectPersistor().getAllObjectIDs();
     for (Iterator iter = objectIDSet.iterator(); iter.hasNext();) {
       ObjectID objectID = (ObjectID) iter.next();
       totalCounter.increment();

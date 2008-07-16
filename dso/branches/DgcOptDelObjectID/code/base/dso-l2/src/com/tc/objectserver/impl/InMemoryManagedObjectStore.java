@@ -40,10 +40,6 @@ public class InMemoryManagedObjectStore implements ManagedObjectStore {
     return this.managed.containsKey(id);
   }
   
-  public boolean containsPersistableCollectionType(ObjectID id) {
-    throw new UnsupportedOperationException();
-  }
-
   public synchronized void addNewObject(ManagedObject managedObject) {
     assertNotInShutdown();
     localPut(managedObject);

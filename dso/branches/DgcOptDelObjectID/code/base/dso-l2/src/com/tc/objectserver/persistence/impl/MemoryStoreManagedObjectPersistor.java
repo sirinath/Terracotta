@@ -13,7 +13,6 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.managedobject.MapManagedObjectState;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
-import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
 import com.tc.text.PrettyPrinter;
@@ -87,7 +86,7 @@ public final class MemoryStoreManagedObjectPersistor implements ManagedObjectPer
     return rv;
   }
 
-  public SyncObjectIdSet getAllObjectIDs(ObjectIDSet persistableCollectionTypeOidSet) {
+  public SyncObjectIdSet getAllObjectIDs() {
     SyncObjectIdSet rv = new SyncObjectIdSetImpl();
     rv.startPopulating();
     Thread t = new Thread(new ObjectIdReader(rv), "ObjectIdReaderThread");
@@ -269,11 +268,18 @@ public final class MemoryStoreManagedObjectPersistor implements ManagedObjectPer
       ObjectIDSet tmp = new ObjectIDSet(objectDB.getAll());
       set.stopPopulating(tmp);
     }
-
   }
 
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
-    throw new UnsupportedOperationException();
+  public boolean addPersistableCollectionTypeObject(ObjectID id) {
+    return false;
+  }
+
+  public boolean containsPersistableCollectionType(ObjectID id) {
+    return false;
+  }
+
+  public void removePersistableCollectionTypeObject(Collection ids) {
+    return;
   }
 
 }

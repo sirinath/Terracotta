@@ -8,10 +8,8 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
-import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinterImpl;
-import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 import com.tc.util.SyncObjectIdSetImpl;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
@@ -80,7 +78,7 @@ public class TestManagedObjectPersistor implements ManagedObjectPersistor {
     throw new ImplementMe();
   }
 
-  public SyncObjectIdSet getAllObjectIDs(ObjectIDSet persistableCollectionTypeOidSet) {
+  public SyncObjectIdSet getAllObjectIDs() {
     return allObjectIDs;
   }
 
@@ -94,7 +92,16 @@ public class TestManagedObjectPersistor implements ManagedObjectPersistor {
     return null;
   }
 
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
+  public boolean addPersistableCollectionTypeObject(ObjectID id) {
+    return false;
+  }
+
+  public boolean containsPersistableCollectionType(ObjectID id) {
+    return false;
+  }
+
+  public void removePersistableCollectionTypeObject(Collection ids) {
     return;
   }
+
 }

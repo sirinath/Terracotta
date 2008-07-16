@@ -15,7 +15,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
@@ -64,12 +64,13 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private long                                 nextSequence;
   private long                                 endSequence;
   private final long                           firstSequenceThisRun;
-  private ManagedObjectStore                   managedObjectStore;
   private SetOnceFlag                          canStartCheckpoint    = new SetOnceFlag();
   private Cursor                               oidLogDBCursor;
+  private final ManagedObjectPersistor         managedObjectPersistor;
 
-  public FastObjectIDManagerImpl(DBEnvironment env, PersistenceTransactionProvider ptp, MutableSequence sequence)
-      throws TCDatabaseException {
+  public FastObjectIDManagerImpl(DBEnvironment env, PersistenceTransactionProvider ptp, MutableSequence sequence,
+                                 ManagedObjectPersistor managedObjectPersistor) throws TCDatabaseException {
+    this.managedObjectPersistor = managedObjectPersistor;
     this.objectOidStoreDB = env.getObjectOidStoreDatabase();
     this.mapsOidStoreDB = env.getMapsOidStoreDatabase();
     this.oidStoreLogDB = env.getOidStoreLogDatabase();
@@ -99,11 +100,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     checkpointThread = new CheckpointRunner(checkpointMaxSleep);
     checkpointThread.setDaemon(true);
     checkpointThread.start();
-  }
-
-  // hard wire ManagedObjectStore
-  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
-    this.managedObjectStore = managedObjectStore;
   }
 
   /*
@@ -448,7 +444,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     int offset = 0;
     for (ObjectID objectID : oidSet) {
       Conversion.writeLong(objectID.toLong(), oids, offset);
-      oids[offset + OidLongArray.BYTES_PER_LONG] = managedObjectStore.containsPersistableCollectionType(objectID) ? PERSIST_COLL
+      oids[offset + OidLongArray.BYTES_PER_LONG] = managedObjectPersistor.containsPersistableCollectionType(objectID) ? PERSIST_COLL
           : NOT_PERSIST_COLL;
       offset += OidLongArray.BYTES_PER_LONG + 1;
     }
