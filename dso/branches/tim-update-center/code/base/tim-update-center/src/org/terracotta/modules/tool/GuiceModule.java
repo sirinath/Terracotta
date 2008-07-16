@@ -7,6 +7,7 @@ import org.terracotta.modules.tool.commands.CommandRegistry;
 import org.terracotta.modules.tool.config.Config;
 import org.terracotta.modules.tool.config.TerracottaVersion;
 import org.terracotta.modules.tool.util.DataLoader;
+import org.terracotta.modules.tool.util.DataLoader.CacheRefreshPolicy;
 
 import com.google.inject.Binder;
 import com.google.inject.Module;
@@ -41,13 +42,14 @@ public class GuiceModule implements Module {
     // the remote data file and cache it locally.
     binder.bind(DataLoader.class).toProvider(new Provider<DataLoader>() {
       public DataLoader get() {
-        DataLoader result = new DataLoader(config.getDataFileUrl(), config.getDataFile());
+        DataLoader dataLoader = new DataLoader(config.getDataFileUrl(), config.getDataFile());
+        dataLoader.setCacheRefreshPolicy(CacheRefreshPolicy.ON_EXPIRATION.setExpirationInSeconds(60 * 60 * 24));
         URL proxyUrl = config.getProxyUrl();
         if (proxyUrl != null) {
           SocketAddress proxyAddress =new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort());
-          result.setProxy(new Proxy(Type.HTTP, proxyAddress));
+          dataLoader.setProxy(new Proxy(Type.HTTP, proxyAddress));
         }
-        return result;
+        return dataLoader;
       }
     });
 
