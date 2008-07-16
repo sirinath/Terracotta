@@ -17,10 +17,10 @@ import java.util.List;
 
 public class InstallCommand extends AbstractCommand {
 
-  private static final String OPTION_ALL       = "all";
-  private static final String OPTION_OVERWRITE = "overwrite";
-  private static final String OPTION_PRETEND   = "pretend";
-  private static final String OPTION_GROUPID   = "groupid";
+  private static final String LONGOPT_ALL       = "all";
+  private static final String LONGOPT_OVERWRITE = "overwrite";
+  private static final String LONGOPT_PRETEND   = "pretend";
+  private static final String LONGOPT_GROUPID   = "group-id";
 
   private final Modules       modules;
 
@@ -31,20 +31,20 @@ public class InstallCommand extends AbstractCommand {
   public InstallCommand(Modules modules) {
     this.modules = modules;
     assert modules != null : "modules is null";
-    options.addOption(OPTION_ALL, false,
-                      "Install all compatible TIMs, ignores the name and version arguments if specified");
-    options.addOption(OPTION_OVERWRITE, false, "Overwrite if already installed");
-    options.addOption(OPTION_PRETEND, false, "Do not perform actual installation");
-    options.addOption(OPTION_GROUPID, true,
-                      "Use this option to qualify the name of the TIM you are looking for. Ignored if the "
-                          + OPTION_ALL + " option is specified");
+    options.addOption(buildOption(LONGOPT_ALL,
+                                  "Install all compatible TIMs, ignoring the name and version arguments if specified"));
+    options.addOption(buildOption(LONGOPT_OVERWRITE, "Overwrite if already installed"));
+    options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
+    options.addOption(buildOption(LONGOPT_GROUPID,
+                                  "Use this option to qualify the name of the TIM you are looking for. Ignored if the "
+                                      + LONGOPT_ALL + " option is specified", String.class));
   }
 
   private void install(Module module) {
     StringWriter sw = new StringWriter();
     module.printDigest(new PrintWriter(sw));
     module.install(overwrite, pretend, out);
-    //out.println();
+    // out.println();
   }
 
   private void install(String groupId, String artifactId, String version) {
@@ -70,10 +70,10 @@ public class InstallCommand extends AbstractCommand {
   }
 
   public void execute(CommandLine cli) throws CommandException {
-    overwrite = cli.hasOption(OPTION_OVERWRITE);
-    pretend = cli.hasOption(OPTION_PRETEND);
+    overwrite = cli.hasOption(LONGOPT_OVERWRITE);
+    pretend = cli.hasOption(LONGOPT_PRETEND);
 
-    if (cli.hasOption(OPTION_ALL)) {
+    if (cli.hasOption(LONGOPT_ALL)) {
       installAll();
       return;
     }
@@ -86,7 +86,7 @@ public class InstallCommand extends AbstractCommand {
 
     String artifactId = args.remove(0);
     String version = args.isEmpty() ? null : args.remove(0);
-    String groupId = cli.getOptionValue(OPTION_GROUPID, ModuleId.DEFAULT_GROUPID);
+    String groupId = cli.getOptionValue(LONGOPT_GROUPID, ModuleId.DEFAULT_GROUPID);
     install(groupId, artifactId, version);
   }
 
