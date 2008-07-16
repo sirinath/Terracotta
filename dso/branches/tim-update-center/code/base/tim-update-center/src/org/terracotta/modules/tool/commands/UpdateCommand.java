@@ -26,11 +26,11 @@ import java.util.jar.Manifest;
 
 public class UpdateCommand extends AbstractCommand {
 
-  private static final String OPTION_ALL       = "all";
-  private static final String OPTION_OVERWRITE = "overwrite";
-  private static final String OPTION_FORCE     = "force";
-  private static final String OPTION_PRETEND   = "pretend";
-  private static final String OPTION_GROUPID   = "groupid";
+  private static final String OPTION_ALL             = "all";
+  private static final String OPTION_OVERWRITE       = "overwrite";
+  private static final String OPTION_FORCE           = "force";
+  private static final String OPTION_PRETEND         = "pretend";
+  private static final String OPTION_GROUPID         = "groupid";
 
   private final Modules       modules;
 
@@ -41,15 +41,15 @@ public class UpdateCommand extends AbstractCommand {
   @Inject
   public UpdateCommand(Modules modules) {
     this.modules = modules;
-    assert modules != null;
-    options.addOption(OPTION_ALL, OPTION_ALL, false,
-                      "Update all installed TIMs, ignores the name and version arguments if specified.");
-    options.addOption(OPTION_FORCE, OPTION_FORCE, false, "Update anyway, even if update is alrady installed.");
-    options.addOption(OPTION_OVERWRITE, OPTION_OVERWRITE, false, "Overwrite if already installed.");
-    options.addOption(OPTION_PRETEND, OPTION_PRETEND, false, "Do not perform actual installation.");
-    options.addOption(OPTION_GROUPID, OPTION_GROUPID, true,
-                      "Use this option to qualify the name of the TIM you are looking for. Ignored if the --"
-                          + OPTION_ALL + " option is specified.");
+    assert modules != null : "modules is null";
+    options.addOption(OPTION_ALL, false,
+                      "Update all installed TIMs, ignores the name and version arguments if specified");
+    options.addOption(OPTION_FORCE, false, "Update anyway, even if update is alrady installed");
+    options.addOption(OPTION_OVERWRITE, false, "Overwrite if already installed");
+    options.addOption(OPTION_PRETEND, false, "Do not perform actual installation");
+    options.addOption(OPTION_GROUPID, true,
+                      "Use this option to qualify the name of the TIM you are looking for. Ignored if the "
+                          + OPTION_ALL + " option is specified");
   }
 
   private Attributes readAttributes(File jarfile) {
@@ -72,7 +72,7 @@ public class UpdateCommand extends AbstractCommand {
   private List<ModuleId> installedModules() throws CommandException {
     File repository = Module.repositoryPath();
     if (!repository.exists()) {
-      String msg = "The local TIM repository '" + repository + "' does not exist.";
+      String msg = "The local TIM repository '" + repository + "' does not exist";
       throw new CommandException(msg);
     }
 
@@ -99,19 +99,24 @@ public class UpdateCommand extends AbstractCommand {
     // installed but not available from the list, skip it.
     if (module == null) {
       if (!verbose) return;
+      out.println("Integration Module '" + artifactId + "' not found");
+      out.println("It might be using a groupId other than '" + groupId + "'");
+      return;
     }
 
     // latest already installed, skip it (unless force flag is set)
-    assert module.isLatest();
+    assert module.isLatest() : module + " is not the latest";
     if (module.isInstalled() && !force) {
-      if (verbose) out().println("No updates found.");
+      if (verbose) out.println("No updates found");
       return;
     }
-    module.install(overwrite, pretend, out());
+
+    // update found, install it
+    module.install(overwrite, pretend, out);
   }
 
   private void updateAll() throws CommandException {
-    out().println("\n*** Updating installed Integration Modules for TC " + modules.tcVersion() + " ***\n");
+    out.println("\n*** Updating installed Integration Modules for TC " + modules.tcVersion() + " ***\n");
     for (ModuleId entry : installedModules()) {
       update(entry.getGroupId(), entry.getArtifactId(), false);
     }
@@ -120,7 +125,7 @@ public class UpdateCommand extends AbstractCommand {
   public void execute(CommandLine cli) throws CommandException {
     List<String> args = cli.getArgList();
     force = cli.hasOption(OPTION_FORCE);
-    overwrite = cli.hasOption(OPTION_OVERWRITE);
+    overwrite = cli.hasOption(OPTION_OVERWRITE) || force;
     pretend = cli.hasOption(OPTION_PRETEND);
 
     if (cli.hasOption(OPTION_ALL)) {
@@ -129,7 +134,7 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     if (args.isEmpty()) {
-      String msg = "You need to at least specify the name of the Integration Module you wish to update.";
+      String msg = "You need to at least specify the name of the Integration Module you wish to update";
       throw new CommandException(msg);
     }
 

@@ -21,9 +21,9 @@ public class ModuleId implements Comparable {
   private final String version;
 
   ModuleId(String groupId, String artifactId, String version) {
-    assert groupId != null;
-    assert artifactId != null;
-    assert version != null;
+    assert groupId != null    : "groupId is null";
+    assert artifactId != null : "artifactId is null";
+    assert version != null    : "version is null";
     this.groupId = groupId.trim();
     this.artifactId = artifactId.trim();
     this.version = version.trim();
@@ -113,7 +113,7 @@ public class ModuleId implements Comparable {
   }
 
   public int compareTo(Object obj) {
-    assert obj instanceof ModuleId;
+    assert obj instanceof ModuleId : "must be instanceof ModuleId.";
     ModuleId other = (ModuleId) obj;
     return toSortableString().compareTo(other.toSortableString());
   }

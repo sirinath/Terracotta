@@ -23,8 +23,8 @@ public abstract class AbstractCommandTestCase extends TestCase {
     command = createCommand();
     commandOut = new StringWriter();
     commandErr = new StringWriter();
-    command.setOut(new PrintWriter(commandOut));
-    command.setErr(new PrintWriter(commandErr));
+    command.out = new PrintWriter(commandOut);
+    command.err = new PrintWriter(commandErr);
   }
 
   public void testHelpNotNull() {

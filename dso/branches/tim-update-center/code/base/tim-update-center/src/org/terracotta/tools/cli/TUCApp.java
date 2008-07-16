@@ -52,11 +52,9 @@ public class TUCApp {
       } 
       commandRegistry.executeCommand(cmdname, cmdargs);
     } catch (CommandException e) {
-      System.err.println();
       System.err.println(e.getMessage());
       System.exit(1);
     } catch (Exception e) {
-      System.err.println();
       System.err.println(e.getMessage());
       System.exit(2);
     }
