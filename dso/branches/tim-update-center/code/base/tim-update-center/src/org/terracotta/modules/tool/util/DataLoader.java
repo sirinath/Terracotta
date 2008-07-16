@@ -6,6 +6,8 @@ package org.terracotta.modules.tool.util;
 
 import org.terracotta.modules.tool.util.DownloadUtil.DownloadOption;
 
+import com.google.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.Proxy;
@@ -63,7 +65,7 @@ public class DataLoader {
   /**
    * Sets the Proxy to use when retrieving the remote data file.
    */
-  public void setProxy(Proxy proxy) {
+  @Inject public void setProxy(Proxy proxy) {
     this.proxy = proxy;
   }
 

@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 public abstract class AbstractCommand implements Command {
   private static final String OPTION_HELP  = "h";
   private static final String LONGOPT_HELP = "help";
+  private static final String OPTION_PROXY  = "p";
+  private static final String LONGOPT_PROXY = "proxy";
 
   protected Options           options      = createOptions();
 
@@ -35,6 +37,7 @@ public abstract class AbstractCommand implements Command {
   protected final Options createOptions() {
     Options opts = new Options();
     opts.addOption(OPTION_HELP, LONGOPT_HELP, false, "Display help information");
+    opts.addOption(OPTION_PROXY, LONGOPT_PROXY, true, "HTTP proxy to use for remote operations");
     return opts;
   }
 
