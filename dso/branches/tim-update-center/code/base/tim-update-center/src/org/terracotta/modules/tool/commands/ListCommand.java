@@ -10,6 +10,7 @@ import org.terracotta.modules.tool.Modules;
 
 import com.google.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,13 +20,28 @@ import java.util.regex.Pattern;
  */
 public class ListCommand extends AbstractCommand {
 
-  private final Modules modules;
+  private static final String OPTION_DETAILS_SHORT = "v";
+  private static final String OPTION_DETAILS       = "details";
+  
+  private final Modules       modules;
 
   @Inject
   public ListCommand(Modules modules) {
     this.modules = modules;
     assert modules != null;
-    options.addOption("v", "details", false, "Display detailed information");
+    options.addOption(OPTION_DETAILS_SHORT, OPTION_DETAILS, false, "Display detailed information");
+  }
+
+  private void displayWithDetails(List<Module> list) {
+    for (Module module : list) {
+      out().println();
+      module.printSummary(out());
+    }
+  }
+  
+  private void display(List<Module> list) {
+    out().println();
+    for (Module module : list) module.printDigest(out());
   }
   
   private boolean isQualified(List<String> keywords, String text) {
@@ -41,11 +57,15 @@ public class ListCommand extends AbstractCommand {
   public void execute(CommandLine cli) {
     List<Module> latest = modules.listLatest();
     List<String> keywords = cli.getArgList();
-    out().println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***\n");
+    
+    List<Module> list = new ArrayList<Module>();
     for (Module module : latest) {
       if (!isQualified(keywords, module.getSymbolicName())) continue;
-      if (cli.hasOption('v') || cli.hasOption("details")) module.printSummary(out());
-      else module.printDigest(out());
+      list.add(module);
     }
+    
+    out().println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
+    if (cli.hasOption('v') || cli.hasOption(OPTION_DETAILS)) displayWithDetails(list);
+    else display(list);
   }
 }

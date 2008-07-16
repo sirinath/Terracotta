@@ -22,33 +22,37 @@ import java.util.regex.Pattern;
  * @author Jason Voegele (jvoegele@terracotta.org)
  */
 public abstract class AbstractCommand implements Command {
-  protected Options   options = createOptions();
+  private static final String OPTION_HELP_SHORT = "h";
+  private static final String OPTION_HELP       = "help";
 
-  private PrintWriter out     = new PrintWriter(System.out, true);
-  private PrintWriter err     = new PrintWriter(System.err, true);
+  protected Options           options           = createOptions();
+
+  private PrintWriter         out               = new PrintWriter(System.out, true);
+  private PrintWriter         err               = new PrintWriter(System.err, true);
 
   protected final Options createOptions() {
     Options opts = new Options();
-    opts.addOption("h", "help", false, "Display help information.");
+    opts.addOption(OPTION_HELP_SHORT, OPTION_HELP, false, "Display help information.");
     return opts;
   }
 
   public String help() {
-    String text = loadHelp();
-    return (text.length() == 0) ? name() + " [options] [arguments]" : text;
+    //String text = loadHelp();
+    //return (text.length() == 0) ? name() + " [options] [arguments]" : text;
+    return "";
   }
 
-  private static final String  EMPTY_HELP_STRING = "";
+  private static final String EMPTY_HELP_STRING = "";
 
   protected String loadHelp() {
     return loadHelp(getClass().getSimpleName());
   }
-  
+
   public void printHelp() {
     out().println(help());
   }
 
-  private static final Pattern classNamePattern  = Pattern.compile("([A-Za-z0-9_]+)Command");
+  private static final Pattern classNamePattern = Pattern.compile("([A-Za-z0-9_]+)Command");
 
   /**
    * Default implementation that returns the name of the class (in lowercase) minus the "Command" suffix if it has one,

@@ -20,9 +20,6 @@ class ModulesProvider implements Provider<CachedModules> {
 
   public CachedModules get() {
     try {
-//      System.out.println(System.getProperty("org.terracotta.modules.tool.tuc.tc-version"));
-//      System.out.println(System.getProperty("org.terracotta.modules.tool.tuc.manifest-url"));
-      
       String tcversion = System.getProperty("org.terracotta.modules.tool.tuc.tc-version");
       if (tcversion == null) tcversion = ProductInfo.getInstance().version();
       String manifestUrl = System.getProperty("org.terracotta.modules.tool.tuc.manifest-url");
