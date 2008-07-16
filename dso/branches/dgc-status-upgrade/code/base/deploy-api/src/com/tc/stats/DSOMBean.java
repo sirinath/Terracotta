@@ -6,6 +6,7 @@ package com.tc.stats;
 import com.tc.management.TerracottaMBean;
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
+import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.NoSuchObjectException;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
@@ -57,4 +58,6 @@ public interface DSOMBean extends DSOStats, TerracottaMBean {
   int getLiveObjectCount();
   
   boolean isResident(NodeID node, ObjectID oid);
+  
+  public GCStats[] getGarbageCollectorStats();
 }

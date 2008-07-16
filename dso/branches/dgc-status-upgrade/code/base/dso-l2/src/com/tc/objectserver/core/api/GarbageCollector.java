@@ -5,8 +5,6 @@
 package com.tc.objectserver.core.api;
 
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.GCStats;
-import com.tc.objectserver.api.ObjectManagerEventListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.text.PrettyPrintable;
 import com.tc.util.ObjectIDSet;
@@ -43,11 +41,6 @@ public interface GarbageCollector extends PrettyPrintable {
    */
   public void notifyGCComplete();
   
-  /*
-   * Notifies the garbage collector that deleting garbage is complete.
-   */
-  public void notifyGCDeleteComplete(long deleteStartTime);
-  
   /**
    * @param traverser Determines whether or not to traverse a given tree node.
    * @param roots
@@ -71,11 +64,9 @@ public interface GarbageCollector extends PrettyPrintable {
   public boolean isStarted();
 
   public void setState(StoppableThread st);
-
-  public void addListener(ObjectManagerEventListener listener);
-
-  public GCStats[] getGarbageCollectorStats();
-
+  
+  public void addListener(GarbageCollectorEventListener listener);
+  
   public boolean deleteGarbage(GCResultContext resultContext);
   
 }

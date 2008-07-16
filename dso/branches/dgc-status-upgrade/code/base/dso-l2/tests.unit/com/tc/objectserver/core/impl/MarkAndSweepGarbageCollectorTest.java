@@ -7,9 +7,7 @@ package com.tc.objectserver.core.impl;
 import com.tc.exception.ImplementMe;
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.ObjectManagerEventListener;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
@@ -21,10 +19,8 @@ import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
-import com.tc.statistics.mock.NullStatisticsAgentSubSystem;
 import com.tc.util.ObjectIDSet;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,8 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-
 import junit.framework.TestCase;
 
 public class MarkAndSweepGarbageCollectorTest extends TestCase {
@@ -73,8 +67,7 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     super.setUp();
     this.managed = new HashMap();
     this.objectManager = new GCTestObjectManager();
-    this.collector = new MarkAndSweepGarbageCollector(this.objectManager, new TestClientStateManager(), false,
-                                                      new NullStatisticsAgentSubSystem());
+    this.collector = new MarkAndSweepGarbageCollector(this.objectManager, new TestClientStateManager(), false);
     this.lookedUp = new HashSet();
     this.released = new HashSet();
     this.root1 = createObject(8);
@@ -88,16 +81,22 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     return this;
   }
 
+  /**
   public void testGCStats() {
-    TestObjectManagerEventListener listener = new TestObjectManagerEventListener();
+    TestGCStatsEventListener listener = new TestGCStatsEventListener();
     collector.start();
-    collector.addListener(listener);
+    collector.addGCStatsEventListener(listener);
     collector.gc();
     collector.stop();
-    assertEquals(5, listener.getUpdateGCStatusList().size());
-    assertEquals(1, listener.getGarbageCollectionCompleteList().size());
+    assertEquals(4, listener.getUpdateGCStatusList().size());
+    List updateGCStatusList = listener.getUpdateGCStatusList();
+    assertEquals("MARK", updateGCStatusList.get(0));
+    assertEquals("PAUSE", updateGCStatusList.get(1));
+    assertEquals("MARK_COMPLETE", updateGCStatusList.get(2));
+    assertEquals("DELETE", updateGCStatusList.get(3));
   }
-
+ **/
+  
   public void testEmptyRoots() {
     Set toDelete = collector.collect(filter, objectManager.getRootIDs(), new ObjectIDSet(managed.keySet()));
     assertTrue(toDelete.size() == 0);
@@ -212,32 +211,22 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     managed.put(tmo.getID(), tmo.getReference());
     return tmo;
   }
-  
-  private static class TestObjectManagerEventListener implements ObjectManagerEventListener {
-    
-    private List garbageCollectionCompleteList = new ArrayList();
-    
+/**
+  private static class TestGCStatsEventListener implements GCStatsEventListener {
+
     private List updateGCStatusList = new ArrayList();
 
-    public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
-      System.out.println("complete:" + stats);
-      garbageCollectionCompleteList.add(stats);
-    }
-
-    public void updateGCStatus(GCStats stats) {
+    public void update(GCStats stats) {
       System.out.println("update:" + stats);
-      updateGCStatusList.add(stats);
-    }
-
-    public List getGarbageCollectionCompleteList() {
-      return garbageCollectionCompleteList;
+      updateGCStatusList.add(stats.getStatus());
     }
 
     public List getUpdateGCStatusList() {
       return updateGCStatusList;
     }
   }
-
+**/
+  
   private class GCTestObjectManager implements ObjectManager {
 
     public ManagedObject getObjectByID(ObjectID id) {
@@ -353,11 +342,11 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     }
 
     public void notifyGCComplete(GCResultContext resultContext) {
-      // ignore
-    }
-
-    public void notifyGCDeleteComplete(long deleteStartMillis) {
-     //ignore
+   
+//      GCStatsImpl gcStats = resultContext.getGCStats();
+//      gcStats.setDeleteState();
+//      gcStats.setDeleteStageTime(System.currentTimeMillis() - startTime);
+//      gcStats.setCompleteState();
     }
 
   }

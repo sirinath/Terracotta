@@ -5,14 +5,13 @@
 package com.tc.objectserver.handler;
 
 import com.tc.async.api.AbstractEventHandler;
-import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
-import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.core.api.GarbageCollectionInfo;
+import com.tc.objectserver.core.api.GarbageCollectionInfoPublisher;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -30,7 +29,6 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
   private final ManagedObjectPersistor         managedObjectPersistor;
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final int                            deleteBatchSize;
-  private ObjectManager                        objectManager;
 
   public GarbageDisposeHandler(ManagedObjectPersistor managedObjectPersistor,
                                PersistenceTransactionProvider persistenceTransactionProvider, int deleteBatchSize) {
@@ -41,7 +39,12 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     GCResultContext gcResult = (GCResultContext) context;
+    GarbageCollectionInfo gcInfo = gcResult.getGCInfo();
+    GarbageCollectionInfoPublisher gcPublisher = gcResult.getGCPublisher();
+    
     logger.info("GC DELETE START : " + gcResult);
+    
+    gcPublisher.fireGCDeleteEvent(gcInfo);
     long start = System.currentTimeMillis();
     SortedSet sortedGarbage = gcResult.getGCedObjectIDs();
 
@@ -63,7 +66,12 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
     long elapsed = System.currentTimeMillis() - start;
     logger.info("GC DELETE COMPLETE : " + gcResult + " Removed " + sortedGarbage.size() + " objects in " + elapsed
                 + " ms.");
-    objectManager.notifyGCDeleteComplete(gcResult.getDeleteStartMillis());
+    gcInfo.setDeleteStageTime(elapsed); 
+    long endMillis = System.currentTimeMillis();
+    gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
+
+    gcPublisher.fireGCCompletedEvent(gcInfo);
+   
   }
 
   private void removeFromStore(SortedSet<ObjectID> sortedGarbage) {
@@ -78,11 +86,4 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
       logger.info("Removed " + sortedGarbage.size() + " objects in " + elapsed + " ms.");
     }
   }
-
-  public void initialize(ConfigurationContext context) {
-    super.initialize(context);
-    ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.objectManager = oscc.getObjectManager();
-  }
-
 }
