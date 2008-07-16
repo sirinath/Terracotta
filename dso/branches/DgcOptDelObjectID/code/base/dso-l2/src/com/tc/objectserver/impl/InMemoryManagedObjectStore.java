@@ -39,6 +39,10 @@ public class InMemoryManagedObjectStore implements ManagedObjectStore {
     assertNotInShutdown();
     return this.managed.containsKey(id);
   }
+  
+  public boolean containsPersistableCollectionType(ObjectID id) {
+    throw new UnsupportedOperationException();
+  }
 
   public synchronized void addNewObject(ManagedObject managedObject) {
     assertNotInShutdown();
