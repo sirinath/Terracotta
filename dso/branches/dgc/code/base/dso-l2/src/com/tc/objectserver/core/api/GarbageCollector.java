@@ -72,4 +72,31 @@ public interface GarbageCollector extends PrettyPrintable {
   public GCStats[] getGarbageCollectorStats();
 
   public boolean deleteGarbage(GCResultContext resultContext);
+
+  /**
+   * Whenever a new object is created, this method is called from the Object Manager. This is used for YoungGen
+   * collection, collectors that are not interested in doing young generation collection could ignore this call.
+   */
+  public void notifyObjectCreated(ObjectID id);
+
+  /**
+   * When a new object is initialized for the first time, this method is called from the Object Manager. This is used
+   * for YoungGen collection, collectors that are not interested in doing young generation collection could ignore this
+   * call.
+   */
+  public void notifyNewObjectInitalized(ObjectID id);
+
+  /**
+   * Whenever objects are evicted from memory, this method is called from the Object Manager. The collection contains
+   * the list of ManagedObjects evicted. This is used for Young generation collection, collectors that are not
+   * interested in doing YoungGen collection could ignore this call.
+   */
+  public void notifyObjectsEvicted(Collection evicted);
+
+  /**
+   * This is the method called on the collector to do YoungGen collection, collectors that are not interested in doing
+   * YoungGen collection could ignore this call.
+   */
+  public void gcYoung();
+
 }
