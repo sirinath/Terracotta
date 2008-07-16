@@ -36,7 +36,7 @@ public class TUCApp {
     String dataDir = new File(System.getProperty("user.home"), ".tc").getAbsolutePath();
     String dataFile = new File(dataDir, "tuc-manifest.xml").getAbsolutePath();
     props.setProperty("tim-update.dataFile", dataFile);
-    props.setProperty("tim-update.dataFileUrl", "http://localhost/tuc-manifest.xml");
+    props.setProperty("tim-update.dataFileUrl", "http://forge-dev.terracotta.lan/tuc-manifest.xml");
     return Config.createConfig(props);
   }
 
