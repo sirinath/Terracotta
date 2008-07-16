@@ -7,16 +7,13 @@ package org.terracotta.modules.tool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
+import org.terracotta.modules.tool.util.DownloadUtil;
+import org.terracotta.modules.tool.util.DownloadUtil.DownloadOption;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +42,8 @@ public class Module implements Comparable {
   private final List<Dependency> dependencies;
 
   private final Modules          modules;
+
+  private static File            repositoryPath = null;
 
   public ModuleId getId() {
     return id;
@@ -228,24 +227,27 @@ public class Module implements Comparable {
   public void install(boolean overwrite, boolean pretend, PrintWriter out) {
     Map<ModuleId, Dependency> manifest = computeManifest();
     List<ModuleId> list = new ArrayList<ModuleId>(manifest.keySet());
+
+    out.println("Installing " + id.toDigestString() + " and dependencies...");
     for (ModuleId key : list) {
       Dependency dependency = manifest.get(key);
+      String dependencyId = dependency.getId().toDigestString();
 
-      File destdir = new File(installDirectory(), dependency.getInstallPath());
+      File destdir = new File(repositoryPath(), dependency.getInstallPath());
       File destfile = new File(destdir, dependency.getFilename());
       if (isInstalled(dependency) && !overwrite) {
-        //TODO: display module info instead of jar filename
-        out.println("Skipped: " + destfile.getName());
+        out.println("   Skipped: " + dependencyId);
         continue;
       }
 
       if (!pretend) {
         File srcfile = null;
         try {
-          srcfile = File.createTempFile("tuc", null);
-          download(dependency.getRepoUrl(), canonicalize(srcfile));
+          srcfile = File.createTempFile("TUC", null);
+          download(dependency.getRepoUrl(), srcfile);
         } catch (IOException e) {
-          out.println("Unable to download from URL: " + e.getMessage());
+          out.println("   Unable to download: " + dependencyId);
+          out.println("             from URL: " + dependency.getRepoUrl());
           continue;
         }
 
@@ -253,66 +255,53 @@ public class Module implements Comparable {
           FileUtils.forceMkdir(destdir);
           FileUtils.copyFile(srcfile, destfile);
         } catch (IOException e) {
-          //TODO: display module info instead of jar filename
-          out.println("Unable to install: " + destfile.getName());
+          out.println("   Unable to install: " + dependencyId);
           continue;
         }
       }
-      //TODO: display module info instead of jar filename
-      out.println("Installed: " + canonicalize(destfile));
+      out.println("   Installed: " + dependencyId);
     }
   }
 
-  private static String canonicalize(File path) {
-    try {
-      return path.getCanonicalPath();
-    } catch (IOException e) {
-      return path.toString();
-    }
-  }
-  static void download(String address, String destpath) throws IOException {
-    OutputStream out = null;
-    URLConnection conn = null;
-    InputStream in = null;
-    try {
-      URL url = new URL(address);
-      out = new BufferedOutputStream(new FileOutputStream(destpath));
-      conn = url.openConnection();
-      in = conn.getInputStream();
-      byte[] buffer = new byte[1024];
-      int bytesread = 0;
-      long byteswritten = 0;
-      while ((bytesread = in.read(buffer)) != -1) {
-        out.write(buffer, 0, bytesread);
-        byteswritten += bytesread;
-      }
-    } finally {
-      try {
-        if (in != null) in.close();
-        if (out != null) out.close();
-      } catch (IOException ioe) {
-        //
-      }
-    }
+  private static void download(String address, File localfile) throws IOException {
+    DownloadUtil downloader = new DownloadUtil();
+    downloader.download(new URL(address), localfile, DownloadOption.CREATE_INTERVENING_DIRECTORIES,
+                        DownloadOption.OVERWRITE_EXISTING);
   }
 
   private File installPath(String path, String name) {
-    return new File(new File(installDirectory(), path), name);
+    return new File(new File(repositoryPath(), path), name);
   }
 
   private File installPath() {
     return installPath(installPath, filename);
   }
 
-  private File installDirectory() {
+  /**
+   * Returns the canonical file path used as root directory when installing modules.
+   */
+  public static File repositoryPath() {
+    if (repositoryPath != null) return repositoryPath;
     String rootdir = System.getProperty("tc.install-root", System.getProperty("java.io.tmpdir"));
-    return new File(rootdir, "modules");
+    repositoryPath = new File(rootdir, "modules");
+    try {
+      repositoryPath = repositoryPath.getCanonicalFile();
+    } catch (IOException e) {
+      //
+    }
+    return repositoryPath;
   }
 
+  /**
+   * Checks if a module described by Dependency has been installed.
+   */
   public boolean isInstalled(Dependency dependency) {
     return installPath(dependency.getInstallPath(), dependency.getFilename()).exists();
   }
 
+  /**
+   * Checks if this module has been installed.
+   */
   public boolean isInstalled() {
     return installPath().exists();
   }
@@ -320,7 +309,7 @@ public class Module implements Comparable {
   private void printNotes(PrintWriter out, boolean printDigest) {
     if (printDigest) printLongDigest(out);
     out.println("   Compatible with " + (tcVersion.equals("*") ? "any Terracotta version." : "TC " + tcVersion));
-    if (isInstalled()) out.println("   Installed at " + installDirectory());
+    if (isInstalled()) out.println("   Installed at " + repositoryPath());
   }
 
   public void printDetails(PrintWriter out) {
@@ -362,19 +351,18 @@ public class Module implements Comparable {
   }
 
   private void printLongDigest(PrintWriter out) {
-    String groupId = id.isDefaultGroupId() ? "" : " [" + id.getGroupId() + "]";
-    String versions = id.getVersion();
-    List<String> allversions = getVersions();
-    if (!allversions.isEmpty()) {
-      Collections.reverse(allversions);
-      versions = versions.concat("*, ").concat(StringUtils.join(allversions.iterator(), ", "));
+    String digest = id.toDigestString();
+    List<String> otherversions = getVersions();
+    if (otherversions.isEmpty()) {
+      Collections.reverse(otherversions);
+      String replacement = "*, " + StringUtils.join(otherversions.iterator(), ", ") + ")";
+      digest = digest.replaceFirst("\\)", replacement);
     }
-    out.println(id.getArtifactId() + groupId + " (" + versions + ")");
+    out.println(digest);
   }
 
   public void printDigest(PrintWriter out) {
-    String groupId = id.isDefaultGroupId() ? "" : " [" + id.getGroupId() + "]";
-    out.println(id.getArtifactId() + groupId + " (" + id.getVersion() + ")");
+    out.println(id.toDigestString());
   }
 
   private Map<ModuleId, Dependency> computeManifest() {

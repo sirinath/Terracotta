@@ -125,4 +125,10 @@ public class ModuleId implements Comparable {
   public String toString() {
     return getClass().getSimpleName() + ": " + getSymbolicName() + " [" + version + "]";
   }
+  
+  public String toDigestString() {
+    String digest = artifactId + " (" + version + ")";
+    if (!isDefaultGroupId()) digest = digest.concat(" [" + groupId + "]");
+    return digest;
+  }
 }
