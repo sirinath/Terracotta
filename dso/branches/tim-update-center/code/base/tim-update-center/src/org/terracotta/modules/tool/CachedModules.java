@@ -27,8 +27,8 @@ class CachedModules implements Modules {
 
   private Map<ModuleId, Module> modules;
 
-  private final String                tcVersion;
-  private final DataLoader            dataLoader;
+  private final String          tcVersion;
+  private final DataLoader      dataLoader;
 
   @Inject
   public CachedModules(@TerracottaVersion String tcVersion, DataLoader dataLoader) throws JDOMException, IOException {
@@ -43,7 +43,7 @@ class CachedModules implements Modules {
       Document document = builder.build(dataLoader.getDataFile());
       Element root = document.getRootElement();
       this.modules = new HashMap<ModuleId, Module>();
-  
+
       List<Element> children = root.getChildren();
       for (Element child : children) {
         Module module = Module.create(this, child);
