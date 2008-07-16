@@ -7,6 +7,7 @@ package com.tc.objectserver.persistence.sleepycat;
 import com.sleepycat.je.OperationStatus;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
@@ -15,7 +16,7 @@ import java.util.Set;
 
 public class NullObjectIDManager implements ObjectIDManager {
 
-  public Runnable getObjectIDReader(final SyncObjectIdSet rv) {
+  public Runnable getObjectIDReader(final SyncObjectIdSet rv, ObjectIDSet persistableCollectionTypeOidSet) {
     // a dummy one, just stop populating and return
     return new Runnable() {
       public void run() {
@@ -40,17 +41,7 @@ public class NullObjectIDManager implements ObjectIDManager {
   public OperationStatus putAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
-
-  public boolean isPersistMapped(ObjectID id) {
-    return false;
-  }
-
-  public void setPersistent(ObjectID id) {
+  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
     return;
   }
-
-  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) {
-    return;
-  }
-
 }

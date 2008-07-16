@@ -14,6 +14,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
@@ -44,7 +45,7 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
 
   }
 
-  public Runnable getObjectIDReader(SyncObjectIdSet rv) {
+  public Runnable getObjectIDReader(SyncObjectIdSet rv, ObjectIDSet persistableCollectionTypeOidSet) {
     return new ObjectIdReader(rv);
   }
 
@@ -128,15 +129,8 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
     }
   }
 
-  public boolean isPersistMapped(ObjectID id) {
-    return false;
+  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
+    throw new UnsupportedOperationException();
   }
 
-  public void setPersistent(ObjectID id) {
-    return;
-  }
-
-  public void flushPersistentEntryToDisk(PersistenceTransaction tx, ObjectID id) {
-    return;
-  }
 }

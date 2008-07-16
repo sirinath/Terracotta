@@ -18,19 +18,20 @@ import com.tc.object.ObjectID;
 import com.tc.util.Conversion;
 import com.tc.util.OidLongArray;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class OidBitsArrayMapImpl implements OidBitsArrayMap {
-  private static final TCLogger logger = TCLogging.getTestingLogger(OidBitsArrayMapImpl.class);
+  private static final TCLogger             logger = TCLogging.getTestingLogger(OidBitsArrayMapImpl.class);
 
-  private final Database        oidDB;
-  private final HashMap         map;
-  private final int             bitsLength;
-  private final int             longsPerDiskUnit;
-  private final int             auxKey;
+  private final Database                    oidDB;
+  private final TreeMap<Long, OidLongArray> map;
+  private final int                         bitsLength;
+  private final int                         longsPerDiskUnit;
+  private final int                         auxKey;
 
   /*
    * Compressed bits array for ObjectIDs, backed up by a database. If null database, then only in-memory representation.
@@ -46,7 +47,7 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
     this.oidDB = oidDB;
     this.longsPerDiskUnit = longsPerDiskUnit;
     this.bitsLength = longsPerDiskUnit * OidLongArray.BITS_PER_LONG;
-    map = new HashMap();
+    map = new TreeMap();
     this.auxKey = auxKey;
   }
 
@@ -69,29 +70,21 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
 
   OidLongArray getBitsArray(long oid) {
     Long mapIndex = oidIndex(oid);
-    OidLongArray longAry = null;
     synchronized (map) {
-      if (map.containsKey(mapIndex)) {
-        longAry = (OidLongArray) map.get(mapIndex);
-      }
+      return map.get(mapIndex);
     }
-    return longAry;
   }
 
   private OidLongArray getOrLoadBitsArray(long oid) {
     Long mapIndex = oidIndex(oid);
     OidLongArray longAry;
     synchronized (map) {
-      if (map.containsKey(mapIndex)) {
-        longAry = (OidLongArray) map.get(mapIndex);
-      } else {
-        longAry = null;
-        if (oidDB != null) {
-          try {
-            longAry = readDiskEntry(null, oid);
-          } catch (DatabaseException e) {
-            logger.error("Reading object ID " + oid + ":" + e);
-          }
+      longAry = map.get(mapIndex);
+      if (longAry == null) {
+        try {
+          longAry = readDiskEntry(null, oid);
+        } catch (DatabaseException e) {
+          logger.error("Reading object ID " + oid + ":" + e);
         }
         if (longAry == null) longAry = new OidLongArray(longsPerDiskUnit, mapIndex.longValue());
         map.put(mapIndex, longAry);
@@ -128,21 +121,22 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
         //
         throw new DatabaseException("Failed to delete oidDB at " + bits.getKey());
       }
-      removeIfEmpty(bits);
     }
-
   }
 
   /*
    * flush in-memory entry to disk
    */
-  public void updateToDiskEntry(Transaction tx, long onDiskIndex) throws DatabaseException {
-    OidLongArray bits = getBitsArray(onDiskIndex);
-    writeDiskEntry(tx, bits);
-  }
-
-  public void setMapEntry(long onDiskIndex, OidLongArray ary) {
-    map.put(onDiskIndex, ary);
+  public void updateToDisk(Transaction tx) throws DatabaseException {
+    synchronized (map) {
+      Iterator<Map.Entry<Long, OidLongArray>> i = map.entrySet().iterator();
+      while (i.hasNext()) {
+        Map.Entry<Long, OidLongArray> entry = i.next();
+        OidLongArray ary = entry.getValue();
+        writeDiskEntry(tx, ary);
+        if (ary.isZero()) i.remove();
+      }
+    }
   }
 
   private OidLongArray getAndModify(long oid, boolean doSet) {
@@ -166,20 +160,12 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
     return (getAndModify(id.toLong(), false));
   }
 
-  void removeIfEmpty(OidLongArray ary) {
-    synchronized (map) {
-      if (ary.isZero()) {
-        map.remove(ary.getKey());
-      }
-    }
-  }
-
   public boolean contains(ObjectID id) {
     long oid = id.toLong();
     Long mapIndex = oidIndex(oid);
     synchronized (map) {
       if (map.containsKey(mapIndex)) {
-        OidLongArray longAry = (OidLongArray) map.get(mapIndex);
+        OidLongArray longAry = map.get(mapIndex);
         return (longAry.isSet((int) oid % bitsLength));
       }
     }
@@ -226,7 +212,7 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
       dupKeySet.addAll(map.keySet());
       Iterator i = dupKeySet.iterator();
       while (i.hasNext()) {
-        OidLongArray bitsArray = (OidLongArray) map.get(i.next());
+        OidLongArray bitsArray = map.get(i.next());
         try {
           writeDiskEntry(null, bitsArray);
         } catch (DatabaseException e) {
@@ -239,5 +225,20 @@ public class OidBitsArrayMapImpl implements OidBitsArrayMap {
   // for testing
   Set getMapKeySet() {
     return map.keySet();
+  }
+  
+  // for testing
+  public String toString() {
+    StringBuffer buf = new StringBuffer();
+    for(Map.Entry<Long, OidLongArray> entry : map.entrySet()) {
+      Long base = entry.getKey();
+      OidLongArray ary = entry.getValue();
+      for(int i = 0; i < ary.totalBits(); ++i) {
+        if (ary.isSet(i)) {
+          buf.append(" " + (base+i));
+        }
+      }
+    }
+    return buf.toString();
   }
 }

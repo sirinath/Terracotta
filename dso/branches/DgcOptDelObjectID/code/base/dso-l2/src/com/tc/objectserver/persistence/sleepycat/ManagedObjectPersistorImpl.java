@@ -20,6 +20,7 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.managedobject.MapManagedObjectState;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
+import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
@@ -30,6 +31,7 @@ import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 import com.tc.util.SyncObjectIdSetImpl;
 import com.tc.util.concurrent.ThreadUtil;
@@ -99,6 +101,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private final ConcurrentHashMap              statsRecords          = new ConcurrentHashMap();
   private int                                  deleteCounter;
   private int                                  deletePersistentStateCounter;
+  private long                                 deleteTime;
+  private ManagedObjectStore                   managedObjectStore;
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, DBEnvironment env,
@@ -131,6 +135,17 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
 
     if (STATS_LOGGING_ENABLED) startStatsPrinter();
     if (measurePerf) startDeleteOperPrinter();
+  }
+
+  // hard wire ManagedObjectStore
+  public void setManagedObjectStore(ManagedObjectStore managedObjectStore) {
+    this.managedObjectStore = managedObjectStore;
+    this.objectIDManager.setManagedObjectStore(managedObjectStore);
+  }
+  
+  private boolean containsPersistableCollectionType(ObjectID id) {
+    Assert.assertNotNull(this.managedObjectStore);
+    return this.managedObjectStore.containsPersistableCollectionType(id);
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -198,10 +213,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return rv;
   }
 
-  public SyncObjectIdSet getAllObjectIDs() {
+  public SyncObjectIdSet getAllObjectIDs(ObjectIDSet persistableCollectionTypeOidSet) {
     SyncObjectIdSet rv = new SyncObjectIdSetImpl();
     rv.startPopulating();
-    Thread t = new Thread(objectIDManager.getObjectIDReader(rv), "ObjectIdReaderThread");
+    Thread t = new Thread(objectIDManager.getObjectIDReader(rv, persistableCollectionTypeOidSet), "ObjectIdReaderThread");
     t.setDaemon(true);
     t.start();
     return rv;
@@ -276,7 +291,6 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       Assert.assertNull(mapState.getMap());
       try {
         mapState.setMap(collectionsPersistor.loadMap(tx, mo.getID()));
-        objectIDManager.setPersistent(mo.getID());
       } catch (DatabaseException e) {
         throw new TCDatabaseException(e);
       }
@@ -291,11 +305,6 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       status = basicSaveObject(persistenceTransaction, managedObject);
       if (OperationStatus.SUCCESS.equals(status) && managedObject.isNew()) {
         status = objectIDManager.put(persistenceTransaction, managedObject);
-        if (OperationStatus.SUCCESS.equals(status)
-            && PersistentCollectionsUtil.isPersistableCollectionType(managedObject.getManagedObjectState().getType())) {
-          objectIDManager.setPersistent(managedObject.getID());
-          objectIDManager.flushPersistentEntryToDisk(persistenceTransaction, managedObject.getID());
-        }
       }
     } catch (DBException e) {
       throw e;
@@ -374,7 +383,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       public void run() {
         while (true) {
           ThreadUtil.reallySleep(60000);
-          logger.info("Deletes count:" + deleteCounter + " delete state count:" + deletePersistentStateCounter);
+          logger.info("Deletes count:" + deleteCounter + " delete state count:" + deletePersistentStateCounter
+                      + " usedTime(ns): " + deleteTime);
         }
       }
     }, "Delete Statistics printer");
@@ -489,12 +499,17 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
         // make the formatter happy
         throw new DBException("Unable to remove ManagedObject for object id: " + id + ", status: " + status);
       } else {
-        if (measurePerf) ++deleteCounter;
-        if (objectIDManager.isPersistMapped(id)) {
+        long startTime = 0;
+        if (measurePerf) {
+          startTime = System.nanoTime();
+          ++deleteCounter;
+        }
+        if (containsPersistableCollectionType(id)) {
           if (measurePerf) ++deletePersistentStateCounter;
           // may return false if ManagedObject persistent state empty
           collectionsPersistor.deleteCollection(tx, id);
         }
+        if (measurePerf) deleteTime += (System.nanoTime() - startTime);
       }
     } catch (DatabaseException t) {
       throw new DBException(t);

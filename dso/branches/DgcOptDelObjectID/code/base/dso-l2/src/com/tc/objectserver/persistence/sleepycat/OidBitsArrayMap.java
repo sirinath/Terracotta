@@ -30,11 +30,6 @@ public interface OidBitsArrayMap {
   /*
    * flush in-memory entry to disk
    */
-  public void updateToDiskEntry(Transaction tx, long onDiskIndex) throws DatabaseException;
+  public void updateToDisk(Transaction tx) throws DatabaseException;
   
-  /*
-   * update memory from disk
-   */
-  public void setMapEntry(long onDiskIndex, OidLongArray ary);
-
 }

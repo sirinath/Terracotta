@@ -27,6 +27,7 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.io.File;
@@ -108,6 +109,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
         ManagedObject mo = new TestPersistentStateManagedObject(new ObjectID(id), new ObjectID[] {},
                                                                 withPersistentCollectionState);
         objects.add(mo);
+        objectStore.addNewObject(mo);
       }
     }
     logger.info("Test with " + objects.size() + " objects");
@@ -115,7 +117,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   }
 
   private void verify(Collection objects) {
-    // verify an in-memory bit crosspond to an object ID
+    // verify an in-memory bit correspond to an object ID
     HashSet originalIds = new HashSet();
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
@@ -125,16 +127,17 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     assertTrue("Wrong bits in memory were set", originalIds.containsAll(inMemoryIds));
 
     // verify on disk object IDs
-    SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs();
+    ObjectIDSet persistentStateObjectSet = new ObjectIDSet();
+    SyncObjectIdSet idSet = managedObjectPersistor.getAllObjectIDs(persistentStateObjectSet);
     idSet.snapshot(); // blocked while reading from disk
     assertTrue("Wrong object IDs on disk", idSet.containsAll(inMemoryIds));
     assertTrue("Wrong object IDs on disk", inMemoryIds.containsAll(idSet));
   }
 
-  private void verifyState(Collection objects) {
+  private void verifyState(OidBitsArrayMapImpl oidMap, Collection objects) {
     for (Iterator i = objects.iterator(); i.hasNext();) {
       ManagedObject mo = (ManagedObject) i.next();
-      assertTrue("PersistentCollectionMap missing " + mo.getID(), oidManager.isPersistMapped(mo.getID()));
+      assertTrue("PersistentCollectionMap missing " + mo.getID(), oidMap.contains((mo.getID())));
     }
   }
 
@@ -145,8 +148,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data
     Collection objects = createRandomObjects(15050, false);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -167,8 +173,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data
     Collection objects = createRandomObjects(15050, false);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -180,9 +189,13 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
       toDelete.add(mo.getID());
       i.remove();
     }
+
     ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
-    ptx.commit();
+    try {
+      managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -197,8 +210,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data
     Collection objects = createRandomObjects(15050, false);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -208,8 +224,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
       objectIds.add(mo.getID());
     }
     ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
-    ptx.commit();
+    try {
+      managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -224,8 +243,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data with persistentCollectionMap
     Collection objects = createRandomObjects(15050, true);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -236,7 +258,9 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
       assertTrue("Object:" + mo.getID() + " missed in memory! ", oidMap.contains(mo.getID()));
     }
     verify(objects);
-    verifyState(objects);
+
+    oidMap = oidManager.loadMapsOidStoreFromDisk();
+    verifyState(oidMap, objects);
   }
 
   public void testStateOidBitsArrayDeleteHalf() throws Exception {
@@ -246,8 +270,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data with persistentCollectionMap
     Collection objects = createRandomObjects(15050, true);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -261,15 +288,20 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     }
     testSleepycatCollectionsPersistor.setCounter(0);
     ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
-    ptx.commit();
+    try {
+      managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
+    } finally {
+      ptx.commit();
+    }
     assertEquals(toDelete.size(), testSleepycatCollectionsPersistor.getCounter());
 
     oidManager.runCheckpoint();
 
     oidManager.loadBitsArrayFromDisk();
     verify(objects);
-    verifyState(objects);
+
+    OidBitsArrayMapImpl oidMap = oidManager.loadMapsOidStoreFromDisk();
+    verifyState(oidMap, objects);
   }
 
   public void testStateOidBitsArrayDeleteAll() throws Exception {
@@ -279,8 +311,11 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     // publish data
     Collection objects = createRandomObjects(15050, true);
     PersistenceTransaction ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.saveAllObjects(ptx, objects);
-    ptx.commit();
+    try {
+      managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
 
     oidManager.runCheckpoint();
 
@@ -291,15 +326,20 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     }
     testSleepycatCollectionsPersistor.setCounter(0);
     ptx = persistenceTransactionProvider.newTransaction();
-    managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
-    ptx.commit();
+    try {
+      managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
+    } finally {
+      ptx.commit();
+    }
     assertEquals(objectIds.size(), testSleepycatCollectionsPersistor.getCounter());
 
     oidManager.runCheckpoint();
 
     objects.clear();
     verify(objects);
-    verifyState(objects);
+
+    OidBitsArrayMapImpl oidMap = oidManager.loadMapsOidStoreFromDisk();
+    verifyState(oidMap, objects);
   }
 
   private class TestSleepycatCollectionsPersistor extends SleepycatCollectionsPersistor {

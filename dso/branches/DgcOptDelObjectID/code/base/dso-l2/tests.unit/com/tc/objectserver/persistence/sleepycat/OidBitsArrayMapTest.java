@@ -36,7 +36,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     boolean paranoid = true;
     env = newDBEnvironment(paranoid);
     env.open();
-    oidDB = env.getOidDatabase();
+    oidDB = env.getObjectOidStoreDatabase();
   }
 
   protected void tearDown() throws Exception {
