@@ -134,7 +134,7 @@ public class Module implements Comparable {
   }
 
   public int compareTo(Object obj) {
-    assert obj instanceof Module;
+    assert obj instanceof Module : "must be instanceof Module";
     Module other = (Module) obj;
     return id.compareTo(other.getId());
   }
@@ -158,7 +158,7 @@ public class Module implements Comparable {
   }
 
   public boolean isOlder(Module o) {
-    assert getSymbolicName().equals(o.getSymbolicName());
+    assert getSymbolicName().equals(o.getSymbolicName()) : "symbolicNames do not match.";
     return id.sortableVersion().compareTo(o.getId().sortableVersion()) < 0;
   }
 
@@ -350,10 +350,10 @@ public class Module implements Comparable {
     printSummary(out, true);
   }
 
-  private void printLongDigest(PrintWriter out) {
+  public void printLongDigest(PrintWriter out) {
     String digest = id.toDigestString();
     List<String> otherversions = getVersions();
-    if (otherversions.isEmpty()) {
+    if (!otherversions.isEmpty()) {
       Collections.reverse(otherversions);
       String replacement = "*, " + StringUtils.join(otherversions.iterator(), ", ") + ")";
       digest = digest.replaceFirst("\\)", replacement);
@@ -368,7 +368,7 @@ public class Module implements Comparable {
   private Map<ModuleId, Dependency> computeManifest() {
     Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
     manifest.put(this.id, new Dependency(this));
-    assert this.dependencies != null;
+    assert this.dependencies != null : "dependencies field must not be null";
     for (Dependency dependency : this.dependencies) {
       if (dependency.isReference()) {
         Module module = this.modules.get(dependency.getId());

@@ -28,20 +28,20 @@ public class ListCommand extends AbstractCommand {
   @Inject
   public ListCommand(Modules modules) {
     this.modules = modules;
-    assert modules != null;
+    assert modules != null : "modules is null";
     options.addOption(OPTION_DETAILS_SHORT, OPTION_DETAILS, false, "Display detailed information");
   }
 
   private void displayWithDetails(List<Module> list) {
     for (Module module : list) {
-      out().println();
-      module.printSummary(out());
+      out.println();
+      module.printSummary(out);
     }
   }
   
   private void display(List<Module> list) {
-    out().println();
-    for (Module module : list) module.printDigest(out());
+    out.println();
+    for (Module module : list) module.printLongDigest(out);
   }
   
   private boolean isQualified(List<String> keywords, String text) {
@@ -64,7 +64,7 @@ public class ListCommand extends AbstractCommand {
       list.add(module);
     }
     
-    out().println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
+    out.println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
     if (cli.hasOption('v') || cli.hasOption(OPTION_DETAILS)) displayWithDetails(list);
     else display(list);
   }

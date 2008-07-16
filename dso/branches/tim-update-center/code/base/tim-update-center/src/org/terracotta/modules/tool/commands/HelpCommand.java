@@ -22,7 +22,7 @@ public class HelpCommand extends AbstractCommand {
     List<String> topics = cli.getArgList();
 
     if (topics.isEmpty()) {
-      out().println(loadHelp("GenericHelp"));
+      out.println(loadHelp("GenericHelp"));
       return;
     }
 
@@ -31,7 +31,7 @@ public class HelpCommand extends AbstractCommand {
         Command cmd = commandRegistry.getCommand(cmdname);
         cmd.printHelp();
       } catch (UnknownCommandException e) {
-        out().println("Command not supported: " + cmdname);
+        out.println("Command not supported: " + cmdname);
       }
     }
   }
