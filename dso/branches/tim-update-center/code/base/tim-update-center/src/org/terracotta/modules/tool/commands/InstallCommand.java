@@ -44,7 +44,6 @@ public class InstallCommand extends AbstractCommand {
     StringWriter sw = new StringWriter();
     module.printDigest(new PrintWriter(sw));
     module.install(overwrite, pretend, out);
-    // out.println();
   }
 
   private void install(String groupId, String artifactId, String version) {
