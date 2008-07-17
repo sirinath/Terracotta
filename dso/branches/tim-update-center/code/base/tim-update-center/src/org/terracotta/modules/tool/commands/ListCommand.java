@@ -42,7 +42,7 @@ public class ListCommand extends AbstractCommand {
   private void display(List<Module> list) {
     out.println();
     for (Module module : list)
-      module.printLongDigest(out);
+      module.printDigest(out);
   }
 
   private boolean isQualified(List<String> keywords, String text) {

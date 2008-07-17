@@ -7,12 +7,15 @@ package org.terracotta.modules.tool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jdom.Element;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 import org.terracotta.modules.tool.util.DownloadUtil;
 import org.terracotta.modules.tool.util.DownloadUtil.DownloadOption;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -306,59 +309,123 @@ public class Module implements Comparable {
     return installPath().exists();
   }
 
-  private void printNotes(PrintWriter out, boolean printDigest) {
-    if (printDigest) printLongDigest(out);
-    out.println("   Compatible with " + (tcVersion.equals("*") ? "any Terracotta version." : "TC " + tcVersion));
-    if (isInstalled()) out.println("   Installed at " + repositoryPath());
+  private void printInstallationInfo(PrintWriter out) {
+    if (isInstalled()) out.println("Installed at " + installPath().getParent());
+    if (getVersions().isEmpty()) {
+      out.println("There are no other versions of this TIM that is compatible with TC " + modules.tcVersion());
+    } else {
+      out.println("The following versions are also available for TC " + modules.tcVersion() + ":\n");
+      List<Module> siblings = this.getSiblings();
+      for (Module sibling : siblings) {
+        out.print("\t" +  (sibling.isInstalled() ? "+ " : "- ") + sibling.getId().getVersion());
+        if (sibling.isInstalled()) out.println("\tinstalled at " + sibling.installPath().getParent());
+        else out.println();
+      }
+    }
+  }
+
+  private void printBasicInfo(PrintWriter out) {
+    out.println("Installed: " + (isInstalled() ? "YES" : "NO"));
+    out.println();
+    out.println("Author   : " + vendor);
+    out.println("Copyright: " + copyright);
+    out.println("Homepage : " + website);
+    out.println("Download : " + repoUrl);
+    out.println();
+    out.println(description.replaceAll("\n[ ]+", "\n"));
+    out.println();
+    out.println("Compatible with " + (tcVersion.equals("*") ? "any Terracotta version." : "TC " + tcVersion));
+  }
+
+  private void printDependenciesInfo(PrintWriter out) {
+    List<ModuleId> requires = dependencies();
+    out.println("Dependencies:\n");
+    if (requires.isEmpty()) {
+      out.println("\tNone.");
+      return;
+    }
+    Collections.sort(requires);
+    Map<ModuleId, Dependency> manifest = computeManifest();
+    for (ModuleId m : requires) {
+      Dependency d = manifest.get(m);
+      out.println("\t" +  (this.isInstalled(d) ? "+ " : "- ") + m.toDigestString());
+    }
+  }
+
+  private void printMavenInfo(PrintWriter out) {
+    out.println("Maven Coordinates:\n");
+    out.println("\tgroupId   : " + id.getGroupId());
+    out.println("\tartifactId: " + id.getArtifactId());
+    out.println("\tversion   : " + id.getVersion());
+  }
+
+  private void printConfigInfo(PrintWriter out) {
+    Element parent = new Element("modules");
+    Map<ModuleId, Dependency> manifest = this.computeManifest();
+    for (ModuleId key : manifest.keySet()) {
+      Element child = new Element("module");
+      parent.addContent(child);
+      child.setAttribute("name", key.getArtifactId());
+      child.setAttribute("version", key.getVersion());
+      if (key.isDefaultGroupId()) continue;
+      child.setAttribute("group-id", key.getGroupId());
+    }
+
+    out.println("Configuration:\n");
+    StringWriter sw = new StringWriter();
+    Format formatter = Format.getPrettyFormat();
+    formatter.setIndent("\t");
+    XMLOutputter xmlout = new XMLOutputter(formatter);
+    try {
+      xmlout.output(parent, new PrintWriter(sw));
+      out.println(sw.toString().replaceAll("\\<", "\t\\<"));
+    } catch (IOException e) {
+      out.println(e.getMessage());
+    }
   }
 
   public void printDetails(PrintWriter out) {
-    printLongDigest(out);
-    out.println();
-    out.println("   groupId   : " + id.getGroupId());
-    out.println("   artifactId: " + id.getArtifactId());
-    out.println("   version   : " + id.getVersion());
-    out.println();
-    List<ModuleId> requires = dependencies();
-    if (!requires.isEmpty()) {
-      out.print("   Requires  : ");
-      Collections.sort(requires);
-      for (ModuleId m : requires) {
-        out.print(m.getArtifactId());
-        if (!m.isDefaultGroupId()) out.print(" [" + m.getGroupId() + "]");
-        out.println(" (" + m.getVersion() + ")");
-        out.print("               ");
-      }
-    }
-    out.println();
-    printSummary(out, false);
-  }
+    StringBuffer text = new StringBuffer();
 
-  private void printSummary(PrintWriter out, boolean printDigest) {
-    if (printDigest) printLongDigest(out);
-    out.println("   Author    : " + vendor);
-    out.println("   Copyright : " + copyright);
-    out.println("   Homepage  : " + website);
-    out.println("   Download  : " + repoUrl);
-    out.println();
-    out.println("   " + description.replaceAll("  ", " "));
-    out.println();
-    printNotes(out, false);
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    printDigest(pw);
+    text.append(sw.toString());
+
+    sw = new StringWriter();
+    pw = new PrintWriter(sw);
+    printBasicInfo(pw);
+    pw.println("\n---\n");
+
+    printDependenciesInfo(pw);
+    pw.println();
+
+    printMavenInfo(pw);
+    pw.println();
+
+    printConfigInfo(pw);
+    pw.println();
+
+    printInstallationInfo(pw);
+
+    text.append("\n\t").append(sw.toString().replaceAll("\n", "\n\t"));
+    out.println(StringUtils.chomp(text.toString().trim().replaceAll("\t", "   ")));
   }
 
   public void printSummary(PrintWriter out) {
-    printSummary(out, true);
-  }
+    StringBuffer text = new StringBuffer();
 
-  public void printLongDigest(PrintWriter out) {
-    String digest = id.toDigestString();
-    List<String> otherversions = getVersions();
-    if (!otherversions.isEmpty()) {
-      Collections.reverse(otherversions);
-      String replacement = "*, " + StringUtils.join(otherversions.iterator(), ", ") + ")";
-      digest = digest.replaceFirst("\\)", replacement);
-    }
-    out.println(digest);
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    printDigest(pw);
+    text.append(sw.toString());
+
+    sw = new StringWriter();
+    pw = new PrintWriter(sw);
+    printBasicInfo(pw);
+
+    text.append("\n\t").append(sw.toString().replaceAll("\n", "\n\t"));
+    out.println(StringUtils.chomp(text.toString().trim().replaceAll("\t", "   ")));
   }
 
   public void printDigest(PrintWriter out) {
@@ -367,11 +434,11 @@ public class Module implements Comparable {
 
   private Map<ModuleId, Dependency> computeManifest() {
     Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
-    manifest.put(this.id, new Dependency(this));
-    assert this.dependencies != null : "dependencies field must not be null";
+    manifest.put(id, new Dependency(this));
+    assert dependencies != null : "dependencies field must not be null";
     for (Dependency dependency : this.dependencies) {
       if (dependency.isReference()) {
-        Module module = this.modules.get(dependency.getId());
+        Module module = modules.get(dependency.getId());
         assert module != null;
         for (Entry<ModuleId, Dependency> entry : module.computeManifest().entrySet()) {
           if (manifest.containsKey(entry.getKey())) continue;
