@@ -10,7 +10,7 @@ ARGUMENTS:
 
   command  OPTIONAL. The list of commands to ask for help on. The help
            command delegates this to the named commands using the 
-           command’s  --help switch.
+           command's  --help switch.
 
 SWITCHES:
 
