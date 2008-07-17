@@ -20,7 +20,9 @@ public interface GCStats {
   long getCandidateGarbageCount();
 
   long getActualGarbageCount();
-
+  
+  long getMarkStageTime();
+  
   long getPausedStageTime();
   
   long getDeleteStageTime();
