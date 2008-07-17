@@ -204,11 +204,10 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     long deleteStartMillis = System.currentTimeMillis();
     gcStats.setPausedStageTime(deleteStartMillis - pauseStartMillis);
     // Delete Garbage
-    deleteGarbage(new GCResultContext(gcIteration, toDelete));
+    deleteGarbage(new GCResultContext(gcIteration, toDelete, deleteStartMillis));
 
     gcStats.setActualGarbageCount(toDelete.size());
     long endMillis = System.currentTimeMillis();
-    gcStats.setDeleteStageTime(endMillis - deleteStartMillis);
     gcStats.setElapsedTime(endMillis - startMillis);
     gcLogger.log_GCComplete(gcStats, rescueTimes);
 
@@ -369,6 +368,12 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     state = GC_SLEEP;
     fireGCStatusUpdateEvent();
   }
+  
+  public synchronized void notifyGCDeleteComplete(long deleteStartMillis) {
+    gcStats.setDeleteStageTime(System.currentTimeMillis() - deleteStartMillis);
+    fireGCStatusUpdateEvent();
+  }
+
 
   /**
    * In Active server, state transitions from GC_PAUSED to GC_DELETE and in the passive server, state transitions from
@@ -485,7 +490,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
   }
 
-  protected void fireGCStatusUpdateEvent() {
+  public void fireGCStatusUpdateEvent() {
     if (gcStats != null) {
       gcStats.setState(state);
       gcStats.setElapsedTime(System.currentTimeMillis() - gcStats.getStartTime());

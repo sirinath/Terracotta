@@ -187,6 +187,10 @@ public class TestObjectManager implements ObjectManager {
   public void notifyGCComplete(GCResultContext resultContext) {
     throw new ImplementMe();
   }
+  
+  public void notifyGCDeleteComplete(long deleteStartMillis) {
+    throw new ImplementMe();
+  }
 
   public void flushAndEvict(List objects2Flush) {
     throw new ImplementMe();
