@@ -16,6 +16,14 @@ public class GCStatsImpl implements GCStats, Serializable {
   private static final long             serialVersionUID      = -4177683133067698672L;
   private static final TCLogger         logger                = TCLogging.getLogger(GCStatsImpl.class);
   private static final SimpleDateFormat printFormat           = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss z");
+
+  private static final State            GC_START              = new State("START");
+  private static final State            GC_MARK               = new State("MARK");
+  private static final State            GC_PAUSE              = new State("PAUSE");
+  private static final State            GC_MARK_COMPLETE      = new State("MARK_COMPLETE");
+  private static final State            GC_DELETE             = new State("DELETE");
+  private static final State            GC_COMPLETE           = new State("COMPLETE");
+
   private static final long             NOT_INITIALIZED       = -1L;
   private static final String           YOUNG_GENERATION      = "Young";
   private static final String           FULL_GENERATION       = "Full";
@@ -28,12 +36,11 @@ public class GCStatsImpl implements GCStats, Serializable {
   private long                          markStageTime         = NOT_INITIALIZED;
   private long                          pausedStageTime       = NOT_INITIALIZED;
   private long                          deleteStageTime       = NOT_INITIALIZED;
-  private State                         state;
+  private State                         state                 = GC_START;
   private boolean                       young;
 
-  public GCStatsImpl(int number, State aState) {
+  public GCStatsImpl(int number) {
     this.number = number;
-    this.state = aState;
   }
 
   public synchronized boolean isYoung() {
@@ -43,6 +50,26 @@ public class GCStatsImpl implements GCStats, Serializable {
   public int getIteration() {
     return this.number;
   }
+
+  public synchronized void setMarkState() {
+    this.state = GC_MARK;
+  }
+
+  public synchronized void setPauseState() {
+    this.state = GC_PAUSE;
+  }
+
+  public synchronized void setMarkCompleteState() {
+    this.state = GC_MARK_COMPLETE;
+  }
+
+  public synchronized void setCompleteState() {
+    this.state = GC_COMPLETE;
+  }
+
+  public synchronized void setDeleteState() {
+    this.state = GC_DELETE;
+   }
 
   public synchronized long getStartTime() {
     return this.startTime;
@@ -63,7 +90,7 @@ public class GCStatsImpl implements GCStats, Serializable {
   public synchronized long getActualGarbageCount() {
     return this.actualGarbageCount;
   }
-  
+
   public synchronized long getMarkStageTime() {
     return this.markStageTime;
   }
@@ -84,10 +111,6 @@ public class GCStatsImpl implements GCStats, Serializable {
     return young ? YOUNG_GENERATION : FULL_GENERATION;
   }
 
-  public synchronized void setState(State state) {
-    this.state = state;
-  }
-
   public synchronized void setActualGarbageCount(long count) {
     validate(count);
     this.actualGarbageCount = count;
@@ -102,7 +125,7 @@ public class GCStatsImpl implements GCStats, Serializable {
     validate(count);
     this.candidateGarbageCount = count;
   }
-  
+
   public synchronized void setMarkStageTime(long time) {
     if (time < 0L) {
       logger.warn("System timer moved backward, setting GC MarkStageTime to 0");
@@ -167,10 +190,11 @@ public class GCStatsImpl implements GCStats, Serializable {
   public String toString() {
     return "GCStats[ iteration: " + getIteration() + "; type: " + getType() + "; status: " + getStatus()
            + " ] : startTime = " + formatAsDate(this.startTime) + "; elapsedTime = " + formatTime(this.elapsedTime)
-           + "; markStageTime = " + formatTime(markStageTime) + "; pausedStageTime = " + formatTime(this.pausedStageTime) + "; deleteStageTime = "
-           + formatTime(this.deleteStageTime) + "; beginObjectCount = " + this.beginObjectCount
-           + "; candidateGarbageCount = " + this.candidateGarbageCount + "; actualGarbageCount = "
-           + this.actualGarbageCount;
+           + "; markStageTime = " + formatTime(markStageTime) + "; pausedStageTime = "
+           + formatTime(this.pausedStageTime) + "; deleteStageTime = " + formatTime(this.deleteStageTime)
+           + "; beginObjectCount = " + this.beginObjectCount + "; candidateGarbageCount = "
+           + this.candidateGarbageCount + "; actualGarbageCount = " + this.actualGarbageCount;
   }
+
 
 }
