@@ -46,6 +46,7 @@ class GarbageCollectorThread extends StoppableThread {
   }
 
   public void run() {
+    System.err.println("SARO :: GC THREAD : " + youngGCSleepTime + " " + fullGCSleepTime);
     long lastFullGC = System.currentTimeMillis();
     while (true) {
       if (isStopRequested()) { return; }

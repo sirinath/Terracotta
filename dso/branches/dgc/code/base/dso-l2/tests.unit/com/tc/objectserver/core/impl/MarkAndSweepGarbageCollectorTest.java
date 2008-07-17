@@ -15,6 +15,7 @@ import com.tc.objectserver.core.api.Filter;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.impl.ManagedObjectReference;
+import com.tc.objectserver.impl.ObjectManagerConfig;
 import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -70,7 +71,8 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
     super.setUp();
     this.managed = new HashMap();
 
-    this.collector = new MarkAndSweepGarbageCollector(this, new TestClientStateManager(), false,
+    this.collector = new MarkAndSweepGarbageCollector(this, new TestClientStateManager(),
+                                                      new ObjectManagerConfig(300000, true, true, false, false, 60000),
                                                       new NullStatisticsAgentSubSystem());
     this.lookedUp = new HashSet();
     this.released = new HashSet();
@@ -344,6 +346,10 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase implements Object
   }
 
   public void notifyGCComplete(GCResultContext resultContext) {
+    throw new ImplementMe();
+  }
+
+  public ObjectIDSet getObjectIDsInCache() {
     throw new ImplementMe();
   }
 
