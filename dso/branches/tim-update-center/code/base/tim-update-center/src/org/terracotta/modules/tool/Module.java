@@ -230,7 +230,7 @@ public class Module implements Comparable {
   public void install(boolean overwrite, boolean pretend, PrintWriter out) {
     Map<ModuleId, Dependency> manifest = computeManifest();
     List<ModuleId> list = new ArrayList<ModuleId>(manifest.keySet());
-
+    
     out.println("Installing " + id.toDigestString() + " and dependencies...");
     for (ModuleId key : list) {
       Dependency dependency = manifest.get(key);
@@ -264,6 +264,25 @@ public class Module implements Comparable {
       }
       out.println("   Installed: " + dependencyId);
     }
+  }
+  
+  private Map<ModuleId, Dependency> computeManifest() {
+    Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
+    manifest.put(id, new Dependency(this));
+    assert dependencies != null : "dependencies field must not be null";
+    for (Dependency dependency : this.dependencies) {
+      if (dependency.isReference()) {
+        Module module = modules.get(dependency.getId());
+        assert module != null;
+        for (Entry<ModuleId, Dependency> entry : module.computeManifest().entrySet()) {
+          if (manifest.containsKey(entry.getKey())) continue;
+          manifest.put(entry.getKey(), entry.getValue());
+        }
+        continue;
+      }
+      manifest.put(dependency.getId(), dependency);
+    }
+    return manifest;
   }
 
   private static void download(String address, File localfile) throws IOException {
@@ -310,7 +329,7 @@ public class Module implements Comparable {
   }
 
   private void printInstallationInfo(PrintWriter out) {
-    if (isInstalled()) out.println("Installed at " + installPath().getParent());
+    if (isInstalled()) out.println("Installed at " + StringUtils.abbreviate(installPath().getParent(), 75));
     if (getVersions().isEmpty()) {
       out.println("There are no other versions of this TIM that is compatible with TC " + modules.tcVersion());
     } else {
@@ -318,7 +337,7 @@ public class Module implements Comparable {
       List<Module> siblings = this.getSiblings();
       for (Module sibling : siblings) {
         out.print("\t" +  (sibling.isInstalled() ? "+ " : "- ") + sibling.getId().getVersion());
-        if (sibling.isInstalled()) out.println("\tinstalled at " + sibling.installPath().getParent());
+        if (sibling.isInstalled()) out.println("\tinstalled at " + StringUtils.abbreviate(sibling.installPath().getParent(), 75));
         else out.println();
       }
     }
@@ -389,7 +408,8 @@ public class Module implements Comparable {
 
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
-    printDigest(pw);
+
+    pw.println(id.toDigestString());
     text.append(sw.toString());
 
     sw = new StringWriter();
@@ -417,7 +437,8 @@ public class Module implements Comparable {
 
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
-    printDigest(pw);
+
+    pw.println(id.toDigestString());
     text.append(sw.toString());
 
     sw = new StringWriter();
@@ -429,26 +450,8 @@ public class Module implements Comparable {
   }
 
   public void printDigest(PrintWriter out) {
+    out.print(isInstalled() ? "+ " : "- "); 
     out.println(id.toDigestString());
-  }
-
-  private Map<ModuleId, Dependency> computeManifest() {
-    Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
-    manifest.put(id, new Dependency(this));
-    assert dependencies != null : "dependencies field must not be null";
-    for (Dependency dependency : this.dependencies) {
-      if (dependency.isReference()) {
-        Module module = modules.get(dependency.getId());
-        assert module != null;
-        for (Entry<ModuleId, Dependency> entry : module.computeManifest().entrySet()) {
-          if (manifest.containsKey(entry.getKey())) continue;
-          manifest.put(entry.getKey(), entry.getValue());
-        }
-        continue;
-      }
-      manifest.put(dependency.getId(), dependency);
-    }
-    return manifest;
   }
 
 }
