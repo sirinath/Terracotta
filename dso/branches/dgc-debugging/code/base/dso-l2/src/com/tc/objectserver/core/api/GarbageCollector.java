@@ -71,5 +71,5 @@ public interface GarbageCollector extends PrettyPrintable {
 
   public GCStats[] getGarbageCollectorStats();
 
-  public boolean deleteGarbage(GCResultContext resultContext);
+  public boolean sweepGarbage(GCResultContext resultContext);
 }
