@@ -38,6 +38,9 @@ public class GuiceModule implements Module {
     // Inject the tcVersion anywhere the @TerracottaVersion annotation is used
     binder.bindConstant().annotatedWith(TerracottaVersion.class).to(config.getTcVersion());
 
+    // Make our Config object available to anybody that needs it
+    binder.bind(Config.class).in(Scopes.SINGLETON);
+
     // The DataLoader is used by the CachedModules implementation to download
     // the remote data file and cache it locally.
     binder.bind(DataLoader.class).toProvider(new Provider<DataLoader>() {
