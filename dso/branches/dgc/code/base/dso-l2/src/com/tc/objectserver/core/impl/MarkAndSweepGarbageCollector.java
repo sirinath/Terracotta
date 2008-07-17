@@ -159,7 +159,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     while (!requestGCStart()) {
       gcLogger.log_GCDisabled();
-      logger.info("GC is Disabled. Waiting for 1 min before checking again ...");
+      logger.info("GC is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);
     }
 
