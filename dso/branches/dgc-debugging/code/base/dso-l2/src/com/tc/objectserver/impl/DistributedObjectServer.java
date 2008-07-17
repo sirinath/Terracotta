@@ -584,7 +584,7 @@ public class DistributedObjectServer implements TCDumper {
     managedObjectChangeListenerProvider.setListener(objectManager);
 
     l2Management.findObjectManagementMonitorMBean()
-        .registerGCController(new GCComptrollerImpl(objectManagerConfig, objectManager.getGarbageCollector()));
+        .registerGCController(new GCComptrollerImpl(objectManager.getGarbageCollector()));
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
