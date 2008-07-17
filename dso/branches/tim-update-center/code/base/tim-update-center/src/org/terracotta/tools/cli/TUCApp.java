@@ -20,7 +20,7 @@ import org.terracotta.modules.tool.config.Config;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,16 +28,10 @@ import java.util.Properties;
 
 public class TUCApp {
 
-  private static Config createConfig() {
+  private static Config createConfig() throws IOException {
     Properties props = new Properties();
-    // TODO: use properties file for creating Config
-    //props.load(TUCApp.class.getResourceAsStream("/org/terracotta/modules/tool/config.properties"));
-    props.setProperty("tim-update.tcVersion", "2.6.2");
-    String dataDir = new File(System.getProperty("user.home"), ".tc").getAbsolutePath();
-    String dataFile = new File(dataDir, "tuc-manifest.xml").getAbsolutePath();
-    props.setProperty("tim-update.dataFile", dataFile);
-    props.setProperty("tim-update.dataFileUrl", "http://forge-dev.terracotta.lan/tuc-manifest.xml");
-    return Config.createConfig(props);
+    props.load(TUCApp.class.getResourceAsStream("/org/terracotta/modules/tool/config.properties"));
+    return new Config(props);
   }
 
   private static Throwable rootCause(Throwable throwable) {
