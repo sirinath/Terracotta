@@ -44,8 +44,12 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
 
   }
 
-  public Runnable getObjectIDReader(SyncObjectIdSet rv, ObjectIDSet persistableCollectionTypeOidSet) {
+  public Runnable getObjectIDReader(SyncObjectIdSet rv) {
     return new ObjectIdReader(rv);
+  }
+
+  public Runnable getMapsObjectIDReader(SyncObjectIdSet rv) {
+    return null;
   }
 
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {

@@ -9,7 +9,6 @@ import com.sleepycat.je.OperationStatus;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
-import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.util.Set;
@@ -24,6 +23,7 @@ public interface ObjectIDManager {
 
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) throws TCDatabaseException;
 
-  public Runnable getObjectIDReader(SyncObjectIdSet objectIDSet, ObjectIDSet persistableCollectionTypeOidSet);
+  public Runnable getObjectIDReader(SyncObjectIdSet objectIDSet);
   
+  public Runnable getMapsObjectIDReader(SyncObjectIdSet objectIDSet);
 }

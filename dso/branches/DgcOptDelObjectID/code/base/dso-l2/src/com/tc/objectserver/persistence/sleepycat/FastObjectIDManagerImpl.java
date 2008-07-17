@@ -27,7 +27,6 @@ import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.OidLongArray;
 import com.tc.util.SyncObjectIdSet;
-import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.sequence.MutableSequence;
 
 import java.util.Collection;
@@ -55,8 +54,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private final Database                       mapsOidStoreDB;
   private final Database                       oidStoreLogDB;
   private final PersistenceTransactionProvider ptp;
-  private final CursorConfig                   oidDBCursorConfig;
-  private final CursorConfig                   oidStateDBCursorConfig;
   private final CheckpointRunner               checkpointThread;
   private final Object                         checkpointSyncObj     = new Object();
   private final Object                         objectIDUpdateSyncObj = new Object();
@@ -64,8 +61,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private long                                 nextSequence;
   private long                                 endSequence;
   private final long                           firstSequenceThisRun;
-  private SetOnceFlag                          canStartCheckpoint    = new SetOnceFlag();
-  private Cursor                               oidLogDBCursor;
   private final ManagedObjectPersistor         managedObjectPersistor;
 
   public FastObjectIDManagerImpl(DBEnvironment env, PersistenceTransactionProvider ptp, MutableSequence sequence,
@@ -75,10 +70,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     this.mapsOidStoreDB = env.getMapsOidStoreDatabase();
     this.oidStoreLogDB = env.getOidStoreLogDatabase();
     this.ptp = ptp;
-    this.oidDBCursorConfig = new CursorConfig();
-    this.oidDBCursorConfig.setReadCommitted(true);
-    this.oidStateDBCursorConfig = new CursorConfig();
-    this.oidStateDBCursorConfig.setReadCommitted(true);
 
     checkpointMaxLimit = TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT);
@@ -96,6 +87,9 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     endSequence = nextSequence + SEQUENCE_BATCH_SIZE;
     firstSequenceThisRun = nextSequence;
 
+    // process left over from previous run
+    processPreviousRunOidLog();
+
     // start checkpoint thread
     checkpointThread = new CheckpointRunner(checkpointMaxSleep);
     checkpointThread.setDaemon(true);
@@ -105,8 +99,15 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   /*
    * A thread to read in ObjectIDs from compressed DB at server restart
    */
-  public Runnable getObjectIDReader(SyncObjectIdSet objectIDSet, ObjectIDSet persistableCollectionTypeOidSet) {
-    return new OidObjectIdReader(objectIDSet, persistableCollectionTypeOidSet);
+  public Runnable getObjectIDReader(SyncObjectIdSet objectIDSet) {
+    return new OidObjectIdReader(objectOidStoreDB, objectIDSet);
+  }
+
+  /*
+   * A thread to read in PersistentCollectionState ObjectIDs from compressed DB at server restart
+   */
+  public Runnable getMapsObjectIDReader(SyncObjectIdSet objectIDSet) {
+    return new OidObjectIdReader(mapsOidStoreDB, objectIDSet);
   }
 
   public void stopCheckpointRunner() {
@@ -300,8 +301,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
           }
         }
         if (stoppedFlag.isStopped()) break;
-        // run only after done with ObjectID reading
-        if (!canStartCheckpoint.isSet()) continue;
         boolean isAllFlushed = processCheckpoint(stoppedFlag, maxProcessLimit);
 
         if (isAllFlushed) {
@@ -330,13 +329,13 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private class OidObjectIdReader implements Runnable {
     private long                  startTime;
     private int                   counter     = 0;
+    private final Database        oidDB;
     private final StoppedFlag     stoppedFlag = new StoppedFlag();
-    private final SyncObjectIdSet oidStoreObjectIDSet;
-    private final ObjectIDSet     persistableCollectionTypeOidSet;
+    private final SyncObjectIdSet syncObjectIDSet;
 
-    public OidObjectIdReader(SyncObjectIdSet objectIDSet, ObjectIDSet persistableCollectionTypeOidSet) {
-      this.oidStoreObjectIDSet = objectIDSet;
-      this.persistableCollectionTypeOidSet = persistableCollectionTypeOidSet;
+    public OidObjectIdReader(Database oidDB, SyncObjectIdSet syncObjectIDSet) {
+      this.oidDB = oidDB;
+      this.syncObjectIDSet = syncObjectIDSet;
     }
 
     public void stop() {
@@ -346,14 +345,13 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
     public void run() {
       if (isMeasurePerf) startTime = System.currentTimeMillis();
 
-      // process left over from previous run
-      processPreviousRunOidLog();
-
       ObjectIDSet tmp = new ObjectIDSet();
       PersistenceTransaction tx = ptp.newTransaction();
-      Cursor cursor = oidLogDBCursor;
+      Cursor cursor = null;
       try {
-        cursor = objectOidStoreDB.openCursor(pt2nt(tx), oidDBCursorConfig);
+        CursorConfig oidDBCursorConfig = new CursorConfig();
+        oidDBCursorConfig.setReadCommitted(true);
+        cursor = oidDB.openCursor(pt2nt(tx), oidDBCursorConfig);
         DatabaseEntry key = new DatabaseEntry();
         DatabaseEntry value = new DatabaseEntry();
         while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
@@ -363,14 +361,6 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
         cursor.close();
         cursor = null;
 
-        cursor = mapsOidStoreDB.openCursor(pt2nt(tx), oidStateDBCursorConfig);
-        while (OperationStatus.SUCCESS.equals(cursor.getNext(key, value, LockMode.DEFAULT))) {
-          OidLongArray bitsArray = new OidLongArray(key.getData(), value.getData());
-          makeObjectIDFromBitsArray(bitsArray, persistableCollectionTypeOidSet);
-        }
-
-        cursor.close();
-        cursor = null;
         safeCommit(tx);
         if (isMeasurePerf) {
           logger.info("MeasurePerf: done");
@@ -379,8 +369,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
         logger.error("Error Reading Object IDs", t);
       } finally {
         safeClose(cursor);
-        oidStoreObjectIDSet.stopPopulating(tmp);
-        if (!canStartCheckpoint.isSet()) canStartCheckpoint.set();
+        syncObjectIDSet.stopPopulating(tmp);
       }
     }
 
