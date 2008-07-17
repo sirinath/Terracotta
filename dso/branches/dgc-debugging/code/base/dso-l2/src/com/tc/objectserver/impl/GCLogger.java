@@ -70,8 +70,8 @@ public class GCLogger {
       for (int i = 0; i < rescueTimes.size(); i++) {
         logGC("GC: rescue " + (i + 1) + " time   : " + rescueTimes.get(i) + " ms.");
       }
-      logGC("GC: paused gc time  : " + gcStats.getPausedTime() + " ms.");
-      logGC("GC: delete in-memory garbage time  : " + gcStats.getDeleteTime() + " ms.");
+      logGC("GC: paused gc time  : " + gcStats.getPausedStageTime() + " ms.");
+      logGC("GC: delete in-memory garbage time  : " + gcStats.getDeleteStageTime() + " ms.");
       logGC("GC: total gc time   : " + gcStats.getElapsedTime() + " ms.");
       logGC("GC: STOP " + gcStats.getIteration());
     } else {

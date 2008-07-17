@@ -7,6 +7,7 @@ package com.tc.objectserver.impl;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.objectserver.api.GCStats;
+import com.tc.util.State;
 
 import java.io.Serializable;
 
@@ -14,18 +15,27 @@ public class GCStatsImpl implements GCStats, Serializable {
   private static final long     serialVersionUID      = -4177683133067698672L;
   private static final TCLogger logger                = TCLogging.getLogger(GCStatsImpl.class);
   private static final long     NOT_INITIALIZED       = -1L;
-
+  private static final String   YOUNG_GENERATION      = "Young";
+  private static final String   FULL_GENERATION       = "Full";
   private final int             number;
   private long                  startTime             = NOT_INITIALIZED;
   private long                  elapsedTime           = NOT_INITIALIZED;
   private long                  beginObjectCount      = NOT_INITIALIZED;
   private long                  candidateGarbageCount = NOT_INITIALIZED;
   private long                  actualGarbageCount    = NOT_INITIALIZED;
-  private long                  pausedTime            = NOT_INITIALIZED;
-  private long                  deleteTime            = NOT_INITIALIZED;
+  private long                  pausedStageTime       = NOT_INITIALIZED;
+  private long                  deleteStageTime       = NOT_INITIALIZED;
+  private State                 state;
+  private boolean               young;
 
-  public GCStatsImpl(int number) {
+  public GCStatsImpl(int number, State aState, boolean aYoung) {
     this.number = number;
+    this.state = aState;
+    this.young = aYoung;
+  }
+
+  public synchronized boolean isYoung() {
+    return young;
   }
 
   public int getIteration() {
@@ -33,52 +43,43 @@ public class GCStatsImpl implements GCStats, Serializable {
   }
 
   public synchronized long getStartTime() {
-    if (this.startTime == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
     return this.startTime;
   }
 
   public synchronized long getElapsedTime() {
-    if (this.elapsedTime == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
     return this.elapsedTime;
   }
 
   public synchronized long getBeginObjectCount() {
-    if (this.beginObjectCount == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
     return this.beginObjectCount;
   }
 
   public synchronized long getCandidateGarbageCount() {
-    if (this.candidateGarbageCount == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
     return this.candidateGarbageCount;
   }
 
   public synchronized long getActualGarbageCount() {
-    if (this.actualGarbageCount == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
     return this.actualGarbageCount;
   }
 
-  public synchronized long getPausedTime() {
-    if (this.pausedTime == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
-    return this.pausedTime;
+  public synchronized long getPausedStageTime() {
+    return this.pausedStageTime;
   }
 
-  public synchronized long getDeleteTime() {
-    if (this.deleteTime == NOT_INITIALIZED) {
-      errorNotInitialized();
-    }
-    return this.deleteTime;
+  public synchronized long getDeleteStageTime() {
+    return this.deleteStageTime;
+  }
+
+  public synchronized String getStatus() {
+    return state.getName();
+  }
+
+  public synchronized String getType() {
+    return young ? YOUNG_GENERATION : FULL_GENERATION;
+  }
+
+  public synchronized void setState(State state) {
+    this.state = state;
   }
 
   public synchronized void setActualGarbageCount(long count) {
@@ -96,20 +97,20 @@ public class GCStatsImpl implements GCStats, Serializable {
     this.candidateGarbageCount = count;
   }
 
-  public synchronized void setPausedTime(long time) {
+  public synchronized void setPausedStageTime(long time) {
     if (time < 0L) {
-      logger.warn("System timer moved backward, setting GC PausedTime to 0");
+      logger.warn("System timer moved backward, setting GC PausedStageTime to 0");
       time = 0;
     }
-    this.pausedTime = time;
+    this.pausedStageTime = time;
   }
 
-  public synchronized void setDeleteTime(long time) {
+  public synchronized void setDeleteStageTime(long time) {
     if (time < 0L) {
-      logger.warn("System timer moved backward, setting GC DeleteTime to 0");
+      logger.warn("System timer moved backward, setting GC DeleteStageTime to 0");
       time = 0;
     }
-    this.deleteTime = time;
+    this.deleteStageTime = time;
   }
 
   public synchronized void setElapsedTime(long time) {
@@ -125,18 +126,36 @@ public class GCStatsImpl implements GCStats, Serializable {
     this.startTime = time;
   }
 
+  public synchronized void markYoungGen() {
+    this.young = true;
+  }
+
+  public synchronized void markOldGen() {
+    this.young = false;
+  }
+
   private void validate(long value) {
     if (value < 0L) { throw new IllegalArgumentException("Value must be greater than or equal to zero"); }
   }
 
-  private void errorNotInitialized() {
-    throw new IllegalStateException("Value not initialized");
+
+  protected void initialize(long aStartTime, long aElapsedTime, long aBeginObjectCount, long aCandidateGarbageCount,
+                            long aActualGarbageCount, long aPausedStageTime, long aDeleteStageTime) {
+    this.startTime = aStartTime;
+    this.elapsedTime = aElapsedTime;
+    this.beginObjectCount = aBeginObjectCount;
+    this.candidateGarbageCount = aCandidateGarbageCount;
+    this.actualGarbageCount = aActualGarbageCount;
+    this.pausedStageTime = aPausedStageTime;
+    this.deleteStageTime = aDeleteStageTime;
   }
 
   public String toString() {
-    return "GCStats[" + getIteration() + "] : startTime = " + getStartTime() + "; elapsedTime = " + getElapsedTime()
-           + "; pausedTime = " + getPausedTime() + "; deleteTime = " + getDeleteTime()
-           + "; beginObjectCount = " + getBeginObjectCount() + "; candidateGarbageCount = "
-           + getCandidateGarbageCount() + "; actualGarbageCount = " + getActualGarbageCount();
+    return "GCStats[ iteration: " + getIteration() + " type: " + getType() + " status: " + getStatus()
+           + " ] : startTime = " + this.startTime + "ms; elapsedTime = " + this.elapsedTime + "ms; pausedStageTime = "
+           + this.pausedStageTime + "ms; deleteStageTime = " + this.deleteStageTime + "ms; beginObjectCount = "
+           + this.beginObjectCount + "; candidateGarbageCount = " + this.candidateGarbageCount
+           + "; actualGarbageCount = " + this.actualGarbageCount;
   }
+
 }

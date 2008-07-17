@@ -103,9 +103,14 @@ public class GCStatsPanel extends XContainer implements DGCListener {
     }
   }
 
-  public void garbageCollected(GCStats gcStats) {
-    GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
-    model.addGCStats(gcStats);
+
+  public void handleNotification(Notification notice, Object notUsed) {
+    String type = notice.getType();
+
+    if (DSOMBean.GC_STATUS_UPDATE.equals(type)) {
+      GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
+      model.addGCStats((GCStats) notice.getSource());
+    }
   }
 
   private class RunGCWorker extends BasicWorker<Void> {

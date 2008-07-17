@@ -250,6 +250,11 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     boolean disabled        = false;
     Map     syncingPassives = new HashMap();
 
+    //TODO: not sure what ReplicationObjectManagerImpl should do
+    public void updateGCStatus(GCStats stats) {
+      //Ignore
+    }
+
     public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
       Map toAdd = null;
       notifyGCResultToPassives(stats, deleted);

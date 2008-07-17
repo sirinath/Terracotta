@@ -45,11 +45,19 @@ public class GCStatsWrapper implements GCStats {
     return m_gcStats.getActualGarbageCount();
   }
 
-  public long getDeleteTime() {
-    return m_gcStats.getDeleteTime();
+  public long getDeleteStageTime() {
+    return m_gcStats.getDeleteStageTime();
   }
 
-  public long getPausedTime() {
-    return m_gcStats.getPausedTime();
+  public long getPausedStageTime() {
+    return m_gcStats.getPausedStageTime();
+  }
+
+  public String getStatus() {
+    return m_gcStats.getStatus();
+  }
+
+  public String getType() {
+    return m_gcStats.getType();
   }
 }

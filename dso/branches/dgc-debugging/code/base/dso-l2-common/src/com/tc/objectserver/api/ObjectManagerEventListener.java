@@ -14,11 +14,16 @@ import java.util.SortedSet;
 public interface ObjectManagerEventListener {
 
   /**
+   * notify the listener that GCStats object has been updated
+   * @param stats statistics about this collection
+   */
+  public void updateGCStatus(GCStats stats);
+
+  /**
    * Called after each GC run is complete
    * 
    * @param stats statistics about this collection
    * @param deleted List of deleted ObjectIDs
    */
   public void garbageCollectionComplete(GCStats stats, SortedSet deleted);
-
 }
