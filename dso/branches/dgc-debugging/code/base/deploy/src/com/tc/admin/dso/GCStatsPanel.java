@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.Callable;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class GCStatsPanel extends XContainer implements DGCListener {
   private AdminClientContext m_acc;
@@ -103,13 +104,19 @@ public class GCStatsPanel extends XContainer implements DGCListener {
     }
   }
 
+  public void statusUpdate(GCStats gcStats) {
+    SwingUtilities.invokeLater(new ModelUpdater(gcStats));
+  }
 
-  public void handleNotification(Notification notice, Object notUsed) {
-    String type = notice.getType();
+  private class ModelUpdater implements Runnable {
+    private GCStats m_gcStats;
 
-    if (DSOMBean.GC_STATUS_UPDATE.equals(type)) {
-      GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
-      model.addGCStats((GCStats) notice.getSource());
+    private ModelUpdater(GCStats gcStats) {
+      m_gcStats = gcStats;
+    }
+
+    public void run() {
+      ((GCStatsTableModel) m_table.getModel()).addGCStats(m_gcStats);
     }
   }
 
