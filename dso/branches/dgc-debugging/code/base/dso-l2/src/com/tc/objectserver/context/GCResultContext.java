@@ -5,6 +5,8 @@
 package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
+import com.tc.objectserver.core.api.GarbageCollectionInfo;
+import com.tc.objectserver.core.api.GarbageCollectionInfoPublisher;
 
 import java.util.SortedSet;
 
@@ -12,12 +14,14 @@ public class GCResultContext implements EventContext {
 
   private final int       gcIteration;
   private final SortedSet gcedOids;
-  private long  deleteStartMillis;
+  private final GarbageCollectionInfo gcInfo;
+  private final GarbageCollectionInfoPublisher gcPublisher;
 
-  public GCResultContext(int gcIteration, SortedSet gcedOids, long deleteStartMillis) {
+  public GCResultContext(int gcIteration, GarbageCollectionInfo gcInfo, GarbageCollectionInfoPublisher gcPublisher, SortedSet gcedOids) {
     this.gcIteration = gcIteration;
     this.gcedOids = gcedOids;
-    this.deleteStartMillis = deleteStartMillis;
+    this.gcInfo = gcInfo;
+    this.gcPublisher = gcPublisher;
   }
 
   public int getGCIterationCount() {
@@ -28,8 +32,12 @@ public class GCResultContext implements EventContext {
     return gcedOids;
   }
   
-  public long getDeleteStartMillis() {
-    return deleteStartMillis;
+  public GarbageCollectionInfo getGCInfo() {
+    return gcInfo;
+  }
+
+  public GarbageCollectionInfoPublisher getGCPublisher() {
+    return gcPublisher;
   }
 
   public String toString() {

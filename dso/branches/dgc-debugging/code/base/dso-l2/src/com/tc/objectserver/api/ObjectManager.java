@@ -104,9 +104,7 @@ public interface ObjectManager extends ManagedObjectProvider {
    * @param resultContext
    */
   public void notifyGCComplete(GCResultContext resultContext);
-
-  public void notifyGCDeleteComplete(long deleteStartMillis);
-  
+ 
   public void setStatsListener(ObjectManagerStatsListener listener);
 
   public void start();
