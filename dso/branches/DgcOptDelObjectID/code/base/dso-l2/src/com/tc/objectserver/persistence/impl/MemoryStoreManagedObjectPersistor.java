@@ -299,15 +299,15 @@ public final class MemoryStoreManagedObjectPersistor implements ManagedObjectPer
     }
   }
 
-  public boolean addPersistableCollectionTypeObject(ObjectID id) {
+  public boolean addMapTypeObject(ObjectID id) {
     return false;
   }
 
-  public boolean containsPersistableCollectionType(ObjectID id) {
+  public boolean containsMapType(ObjectID id) {
     return false;
   }
 
-  public void removePersistableCollectionTypeObject(Collection ids) {
+  public void removeAllMapTypeObject(Collection ids) {
     return;
   }
 

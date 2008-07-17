@@ -103,7 +103,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private int                                  deletePersistentStateCounter;
   private long                                 deleteTime;
   private final SyncObjectIdSet                extantObjectIDs;
-  private final SyncObjectIdSet                extantPersistableCollectionTypeOidSet;
+  private final SyncObjectIdSet                extantMapTypeOidSet;
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, DBEnvironment env,
@@ -135,7 +135,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     }
 
     this.extantObjectIDs = getAllObjectIDs();
-    this.extantPersistableCollectionTypeOidSet = getAllMapsObjectIDs();
+    this.extantMapTypeOidSet = getAllMapsObjectIDs();
 
     if (STATS_LOGGING_ENABLED) startStatsPrinter();
     if (measurePerf) startDeleteOperPrinter();
@@ -161,16 +161,16 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return this.extantObjectIDs.snapshot();
   }
 
-  public boolean containsPersistableCollectionType(ObjectID id) {
-    return extantPersistableCollectionTypeOidSet.contains(id);
+  public boolean containsMapType(ObjectID id) {
+    return extantMapTypeOidSet.contains(id);
   }
 
-  public boolean addPersistableCollectionTypeObject(ObjectID id) {
-    return extantPersistableCollectionTypeOidSet.add(id);
+  public boolean addMapTypeObject(ObjectID id) {
+    return extantMapTypeOidSet.add(id);
   }
 
-  public void removePersistableCollectionTypeObject(Collection ids) {
-    extantPersistableCollectionTypeOidSet.removeAll(ids);
+  public void removeAllMapTypeObject(Collection ids) {
+    extantMapTypeOidSet.removeAll(ids);
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -542,7 +542,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
           startTime = System.nanoTime();
           ++deleteCounter;
         }
-        if (containsPersistableCollectionType(id)) {
+        if (containsMapType(id)) {
           if (measurePerf) ++deletePersistentStateCounter;
           // may return false if ManagedObject persistent state empty
           collectionsPersistor.deleteCollection(tx, id);
@@ -618,8 +618,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     out = out.duplicateAndIndent();
     out.println("db: " + objectDB);
     out.indent().print("extantObjectIDs: ").visit(extantObjectIDs).println();
-    out.indent().print("extantPersistableCollectionTypeOidSet: ").visit(extantPersistableCollectionTypeOidSet)
-        .println();
+    out.indent().print("extantMapTypeOidSet: ").visit(extantMapTypeOidSet).println();
     return out;
   }
 
