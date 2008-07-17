@@ -66,7 +66,7 @@ bundled_modules:
       install_directory: eclipse/org.terracotta.dso/modules
       manifest:
         - clustered-commons-collections-3.1
-        - clustered-glassfish-1.0
+        - clustered-glassfish-2.0
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
         - excludes-config
@@ -78,6 +78,10 @@ bundled_modules:
 packaging:
   - tar
 postscripts:
+  - inject-copyright
+  - make-build-data:
+      args:
+        - lib/resources
   - include-schemas:
       args:
         - eclipse/org.terracotta.dso/html/ref/schema
