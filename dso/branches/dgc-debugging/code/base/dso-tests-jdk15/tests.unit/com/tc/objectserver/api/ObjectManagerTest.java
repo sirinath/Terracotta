@@ -1193,7 +1193,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     listener.gcEvents.clear();
     objectManager.getGarbageCollector().gc();
     assertEquals(2, objectManager.getGarbageCollectorStats().length);
-    assertEquals(1, listener.gcEvents.size());
+    assertEquals(9, listener.gcEvents.size());
     assertEquals(firstIterationNumber + 1, objectManager.getGarbageCollectorStats()[0].getIteration());
 
     listener.gcEvents.clear();
@@ -1203,7 +1203,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     mo2.setReferences(new ObjectID[] {});
     objectManager.getGarbageCollector().gc();
     assertEquals(3, objectManager.getGarbageCollectorStats().length);
-    assertEquals(1, listener.gcEvents.size());
+    assertEquals(9, listener.gcEvents.size());
     GCStats stats3 = (GCStats) listener.gcEvents.get(0);
     assertEquals(4, stats3.getBeginObjectCount());
     assertEquals(1, stats3.getActualGarbageCount());
