@@ -113,4 +113,20 @@ public class NullGarbageCollector implements GarbageCollector {
     return true;
   }
 
+  public void gcYoung() {
+    // do nothing null
+  }
+
+  public void notifyNewObjectInitalized(ObjectID id) {
+    // do nothing null
+  }
+
+  public void notifyObjectCreated(ObjectID id) {
+    // do nothing null
+  }
+
+  public void notifyObjectsEvicted(Collection evicted) {
+    // do nothing null
+  }
+
 }

@@ -301,4 +301,20 @@ public class TestGarbageCollector implements GarbageCollector {
     return true;
   }
 
+  public void gcYoung() {
+    throw new ImplementMe();
+  }
+
+  public void notifyNewObjectInitalized(ObjectID id) {
+    throw new ImplementMe();
+  }
+
+  public void notifyObjectCreated(ObjectID id) {
+    throw new ImplementMe();
+  }
+
+  public void notifyObjectsEvicted(Collection evicted) {
+    throw new ImplementMe();
+  }
+
 }

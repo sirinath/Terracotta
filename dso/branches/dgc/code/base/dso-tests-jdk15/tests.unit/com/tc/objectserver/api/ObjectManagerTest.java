@@ -1142,7 +1142,9 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // objMgr.gc() happens
     this.config.myGCThreadSleepTime = -1;
 
-    GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManager, clientStateManager, true,
+    GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManager, clientStateManager,
+                                                           new ObjectManagerConfig(300000, true, true, false, false,
+                                                                                   60000),
                                                            new NullStatisticsAgentSubSystem());
     objectManager.setGarbageCollector(gc);
     objectManager.start();
@@ -2282,6 +2284,22 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     public boolean deleteGarbage(GCResultContext resultContext) {
       return true;
+    }
+
+    public void gcYoung() {
+      //NOP
+    }
+
+    public void notifyNewObjectInitalized(ObjectID id) {
+      //NOP
+    }
+
+    public void notifyObjectCreated(ObjectID id) {
+      //NOP
+    }
+
+    public void notifyObjectsEvicted(Collection evicted) {
+      //NOP
     }
 
   }

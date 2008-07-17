@@ -610,6 +610,12 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public ObjectIDSet getAllObjectIDs() {
     return objectStore.getAllObjectIDs();
   }
+  
+  public synchronized ObjectIDSet getObjectIDsInCache() {
+    ObjectIDSet ids =  new ObjectIDSet();
+    ids.addAll(references.keySet());
+    return ids;
+  }
 
   public int getLiveObjectCount() {
     return objectStore.getObjectCount();
@@ -1097,4 +1103,5 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private static Set createNewSet() {
     return new HashSet(INITIAL_SET_SIZE, LOAD_FACTOR);
   }
+
 }

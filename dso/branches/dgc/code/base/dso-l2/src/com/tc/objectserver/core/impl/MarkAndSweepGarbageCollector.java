@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -62,8 +63,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
                                                                                return;
                                                                              }
 
-                                                                             public void addNewReferencesTo(Set set) {
-                                                                               return;
+                                                                             public Set addNewReferencesTo(Set set) {
+                                                                               return Collections.EMPTY_SET;
                                                                              }
                                                                            };
 
@@ -78,12 +79,21 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
                                                                                return;
                                                                              }
 
-                                                                             public void addNewReferencesTo(Set set) {
-                                                                               return;
+                                                                             public Set addYoungGenCandidateObjectIDsTo(
+                                                                                                                        Set set) {
+                                                                               return Collections.EMPTY_SET;
                                                                              }
 
                                                                              public void notifyObjectInitalized(
                                                                                                                 ObjectID id) {
+                                                                               return;
+                                                                             }
+
+                                                                             public Set getRememberedSet() {
+                                                                               return Collections.EMPTY_SET;
+                                                                             }
+
+                                                                             public void removeGarbage(SortedSet ids) {
                                                                                return;
                                                                              }
                                                                            };
@@ -112,7 +122,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private final StatisticsAgentSubSystem       statisticsAgentSubSystem;
 
   private State                                state                       = GC_SLEEP;
-  private LifeCycleState                       lifeCycleState;
   private volatile ChangeCollector             referenceCollector          = NULL_CHANGE_COLLECTOR;
   private volatile YoungGenChangeCollector     youngGenReferenceCollector  = NULL_YOUNG_CHANGE_COLLECTOR;
   private LifeCycleState                       gcState                     = new NullLifeCycleState();
@@ -175,8 +184,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     this.referenceCollector = new NewReferenceCollector();
 
-    rootIDs = objectManager.getRootIDs();
     managedIDs = objectManager.getAllObjectIDs();
+    rootIDs = objectManager.getRootIDs();
 
     gcStats.setBeginObjectCount(managedIDs.size());
 
@@ -238,13 +247,113 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       storeGCStats(gcStats);
     }
   }
-  
+
   public void gcYoung() {
+    logger.info("Young Gen : GC START");
+    while (!requestGCStart()) {
+      gcLogger.log_GCDisabled();
+      logger.info("GC is either disabled or is already running. Waiting for 1 min before checking again ...");
+      ThreadUtil.reallySleep(60000);
+    }
+
+    int gcIteration = gcIterationCounter.incrementAndGet();
+    GCStatsImpl gcStats = new GCStatsImpl(gcIteration);
+
+    gcLogger.log_GCStart(gcIteration);
+    long startMillis = System.currentTimeMillis();
+    gcStats.setStartTime(startMillis);
+
+    this.referenceCollector = new NewReferenceCollector();
+
+    // GET young Candidates
+    final ObjectIDSet candidateIDs = (ObjectIDSet) youngGenReferenceCollector
+        .addYoungGenCandidateObjectIDsTo(new ObjectIDSet());
+
+    // GET ROOTS
+    final Set rootIDs = getYoungGenRootIDs(candidateIDs);
+
+    gcStats.setBeginObjectCount(candidateIDs.size());
+
+    if (gcState.isStopRequested()) { return; }
+
+    gcLogger.log_markStart(candidateIDs);
+
+    Filter youngGenFilter = new Filter() {
+      public boolean shouldVisit(ObjectID referencedObject) {
+        return candidateIDs.contains(referencedObject);
+      }
+    };
+
+    ObjectIDSet gcResults = collect(youngGenFilter, rootIDs, candidateIDs, gcState);
+    gcLogger.log_markResults(gcResults);
+
+    if (gcState.isStopRequested()) { return; }
+
+    List rescueTimes = new ArrayList();
+
+    gcLogger.log_rescue(1, gcResults);
+    gcResults = rescue(gcResults, rescueTimes);
+
+    requestGCPause();
+
+    gcLogger.log_quiescing();
+
+    if (gcState.isStopRequested()) { return; }
+
+    objectManager.waitUntilReadyToGC();
+
+    if (gcState.isStopRequested()) { return; }
+
+    long pauseStartMillis = System.currentTimeMillis();
+    gcLogger.log_paused();
+
+    // Assert.eval("No pending lookups allowed during GC pause.", pending.size() == 0);
+
+    gcLogger.log_rescue(2, gcResults);
+
+    gcStats.setCandidateGarbageCount(gcResults.size());
+    SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
+
+    if (gcState.isStopRequested()) { return; }
+    gcLogger.log_sweep(toDelete);
+
+    gcLogger.log_notifyGCComplete();
+
+    this.referenceCollector = NULL_CHANGE_COLLECTOR;
+
+    long deleteStartMillis = System.currentTimeMillis();
+    gcStats.setPausedTime(deleteStartMillis - pauseStartMillis);
+    // Delete Garbage
+    deleteGarbage(new GCResultContext(gcIteration, toDelete));
+
+    gcStats.setActualGarbageCount(toDelete.size());
+    long endMillis = System.currentTimeMillis();
+    gcStats.setDeleteTime(endMillis - deleteStartMillis);
+    gcStats.setElapsedTime(endMillis - startMillis);
+    gcLogger.log_GCComplete(gcStats, rescueTimes);
+
+    gcLogger.push(gcStats);
+    fireGCCompleteEvent(gcStats, toDelete);
+    logger.info("Young Gen : GC FINISHED : " + gcStats);
+
+    if (statisticsAgentSubSystem.isActive()) {
+      storeGCStats(gcStats);
+    }
   }
 
+  private Set getYoungGenRootIDs(Set candidateIDs) {
+    Set idsInMemory = objectManager.getObjectIDsInCache();
+    idsInMemory.removeAll(candidateIDs);
+    Set roots = objectManager.getRootIDs();
+    Set youngGenRoots = youngGenReferenceCollector.getRememberedSet();
+    youngGenRoots.addAll(roots);
+    youngGenRoots.addAll(idsInMemory);
+    return youngGenRoots;
+  }
 
   public boolean deleteGarbage(GCResultContext gcResult) {
     if (requestGCDeleteStart()) {
+      youngGenReferenceCollector.removeGarbage(gcResult.getGCedObjectIDs());
       objectManager.notifyGCComplete(gcResult);
       notifyGCComplete();
       return true;
@@ -309,17 +418,16 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   public ObjectIDSet collect(Filter filter, Collection rootIds, ObjectIDSet managedObjectIds,
-                             LifeCycleState aLifeCycleState) {
-    this.lifeCycleState = aLifeCycleState;
+                             LifeCycleState lifeCycleState) {
 
     long start = System.currentTimeMillis();
     logstart_collect(rootIds, managedObjectIds);
 
-    for (Iterator i = rootIds.iterator(); i.hasNext();) {
+    for (Iterator i = rootIds.iterator(); i.hasNext() && !managedObjectIds.isEmpty();) {
       ObjectID rootId = (ObjectID) i.next();
       managedObjectIds.remove(rootId);
       if (lifeCycleState.isStopRequested()) return TCCollections.EMPTY_OBJECT_ID_SET;
-      collectRoot(filter, rootId, managedObjectIds);
+      collectRoot(filter, rootId, managedObjectIds, lifeCycleState);
     }
 
     profile_collect(start);
@@ -327,15 +435,16 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return managedObjectIds;
   }
 
-  private void collectRoot(Filter filter, ObjectID rootId, Set managedObjectIds) {
+  private void collectRoot(Filter filter, ObjectID rootId, Set managedObjectIds, LifeCycleState lifeCycleState) {
     Set toBeVisited = new ObjectIDSet();
     toBeVisited.add(rootId);
 
-    while (!toBeVisited.isEmpty()) {
+    while (!toBeVisited.isEmpty() && !managedObjectIds.isEmpty()) {
 
-      for (Iterator i = new ObjectIDSet(toBeVisited).iterator(); i.hasNext();) {
+      for (Iterator i = new ObjectIDSet(toBeVisited).iterator(); i.hasNext() && !managedObjectIds.isEmpty();) {
         ObjectID id = (ObjectID) i.next();
         if (lifeCycleState.isStopRequested()) return;
+        // TODO:: come back for young gen to see if we can totally avoid faulting
         ManagedObject obj = objectManager.getObjectByIDOrNull(id);
         toBeVisited.remove(id);
         if (obj == null) {
@@ -448,12 +557,13 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       }
     }
 
-    public void addNewReferencesTo(Set set) {
+    public Set addNewReferencesTo(Set set) {
       long start = System.currentTimeMillis();
       synchronized (newReferences) {
         set.addAll(newReferences);
       }
       profile_addNewReferencesTo(start);
+      return set;
     }
 
     private void profile_addNewReferencesTo(long start) {
@@ -472,7 +582,18 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     private final Map          youngGenObjectIDs = new HashMap();
     private final Set          rememberedSet     = new ObjectIDSet();
 
-    public void addNewReferencesTo(Set set) {
+    public synchronized Set addYoungGenCandidateObjectIDsTo(Set set) {
+      for (Iterator i = youngGenObjectIDs.entrySet().iterator(); i.hasNext();) {
+        Entry e = (Entry) i.next();
+        if (e.getValue() == INITALIZED) {
+          set.add(e.getKey());
+        }
+      }
+      return set;
+    }
+
+    public synchronized Set getRememberedSet() {
+      return new ObjectIDSet(rememberedSet);
     }
 
     public synchronized void notifyObjectCreated(ObjectID id) {
@@ -502,20 +623,31 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       rememberedSet.remove(id);
     }
 
+    public synchronized void removeGarbage(SortedSet ids) {
+      for (Iterator i = ids.iterator(); i.hasNext();) {
+        ObjectID oid = (ObjectID) i.next();
+        removeReferencesTo(oid);
+      }
+    }
+
   }
 
   private interface ChangeCollector extends ManagedObjectChangeListener {
-    public void addNewReferencesTo(Set set);
+    public Set addNewReferencesTo(Set set);
   }
 
   private interface YoungGenChangeCollector {
     public void notifyObjectsEvicted(Collection evicted);
 
+    public void removeGarbage(SortedSet ids);
+
+    public Set getRememberedSet();
+
     public void notifyObjectCreated(ObjectID id);
 
     public void notifyObjectInitalized(ObjectID id);
 
-    public void addNewReferencesTo(Set set);
+    public Set addYoungGenCandidateObjectIDsTo(Set set);
   }
 
   public void addNewReferencesTo(Set rescueIds) {
