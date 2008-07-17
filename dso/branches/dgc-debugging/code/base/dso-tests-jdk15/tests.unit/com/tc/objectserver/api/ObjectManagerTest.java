@@ -2179,6 +2179,11 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
       gcEvents.add(stats);
     }
+
+    public void updateGCStatus(GCStats stats) {
+      gcEvents.add(stats);
+
+    }
   }
 
   private class ExplodingGarbageCollector implements GarbageCollector {

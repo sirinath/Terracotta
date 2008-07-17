@@ -137,8 +137,9 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       ThreadUtil.reallySleep(60000);
     }
 
+    // NABIB COMMENT: this is where an iteration starts
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GCStatsImpl gcStats = new GCStatsImpl(gcIteration);
+    GCStatsImpl gcStats = new GCStatsImpl(gcIteration, this.state, false);
 
     gcLogger.log_GCStart(gcIteration);
     long startMillis = System.currentTimeMillis();
@@ -154,28 +155,42 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     gcStats.setBeginObjectCount(managedIDs.size());
 
-    if (gcState.isStopRequested()) { return; }
+    if (gcState.isStopRequested()) {
+      fireGCStatusUpdateEvent(gcStats);
+      return;
+    }
 
     gcLogger.log_markStart(managedIDs);
     ObjectIDSet gcResults = collect(NULL_FILTER, rootIDs, managedIDs, gcState);
     gcLogger.log_markResults(gcResults);
+    fireGCStatusUpdateEvent(gcStats);
 
-    if (gcState.isStopRequested()) { return; }
+    if (gcState.isStopRequested()) {
+      fireGCStatusUpdateEvent(gcStats);
+      return;
+    }
 
     List rescueTimes = new ArrayList();
 
     gcLogger.log_rescue(1, gcResults);
     gcResults = rescue(gcResults, rescueTimes);
+    fireGCStatusUpdateEvent(gcStats);
 
     requestGCPause();
 
     gcLogger.log_quiescing();
 
-    if (gcState.isStopRequested()) { return; }
+    if (gcState.isStopRequested()) {
+      fireGCStatusUpdateEvent(gcStats);
+      return;
+    }
 
     objectManager.waitUntilReadyToGC();
 
-    if (gcState.isStopRequested()) { return; }
+    if (gcState.isStopRequested()) {
+      fireGCStatusUpdateEvent(gcStats);
+      return;
+    }
 
     long pauseStartMillis = System.currentTimeMillis();
     gcLogger.log_paused();
@@ -187,7 +202,11 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcStats.setCandidateGarbageCount(gcResults.size());
     SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
 
-    if (gcState.isStopRequested()) { return; }
+    fireGCStatusUpdateEvent(gcStats);
+    if (gcState.isStopRequested()) {
+      fireGCStatusUpdateEvent(gcStats);
+      return;
+    }
     gcLogger.log_sweep(toDelete);
 
     gcLogger.log_notifyGCComplete();
@@ -195,22 +214,22 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     this.referenceCollector = NULL_CHANGE_COLLECTOR;
 
     long deleteStartMillis = System.currentTimeMillis();
-    gcStats.setPausedTime(deleteStartMillis - pauseStartMillis);
+    gcStats.setPausedStageTime(deleteStartMillis - pauseStartMillis);
     // Delete Garbage
     deleteGarbage(new GCResultContext(gcIteration, toDelete));
 
     gcStats.setActualGarbageCount(toDelete.size());
     long endMillis = System.currentTimeMillis();
-    gcStats.setDeleteTime(endMillis - deleteStartMillis);
+    gcStats.setDeleteStageTime(endMillis - deleteStartMillis);
     gcStats.setElapsedTime(endMillis - startMillis);
     gcLogger.log_GCComplete(gcStats, rescueTimes);
 
-    gcLogger.push(gcStats);
     fireGCCompleteEvent(gcStats, toDelete);
-
+    gcLogger.push(gcStats);
     if (statisticsAgentSubSystem.isActive()) {
       storeGCStats(gcStats);
     }
+
   }
 
   public boolean deleteGarbage(GCResultContext gcResult) {
@@ -266,7 +285,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return collect(filter, rootIds, managedObjectIds, NULL_LIFECYCLE_STATE);
   }
 
-  public ObjectIDSet collect(Filter filter, Collection rootIds, ObjectIDSet managedObjectIds, LifeCycleState aLifeCycleState) {
+  public ObjectIDSet collect(Filter filter, Collection rootIds, ObjectIDSet managedObjectIds,
+                             LifeCycleState aLifeCycleState) {
     this.lifeCycleState = aLifeCycleState;
 
     long start = System.currentTimeMillis();
@@ -367,8 +387,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   /**
-   * In Active server, state transitions from GC_PAUSED to GC_DELETE and in the passive server,
-   * state transitions from GC_SLEEP to GC_DELETE.
+   * In Active server, state transitions from GC_PAUSED to GC_DELETE and in the passive server, state transitions from
+   * GC_SLEEP to GC_DELETE.
    */
   private synchronized boolean requestGCDeleteStart() {
     if (state == GC_SLEEP || state == GC_PAUSED) {
@@ -466,6 +486,22 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
           logger.debug(e);
         } else {
           logger.warn("Exception in GCComplete event callback: " + e.getMessage());
+        }
+      }
+    }
+  }
+
+  private void fireGCStatusUpdateEvent(GCStatsImpl gcStats) {
+    gcStats.setState(state);
+    for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
+      try {
+        ObjectManagerEventListener listener = (ObjectManagerEventListener) iter.next();
+        listener.updateGCStatus(gcStats);
+      } catch (Exception e) {
+        if (logger.isDebugEnabled()) {
+          logger.debug(e);
+        } else {
+          logger.warn("Exception in GCStatusUpdate event callback: " + e.getMessage());
         }
       }
     }
