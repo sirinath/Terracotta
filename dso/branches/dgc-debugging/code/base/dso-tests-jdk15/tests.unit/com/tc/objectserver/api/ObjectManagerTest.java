@@ -1487,7 +1487,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(gc.isPaused());
 
     // Complete gc
-    gc.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
+    gc.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET, System.currentTimeMillis()));
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.take();
@@ -2287,6 +2287,10 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     public boolean deleteGarbage(GCResultContext resultContext) {
       return true;
+    }
+
+    public void notifyGCDeleteComplete(long deleteStartTime) {
+      return;
     }
 
   }

@@ -202,6 +202,10 @@ public class TestGarbageCollector implements GarbageCollector {
     }
     return;
   }
+  
+  public void notifyGCDeleteComplete(long deleteStartTime) {
+    return;
+  }
 
   public void waitUntil_notifyGCComplete_IsCalled() {
     try {
@@ -247,7 +251,7 @@ public class TestGarbageCollector implements GarbageCollector {
     collect(null, objectProvider.getRootIDs(), objectProvider.getAllObjectIDs(), new NullLifeCycleState());
     this.requestGCPause();
     this.blockUntilReadyToGC();
-    this.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
+    this.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET, System.currentTimeMillis()));
   }
 
   public void addNewReferencesTo(Set rescueIds) {

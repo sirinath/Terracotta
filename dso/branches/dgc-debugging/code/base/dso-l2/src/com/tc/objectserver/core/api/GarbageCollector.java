@@ -42,7 +42,12 @@ public interface GarbageCollector extends PrettyPrintable {
    * Called by the GC thread. Notifies the garbage collector that GC is complete.
    */
   public void notifyGCComplete();
-
+  
+  /*
+   * Notifies the garbage collector that deleting garbage is complete.
+   */
+  public void notifyGCDeleteComplete(long deleteStartTime);
+  
   /**
    * @param traverser Determines whether or not to traverse a given tree node.
    * @param roots
@@ -72,4 +77,5 @@ public interface GarbageCollector extends PrettyPrintable {
   public GCStats[] getGarbageCollectorStats();
 
   public boolean deleteGarbage(GCResultContext resultContext);
+  
 }

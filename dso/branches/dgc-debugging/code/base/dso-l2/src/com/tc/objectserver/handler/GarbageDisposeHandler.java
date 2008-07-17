@@ -5,11 +5,14 @@
 package com.tc.objectserver.handler;
 
 import com.tc.async.api.AbstractEventHandler;
+import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
+import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
+import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -27,6 +30,7 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
   private final ManagedObjectPersistor         managedObjectPersistor;
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final int                            deleteBatchSize;
+  private ObjectManager                        objectManager;
 
   public GarbageDisposeHandler(ManagedObjectPersistor managedObjectPersistor,
                                PersistenceTransactionProvider persistenceTransactionProvider, int deleteBatchSize) {
@@ -57,7 +61,9 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
       }
     }
     long elapsed = System.currentTimeMillis() - start;
-    logger.info("GC DELETE COMPLETE : " + gcResult + " Removed " + sortedGarbage.size() + " objects in " + elapsed + " ms.");
+    logger.info("GC DELETE COMPLETE : " + gcResult + " Removed " + sortedGarbage.size() + " objects in " + elapsed
+                + " ms.");
+    objectManager.notifyGCDeleteComplete(gcResult.getDeleteStartMillis());
   }
 
   private void removeFromStore(SortedSet<ObjectID> sortedGarbage) {
@@ -71,6 +77,12 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
     if (elapsed > REMOVE_THRESHOLD) {
       logger.info("Removed " + sortedGarbage.size() + " objects in " + elapsed + " ms.");
     }
+  }
+
+  public void initialize(ConfigurationContext context) {
+    super.initialize(context);
+    ServerConfigurationContext oscc = (ServerConfigurationContext) context;
+    this.objectManager = oscc.getObjectManager();
   }
 
 }

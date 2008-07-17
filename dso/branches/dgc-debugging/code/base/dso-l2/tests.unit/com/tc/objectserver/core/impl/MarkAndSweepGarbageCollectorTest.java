@@ -356,6 +356,10 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
       // ignore
     }
 
+    public void notifyGCDeleteComplete(long deleteStartMillis) {
+     //ignore
+    }
+
   }
 
 }
