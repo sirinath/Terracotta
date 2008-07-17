@@ -1179,7 +1179,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectManager.getGarbageCollector().gc();
 
     assertEquals(1, objectManager.getGarbageCollectorStats().length);
-    assertEquals(1, listener.gcEvents.size());
+    assertEquals(9, listener.gcEvents.size());
 
     GCStats stats1 = (GCStats) listener.gcEvents.get(0);
     final int firstIterationNumber = stats1.getIteration();
@@ -1487,7 +1487,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertTrue(gc.isPaused());
 
     // Complete gc
-    gc.deleteGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
+    gc.sweepGarbage(new GCResultContext(1, TCCollections.EMPTY_OBJECT_ID_SET));
 
     // Lookup context should have been fired
     loc = (LookupEventContext) coordinator.lookupSink.queue.take();
@@ -2285,7 +2285,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       return false;
     }
 
-    public boolean deleteGarbage(GCResultContext resultContext) {
+    public boolean sweepGarbage(GCResultContext resultContext) {
       return true;
     }
 
