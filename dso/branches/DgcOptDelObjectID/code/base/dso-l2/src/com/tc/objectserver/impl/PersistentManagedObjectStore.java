@@ -80,7 +80,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     boolean result = objectPersistor.addNewObject(managed.getID());
     Assert.eval(result);
     if (PersistentCollectionsUtil.isPersistableCollectionType(managed.getManagedObjectState().getType())) {
-      result = this.objectPersistor.addPersistableCollectionTypeObject(managed.getID());
+      result = this.objectPersistor.addMapTypeObject(managed.getID());
       Assert.eval(result);
     }
   }
@@ -99,7 +99,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     assertNotInShutdown();
     this.objectPersistor.deleteAllObjectsByID(tx, ids);
     this.objectPersistor.removeAllObjectsByID(ids);
-    this.objectPersistor.removePersistableCollectionTypeObject(ids);
+    this.objectPersistor.removeAllMapTypeObject(ids);
   }
 
   /**
@@ -109,7 +109,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     assertNotInShutdown();
     SortedSet<ObjectID> ids = gcResult.getGCedObjectIDs();
     this.objectPersistor.removeAllObjectsByID(ids);
-    this.objectPersistor.removePersistableCollectionTypeObject(ids);
+    this.objectPersistor.removeAllMapTypeObject(ids);
     logger.info("Scheduling gc results " + gcResult + " to be deleted in the background");
     gcDisposerSink.add(gcResult);
   }

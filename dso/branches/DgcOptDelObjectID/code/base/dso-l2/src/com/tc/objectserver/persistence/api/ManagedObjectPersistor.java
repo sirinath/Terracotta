@@ -52,10 +52,10 @@ public interface ManagedObjectPersistor {
 
   public ObjectIDSet snapshotObjects();
 
-  public boolean containsPersistableCollectionType(ObjectID id);
+  public boolean containsMapType(ObjectID id);
 
-  public boolean addPersistableCollectionTypeObject(ObjectID id);
+  public boolean addMapTypeObject(ObjectID id);
 
-  public void removePersistableCollectionTypeObject(Collection ids);
+  public void removeAllMapTypeObject(Collection ids);
 
 }
