@@ -30,6 +30,7 @@ import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
+import com.tc.util.NullSyncObjectIdSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 import com.tc.util.SyncObjectIdSetImpl;
@@ -53,40 +54,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase implements ManagedObjectPersistor,
     PrettyPrintable {
 
-  private final static TCLogger                statsLogger                           = TCLogging
-                                                                                         .getLogger("com.tc.StatsLogger");
+  private final static TCLogger                statsLogger           = TCLogging.getLogger("com.tc.StatsLogger");
 
-  private static final Comparator              MO_COMPARATOR                         = new Comparator() {
-                                                                                       public int compare(Object o1,
-                                                                                                          Object o2) {
-                                                                                         long oid1 = ((ManagedObject) o1)
-                                                                                             .getID().toLong();
-                                                                                         long oid2 = ((ManagedObject) o2)
-                                                                                             .getID().toLong();
-                                                                                         if (oid1 < oid2) {
-                                                                                           return -1;
-                                                                                         } else if (oid1 > oid2) {
-                                                                                           return 1;
-                                                                                         } else {
-                                                                                           return 0;
-                                                                                         }
-                                                                                       }
-                                                                                     };
+  private static final Comparator              MO_COMPARATOR         = new Comparator() {
+                                                                       public int compare(Object o1, Object o2) {
+                                                                         long oid1 = ((ManagedObject) o1).getID()
+                                                                             .toLong();
+                                                                         long oid2 = ((ManagedObject) o2).getID()
+                                                                             .toLong();
+                                                                         if (oid1 < oid2) {
+                                                                           return -1;
+                                                                         } else if (oid1 > oid2) {
+                                                                           return 1;
+                                                                         } else {
+                                                                           return 0;
+                                                                         }
+                                                                       }
+                                                                     };
 
-  private static final Object                  MO_PERSISTOR_KEY                      = ManagedObjectPersistorImpl.class
-                                                                                         .getName()
-                                                                                       + ".saveAllObjects";
-  private static final Object                  MO_PERSISTOR_VALUE                    = "Complete";
+  private static final Object                  MO_PERSISTOR_KEY      = ManagedObjectPersistorImpl.class.getName()
+                                                                       + ".saveAllObjects";
+  private static final Object                  MO_PERSISTOR_VALUE    = "Complete";
 
-  private static final boolean                 STATS_LOGGING_ENABLED                 = TCPropertiesImpl
-                                                                                         .getProperties()
-                                                                                         .getBoolean(
-                                                                                                     TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED);
-  private static final boolean                 measurePerf                           = TCPropertiesImpl
-                                                                                         .getProperties()
-                                                                                         .getBoolean(
-                                                                                                     TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF,
-                                                                                                     false);
+  private static final boolean                 STATS_LOGGING_ENABLED = TCPropertiesImpl
+                                                                         .getProperties()
+                                                                         .getBoolean(
+                                                                                     TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED);
+  private static final boolean                 measurePerf           = TCPropertiesImpl
+                                                                         .getProperties()
+                                                                         .getBoolean(
+                                                                                     TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF,
+                                                                                     false);
 
   private final Database                       objectDB;
   private final SerializationAdapterFactory    saf;
@@ -100,11 +98,12 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   private SerializationAdapter                 serializationAdapter;
   private final SleepycatCollectionsPersistor  collectionsPersistor;
   private final ObjectIDManager                objectIDManager;
-  private final ConcurrentHashMap              statsRecords                          = new ConcurrentHashMap();
+  private final ConcurrentHashMap              statsRecords          = new ConcurrentHashMap();
   private int                                  deleteCounter;
   private int                                  deletePersistentStateCounter;
   private long                                 deleteTime;
-  private final ObjectIDSet                    extantPersistableCollectionTypeOidSet = new ObjectIDSet();
+  private final SyncObjectIdSet                extantObjectIDs;
+  private final SyncObjectIdSet                extantPersistableCollectionTypeOidSet;
 
   public ManagedObjectPersistorImpl(TCLogger logger, ClassCatalog classCatalog,
                                     SerializationAdapterFactory serializationAdapterFactory, DBEnvironment env,
@@ -135,20 +134,43 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       this.objectIDManager = new PlainObjectIDManagerImpl(objectDB, ptp);
     }
 
+    this.extantObjectIDs = getAllObjectIDs();
+    this.extantPersistableCollectionTypeOidSet = getAllMapsObjectIDs();
+
     if (STATS_LOGGING_ENABLED) startStatsPrinter();
     if (measurePerf) startDeleteOperPrinter();
   }
 
+  public int getObjectCount() {
+    return extantObjectIDs.size();
+  }
+
+  public boolean addNewObject(ObjectID id) {
+    return extantObjectIDs.add(id);
+  }
+
+  public boolean containsObject(ObjectID id) {
+    return extantObjectIDs.contains(id);
+  }
+
+  public void removeAllObjectsByID(SortedSet<ObjectID> ids) {
+    this.extantObjectIDs.removeAll(ids);
+  }
+
+  public ObjectIDSet snapshotObjects() {
+    return this.extantObjectIDs.snapshot();
+  }
+
   public boolean containsPersistableCollectionType(ObjectID id) {
-    return this.extantPersistableCollectionTypeOidSet.contains(id);
+    return extantPersistableCollectionTypeOidSet.contains(id);
   }
 
   public boolean addPersistableCollectionTypeObject(ObjectID id) {
-    return this.extantPersistableCollectionTypeOidSet.add(id);
+    return extantPersistableCollectionTypeOidSet.add(id);
   }
 
   public void removePersistableCollectionTypeObject(Collection ids) {
-    this.extantPersistableCollectionTypeOidSet.removeAll(ids);
+    extantPersistableCollectionTypeOidSet.removeAll(ids);
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -219,8 +241,20 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
   public SyncObjectIdSet getAllObjectIDs() {
     SyncObjectIdSet rv = new SyncObjectIdSetImpl();
     rv.startPopulating();
-    Thread t = new Thread(objectIDManager.getObjectIDReader(rv, extantPersistableCollectionTypeOidSet),
-                          "ObjectIdReaderThread");
+    Thread t = new Thread(objectIDManager.getObjectIDReader(rv), "ObjectIdReaderThread");
+    t.setDaemon(true);
+    t.start();
+    return rv;
+  }
+
+  public SyncObjectIdSet getAllMapsObjectIDs() {
+    SyncObjectIdSet rv = new SyncObjectIdSetImpl();
+
+    Runnable reader = objectIDManager.getMapsObjectIDReader(rv);
+    if (reader == null) return new NullSyncObjectIdSet();
+
+    rv.startPopulating();
+    Thread t = new Thread(reader, "MapsObjectIdReaderThread");
     t.setDaemon(true);
     t.start();
     return rv;
@@ -583,6 +617,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     out.println(this.getClass().getName());
     out = out.duplicateAndIndent();
     out.println("db: " + objectDB);
+    out.indent().print("extantObjectIDs: ").visit(extantObjectIDs).println();
+    out.indent().print("extantPersistableCollectionTypeOidSet: ").visit(extantPersistableCollectionTypeOidSet)
+        .println();
     return out;
   }
 

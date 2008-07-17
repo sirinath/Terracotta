@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class NullObjectIDManager implements ObjectIDManager {
 
-  public Runnable getObjectIDReader(final SyncObjectIdSet rv, ObjectIDSet persistableCollectionTypeOidSet) {
+  public Runnable getObjectIDReader(final SyncObjectIdSet rv) {
     // a dummy one, just stop populating and return
     return new Runnable() {
       public void run() {
@@ -23,6 +23,10 @@ public class NullObjectIDManager implements ObjectIDManager {
         return;
       }
     };
+  }
+  
+  public Runnable getMapsObjectIDReader(final SyncObjectIdSet rv) {
+    return null;
   }
 
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
