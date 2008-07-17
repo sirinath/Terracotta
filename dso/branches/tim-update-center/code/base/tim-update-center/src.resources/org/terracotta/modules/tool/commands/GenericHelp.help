@@ -18,4 +18,4 @@ Options:
 Further help:
   Each command accepts a --help argument that will display additional
   usage information for the command. Specifying the command name after 
-  the ‘help’ command does the same thing.
+  the "help" command does the same thing.
