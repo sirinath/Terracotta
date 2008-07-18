@@ -4,9 +4,10 @@
  */
 package com.tc.admin;
 
-import org.dijon.Component;
-
 import com.tc.admin.common.ComponentNode;
+import com.tc.admin.model.IServer;
+
+import java.awt.Component;
 
 public class ServerThreadDumpsNode extends ComponentNode {
   protected ServerNode             m_serverNode;
@@ -18,6 +19,10 @@ public class ServerThreadDumpsNode extends ComponentNode {
     setIcon(ServerHelper.getHelper().getThreadDumpsIcon());
   }
 
+  IServer getServer() {
+    return m_serverNode.getServer();
+  }
+
   protected ServerThreadDumpsPanel createThreadDumpsPanel() {
     return new ServerThreadDumpsPanel(this);
   }
@@ -27,10 +32,6 @@ public class ServerThreadDumpsNode extends ComponentNode {
       m_threadDumpsPanel = createThreadDumpsPanel();
     }
     return m_threadDumpsPanel;
-  }
-
-  ConnectionContext getConnectionContext() {
-    return m_serverNode.getConnectionContext();
   }
 
   public void tearDown() {

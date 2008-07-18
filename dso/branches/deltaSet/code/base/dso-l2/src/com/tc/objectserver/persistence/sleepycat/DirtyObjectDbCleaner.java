@@ -10,12 +10,11 @@ import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.schema.NewL2DSOConfig;
+import com.tc.object.persistence.api.ClusterStatePersistentMapStore;
 import com.tc.object.persistence.api.PersistentMapStore;
-import com.tc.object.persistence.api.SleepycatClusterStateMapStore;
 import com.tc.util.Assert;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -35,14 +34,14 @@ public class DirtyObjectDbCleaner {
   }
 
   private void init() {
-    String dbState = clusterStateStore.get(SleepycatClusterStateMapStore.DBKEY_STATE);
-    Assert.eval((dbState == null) || (dbState.equals(SleepycatClusterStateMapStore.DB_STATE_CLEAN))
-                || (dbState.equals(SleepycatClusterStateMapStore.DB_STATE_DIRTY)));
+    String dbState = clusterStateStore.get(ClusterStatePersistentMapStore.DBKEY_STATE);
+    Assert.eval((dbState == null) || (dbState.equals(ClusterStatePersistentMapStore.DB_STATE_CLEAN))
+                || (dbState.equals(ClusterStatePersistentMapStore.DB_STATE_DIRTY)));
 
     objectDbClean = true;
     if (dbState == null) {
-      clusterStateStore.put(SleepycatClusterStateMapStore.DBKEY_STATE, SleepycatClusterStateMapStore.DB_STATE_CLEAN);
-    } else if (dbState.equals(SleepycatClusterStateMapStore.DB_STATE_DIRTY)) {
+      clusterStateStore.put(ClusterStatePersistentMapStore.DBKEY_STATE, ClusterStatePersistentMapStore.DB_STATE_CLEAN);
+    } else if (dbState.equals(ClusterStatePersistentMapStore.DB_STATE_DIRTY)) {
       Assert.eval(l2DataPath != null);
       objectDbClean = false;
     }
@@ -66,7 +65,8 @@ public class DirtyObjectDbCleaner {
         dirtyDbBackupPath.forceMkdir();
       } catch (IOException ioe) {
         throw new TCDatabaseException("Not able to create Dirty DB Backup Directory '"
-                                      + dirtyDbBackupPath.getFile().getAbsolutePath() + "'. Reason:" + ioe.getCause());
+                                      + dirtyDbBackupPath.getFile().getAbsolutePath() + "'. Reason:"
+                                      + ioe.getClass().getName());
       }
     } else {
       logger.info("dirtyDbBackupPath : " + dirtyDbBackupPath.getFile().getAbsolutePath());
@@ -85,7 +85,7 @@ public class DirtyObjectDbCleaner {
                                                     + dirtyDbBackupDestDir.getAbsolutePath()); }
     } catch (Exception e) {
       throw new TCDatabaseException("Not able to move dirty objectdbs to " + dirtyDbBackupDestDir.getAbsolutePath()
-                                    + ". Reason: " + e.getCause());
+                                    + ". Reason: " + e.getClass().getName());
     }
 
     Assert.eval(!dirtyDbSourcedir.exists());
@@ -93,20 +93,9 @@ public class DirtyObjectDbCleaner {
       FileUtils.forceMkdir(dirtyDbSourcedir);
     } catch (IOException e) {
       throw new TCDatabaseException("Not able to create dbhome " + dirtyDbSourcedir.getAbsolutePath() + ". Reason: "
-                                    + e.getCause());
+                                    + e.getClass().getName());
     }
 
-    File reasonFile = new File(dirtyDbBackupDestDir, "reason.txt");
-    try {
-      FileOutputStream out = new FileOutputStream(reasonFile);
-      out.write(d.toString().getBytes());
-      // out.write(errorMessage.getBytes());
-      // PrintStream ps = new PrintStream(out);
-      // t.printStackTrace(ps);
-      out.close();
-    } catch (Exception e1) {
-      throw new RuntimeException(e1);
-    }
     logger.info("Successfully moved dirty objectdb to " + dirtyDbBackupDestDir.getAbsolutePath() + ".");
   }
 }

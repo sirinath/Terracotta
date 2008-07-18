@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
@@ -15,13 +16,11 @@ public class ServerThreadDumpsPanel extends AbstractThreadDumpsPanel {
 
   protected String getThreadDumpText() throws Exception {
     long requestMillis = System.currentTimeMillis();
-    ConnectionContext cc = m_serverThreadDumpsNode.getConnectionContext();
-    return ServerHelper.getHelper().takeThreadDump(cc, requestMillis);
+    return m_serverThreadDumpsNode.getServer().takeThreadDump(requestMillis);
   }
 
   protected Preferences getPreferences() {
-    AdminClientContext acc = AdminClient.getContext();
-    return acc.prefs.node("ServerThreadDumpsPanel");
+    return m_acc.getPrefs().node(ServerThreadDumpsPanel.class.getName());
   }
 
   public void tearDown() {

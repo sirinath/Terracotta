@@ -36,8 +36,6 @@ public class ThrowableHandler {
   // single
   // place first, then come up with fancy ways of dealing with them. --Orion 03/20/2006
 
-  public static final short         EXITCODE_RESTART_REQUEST        = 11;
-  public static final short         EXITCODE_STARTUP_ERROR          = 2;
   private final TCLogger            logger;
   private final ExceptionHelperImpl helper;
   private CopyOnWriteArrayList      callbackOnExitDefaultHandlers   = new CopyOnWriteArrayList();
@@ -107,9 +105,14 @@ public class ThrowableHandler {
     boolean autoRestart = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_NHA_AUTORESTART);
 
     if (autoRestart && throwableState.isRestartNeeded()) {
-      exit(EXITCODE_RESTART_REQUEST);
+      // don't print any scary stack traces on the console during auto restart of the server. Anyway, logs have them.
+      String errorMessage = "\n\nTerracotta Server startup exception: "
+                            + throwableState.getThrowable().getClass().getName() + "\n\n";
+      System.err.print(errorMessage);
+      System.err.flush();
+      exit(ServerExitStatus.EXITCODE_RESTART_REQUEST);
     } else {
-      exit(EXITCODE_STARTUP_ERROR);
+      exit(ServerExitStatus.EXITCODE_STARTUP_ERROR);
     }
   }
 
@@ -119,7 +122,8 @@ public class ThrowableHandler {
     // before the stacktrace prints
     throwableState.getThrowable().printStackTrace(System.err);
     System.err.flush();
-    logger.error("Thread:" + thread + " got an uncaught exception. calling CallbackOnExitDefaultHandlers.", throwableState.getThrowable());
+    logger.error("Thread:" + thread + " got an uncaught exception. calling CallbackOnExitDefaultHandlers.",
+                 throwableState.getThrowable());
     for (Iterator iter = callbackOnExitDefaultHandlers.iterator(); iter.hasNext();) {
       CallbackOnExitHandler callbackOnExitHandler = (CallbackOnExitHandler) iter.next();
       callbackOnExitHandler.callbackOnExit(throwableState);
