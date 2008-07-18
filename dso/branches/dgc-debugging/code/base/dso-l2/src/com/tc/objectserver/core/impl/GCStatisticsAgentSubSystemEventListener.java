@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-public class GCStatisticsAgentSubSystemEventListener extends AbstractGarbageCollectorEventListener {
+public class GCStatisticsAgentSubSystemEventListener extends GarbageCollectorEventListenerAdapter {
 
   public static final String             DISTRIBUTED_GC_STATISTICS = "distributed gc";
 
@@ -56,7 +56,7 @@ public class GCStatisticsAgentSubSystemEventListener extends AbstractGarbageColl
     datas
         .add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "candidate garbage count", gcInfo.getCandidateGarbageCount()));
     datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "actual garbage count", gcInfo.getActualGarbageCount()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "pauseTime", gcInfo.getPauseStageTime()));
+    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "pauseTime", gcInfo.getPausedStageTime()));
     datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "deleteTime", gcInfo.getDeleteStageTime()));
     return datas.toArray(new StatisticData[datas.size()]);
   }

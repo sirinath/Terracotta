@@ -10,15 +10,11 @@ import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.impl.GCStatsImpl;
 import com.tc.stats.LossyStack;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class GCStatsEventPublisher extends AbstractGarbageCollectorEventListener {
-
-  private Map              gcStatsMap            = new HashMap();
+public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter {
 
   private List             gcStatsEventListeners = new CopyOnWriteArrayList();
 
@@ -34,12 +30,6 @@ public class GCStatsEventPublisher extends AbstractGarbageCollectorEventListener
 
   public void garbageCollectorStart(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
-    if (info.isYoungGen()) {
-      gcStats.markYoungGen();
-    } else {
-      gcStats.markFullGen();
-    }
-    gcStats.setStartTime(info.getStartTime());
     fireGCStatsEvent(gcStats);
   }
 
@@ -58,11 +48,11 @@ public class GCStatsEventPublisher extends AbstractGarbageCollectorEventListener
     
   }
 
-  public void garbageCollectorDeleting(GarbageCollectionInfo info) {
+  public void garbageCollectorMarkComplete(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
     gcStats.setCandidateGarbageCount(info.getCandidateGarbageCount());
     gcStats.setActualGarbageCount(info.getActualGarbageCount());
-    gcStats.setPausedStageTime(info.getPauseStageTime());
+    gcStats.setPausedStageTime(info.getPausedStageTime());
     gcStats.setMarkCompleteState();
     fireGCStatsEvent(gcStats);
     
@@ -79,16 +69,16 @@ public class GCStatsEventPublisher extends AbstractGarbageCollectorEventListener
     GCStatsImpl gcStats = getGCStats(info);
     gcStats.setDeleteStageTime(info.getDeleteStageTime());
     gcStats.setElapsedTime(info.getElapsedTime());
+    gcStats.setCompleteState();
     push(gcStats);
-    gcStatsMap.remove(info.getIteration());
+    fireGCStatsEvent(gcStats);
   }
   
   private GCStatsImpl getGCStats(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = null;
-    int iteration = info.getIteration();
-    if((gcStats = (GCStatsImpl)gcStatsMap.get(iteration)) == null) {
-      gcStats = new GCStatsImpl(iteration);
-      gcStatsMap.put(iteration, gcStats);
+    if((gcStats = info.getObject()) == null) {
+      gcStats = new GCStatsImpl(info.getIteration(), info.isYoungGen(), info.getStartTime());
+      info.setObject(gcStats);
     } 
     return gcStats;
   }

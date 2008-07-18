@@ -24,7 +24,7 @@ public interface GarbageCollectionInfoPublisher {
   
   public void fireGCRescue2ResultsEvent(GarbageCollectionInfo info);
   
-  public void fireGCDeletingEvent(GarbageCollectionInfo info);
+  public void fireGCMarkCompleteEvent(GarbageCollectionInfo info);
   
   public void fireGCDeleteEvent(GarbageCollectionInfo info);
   

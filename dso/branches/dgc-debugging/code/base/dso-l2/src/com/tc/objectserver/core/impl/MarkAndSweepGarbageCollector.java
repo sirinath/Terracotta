@@ -17,6 +17,7 @@ import com.tc.objectserver.core.api.GarbageCollectionInfoPublisher;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.impl.GCStatsImpl;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.text.PrettyPrintable;
@@ -184,9 +185,9 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     if (gcState.isStopRequested()) { return; }
 
     long deleteStartMillis = System.currentTimeMillis();
-    gcInfo.setPauseStageTime(deleteStartMillis - pauseStartMillis);
+    gcInfo.setPausedStageTime(deleteStartMillis - pauseStartMillis);
 
-    gcPublisher.fireGCDeletingEvent(gcInfo);
+    gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     this.referenceCollector = NULL_CHANGE_COLLECTOR;
 
@@ -417,10 +418,10 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       }
     }
 
-    public void fireGCDeletingEvent(GarbageCollectionInfo info) {
+    public void fireGCMarkCompleteEvent(GarbageCollectionInfo info) {
       for (Iterator iter = garbageCollectionEventListeners.iterator(); iter.hasNext();) {
         GarbageCollectorEventListener listener = (GarbageCollectorEventListener) iter.next();
-        listener.garbageCollectorDeleting(info);
+        listener.garbageCollectorMarkComplete(info);
       }
     }
 
@@ -467,6 +468,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     private long        candidateGarbageCount;
 
     private long        actualGarbageCount;
+    
+    private GCStatsImpl gcStats;
 
     private SortedSet   toDelete;
 
@@ -478,7 +481,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     public GarbageCollectionInfoImpl(int iteration) {
       this.iteration = iteration;
-    }
+    }   
 
     public int getIteration() {
       return this.iteration;
@@ -494,10 +497,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     public boolean isYoungGen() {
       return youngGen ? true : false;
-    }
-
-    public boolean isFullGen() {
-      return youngGen ? false : true;
     }
 
     public void setStartTime(long time) {
@@ -524,11 +523,11 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       return this.markStageTime;
     }
 
-    public void setPauseStageTime(long time) {
+    public void setPausedStageTime(long time) {
       this.pauseStageTime = time;
     }
 
-    public long getPauseStageTime() {
+    public long getPausedStageTime() {
       return this.pauseStageTime;
     }
 
@@ -594,6 +593,14 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     public void setRescueTimes(List rescueTimes) {
       this.rescueTimes = rescueTimes;
+    }
+    
+    public GCStatsImpl getObject() {
+      return gcStats;
+    }
+    
+    public void setObject(GCStatsImpl aGCStats) {
+      this.gcStats = aGCStats;
     }
 
   }

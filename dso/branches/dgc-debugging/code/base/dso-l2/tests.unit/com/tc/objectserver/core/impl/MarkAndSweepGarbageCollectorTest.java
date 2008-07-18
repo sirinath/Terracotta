@@ -12,7 +12,9 @@ import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.Filter;
+//import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.core.api.GarbageCollector;
+//import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.impl.ManagedObjectReference;
 import com.tc.objectserver.l1.api.TestClientStateManager;
@@ -21,6 +23,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.util.ObjectIDSet;
 
+//import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -211,6 +214,74 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     managed.put(tmo.getID(), tmo.getReference());
     return tmo;
   }
+  
+  /**
+  private static class TestGarbageCollectorEventListener implements GarbageCollectorEventListener {
+    
+    protected List completedList = new ArrayList();
+    
+    protected List cycleCompletedList = new ArrayList();
+    
+    protected List deleteList = new ArrayList();
+    
+    protected List markCompleteList = new ArrayList();
+    
+    protected List  
+    
+    public void garbageCollectorCompleted(GarbageCollectionInfo info) {
+      //do nothing
+    }
+
+    public void garbageCollectorCycleCompleted(GarbageCollectionInfo info) {
+     //
+    }
+
+    public void garbageCollectorDelete(GarbageCollectionInfo info) {
+     //
+    }
+
+    public void garbageCollectorMarkComplete(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorMark(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorMarkResults(GarbageCollectionInfo info) {
+     //
+    }
+
+    public void garbageCollectorPaused(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorPausing(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorRescue1(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorRescue1Results(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorRescue2(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorRescue2Results(GarbageCollectionInfo info) {
+      //
+    }
+
+    public void garbageCollectorStart(GarbageCollectionInfo info) {
+      //
+    }
+    
+  }
+  **/
 /**
   private static class TestGCStatsEventListener implements GCStatsEventListener {
 
