@@ -5,6 +5,7 @@
 package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
+import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.core.api.GarbageCollectionInfoPublisher;
 
