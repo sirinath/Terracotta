@@ -30,14 +30,14 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
 
   private final ManagedObjectPersistor objectPersistor;
   private final Sink                   gcDisposerSink;
-  private boolean                      inShutdown;
+  private volatile boolean             inShutdown;
 
   public PersistentManagedObjectStore(ManagedObjectPersistor persistor, Sink gcDisposerSink) {
     this.objectPersistor = persistor;
     this.gcDisposerSink = gcDisposerSink;
   }
 
-  public synchronized int getObjectCount() {
+  public int getObjectCount() {
     return objectPersistor.getObjectCount();
   }
 
@@ -129,16 +129,16 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     return rv;
   }
 
-  public synchronized void shutdown() {
+  public void shutdown() {
     assertNotInShutdown();
     this.inShutdown = true;
   }
 
-  public synchronized boolean inShutdown() {
+  public boolean inShutdown() {
     return this.inShutdown;
   }
 
-  public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
     PrettyPrinter rv = out;
     out = out.println(getClass().getName()).duplicateAndIndent();
     return rv;
