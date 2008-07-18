@@ -16,13 +16,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 
-public class LinkedHashSetMutateValidateTest extends TransparentTestBase {
+public class MapsSystemTest extends TransparentTestBase {
   private static final int NODE_COUNT = 2;
   private File             configFile;
 
   @Override
   protected Class getApplicationClass() {
-    return LinkedHashSetMutateValidateTestApp.class;
+    return MapsSystemTestApp.class;
   }
 
   @Override
