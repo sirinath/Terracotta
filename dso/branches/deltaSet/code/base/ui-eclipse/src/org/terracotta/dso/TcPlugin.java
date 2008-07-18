@@ -103,7 +103,7 @@ import com.tc.bundles.ResolverUtils;
 import com.tc.config.Loader;
 import com.tc.config.schema.dynamic.ParameterSubstituter;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.LogLevel;
+import com.tc.logging.LogLevelImpl;
 import com.tc.object.util.JarResourceLoader;
 import com.tc.plugins.ModulesLoader;
 import com.tc.server.ServerConstants;
@@ -157,33 +157,33 @@ import java.util.Properties;
 
 public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaLaunchConfigurationConstants,
     TcPluginStatusConstants {
-  private static TcPlugin           m_plugin;
-  private Loader                    m_configLoader;
-  private CompilationUnitVisitor    m_compilationUnitVisitor;
-  private ResourceListener          m_resourceListener;
-  private ResourceDeltaVisitor      m_resourceDeltaVisitor;
-  private XmlOptions                m_xmlOptions;
-  private DecoratorUpdateAction     m_decoratorUpdateAction;
-  private ArrayList<IProjectAction> m_projectActionList;
-  private ConfigurationEventManager m_configurationEventManager;
+  private static TcPlugin                 m_plugin;
+  private Loader                          m_configLoader;
+  private CompilationUnitVisitor          m_compilationUnitVisitor;
+  private ResourceListener                m_resourceListener;
+  private ResourceDeltaVisitor            m_resourceDeltaVisitor;
+  private XmlOptions                      m_xmlOptions;
+  private DecoratorUpdateAction           m_decoratorUpdateAction;
+  private ArrayList<IProjectAction>       m_projectActionList;
+  private final ConfigurationEventManager m_configurationEventManager;
 
-  public static final String        PLUGIN_ID                           = "org.terracotta.dso";
+  public static final String              PLUGIN_ID                           = "org.terracotta.dso";
 
-  public static final String        DEFAULT_CONFIG_FILENAME             = "tc-config.xml";
-  public static final String        DEFAULT_SERVER_OPTIONS              = "-Xms256m -Xmx256m";
-  public static final boolean       DEFAULT_AUTO_START_SERVER_OPTION    = false;
-  public static final boolean       DEFAULT_WARN_CONFIG_PROBLEMS_OPTION = true;
-  public static final boolean       DEFAULT_QUERY_RESTART_OPTION        = true;
+  public static final String              DEFAULT_CONFIG_FILENAME             = "tc-config.xml";
+  public static final String              DEFAULT_SERVER_OPTIONS              = "-Xms256m -Xmx256m";
+  public static final boolean             DEFAULT_AUTO_START_SERVER_OPTION    = false;
+  public static final boolean             DEFAULT_WARN_CONFIG_PROBLEMS_OPTION = true;
+  public static final boolean             DEFAULT_QUERY_RESTART_OPTION        = true;
 
-  public static final String        SERVER_NAME_LAUNCH_ATTR             = "server.name";
-  public static final String        SERVER_HOST_LAUNCH_ATTR             = "server.host";
-  public static final String        SERVER_JMX_PORT_LAUNCH_ATTR         = "server.jmx-port";
-  public static final String        SERVER_DSO_PORT_LAUNCH_ATTR         = "server.dso-port";
+  public static final String              SERVER_NAME_LAUNCH_ATTR             = "server.name";
+  public static final String              SERVER_HOST_LAUNCH_ATTR             = "server.host";
+  public static final String              SERVER_JMX_PORT_LAUNCH_ATTR         = "server.jmx-port";
+  public static final String              SERVER_DSO_PORT_LAUNCH_ATTR         = "server.dso-port";
 
-  public static final Server        DEFAULT_SERVER_INSTANCE             = createDefaultServerInstance();
+  public static final Server              DEFAULT_SERVER_INSTANCE             = createDefaultServerInstance();
 
   static {
-    CustomerLogging.getConsoleLogger().setLevel(LogLevel.OFF);
+    CustomerLogging.getConsoleLogger().setLevel(LogLevelImpl.OFF);
     Logger.getLogger("com.terracottatech").setLevel(Level.OFF);
     Logger.getLogger("com.tc").setLevel(Level.OFF);
   }
@@ -258,6 +258,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     return getLocation().append("lib");
   }
 
+  @Override
   public void start(BundleContext context) throws Exception {
     super.start(context);
 
@@ -297,6 +298,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     // manager.registerAdapters(factory, BinaryMember.class);
   }
 
+  @Override
   public void stop(BundleContext context) throws Exception {
     ServerTracker.getDefault().shutdownAllServers();
     super.stop(context);
@@ -462,7 +464,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       wc.setAttribute(ATTR_CLASSPATH_PROVIDER, "org.terracotta.dso.classpathProvider");
       wc.setAttribute(ATTR_WORKING_DIRECTORY, project.getLocation().makeAbsolute().toOSString());
 
-      return wc.launch(ILaunchManager.DEBUG_MODE, monitor);
+      return wc.launch(ILaunchManager.RUN_MODE, monitor);
     } else {
       System.out.println("No config file specified.  Set in project properties");
       return null;
@@ -529,10 +531,10 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
 
       if (servers != null) {
         Server launchServer = createLaunchServer(launch);
-        Server[] serverArr = servers.getServerArray();
+        Server[] serverArray = servers.getServerArray();
 
-        for (int i = 0; i < serverArr.length; i++) {
-          Server server = serverArr[i];
+        for (int i = 0; i < serverArray.length; i++) {
+          Server server = serverArray[i];
           Server serverCopy = (Server) server.copy();
           replacePatterns(serverCopy);
           if (areEquivalentServers(launchServer, serverCopy)) { return server; }
@@ -543,6 +545,11 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     return null;
   }
 
+  /**
+   * This should not be called with a configuration server or any patterns will be overwritten with whatever values
+   * apply at call-time. Clone the configuration server first: Server serverCopy = (Server) server.copy(); Further,
+   * identity comparison should not be used on servers, rather use areEquivalentServers(Server1, Server2).
+   */
   public void replacePatterns(Server server) {
     if (server != null) {
       if (server.isSetName()) {
@@ -564,11 +571,12 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       Servers servers = config.getServers();
 
       if (servers != null) {
-        Server[] serverArr = servers.getServerArray();
+        Server[] serverArray = servers.getServerArray();
 
-        if (serverArr.length > 0) {
-          replacePatterns(serverArr[0]);
-          return serverArr[0];
+        if (serverArray.length > 0) {
+          Server server = (Server) serverArray[0].copy();
+          replacePatterns(server);
+          return server;
         }
       }
     }
@@ -637,9 +645,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       }
 
       setBootClassHelper(project, new BootClassHelper(JavaCore.create(project)));
-
-      getConfigurationHelper(project).validateAll();
-      fireConfigurationChange(project);
     }
   }
 
@@ -828,9 +833,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       }
 
       setBootClassHelper(project, new BootClassHelper(JavaCore.create(project)));
-
-      getConfigurationHelper(project).validateAll();
-      fireConfigurationChange(project);
     }
   }
 
@@ -1001,12 +1003,15 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
   public TcConfig getConfiguration(IProject project) {
     if (project == null) return null;
 
+    boolean fireChanged = false;
+    TcConfig config = null;
     synchronized (project) {
-      TcConfig config = (TcConfig) getSessionProperty(project, CONFIGURATION);
+      config = (TcConfig) getSessionProperty(project, CONFIGURATION);
 
       if (config == null) {
         try {
           loadConfiguration(project);
+          fireChanged = true;
         } catch (XmlException e) {
           LineLengths lineLengths = getConfigurationLineLengths(project);
           handleXmlException(getConfigurationFile(project), lineLengths, e);
@@ -1019,12 +1024,19 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
         if (config == null) {
           config = BAD_CONFIG;
           setSessionProperty(project, CONFIGURATION, config);
-          fireConfigurationChange(project);
+          fireChanged = true;
         }
       }
-
-      return config;
     }
+
+    if (fireChanged) {
+      if (config != BAD_CONFIG) {
+        getConfigurationHelper(project).validateAll();
+      }
+      fireConfigurationChange(project);
+    }
+
+    return config;
   }
 
   public void handleXmlException(IFile configFile, LineLengths lineLengths, XmlException e) {

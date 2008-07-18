@@ -14,7 +14,6 @@ import org.jfree.data.time.TimeSeries;
 
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.ExceptionHelper;
-import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.stats.statistics.CountStatistic;
 import com.tc.stats.statistics.Statistic;
@@ -68,11 +67,11 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   public ClientRuntimeStatsPanel(ClientRuntimeStatsNode clientStatsNode) {
     super();
-    m_clientStatsNode = clientStatsNode;
+    setNode(m_clientStatsNode = clientStatsNode);
     setup(m_chartsPanel);
   }
 
-  protected void setup(Container chartsPanel) {
+  protected synchronized void setup(Container chartsPanel) {
     chartsPanel.setLayout(new GridLayout(0, 2));
     setupMemoryPanel(chartsPanel);
     setupCpuPanel(chartsPanel);
@@ -84,7 +83,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   private void setupFlushRatePanel(Container parent) {
     m_flushRateSeries = createTimeSeries("");
-    m_flushRateChart = createChart(m_flushRateSeries);
+    m_flushRateChart = createChart(m_flushRateSeries, false);
     m_flushRatePanel = createChartPanel(m_flushRateChart);
     parent.add(m_flushRatePanel);
     m_flushRatePanel.setPreferredSize(fDefaultGraphSize);
@@ -93,7 +92,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   private void setupFaultRatePanel(Container parent) {
     m_faultRateSeries = createTimeSeries("");
-    m_faultRateChart = createChart(m_faultRateSeries);
+    m_faultRateChart = createChart(m_faultRateSeries, false);
     m_faultRatePanel = createChartPanel(m_faultRateChart);
     parent.add(m_faultRatePanel);
     m_faultRatePanel.setPreferredSize(fDefaultGraphSize);
@@ -102,7 +101,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   private void setupTxnRatePanel(Container parent) {
     m_txnRateSeries = createTimeSeries("");
-    m_txnRateChart = createChart(m_txnRateSeries);
+    m_txnRateChart = createChart(m_txnRateSeries, false);
     m_txnRatePanel = createChartPanel(m_txnRateChart);
     parent.add(m_txnRatePanel);
     m_txnRatePanel.setPreferredSize(fDefaultGraphSize);
@@ -111,7 +110,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   private void setupPendingTxnsPanel(Container parent) {
     m_pendingTxnsSeries = createTimeSeries("");
-    m_pendingTxnsChart = createChart(m_pendingTxnsSeries);
+    m_pendingTxnsChart = createChart(m_pendingTxnsSeries, false);
     m_pendingTxnsPanel = createChartPanel(m_pendingTxnsChart);
     parent.add(m_pendingTxnsPanel);
     m_pendingTxnsPanel.setPreferredSize(fDefaultGraphSize);
@@ -133,7 +132,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_memoryPanel.setBorder(new TitledBorder("Heap Usage"));
   }
 
-  private void setupCpuSeries(int processorCount) {
+  private synchronized void setupCpuSeries(int processorCount) {
     m_cpuTimeSeriesMap = new HashMap<String, TimeSeries>();
     m_cpuTimeSeries = new TimeSeries[processorCount];
     for (int i = 0; i < processorCount; i++) {
@@ -153,8 +152,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     private CpuPanelWorker() {
       super(new Callable<String[]>() {
         public String[] call() throws Exception {
-          L1InfoMBean l1InfoBean = m_clientStatsNode.getL1InfoBean();
-          return l1InfoBean.getCpuStatNames();
+          return m_clientStatsNode.getClient().getCpuStatNames();
         }
       });
     }
@@ -173,10 +171,10 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
         }
       }
     }
+  }
 
-    private void setupInstructions() {
-      setupHypericInstructions(m_cpuPanel);
-    }
+  private synchronized void setupInstructions() {
+    setupHypericInstructions(m_cpuPanel);
   }
 
   private void setupCpuPanel(Container parent) {
@@ -184,15 +182,14 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     parent.add(m_cpuPanel);
     m_cpuPanel.setPreferredSize(fDefaultGraphSize);
     m_cpuPanel.setBorder(new TitledBorder("CPU Usage"));
-    m_acc.executorService.execute(new CpuPanelWorker());
+    m_acc.execute(new CpuPanelWorker());
   }
 
   class L1InfoStatGetter extends BasicWorker<Map> {
     L1InfoStatGetter() {
       super(new Callable<Map>() {
         public Map call() throws Exception {
-          L1InfoMBean l1InfoBean = m_clientStatsNode.getL1InfoBean();
-          return l1InfoBean != null ? l1InfoBean.getStatistics() : null;
+          return m_clientStatsNode.getClient().getL1Statistics();
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }
@@ -202,7 +199,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
       if (e == null) {
         Map statMap = getResult();
         if (statMap != null) {
-          handleL1InfoStats(statMap);
+          handleL1Statistics(statMap);
         }
       } else {
         Throwable rootCause = ExceptionHelper.getRootCause(e);
@@ -214,12 +211,12 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
       }
 
       if (m_acc != null) {
-        m_acc.executorService.submit(new DSOClientStatGetter());
+        m_acc.execute(new DSOClientStatGetter());
       }
     }
   }
 
-  private synchronized void handleL1InfoStats(Map statMap) {
+  private synchronized void handleL1Statistics(Map statMap) {
     if (m_acc == null) return;
 
     Second now = new Second();
@@ -249,8 +246,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     DSOClientStatGetter() {
       super(new Callable<Statistic[]>() {
         public Statistic[] call() throws Exception {
-          DSOClient client = m_clientStatsNode.getClient();
-          return client != null ? client.getStatistics(STATS) : null;
+          return m_clientStatsNode.getClient().getDSOStatistics(STATS);
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }
@@ -260,7 +256,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
       if (e == null) {
         Statistic[] stats = getResult();
         if (stats != null) {
-          handleDSOClientStats(stats);
+          handleDSOStatistics(stats);
         }
       } else {
         Throwable rootCause = ExceptionHelper.getRootCause(e);
@@ -276,7 +272,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     }
   }
 
-  private synchronized void handleDSOClientStats(Statistic[] stats) {
+  private synchronized void handleDSOStatistics(Statistic[] stats) {
     if (m_acc == null) return;
 
     updateSeries(m_flushRateSeries, (CountStatistic) stats[0]);
@@ -287,7 +283,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
 
   protected synchronized void retrieveStatistics() {
     if (m_acc != null) {
-      m_acc.executorService.submit(new L1InfoStatGetter());
+      m_acc.execute(new L1InfoStatGetter());
     }
   }
 

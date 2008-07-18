@@ -669,7 +669,7 @@ public class ClientLockManagerTest extends TestCase {
     lockManager.unpause();
     unlockComplete.take();
     System.out.println("Done testing unlock(..)");
-    
+
     // TODO: test awardLock() and the other public methods I didn't have
     // time to test...
 

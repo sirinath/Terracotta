@@ -7,7 +7,6 @@ package com.tc.server;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -16,7 +15,6 @@ import com.tc.logging.TCLogger;
 import com.tc.util.ProductInfo;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -49,11 +47,11 @@ class UpdateCheckAction extends TimerTask {
     UpdateCheckAction action = new UpdateCheckAction(server, periodDays);
     new Timer("Update Checker", true).schedule(action, 0, action.getCheckPeriodMillis());
   }
-  
+
   public long getCheckPeriodMillis() {
     return periodMillis;
   }
-  
+
   public static void silenceHttpClientLoggers() {
     Logger.getLogger("org.apache.commons.httpclient.HttpClient").setLevel(Level.OFF);
     Logger.getLogger("org.apache.commons.httpclient.params.DefaultHttpParams").setLevel(Level.OFF);
@@ -89,8 +87,13 @@ class UpdateCheckAction extends TimerTask {
     sb.append("&tc-product=");
     sb.append(productInfo.edition().equals("opensource") ? "oss" : "ee");
     sb.append("&uptime-secs=");
-    sb.append((System.currentTimeMillis() - server.getStartTime())/1000);
+    sb.append((System.currentTimeMillis() - server.getStartTime()) / 1000);
     sb.append("&source=server");
+
+    if (productInfo.isPatched()) {
+      sb.append("&patch=");
+      sb.append(productInfo.patchLevel());
+    }
 
     return new URL(sb.toString());
   }
@@ -128,7 +131,6 @@ class UpdateCheckAction extends TimerTask {
   private void doUpdateCheck() {
     showMessage("Update Checker: Checking...");
 
-    InputStream is = null;
     try {
       StringBuffer sb = new StringBuffer();
       String version = productInfo.version();
@@ -139,12 +141,12 @@ class UpdateCheckAction extends TimerTask {
 
         String propVal = props.getProperty("general.notice");
         if (propVal != null && (propVal = propVal.trim()) != null && propVal.length() > 0) {
-          showMessage("Update Checker: "+propVal);
+          showMessage("Update Checker: " + propVal);
         }
 
         propVal = props.getProperty(version + ".notice");
         if (propVal != null && (propVal = propVal.trim()) != null && propVal.length() > 0) {
-          showMessage("Update Checker: "+propVal);
+          showMessage("Update Checker: " + propVal);
         }
 
         propVal = props.getProperty(version + ".updates");
@@ -165,14 +167,14 @@ class UpdateCheckAction extends TimerTask {
       }
       if (sb.length() > 0) {
         showMessage("Update Checker: Available updates:");
-        showMessage("Update Checker:   * "+sb.toString());
+        showMessage("Update Checker:   * " + sb.toString());
       } else {
         showMessage("Update Checker: No updates found");
       }
+    } catch (RuntimeException re) {
+      consoleLogger.info("Update Checker: Check failed (" + re.getClass().getName() + ": " + re.getMessage() + ")");
     } catch (Exception e) {
       consoleLogger.info("Update Checker: Check failed (" + e.getClass().getName() + ": " + e.getMessage() + ")");
-    } finally {
-      IOUtils.closeQuietly(is);
     }
 
     showMessage("Update Checker: Next check at " + new Date(System.currentTimeMillis() + periodMillis));
@@ -189,7 +191,7 @@ class UpdateCheckAction extends TimerTask {
     if (minutes != null) {
       nextCheckTime = minutes.longValue() * 60 * 1000;
     } else {
-      nextCheckTime = days * 24 * 60 * 60 * 1000;
+      nextCheckTime = 1000L * 60 * 60 * 24 * days;
     }
 
     return nextCheckTime;

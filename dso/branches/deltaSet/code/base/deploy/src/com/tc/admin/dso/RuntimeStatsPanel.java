@@ -56,33 +56,33 @@ import javax.swing.text.Element;
 import javax.swing.text.html.HTML;
 
 public class RuntimeStatsPanel extends XContainer implements RuntimeStatisticConstants {
-  protected AdminClientContext  m_acc;
-  protected Timer               m_statsGathererTimer;
-  protected Container           m_chartsPanel;
-  private Button                m_startMonitoringButton;
-  private Button                m_stopMonitoringButton;
-  private Button                m_clearSamplesButton;
-  private Spinner               m_samplePeriodSpinner;
-  private Spinner               m_sampleHistorySpinner;
-  protected AxisSpace           m_rangeAxisSpace;
+  protected AdminClientContext     m_acc;
+  protected Timer                  m_statsGathererTimer;
+  protected Container              m_chartsPanel;
+  private Button                   m_startMonitoringButton;
+  private Button                   m_stopMonitoringButton;
+  private Button                   m_clearSamplesButton;
+  private Spinner                  m_samplePeriodSpinner;
+  private Spinner                  m_sampleHistorySpinner;
+  protected AxisSpace              m_rangeAxisSpace;
 
-  private boolean               m_shouldAutoStart;
+  private boolean                  m_shouldAutoStart;
 
-  protected static Dimension    fDefaultGraphSize                       = new Dimension(
-                                                                                        ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH,
-                                                                                        ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT);
+  protected static final Dimension fDefaultGraphSize                       = new Dimension(
+                                                                                           ChartPanel.DEFAULT_MINIMUM_DRAW_WIDTH,
+                                                                                           ChartPanel.DEFAULT_MINIMUM_DRAW_HEIGHT);
 
-  private static final int      DEFAULT_POLL_PERIOD_SECS                = 3;
-  private static final int      DEFAULT_SAMPLE_HISTORY_MINUTES          = 5;
-  private static final int      SAMPLE_SAMPLE_HISTORY_STEP_SIZE         = 1;
+  private static final int         DEFAULT_POLL_PERIOD_SECS                = 3;
+  private static final int         DEFAULT_SAMPLE_HISTORY_MINUTES          = 5;
+  private static final int         SAMPLE_SAMPLE_HISTORY_STEP_SIZE         = 1;
 
-  private static final String   DEFAULT_POLL_PERIOD_SECONDS_PREF_KEY    = "poll-periods-seconds";
-  private static final String   DEFAULT_SAMPLE_HISTORY_MINUTES_PREF_KEY = "sample-history-minutes";
+  private static final String      DEFAULT_POLL_PERIOD_SECONDS_PREF_KEY    = "poll-periods-seconds";
+  private static final String      DEFAULT_SAMPLE_HISTORY_MINUTES_PREF_KEY = "sample-history-minutes";
 
-  private ArrayList<TimeSeries> m_allSeries;
-  private ArrayList<JFreeChart> m_allCharts;
+  private ArrayList<TimeSeries>    m_allSeries;
+  private ArrayList<JFreeChart>    m_allCharts;
 
-  private static final String   HYPERIC_INSTRUCTIONS_URI                = "/com/tc/admin/HypericInstructions.html";
+  private static final String      HYPERIC_INSTRUCTIONS_URI                = "/com/tc/admin/HypericInstructions.html";
 
   public RuntimeStatsPanel() {
     super();
@@ -90,7 +90,7 @@ public class RuntimeStatsPanel extends XContainer implements RuntimeStatisticCon
     m_allSeries = new ArrayList<TimeSeries>();
     m_allCharts = new ArrayList<JFreeChart>();
     m_shouldAutoStart = true;
-    load((ContainerResource) AdminClient.getContext().topRes.child("RuntimeStatsPanel"));
+    load((ContainerResource) m_acc.childResource("RuntimeStatsPanel"));
   }
 
   public void load(ContainerResource res) {
@@ -188,23 +188,19 @@ public class RuntimeStatsPanel extends XContainer implements RuntimeStatisticCon
   }
 
   protected JFreeChart createChart(TimeSeries series) {
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", series);
-    int sampleHistoryMinutes = getRuntimeStatsSampleHistoryMinutes();
-    int sampleHistoryMillis = sampleHistoryMinutes * 60 * 1000;
+    return createChart(new TimeSeries[] { series });
+  }
 
-    XYPlot plot = (XYPlot) chart.getPlot();
-    plot.getDomainAxis().setFixedAutoRange(sampleHistoryMillis);
-    ((NumberAxis) plot.getRangeAxis()).setAutoRangeIncludesZero(true);
-
-    int maxSampleCount = (sampleHistoryMinutes * 60) / getRuntimeStatsPollPeriodSeconds();
-    series.setMaximumItemCount(maxSampleCount);
-
-    m_allCharts.add(chart);
-    return chart;
+  protected JFreeChart createChart(TimeSeries series, boolean createLegend) {
+    return createChart(new TimeSeries[] { series }, createLegend);
   }
 
   protected JFreeChart createChart(TimeSeries[] seriesArray) {
-    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", seriesArray);
+    return createChart(seriesArray, true);
+  }
+
+  protected JFreeChart createChart(TimeSeries[] seriesArray, boolean createLegend) {
+    JFreeChart chart = DemoChartFactory.getXYLineChart("", "", "", seriesArray, createLegend);
     int sampleHistoryMinutes = getRuntimeStatsSampleHistoryMinutes();
     int sampleHistoryMillis = sampleHistoryMinutes * 60 * 1000;
 
@@ -242,10 +238,12 @@ public class RuntimeStatsPanel extends XContainer implements RuntimeStatisticCon
     m_rangeAxisSpace.setLeft(fixedRangeAxisSpace);
     m_rangeAxisSpace.setRight(5);
 
-    Iterator<XYPlot> plotIter = plotList.iterator();
-    while (plotIter.hasNext()) {
-      XYPlot plot = plotIter.next();
-      plot.setFixedRangeAxisSpace(m_rangeAxisSpace);
+    if (plotList.size() > 0) {
+      Iterator<XYPlot> plotIter = plotList.iterator();
+      while (plotIter.hasNext()) {
+        XYPlot plot = plotIter.next();
+        plot.setFixedRangeAxisSpace(m_rangeAxisSpace);
+      }
     }
 
     if (m_shouldAutoStart) {
@@ -316,13 +314,13 @@ public class RuntimeStatsPanel extends XContainer implements RuntimeStatisticCon
   }
 
   private int getIntPref(String key, int defaultValue) {
-    Preferences prefs = m_acc.prefs.node("RuntimeStats");
-    return prefs.getInt(key, defaultValue);
+    return m_acc.getPrefs().node("RuntimeStats").getInt(key, defaultValue);
   }
 
   private void putIntPref(String key, int value) {
-    Preferences prefs = m_acc.prefs.node("RuntimeStats");
+    Preferences prefs = m_acc.getPrefs().node("RuntimeStats");
     prefs.putInt(key, value);
+    m_acc.storePrefs();
     try {
       prefs.flush();
     } catch (Exception e) {/**/
