@@ -35,6 +35,7 @@ class GarbageCollectorThread extends StoppableThread {
       }
     }
     youngGCSleepTime = youngGCTime;
+    logger.info("Young Gen Time = " + youngGCTime + " Full Gen Time = " + fullGCSleepTime);
   }
 
   public void requestStop() {
@@ -46,7 +47,6 @@ class GarbageCollectorThread extends StoppableThread {
   }
 
   public void run() {
-    System.err.println("SARO :: GC THREAD : " + youngGCSleepTime + " " + fullGCSleepTime);
     long lastFullGC = System.currentTimeMillis();
     while (true) {
       if (isStopRequested()) { return; }

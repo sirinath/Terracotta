@@ -153,12 +153,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     rescueIds.retainAll(gcResults);
 
-    Filter rescueFilter = new Filter() {
-      public boolean shouldVisit(ObjectID referencedObject) {
-        return gcResults.contains(referencedObject);
-      }
-    };
-
+    Filter rescueFilter = new SelectiveFilter(gcResults);
     ObjectIDSet rv = collect(rescueFilter, rescueIds, gcResults, gcState);
     rescueTimes.add(new Long(System.currentTimeMillis() - start));
     return rv;
@@ -278,12 +273,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     gcLogger.log_markStart(candidateIDs);
 
-    Filter youngGenFilter = new Filter() {
-      public boolean shouldVisit(ObjectID referencedObject) {
-        return candidateIDs.contains(referencedObject);
-      }
-    };
-
+    Filter youngGenFilter = new SelectiveFilter(candidateIDs);
     ObjectIDSet gcResults = collect(youngGenFilter, rootIDs, candidateIDs, gcState);
     gcLogger.log_markResults(gcResults);
 
@@ -306,8 +296,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     long pauseStartMillis = System.currentTimeMillis();
     gcLogger.log_paused();
-
-    // Assert.eval("No pending lookups allowed during GC pause.", pending.size() == 0);
 
     gcLogger.log_rescue(2, gcResults);
 
@@ -578,7 +566,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     private static final State UNINITALIZED      = new State("UNINITIALIZED");
     private static final State INITALIZED        = new State("INITIALIZED");
 
-    // TODO::Remove references when deleting garbage
     private final Map          youngGenObjectIDs = new HashMap();
     private final Set          rememberedSet     = new ObjectIDSet();
 
@@ -601,7 +588,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       if (oldState != null) { throw new AssertionError(id + " is already present in " + oldState); }
     }
 
-    public void notifyObjectInitalized(ObjectID id) {
+    public synchronized void notifyObjectInitalized(ObjectID id) {
       Object oldState = youngGenObjectIDs.put(id, INITALIZED);
       if (oldState != UNINITALIZED) { throw new AssertionError(id + " is not in " + UNINITALIZED + " but in "
                                                                + oldState); }
@@ -648,6 +635,18 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     public void notifyObjectInitalized(ObjectID id);
 
     public Set addYoungGenCandidateObjectIDsTo(Set set);
+  }
+
+  private final static class SelectiveFilter implements Filter {
+    private final Set keys;
+
+    public SelectiveFilter(Set keys) {
+      this.keys = keys;
+    }
+
+    public boolean shouldVisit(ObjectID referencedObject) {
+      return keys.contains(referencedObject);
+    }
   }
 
   public void addNewReferencesTo(Set rescueIds) {
