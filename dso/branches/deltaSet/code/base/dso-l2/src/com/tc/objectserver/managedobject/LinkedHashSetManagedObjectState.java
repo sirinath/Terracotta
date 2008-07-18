@@ -6,6 +6,8 @@ package com.tc.objectserver.managedobject;
 
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -22,7 +24,7 @@ public class LinkedHashSetManagedObjectState extends SetManagedObjectState {
   }
 
   public byte getType() {
-    return LINKED_HASH_SET_TYPE;
+    return LINKED_HASHSET_TYPE;
   }
 
   static LinkedHashSetManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
@@ -32,7 +34,15 @@ public class LinkedHashSetManagedObjectState extends SetManagedObjectState {
     for (int i = 0; i < size; i++) {
       set.add(in.readObject());
     }
-    setmo.references = set;
+    setmo.setSet(set);
     return setmo;
+  }
+
+  @Override
+  protected void basicWriteTo(ObjectOutput out) throws IOException {
+    out.writeInt(references.size());
+    for (Iterator i = references.iterator(); i.hasNext();) {
+      out.writeObject(i.next());
+    }
   }
 }

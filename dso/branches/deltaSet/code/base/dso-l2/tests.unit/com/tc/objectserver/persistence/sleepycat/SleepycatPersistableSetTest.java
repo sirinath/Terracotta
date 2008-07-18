@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 
 public class SleepycatPersistableSetTest extends TCTestCase {
@@ -25,67 +26,67 @@ public class SleepycatPersistableSetTest extends TCTestCase {
   public void testBasic() {
     final int NUMBERS_ADDED = 250 * 4;
 
-    addNumbers(0, NUMBERS_ADDED);
-    assertSize(NUMBERS_ADDED);
+    addNumbers(set, 0, NUMBERS_ADDED);
+    assertSize(set, NUMBERS_ADDED);
 
-    addNumbers(0, NUMBERS_ADDED);
-    assertSize(NUMBERS_ADDED);
+    addNumbers(set, 0, NUMBERS_ADDED);
+    assertSize(set, NUMBERS_ADDED);
 
-    clearSet();
-    assertSize(0);
+    clearSet(set);
+    assertSize(set, 0);
 
-    addAllFromCollection(0, NUMBERS_ADDED);
-    assertSize(NUMBERS_ADDED);
+    addAllFromCollection(set, 0, NUMBERS_ADDED);
+    assertSize(set, NUMBERS_ADDED);
 
-    assertContains(0, NUMBERS_ADDED);
-    assertContainsAllAndEquals(0, NUMBERS_ADDED);
+    assertContains(set, 0, NUMBERS_ADDED);
+    assertContainsAllAndEquals(set, 0, NUMBERS_ADDED);
 
-    checkIterator(0, NUMBERS_ADDED);
-    checkRemove(3 * NUMBERS_ADDED / 4, NUMBERS_ADDED / 4, 3 * NUMBERS_ADDED / 4);
-    checkRemoveAll(NUMBERS_ADDED / 2, NUMBERS_ADDED / 4, NUMBERS_ADDED / 2);
-    assertSize(NUMBERS_ADDED / 2);
+    checkIterator(set, 0, NUMBERS_ADDED);
+    checkRemove(set, 3 * NUMBERS_ADDED / 4, NUMBERS_ADDED / 4, 3 * NUMBERS_ADDED / 4);
+    checkRemoveAll(set, NUMBERS_ADDED / 2, NUMBERS_ADDED / 4, NUMBERS_ADDED / 2);
+    assertSize(set, NUMBERS_ADDED / 2);
 
-    checkRetainAll(0, NUMBERS_ADDED / 4, NUMBERS_ADDED / 4);
-    checkToArray(0, NUMBERS_ADDED / 4);
+    checkRetainAll(set, 0, NUMBERS_ADDED / 4, NUMBERS_ADDED / 4);
+    checkToArray(set, 0, NUMBERS_ADDED / 4);
   }
 
-  private void clearSet() {
-    set.clear();
-    assertEmpty();
+  private void clearSet(Set s) {
+    s.clear();
+    assertEmpty(s);
   }
 
-  private void assertContains(int start, int length) {
+  private void assertContains(Set s, int start, int length) {
     for (int i = start; i < start + length; i++)
-      assertTrue(set.contains(new Node(i)));
+      assertTrue(s.contains(new Node(i)));
   }
 
-  private void assertContainsAllAndEquals(int start, int length) {
+  private void assertContainsAllAndEquals(Set s,int start, int length) {
     HashSet tempSet = new HashSet();
     for (int i = start; i < start + length; i++)
       tempSet.add(new Node(i));
 
-    assertContainsAll(tempSet);
-    assertEquals(tempSet);
+    assertContainsAll(s, tempSet);
+    assertEquals(s, tempSet);
   }
 
-  private void assertContainsAll(Collection collection) {
-    assertTrue(set.containsAll(collection));
+  private void assertContainsAll(Set s, Collection collection) {
+    assertTrue(s.containsAll(collection));
   }
 
-  public void assertEquals(Collection collection) {
-    assertTrue(set.equals(collection));
+  public void assertEquals(Set s, Collection collection) {
+    assertTrue(s.equals(collection));
   }
 
-  private void assertEmpty() {
-    assertTrue(set.isEmpty());
+  private void assertEmpty(Set s) {
+    assertTrue(s.isEmpty());
   }
 
-  public void checkIterator(int start, int length) {
+  public void checkIterator(Set s, int start, int length) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
       vector.add(new Node(i));
 
-    Iterator iter = set.iterator();
+    Iterator iter = s.iterator();
     assertNotNull(iter);
 
     while (iter.hasNext()) {
@@ -93,58 +94,58 @@ public class SleepycatPersistableSetTest extends TCTestCase {
     }
   }
 
-  private void checkRemove(int start, int length, int expectedLeft) {
+  private void checkRemove(Set s, int start, int length, int expectedLeft) {
     for (int i = start; i < start + length; i++)
-      set.remove(new Node(i));
-    assertSize(expectedLeft);
+      s.remove(new Node(i));
+    assertSize(s, expectedLeft);
   }
 
-  private void checkRemoveAll(int start, int length, int expectedLeft) {
+  private void checkRemoveAll(Set s, int start, int length, int expectedLeft) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
       vector.add(new Node(i));
 
-    set.removeAll(vector);
-    assertSize(expectedLeft);
+    s.removeAll(vector);
+    assertSize(s, expectedLeft);
   }
 
-  private void checkRetainAll(int start, int length, int expectedLeft) {
+  private void checkRetainAll(Set s, int start, int length, int expectedLeft) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
       vector.add(new Node(i));
 
-    set.retainAll(vector);
-    assertSize(expectedLeft);
+    s.retainAll(vector);
+    assertSize(s, expectedLeft);
   }
 
-  private void assertSize(int expected) {
-    assertEquals(expected, set.size());
+  private void assertSize(Set s, int expected) {
+    assertEquals(expected, s.size());
   }
 
-  private void checkToArray(int start, int length) {
+  private void checkToArray(Set s, int start, int length) {
     Vector vector = new Vector(length);
     for (int i = start; i < start + length; i++)
       vector.add(new Node(i));
 
-    Object[] objArray = set.toArray();
+    Object[] objArray = s.toArray();
     assertEquals(length, objArray.length);
 
     for (int i = 0; i < length; i++)
       assertTrue(vector.contains(objArray[i]));
   }
 
-  private void addNumbers(int start, int numbersToBeAdded) {
+  private void addNumbers(Set s, int start, int numbersToBeAdded) {
     for (int i = start; i < start + numbersToBeAdded; i++) {
-      set.add(new Node(i));
+      s.add(new Node(i));
     }
   }
 
-  private void addAllFromCollection(int start, int numbersToBeAdded) {
+  private void addAllFromCollection(Set s, int start, int numbersToBeAdded) {
     ArrayList list = new ArrayList(numbersToBeAdded);
     for (int i = start; i < start + numbersToBeAdded; i++)
       list.add(new Node(i));
 
-    set.addAll(list);
+    s.addAll(list);
   }
 
   private class Node {
