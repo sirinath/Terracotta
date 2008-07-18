@@ -28,6 +28,7 @@ public class MultiNodeLoadTest extends AbstractDeploymentTest {
     DeploymentBuilder builder = makeDeploymentBuilder(CONTEXT + ".war");
     builder.addServlet(SERVLET, "/" + SERVLET + "/*", CounterServlet.class, null, false);
     return builder.makeDeployment();
+
   }
 
   public void setUp() throws Exception {
@@ -39,13 +40,18 @@ public class MultiNodeLoadTest extends AbstractDeploymentTest {
     }
   }
 
-  public void testFourNodeLoad() throws Throwable {
-    runFourNodeLoad(true);
+  public void testLoad() throws Throwable {
+    runLoad(isSticky());
   }
 
-  protected void runFourNodeLoad(boolean sticky) throws Throwable {
+  boolean isSticky() {
+    return true;
+  }
+
+  protected final void runLoad(boolean sticky) throws Throwable {
+    int numNodes = LowMemWorkaround.computeNumberOfNodes(4, appServerInfo());
     assertTimeDirection();
-    runNodes(4, sticky);
+    runNodes(numNodes, sticky);
   }
 
   private WebApplicationServer createAndStartServer() throws Exception {
