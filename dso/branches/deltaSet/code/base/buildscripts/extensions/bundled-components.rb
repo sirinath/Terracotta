@@ -29,15 +29,26 @@ module BundledComponents
       name = a_module
       exclude_native_runtime_libraries = false
       exclude_runtime_libraries        = false
+      kit_resources                    = []
       if a_module.instance_of?(Hash)
         name                             = a_module.keys.first
         exclude_native_runtime_libraries = a_module.values.first['exclude-native-runtime-libraries']
         exclude_runtime_libraries        = a_module.values.first['exclude-runtime-libraries']
+        kit_resources                    = a_module.values.first['kit-resources'] || []
       end
       a_module = @module_set[name]
       a_module.subtree('src').copy_native_runtime_libraries(libdir, ant, @build_environment) unless exclude_native_runtime_libraries
       a_module.subtree('src').copy_runtime_libraries(libdir, ant)                            unless exclude_runtime_libraries
-      a_module.subtree('src').copy_classes(@build_results, runtime_classes_dir, ant)
+
+      kit_resource_files = kit_resources.join(',')
+      a_module.subtree('src').copy_classes(@build_results, runtime_classes_dir, ant,
+                                           :excludes => kit_resource_files)
+
+      unless kit_resources.empty?
+        kit_resources_dir = FilePath.new(destdir, 'resources').ensure_directory
+        a_module.subtree('src').copy_classes(@build_results, kit_resources_dir, ant,
+                                            :includes => kit_resource_files)
+      end
     end
 
     jarfile = FilePath.new(destdir, "tc.jar")
@@ -78,7 +89,7 @@ module BundledComponents
         excludes = module_package[name]['filter'] || ''
         module_package[name]['modules'].each do |module_name|
           a_module = @module_set[module_name]
-          a_module.subtree(src).copy_classes(@build_results, runtime_classes_dir, ant, excludes)
+          a_module.subtree(src).copy_classes(@build_results, runtime_classes_dir, ant, :excludes => excludes)
         end
         libdir  = FilePath.new(File.dirname(destdir.to_s), *(module_package[name]['install_directory'] || '').split('/')).ensure_directory
         jarfile = FilePath.new(libdir, interpolate("#{name}.jar"))
