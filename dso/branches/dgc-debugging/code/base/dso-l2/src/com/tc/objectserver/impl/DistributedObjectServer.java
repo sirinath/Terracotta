@@ -589,6 +589,7 @@ public class DistributedObjectServer implements TCDumper {
     markAndSweepGarbageCollector.addListener(new GCStatisticsAgentSubSystemEventListener(statisticsAgentSubSystem));
     gcStatsEventPublisher = new GCStatsEventPublisher();
     markAndSweepGarbageCollector.addListener(gcStatsEventPublisher);
+    objectManager.setGarbageCollector(markAndSweepGarbageCollector);
     managedObjectChangeListenerProvider.setListener(objectManager);
 
     l2Management.findObjectManagementMonitorMBean().registerGCController(

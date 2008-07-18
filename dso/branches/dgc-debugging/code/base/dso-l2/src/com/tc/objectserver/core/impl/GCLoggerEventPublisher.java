@@ -8,7 +8,7 @@ import com.tc.logging.TCLogger;
 import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.impl.GCLogger;
 
-public class GCLoggerEventPublisher extends AbstractGarbageCollectorEventListener {
+public class GCLoggerEventPublisher extends GarbageCollectorEventListenerAdapter {
   
   private final GCLogger gcLogger;
 
@@ -41,7 +41,7 @@ public class GCLoggerEventPublisher extends AbstractGarbageCollectorEventListene
     gcLogger.log_rescue(2, info.getGcResults());  
   }
 
-  public void garbageCollectorDeleting(GarbageCollectionInfo info) {
+  public void garbageCollectorMarkComplete(GarbageCollectionInfo info) {
     gcLogger.log_sweep(info.getDeleted());
     gcLogger.log_notifyGCComplete();
   }

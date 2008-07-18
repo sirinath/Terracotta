@@ -6,7 +6,7 @@ package com.tc.objectserver.core.impl;
 import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 
-public abstract class AbstractGarbageCollectorEventListener implements GarbageCollectorEventListener {
+public abstract class GarbageCollectorEventListenerAdapter implements GarbageCollectorEventListener {
 
   public void garbageCollectorCompleted(GarbageCollectionInfo info) {
     //do nothing
@@ -20,7 +20,7 @@ public abstract class AbstractGarbageCollectorEventListener implements GarbageCo
    //
   }
 
-  public void garbageCollectorDeleting(GarbageCollectionInfo info) {
+  public void garbageCollectorMarkComplete(GarbageCollectionInfo info) {
     //
   }
 

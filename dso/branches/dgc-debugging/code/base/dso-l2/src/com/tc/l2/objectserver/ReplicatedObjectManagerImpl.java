@@ -25,7 +25,7 @@ import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.GarbageCollectionInfo;
-import com.tc.objectserver.core.impl.AbstractGarbageCollectorEventListener;
+import com.tc.objectserver.core.impl.GarbageCollectorEventListenerAdapter;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
 import com.tc.util.Assert;
@@ -245,7 +245,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
 
   private static final Object ADDED = new Object();
 
-  private final class GCMonitor extends AbstractGarbageCollectorEventListener {
+  private final class GCMonitor extends GarbageCollectorEventListenerAdapter {
 
     boolean disabled        = false;
     Map     syncingPassives = new HashMap();

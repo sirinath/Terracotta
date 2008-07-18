@@ -3,6 +3,7 @@
  */
 package com.tc.objectserver.core.api;
 
+import com.tc.objectserver.impl.GCStatsImpl;
 import com.tc.util.ObjectIDSet;
 
 import java.util.List;
@@ -11,9 +12,7 @@ import java.util.SortedSet;
 public interface GarbageCollectionInfo {
   
   public boolean isYoungGen();
-  
-  public boolean isFullGen();
-  
+ 
   public int getIteration();
   
   public long getStartTime();
@@ -22,7 +21,7 @@ public interface GarbageCollectionInfo {
   
   public long getMarkStageTime();
   
-  public long getPauseStageTime();
+  public long getPausedStageTime();
   
   public void setDeleteStageTime(long time);
   
@@ -43,4 +42,8 @@ public interface GarbageCollectionInfo {
   public ObjectIDSet getManagedIDs();
   
   public List getRescueTimes();
+  
+  public GCStatsImpl getObject();
+  
+  public void setObject(GCStatsImpl gcStats);
 }
