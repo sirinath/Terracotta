@@ -68,14 +68,14 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
    */
   protected void setUp() throws Exception {
     super.setUp();
-    this.managed = new HashMap();
+    this.managed = new HashMap<ObjectID, ManagedObjectReference>();
     this.objectManager = new GCTestObjectManager();
     this.collector = new MarkAndSweepGarbageCollector(this.objectManager, new TestClientStateManager(), false);
-    this.lookedUp = new HashSet();
-    this.released = new HashSet();
+    this.lookedUp = new HashSet<ObjectID>();
+    this.released = new HashSet<ObjectID>();
     this.root1 = createObject(8);
     this.root2 = createObject(8);
-    this.roots = new HashSet();
+    this.roots = new HashSet<ManagedObject>();
     roots.add(root1);
     roots.add(root2);
   }
@@ -97,6 +97,12 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
     assertEquals("PAUSE", updateGCStatusList.get(1));
     assertEquals("MARK_COMPLETE", updateGCStatusList.get(2));
     assertEquals("DELETE", updateGCStatusList.get(3));
+  public Set<ObjectID> getRootIds() {
+    HashSet<ObjectID> rv = new HashSet<ObjectID>();
+    for (final ManagedObject root : roots) {
+      rv.add(root.getID());
+    }
+    return rv;
   }
  **/
   
@@ -159,8 +165,7 @@ public class MarkAndSweepGarbageCollectorTest extends TestCase {
 
     Filter testFilter = new Filter() {
       public boolean shouldVisit(ObjectID referencedObject) {
-        boolean rv = (!tmo2.getID().equals(referencedObject));
-        return rv;
+        return (!tmo2.getID().equals(referencedObject));
       }
     };
 

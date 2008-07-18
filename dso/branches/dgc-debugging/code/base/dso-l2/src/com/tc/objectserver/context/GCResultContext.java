@@ -12,8 +12,8 @@ import java.util.SortedSet;
 
 public class GCResultContext implements EventContext {
 
-  private final int       gcIteration;
-  private final SortedSet gcedOids;
+  private final int                 gcIteration;
+  private final SortedSet<ObjectID> gcedOids;
   private final GarbageCollectionInfo gcInfo;
   private final GarbageCollectionInfoPublisher gcPublisher;
 
@@ -28,7 +28,7 @@ public class GCResultContext implements EventContext {
     return gcIteration;
   }
 
-  public SortedSet getGCedObjectIDs() {
+  public SortedSet<ObjectID> getGCedObjectIDs() {
     return gcedOids;
   }
   

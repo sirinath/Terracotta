@@ -176,6 +176,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.AccessibleObject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -229,7 +230,33 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.configHelper);
+
+    loadModules();
+  }
+
+  private void loadModules() {
+    // remove the user defined specs already load from config while modules are running so that specs created take
+    // precedence from user defined specs
+    List userSpecs = new ArrayList();
+    for (Iterator i = configHelper.getAllUserDefinedBootSpecs(); i.hasNext();) {
+      userSpecs.add(i.next());
+    }
+
+    for (Iterator i = userSpecs.iterator(); i.hasNext();) {
+      configHelper.removeSpec(((TransparencyClassSpec) i.next()).getClassName());
+    }
+
+    // load the modules
     ModulesLoader.initModules(this.configHelper, null, true);
+
+    // put the user defined specs back not already included by modules
+    for (Iterator i = userSpecs.iterator(); i.hasNext();) {
+      TransparencyClassSpec userSpec = (TransparencyClassSpec) i.next();
+
+      if (configHelper.getSpec(userSpec.getClassName()) == null) {
+        configHelper.addUserDefinedBootSpec(userSpec.getClassName(), userSpec);
+      }
+    }
   }
 
   public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider) {
