@@ -17,7 +17,7 @@ import java.util.Iterator;
 
 public class SleepycatPersistableSet extends AbstractSet implements PersistableCollection {
 
-  private SleepycatPersistableMap map;
+  private final SleepycatPersistableMap map;
   private static final Boolean    VALUE = true;
 
   public SleepycatPersistableSet(ObjectID id) {

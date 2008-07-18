@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public class ManagedObjectStateFactory {
 
-  private static final LiteralValues               literalValues       = new LiteralValues();
+  private static final LiteralValues                literalValues       = new LiteralValues();
   private static final Map                          classNameToStateMap = new ConcurrentHashMap();
   private final ManagedObjectChangeListenerProvider listenerProvider;
   private final StringIndex                         stringIndex;
@@ -55,7 +55,7 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put(java.util.TreeMap.class.getName(), new Byte(ManagedObjectState.TREE_MAP_TYPE));
     classNameToStateMap.put(gnu.trove.THashSet.class.getName(), new Byte(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.HashSet.class.getName(), new Byte(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put(java.util.LinkedHashSet.class.getName(), new Byte(ManagedObjectState.LINKED_HASH_SET_TYPE));
+    classNameToStateMap.put(java.util.LinkedHashSet.class.getName(), new Byte(ManagedObjectState.LINKED_HASHSET_TYPE));
     classNameToStateMap
         .put(java.util.Collections.EMPTY_SET.getClass().getName(), new Byte(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.TreeSet.class.getName(), new Byte(ManagedObjectState.TREE_SET_TYPE));
@@ -150,7 +150,7 @@ public class ManagedObjectStateFactory {
         return new LinkedHashMapManagedObjectState(classID);
       case ManagedObjectState.TREE_MAP_TYPE:
         return new TreeMapManagedObjectState(classID, persistentCollectionFactory.createPersistentMap(oid));
-      case ManagedObjectState.LINKED_HASH_SET_TYPE:
+      case ManagedObjectState.LINKED_HASHSET_TYPE:
         return new LinkedHashSetManagedObjectState(classID);
       case ManagedObjectState.SET_TYPE:
         return new SetManagedObjectState(classID, persistentCollectionFactory.createPersistentSet(oid));
@@ -239,7 +239,7 @@ public class ManagedObjectStateFactory {
         case ManagedObjectState.LIST_TYPE:
           return ListManagedObjectState.readFrom(in);
         case ManagedObjectState.SET_TYPE:
-          return LinkedHashSetManagedObjectState.readFrom(in);
+          return SetManagedObjectState.readFrom(in);
         case ManagedObjectState.TREE_SET_TYPE:
           return TreeSetManagedObjectState.readFrom(in);
         case ManagedObjectState.TREE_MAP_TYPE:
@@ -250,10 +250,13 @@ public class ManagedObjectStateFactory {
           return QueueManagedObjectState.readFrom(in);
         case ManagedObjectState.URL_TYPE:
           return URLManagedObjectState.readFrom(in);
+        case ManagedObjectState.LINKED_HASHSET_TYPE:
+          return LinkedHashSetManagedObjectState.readFrom(in);
         default:
           throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
       }
     } catch (IOException e) {
+      e.printStackTrace();
       throw new TCRuntimeException(e);
     } catch (ClassNotFoundException e) {
       throw new TCRuntimeException(e);
