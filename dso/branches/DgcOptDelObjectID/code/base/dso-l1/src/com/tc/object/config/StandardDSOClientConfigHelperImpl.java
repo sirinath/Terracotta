@@ -1514,6 +1514,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public void removeSpec(String className) {
     className = className.replace('/', '.');
     classSpecs.remove(className);
+    userDefinedBootSpecs.remove(className);
   }
 
   public TransparencyClassSpec getSpec(String className) {

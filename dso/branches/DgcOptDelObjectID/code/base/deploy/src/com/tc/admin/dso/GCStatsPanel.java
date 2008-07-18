@@ -25,19 +25,20 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.Callable;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class GCStatsPanel extends XContainer implements DGCListener {
-  private AdminClientContext     m_acc;
-  private GCStatsNode            m_gcStatsNode;
-  private XObjectTable           m_table;
-  private PopupMenu              m_popupMenu;
-  private RunGCAction            m_gcAction;
+  private AdminClientContext m_acc;
+  private GCStatsNode        m_gcStatsNode;
+  private XObjectTable       m_table;
+  private PopupMenu          m_popupMenu;
+  private RunGCAction        m_gcAction;
 
   public GCStatsPanel(GCStatsNode gcStatsNode) {
     super();
 
     m_acc = AdminClient.getContext();
-    load((ContainerResource) m_acc.topRes.getComponent("GCStatsPanel"));
+    load((ContainerResource) m_acc.getComponent("GCStatsPanel"));
 
     m_gcStatsNode = gcStatsNode;
     m_table = (XObjectTable) findComponent("GCStatsTable");
@@ -52,7 +53,7 @@ public class GCStatsPanel extends XContainer implements DGCListener {
     m_table.add(m_popupMenu);
     m_table.addMouseListener(new TableMouseHandler());
 
-    m_acc.executorService.execute(new InitWorker());
+    m_acc.execute(new InitWorker());
     gcStatsNode.getClusterModel().addDGCListener(this);
   }
 
@@ -103,9 +104,20 @@ public class GCStatsPanel extends XContainer implements DGCListener {
     }
   }
 
-  public void garbageCollected(GCStats gcStats) {
-    GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
-    model.addGCStats(gcStats);
+  public void statusUpdate(GCStats gcStats) {
+    SwingUtilities.invokeLater(new ModelUpdater(gcStats));
+  }
+
+  private class ModelUpdater implements Runnable {
+    private GCStats m_gcStats;
+
+    private ModelUpdater(GCStats gcStats) {
+      m_gcStats = gcStats;
+    }
+
+    public void run() {
+      ((GCStatsTableModel) m_table.getModel()).addGCStats(m_gcStats);
+    }
   }
 
   private class RunGCWorker extends BasicWorker<Void> {
@@ -132,12 +144,12 @@ public class GCStatsPanel extends XContainer implements DGCListener {
   }
 
   private void runGC() {
-    m_acc.executorService.execute(new RunGCWorker());
+    m_acc.execute(new RunGCWorker());
   }
 
   public void tearDown() {
     m_gcStatsNode.getClusterModel().removeDGCListener(this);
-    
+
     super.tearDown();
 
     m_acc = null;

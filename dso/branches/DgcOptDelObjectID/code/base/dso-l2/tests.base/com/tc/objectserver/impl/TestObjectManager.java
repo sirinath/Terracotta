@@ -11,7 +11,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.ObjectManagerEventListener;
+import com.tc.objectserver.api.GCStatsEventListener;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
@@ -76,10 +76,9 @@ public class TestObjectManager implements ObjectManager {
     basicLookup((NodeID) args[0], (ObjectManagerResultsContext) args[1], -1);
   }
 
-  private Map createLookResults(Collection ids) {
-    Map results = new HashMap();
-    for (Iterator i = ids.iterator(); i.hasNext();) {
-      ObjectID id = (ObjectID) i.next();
+  private Map<ObjectID, ManagedObject> createLookResults(Collection<ObjectID> ids) {
+    Map<ObjectID, ManagedObject> results = new HashMap<ObjectID, ManagedObject>();
+    for (final ObjectID id : ids) {
       TestManagedObject tmo = new TestManagedObject(id);
       results.put(id, tmo);
     }
@@ -106,7 +105,7 @@ public class TestObjectManager implements ObjectManager {
     throw new ImplementMe();
   }
 
-  public void addListener(ObjectManagerEventListener listener) {
+  public void addListener(GCStatsEventListener listener) {
     throw new ImplementMe();
   }
 

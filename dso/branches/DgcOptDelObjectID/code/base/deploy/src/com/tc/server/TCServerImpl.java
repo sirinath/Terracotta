@@ -42,6 +42,7 @@ import com.tc.management.beans.TCServerInfo;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.ConnectionPolicyImpl;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.core.impl.GCStatsEventPublisher;
 import com.tc.objectserver.core.impl.ServerManagementContext;
 import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.properties.TCPropertiesConsts;
@@ -86,7 +87,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   private DistributedObjectServer              dsoServer;
   private Server                               httpServer;
   private TerracottaConnector                  terracottaConnector;
-  private StatisticsGathererSubSystem    statisticsGathererSubSystem;
+  private StatisticsGathererSubSystem          statisticsGathererSubSystem;
 
   private final Object                         stateLock                                    = new Object();
   private final L2State                        state                                        = new L2State();
@@ -424,9 +425,10 @@ public class TCServerImpl extends SEDA implements TCServer {
         consoleLogger.warn(msg);
         logger.warn(msg);
       } else {
-        boolean aliases = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_ALIASES, false);
-        boolean dirallowed = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_DIR_ALLOWED,
-                                                                         false);
+        boolean aliases = TCPropertiesImpl.getProperties()
+            .getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_ALIASES, false);
+        boolean dirallowed = TCPropertiesImpl.getProperties()
+            .getBoolean(TCPropertiesConsts.HTTP_DEFAULT_SERVLET_ATTRIBUTE_DIR_ALLOWED, false);
         context.setAttribute("aliases", aliases);
         context.setAttribute("dirAllowed", dirallowed);
         createAndAddServlet(servletHandler, DefaultServlet.class.getName(), "/");
@@ -466,7 +468,8 @@ public class TCServerImpl extends SEDA implements TCServer {
     ServerManagementContext mgmtContext = dsoServer.getManagementContext();
     ServerConfigurationContext configContext = dsoServer.getContext();
     MBeanServer mBeanServer = dsoServer.getMBeanServer();
-    DSOMBean dso = new DSO(mgmtContext, configContext, mBeanServer);
+    GCStatsEventPublisher gcStatsPublisher = dsoServer.getGcStatsEventPublisher();
+    DSOMBean dso = new DSO(mgmtContext, configContext, mBeanServer, gcStatsPublisher);
     mBeanServer.registerMBean(dso, L2MBeanNames.DSO);
     mBeanServer.registerMBean(mgmtContext.getDSOAppEventsMBean(), L2MBeanNames.DSO_APP_EVENTS);
     StatisticsLocalGathererMBeanImpl local_gatherer = new StatisticsLocalGathererMBeanImpl(statisticsGathererSubSystem,
