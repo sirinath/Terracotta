@@ -113,15 +113,8 @@ class ClientLock implements TimerCallback, LockFlushCallback {
                                                                               "Only Synchronous WRITE lock is supported now"); }
       effectiveType = LockLevel.WRITE;
     }
+    basicLock(threadID, effectiveType, timeout, noBlock, contextInfo);
 
-    Thread t = Thread.currentThread();
-    String prevThreadName = t.getName();
-    try {
-      t.setName(prevThreadName + ", locking " + getLockID() + " (" + effectiveType + "," + threadID + ")");
-      basicLock(threadID, effectiveType, timeout, noBlock, contextInfo);
-    } finally {
-      Thread.currentThread().setName(prevThreadName);
-    }
     if (effectiveType != lockType) {
       awardSynchronous(threadID, effectiveType);
     }
@@ -645,9 +638,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
       Object o = i.next();
       if (isOnlyWaitLockRequest(o)) continue;
       LockRequest lr = (LockRequest) o;
-      if (isTryLockRequest(lr) &&
-          !((TryLockRequest)lr).getTimerSpec().needsToWait() &&
-          isHeld()) {
+      if (isTryLockRequest(lr) && !((TryLockRequest) lr).getTimerSpec().needsToWait() && isHeld()) {
         // The tryLock contract stipulates that it should return immediately
         // and only acquire the lock if it wasn't held at the time of
         // invocation. Any tryLocks without a timeout that are pending should
@@ -1355,7 +1346,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
       /*
        * server_level is not changed to NIL_LOCK_LEVEL even though the server will release the lock as we need to know
        * what state we were holding before wait on certain scenarios like server crash etc.
-       *
+       * 
        * @see ClientLockManager.notified
        */
       return this.server_level;

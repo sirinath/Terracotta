@@ -2,11 +2,13 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.management.beans.l1;
+package com.tc.management;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.management.AbstractTerracottaMBean;
+import com.tc.management.beans.l1.L1InfoMBean;
+import com.tc.object.DistributedObjectClient;
+import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.runtime.JVMMemoryManager;
 import com.tc.runtime.MemoryUsage;
 import com.tc.runtime.TCRuntime;
@@ -18,25 +20,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.management.NotCompliantMBeanException;
 
 public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
-  private static final TCLogger    logger = TCLogging.getLogger(L1Info.class);
-  private final String             rawConfigText;
-  private final JVMMemoryManager   manager;
-  private StatisticRetrievalAction cpuSRA;
-  private String[]                 cpuNames;
+  private static final TCLogger         logger = TCLogging.getLogger(L1Info.class);
+  private final String                  rawConfigText;
+  private final DistributedObjectClient client;
+  private final JVMMemoryManager        manager;
+  private StatisticRetrievalAction      cpuSRA;
+  private String[]                      cpuNames;
 
-  public L1Info(String rawConfigText) throws NotCompliantMBeanException {
+  public L1Info(DistributedObjectClient client, String rawConfigText) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
 
     this.manager = TCRuntime.getJVMMemoryManager();
     this.rawConfigText = rawConfigText;
+    this.client = client;
     try {
       Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
@@ -65,12 +71,12 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
         l.add(key);
       }
     }
-    
+
     String[] props = (String[]) l.toArray(new String[0]);
     Arrays.sort(props);
     l.clear();
     l.addAll(Arrays.asList(props));
-    
+
     int maxKeyLen = 0;
     Iterator iter = l.iterator();
     while (iter.hasNext()) {
@@ -99,7 +105,45 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   public String takeThreadDump(long requestMillis) {
-    String text = ThreadDumpUtil.getThreadDump();
+    Set heldLockSet = new HashSet();
+    Map heldLockByThreadIDMap = new HashMap();
+    Set pendingLockSet = new HashSet();
+    Map pendingLockByThreadIDMap = new HashMap();
+
+    client.getLockManager().addAllHeldLocksTo(heldLockSet);
+    client.getLockManager().addAllPendingLockRequestsTo(pendingLockSet);
+
+    System.out.println("L1IFNO heldSet: " + heldLockSet);
+    System.out.println("L1IFNO pendingSet: " + pendingLockSet);
+
+    for (Iterator i = heldLockSet.iterator(); i.hasNext();) {
+      LockRequest request = (LockRequest) i.next();
+      Long threadID = new Long(request.threadID().toLong());
+      System.out.println("L1IFNO A :" + threadID);
+      String lockInfo = (String) heldLockByThreadIDMap.get(threadID);
+      if (lockInfo == null) {
+        heldLockByThreadIDMap.put(threadID, request.lockID().toString());
+      } else {
+        heldLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
+      }
+    }
+
+    for (Iterator i = pendingLockSet.iterator(); i.hasNext();) {
+      LockRequest request = (LockRequest) i.next();
+      Long threadID = new Long(request.threadID().toLong());
+      System.out.println("L1IFNO B :" + threadID);
+      String lockInfo = (String) pendingLockByThreadIDMap.get(threadID);
+      if (lockInfo == null) {
+        pendingLockByThreadIDMap.put(threadID, request.lockID().toString());
+      } else {
+        pendingLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
+      }
+    }
+
+    System.out.println("L1IFNO heldmap: " + heldLockByThreadIDMap);
+    System.out.println("L1IFNO pendingmap: " + pendingLockByThreadIDMap);
+
+    String text = ThreadDumpUtil.getThreadDump(heldLockByThreadIDMap, pendingLockByThreadIDMap);
     logger.info(text);
     return text;
   }
@@ -136,12 +180,10 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   public StatisticData[] getCpuUsage() {
-    if (cpuSRA != null) {
-      return cpuSRA.retrieveStatisticData();
-    }
+    if (cpuSRA != null) { return cpuSRA.retrieveStatisticData(); }
     return null;
   }
-  
+
   public void reset() {
     /**/
   }

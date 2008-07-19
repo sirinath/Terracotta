@@ -50,7 +50,7 @@ public abstract class AbstractIdentifier implements Comparable, Serializable {
   }
 
   public final String toString() {
-    return getIdentifierType() + "=" + "[" + id + "]";
+    return getIdentifierType() + "[" + id + "]";
   }
 
   /**
