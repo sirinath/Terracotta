@@ -655,7 +655,10 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.println(getClass().getName());
-    out.indent().print("locks: ").visit(locksByID).println();
+    out.indent().println("locks: " + locksByID.size());
+    for (Iterator i = locksByID.values().iterator(); i.hasNext(); ) {
+      out.println(i.next());
+    }
     return out;
   }
 }

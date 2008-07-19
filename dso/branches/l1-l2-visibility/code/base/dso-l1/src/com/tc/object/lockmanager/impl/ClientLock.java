@@ -113,7 +113,15 @@ class ClientLock implements TimerCallback, LockFlushCallback {
                                                                               "Only Synchronous WRITE lock is supported now"); }
       effectiveType = LockLevel.WRITE;
     }
-    basicLock(threadID, effectiveType, timeout, noBlock, contextInfo);
+
+    Thread t = Thread.currentThread();
+    String prevThreadName = t.getName();
+    try {
+      t.setName(prevThreadName + ", locking " + getLockID() + " (" + effectiveType + "," + threadID + ")");
+      basicLock(threadID, effectiveType, timeout, noBlock, contextInfo);
+    } finally {
+      Thread.currentThread().setName(prevThreadName);
+    }
     if (effectiveType != lockType) {
       awardSynchronous(threadID, effectiveType);
     }
