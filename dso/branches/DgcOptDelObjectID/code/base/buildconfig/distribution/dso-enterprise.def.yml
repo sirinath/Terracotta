@@ -1,7 +1,7 @@
 name: Terracotta DSO
 internal_name: dso
-kit_name_pattern: terracotta-platform-version
-root_directory: terracotta-version
+kit_name_pattern: terracotta-platform-version-ee
+root_directory: terracotta-version-ee
 bundled_jres:
   - jre15:
       assert: '@build_environment.os_type =~ /^\s*windows\s*$/i'
@@ -116,14 +116,17 @@ bundled_components:
             kit-resources:
               - org/terracotta/modules/tool/tim-get.properties
         - ui-configurator
+        - ../../../code/base/ent-common
+        - ../../../code/base/ent-deploy
+        - ../../../code/base/ent-ui-configurator
 bundled_modules:
   - core:
       install_directory: modules
       manifest:
         - clustered-commons-collections-3.1
-        - clustered-glassfish-2.0
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
+        - clustered-glassfish-2.0
         - excludes-config
         - guimodels-config
         - jdk15-preinst-config
@@ -163,12 +166,6 @@ postscripts:
         - artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
           pom: poms/tcconfig-pom.xml
-        - artifact: tc-l1-reconnect-properties
-          file: lib/tc-l1-reconnect-properties.jar
-          pom: poms/tc-l1-reconnect-properties-pom.xml
-        - artifact: tcstats
-          file: lib/tcstats-xmlbeans-generated.jar
-          pom: poms/tcstats-pom.xml
         - artifact: tc-session
           file: lib/session/tc-session.jar
           pom: poms/tc-session-pom.xml
@@ -178,3 +175,4 @@ postscripts:
         - artifact: terracotta-jmx-api
           file: lib/terracotta-jmx-api.jar
           pom: poms/terracotta-jmx-api-pom.xml
+  - make-enterprise

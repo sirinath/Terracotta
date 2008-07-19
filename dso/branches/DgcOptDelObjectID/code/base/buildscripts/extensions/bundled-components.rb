@@ -7,8 +7,25 @@
 module BundledComponents
   def bundled_components(name, directory, spec)
     add_binaries(spec)
+    add_resources(name, directory)
+    add_dso_bootjar(spec)
+    add_module_packages(spec)
+    add_documentations(spec)
+  end
+
+  def add_resources(name, directory)
     @static_resources.supported_platforms(@build_environment).each do |platform|
-      srcdir = FilePath.new(@static_resources.skeletons_directory, name, platform).to_s
+      add_skeletons(@static_resources.skeletons_directory, name, platform, directory)
+      if (@flavor !~ /opensource/i)
+        if File.exist?(@static_resources.enterprise_skeletons_directory.to_s)
+          add_skeletons(@static_resources.enterprise_skeletons_directory, name, platform, directory)
+        end
+      end
+    end
+  end
+
+  def add_skeletons(skeldir, name, platform, directory)
+      srcdir = FilePath.new(skeldir, name, platform).to_s
       if File.directory?(srcdir)
         non_native = @build_environment.is_unix_like? ? ['*.bat', '*.cmd', '*.exe'] : ['*.sh']
         destdir    = FilePath.new(product_directory, directory).ensure_directory
@@ -17,10 +34,6 @@ module BundledComponents
           ant.fileset(:dir => srcdir, :excludes => "**/.svn/**, **/.*")
         end
       end
-    end
-    add_dso_bootjar(spec)
-    add_module_packages(spec)
-    add_documentations(spec)
   end
 
   def add_binaries(component, libdir=libpath(component), destdir=libpath(component))
@@ -29,15 +42,26 @@ module BundledComponents
       name = a_module
       exclude_native_runtime_libraries = false
       exclude_runtime_libraries        = false
+      kit_resources                    = []
       if a_module.instance_of?(Hash)
         name                             = a_module.keys.first
         exclude_native_runtime_libraries = a_module.values.first['exclude-native-runtime-libraries']
         exclude_runtime_libraries        = a_module.values.first['exclude-runtime-libraries']
+        kit_resources                    = a_module.values.first['kit-resources'] || []
       end
       a_module = @module_set[name]
       a_module.subtree('src').copy_native_runtime_libraries(libdir, ant, @build_environment) unless exclude_native_runtime_libraries
       a_module.subtree('src').copy_runtime_libraries(libdir, ant)                            unless exclude_runtime_libraries
-      a_module.subtree('src').copy_classes(@build_results, runtime_classes_dir, ant)
+
+      kit_resource_files = kit_resources.join(',')
+      a_module.subtree('src').copy_classes(@build_results, runtime_classes_dir, ant,
+                                           :excludes => kit_resource_files)
+
+      unless kit_resources.empty?
+        kit_resources_dir = FilePath.new(destdir, 'resources').ensure_directory
+        a_module.subtree('src').copy_classes(@build_results, kit_resources_dir, ant,
+                                            :includes => kit_resource_files)
+      end
     end
 
     jarfile = FilePath.new(destdir, "tc.jar")
@@ -78,7 +102,7 @@ module BundledComponents
         excludes = module_package[name]['filter'] || ''
         module_package[name]['modules'].each do |module_name|
           a_module = @module_set[module_name]
-          a_module.subtree(src).copy_classes(@build_results, runtime_classes_dir, ant, excludes)
+          a_module.subtree(src).copy_classes(@build_results, runtime_classes_dir, ant, :excludes => excludes)
         end
         libdir  = FilePath.new(File.dirname(destdir.to_s), *(module_package[name]['install_directory'] || '').split('/')).ensure_directory
         jarfile = FilePath.new(libdir, interpolate("#{name}.jar"))
