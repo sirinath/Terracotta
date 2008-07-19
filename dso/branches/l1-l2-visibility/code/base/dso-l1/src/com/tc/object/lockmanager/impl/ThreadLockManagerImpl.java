@@ -70,7 +70,7 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
     ThreadID rv = (ThreadID) threadID.get();
     if (rv == null) {
       rv = new ThreadID(nextThreadID(), Thread.currentThread().getName());
-      ThreadIDMapInfo.addThread(new Long(rv.toLong()));
+      ThreadIDMapInfo.addTCThreadID(new Long(rv.toLong()));
       threadID.set(rv);
     }
     return rv;
