@@ -6,6 +6,9 @@ package com.tc.object;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -248,8 +251,10 @@ public class DistributedObjectClient extends SEDA {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
-      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE, new OOOEventHandler(), 1, maxSize);
-      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE, new OOOEventHandler(), 1, maxSize);
+      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE,
+                                                          new OOOEventHandler(), 1, maxSize);
+      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE,
+                                                             new OOOEventHandler(), 1, maxSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
                                                                      oooSendStage.getSink(), oooReceiveStage.getSink(),
@@ -523,7 +528,7 @@ public class DistributedObjectClient extends SEDA {
     }
     setLoggerOnExit();
   }
-  
+
   private void setReconnectCloseOnExit(final DSOClientMessageChannel channel) {
     CommonShutDownHook.addShutdownHook(new Runnable() {
       public void run() {
@@ -604,6 +609,21 @@ public class DistributedObjectClient extends SEDA {
 
     if (this.objectManager != null) {
       this.objectManager.dump();
+    }
+  }
+
+  public void startBeanShell(int port) {
+    try {
+      Interpreter i = new Interpreter();
+      i.set("client", this);
+      i.set("objectManager", objectManager);
+      i.set("txManager", txManager);
+      i.set("portnum", port);
+      i.eval("setAccessibility(true)"); // turn off access restrictions
+      i.eval("server(portnum)");
+      consoleLogger.info("Bean shell is started on port " + port);
+    } catch (EvalError e) {
+      e.printStackTrace();
     }
   }
 }
