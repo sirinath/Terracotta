@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.lockmanager.impl;
 
@@ -10,6 +11,7 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.tx.TimerSpec;
+import com.tc.util.runtime.ThreadIDMapInfo;
 
 public class ThreadLockManagerImpl implements ThreadLockManager {
 
@@ -67,10 +69,10 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
   private ThreadID getThreadID() {
     ThreadID rv = (ThreadID) threadID.get();
     if (rv == null) {
-      rv = new ThreadID(nextThreadID());
+      rv = new ThreadID(nextThreadID(), Thread.currentThread().getName());
+      ThreadIDMapInfo.addThread(new Long(rv.toLong()));
       threadID.set(rv);
     }
-
     return rv;
   }
 

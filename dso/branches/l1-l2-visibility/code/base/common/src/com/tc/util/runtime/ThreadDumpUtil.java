@@ -8,6 +8,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 public class ThreadDumpUtil {
 
@@ -33,6 +34,10 @@ public class ThreadDumpUtil {
   }
 
   public static String getThreadDump() {
+    return getThreadDump(null, null);
+  }
+
+  public static String getThreadDump(Map map1, Map map2) {
     final Exception exception;
     try {
 
@@ -41,7 +46,11 @@ public class ThreadDumpUtil {
       Method method = null;
       if (Vm.isJDK15()) {
         if (threadDumpUtilJdk15Type != null) {
-          method = threadDumpUtilJdk15Type.getMethod("getThreadDump", EMPTY_PARAM_TYPES);
+          if (map1 != null && map2 != null) {
+            method = threadDumpUtilJdk15Type.getMethod("getThreadDump", new Class[] { Map.class, Map.class });
+          } else {
+            method = threadDumpUtilJdk15Type.getMethod("getThreadDump", EMPTY_PARAM_TYPES);
+          }
         } else {
           return "ThreadDump Classes class not available";
         }
@@ -57,7 +66,12 @@ public class ThreadDumpUtil {
       } else {
         return "Thread dumps require JRE-1.5 or greater";
       }
-      return (String) method.invoke(null, EMPTY_PARAMS);
+
+      if ((map1 != null) && (map2 != null)) {
+        return (String) method.invoke(null, new Object[] { map1, map2 });
+      } else {
+        return (String) method.invoke(null, EMPTY_PARAMS);
+      }
     } catch (Exception e) {
       logger.error("Cannot take thread dumps - " + e.getMessage(), e);
       exception = e;

@@ -11,7 +11,6 @@ import com.tc.logging.TCLogging;
 import com.tc.management.beans.L1Dumper;
 import com.tc.management.beans.L1MBeanNames;
 import com.tc.management.beans.MBeanNames;
-import com.tc.management.beans.l1.L1Info;
 import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.management.beans.logging.InstrumentationLogging;
 import com.tc.management.beans.logging.InstrumentationLoggingMBean;
@@ -90,7 +89,7 @@ public final class L1Management extends TerracottaManagement {
       internalSessionBean = new SessionMonitor();
       publicSessionBean = new SessionsProduct(internalSessionBean, clientTxBean);
       clusterBean = new TerracottaCluster();
-      l1InfoBean = new L1Info(rawConfigText);
+      l1InfoBean = new L1Info(client, rawConfigText);
       instrumentationLoggingBean = new InstrumentationLogging(instrumentationLogger);
       runtimeOutputOptionsBean = new RuntimeOutputOptions(runtimeLogger);
       runtimeLoggingBean = new RuntimeLogging(runtimeLogger);
@@ -196,9 +195,9 @@ public final class L1Management extends TerracottaManagement {
     return runtimeLoggingBean;
   }
 
-  private void attemptToRegister(final boolean createDedicatedMBeanServer) throws InstanceAlreadyExistsException, MBeanRegistrationException,
-      NotCompliantMBeanException, SecurityException, IllegalArgumentException, NoSuchMethodException,
-      ClassNotFoundException, IllegalAccessException, InvocationTargetException {
+  private void attemptToRegister(final boolean createDedicatedMBeanServer) throws InstanceAlreadyExistsException,
+      MBeanRegistrationException, NotCompliantMBeanException, SecurityException, IllegalArgumentException,
+      NoSuchMethodException, ClassNotFoundException, IllegalAccessException, InvocationTargetException {
     synchronized (mBeanServerLock) {
       if (mBeanServer == null) {
         if (createDedicatedMBeanServer) {
@@ -220,7 +219,8 @@ public final class L1Management extends TerracottaManagement {
           } else {
             // CDV-260: Make sure to use java.lang.management.ManagementFactory.getPlatformMBeanServer() on JDK 1.5+
             if (logger.isDebugEnabled()) {
-              logger.debug("attemptToRegister(): Inside a 1.5+ runtime, trying to get the platform default MBeanServer");
+              logger
+                  .debug("attemptToRegister(): Inside a 1.5+ runtime, trying to get the platform default MBeanServer");
             }
             mBeanServer = getPlatformDefaultMBeanServer();
           }
