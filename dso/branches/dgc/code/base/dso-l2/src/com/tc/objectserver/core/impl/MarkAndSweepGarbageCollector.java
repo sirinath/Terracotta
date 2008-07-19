@@ -4,29 +4,20 @@
  */
 package com.tc.objectserver.core.impl;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.ObjectManagerEventListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
 import com.tc.objectserver.core.api.GarbageCollector;
+import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.impl.GCLogger;
-import com.tc.objectserver.impl.GCStatsImpl;
 import com.tc.objectserver.impl.ObjectManagerConfig;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
-import com.tc.statistics.AgentStatisticsManager;
-import com.tc.statistics.StatisticData;
-import com.tc.statistics.StatisticsAgentSubSystem;
-import com.tc.statistics.exceptions.AgentStatisticsManagerException;
 import com.tc.text.PrettyPrinter;
-import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 import com.tc.util.TCCollections;
@@ -38,7 +29,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -114,29 +104,25 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private static final State                   GC_PAUSED                   = new State("GC_PAUSED");
   private static final State                   GC_DELETE                   = new State("GC_DELETE");
 
-  private final GCLogger                       gcLogger;
-  private final List                           eventListeners              = new CopyOnWriteArrayList();
   private final AtomicInteger                  gcIterationCounter          = new AtomicInteger(0);
   private final ObjectManager                  objectManager;
   private final ClientStateManager             stateManager;
-  private final StatisticsAgentSubSystem       statisticsAgentSubSystem;
 
   private State                                state                       = GC_SLEEP;
   private volatile ChangeCollector             referenceCollector          = NULL_CHANGE_COLLECTOR;
   private volatile YoungGenChangeCollector     youngGenReferenceCollector  = NULL_YOUNG_CHANGE_COLLECTOR;
   private LifeCycleState                       gcState                     = new NullLifeCycleState();
   private volatile boolean                     started                     = false;
+  private final GarbageCollectionInfoPublisherImpl gcPublisher           = new GarbageCollectionInfoPublisherImpl();
 
   private final ObjectManagerConfig            objectManagerConfig;
 
   public MarkAndSweepGarbageCollector(ObjectManager objectManager, ClientStateManager stateManager,
-                                      ObjectManagerConfig objectManagerConfig, StatisticsAgentSubSystem agentSubSystem) {
+                                      ObjectManagerConfig objectManagerConfig) {
     this.objectManagerConfig = objectManagerConfig;
-    this.gcLogger = new GCLogger(logger, objectManagerConfig.verboseGC());
     this.objectManager = objectManager;
     this.stateManager = stateManager;
-    this.statisticsAgentSubSystem = agentSubSystem;
-    Assert.assertNotNull(statisticsAgentSubSystem);
+    addListener(new GCLoggerEventPublisher(logger, objectManagerConfig.verboseGC()));
   }
 
   private ObjectIDSet rescue(final ObjectIDSet gcResults, final List rescueTimes) {
@@ -159,47 +145,52 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return rv;
   }
 
+  /**
+   * For state transition diagram look here.
+   * http://intranet.terracotta.lan/xwiki/bin/view/Main/DGC+Lifecycle
+   */
   public void gc() {
 
     while (!requestGCStart()) {
-      gcLogger.log_GCDisabled();
-      logger.info("GC is either disabled or is already running. Waiting for 1 min before checking again ...");
+      logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GCStatsImpl gcStats = new GCStatsImpl(gcIteration);
+    GarbageCollectionInfoImpl gcInfo = new GarbageCollectionInfoImpl(gcIteration);
+    gcInfo.markFullGen();
 
-    gcLogger.log_GCStart(gcIteration);
     long startMillis = System.currentTimeMillis();
-    gcStats.setStartTime(startMillis);
+    gcInfo.setStartTime(startMillis);
+    gcPublisher.fireGCStartEvent(gcInfo);
 
-    Set rootIDs = null;
-    ObjectIDSet managedIDs = null;
-
+    // NOTE:It is important to set this reference collector before getting the roots ID and all object ids
     this.referenceCollector = new NewReferenceCollector();
 
-    managedIDs = objectManager.getAllObjectIDs();
-    rootIDs = objectManager.getRootIDs();
+    ObjectIDSet managedIDs = objectManager.getAllObjectIDs();
+    Set rootIDs = objectManager.getRootIDs();
 
-    gcStats.setBeginObjectCount(managedIDs.size());
+    gcInfo.setBeginObjectCount(managedIDs.size());
 
     if (gcState.isStopRequested()) { return; }
 
-    gcLogger.log_markStart(managedIDs);
+    gcPublisher.fireGCMarkEvent(gcInfo);
     ObjectIDSet gcResults = collect(NULL_FILTER, rootIDs, managedIDs, gcState);
-    gcLogger.log_markResults(gcResults);
+    gcInfo.setPreRescueCount(gcResults.size());
+    gcPublisher.fireGCMarkResultsEvent(gcInfo);
 
     if (gcState.isStopRequested()) { return; }
 
     List rescueTimes = new ArrayList();
 
-    gcLogger.log_rescue(1, gcResults);
     gcResults = rescue(gcResults, rescueTimes);
+    gcInfo.setRescue1Count(gcResults.size());
+    gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
 
+    gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
+
+    gcPublisher.fireGCPausingEvent(gcInfo);
     requestGCPause();
-
-    gcLogger.log_quiescing();
 
     if (gcState.isStopRequested()) { return; }
 
@@ -208,56 +199,48 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     if (gcState.isStopRequested()) { return; }
 
     long pauseStartMillis = System.currentTimeMillis();
-    gcLogger.log_paused();
 
-    // Assert.eval("No pending lookups allowed during GC pause.", pending.size() == 0);
+    gcPublisher.fireGCPausedEvent(gcInfo);
 
-    gcLogger.log_rescue(2, gcResults);
-
-    gcStats.setCandidateGarbageCount(gcResults.size());
+    gcInfo.setCandidateGarbageCount(gcResults.size());
+    gcPublisher.fireGCRescue2StartEvent(gcInfo);
     SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
+    gcInfo.setRescueTimes(rescueTimes);
+    gcInfo.setDeleted(toDelete);
 
     if (gcState.isStopRequested()) { return; }
-    gcLogger.log_sweep(toDelete);
-
-    gcLogger.log_notifyGCComplete();
 
     this.referenceCollector = NULL_CHANGE_COLLECTOR;
 
     long deleteStartMillis = System.currentTimeMillis();
-    gcStats.setPausedTime(deleteStartMillis - pauseStartMillis);
+    gcInfo.setPausedStageTime(deleteStartMillis - pauseStartMillis);
+
+    gcPublisher.fireGCMarkCompleteEvent(gcInfo);
+
     // Delete Garbage
-    deleteGarbage(new GCResultContext(gcIteration, toDelete));
+    deleteGarbage(new GCResultContext(gcIteration, gcInfo, gcPublisher, toDelete));
 
-    gcStats.setActualGarbageCount(toDelete.size());
     long endMillis = System.currentTimeMillis();
-    gcStats.setDeleteTime(endMillis - deleteStartMillis);
-    gcStats.setElapsedTime(endMillis - startMillis);
-    gcLogger.log_GCComplete(gcStats, rescueTimes);
-
-    gcLogger.push(gcStats);
-    fireGCCompleteEvent(gcStats, toDelete);
-
-    if (statisticsAgentSubSystem.isActive()) {
-      storeGCStats(gcStats);
-    }
+    gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
+    gcPublisher.fireGCCycleCompletedEvent(gcInfo);
   }
 
   public void gcYoung() {
     logger.info("Young Gen : GC START");
     while (!requestGCStart()) {
-      gcLogger.log_GCDisabled();
-      logger.info("GC is either disabled or is already running. Waiting for 1 min before checking again ...");
+      logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GCStatsImpl gcStats = new GCStatsImpl(gcIteration);
+    GarbageCollectionInfoImpl gcInfo = new GarbageCollectionInfoImpl(gcIteration);
+    gcInfo.markFullGen();
 
-    gcLogger.log_GCStart(gcIteration);
     long startMillis = System.currentTimeMillis();
-    gcStats.setStartTime(startMillis);
+    gcInfo.setStartTime(startMillis);
+    gcPublisher.fireGCStartEvent(gcInfo);
 
+    // NOTE:It is important to set this reference collector before getting the roots ID and all object ids
     this.referenceCollector = new NewReferenceCollector();
 
     // GET young Candidates
@@ -267,26 +250,28 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     // GET ROOTS
     final Set rootIDs = getYoungGenRootIDs(candidateIDs);
 
-    gcStats.setBeginObjectCount(candidateIDs.size());
+    gcInfo.setBeginObjectCount(candidateIDs.size());
 
     if (gcState.isStopRequested()) { return; }
 
-    gcLogger.log_markStart(candidateIDs);
-
+    gcPublisher.fireGCMarkEvent(gcInfo);
     Filter youngGenFilter = new SelectiveFilter(candidateIDs);
     ObjectIDSet gcResults = collect(youngGenFilter, rootIDs, candidateIDs, gcState);
-    gcLogger.log_markResults(gcResults);
+    gcInfo.setPreRescueCount(gcResults.size());
+    gcPublisher.fireGCMarkResultsEvent(gcInfo);
 
     if (gcState.isStopRequested()) { return; }
 
     List rescueTimes = new ArrayList();
 
-    gcLogger.log_rescue(1, gcResults);
     gcResults = rescue(gcResults, rescueTimes);
+    gcInfo.setRescue1Count(gcResults.size());
+    gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
 
+    gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
+
+    gcPublisher.fireGCPausingEvent(gcInfo);
     requestGCPause();
-
-    gcLogger.log_quiescing();
 
     if (gcState.isStopRequested()) { return; }
 
@@ -295,38 +280,32 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     if (gcState.isStopRequested()) { return; }
 
     long pauseStartMillis = System.currentTimeMillis();
-    gcLogger.log_paused();
 
-    gcLogger.log_rescue(2, gcResults);
+    gcPublisher.fireGCPausedEvent(gcInfo);
 
-    gcStats.setCandidateGarbageCount(gcResults.size());
+    gcInfo.setCandidateGarbageCount(gcResults.size());
+    gcPublisher.fireGCRescue2StartEvent(gcInfo);
     SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
+    gcInfo.setRescueTimes(rescueTimes);
+    gcInfo.setDeleted(toDelete);
 
     if (gcState.isStopRequested()) { return; }
-    gcLogger.log_sweep(toDelete);
-
-    gcLogger.log_notifyGCComplete();
 
     this.referenceCollector = NULL_CHANGE_COLLECTOR;
 
     long deleteStartMillis = System.currentTimeMillis();
-    gcStats.setPausedTime(deleteStartMillis - pauseStartMillis);
+    gcInfo.setPausedStageTime(deleteStartMillis - pauseStartMillis);
+
+    gcPublisher.fireGCMarkCompleteEvent(gcInfo);
+
     // Delete Garbage
     deleteGarbage(new GCResultContext(gcIteration, toDelete));
 
-    gcStats.setActualGarbageCount(toDelete.size());
     long endMillis = System.currentTimeMillis();
-    gcStats.setDeleteTime(endMillis - deleteStartMillis);
-    gcStats.setElapsedTime(endMillis - startMillis);
-    gcLogger.log_GCComplete(gcStats, rescueTimes);
+    gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
+    gcPublisher.fireGCCycleCompletedEvent(gcInfo);
 
-    gcLogger.push(gcStats);
-    fireGCCompleteEvent(gcStats, toDelete);
-    logger.info("Young Gen : GC FINISHED : " + gcStats);
-
-    if (statisticsAgentSubSystem.isActive()) {
-      storeGCStats(gcStats);
-    }
+    logger.info("Young Gen : GC FINISHED : " + gcInfo);
   }
 
   private Set getYoungGenRootIDs(Set candidateIDs) {
@@ -347,42 +326,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       return true;
     }
     return false;
-  }
-
-  private void storeGCStats(GCStats gcStats) {
-    Date moment = new Date();
-    AgentStatisticsManager agentStatisticsManager = statisticsAgentSubSystem.getStatisticsManager();
-    Collection sessions = agentStatisticsManager.getActiveSessionIDsForAction(DISTRIBUTED_GC_STATISTICS);
-    if (sessions != null && sessions.size() > 0) {
-      StatisticData[] datas = getGCStatisticsData(gcStats);
-      storeStatisticsDatas(moment, sessions, datas);
-    }
-  }
-
-  private StatisticData[] getGCStatisticsData(GCStats gcStats) {
-    List<StatisticData> datas = new ArrayList<StatisticData>();
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "iteration", (long) gcStats.getIteration()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "start time", gcStats.getStartTime()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "elapsed time", gcStats.getElapsedTime()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "begin object count", gcStats.getBeginObjectCount()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "candidate garbage count", gcStats
-        .getCandidateGarbageCount()));
-    datas.add(new StatisticData(DISTRIBUTED_GC_STATISTICS, "actual garbage count", gcStats.getActualGarbageCount()));
-    return datas.toArray(new StatisticData[datas.size()]);
-  }
-
-  private synchronized void storeStatisticsDatas(Date moment, Collection sessions, StatisticData[] datas) {
-    try {
-      for (Iterator sessionsIterator = sessions.iterator(); sessionsIterator.hasNext();) {
-        String session = (String) sessionsIterator.next();
-        for (int i = 0; i < datas.length; i++) {
-          StatisticData data = datas[i];
-          statisticsAgentSubSystem.getStatisticsManager().injectStatisticData(session, data.moment(moment));
-        }
-      }
-    } catch (AgentStatisticsManagerException e) {
-      logger.error("Unexpected error while trying to store Cache Objects Evict Request statistics statistics.", e);
-    }
   }
 
   public void changed(ObjectID changedObject, ObjectID oldReference, ObjectID newReference) {
@@ -407,7 +350,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
   public ObjectIDSet collect(Filter filter, Collection rootIds, ObjectIDSet managedObjectIds,
                              LifeCycleState lifeCycleState) {
-
     long start = System.currentTimeMillis();
     logstart_collect(rootIds, managedObjectIds);
 
@@ -484,26 +426,14 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  public synchronized boolean isDisabled() {
-    return GC_DISABLED == state;
-  }
-
-  public synchronized boolean isPausingOrPaused() {
-    return GC_PAUSED == state || GC_PAUSING == state;
-  }
-
-  public synchronized boolean isPaused() {
-    return state == GC_PAUSED;
-  }
-
-  public synchronized void requestGCPause() {
-    state = GC_PAUSING;
-  }
-
   public synchronized void notifyReadyToGC() {
     if (state == GC_PAUSING) {
       state = GC_PAUSED;
     }
+  }
+
+  public synchronized void notifyGCComplete() {
+    state = GC_SLEEP;
   }
 
   /**
@@ -518,8 +448,20 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  public synchronized void notifyGCComplete() {
-    state = GC_SLEEP;
+  public synchronized void requestGCPause() {
+    state = GC_PAUSING;
+  }
+
+  public synchronized boolean isPausingOrPaused() {
+    return GC_PAUSED == state || GC_PAUSING == state;
+  }
+
+  public synchronized boolean isPaused() {
+    return state == GC_PAUSED;
+  }
+
+  public synchronized boolean isDisabled() {
+    return GC_DISABLED == state;
   }
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
@@ -678,27 +620,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     this.gcState = st;
   }
 
-  private void fireGCCompleteEvent(GCStats gcStats, SortedSet deleted) {
-    for (Iterator iter = eventListeners.iterator(); iter.hasNext();) {
-      try {
-        ObjectManagerEventListener listener = (ObjectManagerEventListener) iter.next();
-        listener.garbageCollectionComplete(gcStats, deleted);
-      } catch (Exception e) {
-        if (logger.isDebugEnabled()) {
-          logger.debug(e);
-        } else {
-          logger.warn("Exception in GCComplete event callback: " + e.getMessage());
-        }
-      }
-    }
+  public void addListener(GarbageCollectorEventListener listener) {
+    gcPublisher.addListener(listener);
   }
-
-  public void addListener(ObjectManagerEventListener listener) {
-    eventListeners.add(listener);
-  }
-
-  public GCStats[] getGarbageCollectorStats() {
-    return gcLogger.getGarbageCollectorStats();
-  }
-
 }
