@@ -369,7 +369,7 @@ public class DistributedObjectClient extends SEDA {
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
     l1Management = new L1Management(teh, statisticsAgentSubSystem, runtimeLogger, manager.getInstrumentationLogger(),
-                                    config.rawConfigText());
+                                    config.rawConfigText(), this);
     l1Management.start(createDedicatedMBeanServer);
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
@@ -593,4 +593,17 @@ public class DistributedObjectClient extends SEDA {
     return statisticsAgentSubSystem;
   }
 
+  public void dump() {
+    if (this.lockManager != null) {
+      this.lockManager.dumpToLogger();
+    }
+
+    if (this.txManager != null) {
+      this.txManager.dump();
+    }
+
+    if (this.objectManager != null) {
+      this.objectManager.dump();
+    }
+  }
 }
