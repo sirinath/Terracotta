@@ -37,7 +37,7 @@ public class ThreadDumpUtil {
     return getThreadDump(null, null);
   }
 
-  public static String getThreadDump(Map map1, Map map2) {
+  public static String getThreadDump(Map heldLockMap, Map pendingLockMap) {
     final Exception exception;
     try {
 
@@ -46,7 +46,7 @@ public class ThreadDumpUtil {
       Method method = null;
       if (Vm.isJDK15()) {
         if (threadDumpUtilJdk15Type != null) {
-          if (map1 != null && map2 != null) {
+          if (heldLockMap != null && pendingLockMap != null) {
             method = threadDumpUtilJdk15Type.getMethod("getThreadDump", new Class[] { Map.class, Map.class });
           } else {
             method = threadDumpUtilJdk15Type.getMethod("getThreadDump", EMPTY_PARAM_TYPES);
@@ -67,8 +67,8 @@ public class ThreadDumpUtil {
         return "Thread dumps require JRE-1.5 or greater";
       }
 
-      if ((map1 != null) && (map2 != null)) {
-        return (String) method.invoke(null, new Object[] { map1, map2 });
+      if ((heldLockMap != null) && (pendingLockMap != null)) {
+        return (String) method.invoke(null, new Object[] { heldLockMap, pendingLockMap });
       } else {
         return (String) method.invoke(null, EMPTY_PARAMS);
       }

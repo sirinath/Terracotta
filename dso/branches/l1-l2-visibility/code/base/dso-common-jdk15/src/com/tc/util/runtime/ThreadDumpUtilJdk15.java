@@ -36,6 +36,7 @@ public class ThreadDumpUtilJdk15 {
       for (int i = 0; i < threadIds.length; i++) {
         ThreadInfo threadInfo = threadMXBean.getThreadInfo(threadIds[i], Integer.MAX_VALUE);
         if (threadInfo != null) {
+          
           if (heldMap != null && pendingMap != null) {
             Long vmThreadID = ThreadIDMapInfo.getTCThreadID(threadIds[i]);
             if ((vmThreadID != null) && (heldMap.get(vmThreadID) != null)) {
@@ -45,6 +46,7 @@ public class ThreadDumpUtilJdk15 {
               sb.append("LOCK PENDING FOR: " + pendingMap.get(vmThreadID) + "\n");
             }
           }
+          
           sb.append(threadHeader(threadInfo, threadIds[i]));
           sb.append('\n');
 

@@ -12,12 +12,12 @@ import java.util.Map;
 public class ThreadIDMapInfoJDK15 {
   private static final Map threadIDMap = new HashMap();
 
-  public synchronized static void addThread(Long tcThreadID) {
+  public synchronized static void addTCThreadID(Long tcThreadID) {
     Assert.assertFalse(threadIDMap.containsKey(Thread.currentThread().getId()));
-    threadIDMap.put(new Long(Thread.currentThread().getId()), new Long(tcThreadID));
+    threadIDMap.put(new Long(Thread.currentThread().getId()), tcThreadID);
   }
 
-  public synchronized static Long getThread(Long vmThreadID) {
+  public synchronized static Long getTCThreadID(Long vmThreadID) {
     return (Long) threadIDMap.get(vmThreadID);
   }
 }
