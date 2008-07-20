@@ -30,17 +30,15 @@ public class ListCommand extends AbstractCommand {
     this.modules = modules;
     assert modules != null : "modules is null";
     options.addOption(OPTION_DETAILS, LONGOPT_DETAILS, false, "Display detailed information");
-    this.arguments
-        .put("keyword",
-             "OPTIONAL. Filters the list to those that contain this keyword. Multiple keywords may be specified");
+    arguments.put("keywords", "OPTIONAL. Space delimited list of keywords used to filter the list.");
   }
 
   public String syntax() {
-    return "[keyword] [options]";
+    return "[keywords] {options}";
   }
 
   public String description() {
-    return "List all available Integration Modules for TC " + modules.tcVersion();
+    return "List all available integration modules for TC " + modules.tcVersion();
   }
 
   private void displayWithDetails(List<Module> list) {
@@ -77,15 +75,14 @@ public class ListCommand extends AbstractCommand {
       list.add(module);
     }
 
-    out.println("\n*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
+    out.println("*** Terracotta Integration Modules for TC " + modules.tcVersion() + " ***");
     if (cli.hasOption('v') || cli.hasOption(LONGOPT_DETAILS)) displayWithDetails(list);
     else display(list);
 
     if (!list.isEmpty()) {
       out.println();
       out.println("legends: [+] already installed  [!] installed but newer version exists  [-] not installed");
-      
     }
-       
+
   }
 }

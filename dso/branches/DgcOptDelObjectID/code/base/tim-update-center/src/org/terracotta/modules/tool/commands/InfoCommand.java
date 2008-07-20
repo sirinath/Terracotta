@@ -15,25 +15,23 @@ import java.util.List;
 
 public class InfoCommand extends AbstractCommand {
 
-  // private static final String LONGOPT_GROUPID = "group-id";
-
   private final Modules modules;
 
   @Inject
   public InfoCommand(Modules modules) {
     this.modules = modules;
     assert modules != null : "modules is null";
-    arguments.put("name", "The name of the Integration Module");
+    arguments.put("name", "The name of the integration module");
     arguments.put("version", "OPTIONAL. The version used to qualify the name");
     arguments.put("group-id", "OPTIONAL. The group-id used to qualify the name");
   }
 
   public String syntax() {
-    return "<name> [version] [group-id] [options]";
+    return "<name> [version] [group-id] {options}";
   }
 
   public String description() {
-    return "Display detailed information about an Integration Module";
+    return "Display detailed information about an integration module";
   }
 
   public void execute(CommandLine cli) {
