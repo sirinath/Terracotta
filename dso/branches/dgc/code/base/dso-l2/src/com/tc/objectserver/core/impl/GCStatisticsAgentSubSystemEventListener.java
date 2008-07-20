@@ -6,7 +6,6 @@ package com.tc.objectserver.core.impl;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.statistics.AgentStatisticsManager;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticsAgentSubSystem;

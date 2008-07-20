@@ -5,7 +5,6 @@
 package com.tc.objectserver.core.impl;
 
 import com.tc.logging.TCLogger;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.impl.GCLogger;
 
 public class GCLoggerEventPublisher extends GarbageCollectorEventListenerAdapter {

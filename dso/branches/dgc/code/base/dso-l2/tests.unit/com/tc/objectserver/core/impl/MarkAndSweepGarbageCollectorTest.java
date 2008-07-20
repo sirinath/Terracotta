@@ -14,7 +14,6 @@ import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.Filter;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;

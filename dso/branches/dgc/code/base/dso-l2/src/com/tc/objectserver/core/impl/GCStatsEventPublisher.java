@@ -6,7 +6,6 @@ package com.tc.objectserver.core.impl;
 
 import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.GCStatsEventListener;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
 import com.tc.objectserver.impl.GCStatsImpl;
 import com.tc.stats.LossyStack;
 
