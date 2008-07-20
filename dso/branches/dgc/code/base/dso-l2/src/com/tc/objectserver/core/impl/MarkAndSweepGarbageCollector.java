@@ -43,93 +43,88 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
-  private static final TCLogger                logger                      = TCLogging
-                                                                               .getLogger(MarkAndSweepGarbageCollector.class);
+  private static final TCLogger                    logger                      = TCLogging
+                                                                                   .getLogger(MarkAndSweepGarbageCollector.class);
 
-  private static final ChangeCollector         NULL_CHANGE_COLLECTOR       = new ChangeCollector() {
-                                                                             public void changed(
-                                                                                                 ObjectID changedObject,
-                                                                                                 ObjectID oldReference,
-                                                                                                 ObjectID newReference) {
-                                                                               return;
-                                                                             }
+  private static final ChangeCollector             NULL_CHANGE_COLLECTOR       = new ChangeCollector() {
+                                                                                 public void changed(
+                                                                                                     ObjectID changedObject,
+                                                                                                     ObjectID oldReference,
+                                                                                                     ObjectID newReference) {
+                                                                                   return;
+                                                                                 }
 
-                                                                             public Set addNewReferencesTo(Set set) {
-                                                                               return Collections.EMPTY_SET;
-                                                                             }
-                                                                           };
+                                                                                 public Set addNewReferencesTo(Set set) {
+                                                                                   return Collections.EMPTY_SET;
+                                                                                 }
+                                                                               };
 
-  private static final YoungGenChangeCollector NULL_YOUNG_CHANGE_COLLECTOR = new YoungGenChangeCollector() {
+  private static final YoungGenChangeCollector     NULL_YOUNG_CHANGE_COLLECTOR = new YoungGenChangeCollector() {
 
-                                                                             public void notifyObjectCreated(ObjectID id) {
-                                                                               return;
-                                                                             }
+                                                                                 public void notifyObjectCreated(
+                                                                                                                 ObjectID id) {
+                                                                                   return;
+                                                                                 }
 
-                                                                             public void notifyObjectsEvicted(
-                                                                                                              Collection evicted) {
-                                                                               return;
-                                                                             }
+                                                                                 public void notifyObjectsEvicted(
+                                                                                                                  Collection evicted) {
+                                                                                   return;
+                                                                                 }
 
-                                                                             public Set addYoungGenCandidateObjectIDsTo(
-                                                                                                                        Set set) {
-                                                                               return Collections.EMPTY_SET;
-                                                                             }
+                                                                                 public Set addYoungGenCandidateObjectIDsTo(
+                                                                                                                            Set set) {
+                                                                                   return Collections.EMPTY_SET;
+                                                                                 }
 
-                                                                             public void notifyObjectInitalized(
-                                                                                                                ObjectID id) {
-                                                                               return;
-                                                                             }
+                                                                                 public void notifyObjectInitalized(
+                                                                                                                    ObjectID id) {
+                                                                                   return;
+                                                                                 }
 
-                                                                             public Set getRememberedSet() {
-                                                                               return Collections.EMPTY_SET;
-                                                                             }
+                                                                                 public Set getRememberedSet() {
+                                                                                   return Collections.EMPTY_SET;
+                                                                                 }
 
-                                                                             public void removeGarbage(SortedSet ids) {
-                                                                               return;
-                                                                             }
-                                                                           };
+                                                                                 public void removeGarbage(SortedSet ids) {
+                                                                                   return;
+                                                                                 }
+                                                                               };
 
-  private static final Filter                  NULL_FILTER                 = new Filter() {
-                                                                             public boolean shouldVisit(
-                                                                                                        ObjectID referencedObject) {
-                                                                               return true;
-                                                                             }
-                                                                           };
-  private static final LifeCycleState          NULL_LIFECYCLE_STATE        = new NullLifeCycleState();
-  public static final String                   DISTRIBUTED_GC_STATISTICS   = "distributed gc";
+  private static final Filter                      NULL_FILTER                 = new Filter() {
+                                                                                 public boolean shouldVisit(
+                                                                                                            ObjectID referencedObject) {
+                                                                                   return true;
+                                                                                 }
+                                                                               };
+  private static final LifeCycleState              NULL_LIFECYCLE_STATE        = new NullLifeCycleState();
+  public static final String                       DISTRIBUTED_GC_STATISTICS   = "distributed gc";
 
-  private static final State                   GC_DISABLED                 = new State("GC_DISABLED");
-  private static final State                   GC_RUNNING                  = new State("GC_RUNNING");
-  private static final State                   GC_SLEEP                    = new State("GC_SLEEP");
-  private static final State                   GC_PAUSING                  = new State("GC_PAUSING");
-  private static final State                   GC_PAUSED                   = new State("GC_PAUSED");
-  private static final State                   GC_DELETE                   = new State("GC_DELETE");
+  private static final State                       GC_DISABLED                 = new State("GC_DISABLED");
+  private static final State                       GC_RUNNING                  = new State("GC_RUNNING");
+  private static final State                       GC_SLEEP                    = new State("GC_SLEEP");
+  private static final State                       GC_PAUSING                  = new State("GC_PAUSING");
+  private static final State                       GC_PAUSED                   = new State("GC_PAUSED");
+  private static final State                       GC_DELETE                   = new State("GC_DELETE");
 
-  private final AtomicInteger                  gcIterationCounter          = new AtomicInteger(0);
-  private final ObjectManager                  objectManager;
-  private final ClientStateManager             stateManager;
+  private final AtomicInteger                      gcIterationCounter          = new AtomicInteger(0);
+  private final ObjectManager                      objectManager;
+  private final ClientStateManager                 stateManager;
 
-  private State                                state                       = GC_SLEEP;
-  private volatile ChangeCollector             referenceCollector          = NULL_CHANGE_COLLECTOR;
-  private volatile YoungGenChangeCollector     youngGenReferenceCollector  = NULL_YOUNG_CHANGE_COLLECTOR;
-  private LifeCycleState                       gcState                     = new NullLifeCycleState();
-  private volatile boolean                     started                     = false;
-  private final GarbageCollectionInfoPublisherImpl gcPublisher           = new GarbageCollectionInfoPublisherImpl();
+  private State                                    state                       = GC_SLEEP;
+  private volatile ChangeCollector                 referenceCollector          = NULL_CHANGE_COLLECTOR;
+  private volatile YoungGenChangeCollector         youngGenReferenceCollector  = NULL_YOUNG_CHANGE_COLLECTOR;
+  private LifeCycleState                           gcState                     = new NullLifeCycleState();
+  private volatile boolean                         started                     = false;
+  private final GarbageCollectionInfoPublisherImpl gcPublisher                 = new GarbageCollectionInfoPublisherImpl();
 
-  private final ObjectManagerConfig            objectManagerConfig;
-  private GarbageCollectionInfoFactory             garbageCollectionInfoFactory;
+  private final ObjectManagerConfig                objectManagerConfig;
 
   public MarkAndSweepGarbageCollector(ObjectManager objectManager, ClientStateManager stateManager,
                                       ObjectManagerConfig objectManagerConfig) {
     this.objectManagerConfig = objectManagerConfig;
     this.objectManager = objectManager;
     this.stateManager = stateManager;
-    garbageCollectionInfoFactory = new GarbageCollectionInfoFactoryImpl();
     addListener(new GCLoggerEventPublisher(logger, objectManagerConfig.verboseGC()));
-  }
-  
-  public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory) {
-    this.garbageCollectionInfoFactory = factory;
   }
 
   private ObjectIDSet rescue(final ObjectIDSet gcResults, final List rescueTimes) {
@@ -153,20 +148,22 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   /**
-   * For state transition diagram look here.
-   * http://intranet.terracotta.lan/xwiki/bin/view/Main/DGC+Lifecycle
+   * For state transition diagram look here. http://intranet.terracotta.lan/xwiki/bin/view/Main/DGC+Lifecycle
    */
   public void gc() {
+    doGC(true);
+  }
 
+  // TODO:: This needs to be refactored later
+  private void doGC(boolean fullGC) {
     while (!requestGCStart()) {
-      logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
+      logger.info((fullGC ? "Full" : "YoungGen")
+                  + " GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GarbageCollectionInfo gcInfo = garbageCollectionInfoFactory.newInstance(gcIteration);
-    gcInfo.markFullGen();
-
+    GarbageCollectionInfo gcInfo = new GarbageCollectionInfoImpl(gcIteration, fullGC);
     long startMillis = System.currentTimeMillis();
     gcInfo.setStartTime(startMillis);
     gcPublisher.fireGCStartEvent(gcInfo);
@@ -225,7 +222,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     // Delete Garbage
-    deleteGarbage(new GCResultContext(gcIteration,toDelete, gcInfo, gcPublisher));
+    deleteGarbage(new GCResultContext(gcIteration, toDelete, gcInfo, gcPublisher));
 
     long endMillis = System.currentTimeMillis();
     gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
@@ -233,6 +230,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   public void gcYoung() {
+    doGC(false);
     while (!requestGCStart()) {
       logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);

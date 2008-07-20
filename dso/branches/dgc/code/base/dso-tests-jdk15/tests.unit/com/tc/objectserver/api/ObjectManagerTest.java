@@ -2272,10 +2272,6 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       return true;
     }
     
-    public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory) {
-      //do nothing
-    }
-
     public void gcYoung() {
       //NOP
     }
