@@ -4,13 +4,14 @@
  */
 package com.tc.objectserver.core.impl;
 
-
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
+import com.tc.objectserver.core.api.GarbageCollectionInfo;
+import com.tc.objectserver.core.api.GarbageCollectionInfoFactory;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -116,13 +117,19 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private final GarbageCollectionInfoPublisherImpl gcPublisher           = new GarbageCollectionInfoPublisherImpl();
 
   private final ObjectManagerConfig            objectManagerConfig;
+  private GarbageCollectionInfoFactory             garbageCollectionInfoFactory;
 
   public MarkAndSweepGarbageCollector(ObjectManager objectManager, ClientStateManager stateManager,
                                       ObjectManagerConfig objectManagerConfig) {
     this.objectManagerConfig = objectManagerConfig;
     this.objectManager = objectManager;
     this.stateManager = stateManager;
+    garbageCollectionInfoFactory = new GarbageCollectionInfoFactoryImpl();
     addListener(new GCLoggerEventPublisher(logger, objectManagerConfig.verboseGC()));
+  }
+  
+  public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory) {
+    this.garbageCollectionInfoFactory = factory;
   }
 
   private ObjectIDSet rescue(final ObjectIDSet gcResults, final List rescueTimes) {
@@ -157,7 +164,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GarbageCollectionInfoImpl gcInfo = new GarbageCollectionInfoImpl(gcIteration);
+    GarbageCollectionInfo gcInfo = garbageCollectionInfoFactory.newInstance(gcIteration);
     gcInfo.markFullGen();
 
     long startMillis = System.currentTimeMillis();
@@ -299,7 +306,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     // Delete Garbage
-    deleteGarbage(new GCResultContext(gcIteration, toDelete));
+    GCResultContext gcResultContext = new GCResultContext(gcIteration, toDelete, gcInfo, gcPublisher);
+    deleteGarbage(gcResultContext);
 
     long endMillis = System.currentTimeMillis();
     gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
