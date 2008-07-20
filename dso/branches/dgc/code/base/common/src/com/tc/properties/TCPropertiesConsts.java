@@ -14,13 +14,10 @@ public interface TCPropertiesConsts {
    * </code>
    ********************************************************************************************************************/
 
-  public static final String [] OLD_PROPERTIES                                      = {"l1.reconnect.enabled",
-                                                                                       "l1.reconnect.timeout.millis",
-                                                                                       "l2.nha.ooo.maxDelayedAcks",
-                                                                                       "l2.nha.ooo.sendWindow",
-                                                                                       "l2.objectmanager.loadObjectID.checkpoint.changes",
-                                                                                       "l2.objectmanager.loadObjectID.checkpoint.timeperiod"};
-  
+  public static final String[] OLD_PROPERTIES                                         = { "l1.reconnect.enabled",
+      "l1.reconnect.timeout.millis", "l2.nha.ooo.maxDelayedAcks", "l2.nha.ooo.sendWindow",
+      "l2.objectmanager.loadObjectID.checkpoint.changes", "l2.objectmanager.loadObjectID.checkpoint.timeperiod" };
+
   /*********************************************************************************************************************
    * <code>
    * Section : L2 Cache Manager Properties 
@@ -91,23 +88,10 @@ public interface TCPropertiesConsts {
   public static final String   L2_OBJECTMANAGER_DGC_YOUNG_ENABLED                     = "l2.objectmanager.dgc.young.enabled";
   public static final String   L2_OBJECTMANAGER_DGC_YOUNG_FREQUENCY                   = "l2.objectmanager.dgc.young.frequencyInMillis";
   public static final String   L2_DATA_BACKUP_THROTTLE_TIME                           = "l2.data.backup.throttle.timeInMillis";
-  public static final String L2_OBJECTMANAGER_DELETEBATCHSIZE                       = "l2.objectmanager.deleteBatchSize";
-  public static final String L2_OBJECTMANAGER_CACHEPOLICY                           = "l2.objectmanager.cachePolicy";
-  public static final String L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT                  = "l2.objectmanager.maxObjectsToCommit";
-  public static final String L2_OBJECTMANAGER_MAXOBJECTS_INTXNOBJ_GROUPING          = "l2.objectmanager.maxObjectsInTxnObjGrouping";
-  public static final String L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING          = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
-  public static final String L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                 = "l2.objectmanager.fault.logging.enabled";
-  public static final String L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED             = "l2.objectmanager.persistor.logging.enabled";
-  public static final String L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF                = "l2.objectmanager.persistor.measure.performance";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                 = "l2.objectmanager.loadObjectID.fastLoad";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY       = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_MAPDB_LONGS_PERDISKENTRY = "l2.objectmanager.loadObjectID.mapsdatabase.longsPerDiskEntry";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF             = "l2.objectmanager.loadObjectID.measure.performance";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT      = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
-  public static final String L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP      = "l2.objectmanager.loadObjectID.checkpoint.maxsleep";
-  public static final String L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE               = "l2.objectmanager.passive.sync.batch.size";
-  public static final String L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_TIME            = "l2.objectmanager.passive.sync.throttle.timeInMillis";
-  public static final String L2_DATA_BACKUP_THROTTLE_TIME                           = "l2.data.backup.throttle.timeInMillis";
+  public static final String   L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF                = "l2.objectmanager.persistor.measure.performance";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MAPDB_LONGS_PERDISKENTRY = "l2.objectmanager.loadObjectID.mapsdatabase.longsPerDiskEntry";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF             = "l2.objectmanager.loadObjectID.measure.performance";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP      = "l2.objectmanager.loadObjectID.checkpoint.maxsleep";
 
   /*********************************************************************************************************************
    * <code>
