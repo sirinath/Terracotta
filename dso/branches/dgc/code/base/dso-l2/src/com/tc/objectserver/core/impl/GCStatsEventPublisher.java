@@ -75,7 +75,7 @@ public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter 
   private GCStatsImpl getGCStats(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = null;
     if ((gcStats = (GCStatsImpl) info.getObject()) == null) {
-      gcStats = new GCStatsImpl(info.getIteration(), info.isYoungGen(), info.getStartTime());
+      gcStats = new GCStatsImpl(info.getIteration(), info.isFullGC(), info.getStartTime());
       info.setObject(gcStats);
     }
     return gcStats;
