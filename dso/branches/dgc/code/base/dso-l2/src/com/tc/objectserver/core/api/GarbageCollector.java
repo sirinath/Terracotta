@@ -95,4 +95,5 @@ public interface GarbageCollector extends PrettyPrintable {
    */
   public void gcYoung();
 
+  public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory);
 }

@@ -8,6 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
+import com.tc.objectserver.core.api.GarbageCollectionInfoFactory;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.text.PrettyPrinter;
@@ -112,6 +113,7 @@ public class NullGarbageCollector implements GarbageCollector {
   public boolean deleteGarbage(GCResultContext resultContext) {
     return true;
   }
+  
 
   public void gcYoung() {
     // do nothing null
@@ -127,6 +129,10 @@ public class NullGarbageCollector implements GarbageCollector {
 
   public void notifyObjectsEvicted(Collection evicted) {
     // do nothing null
+  }
+
+  public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory) {
+    //do nothing
   }
 
 }

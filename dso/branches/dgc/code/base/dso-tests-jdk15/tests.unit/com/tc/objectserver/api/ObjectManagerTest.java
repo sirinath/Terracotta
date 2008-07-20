@@ -46,6 +46,7 @@ import com.tc.objectserver.context.ManagedObjectFlushingContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RecallObjectsContext;
 import com.tc.objectserver.core.api.Filter;
+import com.tc.objectserver.core.api.GarbageCollectionInfoFactory;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -2167,19 +2168,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
   }
-
-  /**
-  private static class Listener implements GCStatsEventListener {
-    final List<GCStats> gcEvents = new ArrayList<GCStats>();
-
-    
-
-    public void update(GCStats stats) {
-      gcEvents.add(stats);
-
-    }
-  }
-**/
+  
   private class ExplodingGarbageCollector implements GarbageCollector {
 
     private final RuntimeException toThrow;
@@ -2281,6 +2270,10 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     public boolean deleteGarbage(GCResultContext resultContext) {
       return true;
+    }
+    
+    public void setGarbageCollectionInfoFactory(GarbageCollectionInfoFactory factory) {
+      //do nothing
     }
 
     public void gcYoung() {
