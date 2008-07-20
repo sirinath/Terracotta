@@ -10,8 +10,6 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
-import com.tc.objectserver.core.api.GarbageCollectionInfoFactory;
 import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.GarbageCollectorEventListener;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -163,7 +161,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GarbageCollectionInfo gcInfo = new GarbageCollectionInfoImpl(gcIteration, fullGC);
+    GarbageCollectionInfo gcInfo = new GarbageCollectionInfo(gcIteration, fullGC);
     long startMillis = System.currentTimeMillis();
     gcInfo.setStartTime(startMillis);
     gcPublisher.fireGCStartEvent(gcInfo);
@@ -237,8 +235,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
 
     int gcIteration = gcIterationCounter.incrementAndGet();
-    GarbageCollectionInfoImpl gcInfo = new GarbageCollectionInfoImpl(gcIteration);
-    gcInfo.markYoungGen();
+    GarbageCollectionInfo gcInfo = new GarbageCollectionInfo(gcIteration, false);
 
     long startMillis = System.currentTimeMillis();
     gcInfo.setStartTime(startMillis);

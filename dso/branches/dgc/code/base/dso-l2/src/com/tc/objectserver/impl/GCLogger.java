@@ -5,7 +5,7 @@
 package com.tc.objectserver.impl;
 
 import com.tc.logging.TCLogger;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
+import com.tc.objectserver.core.impl.GarbageCollectionInfo;
 import com.tc.util.Assert;
 
 import java.util.List;
