@@ -8,8 +8,8 @@ import com.tc.objectserver.core.api.GarbageCollectionInfoFactory;
 
 public class GarbageCollectionInfoFactoryImpl implements GarbageCollectionInfoFactory {
 
-  public GarbageCollectionInfo newInstance(int iteration) {
-    return new GarbageCollectionInfoImpl(iteration);
+  public GarbageCollectionInfo newInstance(int iteration, boolean fullGC) {
+    return new GarbageCollectionInfoImpl(iteration, fullGC);
   }
 
 }

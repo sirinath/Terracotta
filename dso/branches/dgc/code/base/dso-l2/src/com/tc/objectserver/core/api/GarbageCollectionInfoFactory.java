@@ -5,6 +5,6 @@ package com.tc.objectserver.core.api;
 
 public interface GarbageCollectionInfoFactory {
   
-  public GarbageCollectionInfo newInstance(int iteration);
+  public GarbageCollectionInfo newInstance(int iteration, boolean fullGC);
 
 }
