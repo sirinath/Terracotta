@@ -233,7 +233,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   }
 
   public void gcYoung() {
-    logger.info("Young Gen : GC START");
     while (!requestGCStart()) {
       logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
       ThreadUtil.reallySleep(60000);
@@ -241,7 +240,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     int gcIteration = gcIterationCounter.incrementAndGet();
     GarbageCollectionInfoImpl gcInfo = new GarbageCollectionInfoImpl(gcIteration);
-    gcInfo.markFullGen();
+    gcInfo.markYoungGen();
 
     long startMillis = System.currentTimeMillis();
     gcInfo.setStartTime(startMillis);
@@ -313,7 +312,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
     gcPublisher.fireGCCycleCompletedEvent(gcInfo);
 
-    logger.info("Young Gen : GC FINISHED : " + gcInfo);
   }
 
   private Set getYoungGenRootIDs(Set candidateIDs) {
