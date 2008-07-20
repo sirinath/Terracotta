@@ -16,7 +16,7 @@ public class GCLoggerEventPublisher extends GarbageCollectorEventListenerAdapter
   }
   
   public void garbageCollectorStart(GarbageCollectionInfo info) {
-    gcLogger.log_GCStart(info.getBeginObjectCount(), !info.isYoungGen());
+    gcLogger.log_GCStart(info.getIteration(), info.isFullGC());
   }
 
   public void garbageCollectorMark(GarbageCollectionInfo info) {

@@ -152,7 +152,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     doGC(true);
   }
 
-  // TODO:: This needs to be refactored later
   private void doGC(boolean fullGC) {
     while (!requestGCStart()) {
       logger.info((fullGC ? "Full" : "YoungGen")
@@ -169,15 +168,16 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     // NOTE:It is important to set this reference collector before getting the roots ID and all object ids
     this.referenceCollector = new NewReferenceCollector();
 
-    ObjectIDSet managedIDs = objectManager.getAllObjectIDs();
-    Set rootIDs = objectManager.getRootIDs();
+    final ObjectIDSet candidateIDs = getGCCandidates(fullGC);
+    final Set rootIDs = getRootObjectIDs(fullGC, candidateIDs);
 
-    gcInfo.setBeginObjectCount(managedIDs.size());
+    gcInfo.setBeginObjectCount(candidateIDs.size());
+    gcPublisher.fireGCMarkEvent(gcInfo);
 
     if (gcState.isStopRequested()) { return; }
 
-    gcPublisher.fireGCMarkEvent(gcInfo);
-    ObjectIDSet gcResults = collect(NULL_FILTER, rootIDs, managedIDs, gcState);
+    Filter filter = (fullGC ? NULL_FILTER : new SelectiveFilter(candidateIDs));
+    ObjectIDSet gcResults = collect(filter, rootIDs, candidateIDs, gcState);
     gcInfo.setPreRescueCount(gcResults.size());
     gcPublisher.fireGCMarkResultsEvent(gcInfo);
 
@@ -190,8 +190,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
 
     gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
-
     gcPublisher.fireGCPausingEvent(gcInfo);
+    
     requestGCPause();
 
     if (gcState.isStopRequested()) { return; }
@@ -201,7 +201,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     if (gcState.isStopRequested()) { return; }
 
     long pauseStartMillis = System.currentTimeMillis();
-
     gcPublisher.fireGCPausedEvent(gcInfo);
 
     gcInfo.setCandidateGarbageCount(gcResults.size());
@@ -216,7 +215,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     long deleteStartMillis = System.currentTimeMillis();
     gcInfo.setPausedStageTime(deleteStartMillis - pauseStartMillis);
-
     gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     // Delete Garbage
@@ -227,86 +225,24 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcPublisher.fireGCCycleCompletedEvent(gcInfo);
   }
 
+  private Set getRootObjectIDs(boolean fullGC, Set candidateIDs) {
+    if (fullGC) {
+      return objectManager.getRootIDs();
+    } else {
+      return getYoungGenRootIDs(candidateIDs);
+    }
+  }
+
+  private ObjectIDSet getGCCandidates(boolean fullGC) {
+    if (fullGC) {
+      return objectManager.getAllObjectIDs();
+    } else {
+      return (ObjectIDSet) youngGenReferenceCollector.addYoungGenCandidateObjectIDsTo(new ObjectIDSet());
+    }
+  }
+
   public void gcYoung() {
     doGC(false);
-    while (!requestGCStart()) {
-      logger.info("GC: It is either disabled or is already running. Waiting for 1 min before checking again ...");
-      ThreadUtil.reallySleep(60000);
-    }
-
-    int gcIteration = gcIterationCounter.incrementAndGet();
-    GarbageCollectionInfo gcInfo = new GarbageCollectionInfo(gcIteration, false);
-
-    long startMillis = System.currentTimeMillis();
-    gcInfo.setStartTime(startMillis);
-    gcPublisher.fireGCStartEvent(gcInfo);
-
-    // NOTE:It is important to set this reference collector before getting the roots ID and all object ids
-    this.referenceCollector = new NewReferenceCollector();
-
-    // GET young Candidates
-    final ObjectIDSet candidateIDs = (ObjectIDSet) youngGenReferenceCollector
-        .addYoungGenCandidateObjectIDsTo(new ObjectIDSet());
-
-    // GET ROOTS
-    final Set rootIDs = getYoungGenRootIDs(candidateIDs);
-
-    gcInfo.setBeginObjectCount(candidateIDs.size());
-
-    if (gcState.isStopRequested()) { return; }
-
-    gcPublisher.fireGCMarkEvent(gcInfo);
-    Filter youngGenFilter = new SelectiveFilter(candidateIDs);
-    ObjectIDSet gcResults = collect(youngGenFilter, rootIDs, candidateIDs, gcState);
-    gcInfo.setPreRescueCount(gcResults.size());
-    gcPublisher.fireGCMarkResultsEvent(gcInfo);
-
-    if (gcState.isStopRequested()) { return; }
-
-    List rescueTimes = new ArrayList();
-
-    gcResults = rescue(gcResults, rescueTimes);
-    gcInfo.setRescue1Count(gcResults.size());
-    gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
-
-    gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
-
-    gcPublisher.fireGCPausingEvent(gcInfo);
-    requestGCPause();
-
-    if (gcState.isStopRequested()) { return; }
-
-    objectManager.waitUntilReadyToGC();
-
-    if (gcState.isStopRequested()) { return; }
-
-    long pauseStartMillis = System.currentTimeMillis();
-
-    gcPublisher.fireGCPausedEvent(gcInfo);
-
-    gcInfo.setCandidateGarbageCount(gcResults.size());
-    gcPublisher.fireGCRescue2StartEvent(gcInfo);
-    SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
-    gcInfo.setRescueTimes(rescueTimes);
-    gcInfo.setDeleted(toDelete);
-
-    if (gcState.isStopRequested()) { return; }
-
-    this.referenceCollector = NULL_CHANGE_COLLECTOR;
-
-    long deleteStartMillis = System.currentTimeMillis();
-    gcInfo.setPausedStageTime(deleteStartMillis - pauseStartMillis);
-
-    gcPublisher.fireGCMarkCompleteEvent(gcInfo);
-
-    // Delete Garbage
-    GCResultContext gcResultContext = new GCResultContext(gcIteration, toDelete, gcInfo, gcPublisher);
-    deleteGarbage(gcResultContext);
-
-    long endMillis = System.currentTimeMillis();
-    gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
-    gcPublisher.fireGCCycleCompletedEvent(gcInfo);
-
   }
 
   private Set getYoungGenRootIDs(Set candidateIDs) {
