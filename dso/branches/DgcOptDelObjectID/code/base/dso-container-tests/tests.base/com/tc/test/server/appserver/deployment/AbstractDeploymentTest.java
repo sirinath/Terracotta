@@ -21,6 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 public abstract class AbstractDeploymentTest extends TCTestCase {
 
   protected Log         logger              = LogFactory.getLog(getClass());
@@ -30,10 +33,12 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
   private final Map     disabledVariants    = new HashMap();
   private final List    disabledJavaVersion = new ArrayList();
 
+  public static Test suite() {
+    return new ErrorTestSetup(new TestSuite(AbstractDeploymentTest.class));
+  }
+
   public AbstractDeploymentTest() {
-//    if (isSessionTest() && (appServerInfo().getId() == AppServerInfo.GLASSFISH)) {
-//      disableAllTests();
-//    }
+    //
   }
 
   public boolean shouldDisable() {
