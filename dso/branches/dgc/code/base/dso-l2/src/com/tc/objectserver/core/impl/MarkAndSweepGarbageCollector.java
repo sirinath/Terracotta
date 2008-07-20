@@ -225,7 +225,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     // Delete Garbage
-    deleteGarbage(new GCResultContext(gcIteration, gcInfo, gcPublisher, toDelete));
+    deleteGarbage(new GCResultContext(gcIteration,toDelete, gcInfo, gcPublisher));
 
     long endMillis = System.currentTimeMillis();
     gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
