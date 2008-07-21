@@ -46,10 +46,14 @@ import java.util.TimerTask;
 
 public class Lock {
   private static final TCLogger            logger              = TCLogging.getLogger(Lock.class);
-  private final static boolean             LOCK_LEASE_ENABLE   = TCPropertiesImpl.getProperties()
-                                                                   .getBoolean(TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_ENABLED);
-  private final static int                 LOCK_LEASE_TIME     = TCPropertiesImpl.getProperties()
-                                                                   .getInt(TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_LEASETIME_INMILLS);
+  private final static boolean             LOCK_LEASE_ENABLE   = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getBoolean(
+                                                                               TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_ENABLED);
+  private final static int                 LOCK_LEASE_TIME     = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getInt(
+                                                                           TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_LEASETIME_INMILLS);
   public final static Lock                 NULL_LOCK           = new Lock(LockID.NULL_ID, 0,
                                                                           new LockEventListener[] {}, true,
                                                                           LockManagerImpl.ALTRUISTIC_LOCK_POLICY,
@@ -180,8 +184,8 @@ public class Lock {
     for (Iterator i = this.waiters.values().iterator(); i.hasNext();) {
       LockWaitContext wc = (LockWaitContext) i.next();
       NodeID cid = wc.getNodeID();
-      waits[count++] = new Waiter(cid, channelManager.getChannelAddress(cid), wc.getThreadID(), wc.getTimerSpec(),
-                                  wc.getTimestamp());
+      waits[count++] = new Waiter(cid, channelManager.getChannelAddress(cid), wc.getThreadID(), wc.getTimerSpec(), wc
+          .getTimestamp());
     }
 
     return new LockMBeanImpl(lockID, holds, reqs, waits);
@@ -197,8 +201,8 @@ public class Lock {
                                                           this.holders.values(), this.waiters.values()));
   }
 
-  boolean tryRequestLock(ServerThreadContext txn, int requestedLockLevel, TimerSpec lockRequestTimeout, TCLockTimer waitTimer,
-                         TimerCallback callback, Sink lockResponseSink) {
+  boolean tryRequestLock(ServerThreadContext txn, int requestedLockLevel, TimerSpec lockRequestTimeout,
+                         TCLockTimer waitTimer, TimerCallback callback, Sink lockResponseSink) {
     return requestLock(txn, requestedLockLevel, lockResponseSink, true, lockRequestTimeout, waitTimer, callback);
   }
 
@@ -226,8 +230,7 @@ public class Lock {
     // request a lock you already hold
     Holder holder = getHolder(txn);
     if (noBlock && !lockRequestTimeout.needsToWait() && holder == null
-        && (requestedLockLevel != LockLevel.READ || !this.isRead())
-        && (getHoldersCount() > 0 || hasGreedyHolders())) {
+        && (requestedLockLevel != LockLevel.READ || !this.isRead()) && (getHoldersCount() > 0 || hasGreedyHolders())) {
       // These requests are the ones in the wire when the greedy lock was given out to the client.
       // We can safely ignore it as the clients will be able to award it locally.
       if (!isPolicyGreedy() || !canAwardGreedilyOnTheClient(txn, requestedLockLevel)) {
@@ -316,9 +319,9 @@ public class Lock {
     addPendingLockRequest(txn, lockLevel, lockResponseSink);
   }
 
-  synchronized void addRecalledTryLockPendingRequest(ServerThreadContext txn, int lockLevel, TimerSpec lockRequestTimeout,
-                                                     Sink lockResponseSink, TCLockTimer waitTimer,
-                                                     TimerCallback callback) {
+  synchronized void addRecalledTryLockPendingRequest(ServerThreadContext txn, int lockLevel,
+                                                     TimerSpec lockRequestTimeout, Sink lockResponseSink,
+                                                     TCLockTimer waitTimer, TimerCallback callback) {
     recordLockRequestStat(txn.getId().getNodeID(), txn.getId().getClientThreadID());
 
     if (!lockRequestTimeout.needsToWait()) {
@@ -425,8 +428,8 @@ public class Lock {
     for (Iterator i = greedyHolders.values().iterator(); i.hasNext();) {
       Holder holder = (Holder) i.next();
       holder.getSink().add(
-                           createLockRecallResponseContext(holder.getLockID(), holder.getThreadContext()
-                               .getId(), recallLevel));
+                           createLockRecallResponseContext(holder.getLockID(), holder.getThreadContext().getId(),
+                                                           recallLevel));
       recalled = true;
     }
   }
@@ -543,8 +546,8 @@ public class Lock {
 
   // This method reestablished Wait State and schedules wait timeouts too. There are cases where we may need to ignore a
   // wait, if we already know about it. Note that it could be either in waiting or pending state.
-  synchronized void addRecalledWaiter(ServerThreadContext txn, TimerSpec call, int lockLevel,
-                                      Sink lockResponseSink, TCLockTimer waitTimer, TimerCallback callback) {
+  synchronized void addRecalledWaiter(ServerThreadContext txn, TimerSpec call, int lockLevel, Sink lockResponseSink,
+                                      TCLockTimer waitTimer, TimerCallback callback) {
     // debug("addRecalledWaiter() - BEGIN -", txn, ", ", call);
 
     LockWaitContext waitContext = new LockWaitContextImpl(txn, this, call, lockLevel, lockResponseSink);
@@ -871,7 +874,7 @@ public class Lock {
 
   /**
    * Remove the specified lock hold.
-   *
+   * 
    * @return true if the current hold was an upgrade
    */
   synchronized boolean removeCurrentHold(ServerThreadContext threadContext) {
@@ -988,7 +991,7 @@ public class Lock {
    * This clears out stuff from the pending and wait lists that belonged to a dead session. It occurs to me that this is
    * a race condition because a request could come in on the connection, then the cleanup could happen, and then the
    * request could be processed. We need to drop requests that are processed after the cleanup
-   *
+   * 
    * @param nid
    */
   synchronized void clearStateForNode(NodeID nid) {

@@ -41,10 +41,10 @@ public abstract class ThreadDumpUtilJdk16 {
           if (heldMap != null && pendingMap != null) {
             Long vmThreadID = ThreadIDMapInfo.getTCThreadID(threadInfo.getThreadId());
             if ((vmThreadID != null) && (heldMap.get(vmThreadID) != null)) {
-              sb.append("LOCK HELD: " + heldMap.get(vmThreadID) + "\n");
+              sb.append("LOCKS HELD: " + heldMap.get(vmThreadID) + "\n");
             }
             if ((vmThreadID != null) && (pendingMap.get(vmThreadID) != null)) {
-              sb.append("LOCK PENDING FOR: " + pendingMap.get(vmThreadID) + "\n");
+              sb.append("LOCKS WAITING FOR: " + pendingMap.get(vmThreadID) + "\n");
             }
           }
 
