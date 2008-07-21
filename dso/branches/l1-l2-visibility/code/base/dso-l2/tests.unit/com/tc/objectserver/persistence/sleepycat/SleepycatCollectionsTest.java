@@ -1,6 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 20032008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.
+ * All rights reserved.
  */
 package com.tc.objectserver.persistence.sleepycat;
 
@@ -11,26 +11,21 @@ import java.io.IOException;
 
 public class SleepycatCollectionsTest extends TCTestCase {
 
-  // private SleepycatPersistor persistor;
-  // private PersistenceTransactionProvider ptp;
   private DBEnvironment env;
-  // private PersistentCollectionFactory collectionsFactory;
-  // private SleepycatCollectionsPersistor collectionsPersistor;
   private static int    dbHomeCounter = 0;
   private static File   tempDirectory;
+
+  public SleepycatCollectionsTest() {
+    // MNK649
+    disableAllUntil("2008-08-15");
+  }
 
   @Override
   public void setUp() throws Exception {
 
     if (env != null) env.close();
     File dbHome = newDBHome();
-    // TCLogger logger = TCLogging.getLogger(getClass());
-    // CustomSerializationAdapterFactory saf = new CustomSerializationAdapterFactory();
     env = new DBEnvironment(true, dbHome);
-    // persistor = new SleepycatPersistor(logger, env, saf);
-    // ptp = persistor.getPersistenceTransactionProvider();
-    // collectionsFactory = persistor.getPersistentCollectionFactory();
-    // collectionsPersistor = persistor.getCollectionsPersistor();
   }
 
   // XXX:: Check SleepycatSerializationTest if you want know why its done like this or ask Orion.
@@ -51,6 +46,10 @@ public class SleepycatCollectionsTest extends TCTestCase {
     // persistor = null;
     // ptp = null;
     env = null;
+  }
+
+  public void testDummy() {
+    // dummy test method so this test won't fail
   }
 
   // public void testSleepycatPersistableMap() throws Exception {
@@ -189,7 +188,7 @@ public class SleepycatCollectionsTest extends TCTestCase {
   // map.put(new ObjectID(j), new ObjectID(100 + j));
   // map.put(new Integer(j), new Long(j));
   // map.put(new String("" + j), new String("" + j));
-  // map.put(new Double(j + 0.005), new Float(j - 0.004));
+  // map.put(new Double(j + 0.005), new Float(j 0.004));
   // }
   // }
 
@@ -199,11 +198,11 @@ public class SleepycatCollectionsTest extends TCTestCase {
   // map.put(new ObjectID(j), new ObjectID(100 + j));
   // map.put(new Integer(j), new Long(j));
   // map.put(new String("" + j), new String("" + j));
-  // map.put(new Double(j + 0.005), new Float(j - 0.004));
-  // map.remove(new ObjectID(j - 25));
-  // map.remove(new Integer(j - 25));
-  // map.remove(new String("" + (j - 25)));
-  // map.remove(new Double((j - 25) + 0.005));
+  // map.put(new Double(j + 0.005), new Float(j 0.004));
+  // map.remove(new ObjectID(j 25));
+  // map.remove(new Integer(j 25));
+  // map.remove(new String("" + (j 25)));
+  // map.remove(new Double((j 25) + 0.005));
   // }
   // }
 
@@ -213,15 +212,13 @@ public class SleepycatCollectionsTest extends TCTestCase {
   // map.put(new ObjectID(j), new ObjectID(100 + j));
   // map.put(new Integer(j), new Long(j));
   // map.put(new String("" + j), new String("" + j));
-  // map.put(new Double(j + 0.005), new Float(j - 0.004));
-  // map.remove(new ObjectID(j - 25));
-  // map.remove(new Integer(j - 25));
-  // map.remove(new String("" + (j - 25)));
-  // map.remove(new Double((j - 25) + 0.005));
+  // map.put(new Double(j + 0.005), new Float(j 0.004));
+  // map.remove(new ObjectID(j 25));
+  // map.remove(new Integer(j 25));
+  // map.remove(new String("" + (j 25)));
+  // map.remove(new Double((j 25) + 0.005));
   // if (i % 20 == 19) {
   // map.clear();
   // }
   // }
-  // }
-
 }
