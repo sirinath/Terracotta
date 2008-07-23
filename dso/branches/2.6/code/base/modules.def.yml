@@ -981,6 +981,7 @@ modules:
         - legacy-test-tree
         - management
         - management-api
+        - sigarstats
         - simulator
         - thirdparty
         - thirdparty-api

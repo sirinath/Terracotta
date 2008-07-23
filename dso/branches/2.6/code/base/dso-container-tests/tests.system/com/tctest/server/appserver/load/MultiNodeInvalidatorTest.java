@@ -15,6 +15,7 @@ import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
 import com.tc.test.server.appserver.deployment.Deployment;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
+import com.tc.test.server.appserver.load.LowMemWorkaround;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.listeners.MultiNodeInvalidatorListener;
@@ -77,7 +78,7 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
   }
 
   public void testLoad() throws Throwable {
-    runLoad(LowMemWorkaround.computeNumberOfNodes(4, appServerInfo()));
+    runLoad(LowMemWorkaround.computeNumberOfNodes(4, 2, appServerInfo()));
   }
 
   private void runLoad(final int numServers) throws Throwable {
