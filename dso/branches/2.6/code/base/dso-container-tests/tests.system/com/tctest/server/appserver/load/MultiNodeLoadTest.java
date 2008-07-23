@@ -8,6 +8,7 @@ import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
 import com.tc.test.server.appserver.deployment.Deployment;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
+import com.tc.test.server.appserver.load.LowMemWorkaround;
 import com.tc.test.server.appserver.load.Node;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.CounterServlet;
@@ -49,7 +50,7 @@ public class MultiNodeLoadTest extends AbstractDeploymentTest {
   }
 
   protected final void runLoad(boolean sticky) throws Throwable {
-    int numNodes = LowMemWorkaround.computeNumberOfNodes(4, appServerInfo());
+    int numNodes = LowMemWorkaround.computeNumberOfNodes(4, 2, appServerInfo());
     assertTimeDirection();
     runNodes(numNodes, sticky);
   }
