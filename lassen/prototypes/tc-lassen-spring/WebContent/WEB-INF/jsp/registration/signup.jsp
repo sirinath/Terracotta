@@ -1,3 +1,4 @@
+<%@ page import="org.terracotta.lassen.web.WelcomeController" %>
 <%@ include file="/WEB-INF/jsp/includes.jsp"%>
 <html>
 <head>
@@ -36,7 +37,8 @@
 		</tr>
 	</table>
 </form:form>
-<p><a href='<c:url value="/welcome.do"/>'>back to index</a></p>
+
+<p><a href="<c:url value="<%=UrlHelper.getControllerRequestMapping(WelcomeController.class)%>"/>">back to index</a></p>
 
 </body>
 </html>

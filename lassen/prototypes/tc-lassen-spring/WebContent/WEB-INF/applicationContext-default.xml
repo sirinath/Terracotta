@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xmlns:p="http://www.springframework.org/schema/p" xmlns:aop="http://www.springframework.org/schema/aop"
-		xmlns:context="http://www.springframework.org/schema/context" xmlns:jee="http://www.springframework.org/schema/jee"
-		xmlns:tx="http://www.springframework.org/schema/tx"
-		xsi:schemaLocation="
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
 			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
 			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
 			http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.5.xsd
 			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
-
-	<!-- ========================= BUSINESS OBJECT DEFINITIONS ========================= -->
-
+	<!--
+		========================= BUSINESS OBJECT DEFINITIONS
+		=========================
+	-->
 	<!--
 		Activates various annotations to be detected in bean classes: Spring's
 		@Required and @Autowired, as well as JSR 250's @PostConstruct,
 		@PreDestroy and @Resource (if available) and JPA's @PersistenceContext
 		and @PersistenceUnit (if available).
 	-->
-	<context:annotation-config/>
-
-	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService"/>
-	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator"/>
-	<bean id="registrationService" class="org.terracotta.lassen.services.impl.DefaultRegistrationService"/>
-	
+	<context:annotation-config />
+	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService" />
+	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator" />
+	<bean id="registrationService"
+		class="org.terracotta.lassen.services.impl.DefaultRegistrationService" />
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
-		<property name="host"><value>smtp.edpnet.be</value></property>
-	</bean>	
+		<property name="host">
+			<value>smtp.edpnet.be</value>
+		</property>
+	</bean>
+	<bean id="freemarkerMailConfiguration"
+		class="org.springframework.ui.freemarker.FreeMarkerConfigurationFactoryBean">
+		<property name="templateLoaderPath" value="/WEB-INF/templates"/>
+	</bean>
 </beans>
