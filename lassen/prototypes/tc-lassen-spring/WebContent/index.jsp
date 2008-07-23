@@ -1,4 +1,4 @@
-<%@ page import="org.terracotta.lassen.util.UrlHelper,org.terracotta.lassen.web.WelcomeController" %>
+<%@ page import="org.terracotta.lassen.web.WelcomeController" %>
 <%@ include file="/WEB-INF/jsp/includes.jsp" %>
 
 <%-- Redirected because we can't set the welcome page to a virtual URL. --%>
