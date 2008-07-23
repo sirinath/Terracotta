@@ -9,7 +9,6 @@ import org.dijon.ContainerResource;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
-import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XTextArea;
@@ -50,12 +49,9 @@ public class ClassesPanel extends XContainer {
 
   public ClassesPanel(ClassesNode classesNode) {
     super();
-    AdminClientContext cntx = AdminClient.getContext();
 
-    load((ContainerResource) cntx.topRes.getComponent("ClassesPanel"));
-
+    load((ContainerResource) AdminClient.getContext().getComponent("ClassesPanel"));
     m_classesNode = classesNode;
-
     DSOClassInfo[] classInfo = getClassInfos();
 
     m_table = (ClassesTable) findComponent("ClassTable");
@@ -64,7 +60,7 @@ public class ClassesPanel extends XContainer {
     m_tree = (XTree) findComponent("ClassTree");
     m_tree.setShowsRootHandles(true);
     m_tree.setModel(new ClassTreeModel(classInfo));
-
+    
     m_treeMap = (ClassesTreeMap) findComponent("ClassesTreeMap");
     m_treeMap.setModel((ClassTreeModel) m_tree.getModel());
 
@@ -77,8 +73,7 @@ public class ClassesPanel extends XContainer {
   }
 
   private DSOClassInfo[] getClassInfos() {
-    ConnectionContext cc = m_classesNode.getConnectionContext();
-    DSOClassInfo[] classInfo = ClassesHelper.getHelper().getClassInfo(cc);
+    DSOClassInfo[] classInfo = m_classesNode.getClusterModel().getClassInfo();
     ArrayList<DSOClassInfo> list = new ArrayList<DSOClassInfo>();
 
     if (classInfo != null) {
@@ -168,8 +163,8 @@ public class ClassesPanel extends XContainer {
   public void refresh() {
     AdminClientContext acc = AdminClient.getContext();
 
-    acc.controller.setStatus(acc.getMessage("dso.classes.refreshing"));
-    acc.controller.block();
+    acc.setStatus(acc.getMessage("dso.classes.refreshing"));
+    acc.block();
 
     DSOClassInfo[] classInfo = getClassInfos();
     m_table.setClassInfo(classInfo);
@@ -177,7 +172,7 @@ public class ClassesPanel extends XContainer {
     m_treeMap.setModel((ClassTreeModel) m_tree.getModel());
     updateConfigText();
 
-    acc.controller.clearStatus();
-    acc.controller.unblock();
+    acc.clearStatus();
+    acc.unblock();
   }
 }

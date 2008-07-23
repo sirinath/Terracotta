@@ -14,6 +14,7 @@ import com.tc.test.server.appserver.StandardAppServerParameters;
 import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
 import com.tc.test.server.appserver.deployment.Deployment;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
+import com.tc.test.server.appserver.deployment.ServerTestSetup;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.concurrent.ThreadUtil;
@@ -21,6 +22,8 @@ import com.tctest.webapp.listeners.MultiNodeInvalidatorListener;
 import com.tctest.webapp.servlets.MultiNodeInvalidatorSerlvet;
 
 import java.util.Random;
+
+import junit.framework.Test;
 
 public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
   private static final String CONTEXT                = "MultiNodeInvalidatorTest";
@@ -41,10 +44,13 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
   private Deployment          deployment;
   private TcConfigBuilder     configBuilder;
 
-  public MultiNodeInvalidatorTest() {
-    disableAllUntil("2008-07-14");
+  public static Test suite() {
+    return new ServerTestSetup(MultiNodeInvalidatorTest.class);
   }
 
+  public MultiNodeInvalidatorTest() {
+    //
+  }
 
   private Deployment makeDeployment() throws Exception {
     DeploymentBuilder builder = makeDeploymentBuilder(CONTEXT + ".war");
@@ -77,8 +83,8 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
     return server;
   }
 
-  public void testFourNodeLoad() throws Throwable {
-    runLoad(4);
+  public void testLoad() throws Throwable {
+    runLoad(LowMemWorkaround.computeNumberOfNodes(4, appServerInfo()));
   }
 
   private void runLoad(final int numServers) throws Throwable {
@@ -135,6 +141,7 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
         if (r.nextInt(ABANDON_RATE) == 0) {
           sessions[getRandomSessionIndex()] = newSession();
         }
+        ThreadUtil.reallySleep(r.nextInt(5) + 1);
       }
     }
 
