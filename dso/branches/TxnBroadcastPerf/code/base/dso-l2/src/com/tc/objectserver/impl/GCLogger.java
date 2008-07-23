@@ -5,40 +5,32 @@
 package com.tc.objectserver.impl;
 
 import com.tc.logging.TCLogger;
-import com.tc.objectserver.api.GCStats;
-import com.tc.stats.LossyStack;
+import com.tc.objectserver.core.impl.GarbageCollectionInfo;
+import com.tc.util.Assert;
 
 import java.util.List;
 import java.util.Set;
 
 public class GCLogger {
-  private TCLogger         logger;
-  private final LossyStack gcHistory = new LossyStack(1500);
-  private final boolean    verboseGC;
+  private final TCLogger logger;
+  private final boolean  verboseGC;
 
   public GCLogger(TCLogger logger, boolean verboseGC) {
+    Assert.assertNotNull(logger);
     this.logger = logger;
     this.verboseGC = verboseGC;
   }
 
-  public void push(Object obj) {
-    gcHistory.push(obj);
+  public void log_GCStart(long iteration, boolean fullGC) {
+    if (verboseGC()) logGC("GC: " + (fullGC ? "Full GC" : "YoungGen GC") + " START " + iteration);
   }
 
-  public GCStats[] getGarbageCollectorStats() {
-    return (GCStats[]) gcHistory.toArray(new GCStats[gcHistory.depth()]);
+  public void log_markStart(int size) {
+    if (verboseGC()) logGC("GC: pre-GC managed id count: " + size);
   }
 
-  public void log_GCStart(long iteration) {
-    if (verboseGC()) logGC("GC: START " + iteration);
-  }
-
-  public void log_markStart(Set managedIdSet) {
-    if (verboseGC()) logGC("GC: pre-GC managed id count: " + managedIdSet.size());
-  }
-
-  public void log_markResults(Set gcResults) {
-    if (verboseGC()) logGC("GC: pre-rescue GC results: " + gcResults.size());
+  public void log_markResults(int size) {
+    if (verboseGC()) logGC("GC: pre-rescue GC results: " + size);
   }
 
   public void log_quiescing() {
@@ -49,8 +41,12 @@ public class GCLogger {
     if (verboseGC()) logGC("GC: paused.");
   }
 
-  public void log_rescue(int pass, Set objectIDs) {
-    if (verboseGC()) logGC("GC: rescue pass " + pass + " on " + objectIDs.size() + " objects...");
+  public void log_rescue_complete(int pass, int count) {
+    if (verboseGC()) logGC("GC: rescue pass " + pass + " completed. gc candidates = " + count + " objects...");
+  }
+
+  public void log_rescue_start(int pass, int count) {
+    if (verboseGC()) logGC("GC: rescue pass " + pass + " on " + count + " objects...");
   }
 
   public void log_sweep(Set toDelete) {
@@ -61,21 +57,17 @@ public class GCLogger {
     if (verboseGC()) logGC("GC: notifying gc complete...");
   }
 
-  public void log_GCDisabled() {
-    if (verboseGC()) logGC("GC: Not running gc since its disabled...");
-  }
-
-  public void log_GCComplete(GCStats gcStats, List rescueTimes) {
+  public void log_GCComplete(GarbageCollectionInfo gcInfo, List rescueTimes) {
     if (verboseGC()) {
       for (int i = 0; i < rescueTimes.size(); i++) {
         logGC("GC: rescue " + (i + 1) + " time   : " + rescueTimes.get(i) + " ms.");
       }
-      logGC("GC: paused gc time  : " + gcStats.getPausedTime() + " ms.");
-      logGC("GC: delete in-memory garbage time  : " + gcStats.getDeleteTime() + " ms.");
-      logGC("GC: total gc time   : " + gcStats.getElapsedTime() + " ms.");
-      logGC("GC: STOP " + gcStats.getIteration());
+      logGC("GC: paused gc time  : " + gcInfo.getPausedStageTime() + " ms.");
+      logGC("GC: delete in-memory garbage time  : " + gcInfo.getDeleteStageTime() + " ms.");
+      logGC("GC: total gc time   : " + gcInfo.getElapsedTime() + " ms.");
+      logGC("GC: " + (gcInfo.isFullGC() ? "Full GC" : "YoungGen GC") + " STOP " + gcInfo.getIteration());
     } else {
-      logGC("GC: Complete : " + gcStats);
+      logGC("GC: Complete : " + gcInfo);
     }
   }
 

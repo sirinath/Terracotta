@@ -6,30 +6,26 @@ package com.tc.object.logging;
 
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.tx.TimerSpec;
-import com.tc.util.Util;
 
 public class RuntimeLoggerImpl implements RuntimeLogger {
-  private static final TCLogger internalLogger = TCLogging.getLogger(RuntimeLoggerImpl.class);
+  private final TCLogger logger;
 
-  private final TCLogger        logger;
+  private boolean        lockDebug;
+  private boolean        fieldChangeDebug;
+  private boolean        arrayChangeDebug;
+  private boolean        newManagedObjectDebug;
+  private boolean        distributedMethodDebug;
+  private boolean        nonPortableDump;
+  private boolean        waitNotifyDebug;
 
-  private boolean               lockDebug;
-  private boolean               fieldChangeDebug;
-  private boolean               arrayChangeDebug;
-  private boolean               newManagedObjectDebug;
-  private boolean               distributedMethodDebug;
-  private boolean               nonPortableDump;
-  private boolean               waitNotifyDebug;
-
-  private boolean               fullStack;
-  private boolean               caller;
-  private boolean               autoLockDetails;
+  private boolean        fullStack;
+  private boolean        caller;
+  private boolean        autoLockDetails;
 
   public RuntimeLoggerImpl(DSOClientConfigHelper configHelper) {
     this.logger = CustomerLogging.getDSORuntimeLogger();
@@ -60,7 +56,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setFieldChangeDebug(boolean fieldChangeDebug) {
     this.fieldChangeDebug = fieldChangeDebug;
   }
-  
+
   public boolean getFieldChangeDebug() {
     return this.fieldChangeDebug;
   }
@@ -68,7 +64,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setArrayChangeDebug(boolean arrayChangeDebug) {
     this.arrayChangeDebug = arrayChangeDebug;
   }
-  
+
   public boolean getArrayChangeDebug() {
     return this.arrayChangeDebug;
   }
@@ -76,7 +72,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setNewManagedObjectDebug(boolean newManagedObjectDebug) {
     this.newManagedObjectDebug = newManagedObjectDebug;
   }
-  
+
   public boolean getNewManagedObjectDebug() {
     return this.newManagedObjectDebug;
   }
@@ -84,7 +80,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setWaitNotifyDebug(boolean waitNotifyDebug) {
     this.waitNotifyDebug = waitNotifyDebug;
   }
-  
+
   public boolean getWaitNotifyDebug() {
     return this.waitNotifyDebug;
   }
@@ -92,7 +88,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setDistributedMethodDebug(boolean distributedMethodDebug) {
     this.distributedMethodDebug = distributedMethodDebug;
   }
-  
+
   public boolean getDistributedMethodDebug() {
     return this.distributedMethodDebug;
   }
@@ -108,27 +104,27 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
   public void setFullStack(boolean fullStack) {
     this.fullStack = fullStack;
   }
-  
+
   public boolean getFullStack() {
     return this.fullStack;
   }
-  
+
   public void setCaller(boolean caller) {
     this.caller = caller;
   }
-  
+
   public boolean getCaller() {
     return this.caller;
   }
-  
+
   public void setAutoLockDetails(boolean autoLockDetails) {
     this.autoLockDetails = autoLockDetails;
   }
-  
+
   public boolean getAutoLockDetails() {
     return this.autoLockDetails;
   }
-  
+
   public void lockAcquired(String lockName, int level, Object instance, TCObject tcObject) {
     boolean isAutoLock = ByteCodeUtil.isAutolockName(lockName);
 
@@ -162,7 +158,7 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
 
   private void appendCall(StringBuffer message) {
     if (fullStack || caller) {
-      StackTraceElement[] stack = getTrimmedStack();
+      StackTraceElement[] stack = new Throwable().getStackTrace();
       if (stack != null) {
         message.append("\n");
         if (fullStack) {
@@ -262,38 +258,4 @@ public class RuntimeLoggerImpl implements RuntimeLogger {
     if (obj == null) { return null; }
     return obj.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(obj));
   }
-
-  private static StackTraceElement[] getTrimmedStack() {
-    StackTraceElement[] stack = new Throwable().getStackTrace();
-    if ((stack == null) || (stack.length <= 1)) {
-      internalLogger.warn("funny stack returned: " + Util.enumerateArray(stack));
-      return null;
-    }
-
-    int index = 0;
-    while (index < stack.length) {
-      String className = stack[index].getClassName();
-
-      if (className.equals("com.tc.object.bytecode.ManagerUtil")) {
-        break;
-      }
-
-      index++;
-    }
-
-    // advance to the calling frame
-    index++;
-
-    if (index < (stack.length - 1)) {
-      StackTraceElement[] rv = new StackTraceElement[stack.length - index];
-      System.arraycopy(stack, index, rv, 0, rv.length);
-      return rv;
-    } else {
-      internalLogger.warn("could not find proper stack frame: " + Util.enumerateArray(stack));
-      return null;
-    }
-
-    // unreachable
-  }
-
 }

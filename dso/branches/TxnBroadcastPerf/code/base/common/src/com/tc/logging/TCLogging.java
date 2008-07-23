@@ -84,6 +84,8 @@ public class TCLogging {
   private static FileLock           currentLoggingDirectoryFileLock    = null;
   private static boolean            lockingDisabled                    = false;
 
+  private static final String       CONSOLE_LOG_LEVEL_PROPERTY_NAME    = "tc.logging.console.level";
+
   public static JMXAppender getJMXAppender() {
     return jmxAppender;
   }
@@ -363,6 +365,11 @@ public class TCLogging {
     Thread.currentThread().setContextClassLoader(TCLogging.class.getClassLoader());
 
     try {
+      String consoleLogLevelStr = System.getProperty(CONSOLE_LOG_LEVEL_PROPERTY_NAME);
+      Level consoleLogLevel = null;
+      if (consoleLogLevelStr != null && !consoleLogLevelStr.trim().equals("")) {
+        consoleLogLevel = Level.toLevel(consoleLogLevelStr);
+      }
       currentLoggingDirectory = null;
 
       Logger jettyLogger = Logger.getLogger("org.mortbay");
@@ -383,7 +390,7 @@ public class TCLogging {
 
       internalLogger.setLevel(Level.INFO);
       customerLogger.setLevel(Level.INFO);
-      consoleLogger.setLevel(Level.INFO);
+      consoleLogger.setLevel(consoleLogLevel == null? Level.INFO: consoleLogLevel);
       benchLogger.setLevel(Level.INFO);
 
       boolean isDev = developmentConfiguration();
@@ -438,9 +445,18 @@ public class TCLogging {
   }
 
   private static void writeVersion() {
-    ProductInfo info = ProductInfo.getInstance();
-    CustomerLogging.getConsoleLogger().info(info.toLongString());
-    getLogger(TCLogging.class).info(info.toLongString());
+    ProductInfo info = ProductInfo.getInstance();    
+    TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
+
+    // Write build info always
+    String longProductString = info.toLongString();
+    consoleLogger.info(longProductString);
+    
+    // Write patch info, if any
+    if(info.isPatched()) {
+      String longPatchString = info.toLongPatchString();
+      consoleLogger.info(longPatchString);
+    }
   }
 
   private static void writeSystemProperties() {
@@ -455,7 +471,7 @@ public class TCLogging {
         Object objKey = entry.getKey();
         Object objValue = entry.getValue();
 
-        // It's possible someone is being bad and shoving non-String keys or values into system props
+        // Filter out any bad non-String keys or values in system properties 
         if (objKey instanceof String && objValue instanceof String) {
           String key = (String) objKey;
           keys.add(key);

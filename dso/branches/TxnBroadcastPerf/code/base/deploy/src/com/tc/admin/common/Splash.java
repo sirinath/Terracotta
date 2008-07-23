@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin.common;
 
@@ -34,7 +35,7 @@ public class Splash extends Dialog {
     label.setIcon(new ImageIcon(getClass().getResource("/com/tc/admin/icons/logo.png")));
     label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     Container contentPane = (Container) getContentPane();
-    contentPane.setBorder(BorderFactory.createEtchedBorder());
+    contentPane.setBorder(UIManager.getBorder("InternalFrame.border"));
     contentPane.setLayout(new BorderLayout());
     contentPane.add(label, BorderLayout.CENTER);
     JProgressBar progressBar = new JProgressBar();

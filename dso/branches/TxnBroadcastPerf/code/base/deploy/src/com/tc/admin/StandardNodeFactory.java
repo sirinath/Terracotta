@@ -1,9 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
-import com.tc.config.schema.L2Info;
+import com.tc.admin.model.IServer;
 
 public class StandardNodeFactory extends AbstractNodeFactory {
   public ClusterNode createClusterNode() {
@@ -16,8 +17,8 @@ public class StandardNodeFactory extends AbstractNodeFactory {
   }
 
   @Override
-  public ServerNode createServerNode(ServersNode serversNode, L2Info l2Info) {
-    return new ServerNode(serversNode, l2Info);
+  public ServerNode createServerNode(ServersNode serversNode, IServer server) {
+    return new ServerNode(serversNode, server);
   }
-  
+
 }
