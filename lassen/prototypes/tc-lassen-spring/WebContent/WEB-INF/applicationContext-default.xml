@@ -22,4 +22,10 @@
 	<context:annotation-config/>
 
 	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService"/>
+	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator"/>
+	<bean id="registrationService" class="org.terracotta.lassen.services.impl.DefaultRegistrationService"/>
+	
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host"><value>smtp.edpnet.be</value></property>
+	</bean>	
 </beans>
