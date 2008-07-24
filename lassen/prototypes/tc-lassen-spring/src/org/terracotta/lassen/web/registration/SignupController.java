@@ -5,6 +5,7 @@ import java.net.ProtocolException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.providers.encoding.ShaPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -29,9 +30,9 @@ public class SignupController {
   private final UserValidator       validator;
 
   @Autowired
-  public SignupController(final RegistrationService userService, final UserValidator userValidator) {
-    this.service = userService;
-    this.validator = userValidator;
+  public SignupController(final RegistrationService service, final UserValidator validator) {
+    this.service = service;
+    this.validator = validator;
   }
 
   @RequestMapping(method = RequestMethod.GET)
@@ -48,6 +49,10 @@ public class SignupController {
     if (result.hasErrors()) {
       return new ModelAndView("registration/signup");
     } else {
+      // make sure that no clear text passwords are stored in the back-end
+      user.setPassword(new ShaPasswordEncoder().encodePassword(user.getPassword(), user.getUserName()));
+      
+      // hold the user's registration until it has been confirmed over email
       this.service.holdForEmailConfirmation(user, UrlHelper.createAbsolutePrettyUrl(request, ConfirmController.class));
       status.setComplete();
       return new ModelAndView("registration/success", "user", user);
