@@ -133,4 +133,8 @@ public class TestProtocolMessage implements OOOProtocolMessage {
   public void reallyDoRecycleOnWrite() {
     //
   }
+
+  public void setSendCount(int sendCount) {
+    throw new ImplementMe();
+  }
 }
