@@ -5,8 +5,8 @@
 package com.tc.test.activepassive;
 
 public class ActivePassiveSharedDataMode {
-  public static final String DISK    = "disk";
-  public static final String NETWORK = "network";
+  public static final String DISK    = "disk-based-active-passive";
+  public static final String NETWORK = "networked-active-passive";
 
   private final String       mode;
 

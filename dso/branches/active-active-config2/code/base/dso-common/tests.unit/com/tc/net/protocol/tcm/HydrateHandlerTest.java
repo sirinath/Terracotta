@@ -10,6 +10,7 @@ import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.ClientID;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.object.session.SessionID;
@@ -159,6 +160,28 @@ public class HydrateHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    public NodeID getClientID() {
+      throw new ImplementMe();
+    }
+    
+    public void setClientID(NodeID source) {
+      throw new ImplementMe();
+      
+    }
+    
+    public NodeID getServerID() {
+      throw new ImplementMe();
+    }
+
+    public void setServerID(NodeID destination) {
+      throw new ImplementMe();
+      
+    }
+
+    public TCMessage createMessage(NodeID sendToNode, TCMessageType type) {
+      throw new ImplementMe();
+    }
+
   }
 
   private static class Message implements TCMessage {
@@ -203,7 +226,6 @@ public class HydrateHandlerTest extends TCTestCase {
     public void send() {
       throw new ImplementMe();
     }
-
   }
 
 }
