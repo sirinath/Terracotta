@@ -28,11 +28,27 @@ public class DefaultRegistrationService implements RegistrationService {
   private final MailSender        mailSender;
   private final Map<String, Long> heldUsers = new ConcurrentHashMap<String, Long>();
 
+  private String  signupConfirmationTemplateName;
+  private String  signupConfirmationSubject;
+  private String  signupConfirmationFromEmail;
+
   @Autowired
   public DefaultRegistrationService(final Configuration freemarkerConfiguration, final UserService userService, final MailSender mailSender) {
     this.freemarkerConfiguration = freemarkerConfiguration;
     this.userService = userService;
     this.mailSender = mailSender;
+  }
+
+  public void setSignupConfirmationTemplateName(final String signupConfirmationTemplateName) {
+    this.signupConfirmationTemplateName = signupConfirmationTemplateName;
+  }
+
+  public void setSignupConfirmationSubject(final String signupConfirmationSubject) {
+    this.signupConfirmationSubject = signupConfirmationSubject;
+  }
+
+  public void setSignupConfirmationFromEmail(final String signupConfirmationFromEmail) {
+    this.signupConfirmationFromEmail = signupConfirmationFromEmail;
   }
 
   public String holdForEmailConfirmation(final User user, final String confirmationUrl) throws RegistrationException {
@@ -50,11 +66,11 @@ public class DefaultRegistrationService implements RegistrationService {
       model.put("user", user);
       model.put("url", confirmationUrl);
       model.put("code", uuidString);
-      final String result = FreeMarkerTemplateUtils.processTemplateIntoString(freemarkerConfiguration.getTemplate("signup-confirmation.ftl"), model);
+      final String result = FreeMarkerTemplateUtils.processTemplateIntoString(freemarkerConfiguration.getTemplate(signupConfirmationTemplateName), model);
 
       SimpleMailMessage msg = new SimpleMailMessage();
-      msg.setSubject("Welcome to Examinator");
-      msg.setFrom("gbevin@uwyn.com");
+      msg.setSubject(signupConfirmationSubject);
+      msg.setFrom(signupConfirmationFromEmail);
       msg.setTo(user.getEmail());
       msg.setText(result);
         mailSender.send(msg);
