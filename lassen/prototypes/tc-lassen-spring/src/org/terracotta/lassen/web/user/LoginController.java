@@ -1,4 +1,4 @@
-package org.terracotta.lassen.web;
+package org.terracotta.lassen.web.user;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,7 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class LoginController {
   @RequestMapping(method = RequestMethod.GET)
   public ModelAndView loginHandler(final HttpServletRequest request, final HttpServletResponse response, final HttpSession session) {
-    final ModelAndView result = new ModelAndView("login");
+    final ModelAndView result = new ModelAndView("user/login");
     
     boolean loginError = request.getParameter("login_error") != null;
     if (loginError) {

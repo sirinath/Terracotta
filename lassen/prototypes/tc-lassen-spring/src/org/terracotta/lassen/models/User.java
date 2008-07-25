@@ -1,5 +1,7 @@
 package org.terracotta.lassen.models;
 
+import org.springframework.security.providers.encoding.ShaPasswordEncoder;
+
 public class User {
   private Long    id;
   private boolean confirmed = false;
@@ -31,6 +33,14 @@ public class User {
 
   public void setUserName(String userName) {
     this.userName = userName;
+  }
+  
+  public void setAndEncodePassword(final String password) {
+    if (null == password) {
+      this.password = null;
+    }
+    
+    this.password = new ShaPasswordEncoder().encodePassword(password, userName);
   }
 
   public String getPassword() {

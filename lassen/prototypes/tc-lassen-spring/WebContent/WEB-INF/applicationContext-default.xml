@@ -28,9 +28,17 @@
 	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService" />
 	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator" />
 	<bean id="registrationService" class="org.terracotta.lassen.services.impl.DefaultRegistrationService">
-		<property name="signupConfirmationTemplateName" value="registration/signup-confirmation.ftl"/>
+		<property name="signupConfirmationTemplateName" value="registration/confirmation.ftl"/>
 		<property name="signupConfirmationSubject" value="Welcome to Examinator"/>
 		<property name="signupConfirmationFromEmail" value="gbevin@terracottatech.com"/>
+	</bean>
+	<bean id="passwordResetService" class="org.terracotta.lassen.services.impl.DefaultPasswordResetService">
+		<property name="requestConfirmationTemplateName" value="passwordreset/confirmation.ftl"/>
+		<property name="requestConfirmationSubject" value="Password reset confirmation"/>
+		<property name="requestConfirmationFromEmail" value="gbevin@terracottatech.com"/>
+		<property name="resetDoneTemplateName" value="passwordreset/reset-done.ftl"/>
+		<property name="resetDoneSubject" value="Your password has been reset"/>
+		<property name="resetDoneFromEmail" value="gbevin@terracottatech.com"/>
 	</bean>
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
 		<property name="host">
