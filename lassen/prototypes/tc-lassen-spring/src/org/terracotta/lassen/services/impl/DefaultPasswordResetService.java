@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
@@ -59,7 +60,7 @@ public class DefaultPasswordResetService implements PasswordResetService {
       throw new PasswordResetConfirmationEmailException(email, uuidString, e);
     }
 
-    System.out.println("Password reset code: " + uuidString);
+    Logger.getLogger(DefaultPasswordResetService.class).debug("Password reset code: " + uuidString);
 
     return true;
   }
@@ -96,7 +97,7 @@ public class DefaultPasswordResetService implements PasswordResetService {
     user.setAndEncodePassword(uuidString);
     userService.store(user);
 
-    System.out.println("New password: " + uuidString);
+    Logger.getLogger(DefaultPasswordResetService.class).debug("New password: " + uuidString);
     
     return true;
   }

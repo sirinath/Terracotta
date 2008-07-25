@@ -4,13 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
-import org.terracotta.lassen.models.UserCodeConfirmation;
 import org.terracotta.lassen.models.User;
+import org.terracotta.lassen.models.UserCodeConfirmation;
 import org.terracotta.lassen.services.RegistrationService;
 import org.terracotta.lassen.services.UserService;
 import org.terracotta.lassen.services.exceptions.RegistrationConfirmationEmailException;
@@ -41,7 +42,7 @@ public class DefaultRegistrationService implements RegistrationService {
 
     final String uuidString = SecurityHelper.generateUniqueCode();
     heldUsers.put(uuidString, user.getId());
-    
+   
     try {
       final Map model = new HashMap();
       model.put("user", user);
@@ -59,7 +60,7 @@ public class DefaultRegistrationService implements RegistrationService {
       throw new RegistrationConfirmationEmailException(user.getEmail(), uuidString, e);
     }
 
-    System.out.println("Signup confirmation code: " + uuidString);
+    Logger.getLogger(DefaultRegistrationService.class).debug("Signup confirmation code: " + uuidString);
 
     return true;
   }
