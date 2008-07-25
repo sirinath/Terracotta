@@ -1,6 +1,6 @@
 package org.terracotta.lassen.models;
 
-public class SignupConfirmation {
+public class UserCodeConfirmation {
   private String  email;
   private String  code;
 

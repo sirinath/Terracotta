@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
-import org.terracotta.lassen.models.SignupConfirmation;
+import org.terracotta.lassen.models.UserCodeConfirmation;
 import org.terracotta.lassen.security.StandardAuthorities;
 import org.terracotta.lassen.services.RegistrationService;
 import org.terracotta.lassen.services.exceptions.RegistrationException;
@@ -31,7 +31,7 @@ public class ConfirmController {
   }
 
   @RequestMapping(method = RequestMethod.POST)
-  public ModelAndView processSubmit(@ModelAttribute final SignupConfirmation confirmation) throws RegistrationException {
+  public ModelAndView processSubmit(@ModelAttribute final UserCodeConfirmation confirmation) throws RegistrationException {
     if (service.confirmRegistration(confirmation)) {
       return new ModelAndView("registration/finalized");
     } else {

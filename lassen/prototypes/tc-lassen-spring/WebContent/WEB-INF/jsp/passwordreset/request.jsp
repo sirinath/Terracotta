@@ -1,30 +1,29 @@
 <%@ page import="org.terracotta.lassen.web.WelcomeController" %>
 <%@ include file="/WEB-INF/jsp/includes.jsp"%>
 <html>
-<head>
-	<title>Registration Confirmation</title>
-</head>
+	<head>
+		<title>Reset password</title>
+	</head>
 <body>
 
-<h1>Please provide the following information to finalize your registration</h1>
+<h1>Reset your password</h1>
 
-<c:if test="${invalid}">
-	<p style="color: red">Invalid confirmation data.</p>
+<p>Please fill in your email address.</p>
+<p>You will receive an email that contains the instructions of how to reset your password.</p>
+
+<c:if test="${userNotFound}">
+	<p style="color: red">No user was found with this email address.</p>
 </c:if>
 
 <form method="post">
 	<table>
 		<tr>
-			<td>Registration Email:</td>
+			<td>Email:</td>
 			<td><input type="text" name="email" size="30" maxlength="80" /></td>
 		</tr>
 		<tr>
-			<td>Confirmation Code:</td>
-			<td><input type="text" name="code" size="30" maxlength="80" /></td>
-		</tr>
-		<tr>
 			<td colspan="2">
-				<p class="submit"><input type="submit" value="Finalize registration" /></p>
+				<p class="submit"><input type="submit" value="Request password reset" /></p>
 			</td>
 		</tr>
 	</table>

@@ -2,11 +2,11 @@
 <%@ include file="/WEB-INF/jsp/includes.jsp"%>
 <html>
 <head>
-	<title>Registration Confirmation</title>
+	<title>Password Reset Confirmation</title>
 </head>
 <body>
 
-<h1>Please provide the following information to finalize your registration</h1>
+<h1>Please provide the following information to reset your password</h1>
 
 <c:if test="${invalid}">
 	<p style="color: red">Invalid confirmation data.</p>
@@ -24,7 +24,7 @@
 		</tr>
 		<tr>
 			<td colspan="2">
-				<p class="submit"><input type="submit" value="Finalize registration" /></p>
+				<p class="submit"><input type="submit" value="Reset your password" /></p>
 			</td>
 		</tr>
 	</table>

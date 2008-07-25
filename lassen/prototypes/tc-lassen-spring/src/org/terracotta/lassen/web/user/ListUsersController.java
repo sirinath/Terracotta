@@ -1,4 +1,4 @@
-package org.terracotta.lassen.web;
+package org.terracotta.lassen.web.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,6 +20,6 @@ public class ListUsersController {
 
   @RequestMapping(method = RequestMethod.GET)
   public ModelAndView setupForm() {
-    return new ModelAndView("listusers", "users", service.getAllUsers());
+    return new ModelAndView("user/listusers", "users", service.getAllUsers());
   }
 }
