@@ -16,6 +16,7 @@
 
 	<sec:global-method-security jsr250-annotations="enabled" />
 	<sec:http auto-config="true">
+		<sec:form-login login-page="/login.do" authentication-failure-url="/login.do?login_error=1"/>
 		<sec:logout logout-url="/logout.do"/>
 	</sec:http>
 	<sec:authentication-provider user-service-ref="userService">
