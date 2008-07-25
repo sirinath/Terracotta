@@ -25,25 +25,25 @@
 		</sec:password-encoder>
 	</sec:authentication-provider>
 
+	<context:property-placeholder location="classpath:org/terracotta/lassen/mail.properties"/>
+
 	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService" />
 	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator" />
 	<bean id="registrationService" class="org.terracotta.lassen.services.impl.DefaultRegistrationService">
 		<property name="signupConfirmationTemplateName" value="registration/confirmation.ftl"/>
-		<property name="signupConfirmationSubject" value="Welcome to Examinator"/>
-		<property name="signupConfirmationFromEmail" value="gbevin@terracottatech.com"/>
+		<property name="signupConfirmationSubject" value="${subject.signup.confirmation}"/>
+		<property name="signupConfirmationFromEmail" value="${lassen.from.email}"/>
 	</bean>
 	<bean id="passwordResetService" class="org.terracotta.lassen.services.impl.DefaultPasswordResetService">
 		<property name="requestConfirmationTemplateName" value="passwordreset/confirmation.ftl"/>
-		<property name="requestConfirmationSubject" value="Password reset confirmation"/>
-		<property name="requestConfirmationFromEmail" value="gbevin@terracottatech.com"/>
+		<property name="requestConfirmationSubject" value="${subject.password.reset.confirmation}"/>
+		<property name="requestConfirmationFromEmail" value="${lassen.from.email}"/>
 		<property name="resetDoneTemplateName" value="passwordreset/reset-done.ftl"/>
-		<property name="resetDoneSubject" value="Your password has been reset"/>
-		<property name="resetDoneFromEmail" value="gbevin@terracottatech.com"/>
+		<property name="resetDoneSubject" value="${subject.password.reset.done}"/>
+		<property name="resetDoneFromEmail" value="${lassen.from.email}"/>
 	</bean>
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
-		<property name="host">
-			<value>smtp.edpnet.be</value>
-		</property>
+		<property name="host" value="${smtp.host}"/>
 	</bean>
 	<bean id="freemarkerMailConfiguration"
 		class="org.springframework.ui.freemarker.FreeMarkerConfigurationFactoryBean">
