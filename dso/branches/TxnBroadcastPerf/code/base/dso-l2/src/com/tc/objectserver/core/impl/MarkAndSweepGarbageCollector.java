@@ -115,7 +115,6 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private volatile LifeCycleState                  gcState                     = new NullLifeCycleState();
   private volatile boolean                         started                     = false;
 
-  
   public MarkAndSweepGarbageCollector(ObjectManager objectManager, ClientStateManager stateManager,
                                       ObjectManagerConfig objectManagerConfig) {
     this.objectManagerConfig = objectManagerConfig;
@@ -186,11 +185,18 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     gcResults = rescue(gcResults, rescueTimes);
     gcInfo.setRescue1Count(gcResults.size());
+    gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
     gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
 
-    gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
+    if(gcResults.isEmpty()) {
+      // No garbage, short circuit GC cycle, don't pass objectMgr etc. 
+      this.referenceCollector = NULL_CHANGE_COLLECTOR;
+      notifyGCComplete();
+      shortCircuitGCComplete(gcInfo, rescueTimes);
+      return;
+    }
+    
     gcPublisher.fireGCPausingEvent(gcInfo);
-
     requestGCPause();
 
     if (gcState.isStopRequested()) { return; }
@@ -220,8 +226,20 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     deleteGarbage(new GCResultContext(gcIteration, toDelete, gcInfo, gcPublisher));
 
     long endMillis = System.currentTimeMillis();
+    gcInfo.setTotalMarkCycleTime(endMillis - gcInfo.getStartTime());
+    gcPublisher.fireGCCycleCompletedEvent(gcInfo);
+  }
+
+  private void shortCircuitGCComplete(GarbageCollectionInfo gcInfo, List rescueTimes) {
+    gcInfo.setCandidateGarbageCount(0);
+    gcInfo.setRescueTimes(rescueTimes);
+    gcInfo.setDeleted(TCCollections.EMPTY_SORTED_SET);
+    gcInfo.setPausedStageTime(0);
+    long endMillis = System.currentTimeMillis();
+    gcInfo.setTotalMarkCycleTime(endMillis - gcInfo.getStartTime());
     gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
     gcPublisher.fireGCCycleCompletedEvent(gcInfo);
+    gcPublisher.fireGCCompletedEvent(gcInfo);
   }
 
   private Set getRootObjectIDs(boolean fullGC, Set candidateIDs) {
@@ -257,8 +275,9 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   public boolean deleteGarbage(GCResultContext gcResult) {
     if (requestGCDeleteStart()) {
       youngGenReferenceCollector.removeGarbage(gcResult.getGCedObjectIDs());
-      objectManager.notifyGCComplete(gcResult);
+      // NOTE:: Important to do this state transition b4 notifying ObjectMgr to avoid hanging lookups.
       notifyGCComplete();
+      objectManager.notifyGCComplete(gcResult);
       return true;
     }
     return false;

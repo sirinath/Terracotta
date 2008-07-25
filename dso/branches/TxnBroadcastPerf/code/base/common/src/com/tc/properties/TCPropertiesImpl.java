@@ -156,7 +156,7 @@ public class TCPropertiesImpl implements TCProperties {
       propertyValue = tcProperties[i].getPropertyValue();
       if (!this.localTcProperties.containsKey(propertyName)) {
         logger.info("The property \"" + propertyName + "\" has been overridden to " + propertyValue + " from "
-                    + getProperty(propertyName) + " by the tc-config file");
+                    + props.getProperty(propertyName) + " by the tc-config file");
         setProperty(propertyName, propertyValue);
       }
     }
