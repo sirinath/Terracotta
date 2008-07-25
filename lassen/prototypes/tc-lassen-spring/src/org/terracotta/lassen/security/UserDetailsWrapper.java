@@ -12,7 +12,7 @@ public class UserDetailsWrapper implements UserDetails {
   }
   
   public GrantedAuthority[] getAuthorities() {
-    // todo : properly adapt this once roles are supported
+    // todo : properly adapt this once roles are fully supported
     return StandardAuthorityGroups.DEFAULT;
   }
 
