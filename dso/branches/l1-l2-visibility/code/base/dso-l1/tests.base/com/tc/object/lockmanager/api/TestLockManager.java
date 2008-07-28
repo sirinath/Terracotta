@@ -170,4 +170,12 @@ public class TestLockManager implements ClientLockManager {
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
     throw new ImplementMe();
   }
+
+  public Collection addAllHeldLocksTo(Collection c, boolean stateCheck) {
+    return addAllHeldLocksTo(c);
+  }
+
+  public Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck) {
+    return addAllPendingLockRequestsTo(c);
+  }
 }

@@ -5,7 +5,6 @@
 package com.tc.object;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
-
 import bsh.EvalError;
 import bsh.Interpreter;
 
@@ -142,6 +141,8 @@ import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.runtime.ThreadIDMap;
+import com.tc.util.runtime.ThreadIDMapUtil;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -182,6 +183,7 @@ public class DistributedObjectClient extends SEDA {
   private DmiManager                               dmiManager;
   private boolean                                  createDedicatedMBeanServer = false;
   private CounterManager                           sampledCounterManager;
+  private final ThreadIDMap                        thIDMap;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -196,6 +198,11 @@ public class DistributedObjectClient extends SEDA {
     this.cluster = cluster;
     this.threadGroup = threadGroup;
     this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
+    this.thIDMap = new ThreadIDMapUtil().getInstance();
+  }
+
+  public ThreadIDMap getThreadIDMap() {
+    return this.thIDMap;
   }
 
   public void setCreateDedicatedMBeanServer(boolean createDedicatedMBeanServer) {
@@ -378,8 +385,8 @@ public class DistributedObjectClient extends SEDA {
     l1Management.start(createDedicatedMBeanServer);
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
-                                                 new ThreadLockManagerImpl(lockManager), txFactory, rtxManager,
-                                                 runtimeLogger, l1Management.findClientTxMonitorMBean());
+                                                 new ThreadLockManagerImpl(lockManager, thIDMap), txFactory,
+                                                 rtxManager, runtimeLogger, l1Management.findClientTxMonitorMBean());
 
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(txManager));
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
@@ -604,11 +611,11 @@ public class DistributedObjectClient extends SEDA {
     }
 
     if (this.txManager != null) {
-      this.txManager.dump();
+      this.txManager.dumpToLogger();
     }
 
     if (this.objectManager != null) {
-      this.objectManager.dump();
+      this.objectManager.dumpToLogger();
     }
   }
 
@@ -617,6 +624,7 @@ public class DistributedObjectClient extends SEDA {
       Interpreter i = new Interpreter();
       i.set("client", this);
       i.set("objectManager", objectManager);
+      i.set("lockmanager", lockManager);
       i.set("txManager", txManager);
       i.set("portnum", port);
       i.eval("setAccessibility(true)"); // turn off access restrictions

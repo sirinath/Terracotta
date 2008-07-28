@@ -8,7 +8,5 @@ import com.tc.management.TerracottaMBean;
 
 public interface L1DumperMBean extends TerracottaMBean {
 
-  void startBeanShell(int port);
-
   void dump();
 }

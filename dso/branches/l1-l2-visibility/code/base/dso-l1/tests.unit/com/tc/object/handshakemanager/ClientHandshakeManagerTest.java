@@ -420,6 +420,14 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public PrettyPrinter prettyPrint(PrettyPrinter out) {
       return null;
     }
+
+    public Collection addAllHeldLocksTo(Collection c, boolean stateCheck) {
+      return addAllHeldLocksTo(c);
+    }
+
+    public Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck) {
+      return addAllPendingLockRequestsTo(c);
+    }
   }
 
   public class TestSequenceProvider implements BatchSequenceProvider {

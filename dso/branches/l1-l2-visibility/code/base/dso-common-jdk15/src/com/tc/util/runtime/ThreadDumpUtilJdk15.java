@@ -15,10 +15,10 @@ public class ThreadDumpUtilJdk15 {
   private static ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 
   public static String getThreadDump() {
-    return getThreadDump(null, null);
+    return getThreadDump(null, null, new NullThreadIDMap());
   }
 
-  public static String getThreadDump(Map heldMap, Map pendingMap) {
+  public static String getThreadDump(Map heldMap, Map pendingMap, ThreadIDMap thIDMap) {
 
     StringBuilder sb = new StringBuilder();
     sb.append(new Date().toString());
@@ -36,17 +36,7 @@ public class ThreadDumpUtilJdk15 {
       for (int i = 0; i < threadIds.length; i++) {
         ThreadInfo threadInfo = threadMXBean.getThreadInfo(threadIds[i], Integer.MAX_VALUE);
         if (threadInfo != null) {
-          
-          if (heldMap != null && pendingMap != null) {
-            Long vmThreadID = ThreadIDMapInfo.getTCThreadID(threadIds[i]);
-            if ((vmThreadID != null) && (heldMap.get(vmThreadID) != null)) {
-              sb.append("LOCKS HELD: " + heldMap.get(vmThreadID) + "\n");
-            }
-            if ((vmThreadID != null) && (pendingMap.get(vmThreadID) != null)) {
-              sb.append("LOCKS WAITING FOR: " + pendingMap.get(vmThreadID) + "\n");
-            }
-          }
-          
+          sb.append(ThreadDumpUtil.getHeldAndPendingLockInfo(heldMap, pendingMap, thIDMap.getTCThreadID(threadIds[i])));
           sb.append(threadHeader(threadInfo, threadIds[i]));
           sb.append('\n');
 
