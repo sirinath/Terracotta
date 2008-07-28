@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.annotation.security.RolesAllowed;
-
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.userdetails.UserDetails;
 import org.springframework.security.userdetails.UserDetailsService;
@@ -52,12 +50,10 @@ public class DefaultUserService implements UserService, UserDetailsService {
     return null;
   }
 
-  @RolesAllowed(StandardAuthoritiesService.ADMINISTRATOR_LITERAL)
   public Collection<User> getAllUsers() {
     return users.values();
   }
 
-  @RolesAllowed(StandardAuthoritiesService.ADMINISTRATOR_LITERAL)
   public boolean deleteById(final Long id) {
     return users.remove(id) != null;
   }
@@ -70,11 +66,11 @@ public class DefaultUserService implements UserService, UserDetailsService {
       user.setId(ids.incrementAndGet());
 
       // every new user always has the student role
-      user.addRole(StandardAuthoritiesService.STUDENT_LITERAL);
+      user.addRole(StandardAuthoritiesService.STUDENT);
 
       // if this is the first user, give him also administrator rights
       if (0 == users.size()) {
-        user.addRole(StandardAuthoritiesService.ADMINISTRATOR_LITERAL);
+        user.addRole(StandardAuthoritiesService.ADMINISTRATOR);
       }
     }
     users.put(user.getId(), user);

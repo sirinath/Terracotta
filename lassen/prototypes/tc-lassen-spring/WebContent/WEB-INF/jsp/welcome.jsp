@@ -15,7 +15,7 @@
 	<li><a href="<c:url value="<%=UrlHelper.createAbsolutePrettyUrl(request, SignupController.class)%>"/>">Register</a></li>
 	<li><a href="<c:url value="<%=UrlHelper.createAbsolutePrettyUrl(request, ListUsersController.class)%>"/>">List users</a></li>
 	<li><a href="<c:url value="<%=UrlHelper.createAbsolutePrettyUrl(request, RequestResetController.class)%>"/>">Reset password</a></li>
-	<sec:authorize ifAllGranted="<%=StandardAuthoritiesService.STUDENT_LITERAL%>">
+	<sec:authorize ifAllGranted="<%=StandardAuthoritiesService.STUDENT%>">
 		<li><a href="<c:url value="<%=UrlHelper.createAbsolutePrettyUrl(request, "logout.do")%>"/>">Logout</a></li>
 	</sec:authorize>
 </ul>

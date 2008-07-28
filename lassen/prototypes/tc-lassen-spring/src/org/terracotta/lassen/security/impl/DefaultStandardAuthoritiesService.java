@@ -11,29 +11,27 @@ import org.terracotta.lassen.security.StandardAuthoritiesService;
 @Service
 public class DefaultStandardAuthoritiesService implements StandardAuthoritiesService {
 
-  private final static Map<String, GrantedAuthority> STANDARD;
+  private final Map<String, GrantedAuthority> standard = new ConcurrentHashMap<String, GrantedAuthority>();
   
-  static {
-    STANDARD = new ConcurrentHashMap<String, GrantedAuthority>();
-    
-    createStandardAuthority(STUDENT_LITERAL);
-    createStandardAuthority(ADMINISTRATOR_LITERAL);
+  public DefaultStandardAuthoritiesService() {
+    createStandardAuthority(STUDENT);
+    createStandardAuthority(ADMINISTRATOR);
   }
   
-  private static GrantedAuthority createStandardAuthority(final String name) {
+  private GrantedAuthority createStandardAuthority(final String name) {
     if (null == name) {
       return null;
     }
     
-    assert !STANDARD.containsKey(name);
+    assert !standard.containsKey(name);
     
     final GrantedAuthority auth = new GrantedAuthorityImpl(name);
-    STANDARD.put(name, auth);
+    standard.put(name, auth);
     return auth;
   }
   
   public GrantedAuthority getNameBasedAuthority(final String name) {
-    final GrantedAuthority auth = STANDARD.get(name);
+    final GrantedAuthority auth = standard.get(name);
     if (null == auth) {
       return new GrantedAuthorityImpl(name);
     } else {
