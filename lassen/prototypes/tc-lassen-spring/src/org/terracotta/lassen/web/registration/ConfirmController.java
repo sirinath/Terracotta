@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.terracotta.lassen.models.UserCodeConfirmation;
-import org.terracotta.lassen.security.StandardAuthorities;
+import org.terracotta.lassen.security.StandardAuthoritiesService;
 import org.terracotta.lassen.services.RegistrationService;
 import org.terracotta.lassen.services.exceptions.RegistrationException;
 
 @Controller
 @RequestMapping("/registration/confirm.do")
-@RolesAllowed(StandardAuthorities.ADMINISTRATOR_LITERAL)
+@RolesAllowed(StandardAuthoritiesService.ADMINISTRATOR_LITERAL)
 public class ConfirmController {
 
   private final RegistrationService service;

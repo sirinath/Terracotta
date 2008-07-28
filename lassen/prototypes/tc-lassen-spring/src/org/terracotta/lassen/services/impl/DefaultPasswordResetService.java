@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.terracotta.lassen.models.User;
 import org.terracotta.lassen.services.PasswordResetService;
@@ -20,6 +21,7 @@ import org.terracotta.lassen.util.SecurityHelper;
 import freemarker.template.Configuration;
 
 //todo: implement purging of password reset requests that are expired
+@Service
 public class DefaultPasswordResetService implements PasswordResetService {
 
   private final Configuration     freemarkerConfiguration;
