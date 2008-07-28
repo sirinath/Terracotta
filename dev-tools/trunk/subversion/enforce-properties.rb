@@ -2,7 +2,7 @@
 
 module Config
   # Where to find the svnlook program
-  SVNLOOK = '/usr/bin/svnlook'
+  SVNLOOK = ENV['SVNLOOK'] || '/usr/bin/svnlook'
 
   # The error message displayed to the user if newly-added files in their commit
   # do not have the required properties
