@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Invokes the SVN-Notify script to send colorized HTML diff e-mail messages.
+# This script expects the svnlook program to be on the PATH and the following
+# environment variables to be defined:
+# SVN_NOTIFY_HOME (path to SVN-Notify installation)
+# TO_ADDRESS (address to which e-mails will be sent)
+# FROM_ADDRESS (from address to use for e-mails)
+
+AUTHOR=`svnlook propget $REPOS svn:author -r$REV --revprop`
+
+SVN_NOTIFY=$SVN_NOTIFY_HOME/bin/svnnotify
+
+SMTP=localhost
+SUBJECT_PREFIX="$AUTHOR "
+
+REPOS="$1"
+REV="$2"
+
+perl -I$SVN_NOTIFY_HOME/lib $SVN_NOTIFY --repos-path $REPOS --revision $REV \
+    --to $TO_ADDRESS --from "$FROM_ADDRESS" --subject-prefix "$SUBJECT_PREFIX" \
+    --smtp $SMTP --with-diff --handler HTML::ColorDiff
