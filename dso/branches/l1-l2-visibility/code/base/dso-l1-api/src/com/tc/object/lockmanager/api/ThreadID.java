@@ -12,10 +12,10 @@ import com.tc.util.AbstractIdentifier;
 public class ThreadID extends AbstractIdentifier {
 
   /** Null identifier */
-  public static final ThreadID NULL_ID = new ThreadID();
+  public static final ThreadID   NULL_ID = new ThreadID();
   /** VM identifier */
-  public static final ThreadID VM_ID   = new ThreadID(Long.MIN_VALUE);
-  private String               name;
+  public static final ThreadID   VM_ID   = new ThreadID(Long.MIN_VALUE);
+  private transient final String name;
 
   /**
    * New thread id
@@ -33,14 +33,15 @@ public class ThreadID extends AbstractIdentifier {
 
   private ThreadID() {
     super();
+    this.name = "thread_NULL_ID";
   }
 
   public String getIdentifierType() {
-    if (name != null) {
-      return "Thread(" + name + ")ID";
-    } else {
-      return "ThreadID";
-    }
+    return "ThreadID";
+  }
+
+  public String toString() {
+    return "Thread(" + name + ") ID[" + toLong() + "]";
   }
 
 }

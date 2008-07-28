@@ -16,6 +16,7 @@ import com.tc.runtime.TCRuntime;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.runtime.ThreadDumpUtil;
+import com.tc.util.runtime.ThreadIDMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,21 +32,23 @@ import java.util.Set;
 import javax.management.NotCompliantMBeanException;
 
 public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
-  private static final TCLogger    logger                   = TCLogging.getLogger(L1Info.class);
-  private final String             rawConfigText;
-  private final ClientLockManager  lockManager;
-  private final JVMMemoryManager   manager;
-  private StatisticRetrievalAction cpuSRA;
-  private String[]                 cpuNames;
-  private Map                      heldLockByThreadIDMap    = new HashMap();
-  private Map                      pendingLockByThreadIDMap = new HashMap();
+  private static final TCLogger         logger = TCLogging.getLogger(L1Info.class);
+  private final String                  rawConfigText;
+  private final JVMMemoryManager        manager;
+  private StatisticRetrievalAction      cpuSRA;
+  private String[]                      cpuNames;
+  private final DistributedObjectClient client;
+  private final ThreadIDMap             thIDMap;
+  private final ClientLockManager       lockManager;
 
   public L1Info(DistributedObjectClient client, String rawConfigText) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
 
     this.manager = TCRuntime.getJVMMemoryManager();
     this.rawConfigText = rawConfigText;
+    this.client = client;
     this.lockManager = client.getLockManager();
+    this.thIDMap = client.getThreadIDMap();
     try {
       Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
@@ -62,11 +65,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   // for tests
-  public L1Info(ClientLockManager lockManager) throws NotCompliantMBeanException {
+  public L1Info(ClientLockManager lockManager, ThreadIDMap thIDMap) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
     this.rawConfigText = null;
     this.manager = TCRuntime.getJVMMemoryManager();
     this.lockManager = lockManager;
+    this.thIDMap = thIDMap;
+    this.client = null;
   }
 
   public String getEnvironment() {
@@ -115,25 +120,10 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return rawConfigText;
   }
 
-  public String takeThreadDump(long requestMillis) {
+  public Map getHeldLockByThreadID() {
+    Map heldLockByThreadIDMap = new HashMap();
     Set heldLockSet = new HashSet();
-    Set pendingLockSet = new HashSet();
-
-    synchronized (this.lockManager) {
-      boolean paused = false;
-      if (!this.lockManager.isStarting()) {
-        paused = true;
-        this.lockManager.pause();
-        this.lockManager.starting();
-      }
-
-      this.lockManager.addAllHeldLocksTo(heldLockSet);
-      this.lockManager.addAllPendingLockRequestsTo(pendingLockSet);
-
-      if (paused) {
-        this.lockManager.unpause();
-      }
-    }
+    this.lockManager.addAllHeldLocksTo(heldLockSet, false);
 
     heldLockByThreadIDMap.clear();
     for (Iterator i = heldLockSet.iterator(); i.hasNext();) {
@@ -146,6 +136,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
         heldLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
       }
     }
+    return heldLockByThreadIDMap;
+  }
+
+  public Map getPendingLockByThreadID() {
+    Map pendingLockByThreadIDMap = new HashMap();
+    Set pendingLockSet = new HashSet();
+    this.lockManager.addAllPendingLockRequestsTo(pendingLockSet, false);
 
     pendingLockByThreadIDMap.clear();
     for (Iterator i = pendingLockSet.iterator(); i.hasNext();) {
@@ -158,20 +155,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
         pendingLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
       }
     }
+    return pendingLockByThreadIDMap;
+  }
 
-    String text = ThreadDumpUtil.getThreadDump(heldLockByThreadIDMap, pendingLockByThreadIDMap);
+  public String takeThreadDump(long requestMillis) {
+    String text = ThreadDumpUtil.getThreadDump(getHeldLockByThreadID(), getPendingLockByThreadID(), thIDMap);
     logger.info(text);
     return text;
-  }
-
-  // for test
-  public Map getHeldLocksByThreadIDMap() {
-    return this.heldLockByThreadIDMap;
-  }
-
-  // for test
-  public Map getPendingLocksByThreadIDMap() {
-    return this.pendingLockByThreadIDMap;
   }
 
   public String[] getCpuStatNames() {
@@ -212,6 +202,10 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
 
   public void reset() {
     /**/
+  }
+
+  public void startBeanShell(int port) {
+    this.client.startBeanShell(port);
   }
 
 }

@@ -512,8 +512,8 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return c;
   }
 
-  public synchronized Collection addAllHeldLocksTo(Collection c) {
-    assertStarting();
+  public synchronized Collection addAllHeldLocksTo(Collection c, boolean stateCheck) {
+    if (stateCheck) assertStarting();
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
       ClientLock lock = (ClientLock) i.next();
       lock.addHoldersToAsLockRequests(c);
@@ -521,13 +521,21 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return c;
   }
 
-  public synchronized Collection addAllPendingLockRequestsTo(Collection c) {
-    assertStarting();
+  public synchronized Collection addAllHeldLocksTo(Collection c) {
+    return addAllHeldLocksTo(c, true);
+  }
+
+  public synchronized Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck) {
+    if (stateCheck) assertStarting();
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
       ClientLock lock = (ClientLock) i.next();
       lock.addAllPendingLockRequestsTo(c);
     }
     return c;
+  }
+
+  public synchronized Collection addAllPendingLockRequestsTo(Collection c) {
+    return addAllPendingLockRequestsTo(c, true);
   }
 
   public synchronized Collection addAllPendingTryLockRequestsTo(Collection c) {

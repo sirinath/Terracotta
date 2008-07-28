@@ -11,17 +11,24 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.tx.TimerSpec;
-import com.tc.util.runtime.ThreadIDMapInfo;
+import com.tc.util.runtime.NullThreadIDMap;
+import com.tc.util.runtime.ThreadIDMap;
 
 public class ThreadLockManagerImpl implements ThreadLockManager {
 
   private final ClientLockManager lockManager;
   private final ThreadLocal       threadID;
   private long                    threadIDSequence;
+  private final ThreadIDMap       thMap;
 
   public ThreadLockManagerImpl(ClientLockManager lockManager) {
+    this(lockManager, new NullThreadIDMap());
+  }
+
+  public ThreadLockManagerImpl(ClientLockManager lockManager, ThreadIDMap thMap) {
     this.lockManager = lockManager;
     this.threadID = new ThreadLocal();
+    this.thMap = thMap;
   }
 
   public LockID lockIDFor(String lockName) {
@@ -70,7 +77,7 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
     ThreadID rv = (ThreadID) threadID.get();
     if (rv == null) {
       rv = new ThreadID(nextThreadID(), Thread.currentThread().getName());
-      ThreadIDMapInfo.addTCThreadID(new Long(rv.toLong()));
+      thMap.addTCThreadID(rv.toLong());
       threadID.set(rv);
     }
     return rv;

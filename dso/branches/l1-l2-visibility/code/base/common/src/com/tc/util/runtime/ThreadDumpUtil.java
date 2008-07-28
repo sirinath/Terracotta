@@ -34,20 +34,20 @@ public class ThreadDumpUtil {
   }
 
   public static String getThreadDump() {
-    return getThreadDump(null, null);
+    return getThreadDump(null, null, new NullThreadIDMap());
   }
 
-  public static String getThreadDump(Map heldLockMap, Map pendingLockMap) {
+  public static String getThreadDump(Map heldLockMap, Map pendingLockMap, ThreadIDMap thIDMap) {
     final Exception exception;
     try {
-
       if (!Vm.isJDK15Compliant()) { return "Thread dumps require JRE-1.5 or greater"; }
 
       Method method = null;
       if (Vm.isJDK15()) {
         if (threadDumpUtilJdk15Type != null) {
           if (heldLockMap != null && pendingLockMap != null) {
-            method = threadDumpUtilJdk15Type.getMethod("getThreadDump", new Class[] { Map.class, Map.class });
+            method = threadDumpUtilJdk15Type.getMethod("getThreadDump", new Class[] { Map.class, Map.class,
+                ThreadIDMap.class });
           } else {
             method = threadDumpUtilJdk15Type.getMethod("getThreadDump", EMPTY_PARAM_TYPES);
           }
@@ -68,7 +68,7 @@ public class ThreadDumpUtil {
       }
 
       if ((heldLockMap != null) && (pendingLockMap != null)) {
-        return (String) method.invoke(null, new Object[] { heldLockMap, pendingLockMap });
+        return (String) method.invoke(null, new Object[] { heldLockMap, pendingLockMap, thIDMap });
       } else {
         return (String) method.invoke(null, EMPTY_PARAMS);
       }
@@ -77,6 +77,19 @@ public class ThreadDumpUtil {
       exception = e;
     }
     return "Cannot take thread dumps " + exception.getMessage();
+  }
+
+  public static String getHeldAndPendingLockInfo(Map heldMap, Map pendingMap, Long tcThreadID) {
+    String info = "";
+    if (heldMap != null && pendingMap != null) {
+      if ((tcThreadID != null) && (heldMap.get(tcThreadID) != null)) {
+        info += "LOCKS HELD: " + heldMap.get(tcThreadID) + "\n";
+      }
+      if ((tcThreadID != null) && (pendingMap.get(tcThreadID) != null)) {
+        info += "LOCKS WAITING FOR: " + pendingMap.get(tcThreadID) + "\n";
+      }
+    }
+    return info;
   }
 
   public static void main(String[] args) {

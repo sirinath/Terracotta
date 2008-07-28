@@ -26,8 +26,4 @@ public class L1Dumper extends AbstractTerracottaMBean implements L1DumperMBean {
     client.dump();
   }
 
-  public void startBeanShell(int port) {
-    client.startBeanShell(port);
-  }
-
 }

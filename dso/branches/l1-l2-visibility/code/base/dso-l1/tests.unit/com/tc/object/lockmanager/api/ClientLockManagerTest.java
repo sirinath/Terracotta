@@ -18,7 +18,6 @@ import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Info;
 import com.tc.object.lockmanager.api.TestRemoteLockManager.LockResponder;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
-import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
@@ -27,6 +26,7 @@ import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.runtime.ThreadIDMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +49,7 @@ public class ClientLockManagerTest extends TestCase {
   private TestRemoteLockManager rmtLockManager;
   private TestSessionManager    sessionManager;
   private ThreadLockManager     threadLockManager;
+  private ThreadIDMap           thIDMap;
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -59,7 +60,6 @@ public class ClientLockManagerTest extends TestCase {
                                             ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                             new NullClientLockManagerConfig());
     rmtLockManager.setClientLockManager(lockManager);
-    threadLockManager = new ThreadLockManagerImpl(lockManager);
   }
 
   public void testRunGC() {
@@ -796,7 +796,7 @@ public class ClientLockManagerTest extends TestCase {
   }
 
   public void testHeldAndPendingLocksInThreadDump() throws Exception {
-    final L1Info l1info = new L1Info(lockManager);
+    final L1Info l1info = new L1Info(lockManager, this.thIDMap);
     final LockID lid0 = threadLockManager.lockIDFor("Locky0");
     final LockID lid1 = threadLockManager.lockIDFor("Locky1");
     final LockID lid2 = threadLockManager.lockIDFor("Locky2");
@@ -871,12 +871,14 @@ public class ClientLockManagerTest extends TestCase {
     assertFalse(done[1]);
     assertFalse(done[2]);
 
+    // pauseAndStart();
     l1info.takeThreadDump(System.currentTimeMillis());
 
-    Map heldLocksMap = l1info.getHeldLocksByThreadIDMap();
-    Map pendingLocksMap = l1info.getPendingLocksByThreadIDMap();
+    Map heldLocksMap = l1info.getHeldLockByThreadID();
+    Map pendingLocksMap = l1info.getPendingLockByThreadID();
     System.out.println("XXX HELD locks:" + heldLocksMap);
     System.out.println("XXX WAIT locks:" + pendingLocksMap);
+    // this.lockManager.unpause();
 
     Assert.eval(heldLocksMap.size() == 2);
     for (Iterator i = heldLocksMap.values().iterator(); i.hasNext();) {
@@ -910,12 +912,14 @@ public class ClientLockManagerTest extends TestCase {
     assertTrue(done[1]);
     assertTrue(done[2]);
 
+    // pauseAndStart();
     l1info.takeThreadDump(System.currentTimeMillis());
 
-    heldLocksMap = l1info.getHeldLocksByThreadIDMap();
-    pendingLocksMap = l1info.getPendingLocksByThreadIDMap();
+    heldLocksMap = l1info.getHeldLockByThreadID();
+    pendingLocksMap = l1info.getPendingLockByThreadID();
     System.out.println("XXX HELD locks:" + heldLocksMap);
     System.out.println("XXX WAIT locks:" + pendingLocksMap);
+    // this.lockManager.unpause();
 
     Assert.eval(heldLocksMap.size() == 1);
     for (Iterator i = heldLocksMap.values().iterator(); i.hasNext();) {
