@@ -27,7 +27,10 @@
 
 	<context:property-placeholder location="classpath:org/terracotta/lassen/mail.properties"/>
 
-	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService" />
+	<bean id="standardAuthoritiesService" class="org.terracotta.lassen.security.impl.DefaultStandardAuthoritiesService" />
+	<bean id="userService" class="org.terracotta.lassen.services.impl.DefaultUserService">
+		<constructor-arg ref="standardAuthoritiesService"/>
+	</bean>
 	<bean id="userValidator" class="org.terracotta.lassen.validation.UserValidator" />
 	<bean id="registrationService" class="org.terracotta.lassen.services.impl.DefaultRegistrationService">
 		<property name="signupConfirmationTemplateName" value="registration/confirmation.ftl"/>

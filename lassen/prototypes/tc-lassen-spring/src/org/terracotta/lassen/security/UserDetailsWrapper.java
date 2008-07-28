@@ -5,15 +5,22 @@ import org.springframework.security.userdetails.UserDetails;
 import org.terracotta.lassen.models.User;
 
 public class UserDetailsWrapper implements UserDetails {
+  private final transient StandardAuthoritiesService standardAuthoritiesService;
+  
   private final User delegate;
   
-  public UserDetailsWrapper(final User delegate) {
+  public UserDetailsWrapper(final StandardAuthoritiesService service, final User delegate) {
+    this.standardAuthoritiesService = service;
     this.delegate = delegate;
   }
   
   public GrantedAuthority[] getAuthorities() {
-    // todo : properly adapt this once roles are fully supported
-    return StandardAuthorityGroups.DEFAULT;
+    final GrantedAuthority[] userAuthorities = new GrantedAuthority[delegate.getRoles().size()];
+    int i = 0;
+    for (final String role : delegate.getRoles()) {
+      userAuthorities[i++] = standardAuthoritiesService.getNameBasedAuthority(role);
+    }
+    return userAuthorities;
   }
 
   public String getPassword() {

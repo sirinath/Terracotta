@@ -13,14 +13,19 @@ import org.springframework.security.userdetails.UserDetailsService;
 import org.springframework.security.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.terracotta.lassen.models.User;
-import org.terracotta.lassen.security.StandardAuthorities;
+import org.terracotta.lassen.security.StandardAuthoritiesService;
 import org.terracotta.lassen.security.UserDetailsWrapper;
 import org.terracotta.lassen.services.UserService;
 
 @Service
 public class DefaultUserService implements UserService, UserDetailsService {
-  private final AtomicLong      ids   = new AtomicLong();
-  private final Map<Long, User> users = new ConcurrentHashMap<Long, User>();
+  private final StandardAuthoritiesService standardAuthoritiesService;
+  private final AtomicLong                 ids   = new AtomicLong();
+  private final Map<Long, User>            users = new ConcurrentHashMap<Long, User>();
+
+  public DefaultUserService(final StandardAuthoritiesService standardAuthoritiesService) {
+    this.standardAuthoritiesService = standardAuthoritiesService;
+  }
 
   public User findById(final Long id) {
     if (null == id) { return null; }
@@ -40,18 +45,19 @@ public class DefaultUserService implements UserService, UserDetailsService {
   public User findByUserName(final String userName) {
     if (null == userName) { return null; }
 
-    for (User user : users.values()) {
+    for (final User user : users.values()) {
       if (userName.equals(user.getUserName())) { return user; }
     }
 
     return null;
   }
 
-  @RolesAllowed(StandardAuthorities.STUDENT_LITERAL)
+  @RolesAllowed(StandardAuthoritiesService.ADMINISTRATOR_LITERAL)
   public Collection<User> getAllUsers() {
     return users.values();
   }
 
+  @RolesAllowed(StandardAuthoritiesService.ADMINISTRATOR_LITERAL)
   public boolean deleteById(final Long id) {
     return users.remove(id) != null;
   }
@@ -59,8 +65,17 @@ public class DefaultUserService implements UserService, UserDetailsService {
   public boolean store(final User user) {
     if (null == user) { return false; }
 
+    // new user
     if (null == user.getId()) {
       user.setId(ids.incrementAndGet());
+
+      // every new user always has the student role
+      user.addRole(StandardAuthoritiesService.STUDENT_LITERAL);
+
+      // if this is the first user, give him also administrator rights
+      if (0 == users.size()) {
+        user.addRole(StandardAuthoritiesService.ADMINISTRATOR_LITERAL);
+      }
     }
     users.put(user.getId(), user);
 
@@ -69,9 +84,7 @@ public class DefaultUserService implements UserService, UserDetailsService {
 
   public UserDetails loadUserByUsername(final String userName) throws UsernameNotFoundException, DataAccessException {
     final User user = findByUserName(userName);
-    if (null == user) {
-      throw new UsernameNotFoundException(userName);
-    }
-    return new UserDetailsWrapper(user);
+    if (null == user) { throw new UsernameNotFoundException(userName); }
+    return new UserDetailsWrapper(standardAuthoritiesService, user);
   }
 }

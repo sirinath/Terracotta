@@ -1,15 +1,20 @@
 package org.terracotta.lassen.models;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.security.providers.encoding.ShaPasswordEncoder;
 
 public class User {
-  private Long    id;
-  private boolean confirmed = false;
-  private String  userName;
-  private String  password;
-  private String  email;
-  private String  firstName;
-  private String  lastName;
+  private Long        id;
+  private boolean     confirmed = false;
+  private String      userName;
+  private String      password;
+  private String      email;
+  private String      firstName;
+  private String      lastName;
+  private Set<String> roles;
 
   public Long getId() {
     return id;
@@ -34,12 +39,12 @@ public class User {
   public void setUserName(String userName) {
     this.userName = userName;
   }
-  
+
   public void setAndEncodePassword(final String password) {
     if (null == password) {
       this.password = null;
     }
-    
+
     this.password = new ShaPasswordEncoder().encodePassword(password, userName);
   }
 
@@ -75,15 +80,52 @@ public class User {
     this.lastName = lastName;
   }
   
+  public synchronized void addRole(final String role) {
+    Set<String> updatedRoles = roles;
+    if (null == updatedRoles) {
+      updatedRoles = new HashSet<String>();
+    }
+    updatedRoles.add(role);
+    if (null == roles) {
+      roles = updatedRoles;
+    }
+  }
+  
+  public synchronized boolean removeRole(final String role) {
+    if (null == roles ||
+        0 == roles.size()) {
+      return false;
+    }
+    
+    return roles.remove(role);
+  }
+
+  public synchronized Set<String> getRoles() {
+    if (null == roles) {
+      return Collections.emptySet();
+    }
+    return Collections.unmodifiableSet(roles);
+  }
+
   public String toString() {
-    return "[" 
-      + id + ";" 
-      + confirmed + ";" 
-      + userName + ";" 
-      // password left out for security concerns
-      + email + ";" 
-      + firstName + ";" 
-      + lastName 
-      + "]";
+    StringBuilder result = new StringBuilder();
+    result.append("[");
+    result.append(id).append(";");
+    result.append(confirmed).append(";");
+    result.append(userName).append(";");
+    // password left out for security concerns
+    result.append(email).append(";");
+    result.append(firstName).append(";");
+    result.append(lastName).append(";");
+    result.append("[");
+    if (roles != null && roles.size() > 0) {
+      for (String role : roles) {
+        result.append(role);
+        result.append(";");
+      }
+    }
+    result.append("]");
+    result.append("]");
+    return result.toString();
   }
 }
