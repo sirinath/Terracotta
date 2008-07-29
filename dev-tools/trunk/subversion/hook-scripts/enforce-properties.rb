@@ -73,7 +73,7 @@ class SVNLook
     result = {
       :added => [], :modified => [], :deleted => []
     }
-    changes = `#{@svnlook} changed #{@args} "#{@repository}"`
+    changes = svnlook('changed', %<"#@repository">)
     changes.each do |line|
       if md = ADDED_PATH.match(line)
         result[:added] = md[1]
@@ -91,13 +91,23 @@ class SVNLook
   # :revision or :transaction.
   def props_for_path(path)
     result = Hash.new
-    cmd = "#{@svnlook} proplist #{@args} \"#{@repository}\" \"#{path}\""
-    output = `#{cmd}`
+    output = svnlook('proplist', %<"#@repository">, %<"#{path}">)
     output.each do |name|
       name.strip!
-      cmd = "#{@svnlook} propget #{@args} \"#{@repository}\" \"#{name}\" \"#{path}\""
-      value = `#{cmd}`
+      value = svnlook('propget', %<"#@repository">, %<"#{name}">, %<"#{path}">)
       result[name] = value
+    end
+    result
+  end
+
+  private
+
+  def svnlook(command, *args)
+    cmd = "#{@svnlook} #@args #{command} #{args.join(' ')}"
+    result = `#{cmd}`
+    if $? != 0
+      $stderr.puts("Command failed with status #{$?}: #{cmd}")
+      exit 42
     end
     result
   end
