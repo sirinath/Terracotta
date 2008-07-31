@@ -4,9 +4,11 @@
  */
 package com.tc.util.runtime;
 
+import com.tc.object.lockmanager.api.ThreadID;
+
 public class NullThreadIDMap implements ThreadIDMap {
 
-  public void addTCThreadID(long l) {
+  public void addTCThreadID(ThreadID threadID) {
     //
   }
 

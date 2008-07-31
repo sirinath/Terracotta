@@ -5,17 +5,16 @@
 package com.tc.management.beans;
 
 import com.tc.management.AbstractTerracottaMBean;
-import com.tc.object.DistributedObjectClient;
 
 import javax.management.NotCompliantMBeanException;
 
 public class L1Dumper extends AbstractTerracottaMBean implements L1DumperMBean {
 
-  private final DistributedObjectClient client;
+  private final TCDumper dumper;
 
-  public L1Dumper(DistributedObjectClient client) throws NotCompliantMBeanException {
+  public L1Dumper(TCDumper client) throws NotCompliantMBeanException {
     super(L1DumperMBean.class, false);
-    this.client = client;
+    this.dumper = client;
   }
 
   public void reset() {
@@ -23,7 +22,7 @@ public class L1Dumper extends AbstractTerracottaMBean implements L1DumperMBean {
   }
 
   public void dump() {
-    client.dump();
+    dumper.dump();
   }
 
 }

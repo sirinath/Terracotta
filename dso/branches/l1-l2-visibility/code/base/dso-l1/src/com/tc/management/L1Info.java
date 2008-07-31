@@ -7,7 +7,6 @@ package com.tc.management;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.l1.L1InfoMBean;
-import com.tc.object.DistributedObjectClient;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.runtime.JVMMemoryManager;
@@ -32,23 +31,23 @@ import java.util.Set;
 import javax.management.NotCompliantMBeanException;
 
 public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
-  private static final TCLogger         logger = TCLogging.getLogger(L1Info.class);
-  private final String                  rawConfigText;
-  private final JVMMemoryManager        manager;
-  private StatisticRetrievalAction      cpuSRA;
-  private String[]                      cpuNames;
-  private final DistributedObjectClient client;
-  private final ThreadIDMap             thIDMap;
-  private final ClientLockManager       lockManager;
+  private static final TCLogger    logger = TCLogging.getLogger(L1Info.class);
+  private final String             rawConfigText;
+  private final JVMMemoryManager   manager;
+  private StatisticRetrievalAction cpuSRA;
+  private String[]                 cpuNames;
+  private final TCClient           client;
+  private final ThreadIDMap        threadIDMap;
+  private final ClientLockManager  lockManager;
 
-  public L1Info(DistributedObjectClient client, String rawConfigText) throws NotCompliantMBeanException {
+  public L1Info(TCClient client, String rawConfigText) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
 
     this.manager = TCRuntime.getJVMMemoryManager();
     this.rawConfigText = rawConfigText;
     this.client = client;
     this.lockManager = client.getLockManager();
-    this.thIDMap = client.getThreadIDMap();
+    this.threadIDMap = client.getThreadIDMap();
     try {
       Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
@@ -65,12 +64,12 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   // for tests
-  public L1Info(ClientLockManager lockManager, ThreadIDMap thIDMap) throws NotCompliantMBeanException {
+  public L1Info(ClientLockManager lockManager, ThreadIDMap threadIDMap) throws NotCompliantMBeanException {
     super(L1InfoMBean.class, false);
     this.rawConfigText = null;
     this.manager = TCRuntime.getJVMMemoryManager();
     this.lockManager = lockManager;
-    this.thIDMap = thIDMap;
+    this.threadIDMap = threadIDMap;
     this.client = null;
   }
 
@@ -120,46 +119,41 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return rawConfigText;
   }
 
-  public Map getHeldLockByThreadID() {
-    Map heldLockByThreadIDMap = new HashMap();
-    Set heldLockSet = new HashSet();
-    this.lockManager.addAllHeldLocksTo(heldLockSet, false);
+  public void getHeldLocksAndPendingLocksByThreadID(Map heldLocksByThreadID, Map pendingLocksByThreadID) {
 
-    heldLockByThreadIDMap.clear();
+    Set heldLockSet = new HashSet();
+    Set pendingLockSet = new HashSet();
+    this.lockManager.addAllHeldLocksAndPendingLockRequestsTo(heldLockSet, pendingLockSet);
+
     for (Iterator i = heldLockSet.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       Long threadID = new Long(request.threadID().toLong());
-      String lockInfo = (String) heldLockByThreadIDMap.get(threadID);
+      String lockInfo = (String) heldLocksByThreadID.get(threadID);
       if (lockInfo == null) {
-        heldLockByThreadIDMap.put(threadID, request.lockID().toString());
+        heldLocksByThreadID.put(threadID, request.lockID().toString());
       } else {
-        heldLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
+        heldLocksByThreadID.put(threadID, lockInfo + "; " + request.lockID().toString());
       }
     }
-    return heldLockByThreadIDMap;
-  }
 
-  public Map getPendingLockByThreadID() {
-    Map pendingLockByThreadIDMap = new HashMap();
-    Set pendingLockSet = new HashSet();
-    this.lockManager.addAllPendingLockRequestsTo(pendingLockSet, false);
-
-    pendingLockByThreadIDMap.clear();
     for (Iterator i = pendingLockSet.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       Long threadID = new Long(request.threadID().toLong());
-      String lockInfo = (String) pendingLockByThreadIDMap.get(threadID);
+      String lockInfo = (String) pendingLocksByThreadID.get(threadID);
       if (lockInfo == null) {
-        pendingLockByThreadIDMap.put(threadID, request.lockID().toString());
+        pendingLocksByThreadID.put(threadID, request.lockID().toString());
       } else {
-        pendingLockByThreadIDMap.put(threadID, lockInfo + "; " + request.lockID().toString());
+        pendingLocksByThreadID.put(threadID, lockInfo + "; " + request.lockID().toString());
       }
     }
-    return pendingLockByThreadIDMap;
+
   }
 
   public String takeThreadDump(long requestMillis) {
-    String text = ThreadDumpUtil.getThreadDump(getHeldLockByThreadID(), getPendingLockByThreadID(), thIDMap);
+    Map heldLocksByThreadID = new HashMap();
+    Map pendingLocksByThreadID = new HashMap();
+    getHeldLocksAndPendingLocksByThreadID(heldLocksByThreadID, pendingLocksByThreadID);
+    String text = ThreadDumpUtil.getThreadDump(heldLocksByThreadID, pendingLocksByThreadID, threadIDMap);
     logger.info(text);
     return text;
   }

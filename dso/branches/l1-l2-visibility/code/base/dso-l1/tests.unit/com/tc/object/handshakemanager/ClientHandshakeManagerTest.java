@@ -421,13 +421,10 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       return null;
     }
 
-    public Collection addAllHeldLocksTo(Collection c, boolean stateCheck) {
-      return addAllHeldLocksTo(c);
+    public void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks) {
+      throw new ImplementMe();
     }
 
-    public Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck) {
-      return addAllPendingLockRequestsTo(c);
-    }
   }
 
   public class TestSequenceProvider implements BatchSequenceProvider {

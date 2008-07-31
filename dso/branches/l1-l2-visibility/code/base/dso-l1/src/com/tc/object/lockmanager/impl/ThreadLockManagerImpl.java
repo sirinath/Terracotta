@@ -19,7 +19,7 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
   private final ClientLockManager lockManager;
   private final ThreadLocal       threadID;
   private long                    threadIDSequence;
-  private final ThreadIDMap       thMap;
+  private final ThreadIDMap       threadIDMap;
 
   public ThreadLockManagerImpl(ClientLockManager lockManager) {
     this(lockManager, new NullThreadIDMap());
@@ -28,7 +28,7 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
   public ThreadLockManagerImpl(ClientLockManager lockManager, ThreadIDMap thMap) {
     this.lockManager = lockManager;
     this.threadID = new ThreadLocal();
-    this.thMap = thMap;
+    this.threadIDMap = thMap;
   }
 
   public LockID lockIDFor(String lockName) {
@@ -77,7 +77,7 @@ public class ThreadLockManagerImpl implements ThreadLockManager {
     ThreadID rv = (ThreadID) threadID.get();
     if (rv == null) {
       rv = new ThreadID(nextThreadID(), Thread.currentThread().getName());
-      thMap.addTCThreadID(rv.toLong());
+      threadIDMap.addTCThreadID(rv);
       threadID.set(rv);
     }
     return rv;

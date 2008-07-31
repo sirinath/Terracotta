@@ -4,12 +4,14 @@
  */
 package com.tc.util.runtime;
 
+import com.tc.object.lockmanager.api.ThreadID;
+
 /**
  * VM ThreadID to TC Thread ID mapping
  */
 public interface ThreadIDMap {
 
-  public void addTCThreadID(long tcThreadID);
+  public void addTCThreadID(ThreadID tcThreadID);
 
   public Long getTCThreadID(long vmThreadID);
 
