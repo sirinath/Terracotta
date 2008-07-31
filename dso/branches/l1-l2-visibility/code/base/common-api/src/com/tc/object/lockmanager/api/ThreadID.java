@@ -41,7 +41,11 @@ public class ThreadID extends AbstractIdentifier {
   }
 
   public String toString() {
-    return "Thread(" + name + ") ID[" + toLong() + "]";
+    if (name == null) {
+      return super.toString();
+    } else {
+      return "Thread(" + name + ") ID[" + toLong() + "]";
+    }
   }
 
 }

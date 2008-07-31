@@ -171,11 +171,8 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public Collection addAllHeldLocksTo(Collection c, boolean stateCheck) {
-    return addAllHeldLocksTo(c);
+  public void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks) {
+    throw new ImplementMe();
   }
 
-  public Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck) {
-    return addAllPendingLockRequestsTo(c);
-  }
 }

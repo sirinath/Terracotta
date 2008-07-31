@@ -18,7 +18,7 @@ public class ThreadDumpUtilJdk15 {
     return getThreadDump(null, null, new NullThreadIDMap());
   }
 
-  public static String getThreadDump(Map heldMap, Map pendingMap, ThreadIDMap thIDMap) {
+  public static String getThreadDump(Map heldMap, Map pendingMap, ThreadIDMap threadIDMap) {
 
     StringBuilder sb = new StringBuilder();
     sb.append(new Date().toString());
@@ -36,7 +36,6 @@ public class ThreadDumpUtilJdk15 {
       for (int i = 0; i < threadIds.length; i++) {
         ThreadInfo threadInfo = threadMXBean.getThreadInfo(threadIds[i], Integer.MAX_VALUE);
         if (threadInfo != null) {
-          sb.append(ThreadDumpUtil.getHeldAndPendingLockInfo(heldMap, pendingMap, thIDMap.getTCThreadID(threadIds[i])));
           sb.append(threadHeader(threadInfo, threadIds[i]));
           sb.append('\n');
 
@@ -46,6 +45,7 @@ public class ThreadDumpUtilJdk15 {
             sb.append(stea[j].toString());
             sb.append('\n');
           }
+          sb.append(ThreadDumpUtil.getHeldAndPendingLockInfo(heldMap, pendingMap, threadIDMap.getTCThreadID(threadIds[i])));
           sb.append('\n');
         }
       }

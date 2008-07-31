@@ -23,6 +23,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Management;
+import com.tc.management.TCClient;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
@@ -155,7 +156,7 @@ import java.util.Collections;
 /**
  * This is the main point of entry into the DSO client.
  */
-public class DistributedObjectClient extends SEDA {
+public class DistributedObjectClient extends SEDA implements TCClient {
 
   private static final TCLogger                    logger                     = CustomerLogging.getDSOGenericLogger();
   private static final TCLogger                    consoleLogger              = CustomerLogging.getConsoleLogger();
@@ -183,7 +184,7 @@ public class DistributedObjectClient extends SEDA {
   private DmiManager                               dmiManager;
   private boolean                                  createDedicatedMBeanServer = false;
   private CounterManager                           sampledCounterManager;
-  private final ThreadIDMap                        thIDMap;
+  private final ThreadIDMap                        threadIDMap;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -198,11 +199,11 @@ public class DistributedObjectClient extends SEDA {
     this.cluster = cluster;
     this.threadGroup = threadGroup;
     this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
-    this.thIDMap = new ThreadIDMapUtil().getInstance();
+    this.threadIDMap = ThreadIDMapUtil.getInstance();
   }
 
   public ThreadIDMap getThreadIDMap() {
-    return this.thIDMap;
+    return this.threadIDMap;
   }
 
   public void setCreateDedicatedMBeanServer(boolean createDedicatedMBeanServer) {
@@ -385,7 +386,7 @@ public class DistributedObjectClient extends SEDA {
     l1Management.start(createDedicatedMBeanServer);
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
-                                                 new ThreadLockManagerImpl(lockManager, thIDMap), txFactory,
+                                                 new ThreadLockManagerImpl(lockManager, threadIDMap), txFactory,
                                                  rtxManager, runtimeLogger, l1Management.findClientTxMonitorMBean());
 
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(txManager));

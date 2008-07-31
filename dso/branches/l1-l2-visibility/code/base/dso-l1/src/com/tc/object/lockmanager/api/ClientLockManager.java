@@ -79,14 +79,12 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable {
    */
   public Collection addAllHeldLocksTo(Collection c);
 
-  public Collection addAllHeldLocksTo(Collection c, boolean stateCheck);
-
   /**
    * Causes all pending lock requests to be added to the collection.
    */
   public Collection addAllPendingLockRequestsTo(Collection c);
 
-  public Collection addAllPendingLockRequestsTo(Collection c, boolean stateCheck);
+  public void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks);
 
   public Collection addAllPendingTryLockRequestsTo(Collection c);
 

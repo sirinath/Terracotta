@@ -37,8 +37,6 @@ public abstract class ThreadDumpUtilJdk16 {
       for (int i = 0; i < threadInfos.length; i++) {
         ThreadInfo threadInfo = threadInfos[i];
         if (threadInfo != null) {
-          sb.append(ThreadDumpUtil.getHeldAndPendingLockInfo(heldMap, pendingMap, thIDMap.getTCThreadID(threadInfo
-              .getThreadId())));
           sb.append(threadHeader(threadInfo));
           sb.append('\n');
 
@@ -48,6 +46,8 @@ public abstract class ThreadDumpUtilJdk16 {
             sb.append(stea[j].toString());
             sb.append('\n');
           }
+          sb.append(ThreadDumpUtil.getHeldAndPendingLockInfo(heldMap, pendingMap, thIDMap.getTCThreadID(threadInfo
+              .getThreadId())));
           if (threadMXBean.isObjectMonitorUsageSupported()) {
             sb.append("\n").append(threadLockedMonitors(threadInfo));
           } else if (threadMXBean.isSynchronizerUsageSupported()) {

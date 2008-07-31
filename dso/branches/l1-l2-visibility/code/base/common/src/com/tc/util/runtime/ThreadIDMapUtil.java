@@ -9,15 +9,15 @@ import com.tc.logging.TCLogging;
 
 public class ThreadIDMapUtil {
 
-  private final TCLogger logger = TCLogging.getLogger(ThreadIDMapUtil.class);
-  private final Class    threadIDMapInfoJdk15Type;
+  private static final TCLogger logger = TCLogging.getLogger(ThreadIDMapUtil.class);
+  private static final Class    threadIDMapInfoJdk15Type;
 
-  public ThreadIDMapUtil() {
+  static {
     if (Vm.isJDK15Compliant()) {
       try {
-        threadIDMapInfoJdk15Type = Class.forName("com.tc.util.runtime.ThreadIDMapUtilJDK15");
+        threadIDMapInfoJdk15Type = Class.forName("com.tc.util.runtime.ThreadIDMapJdk15");
       } catch (ClassNotFoundException e) {
-        throw new AssertionError("Class ThreadIDMapUtilJDK15 not found");
+        throw new AssertionError("Class ThreadIDMapJdk15 not found");
       }
     } else {
       threadIDMapInfoJdk15Type = null;
@@ -25,12 +25,12 @@ public class ThreadIDMapUtil {
     }
   }
 
-  public ThreadIDMap getInstance() {
+  public static ThreadIDMap getInstance() {
     if (threadIDMapInfoJdk15Type != null) {
       try {
         return (ThreadIDMap) threadIDMapInfoJdk15Type.newInstance();
       } catch (Exception e) {
-        logger.warn("Not able to create new instance of ThreadIDMapInfoJDK15 : " + e);
+        logger.warn("Not able to create new instance of ThreadIDMapJdk15 : " + e);
       }
     }
     return new NullThreadIDMap();
