@@ -14,6 +14,7 @@ import org.jfree.data.time.TimeSeries;
 
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.ExceptionHelper;
+import com.tc.admin.model.IClient;
 import com.tc.statistics.StatisticData;
 import com.tc.stats.statistics.CountStatistic;
 import com.tc.stats.statistics.Statistic;
@@ -87,7 +88,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_flushRatePanel = createChartPanel(m_flushRateChart);
     parent.add(m_flushRatePanel);
     m_flushRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_flushRatePanel.setBorder(new TitledBorder("Object Flush Rate"));
+    m_flushRatePanel.setBorder(new TitledBorder(m_acc.getString("object.flush.rate")));
   }
 
   private void setupFaultRatePanel(Container parent) {
@@ -96,7 +97,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_faultRatePanel = createChartPanel(m_faultRateChart);
     parent.add(m_faultRatePanel);
     m_faultRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_faultRatePanel.setBorder(new TitledBorder("Object Fault Rate"));
+    m_faultRatePanel.setBorder(new TitledBorder(m_acc.getString("object.fault.rate")));
   }
 
   private void setupTxnRatePanel(Container parent) {
@@ -105,7 +106,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_txnRatePanel = createChartPanel(m_txnRateChart);
     parent.add(m_txnRatePanel);
     m_txnRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_txnRatePanel.setBorder(new TitledBorder("Transaction Rate"));
+    m_txnRatePanel.setBorder(new TitledBorder(m_acc.getString("transaction.rate")));
   }
 
   private void setupPendingTxnsPanel(Container parent) {
@@ -114,12 +115,12 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_pendingTxnsPanel = createChartPanel(m_pendingTxnsChart);
     parent.add(m_pendingTxnsPanel);
     m_pendingTxnsPanel.setPreferredSize(fDefaultGraphSize);
-    m_pendingTxnsPanel.setBorder(new TitledBorder("Pending Transactions"));
+    m_pendingTxnsPanel.setBorder(new TitledBorder(m_acc.getString("pending.transactions")));
   }
 
   private void setupMemoryPanel(Container parent) {
-    m_memoryMaxTimeSeries = createTimeSeries("memory max");
-    m_memoryUsedTimeSeries = createTimeSeries("memory used");
+    m_memoryMaxTimeSeries = createTimeSeries(m_acc.getString("heap.usage.max"));
+    m_memoryUsedTimeSeries = createTimeSeries(m_acc.getString("heap.usage.used"));
     m_memoryChart = createChart(new TimeSeries[] { m_memoryMaxTimeSeries, m_memoryUsedTimeSeries });
     XYPlot plot = (XYPlot) m_memoryChart.getPlot();
     NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
@@ -129,7 +130,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_memoryPanel = createChartPanel(m_memoryChart);
     parent.add(m_memoryPanel);
     m_memoryPanel.setPreferredSize(fDefaultGraphSize);
-    m_memoryPanel.setBorder(new TitledBorder("Heap Usage"));
+    m_memoryPanel.setBorder(new TitledBorder(m_acc.getString("heap.usage")));
   }
 
   private synchronized void setupCpuSeries(int processorCount) {
@@ -148,11 +149,19 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_cpuPanel.setRangeZoomable(false);
   }
 
+  private synchronized IClient getClient() {
+    return m_clientStatsNode != null ? m_clientStatsNode.getClient() : null;
+  }
+  
   private class CpuPanelWorker extends BasicWorker<String[]> {
     private CpuPanelWorker() {
       super(new Callable<String[]>() {
         public String[] call() throws Exception {
-          return m_clientStatsNode.getClient().getCpuStatNames();
+          final IClient client = getClient();
+          if(client != null) {
+            return client.getCpuStatNames();
+          }
+          return null;
         }
       });
     }
@@ -181,7 +190,7 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     m_cpuPanel = createChartPanel(null);
     parent.add(m_cpuPanel);
     m_cpuPanel.setPreferredSize(fDefaultGraphSize);
-    m_cpuPanel.setBorder(new TitledBorder("CPU Usage"));
+    m_cpuPanel.setBorder(new TitledBorder(m_acc.getString("cpu.usage")));
     m_acc.execute(new CpuPanelWorker());
   }
 
@@ -189,7 +198,11 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     L1InfoStatGetter() {
       super(new Callable<Map>() {
         public Map call() throws Exception {
-          return m_clientStatsNode.getClient().getL1Statistics();
+          final IClient client = getClient();
+          if(client != null) {
+            return client.getL1Statistics();
+          }
+          return null;
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }
@@ -246,7 +259,11 @@ public class ClientRuntimeStatsPanel extends RuntimeStatsPanel {
     DSOClientStatGetter() {
       super(new Callable<Statistic[]>() {
         public Statistic[] call() throws Exception {
-          return m_clientStatsNode.getClient().getDSOStatistics(STATS);
+          final IClient client = getClient();
+          if(client != null) {
+            return client.getDSOStatistics(STATS);
+          }
+          return null;
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }

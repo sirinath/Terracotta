@@ -76,7 +76,11 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   protected List<IBasicObject>            m_roots;
   protected Map<ObjectName, IBasicObject> m_rootMap;
   protected LogListener                   m_logListener;
-
+  protected long                          m_startTime;
+  protected long                          m_activateTime;
+  protected String                        m_persistenceMode;
+  protected String                        m_failoverMode;  
+  
   public Server() {
     this(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT, ConnectionContext.DEFAULT_AUTO_CONNECT);
   }
@@ -157,12 +161,22 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   private synchronized void setupFromDSOBean() throws Exception {
-    for (ObjectName clientBeanName : getDSOBean().getClients()) {
-      addClient(clientBeanName);
+    synchronized (CLIENT_ADD_LOCK) {
+      for (ObjectName clientBeanName : getDSOBean().getClients()) {
+        if (!haveClient(clientBeanName)) {
+          addClient(clientBeanName);
+        }
+      }
     }
-    for (ObjectName rootBeanName : getDSOBean().getRoots()) {
-      addRoot(rootBeanName);
+
+    synchronized (ROOT_ADD_LOCK) {
+      for (ObjectName rootBeanName : getDSOBean().getRoots()) {
+        if (!haveRoot(rootBeanName)) {
+          addRoot(rootBeanName);
+        }
+      }
     }
+
     getConnectionContext().addNotificationListener(L2MBeanNames.DSO, this);
   }
 
@@ -196,17 +210,6 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     if (oldConnected == true && connected == false) {
       setReady(false);
       handleDisconnect();
-    }
-  }
-
-  private void removeAllClients() {
-    DSOClient[] clients;
-    synchronized (m_clients) {
-      clients = getClients();
-      m_clients.clear();
-    }
-    for (int i = clients.length - 1; i >= 0; i--) {
-      fireClientDisconnected(clients[i]);
     }
   }
 
@@ -311,6 +314,20 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     return getServerInfoBean().getDSOListenPort();
   }
 
+  public String getPersistenceMode() {
+    if(m_persistenceMode == null) {
+      m_persistenceMode = getServerInfoBean().getPersistenceMode();
+    }
+    return m_persistenceMode;
+  }
+  
+  public String getFailoverMode() {
+    if(m_failoverMode == null) {
+      m_failoverMode = getServerInfoBean().getFailoverMode();
+    }
+    return m_failoverMode;
+  }
+  
   public String getStatsExportServletURI() {
     Integer dsoPort = getDSOListenPort();
     Object[] args = new Object[] { getHost(), dsoPort.toString() };
@@ -440,11 +457,17 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   public long getStartTime() {
-    return getServerInfoBean().getStartTime();
+    if(m_startTime == -1) {
+      m_startTime = getServerInfoBean().getStartTime();
+    }
+    return m_startTime;
   }
 
   public long getActivateTime() {
-    return getServerInfoBean().getActivateTime();
+    if(m_activateTime == -1) {
+      m_activateTime = getServerInfoBean().getActivateTime();
+    }
+    return m_activateTime;
   }
 
   public CountStatistic getTransactionRate() {
@@ -463,7 +486,7 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     }
   }
 
-  public Map getServerStatistics() {
+  public synchronized Map getServerStatistics() {
     return getServerInfoBean().getStatistics();
   }
 
@@ -471,7 +494,7 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     return getDSOBean().getStatistics(names);
   }
 
-  public Map getPrimaryStatistics() {
+  public synchronized Map getPrimaryStatistics() {
     Map result = getServerStatistics();
     result.put("TransactionRate", getTransactionRate());
     return result;
@@ -572,9 +595,13 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
       final String prop = evt.getPropertyName();
       if (IClusterNode.PROP_READY.equals(prop)) {
         DSOClient client = (DSOClient) evt.getSource();
-        m_clients.add(client);
-        fireClientConnected(client);
-        client.removePropertyChangeListener(this);
+        synchronized (CLIENT_ADD_LOCK) {
+          if (client.isReady() && !m_clients.contains(client)) {
+            m_clients.add(client);
+            fireClientConnected(client);
+            client.removePropertyChangeListener(this);
+          }
+        }
       }
     }
   }
@@ -607,13 +634,17 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     }
   }
 
+  private final Object CLIENT_ADD_LOCK = new Object();
+
   private void clientNotification(Notification notification, Object handback) {
     String type = notification.getType();
 
     if (DSOMBean.CLIENT_ATTACHED.equals(type)) {
       ObjectName clientObjectName = (ObjectName) notification.getSource();
-      if (!haveClient(clientObjectName)) {
-        addClient(clientObjectName);
+      synchronized (CLIENT_ADD_LOCK) {
+        if (!haveClient(clientObjectName)) {
+          addClient(clientObjectName);
+        }
       }
     } else if (DSOMBean.CLIENT_DETACHED.equals(type)) {
       removeClient((ObjectName) notification.getSource());
@@ -641,10 +672,15 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     return m_rootMap.containsKey(objectName);
   }
 
+  private final Object ROOT_ADD_LOCK = new Object();
+
   private void rootAdded(Notification notification, Object handback) {
     ObjectName objectName = (ObjectName) notification.getSource();
-    if (haveRoot(objectName)) return;
-    fireRootCreated(addRoot(objectName));
+    synchronized (ROOT_ADD_LOCK) {
+      if (!haveRoot(objectName)) {
+        fireRootCreated(addRoot(objectName));
+      }
+    }
   }
 
   private ManagedObjectFacade safeLookupFacade(DSORootMBean rootBean) {
@@ -748,7 +784,16 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     getConnectionManager().disconnect();
   }
 
+  private void removeAllClients() {
+    DSOClient[] clients = getClients();
+    for (DSOClient client : clients) {
+      m_clients.remove(client);
+      fireClientDisconnected(client);
+    }
+  }
+
   synchronized void reset() {
+    if (m_roots == null) return;
     m_connected = m_ready = false;
     initReadySet();
     m_roots.clear();
@@ -964,6 +1009,8 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   public synchronized void tearDown() {
     m_clients.clear();
     m_clients = null;
+    m_readySet.clear();
+    m_readySet = null;
     m_roots.clear();
     m_roots = null;
     m_rootMap.clear();

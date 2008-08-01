@@ -114,7 +114,7 @@ bundled_components:
         - thirdparty-api
         - tim-update-center:
             kit-resources:
-              - org/terracotta/modules/tool/tim-get.properties
+              - tim-get.properties
         - ui-configurator
         - ../../../code/base/ent-common
         - ../../../code/base/ent-deploy
@@ -124,9 +124,10 @@ bundled_modules:
       install_directory: modules
       manifest:
         - clustered-commons-collections-3.1
+        - clustered-glassfish-2.0
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
-        - clustered-glassfish-2.0
+        - clustered-apache-struts-1.1
         - excludes-config
         - guimodels-config
         - jdk15-preinst-config
@@ -163,6 +164,7 @@ postscripts:
         - artifact: terracotta
           file: lib/tc.jar
           pom: poms/terracotta-pom.xml
+          inject: lib/resources/build-data.txt
         - artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
           pom: poms/tcconfig-pom.xml
@@ -172,7 +174,9 @@ postscripts:
         - artifact: terracotta-api
           file: lib/terracotta-api-version-PREALPHA.jar
           pom: poms/terracotta-api-pom.xml
+          inject: lib/resources/build-data.txt
         - artifact: terracotta-jmx-api
           file: lib/terracotta-jmx-api.jar
           pom: poms/terracotta-jmx-api-pom.xml
+          inject: lib/resources/build-data.txt
   - make-enterprise

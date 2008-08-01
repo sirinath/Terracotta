@@ -503,22 +503,34 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   /**
    * Returns true if quit should proceed.
    */
-  private boolean testWarnCurrentRecordingSessions() {
+  private boolean testWarnMonitoringActivity() {
     XTreeModel model = (XTreeModel) m_tree.getModel();
     XTreeNode root = (XTreeNode) model.getRoot();
     int count = root.getChildCount();
-    boolean currentlyRecording = false;
+    boolean recordingStats = false;
+    boolean profilingLocks = false;
 
     for (int i = 0; i < count; i++) {
       ClusterNode clusterNode = (ClusterNode) root.getChildAt(i);
       if (clusterNode.haveActiveRecordingSession()) {
-        currentlyRecording = true;
-        break;
+        recordingStats = true;
+      }
+      if (clusterNode.isProfilingLocks()) {
+        profilingLocks = true;
       }
     }
 
-    if (currentlyRecording) {
-      String msg = m_acc.getMessage("stats.active.recording.msg");
+    if (recordingStats || profilingLocks) {
+      String key;
+      if(recordingStats && profilingLocks) {
+        key = "recording.stats.profiling.locks.msg"; 
+      } else if(recordingStats) {
+        key = "recording.stats.msg";
+      } else {
+        key = "profiling.locks.msg";        
+      }
+      
+      String msg = m_acc.format(key, m_acc.getMessage("quit.anyway"));
       Frame frame = (Frame) getAncestorOfClass(Frame.class);
       int answer = JOptionPane.showConfirmDialog(this, msg, frame.getTitle(), JOptionPane.OK_CANCEL_OPTION);
       return answer == JOptionPane.OK_OPTION;
@@ -535,7 +547,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
     public void actionPerformed(ActionEvent ae) {
       m_acc.storePrefs();
-      if (testWarnCurrentRecordingSessions()) {
+      if (testWarnMonitoringActivity()) {
         Runtime.getRuntime().exit(0);
       }
     }

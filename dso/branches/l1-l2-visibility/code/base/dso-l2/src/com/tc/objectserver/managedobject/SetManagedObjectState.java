@@ -47,7 +47,7 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
   protected void apply(ObjectID objectID, int method, Object[] params, BackReferences includeIDs) {
     switch (method) {
       case SerializationUtil.ADD:
-        Object v = getValue(params);
+        Object v = params[0];
         addChangeToCollector(objectID, v, includeIDs);
         references.add(v);
         break;
@@ -65,11 +65,6 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     }
   }
 
-  private Object getValue(Object[] params) {
-    // hack for trove sets which replace the old set value (java ones do the opposite) clean this up
-    return params.length == 2 ? params[1] : params[0];
-  }
-
   private void addChangeToCollector(ObjectID objectID, Object newValue, BackReferences includeIDs) {
     if (newValue instanceof ObjectID) {
       getListener().changed(objectID, null, (ObjectID) newValue);
@@ -84,6 +79,7 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     }
   }
 
+  @Override
   protected void addAllObjectReferencesTo(Set refs) {
     addAllObjectReferencesFromIteratorTo(this.references.iterator(), refs);
   }
@@ -111,11 +107,13 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     return SET_TYPE;
   }
 
+  @Override
   protected void basicWriteTo(ObjectOutput out) throws IOException {
-    //for removing warning
-    if(false) throw new IOException();
+    // for removing warning
+    if (false) throw new IOException();
   }
 
+  @Override
   protected boolean basicEquals(LogicalManagedObjectState o) {
     SetManagedObjectState mo = (SetManagedObjectState) o;
     return references.equals(mo.references);
@@ -127,14 +125,14 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   public PersistableCollection getPersistentCollection() {
-    return (PersistableCollection)references;
+    return (PersistableCollection) references;
   }
 
   public void setPersistentCollection(PersistableCollection collection) {
     if (this.references != null) { throw new AssertionError("The references map is already set ! " + references); }
-    this.references = (Set)collection;
+    this.references = (Set) collection;
   }
-  
+
   static SetManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
     if (false) {
       // This is added to make the compiler happy. For some reason if I have readFrom() method throw

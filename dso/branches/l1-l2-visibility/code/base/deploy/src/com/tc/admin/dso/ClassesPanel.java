@@ -6,6 +6,7 @@ package com.tc.admin.dso;
 
 import org.apache.xmlbeans.XmlOptions;
 import org.dijon.ContainerResource;
+import org.dijon.TextArea;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
@@ -60,10 +61,12 @@ public class ClassesPanel extends XContainer {
     m_tree = (XTree) findComponent("ClassTree");
     m_tree.setShowsRootHandles(true);
     m_tree.setModel(new ClassTreeModel(classInfo));
-
+    
     m_treeMap = (ClassesTreeMap) findComponent("ClassesTreeMap");
     m_treeMap.setModel((ClassTreeModel) m_tree.getModel());
 
+    TextArea configDescriptionText = (TextArea) findComponent("ClassesConfigDescriptionText");
+    configDescriptionText.setText(AdminClient.getContext().getString("dso.classes.config.desc"));
     m_configText = (XTextArea) findComponent("ClassesConfigTextArea");
     updateConfigText();
 

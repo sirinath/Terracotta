@@ -30,12 +30,14 @@ public class UpdateCommand extends AbstractCommand {
   private static final String LONGOPT_OVERWRITE = "overwrite";
   private static final String LONGOPT_FORCE     = "force";
   private static final String LONGOPT_PRETEND   = "pretend";
+  private static final String LONGOPT_NOVERIFY  = "no-verify";
 
   private final Modules       modules;
 
   private boolean             force;
   private boolean             overwrite;
   private boolean             pretend;
+  private boolean             verify;
 
   @Inject
   public UpdateCommand(Modules modules) {
@@ -46,8 +48,9 @@ public class UpdateCommand extends AbstractCommand {
     options.addOption(buildOption(LONGOPT_FORCE, "Update anyway, even if update is already installed"));
     options.addOption(buildOption(LONGOPT_OVERWRITE, "Overwrite if already installed"));
     options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
+    options.addOption(buildOption(LONGOPT_NOVERIFY, "Skip checksum verification"));
     arguments.put("name", "The name of the integration module");
-    arguments.put("group-id", "OPTIONAL. The group-id used to qualify the name");
+    arguments.put("group-id", "(OPTIONAL) The group-id used to qualify the name");
   }
 
   public String syntax() {
@@ -108,7 +111,7 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     // update found, install it
-    module.install(overwrite, pretend, out);
+    module.install(verify, overwrite, pretend, out);
   }
 
   private void updateAll() throws CommandException {
@@ -129,7 +132,8 @@ public class UpdateCommand extends AbstractCommand {
     force = cli.hasOption(LONGOPT_FORCE);
     overwrite = cli.hasOption(LONGOPT_OVERWRITE) || force;
     pretend = cli.hasOption(LONGOPT_PRETEND);
-
+    verify = !cli.hasOption(LONGOPT_NOVERIFY);
+    
     // --all was specified, update everything that is installed
     if (cli.hasOption(LONGOPT_ALL)) {
       updateAll();
@@ -144,8 +148,11 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     // given the artifactId and maybe the groupId - find some candidates
+    Module module = null;
     String artifactId = args.remove(0);
     String groupId = args.isEmpty() ? null : args.remove(0);
+
+    // get candidates
     List<Module> candidates = modules.find(artifactId, null, groupId);
 
     // no candidates found, inform the user
@@ -156,31 +163,22 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     // several candidates found, see if we can figure out which one we can install
-    if (candidates.size() > 1) {
-      // more than 1 found, they are not siblings if no groupId was specified
-      // so ask the user to be more specific
-      if (groupId == null) {
-        out.println("There's more than one integration module found matching the name '" + artifactId + "':");
-        out.println();
-        for (Module candidate : candidates) {
-          ModuleId id = candidate.getId();
-          out.println("  * " + id.getArtifactId() + " " + id.getGroupId());
-        }
-        out.println();
-        out.println("Pass the group-id argument in the command to be more specific.");
-        return;
-      }
-
-      // more than 1 found, they are siblings (since group-id was specified)
-      // so get the latest from the lot, and install it
-      Module latest = modules.getLatest(groupId, artifactId);
-      update(latest, true);
+    module = modules.getLatest(candidates);
+    if (module != null) {
+      update(module, true);
       return;
     }
 
-    // only 1 candidate found, install it
-    Module module = candidates.remove(0);
-    update(module, true);
+    // we can't figure out which one to update/install
+    // so ask the user to be more specific
+    out.println("There's more than one integration module found matching the name '" + artifactId + "':");
+    out.println();
+    for (Module candidate : candidates) {
+      ModuleId id = candidate.getId();
+      out.println("  * " + id.getArtifactId() + " " + id.getGroupId());
+    }
+    out.println();
+    out.println("Pass the group-id argument in the command to be more specific.");
   }
 
 }

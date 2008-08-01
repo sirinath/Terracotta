@@ -27,11 +27,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-public class TUCApp {
+public class TIMGetTool {
 
   private static Config createConfig() throws IOException {
     Properties props = new Properties();
-    props.load(TUCApp.class.getResourceAsStream("/org/terracotta/modules/tool/tim-get.properties"));
+    props.load(TIMGetTool.class.getResourceAsStream("/tim-get.properties"));
     return new Config(props);
   }
 
@@ -44,7 +44,9 @@ public class TUCApp {
   }
 
   public static void main(String args[]) {
-    System.out.println(ProductInfo.getInstance().toLongString()); 
+    ProductInfo pInfo = ProductInfo.getInstance();
+    System.out.println(pInfo.toLongString());
+    if (pInfo.isPatched()) System.out.println(pInfo.toLongPatchString());
     System.out.println();
     
     Config config = null;
