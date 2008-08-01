@@ -72,8 +72,8 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     setup(m_chartsPanel);
   }
 
-  IServer getServer() {
-    return m_serverStatsNode.getServer();
+  synchronized IServer getServer() {
+    return m_serverStatsNode != null ? m_serverStatsNode.getServer() : null;
   }
 
   protected synchronized void setup(Container chartsPanel) {
@@ -92,7 +92,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_flushRatePanel = createChartPanel(m_flushRateChart);
     parent.add(m_flushRatePanel);
     m_flushRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_flushRatePanel.setBorder(new TitledBorder("Object Flush Rate"));
+    m_flushRatePanel.setBorder(new TitledBorder(m_acc.getString("object.flush.rate")));
   }
 
   private void setupFaultRatePanel(Container parent) {
@@ -101,7 +101,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_faultRatePanel = createChartPanel(m_faultRateChart);
     parent.add(m_faultRatePanel);
     m_faultRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_faultRatePanel.setBorder(new TitledBorder("Object Fault Rate"));
+    m_faultRatePanel.setBorder(new TitledBorder(m_acc.getString("object.fault.rate")));
   }
 
   private void setupTxnRatePanel(Container parent) {
@@ -110,7 +110,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_txnRatePanel = createChartPanel(m_txnRateChart);
     parent.add(m_txnRatePanel);
     m_txnRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_txnRatePanel.setBorder(new TitledBorder("Transaction Rate"));
+    m_txnRatePanel.setBorder(new TitledBorder(m_acc.getString("transaction.rate")));
   }
 
   private void setupCacheMissRatePanel(Container parent) {
@@ -119,12 +119,12 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_cacheMissRatePanel = createChartPanel(m_cacheMissRateChart);
     parent.add(m_cacheMissRatePanel);
     m_cacheMissRatePanel.setPreferredSize(fDefaultGraphSize);
-    m_cacheMissRatePanel.setBorder(new TitledBorder("Cache Miss Rate"));
+    m_cacheMissRatePanel.setBorder(new TitledBorder(m_acc.getString("cache.miss.rate")));
   }
 
   private void setupMemoryPanel(Container parent) {
-    m_memoryMaxTimeSeries = createTimeSeries("memory max");
-    m_memoryUsedTimeSeries = createTimeSeries("memory used");
+    m_memoryMaxTimeSeries = createTimeSeries(m_acc.getString("heap.usage.max"));
+    m_memoryUsedTimeSeries = createTimeSeries(m_acc.getString("heap.usage.used"));
     m_memoryChart = createChart(new TimeSeries[] { m_memoryMaxTimeSeries, m_memoryUsedTimeSeries });
     XYPlot plot = (XYPlot) m_memoryChart.getPlot();
     NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
@@ -134,7 +134,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_memoryPanel = createChartPanel(m_memoryChart);
     parent.add(m_memoryPanel);
     m_memoryPanel.setPreferredSize(fDefaultGraphSize);
-    m_memoryPanel.setBorder(new TitledBorder("Heap Usage"));
+    m_memoryPanel.setBorder(new TitledBorder(m_acc.getString("heap.usage")));
   }
 
   private synchronized void setupCpuSeries(int processorCount) {
@@ -160,8 +160,9 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     private CpuPanelWorker() {
       super(new Callable<String[]>() {
         public String[] call() throws Exception {
-          String[] cpuNames = getServer().getCpuStatNames();
-          return cpuNames;
+          IServer server = getServer();
+          if (server != null) { return server.getCpuStatNames(); }
+          return null;
         }
       });
     }
@@ -190,7 +191,7 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     m_cpuPanel = createChartPanel(null);
     parent.add(m_cpuPanel);
     m_cpuPanel.setPreferredSize(fDefaultGraphSize);
-    m_cpuPanel.setBorder(new TitledBorder("CPU Usage"));
+    m_cpuPanel.setBorder(new TitledBorder(m_acc.getString("cpu.usage")));
     m_acc.execute(new CpuPanelWorker());
   }
 
@@ -198,7 +199,9 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     TCServerInfoStatGetter() {
       super(new Callable<Map>() {
         public Map call() throws Exception {
-          return getServer().getServerStatistics();
+          IServer server = getServer();
+          if (server != null) { return server.getServerStatistics(); }
+          return null;
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }
@@ -259,7 +262,9 @@ public class ServerRuntimeStatsPanel extends RuntimeStatsPanel {
     DSOServerStatGetter() {
       super(new Callable<Statistic[]>() {
         public Statistic[] call() throws Exception {
-          return getServer().getDSOStatistics(STATS);
+          IServer server = getServer();
+          if (server != null) { return server.getDSOStatistics(STATS); }
+          return null;
         }
       }, getRuntimeStatsPollPeriodSeconds(), TimeUnit.SECONDS);
     }

@@ -162,11 +162,19 @@ public class ServerNode extends ComponentNode {
     return m_server.getPort();
   }
 
-  public Integer getDSOListenPort() throws Exception {
+  public Integer getDSOListenPort() {
     return m_server.getDSOListenPort();
   }
 
-  String getStatsExportServletURI(String sessionId) throws Exception {
+  public String getPersistenceMode() {
+    return m_server.getPersistenceMode();
+  }
+  
+  public String getFailoverMode() {
+    return m_server.getFailoverMode();
+  }
+  
+  String getStatsExportServletURI(String sessionId) {
     return m_server.getStatsExportServletURI(sessionId);
   }
 
@@ -389,11 +397,13 @@ public class ServerNode extends ComponentNode {
 
   public void tearDown() {
     m_server.removePropertyChangeListener(m_serverPropertyChangeListener);
+    
+    super.tearDown();
+
     m_acc = null;
     m_server = null;
     m_serverPanel = null;
     m_popupMenu = null;
     m_threadDumpsNode = null;
-    super.tearDown();
   }
 }

@@ -118,8 +118,34 @@ public class ModuleTest extends TestCase {
     assertEquals(2, siblings.size());
     assertTrue(module.isOlder(siblings.get(0)));
     assertTrue(module.isOlder(siblings.get(1)));
-    assertFalse(siblings.get(0).isLatest());
-    assertTrue(siblings.get(1).isLatest());
+    assertTrue(siblings.get(0).isLatest());
+    assertFalse(siblings.get(1).isLatest());
+  }
+  
+  public void testSnapshotIsOlder() {
+    Modules modules = getModules("2.7.0", "/testList.xml");
+    assertNotNull(modules);
+    assertFalse(modules.list().isEmpty());
+    assertEquals(3, modules.list().size());
+
+    ModuleId id = ModuleId.create("org.foo.bar", "tim-hibernate-3.2.5", "1.0.0-SNAPSHOT");
+    Module snapshot = modules.get(id);
+    assertNotNull(snapshot);
+    assertEquals("1.0.0-SNAPSHOT", snapshot.getId().getVersion());
+
+    id = ModuleId.create("org.foo.bar", "tim-hibernate-3.2.5", "1.0.0");
+    Module release = modules.get(id);
+    assertNotNull(release);
+    assertEquals("1.0.0", release.getId().getVersion());
+    assertTrue(snapshot.isOlder(release));
+    assertFalse(release.isOlder(snapshot));
+    
+    Module latest = modules.getLatest("org.foo.bar", "tim-hibernate-3.2.5");
+    assertNotNull(latest);
+    assertTrue(latest.isLatest());
+    assertEquals("1.0.1", latest.getId().getVersion());
+    assertTrue(release.isOlder(latest));
+    assertTrue(snapshot.isOlder(latest));
   }
   
   public void testGetSiblings() {

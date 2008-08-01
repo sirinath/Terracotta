@@ -30,7 +30,7 @@ public class ListCommand extends AbstractCommand {
     this.modules = modules;
     assert modules != null : "modules is null";
     options.addOption(OPTION_DETAILS, LONGOPT_DETAILS, false, "Display detailed information");
-    arguments.put("keywords", "OPTIONAL. Space delimited list of keywords used to filter the list.");
+    arguments.put("keywords", "(OPTIONAL) Space delimited list of keywords used to filter the list.");
   }
 
   public String syntax() {
@@ -79,9 +79,9 @@ public class ListCommand extends AbstractCommand {
     if (cli.hasOption('v') || cli.hasOption(LONGOPT_DETAILS)) displayWithDetails(list);
     else display(list);
 
-    if (!list.isEmpty()) {
+    if (!list.isEmpty()) { 
       out.println();
-      out.println("legends: [+] already installed  [!] installed but newer version exists  [-] not installed");
+      out.println(Module.LEGEND);
     }
 
   }

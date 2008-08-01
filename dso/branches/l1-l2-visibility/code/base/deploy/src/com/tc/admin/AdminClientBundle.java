@@ -9,12 +9,19 @@ import java.util.ListResourceBundle;
 public class AdminClientBundle extends ListResourceBundle {
   public Object[][] getContents() {
     return new Object[][] {
+        { "cluster.node.label", "Terracotta cluster" },
         { "connect.label", "Connect" },
         { "disconnect.label", "Disconnect" },
         { "shutdown.label", "Shutdown" },
         { "shutdown.server.confirm", "Are you sure you want to shutdown {0}?" },
         { "stats.recorder.node.label", "Cluster statistics recorder" },
-        { "stats.active.recording.msg", "There is an active statistic recording sessions.  Quit anyway?" },
+        { "stats.recording.suffix", " (on)" },
+        { "quit.anyway", "Quit anyway?" },
+        { "disconnect.anyway", "Disconnect anyway?" },
+        { "recording.stats.msg", "There is an active statistic recording session.  {0}" },
+        { "profiling.locks.msg", "Lock profiling is currently enabled.  {0}" },
+        { "recording.stats.profiling.locks.msg",
+            "<html>There is an active statistic recording session<br>and lock profiling is currently enabled.  {0}</html>" },
         { "sessions", "Sessions" },
         { "title", "Terracotta Administrator Console" },
         { "new.server.action.label", "New server" },
@@ -41,11 +48,16 @@ public class AdminClientBundle extends ListResourceBundle {
         { "server.standingby.label", "Standing by on {0}" },
         { "server.disconnected.status", "{0} disconnected on {1}" },
         { "server.disconnected.label", "Disconnected on {0}" },
+        {
+            "server.non-restartable.warning",
+            "<html>This server is configured for <b>temporary-swap-only</b> persistence mode and so will not "
+                + "allow clients to reconnect upon restart.  To allow for client reconnect upon restart, change the "
+                + "server's configured persistence mode to <b>permanent-store</b> and restart:</html>" },
         { "dso", "DSO" },
         { "dso.roots", "Cluster object browser" },
         { "dso.client.roots", "Client object browser" },
         { "dso.locks", "Lock profiler" },
-        { "dso.locks.profiling.suffix", " (enabled)" },
+        { "dso.locks.profiling.suffix", " (on)" },
         {
             "dso.locks.column.headings",
             new String[] { "Lock", "<html>Times<br>Requested</html>", "<html>Times<br>Hopped</html>",
@@ -70,6 +82,8 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dso.classes.refreshing", "Refreshing classes..." },
         { "dso.classes.className", "Class" },
         { "dso.classes.instanceCount", "Creation count since active server start" },
+        { "dso.classes.config.desc",
+            "This config snippet is constructed from the set of shared instances created since the server started." },
         { "dso.locks.refreshing", "Refreshing locks..." },
         { "dso.object.flush.rate", "Object Flush Rate" },
         { "dso.object.fault.rate", "Object Fault Rate" },
@@ -91,6 +105,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dso.client.port", "Port" },
         { "dso.client.channelID", "ChannelID" },
         { "dso.client.liveObjectCount", "Live objects" },
+        { "liveObjectCount.tip", "<html>Number of managed objects currently resident,<br>excluding literals</html>" },
         { "dso.gcstats", "Distributed garbage collection" },
         { "map.entry", "MapEntry" },
         { "log.error", "ERROR" },
@@ -99,13 +114,12 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dso.cache.rate.domain.label", "Time" },
         { "dso.cache.rate.range.label", "Objects per second" },
         { "dso.transaction.rate.range.label", "Transactions per second" },
-        { "dso.pending.transaction.count.range.label", "Pending Transactions" },
         { "dso.cache.activity", "Cache activity" },
         { "dso.cache.miss.rate", "Cache Miss Rate" },
         { "dso.cache.miss.rate.label", "Cache Misses per second" },
         { "dso.gcstats.iteration", "Iteration" },
         { "dso.gcstats.type", "Type" },
-        { "dso.gcstats.status", "Status" },        
+        { "dso.gcstats.status", "Status" },
         { "dso.gcstats.startTime", "Start time" },
         { "dso.gcstats.elapsedTime", "<html>Total elapsed<br>time (ms.)</html>" },
         { "dso.gcstats.beginObjectCount", "Begin count" },
@@ -133,6 +147,10 @@ public class AdminClientBundle extends ListResourceBundle {
             "<html><h3>Version mismatch for {0}.</h3><br>"
                 + "<table border=0 cellspacing=1><tr><td align=right><b>Terracotta Server Version:</b></td><td>{1}"
                 + "</tr><tr><td align=right><b>AdminConsole Version:</b</td><td>{2}"
-                + "</td></tr></table><h3>Continue?</h3></html>" } };
+                + "</td></tr></table><h3>Continue?</h3></html>" }, { "cpu.usage", "CPU Usage" },
+        { "object.flush.rate", "Object Flush Rate" }, { "object.fault.rate", "Object FaultRate" },
+        { "transaction.rate", "Transaction Rate" }, { "cache.miss.rate", "Cache Miss Rate" },
+        { "heap.usage", "Heap Usage" }, { "heap.usage.max", "memory max" }, { "heap.usage.used", "memory used" },
+        { "pending.transactions", "Pending Transactions" }, };
   }
 }

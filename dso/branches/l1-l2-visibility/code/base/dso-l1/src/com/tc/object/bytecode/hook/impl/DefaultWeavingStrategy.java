@@ -60,7 +60,7 @@ import java.util.Set;
 
 /**
  * A weaving strategy implementing a weaving scheme based on statical compilation, and no reflection.
- * 
+ *
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bon&#233;r </a>
  * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur </a>
  */
@@ -97,7 +97,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Performs the weaving of the target class.
-   * 
+   *
    * @param className
    * @param context
    */
@@ -233,7 +233,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         }
 
         // prepare ctor call jp
-        final ClassReader crLookahead = new ClassReader(bytecode);
+        final ClassReader crLookahead = new ClassReader(context.getCurrentBytecode());
         HashMap newInvocationsByCallerMemberHash = null;
         if (!filterForCall) {
           newInvocationsByCallerMemberHash = new HashMap();
@@ -251,7 +251,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
           HandlerVisitor.LookaheadCatchLabelsClassAdapter lookForCatches = //
           new HandlerVisitor.LookaheadCatchLabelsClassAdapter(cv, loader, classInfo, context, catchLabels);
           // we must visit exactly as we will do further on with debug info (that produces extra labels)
-          final ClassReader crLookahead2 = new ClassReader(bytecode);
+          final ClassReader crLookahead2 = new ClassReader(context.getCurrentBytecode());
           crLookahead2.accept(lookForCatches, ClassReader.SKIP_FRAMES);
         }
 
@@ -263,7 +263,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
         // ------------------------------------------------
         // -- Phase 1 -- type change (ITDs)
-        final ClassReader readerPhase1 = new ClassReader(bytecode);
+        final ClassReader readerPhase1 = new ClassReader(context.getCurrentBytecode());
         final ClassWriter writerPhase1 = new ClassWriter(readerPhase1, ClassWriter.COMPUTE_MAXS);
         ClassVisitor reversedChainPhase1 = new AddMixinMethodsVisitor(writerPhase1, classInfo, context, addedMethods);
         reversedChainPhase1 = new AddInterfaceVisitor(reversedChainPhase1, classInfo, context);
@@ -374,7 +374,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Filters out the classes that are not eligible for transformation.
-   * 
+   *
    * @param definitions the definitions
    * @param ctxs an array with the contexts
    * @param classInfo the class to filter
@@ -390,7 +390,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Filters out the classes that are not eligible for transformation.
-   * 
+   *
    * @param definition the definition
    * @param ctxs an array with the contexts
    * @param classInfo the class to filter

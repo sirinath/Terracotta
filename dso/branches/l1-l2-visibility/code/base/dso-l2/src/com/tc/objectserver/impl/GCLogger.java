@@ -5,15 +5,15 @@
 package com.tc.objectserver.impl;
 
 import com.tc.logging.TCLogger;
-import com.tc.objectserver.core.api.GarbageCollectionInfo;
+import com.tc.objectserver.core.impl.GarbageCollectionInfo;
 import com.tc.util.Assert;
 
 import java.util.List;
 import java.util.Set;
 
 public class GCLogger {
-  private final TCLogger      logger;
-  private final boolean verboseGC;
+  private final TCLogger logger;
+  private final boolean  verboseGC;
 
   public GCLogger(TCLogger logger, boolean verboseGC) {
     Assert.assertNotNull(logger);
@@ -21,15 +21,15 @@ public class GCLogger {
     this.verboseGC = verboseGC;
   }
 
-  public void log_GCStart(long iteration) {
-    if (verboseGC()) logGC("GC: START " + iteration);
+  public void log_GCStart(long iteration, boolean fullGC) {
+    if (verboseGC()) logGC("GC: " + (fullGC ? "Full GC" : "YoungGen GC") + " START " + iteration);
   }
 
-  public void log_markStart(int size) {
+  public void log_markStart(long size) {
     if (verboseGC()) logGC("GC: pre-GC managed id count: " + size);
   }
 
-  public void log_markResults(int size) {
+  public void log_markResults(long size) {
     if (verboseGC()) logGC("GC: pre-rescue GC results: " + size);
   }
 
@@ -41,11 +41,11 @@ public class GCLogger {
     if (verboseGC()) logGC("GC: paused.");
   }
 
-  public void log_rescue_complete(int pass, int count) {
+  public void log_rescue_complete(int pass, long count) {
     if (verboseGC()) logGC("GC: rescue pass " + pass + " completed. gc candidates = " + count + " objects...");
   }
 
-  public void log_rescue_start(int pass, int count) {
+  public void log_rescue_start(int pass, long count) {
     if (verboseGC()) logGC("GC: rescue pass " + pass + " on " + count + " objects...");
   }
 
@@ -64,8 +64,8 @@ public class GCLogger {
       }
       logGC("GC: paused gc time  : " + gcInfo.getPausedStageTime() + " ms.");
       logGC("GC: delete in-memory garbage time  : " + gcInfo.getDeleteStageTime() + " ms.");
-      logGC("GC: total gc time   : " + gcInfo.getElapsedTime() + " ms.");
-      logGC("GC: STOP " + gcInfo.getIteration());
+      logGC("GC: total mark cycle time   : " + gcInfo.getTotalMarkCycleTime() + " ms.");
+      logGC("GC: " + (gcInfo.isFullGC() ? "Full GC" : "YoungGen GC") + " STOP " + gcInfo.getIteration());
     } else {
       logGC("GC: Complete : " + gcInfo);
     }
