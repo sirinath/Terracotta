@@ -7,15 +7,15 @@
 # TO_ADDRESS (address to which e-mails will be sent)
 # FROM_ADDRESS (from address to use for e-mails)
 
-AUTHOR=`svnlook propget $REPOS svn:author -r$REV --revprop`
-
 SVN_NOTIFY=$SVN_NOTIFY_HOME/bin/svnnotify
-
-SMTP=localhost
-SUBJECT_PREFIX="<$AUTHOR> "
 
 REPOS="$1"
 REV="$2"
+
+AUTHOR=`svnlook propget $REPOS svn:author -r$REV --revprop`
+
+SMTP=localhost
+SUBJECT_PREFIX="<$AUTHOR> "
 
 perl -I$SVN_NOTIFY_HOME/lib $SVN_NOTIFY --repos-path $REPOS --revision $REV \
     --to $TO_ADDRESS --from "$FROM_ADDRESS" --subject-prefix "$SUBJECT_PREFIX" \
