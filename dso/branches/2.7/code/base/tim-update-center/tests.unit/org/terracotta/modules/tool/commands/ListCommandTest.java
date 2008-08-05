@@ -11,7 +11,7 @@ public class ListCommandTest extends AbstractCommandTestCase {
   
   public ListCommandTest() {
     // MNK-648
-    this.disableAllUntil("2008-08-15");
+    //this.disableAllUntil("2008-08-15");
   }
 
   @Override
