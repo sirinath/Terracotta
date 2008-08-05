@@ -174,15 +174,13 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     for (int i = 0; i < serverArray.length; i++) {
       String serverName = serverArray[i].getName();
       boolean found = false;
-      int lastFound = -1;
+      int gid = -1;
       for (int j = 0; j < groupArray.length; j++) {
         if (isMemberOf(serverName, groupArray[j])) {
-          if (found) { throw new ConfigurationSetupException(
-                                                             "Server{"
-                                                                 + serverName
-                                                                 + "} is part of more than 1 active-server-group:  groups written in order{"
-                                                                 + lastFound + "," + j + "}"); }
-          lastFound = j;
+          if (found) { throw new ConfigurationSetupException("Server{" + serverName
+                                                             + "} is part of more than 1 active-server-group:  groups{"
+                                                             + gid + "," + groupArray[j].getId() + "}"); }
+          gid = groupArray[j].getId();
           found = true;
         }
       }
