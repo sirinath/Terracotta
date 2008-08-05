@@ -12,7 +12,7 @@ AUTHOR=`svnlook propget $REPOS svn:author -r$REV --revprop`
 SVN_NOTIFY=$SVN_NOTIFY_HOME/bin/svnnotify
 
 SMTP=localhost
-SUBJECT_PREFIX="$AUTHOR "
+SUBJECT_PREFIX="<$AUTHOR> "
 
 REPOS="$1"
 REV="$2"
