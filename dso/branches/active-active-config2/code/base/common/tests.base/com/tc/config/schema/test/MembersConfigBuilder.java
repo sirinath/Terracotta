@@ -38,7 +38,7 @@ public class MembersConfigBuilder extends BaseConfigBuilder {
       out += "</member>";
     }
 
-    out += indent() + closeElement("members");
+    out += closeElement("members");
 
     return out;
   }

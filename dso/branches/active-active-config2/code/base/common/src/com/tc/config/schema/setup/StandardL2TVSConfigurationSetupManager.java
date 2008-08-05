@@ -15,9 +15,9 @@ import com.tc.capabilities.Capabilities;
 import com.tc.config.schema.ConfigTCProperties;
 import com.tc.config.schema.ConfigTCPropertiesFromObject;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
-import com.tc.config.schema.NewActiveServerGroupConfig;
-import com.tc.config.schema.NewActiveServerGroupsConfig;
-import com.tc.config.schema.NewActiveServerGroupsConfigObject;
+import com.tc.config.schema.ActiveServerGroupConfig;
+import com.tc.config.schema.ActiveServerGroupsConfig;
+import com.tc.config.schema.ActiveServerGroupsConfigObject;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.config.schema.NewCommonL2ConfigObject;
 import com.tc.config.schema.NewHaConfig;
@@ -67,35 +67,35 @@ import java.util.Set;
 public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L2TVSConfigurationSetupManager {
 
-  private static TCLogger                   logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static TCLogger                logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
 
-  private final ConfigurationCreator        configurationCreator;
+  private final ConfigurationCreator     configurationCreator;
 
-  private NewSystemConfig                   systemConfig;
-  private final Map                         l2ConfigData;
-  private final NewHaConfig                 haConfig;
-  private final NewActiveServerGroupsConfig activeServerGroupsConfig;
-  private final UpdateCheckConfig           updateCheckConfig;
+  private NewSystemConfig                systemConfig;
+  private final Map                      l2ConfigData;
+  private final NewHaConfig              haConfig;
+  private final ActiveServerGroupsConfig activeServerGroupsConfig;
+  private final UpdateCheckConfig        updateCheckConfig;
 
-  private final String                      thisL2Identifier;
-  private L2ConfigData                      myConfigData;
-  private ConfigTCProperties                configTCProperties;
-  private final boolean              thisl2IdentifierSpecified;
+  private final String                   thisL2Identifier;
+  private L2ConfigData                   myConfigData;
+  private ConfigTCProperties             configTCProperties;
+  private final boolean                  thisl2IdentifierSpecified;
 
   public StandardL2TVSConfigurationSetupManager(ConfigurationCreator configurationCreator, String thisL2Identifier,
                                                 DefaultValueProvider defaultValueProvider,
                                                 XmlObjectComparator xmlObjectComparator,
                                                 IllegalConfigurationChangeHandler illegalConfigChangeHandler)
       throws ConfigurationSetupException {
-    this(configurationCreator, thisL2Identifier, defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler, false);
+    this(configurationCreator, thisL2Identifier, defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler,
+         false);
   }
 
   public StandardL2TVSConfigurationSetupManager(ConfigurationCreator configurationCreator, String thisL2Identifier,
                                                 DefaultValueProvider defaultValueProvider,
                                                 XmlObjectComparator xmlObjectComparator,
                                                 IllegalConfigurationChangeHandler illegalConfigChangeHandler,
-                                                boolean thisl2IdentifierSpecified)
-      throws ConfigurationSetupException {
+                                                boolean thisl2IdentifierSpecified) throws ConfigurationSetupException {
     super(defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler);
 
     Assert.assertNotNull(configurationCreator);
@@ -106,11 +106,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
 
     this.systemConfig = null;
     this.l2ConfigData = new HashMap();
-    try {
-      this.updateCheckConfig = getUpdateCheckConfig();
-    } catch (XmlException e2) {
-      throw new ConfigurationSetupException(e2);
-    }
 
     this.thisL2Identifier = thisL2Identifier;
     this.myConfigData = null;
@@ -119,9 +114,18 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     // this sets the beans in each repository
     runConfigurationCreator(this.configurationCreator);
 
+    // validate that servers config is proper
+    validateServersConfiguration();
+
     this.configTCProperties = new ConfigTCPropertiesFromObject((TcProperties) tcPropertiesRepository().bean());
     overwriteTcPropertiesFromConfig();
     // do this after runConfigurationCreator method call, after serversBeanRepository is set
+    try {
+      this.updateCheckConfig = getUpdateCheckConfig();
+    } catch (XmlException e2) {
+      throw new ConfigurationSetupException(e2);
+    }
+
     try {
       this.haConfig = getHaConfig();
     } catch (XmlException e1) {
@@ -142,9 +146,30 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     validateGroups();
   }
 
+  private void validateServersConfiguration() throws ConfigurationSetupException {
+    Servers servers = (Servers) serversBeanRepository().bean();
+
+    if (servers.getActiveServerGroupsArray().length > 1) { throw new ConfigurationSetupException(
+                                                                                                 "You have specified too many ACTIVE SERVER GROUPS elements. There are "
+                                                                                                     + servers
+                                                                                                         .getActiveServerGroupsArray().length
+                                                                                                     + " ACTIVE SERVER GROUPS elements defined in the configuration file. You must indicate at most 1 ACTIVE SERVER GROUPS element."); }
+
+    if (servers.getHaArray().length > 1) { throw new ConfigurationSetupException(
+                                                                                 "You have specified too many HA elements. There are "
+                                                                                     + servers.getHaArray().length
+                                                                                     + " HA elements defined in the configuration file. You must indicate at most 1 HA element."); }
+
+    if (servers.getUpdateCheckArray().length > 1) { throw new ConfigurationSetupException(
+                                                                                          "You have specified too many UpdateCheck elements. There are "
+                                                                                              + servers
+                                                                                                  .getUpdateCheckArray().length
+                                                                                              + " UpdateCheck elements defined in the configuration file. You must indicate at most 1 UpdateCheck element."); }
+  }
+
   private void validateGroups() throws ConfigurationSetupException {
     Server[] serverArray = ((Servers) serversBeanRepository().bean()).getServerArray();
-    NewActiveServerGroupConfig[] groupArray = this.activeServerGroupsConfig.getActiveServerGroupArray();
+    ActiveServerGroupConfig[] groupArray = this.activeServerGroupsConfig.getActiveServerGroupArray();
 
     for (int i = 0; i < serverArray.length; i++) {
       String serverName = serverArray[i].getName();
@@ -164,7 +189,7 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     }
   }
 
-  private boolean isMemberOf(String serverName, NewActiveServerGroupConfig groupConfig) {
+  private boolean isMemberOf(String serverName, ActiveServerGroupConfig groupConfig) {
     String[] members = groupConfig.getMembers().getMemberArray();
     for (int i = 0; i < members.length; i++) {
       if (members[i].equals(serverName)) { return true; }
@@ -173,11 +198,11 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
   }
 
   // make sure there is at most one of these
-  private NewActiveServerGroupsConfig getActiveServerGroupsConfig() throws ConfigurationSetupException {
+  private ActiveServerGroupsConfig getActiveServerGroupsConfig() throws ConfigurationSetupException {
     if (this.haConfig == null) { throw new AssertionError(
                                                           "Define haConfig before defining activeServerGroupsConfig in the constructor!"); }
 
-    final ActiveServerGroups defaultActiveServerGroups = NewActiveServerGroupsConfigObject
+    final ActiveServerGroups defaultActiveServerGroups = ActiveServerGroupsConfigObject
         .getDefaultActiveServerGroups(defaultValueProvider, serversBeanRepository(), haConfig.getHa());
 
     ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), ActiveServerGroups.class,
@@ -185,24 +210,16 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                                    public XmlObject getChild(XmlObject parent) {
                                                                      ActiveServerGroups[] activeServerGroupsArray = ((Servers) parent)
                                                                          .getActiveServerGroupsArray();
-                                                                     if (activeServerGroupsArray.length > 1) {
-                                                                       // TODO: throw this error in a different way?
-                                                                       throw new AssertionError(
-                                                                                                "You have specified too many ACTIVE SERVER GROUPS elements. There are "
-                                                                                                    + activeServerGroupsArray.length
-                                                                                                    + " ACTIVE SERVER GROUPS elements defined in the configuration file. You must indicate at most 1 ACTIVE SERVER GROUPS element.");
-                                                                     } else {
-                                                                       if (activeServerGroupsArray.length == 0) {
-                                                                         activeServerGroupsArray = new ActiveServerGroups[1];
-                                                                         activeServerGroupsArray[0] = defaultActiveServerGroups;
-                                                                         ((Servers) parent)
-                                                                             .setActiveServerGroupsArray(activeServerGroupsArray);
-                                                                       }
-                                                                       return activeServerGroupsArray[0];
+                                                                     if (activeServerGroupsArray.length == 0) {
+                                                                       activeServerGroupsArray = new ActiveServerGroups[1];
+                                                                       activeServerGroupsArray[0] = defaultActiveServerGroups;
+                                                                       ((Servers) parent)
+                                                                           .setActiveServerGroupsArray(activeServerGroupsArray);
                                                                      }
+                                                                     return activeServerGroupsArray[0];
                                                                    }
                                                                  });
-    return new NewActiveServerGroupsConfigObject(createContext(beanRepository, configurationCreator
+    return new ActiveServerGroupsConfigObject(createContext(beanRepository, configurationCreator
         .directoryConfigurationLoadedFrom()), this);
   }
 
@@ -215,20 +232,12 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                                    public XmlObject getChild(XmlObject parent) {
                                                                      Ha[] haArray = ((Servers) parent).getHaArray();
 
-                                                                     if (haArray.length > 1) {
-                                                                       // TODO: throw this error in a different way?
-                                                                       throw new AssertionError(
-                                                                                                "You have specified too many HA elements. There are "
-                                                                                                    + haArray.length
-                                                                                                    + " HA elements defined in the configuration file. You must indicate at most 1 HA element.");
-                                                                     } else {
-                                                                       if (haArray.length == 0) {
-                                                                         haArray = new Ha[1];
-                                                                         haArray[0] = defaultHa;
-                                                                         ((Servers) parent).setHaArray(haArray);
-                                                                       }
-                                                                       return haArray[0];
+                                                                     if (haArray.length == 0) {
+                                                                       haArray = new Ha[1];
+                                                                       haArray[0] = defaultHa;
+                                                                       ((Servers) parent).setHaArray(haArray);
                                                                      }
+                                                                     return haArray[0];
                                                                    }
                                                                  });
 
@@ -244,21 +253,12 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                                      UpdateCheck[] ucArray = ((Servers) parent)
                                                                          .getUpdateCheckArray();
 
-                                                                     if (ucArray.length > 1) {
-                                                                       // TODO: throw this error in a different way?
-                                                                       throw new AssertionError(
-                                                                                                "You have specified too many UpdateCheck elements. There are "
-                                                                                                    + ucArray.length
-                                                                                                    + " UpdateCheck elements defined in the configuration file. You must indicate at most 1 UpdateCheck element.");
-                                                                     } else {
-                                                                       if (ucArray.length == 0) {
-                                                                         ucArray = new UpdateCheck[1];
-                                                                         ucArray[0] = defaultUpdateCheck;
-                                                                         ((Servers) parent)
-                                                                             .setUpdateCheckArray(ucArray);
-                                                                       }
-                                                                       return ucArray[0];
+                                                                     if (ucArray.length == 0) {
+                                                                       ucArray = new UpdateCheck[1];
+                                                                       ucArray[0] = defaultUpdateCheck;
+                                                                       ((Servers) parent).setUpdateCheckArray(ucArray);
                                                                      }
+                                                                     return ucArray[0];
                                                                    }
                                                                  });
 
@@ -413,11 +413,12 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     if (this.allCurrentlyKnownServers().length == 1) {
       if (servers != null && servers.getServerArray() != null && servers.getServerArray()[0] != null) {
         final String server0Name = servers.getServerArray()[0].getName();
-        if (thisl2IdentifierSpecified && !thisL2Identifier.equals(server0Name)) {
-          throw new ConfigurationSetupException("You have specified server name '" + thisL2Identifier + "' which does not " +
-                                                "exist in the specified tc-config file. \n\n" +
-                                                "Please check your settings and try again");
-        }
+        if (thisl2IdentifierSpecified && !thisL2Identifier.equals(server0Name)) { throw new ConfigurationSetupException(
+                                                                                                                        "You have specified server name '"
+                                                                                                                            + thisL2Identifier
+                                                                                                                            + "' which does not "
+                                                                                                                            + "exist in the specified tc-config file. \n\n"
+                                                                                                                            + "Please check your settings and try again"); }
         this.myConfigData = configDataFor(server0Name);
       } else {
         this.myConfigData = configDataFor(null);
@@ -523,7 +524,7 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     return updateCheckConfig;
   }
 
-  public NewActiveServerGroupsConfig activeServerGroupsConfig() {
+  public ActiveServerGroupsConfig activeServerGroupsConfig() {
     return activeServerGroupsConfig;
   }
 

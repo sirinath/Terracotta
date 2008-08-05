@@ -20,6 +20,13 @@ public class GroupsConfigBuilder extends BaseConfigBuilder {
     this.groups.add(data);
   }
 
+  public void addGroupConfigBuilder(GroupConfigBuilder[] data) {
+    int numberOfGroups = data.length;
+    for(int i = 0; i < numberOfGroups; i++){
+      this.groups.add(data[i]);
+    }
+  }
+  
   public void addGroupConfigBuilders(List groupConfigBuilders) {
     for (Iterator iter = groupConfigBuilders.iterator(); iter.hasNext();) {
       GroupConfigBuilder group = (GroupConfigBuilder) iter.next();

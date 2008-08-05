@@ -105,7 +105,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
             String host = (String) iter.next();
             members.addMember(host);
           }
-          group.setId(NewActiveServerGroupConfigObject.defaultGroupId);
+          group.setId(ActiveServerGroupConfigObject.defaultGroupId);
         }
         ActiveServerGroup[] asgArray = asgsArray[0].getActiveServerGroupArray();
         Assert.assertNotNull(asgArray);

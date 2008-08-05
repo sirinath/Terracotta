@@ -18,7 +18,7 @@ public class HaConfigBuilder extends BaseConfigBuilder {
   private String                electionTime;
 
   public HaConfigBuilder() {
-    super(3, ALL_PROPERTIES);
+    super(7, ALL_PROPERTIES);
   }
 
   public HaConfigBuilder(int indent) {
