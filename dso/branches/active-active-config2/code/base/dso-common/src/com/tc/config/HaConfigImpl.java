@@ -24,7 +24,7 @@ public class HaConfigImpl implements HaConfig {
     int groupCount = groupsConfig.getActiveServerGroupCount();
     this.groups = new ServerGroup[groupCount];
     for (int i = 0; i < groupCount; i++) {
-      this.groups[i] = new ServerGroup(groupsConfig.getActiveServerGroupArray()[i]);
+      this.groups[i] = new ServerGroup(groupsConfig.getActiveServerGroupArray()[i], i);
     }
   }
 
@@ -41,12 +41,7 @@ public class HaConfigImpl implements HaConfig {
   }
 
   public ServerGroup getActiveCoordinatorGroup() {
-    int activeCoordinatorGroupId = this.configSetupManager.activeServerGroupsConfig().getSmallestGroupId();
-    for (int i = 0; i < this.groups.length; i++) {
-      if (groups[i].getGroupId() == activeCoordinatorGroupId) { return groups[i]; }
-    }
-    throw new AssertionError("Could not find the ActiveServerGroup matching activeCoordinatorGroupId=["
-                             + activeCoordinatorGroupId + "]");
+    return groups != null ? groups[0] : null;
   }
 
   public ServerGroup[] getAllActiveServerGroups() {
