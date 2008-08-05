@@ -52,6 +52,8 @@ public class ClusterModel extends Server implements IClusterModel {
     boolean autoConnect = isAutoConnect();
     m_connectManager.setAutoConnect(false);
     m_connectManager.setL2Info(new L2Info(scm.getL2Info()));
+    m_displayLabel = m_connectManager.toString();
+    
     reset();
 
     try {
@@ -85,7 +87,7 @@ public class ClusterModel extends Server implements IClusterModel {
     firePropertyChange(PROP_ACTIVE_SERVER, oldActiveServer, m_activeServer);
   }
 
-  public Server getActiveServer() {
+  public synchronized Server getActiveServer() {
     return m_activeServer;
   }
 
@@ -255,6 +257,7 @@ public class ClusterModel extends Server implements IClusterModel {
 
   boolean tryFindNewActive() {
     synchronized (ClusterModel.this) {
+      if(m_clusterServers == null) return false;
       int serverCount = m_clusterServers.length;
       if (serverCount > 1) {
         for (int i = 0; i < serverCount; i++) {

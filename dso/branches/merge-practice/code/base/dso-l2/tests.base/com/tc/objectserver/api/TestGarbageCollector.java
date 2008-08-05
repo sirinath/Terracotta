@@ -10,8 +10,8 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
-import com.tc.objectserver.core.api.GarbageCollector;
-import com.tc.objectserver.core.api.GarbageCollectorEventListener;
+import com.tc.objectserver.dgc.api.GarbageCollector;
+import com.tc.objectserver.dgc.api.GarbageCollectorEventListener;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
@@ -315,6 +315,10 @@ public class TestGarbageCollector implements GarbageCollector {
 
   public void notifyObjectsEvicted(Collection evicted) {
     // NOP
+  }
+
+  public boolean requestGCStart() {
+    throw new ImplementMe();
   }
 
 }

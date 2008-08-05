@@ -59,6 +59,7 @@ import javax.swing.event.EventListenerList;
 
 public class Server implements IServer, NotificationListener, ManagedObjectFacadeProvider {
   protected ServerConnectionManager       m_connectManager;
+  protected String                        m_displayLabel;
   protected boolean                       m_connected;
   protected Set<ObjectName>               m_readySet;
   protected boolean                       m_ready;
@@ -76,7 +77,11 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   protected List<IBasicObject>            m_roots;
   protected Map<ObjectName, IBasicObject> m_rootMap;
   protected LogListener                   m_logListener;
-
+  protected long                          m_startTime;
+  protected long                          m_activateTime;
+  protected String                        m_persistenceMode;
+  protected String                        m_failoverMode;  
+  
   public Server() {
     this(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT, ConnectionContext.DEFAULT_AUTO_CONNECT);
   }
@@ -103,6 +108,7 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   private void init() {
+    m_displayLabel = m_connectManager.toString();
     m_propertyChangeSupport = new PropertyChangeSupport(this);
     m_listenerList = new EventListenerList();
     m_logListener = new LogListener();
@@ -310,6 +316,20 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
     return getServerInfoBean().getDSOListenPort();
   }
 
+  public String getPersistenceMode() {
+    if(m_persistenceMode == null) {
+      m_persistenceMode = getServerInfoBean().getPersistenceMode();
+    }
+    return m_persistenceMode;
+  }
+  
+  public String getFailoverMode() {
+    if(m_failoverMode == null) {
+      m_failoverMode = getServerInfoBean().getFailoverMode();
+    }
+    return m_failoverMode;
+  }
+  
   public String getStatsExportServletURI() {
     Integer dsoPort = getDSOListenPort();
     Object[] args = new Object[] { getHost(), dsoPort.toString() };
@@ -439,11 +459,17 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   public long getStartTime() {
-    return getServerInfoBean().getStartTime();
+    if(m_startTime == -1) {
+      m_startTime = getServerInfoBean().getStartTime();
+    }
+    return m_startTime;
   }
 
   public long getActivateTime() {
-    return getServerInfoBean().getActivateTime();
+    if(m_activateTime == -1) {
+      m_activateTime = getServerInfoBean().getActivateTime();
+    }
+    return m_activateTime;
   }
 
   public CountStatistic getTransactionRate() {
@@ -979,7 +1005,7 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   public String toString() {
-    return m_connectManager != null ? m_connectManager.toString() : "tornDown";
+    return m_displayLabel;
   }
 
   public synchronized void tearDown() {
