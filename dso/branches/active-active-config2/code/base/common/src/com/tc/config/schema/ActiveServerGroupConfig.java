@@ -9,4 +9,6 @@ public interface ActiveServerGroupConfig extends NewConfig {
   MembersConfig getMembers();
 
   NewHaConfig getHa();
+
+  int getId();
 }

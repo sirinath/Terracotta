@@ -14,16 +14,20 @@ import java.util.Map;
 
 public class ServerGroup {
 
+  private final int         groupId;
   private final String[]    members;
   private final NewHaConfig haMode;
   private final Map         nodes;
-  private final int         groupId;
 
-  public ServerGroup(final ActiveServerGroupConfig group, int groupId) {
-    this.groupId = groupId;
+  public ServerGroup(final ActiveServerGroupConfig group) {
+    this.groupId = group.getId();
     this.members = group.getMembers().getMemberArray();
     this.haMode = group.getHa();
     this.nodes = new HashMap();
+  }
+
+  public int getGroupId() {
+    return groupId;
   }
 
   public Collection getNodes() {
@@ -74,7 +78,7 @@ public class ServerGroup {
   public boolean equals(Object obj) {
     if (obj instanceof ServerGroup) {
       ServerGroup that = (ServerGroup) obj;
-      return that.groupId == this.groupId;
+      return this.groupId == that.groupId;
     }
     return false;
   }
