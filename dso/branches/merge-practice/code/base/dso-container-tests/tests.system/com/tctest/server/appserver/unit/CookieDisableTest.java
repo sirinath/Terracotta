@@ -6,6 +6,7 @@ package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
+import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.deployment.AbstractOneServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.GenericServer;
@@ -13,13 +14,23 @@ import com.tc.test.server.appserver.deployment.WebApplicationServer;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.ShutdownNormallyServlet;
 
+import java.util.Arrays;
+import java.util.Date;
+
 import junit.framework.Test;
 
+/**
+ * This test makes sure we honor cookie disable mechanism in Tomcat and appservers that use Tomcat
+ * 
+ * @author hhuynh
+ */
 public class CookieDisableTest extends AbstractOneServerDeploymentTest {
   private static final String CONTEXT = "CookieDisableTest";
 
   public CookieDisableTest() {
-    disableAllUntil("2008-12-15");
+    if (appServerInfo().getId() != AppServerInfo.TOMCAT) {
+      disableAllUntil(new Date(Long.MAX_VALUE));
+    }
   }
 
   public static Test suite() {
@@ -33,10 +44,11 @@ public class CookieDisableTest extends AbstractOneServerDeploymentTest {
     assertEquals("OK", response1.getText().trim());
 
     response1 = request(server0, "cmd=query", conversation);
-    assertEquals("OK", response1.getText().trim());
-
-    assertNull(conversation.getCookieNames());
-  }
+    assertNotEquals("OK", response1.getText().trim());
+    
+    System.out.println("Cookie names: " + Arrays.asList(conversation.getCookieNames()));
+    assertEquals(0, conversation.getCookieNames().length);
+  } 
 
   private WebResponse request(WebApplicationServer server, String params, WebConversation con) throws Exception {
     return server.ping("/" + CONTEXT + "/ShutdownNormallyServlet?" + params, con);
@@ -47,7 +59,7 @@ public class CookieDisableTest extends AbstractOneServerDeploymentTest {
 
     public CookieDisableTestSetup() {
       super(CookieDisableTest.class, CONTEXT);
-      GenericServer.setDsoEnabled(false);
+      GenericServer.setDsoEnabled(true);
     }
 
     protected void configureWar(DeploymentBuilder builder) {

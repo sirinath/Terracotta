@@ -2,10 +2,10 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.impl;
+package com.tc.objectserver.dgc.impl;
 
 import com.tc.logging.TCLogger;
-import com.tc.objectserver.core.impl.GarbageCollectionInfo;
+import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.util.Assert;
 
 import java.util.List;
@@ -25,11 +25,11 @@ public class GCLogger {
     if (verboseGC()) logGC("GC: " + (fullGC ? "Full GC" : "YoungGen GC") + " START " + iteration);
   }
 
-  public void log_markStart(int size) {
+  public void log_markStart(long size) {
     if (verboseGC()) logGC("GC: pre-GC managed id count: " + size);
   }
 
-  public void log_markResults(int size) {
+  public void log_markResults(long size) {
     if (verboseGC()) logGC("GC: pre-rescue GC results: " + size);
   }
 
@@ -41,11 +41,11 @@ public class GCLogger {
     if (verboseGC()) logGC("GC: paused.");
   }
 
-  public void log_rescue_complete(int pass, int count) {
+  public void log_rescue_complete(int pass, long count) {
     if (verboseGC()) logGC("GC: rescue pass " + pass + " completed. gc candidates = " + count + " objects...");
   }
 
-  public void log_rescue_start(int pass, int count) {
+  public void log_rescue_start(int pass, long count) {
     if (verboseGC()) logGC("GC: rescue pass " + pass + " on " + count + " objects...");
   }
 
