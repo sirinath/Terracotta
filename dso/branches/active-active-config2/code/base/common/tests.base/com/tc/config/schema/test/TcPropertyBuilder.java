@@ -10,7 +10,7 @@ public class TcPropertyBuilder extends BaseConfigBuilder{
   private String value;
   
   public TcPropertyBuilder() {
-    super(1, ALL_PROPERTIES);
+    super(3, ALL_PROPERTIES);
   }
 
   public TcPropertyBuilder(String name, String value){

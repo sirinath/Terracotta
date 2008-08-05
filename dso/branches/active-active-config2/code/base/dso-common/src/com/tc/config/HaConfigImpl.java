@@ -4,7 +4,7 @@
  */
 package com.tc.config;
 
-import com.tc.config.schema.NewActiveServerGroupsConfig;
+import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.net.TCSocketAddress;
@@ -16,11 +16,11 @@ public class HaConfigImpl implements HaConfig {
 
   private final L2TVSConfigurationSetupManager configSetupManager;
   private final ServerGroup[]                  groups;
-  private Node[]                         nodes;
+  private Node[]                               nodes;
 
   public HaConfigImpl(L2TVSConfigurationSetupManager configSetupManager) {
     this.configSetupManager = configSetupManager;
-    NewActiveServerGroupsConfig groupsConfig = this.configSetupManager.activeServerGroupsConfig();
+    ActiveServerGroupsConfig groupsConfig = this.configSetupManager.activeServerGroupsConfig();
     int groupCount = groupsConfig.getActiveServerGroupCount();
     this.groups = new ServerGroup[groupCount];
     for (int i = 0; i < groupCount; i++) {

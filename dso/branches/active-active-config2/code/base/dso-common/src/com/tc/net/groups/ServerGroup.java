@@ -4,7 +4,7 @@
  */
 package com.tc.net.groups;
 
-import com.tc.config.schema.NewActiveServerGroupConfig;
+import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.NewHaConfig;
 
 import java.util.Collection;
@@ -19,7 +19,7 @@ public class ServerGroup {
   private final NewHaConfig haMode;
   private final Map         nodes;
 
-  public ServerGroup(final NewActiveServerGroupConfig group) {
+  public ServerGroup(final ActiveServerGroupConfig group) {
     this.groupId = group.getId();
     this.members = group.getMembers().getMemberArray();
     this.haMode = group.getHa();

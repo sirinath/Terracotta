@@ -19,7 +19,7 @@ import com.terracottatech.config.Members;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 
-public class NewActiveServerGroupConfigObject extends BaseNewConfigObject implements NewActiveServerGroupConfig {
+public class ActiveServerGroupConfigObject extends BaseNewConfigObject implements ActiveServerGroupConfig {
 
   // TODO: the defaultValueProvider is not implemented to fetch default values for attributes... possibly fix this and
   // use the commented code to set defaultId:
@@ -29,9 +29,9 @@ public class NewActiveServerGroupConfigObject extends BaseNewConfigObject implem
 
   private final int              groupId;
   private final NewHaConfig      haConfig;
-  private final NewMembersConfig membersConfig;
+  private final MembersConfig membersConfig;
 
-  public NewActiveServerGroupConfigObject(ConfigContext context, StandardL2TVSConfigurationSetupManager setupManager)
+  public ActiveServerGroupConfigObject(ConfigContext context, StandardL2TVSConfigurationSetupManager setupManager)
       throws ConfigurationSetupException {
     super(context);
     context.ensureRepositoryProvides(ActiveServerGroup.class);
@@ -40,7 +40,7 @@ public class NewActiveServerGroupConfigObject extends BaseNewConfigObject implem
     groupId = group.getId();
     checkNonNegative(groupId);
 
-    membersConfig = new NewMembersConfigObject(createContext(setupManager, true, group));
+    membersConfig = new MembersConfigObject(createContext(setupManager, true, group));
     haConfig = new NewHaConfigObject(createContext(setupManager, false, group));
   }
 
@@ -53,7 +53,7 @@ public class NewActiveServerGroupConfigObject extends BaseNewConfigObject implem
     return this.haConfig;
   }
 
-  public NewMembersConfig getMembers() {
+  public MembersConfig getMembers() {
     return this.membersConfig;
   }
 

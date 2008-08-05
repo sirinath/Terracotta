@@ -7,10 +7,10 @@ package com.tc.config.schema;
 import com.tc.config.schema.context.ConfigContext;
 import com.terracottatech.config.Members;
 
-public class NewMembersConfigObject extends BaseNewConfigObject implements NewMembersConfig {
+public class MembersConfigObject extends BaseNewConfigObject implements MembersConfig {
   private final String[] memberArray;
 
-  public NewMembersConfigObject(ConfigContext context) {
+  public MembersConfigObject(ConfigContext context) {
     super(context);
     context.ensureRepositoryProvides(Members.class);
     Members members = (Members) context.bean();

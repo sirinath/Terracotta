@@ -4,6 +4,11 @@
  */
 package com.tc.config.schema;
 
-public interface NewMembersConfig extends NewConfig {
-  String[] getMemberArray();
+
+public interface ActiveServerGroupConfig extends NewConfig {
+  MembersConfig getMembers();
+
+  NewHaConfig getHa();
+
+  int getId();
 }
