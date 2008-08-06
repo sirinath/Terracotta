@@ -174,8 +174,8 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
   }
 
   // make sure there is at most one of these
-  private ActiveServerGroupsConfig getActiveServerGroupsConfig() {
-    if (this.haConfig == null) { throw new AssertionError(
+  private ActiveServerGroupsConfig getActiveServerGroupsConfig() throws ConfigurationSetupException {
+    if (this.haConfig == null) { throw new ConfigurationSetupException(
                                                           "Define haConfig before defining activeServerGroupsConfig in the constructor!"); }
 
     final ActiveServerGroups defaultActiveServerGroups = ActiveServerGroupsConfigObject

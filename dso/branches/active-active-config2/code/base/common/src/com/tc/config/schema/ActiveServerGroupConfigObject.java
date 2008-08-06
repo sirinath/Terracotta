@@ -11,6 +11,7 @@ import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.repository.MutableBeanRepository;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.StandardL2TVSConfigurationSetupManager;
 import com.terracottatech.config.ActiveServerGroup;
 import com.terracottatech.config.Ha;
@@ -76,7 +77,8 @@ public class ActiveServerGroupConfigObject extends BaseNewConfigObject implement
   }
 
   public static ActiveServerGroup getDefaultActiveServerGroup(DefaultValueProvider defaultValueProvider,
-                                                              MutableBeanRepository serversBeanRepository, Ha commonHa) {
+                                                              MutableBeanRepository serversBeanRepository, Ha commonHa)
+      throws ConfigurationSetupException {
     ActiveServerGroup asg = ActiveServerGroup.Factory.newInstance();
     asg.setHa(commonHa);
     Members members = asg.addNewMembers();
@@ -85,9 +87,11 @@ public class ActiveServerGroupConfigObject extends BaseNewConfigObject implement
     for (int i = 0; i < serverArray.length; i++) {
       // name for each server should exist
       String name = serverArray[i].getName();
-      if (name == null || name.equals("")) { throw new AssertionError("server's name not defined... name=[" + name
-                                                                      + "] serverDsoPort=["
-                                                                      + serverArray[i].getDsoPort() + "]"); }
+      if (name == null || name.equals("")) { throw new ConfigurationSetupException(
+                                                                                   "server's name not defined... name=["
+                                                                                       + name + "] serverDsoPort=["
+                                                                                       + serverArray[i].getDsoPort()
+                                                                                       + "]"); }
       members.insertMember(i, serverArray[i].getName());
     }
 

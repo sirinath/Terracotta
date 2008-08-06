@@ -170,7 +170,6 @@ public class ActivePassiveServerConfigCreator {
         members.addMember(memberName);
       }
       group.setHa(groupHa);
-      group.setId(i);
       group.setMembers(members);
       groupsConfigBuilder.addGroupConfigBuilder(group);
     }

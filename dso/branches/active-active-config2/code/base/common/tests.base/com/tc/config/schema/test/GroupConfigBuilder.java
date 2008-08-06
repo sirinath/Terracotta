@@ -6,20 +6,11 @@ package com.tc.config.schema.test;
 
 public class GroupConfigBuilder extends BaseConfigBuilder {
 
-  private int                  id = -1;
   private MembersConfigBuilder members;
   private HaConfigBuilder      ha;
 
   public GroupConfigBuilder() {
     super(5, new String[0]);
-  }
-
-  public void setId(int data) {
-    this.id = data;
-  }
-
-  String getId() {
-    return this.id + "";
   }
 
   public void setMembers(MembersConfigBuilder members) {
@@ -33,7 +24,7 @@ public class GroupConfigBuilder extends BaseConfigBuilder {
   public String toString() {
     String out = "";
 
-    out += indent() + "<active-server-group" + (this.id >= 0 ? " id=\"" + this.id + "\"" : "") + ">\n";
+    out += openElement("active-server-group");
 
     out += this.members.toString();
 

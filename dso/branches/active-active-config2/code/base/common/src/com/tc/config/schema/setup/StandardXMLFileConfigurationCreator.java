@@ -5,6 +5,7 @@
 package com.tc.config.schema.setup;
 
 import org.apache.commons.io.CopyUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlInteger;
@@ -302,7 +303,7 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
       configDescription = descrip;
 
       ByteArrayOutputStream dataCopy = new ByteArrayOutputStream();
-      CopyUtils.copy(in, dataCopy);
+      IOUtils.copy(in, dataCopy);
 
       logCopyOfConfig(new ByteArrayInputStream(dataCopy.toByteArray()), descrip);
 

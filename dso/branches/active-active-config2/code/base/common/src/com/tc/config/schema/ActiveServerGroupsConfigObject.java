@@ -11,6 +11,7 @@ import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.repository.MutableBeanRepository;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.StandardL2TVSConfigurationSetupManager;
 import com.terracottatech.config.ActiveServerGroup;
 import com.terracottatech.config.ActiveServerGroups;
@@ -67,7 +68,8 @@ public class ActiveServerGroupsConfigObject extends BaseNewConfigObject implemen
   }
 
   public static ActiveServerGroups getDefaultActiveServerGroups(DefaultValueProvider defaultValueProvider,
-                                                                MutableBeanRepository serversBeanRepository, Ha commonHa) {
+                                                                MutableBeanRepository serversBeanRepository, Ha commonHa)
+      throws ConfigurationSetupException {
     ActiveServerGroups asgs = ActiveServerGroups.Factory.newInstance();
     ActiveServerGroup[] groupArray = new ActiveServerGroup[1];
     groupArray[0] = ActiveServerGroupConfigObject.getDefaultActiveServerGroup(defaultValueProvider,
