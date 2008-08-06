@@ -341,10 +341,10 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     Assert.assertNotNull(beanSetArg);
 
     Servers l2s = beanSetArg.serversBean();
-    ActiveServerGroups[] groupsArray = l2s.getActiveServerGroupsArray();
-    Assert.assertNotNull(groupsArray);
-    if (groupsArray.length == 1) {
-      ActiveServerGroup[] groupArray = groupsArray[0].getActiveServerGroupArray();
+    ActiveServerGroups groups = l2s.getActiveServerGroups();
+    Assert.assertNotNull(groups);
+    if (groups != null) {
+      ActiveServerGroup[] groupArray = groups.getActiveServerGroupArray();
 
       if (groupArray.length == 1) {
         Members members = groupArray[0].getMembers();
@@ -353,8 +353,8 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
         Assert.assertNotNull(memberNames);
 
         if (memberNames.length == 1 && memberNames[0].equals(TestConfigBeanSet.DEFAULT_SERVER_NAME)) {
-          groupsArray[0].removeActiveServerGroup(0);
-          Assert.assertEquals(0, groupsArray[0].getActiveServerGroupArray().length);
+          groups.removeActiveServerGroup(0);
+          Assert.assertEquals(0, groups.getActiveServerGroupArray().length);
         }
       }
     }
@@ -415,9 +415,9 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     Assert.assertTrue(groupId >= 0);
     cleanBeanSetServerGroupsIfNeeded(l1_beanSet);
 
-    ActiveServerGroups[] groups = l1_beanSet.serversBean().getActiveServerGroupsArray();
-    if (groups.length != 0) {
-      ActiveServerGroup group = groups[0].addNewActiveServerGroup();
+    ActiveServerGroups groups = l1_beanSet.serversBean().getActiveServerGroups();
+    if (groups != null) {
+      ActiveServerGroup group = groups.addNewActiveServerGroup();
       Members newMembers = group.addNewMembers();
       for (int i = 0; i < members.length; i++) {
         String memberName = members[i];
