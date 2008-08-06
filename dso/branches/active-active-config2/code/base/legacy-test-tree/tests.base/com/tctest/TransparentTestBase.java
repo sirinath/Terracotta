@@ -183,16 +183,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       adminPort = helper.getAdminPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort, true);
+      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
-    } else if (isActivePassive() && canRunActivePassive() || (isActiveActive() && canRunActiveActive())) {
+    } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers(portChooser, jvmArgs);
     } else {
       dsoPort = portChooser.chooseRandomPort();
       adminPort = portChooser.chooseRandomPort();
       ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, -1, true);
+      if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, -1);
     }
 
     if (canRunL1ProxyConnect()) {
@@ -241,14 +241,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     controlledCrashMode = true;
     setJavaHome();
     apSetupManager = new ActivePassiveTestSetupManager();
-    if (isActiveActive() && canRunActiveActive()) {
-      setupActiveActiveTest(apSetupManager);
-    } else {
-      setupActivePassiveTest(apSetupManager);
-    }
-    apServerManager = new ActivePassiveServerManager(getTempDirectory(), portChooser,
+    setupActivePassiveTest(apSetupManager);
+    apServerManager = new ActivePassiveServerManager(mode()
+        .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
                                                      ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
-                                                     javaHome, configFactory(), jvmArgs, mode(), canRunL2ProxyConnect());
+                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
     apServerManager.addServersToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
@@ -257,11 +254,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     throw new AssertionError("The sub-class (test) should override this method.");
   }
 
-  protected void setupActiveActiveTest(ActivePassiveTestSetupManager setupManager) {
-    throw new AssertionError("The sub-class (test) should override this method.");
-  }
-
- protected void setupConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
+  protected void setupConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
     // do nothing
   }
 
@@ -298,7 +291,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(dsoPort);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-    configFactory().addServerToL1Config(null, dsoProxyPort, -1, true);
+    configFactory().addServerToL1Config(null, dsoProxyPort, -1);
   }
 
   protected void setupL1ProxyConnectTest(ProxyConnectManager mgr) {
@@ -378,6 +371,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(serverPort);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
+    configFactory().addServerToL1Config(null, serverPort, adminPort);
   }
 
   private final void setUpTransparent(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)
@@ -419,10 +413,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private boolean isActivePassive() {
     return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE.equals(mode());
-  }
-  
-  private boolean isActiveActive() {
-    return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE.equals(mode());
   }
 
   public DistributedTestRunnerConfig getRunnerConfig() {
@@ -472,16 +462,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected boolean canRun() {
     return (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL) && canRunNormal())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH) && canRunCrash())
-           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive())
-           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE) && canRunActiveActive());
+           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive());
   }
 
   protected boolean canRunNormal() {
     return true;
-  }
-  
-  protected boolean canRunActiveActive() {
-    return false;
   }
 
   protected boolean canRunCrash() {
@@ -556,6 +541,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     apServerManager.crashActive();
   }
 
+  protected int apGetActiveIndex() throws Exception {
+    return apServerManager.getAndUpdateActiveIndex();
+  }
+
   protected void waitServerIsPassiveStandby(int index, int waitSeconds) throws Exception {
     boolean isStandby = apServerManager.waitServerIsPassiveStandby(index, waitSeconds);
     Assert.assertTrue(isStandby);
@@ -567,7 +556,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void test() throws Exception {
     if (canRun()) {
-      if (controlledCrashMode &&  (isActivePassive() || isActiveActive()) && apServerManager != null) {
+      if (controlledCrashMode && isActivePassive() && apServerManager != null) {
         // active passive tests
         customerizeActivePassiveTest();
       } else if (controlledCrashMode && serverControls != null) {
