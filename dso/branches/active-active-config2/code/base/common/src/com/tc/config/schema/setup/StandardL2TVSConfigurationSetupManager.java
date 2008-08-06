@@ -12,12 +12,12 @@ import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.capabilities.AbstractCapabilitiesFactory;
 import com.tc.capabilities.Capabilities;
-import com.tc.config.schema.ConfigTCProperties;
-import com.tc.config.schema.ConfigTCPropertiesFromObject;
-import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
+import com.tc.config.schema.ConfigTCProperties;
+import com.tc.config.schema.ConfigTCPropertiesFromObject;
+import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.config.schema.NewCommonL2ConfigObject;
 import com.tc.config.schema.NewHaConfig;
@@ -198,7 +198,7 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
   }
 
   // make sure there is at most one of these
-  private ActiveServerGroupsConfig getActiveServerGroupsConfig() throws ConfigurationSetupException {
+  private ActiveServerGroupsConfig getActiveServerGroupsConfig() {
     if (this.haConfig == null) { throw new AssertionError(
                                                           "Define haConfig before defining activeServerGroupsConfig in the constructor!"); }
 
