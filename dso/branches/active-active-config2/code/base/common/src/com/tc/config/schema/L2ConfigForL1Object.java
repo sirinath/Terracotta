@@ -105,23 +105,21 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
             String host = (String) iter.next();
             members.addMember(host);
           }
-          group.setId(ActiveServerGroupConfigObject.defaultGroupId);
         }
         ActiveServerGroup[] asgArray = asgsArray[0].getActiveServerGroupArray();
         Assert.assertNotNull(asgArray);
 
         for (int i = 0; i < asgArray.length; i++) {
-          int groupId = asgArray[i].getId();
           String[] members = asgArray[i].getMembers().getMemberArray();
-          List groupList = (List) l2DataByGroupId.get(new Integer(groupId));
+          List groupList = (List) l2DataByGroupId.get(new Integer(i));
           if (groupList == null) {
             groupList = new ArrayList();
-            l2DataByGroupId.put(new Integer(groupId), groupList);
+            l2DataByGroupId.put(new Integer(i), groupList);
           }
           for (int j = 0; j < members.length; j++) {
             L2Data data = (L2Data) l2DataByName.get(members[j]);
             Assert.assertNotNull(data);
-            data.setGroupId(groupId);
+            data.setGroupId(i);
             groupList.add(data);
           }
         }

@@ -11,7 +11,6 @@ import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.repository.MutableBeanRepository;
-import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.StandardL2TVSConfigurationSetupManager;
 import com.terracottatech.config.ActiveServerGroup;
 import com.terracottatech.config.ActiveServerGroups;
@@ -19,12 +18,9 @@ import com.terracottatech.config.Ha;
 
 public class ActiveServerGroupsConfigObject extends BaseNewConfigObject implements ActiveServerGroupsConfig {
   private final ActiveServerGroupConfig[] groupConfigArray;
-  private final int                       smallestGroupId;
   private final int                       activeServerGroupCount;
-  private final int[]                     activeServerGroupIds;
 
-  public ActiveServerGroupsConfigObject(ConfigContext context, StandardL2TVSConfigurationSetupManager setupManager)
-      throws ConfigurationSetupException {
+  public ActiveServerGroupsConfigObject(ConfigContext context, StandardL2TVSConfigurationSetupManager setupManager) {
     super(context);
     context.ensureRepositoryProvides(ActiveServerGroups.class);
     final ActiveServerGroups groups = (ActiveServerGroups) context.bean();
@@ -38,50 +34,21 @@ public class ActiveServerGroupsConfigObject extends BaseNewConfigObject implemen
                                                                                  "ActiveServerGroup array is null!  This should never happen since we make sure default is used."); }
 
     this.activeServerGroupCount = groupArray.length;
-    this.activeServerGroupIds = new int[groupArray.length];
 
     this.groupConfigArray = new ActiveServerGroupConfig[groupArray.length];
-    int smallest = Integer.MAX_VALUE;
 
     for (int i = 0; i < groupArray.length; i++) {
-      if (!checkGroupIdUnique(groupConfigArray, groupArray[i])) { throw new ConfigurationSetupException(
-                                                                                                        "Each active-server-group must have a unique id:  there are two or more groups defined with id{"
-                                                                                                            + groupArray[i]
-                                                                                                                .getId()
-                                                                                                            + "}"); }
       // if no Ha element defined for this group then set it to common ha
       if (!groupArray[i].isSetHa()) {
         groupArray[i].setHa(setupManager.getCommonHa());
       }
       this.groupConfigArray[i] = new ActiveServerGroupConfigObject(createContext(setupManager, groupArray[i]),
-                                                                   setupManager);
-
-      this.activeServerGroupIds[i] = groupArray[i].getId();
-      if (groupArray[i].getId() < smallest) {
-        smallest = groupArray[i].getId();
-      }
+                                                                   setupManager, i);
     }
-
-    this.smallestGroupId = smallest;
-  }
-
-  public int getSmallestGroupId() {
-    return this.smallestGroupId;
   }
 
   public int getActiveServerGroupCount() {
     return this.activeServerGroupCount;
-  }
-
-  public int[] getActiveServerGroupIds() {
-    return this.activeServerGroupIds;
-  }
-
-  private boolean checkGroupIdUnique(ActiveServerGroupConfig[] groupList, ActiveServerGroup newGroup) {
-    for (int i = 0; i < groupList.length; i++) {
-      if (groupList[i] != null && (groupList[i].getId() == newGroup.getId())) { return false; }
-    }
-    return true;
   }
 
   public ActiveServerGroupConfig[] getActiveServerGroupArray() {
