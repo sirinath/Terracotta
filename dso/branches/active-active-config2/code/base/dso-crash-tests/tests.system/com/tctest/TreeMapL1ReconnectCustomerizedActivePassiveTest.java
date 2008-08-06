@@ -8,6 +8,7 @@ import com.tc.test.activepassive.ActivePassiveCrashMode;
 import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tc.util.Assert;
 
 public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends TransparentTestBase {
 
@@ -48,59 +49,59 @@ public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends Transparent
 
     // Allow L1/clients to start, do rest in a thread
     Thread apThread = new Thread(new Runnable() {
-      //int activeIndex;
+      int activeIndex;
 
       public void run() {
-//        try {
-//          Thread.sleep(5000);
-//          activeIndex = apGetActiveIndex();
-//          Assert.assertTrue(activeIndex == 0);
-//          System.out.println("XXX Stop active server[0]");
-//          apStopServer(0);
-//
-//          Thread.sleep(100);
-//          System.out.println("XXX Retart active server[0] for L1 to reconnect");
-//          apStartServer(0);
-//          activeIndex = apGetActiveIndex();
-//          Assert.assertTrue(activeIndex == 0);
-//
-//          System.out.println("XXX Start passive server[1]");
-//          apStartServer(1);
-//          Thread.sleep(1000);
-//          waitServerIsPassiveStandby(1, 20);
-//
-//          System.out.println("XXX Stop active server[0] to failover to passive");
-//          apStopServer(0);
-//          Thread.sleep(2000);
-//          activeIndex = apGetActiveIndex();
-//          Assert.assertTrue(activeIndex == 1);
-//
-//          apCleanupServerDB(0);
-//          System.out.println("XXX Start passive server[0]");
-//          apStartServer(0);
-//          Thread.sleep(1000);
-//          waitServerIsPassiveStandby(0, 20);
-//          
-//          while(true) {
-//            Thread.sleep(20000);
-//            int crashedIndex = activeIndex;
-//            System.out.println("XXX Stop active server[" + activeIndex + "]");
-//            apCrashActiveserver();
-//            
-//            Thread.sleep(3000);
-//            apCleanupServerDB(crashedIndex);
-//            System.out.println("XXX Start passive server[" + crashedIndex + "]");
-//            apStartServer(crashedIndex);
-//            Thread.sleep(1000);
-//            waitServerIsPassiveStandby(crashedIndex, 20);
-//            
-//            activeIndex = apGetActiveIndex();
-//            Assert.assertTrue(activeIndex != crashedIndex);
-//          }
-//
-//        } catch (Exception e) {
-//          System.out.println("customerizeActivePassiveTest: " + e);
-//        }
+        try {
+          Thread.sleep(5000);
+          activeIndex = apGetActiveIndex();
+          Assert.assertTrue(activeIndex == 0);
+          System.out.println("XXX Stop active server[0]");
+          apStopServer(0);
+
+          Thread.sleep(100);
+          System.out.println("XXX Retart active server[0] for L1 to reconnect");
+          apStartServer(0);
+          activeIndex = apGetActiveIndex();
+          Assert.assertTrue(activeIndex == 0);
+
+          System.out.println("XXX Start passive server[1]");
+          apStartServer(1);
+          Thread.sleep(1000);
+          waitServerIsPassiveStandby(1, 20);
+
+          System.out.println("XXX Stop active server[0] to failover to passive");
+          apStopServer(0);
+          Thread.sleep(2000);
+          activeIndex = apGetActiveIndex();
+          Assert.assertTrue(activeIndex == 1);
+
+          apCleanupServerDB(0);
+          System.out.println("XXX Start passive server[0]");
+          apStartServer(0);
+          Thread.sleep(1000);
+          waitServerIsPassiveStandby(0, 20);
+          
+          while(true) {
+            Thread.sleep(20000);
+            int crashedIndex = activeIndex;
+            System.out.println("XXX Stop active server[" + activeIndex + "]");
+            apCrashActiveserver();
+            
+            Thread.sleep(3000);
+            apCleanupServerDB(crashedIndex);
+            System.out.println("XXX Start passive server[" + crashedIndex + "]");
+            apStartServer(crashedIndex);
+            Thread.sleep(1000);
+            waitServerIsPassiveStandby(crashedIndex, 20);
+            
+            activeIndex = apGetActiveIndex();
+            Assert.assertTrue(activeIndex != crashedIndex);
+          }
+
+        } catch (Exception e) {
+          System.out.println("customerizeActivePassiveTest: " + e);
+        }
       }
     });
     apThread.setDaemon(true);
