@@ -114,9 +114,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     // this sets the beans in each repository
     runConfigurationCreator(this.configurationCreator);
 
-    // validate that servers config is proper
-    validateServersConfiguration();
-
     this.configTCProperties = new ConfigTCPropertiesFromObject((TcProperties) tcPropertiesRepository().bean());
     overwriteTcPropertiesFromConfig();
     // do this after runConfigurationCreator method call, after serversBeanRepository is set
@@ -144,27 +141,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
 
     // do this after servers and groups have been processed
     validateGroups();
-  }
-
-  private void validateServersConfiguration() throws ConfigurationSetupException {
-    Servers servers = (Servers) serversBeanRepository().bean();
-
-    if (servers.getActiveServerGroupsArray().length > 1) { throw new ConfigurationSetupException(
-                                                                                                 "You have specified too many ACTIVE SERVER GROUPS elements. There are "
-                                                                                                     + servers
-                                                                                                         .getActiveServerGroupsArray().length
-                                                                                                     + " ACTIVE SERVER GROUPS elements defined in the configuration file. You must indicate at most 1 ACTIVE SERVER GROUPS element."); }
-
-    if (servers.getHaArray().length > 1) { throw new ConfigurationSetupException(
-                                                                                 "You have specified too many HA elements. There are "
-                                                                                     + servers.getHaArray().length
-                                                                                     + " HA elements defined in the configuration file. You must indicate at most 1 HA element."); }
-
-    if (servers.getUpdateCheckArray().length > 1) { throw new ConfigurationSetupException(
-                                                                                          "You have specified too many UpdateCheck elements. There are "
-                                                                                              + servers
-                                                                                                  .getUpdateCheckArray().length
-                                                                                              + " UpdateCheck elements defined in the configuration file. You must indicate at most 1 UpdateCheck element."); }
   }
 
   private void validateGroups() throws ConfigurationSetupException {
@@ -208,15 +184,14 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), ActiveServerGroups.class,
                                                                  new ChildBeanFetcher() {
                                                                    public XmlObject getChild(XmlObject parent) {
-                                                                     ActiveServerGroups[] activeServerGroupsArray = ((Servers) parent)
-                                                                         .getActiveServerGroupsArray();
-                                                                     if (activeServerGroupsArray.length == 0) {
-                                                                       activeServerGroupsArray = new ActiveServerGroups[1];
-                                                                       activeServerGroupsArray[0] = defaultActiveServerGroups;
+                                                                     ActiveServerGroups activeServerGroups = ((Servers) parent)
+                                                                         .getActiveServerGroups();
+                                                                     if (activeServerGroups == null) {
+                                                                       activeServerGroups = defaultActiveServerGroups;
                                                                        ((Servers) parent)
-                                                                           .setActiveServerGroupsArray(activeServerGroupsArray);
+                                                                           .setActiveServerGroups(activeServerGroups);
                                                                      }
-                                                                     return activeServerGroupsArray[0];
+                                                                     return activeServerGroups;
                                                                    }
                                                                  });
     return new ActiveServerGroupsConfigObject(createContext(beanRepository, configurationCreator
@@ -230,14 +205,12 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Ha.class,
                                                                  new ChildBeanFetcher() {
                                                                    public XmlObject getChild(XmlObject parent) {
-                                                                     Ha[] haArray = ((Servers) parent).getHaArray();
-
-                                                                     if (haArray.length == 0) {
-                                                                       haArray = new Ha[1];
-                                                                       haArray[0] = defaultHa;
-                                                                       ((Servers) parent).setHaArray(haArray);
+                                                                     Ha ha = ((Servers) parent).getHa();
+                                                                     if (ha == null) {
+                                                                       ha = defaultHa;
+                                                                       ((Servers) parent).setHa(ha);
                                                                      }
-                                                                     return haArray[0];
+                                                                     return ha;
                                                                    }
                                                                  });
 
@@ -250,15 +223,14 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), UpdateCheck.class,
                                                                  new ChildBeanFetcher() {
                                                                    public XmlObject getChild(XmlObject parent) {
-                                                                     UpdateCheck[] ucArray = ((Servers) parent)
-                                                                         .getUpdateCheckArray();
+                                                                     UpdateCheck updateCheck = ((Servers) parent)
+                                                                         .getUpdateCheck();
 
-                                                                     if (ucArray.length == 0) {
-                                                                       ucArray = new UpdateCheck[1];
-                                                                       ucArray[0] = defaultUpdateCheck;
-                                                                       ((Servers) parent).setUpdateCheckArray(ucArray);
+                                                                     if (updateCheck == null) {
+                                                                       updateCheck = defaultUpdateCheck;
+                                                                       ((Servers) parent).setUpdateCheck(updateCheck);
                                                                      }
-                                                                     return ucArray[0];
+                                                                     return updateCheck;
                                                                    }
                                                                  });
 

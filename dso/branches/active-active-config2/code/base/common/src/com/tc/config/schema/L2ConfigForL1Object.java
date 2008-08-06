@@ -94,11 +94,10 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
       }
 
       private void organizeByGroup(XmlObject xmlObject) {
-        ActiveServerGroups[] asgsArray = ((Servers) xmlObject).getActiveServerGroupsArray();
-        if (asgsArray.length == 0) {
-          asgsArray = new ActiveServerGroups[1];
+        ActiveServerGroups asgs = ((Servers) xmlObject).getActiveServerGroups();
+        if (asgs == null) {
           ActiveServerGroups groups = ((Servers) xmlObject).addNewActiveServerGroups();
-          asgsArray[0] = groups;
+          asgs = groups;
           ActiveServerGroup group = groups.addNewActiveServerGroup();
           Members members = group.addNewMembers();
           for (Iterator iter = l2DataByName.keySet().iterator(); iter.hasNext();) {
@@ -106,7 +105,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
             members.addMember(host);
           }
         }
-        ActiveServerGroup[] asgArray = asgsArray[0].getActiveServerGroupArray();
+        ActiveServerGroup[] asgArray = asgs.getActiveServerGroupArray();
         Assert.assertNotNull(asgArray);
 
         for (int i = 0; i < asgArray.length; i++) {

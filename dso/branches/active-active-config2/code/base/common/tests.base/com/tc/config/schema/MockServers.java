@@ -363,4 +363,58 @@ public class MockServers implements Servers {
   public int sizeOfUpdateCheckArray() {
     throw new ImplementMe();
   }
+
+  public ActiveServerGroups getActiveServerGroups() {
+    throw new ImplementMe();
+  }
+
+  public Ha getHa() {
+    throw new ImplementMe();
+  }
+
+  public UpdateCheck getUpdateCheck() {
+    throw new ImplementMe();
+  }
+
+  public boolean isSetActiveServerGroups() {
+    throw new ImplementMe();
+  }
+
+  public boolean isSetHa() {
+    throw new ImplementMe();
+  }
+
+  public boolean isSetUpdateCheck() {
+    throw new ImplementMe();
+  }
+
+  public void setActiveServerGroups(ActiveServerGroups arg0) {
+    throw new ImplementMe();
+    
+  }
+
+  public void setHa(Ha arg0) {
+    throw new ImplementMe();
+    
+  }
+
+  public void setUpdateCheck(UpdateCheck arg0) {
+    throw new ImplementMe();
+    
+  }
+
+  public void unsetActiveServerGroups() {
+    throw new ImplementMe();
+    
+  }
+
+  public void unsetHa() {
+    throw new ImplementMe();
+    
+  }
+
+  public void unsetUpdateCheck() {
+    throw new ImplementMe();
+    
+  }
 }
