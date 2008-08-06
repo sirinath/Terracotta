@@ -895,12 +895,6 @@
       <xs:element name="members" type="members" minOccurs="0" />
       <xs:element name="ha" type="ha" minOccurs="0" />
     </xs:all>
-    <xs:attribute name="id" type="non-negative-int" default="0" use="optional">
-      <xs:annotation>
-        <xs:documentation>
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
   </xs:complexType>
   
   <xs:complexType name="members">

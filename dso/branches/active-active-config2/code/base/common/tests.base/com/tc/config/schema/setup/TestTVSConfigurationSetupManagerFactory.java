@@ -418,7 +418,6 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     ActiveServerGroups[] groups = l1_beanSet.serversBean().getActiveServerGroupsArray();
     if (groups.length != 0) {
       ActiveServerGroup group = groups[0].addNewActiveServerGroup();
-      group.setId(groupId);
       Members newMembers = group.addNewMembers();
       for (int i = 0; i < members.length; i++) {
         String memberName = members[i];
