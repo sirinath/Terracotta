@@ -88,12 +88,12 @@ public class UpdateCommand extends AbstractCommand {
     List<ModuleId> list = new ArrayList<ModuleId>();
     for (File jarfile : jarfiles) {
       Attributes attrs = readAttributes(jarfile);
-
       if (attrs == null) continue;
-      if (!"Terracotta Integration Module".equals(attrs.getValue("Bundle-Category"))) continue;
 
-      String symbolicName = attrs.getValue("Bundle-SymbolicName");
+      String symbolicName = attrs.getValue("Bundle-SymbolicName");      
       String version = attrs.getValue("Bundle-Version");
+      if ((symbolicName == null) || (version == null)) continue;
+      
       String artifactId = OSGiToMaven.artifactIdFromSymbolicName(symbolicName);
       String groupId = OSGiToMaven.groupIdFromSymbolicName(symbolicName);
       list.add(ModuleId.create(groupId, artifactId, version));
