@@ -328,6 +328,16 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
 
       TcConfig config = ((TcConfigDocument) beanWithErrors.bean()).getTcConfig();
       Servers servers = config.getServers();
+      
+      if(servers == null) {
+        servers = Servers.Factory.newInstance();
+        Server[] serverArray = new Server[1];
+        serverArray[0] = Server.Factory.newInstance();
+        servers.setServerArray(serverArray);
+        config.setServers(servers);
+        servers = config.getServers();
+      }
+      
       if (servers != null) {
         Server server;
         for (int i = 0; i < servers.sizeOfServerArray(); i++) {
@@ -361,7 +371,7 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
           server.setBind(ParameterSubstituter.substitute(server.getBind()));
         }
       }
-
+      
       clientBeanRepository.setBean(config.getClients(), descrip);
       serversBeanRepository.setBean(config.getServers(), descrip);
       systemBeanRepository.setBean(config.getSystem(), descrip);
