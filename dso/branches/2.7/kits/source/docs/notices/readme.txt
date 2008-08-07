@@ -1,7 +1,7 @@
 Terracotta
 ==========
 
-Documentation: http://www.terracotta.org/kit/reflector?kitID=2.6&pageID=Documentation 
+Documentation: http://www.terracotta.org/kit/reflector?kitID=2.7&pageID=Documentation 
 Forums:        http://www.terracottatech.com/forums/
 Mailing Lists: http://lists.terracotta.org
 Services:      http://www.terracottatech.com/support_services.shtml
