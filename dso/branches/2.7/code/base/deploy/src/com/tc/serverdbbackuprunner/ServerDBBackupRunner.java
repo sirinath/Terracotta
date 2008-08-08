@@ -32,14 +32,13 @@ public class ServerDBBackupRunner {
   public static void main(String[] args) {
     RunnerUtility runnerUtility = new RunnerUtility(ServerDBBackupRunner.class.getName(), args);
 
-    runnerUtility.addOption("n", "hostname", true, "Terracotta Server hostname", String.class, false, "l2-hostname");
-    runnerUtility.addOption("p", "jmxport", true, "Terracotta Server JMX port", Integer.class, false, "l2-jmx-port");
-    runnerUtility.addOption("u", "username", true, "user name", String.class, false);
-    runnerUtility.addOption("d", "pathForBackup", true, "Path for back up", String.class, false);
+    runnerUtility.addOption("n", "hostname", true, "Terracotta Server hostname", String.class, false, "hostname");
+    runnerUtility.addOption("p", "jmxport", true, "Terracotta Server JMX port", Integer.class, false, "jmx-port");
+    runnerUtility.addOption("u", "username", true, "User name", String.class, false);
+    runnerUtility.addOption("d", "directory", true, "Directory to back up to", String.class, false);
     runnerUtility.addOption("h", "help", String.class, false);
 
     runnerUtility.parse();
-    runnerUtility.printArguments();
 
     String[] arguments = runnerUtility.getArguments();
     String host = null;
@@ -64,7 +63,7 @@ public class ServerDBBackupRunner {
     if (arguments.length == 0) {
       host = DEFAULT_HOST;
       port = DEFAULT_PORT;
-      System.err.println("No host or port provided. Invoking Backup Runner on Terracotta server at '" + host
+      System.err.println("No host or port provided. Invoking Backup Runner on Terracotta Server at '" + host
                          + "', port " + port + " by default.");
     } else if (arguments.length == 1) {
       host = DEFAULT_HOST;
@@ -121,7 +120,7 @@ public class ServerDBBackupRunner {
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {
-      throw new RuntimeException("Backup Failed: are you sure that the server is being run in persistent mode");
+      throw new RuntimeException(e.getCause().getMessage());
     } finally {
       if (closeJMXAndListener) {
         removeListenerAndCloseJMX(listener, jmxConnector, mbs);
@@ -141,7 +140,7 @@ public class ServerDBBackupRunner {
       mbs = jmxConnector.getMBeanServerConnection();
     } catch (IOException e1) {
       System.err.println("Unable to connect to host '" + host + "', port " + port
-                         + ". Are you sure there is a Terracotta server running there?");
+                         + ". Are you sure there is a Terracotta Server running there?");
       return null;
     }
     return mbs;
