@@ -2,14 +2,14 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.core.impl;
+package com.tc.objectserver.dgc.impl;
 
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.core.api.Filter;
-import com.tc.objectserver.core.api.GarbageCollector;
-import com.tc.objectserver.core.api.GarbageCollectorEventListener;
+import com.tc.objectserver.dgc.api.GarbageCollector;
+import com.tc.objectserver.dgc.api.GarbageCollectorEventListener;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
@@ -128,6 +128,10 @@ public class NullGarbageCollector implements GarbageCollector {
 
   public void notifyObjectsEvicted(Collection evicted) {
     // do nothing null
+  }
+
+  public boolean requestGCStart() {
+    return false;
   }
 
 }

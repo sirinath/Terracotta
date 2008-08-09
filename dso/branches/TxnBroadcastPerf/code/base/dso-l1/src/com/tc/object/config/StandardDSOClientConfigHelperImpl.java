@@ -577,9 +577,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
     // "* org.apache.commons.collections.FastHashMap*.size(..)" });
 
+    spec = getOrCreateSpec("gnu.trove.TObjectHash");
+    spec.addTObjectHashRemoveAtLogSpec(SerializationUtil.TROVE_REMOVE_AT_SIGNATURE);
+
     spec = getOrCreateSpec("gnu.trove.THashMap", "com.tc.object.applicator.HashMapApplicator");
     spec.addTHashMapPutLogSpec(SerializationUtil.PUT_SIGNATURE);
-    spec.addTHashRemoveAtLogSpec(SerializationUtil.TROVE_REMOVE_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
     spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
     spec.addKeySetWrapperSpec(SerializationUtil.KEY_SET_SIGNATURE);
@@ -587,8 +589,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addMethodAdapter(SerializationUtil.TRANSFORM_VALUES_SIGNATURE, new THashMapAdapter.TransformValuesAdapter());
 
     spec = getOrCreateSpec("gnu.trove.THashSet", "com.tc.object.applicator.HashSetApplicator");
-    spec.addTHashSetAddLogSpec(SerializationUtil.ADD_SIGNATURE);
-    spec.addTHashSetRemoveAtLogSpec(SerializationUtil.REMOVE_SIGNATURE);
+    spec.addIfTrueLogSpec(SerializationUtil.ADD_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
 
@@ -1752,7 +1753,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         l1PropFromL2Stream = connection.getInputStream();
         if (l1PropFromL2Stream != null) return l1PropFromL2Stream;
       } catch (IOException e) {
-        String text = "Cannot connect to [" + ci + "].";
+        String text = "Can't connect to [" + ci + "].";
         boolean tryAgain = (i < connectInfo.length - 1);
         if (tryAgain) text += " Will retry next server.";
         logger.warn(text);
@@ -1774,7 +1775,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       if (serverList.length() > 0) serverList += ", ";
       serverList += connections[i];
     }
-    String text = "Cannot connect to " + (connections.length > 1 ? "any of the servers" : "server") + "[" + serverList
+    String text = "Can't connect to " + (connections.length > 1 ? "any of the servers" : "server") + "[" + serverList
                   + "]. Retrying...\n";
 
     while (in == null) {
@@ -1830,6 +1831,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public synchronized ReconnectConfig getL1ReconnectProperties() {
     if (l1ReconnectConfig == null) setupL1ReconnectProperties();
     return l1ReconnectConfig;
+  }
+
+  public boolean useResolveLockWhenClearing(Class clazz) {
+    // If this condition ever needs to be true for any other classes besides ConcurrentHashMap, this setting should be
+    // move into the TransparencyClassSpec (as opposed to growing the list of classes here)
+    return !clazz.getName().equals("java.util.concurrent.ConcurrentHashMap");
   }
 
 }

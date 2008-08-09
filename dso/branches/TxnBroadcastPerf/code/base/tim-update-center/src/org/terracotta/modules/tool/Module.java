@@ -55,6 +55,7 @@ public class Module implements Comparable {
   private final String           filename;
 
   private final String           tcVersion;
+  private final String           tcProjectStatus;
   private final String           website;
   private final String           vendor;
   private final String           copyright;
@@ -65,8 +66,6 @@ public class Module implements Comparable {
   private final List<Dependency> dependencies;
 
   private final Modules          modules;
-
-  private String                 tcRating;
 
   private static File            repositoryPath      = null;
 
@@ -94,8 +93,8 @@ public class Module implements Comparable {
     return list;
   }
 
-  public String getTcRating() {
-    return tcRating;
+  public String getTcProjectStatus() {
+    return tcProjectStatus;
   }
 
   public String getTcVersion() {
@@ -137,7 +136,7 @@ public class Module implements Comparable {
     this.modules = modules;
     id = ModuleId.create(root);
     tcVersion = getChildText(root, "tc-version");
-    tcRating = getChildText(root, "tc-rating");
+    tcProjectStatus = getChildText(root, "tc-projectStatus");
     website = getChildText(root, "website");
     vendor = getChildText(root, "vendor");
     copyright = getChildText(root, "copyright");
@@ -199,6 +198,7 @@ public class Module implements Comparable {
     return this.compareTo(other) < 0;
   }
 
+  @Override
   public String toString() {
     return getSymbolicName() + " " + id.getVersion();
   }
@@ -260,8 +260,8 @@ public class Module implements Comparable {
 
   /**
    * Install this module.
-   * @param verify TODO
    * 
+   * @param verify TODO
    * @throws IOException
    */
   public void install(boolean verify, boolean overwrite, boolean pretend, PrintWriter out) {
@@ -321,11 +321,11 @@ public class Module implements Comparable {
   private Map<ModuleId, Dependency> computeManifest() {
     Map<ModuleId, Dependency> manifest = new HashMap<ModuleId, Dependency>();
     manifest.put(id, new Dependency(this));
-    assert dependencies != null : "dependencies field must not be null";
-    for (Dependency dependency : this.dependencies) {
+    // assert dependencies != null : "dependencies field must not be null";
+    for (Dependency dependency : dependencies) {
       if (dependency.isReference()) {
         Module module = modules.get(dependency.getId());
-        assert module != null;
+        assert module != null : "ID yields null: " + dependency.toString();
         for (Entry<ModuleId, Dependency> entry : module.computeManifest().entrySet()) {
           if (manifest.containsKey(entry.getKey())) continue;
           manifest.put(entry.getKey(), entry.getValue());
@@ -343,7 +343,7 @@ public class Module implements Comparable {
     try {
       reader = new BufferedReader(new FileReader(md5file));
       String expected = reader.readLine();
-      reader.close();
+      // reader.close();
 
       MessageDigest md = MessageDigest.getInstance("MD5");
       md.reset();
@@ -353,11 +353,11 @@ public class Module implements Comparable {
       while ((read = src.read(buffer)) > 0) {
         md.update(buffer, 0, read);
       }
-      
+
       byte[] md5sum = md.digest();
       BigInteger bigInt = new BigInteger(1, md5sum);
       String actual = bigInt.toString(16);
-      src.close();
+      // src.close();
       return actual.equals(expected);
     } catch (IOException e) {
       return false;
@@ -365,6 +365,7 @@ public class Module implements Comparable {
       return false;
     } finally {
       try {
+        // use IOUtils here
         if (reader != null) reader.close();
         if (src != null) src.close();
       } catch (IOException e) {
@@ -377,6 +378,14 @@ public class Module implements Comparable {
     DownloadUtil downloader = new DownloadUtil();
     downloader.download(new URL(address), localfile, DownloadOption.CREATE_INTERVENING_DIRECTORIES,
                         DownloadOption.OVERWRITE_EXISTING);
+  }
+
+  private File rootInstallPath(String name) {
+    return new File(repositoryPath(), name);
+  }
+
+  private File rootInstallPath() {
+    return rootInstallPath(filename);
   }
 
   private File installPath(String path, String name) {
@@ -397,29 +406,34 @@ public class Module implements Comparable {
     try {
       repositoryPath = repositoryPath.getCanonicalFile();
     } catch (IOException e) {
-      //
+      // can't compute canonicalpath for some reason
+      // we'll just return whatever we have
     }
     return repositoryPath;
   }
 
   /**
-   * Checks if a module described by Dependency has been installed.
+   * Checks if a module described by Dependency has been installed. It is installed if the jar file for the TIM exists
+   * either in the recommended Maven-like installpath or the root of the default repository.
    */
   public boolean isInstalled(Dependency dependency) {
-    return installPath(dependency.getInstallPath(), dependency.getFilename()).exists();
+    String path = dependency.getInstallPath();
+    String name = dependency.getFilename();
+    return installPath(path, name).exists() || rootInstallPath(name).exists();
   }
 
   /**
-   * Checks if this module has been installed.
+   * Checks if this module has been installed. It is installed if the jar file for the TIM exists either in the
+   * recommended Maven-like installpath or the root of the default repository.
    */
   public boolean isInstalled() {
-    return installPath().exists();
+    return installPath().exists() || rootInstallPath().exists();
   }
 
   private void printInstallationInfo(PrintWriter out) {
     if (isInstalled()) out.println("Installed at " + installPath().getParent());
     if (getVersions().isEmpty()) {
-      out.println("There are no other versions of this TIM that is compatible with TC " + modules.tcVersion());
+      out.println("There are no other versions of this TIM that are compatible with TC " + modules.tcVersion());
     } else {
       out.println("The following versions are also available for TC " + modules.tcVersion() + ":\n");
       List<Module> siblings = this.getSiblings();
@@ -441,7 +455,7 @@ public class Module implements Comparable {
     if (contactAddress.length() > 0) out.println("Contact  : " + contactAddress);
     if (docUrl.length() > 0) out.println("Docs     : " + docUrl);
     out.println("Download : " + repoUrl);
-    out.println("TC Rating: " + tcRating); // CERTIFIED, EXPERIMENTAL, NONE
+    out.println("Status   : " + tcProjectStatus); // CERTIFIED, EXPERIMENTAL, NONE, etc.
     out.println();
     if (description.length() > 0) {
       out.println(description.replaceAll("\n[ ]+", "\n"));
@@ -479,16 +493,6 @@ public class Module implements Comparable {
     child.setAttribute("name", id.getArtifactId());
     child.setAttribute("version", id.getVersion());
     if (!id.isUsingDefaultGroupId()) child.setAttribute("group-id", id.getGroupId());
-
-    // Map<ModuleId, Dependency> manifest = this.computeManifest();
-    // for (ModuleId key : manifest.keySet()) {
-    // Element child = new Element("module");
-    // parent.addContent(child);
-    // child.setAttribute("name", key.getArtifactId());
-    // child.setAttribute("version", key.getVersion());
-    // if (key.isDefaultGroupId()) continue;
-    // child.setAttribute("group-id", key.getGroupId());
-    // }
 
     out.println("Configuration:\n");
     StringWriter sw = new StringWriter();

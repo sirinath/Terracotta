@@ -53,6 +53,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
   private ClusterPanel        m_clusterPanel;
   private ConnectDialog       m_connectDialog;
   private JDialog             m_versionMismatchDialog;
+  private AtomicBoolean       m_versionCheckOccurred;
   private JPopupMenu          m_popupMenu;
   private ConnectAction       m_connectAction;
   private DisconnectAction    m_disconnectAction;
@@ -88,10 +89,15 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     setComponent(m_clusterPanel = createClusterPanel());
     setIcon(ServersHelper.getHelper().getServerIcon());
     m_clusterModel.addPropertyChangeListener(new ClusterPropertyChangeListener());
+    m_versionCheckOccurred = new AtomicBoolean(false);    
   }
 
   public IClusterModel getClusterModel() {
     return m_clusterModel;
+  }
+  
+  boolean isDBBackupSupported() {
+    return getClusterModel().isDBBackupSupported();
   }
 
   public IServer[] getClusterServers() throws Exception {
@@ -134,10 +140,14 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     }
   }
 
+  private boolean testCheckServerVersion() {
+    if (m_versionCheckOccurred.getAndSet(true)) { return true; }
+    return m_acc.testServerMatch(this);
+  }
+  
   private void handleConnected() {
     if (m_acc == null) return;
-    if (m_versionMismatchDialog != null) return;
-    if (!m_clusterPanel.isProductInfoShowing() && !m_acc.testServerMatch(this)) {
+    if (!testCheckServerVersion()) {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           if (m_clusterModel.isConnected()) {
@@ -193,10 +203,6 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
 
   protected ClusterPanel createClusterPanel() {
     return new ClusterPanel(this);
-  }
-
-  boolean isProfilingLocks() {
-    return m_locksNode != null ? m_locksNode.isProfiling() : false;
   }
 
   void handleNewActive() {
@@ -447,12 +453,25 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     }
 
     public void actionPerformed(ActionEvent ae) {
-      boolean recording = haveActiveRecordingSession();
-      if (recording) {
-        String msg = m_acc.getMessage("stats.active.recording.msg");
+      boolean recordingStats = haveActiveRecordingSession();
+      boolean profilingLocks = isProfilingLocks();
+      
+      if (recordingStats || profilingLocks) {
+        String key;
+        if(recordingStats && profilingLocks) {
+          key = "recording.stats.profiling.locks.msg"; 
+        } else if(recordingStats) {
+          key = "recording.stats.msg";
+        } else {
+          key = "profiling.locks.msg";        
+        }
+        
+        String msg = m_acc.format(key, m_acc.getMessage("disconnect.anyway"));
         Frame frame = (Frame) m_clusterPanel.getAncestorOfClass(Frame.class);
         int answer = JOptionPane.showConfirmDialog(m_clusterPanel, msg, frame.getTitle(), JOptionPane.OK_CANCEL_OPTION);
-        if (answer != JOptionPane.OK_OPTION) { return; }
+        if(answer != JOptionPane.OK_OPTION) {
+          return;
+        }
       }
       disconnect();
     }
@@ -633,9 +652,18 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     return m_statsRecorderNode != null && m_statsRecorderNode.isRecording();
   }
 
+  boolean isProfilingLocks() {
+    return m_locksNode != null ? m_locksNode.isProfiling() : false;
+  }
+
+  boolean haveMonitoringActivity() {
+    return haveActiveRecordingSession() || isProfilingLocks();    
+  }
+  
   private ScheduledExecutorService m_scheduledExecutor;
   private ScheduledFuture<?>       m_monitoringTaskFuture;
   private Runnable                 m_monitoringActivityTask;
+  private final int                MONITORING_FEEDBACK_SECS = 2;
 
   private synchronized ScheduledExecutorService getScheduledExecutor() {
     if (m_scheduledExecutor == null) {
@@ -654,9 +682,9 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
   private class MonitoringActivityTask implements Runnable {
     private Icon m_defaultIcon  = ServersHelper.getHelper().getServerIcon();
     private Icon m_activityIcon = ServersHelper.getHelper().getActivityIcon();
-
+    
     public void run() {
-      boolean haveActivity = m_locksNode.isProfiling() || m_statsRecorderNode.isRecording();
+      boolean haveActivity = haveMonitoringActivity();
       setIcon(determineIcon(haveActivity));
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
@@ -664,7 +692,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
         }
       });
       if (haveActivity) {
-        m_monitoringTaskFuture = getScheduledExecutor().schedule(this, 3, TimeUnit.SECONDS);
+        m_monitoringTaskFuture = getScheduledExecutor().schedule(this, MONITORING_FEEDBACK_SECS, TimeUnit.SECONDS);
       } else {
         m_monitoringTaskFuture = null;
       }
@@ -681,10 +709,20 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
 
   private synchronized void testStartMonitoringTask() {
     if (m_monitoringTaskFuture == null) {
-      m_monitoringTaskFuture = getScheduledExecutor().schedule(getMonitoringActivityTask(), 3, TimeUnit.SECONDS);
+      m_monitoringTaskFuture = getScheduledExecutor().schedule(getMonitoringActivityTask(), MONITORING_FEEDBACK_SECS,
+                                                               TimeUnit.SECONDS);
     }
   }
-  
+
+  private synchronized void testStopMonitoringTask() {
+    if(m_scheduledExecutor != null) {
+      m_scheduledExecutor.shutdownNow();
+      m_scheduledExecutor = null;
+      setIcon(ServersHelper.getHelper().getServerIcon());
+    }
+    m_monitoringTaskFuture = null;
+  }
+
   public void showRecordingStats(boolean recordingStats) {
     testStartMonitoringTask();
   }
@@ -694,6 +732,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
   }
 
   void handleDisconnect() {
+    testStopMonitoringTask();
     m_acc.select(this);
 
     m_locksNode = null;
@@ -703,6 +742,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     removeAllChildren();
     m_acc.nodeStructureChanged(this);
     m_clusterPanel.disconnected();
+    m_versionCheckOccurred.set(false);
   }
 
   Color getServerStatusColor() {
@@ -743,6 +783,7 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
   }
 
   public void tearDown() {
+    testStopMonitoringTask();
     if (m_connectDialog != null) {
       m_connectDialog.tearDown();
     }
@@ -761,6 +802,8 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
     m_locksNode = null;
     m_clientsNode = null;
 
+    m_monitoringActivityTask = null;
+    
     super.tearDown();
   }
 }

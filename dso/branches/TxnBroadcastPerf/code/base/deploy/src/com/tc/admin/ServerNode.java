@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -39,7 +38,6 @@ public class ServerNode extends ComponentNode {
   protected IServer                      m_server;
   protected ServerPropertyChangeListener m_serverPropertyChangeListener;
   protected ServerPanel                  m_serverPanel;
-  protected JDialog                      m_versionMismatchDialog;
   protected JPopupMenu                   m_popupMenu;
   protected ServerThreadDumpsNode        m_threadDumpsNode;
   protected ServerRuntimeStatsNode       m_runtimeStatsNode;
@@ -50,7 +48,7 @@ public class ServerNode extends ComponentNode {
     m_acc = AdminClient.getContext();
     m_serversNode = serversNode;
     m_server = server;
-
+ 
     setRenderer(new ServerNodeTreeCellRenderer());
     initMenu();
     m_server.addPropertyChangeListener(m_serverPropertyChangeListener = new ServerPropertyChangeListener());
@@ -58,10 +56,12 @@ public class ServerNode extends ComponentNode {
 
   public java.awt.Component getComponent() {
     if (m_serverPanel == null) {
+      m_acc.block();
       m_serverPanel = createServerPanel();
       if (m_server.isConnected()) {
         handleConnected();
       }
+      m_acc.unblock();      
     }
     return m_serverPanel;
   }
@@ -109,17 +109,6 @@ public class ServerNode extends ComponentNode {
 
   void handleConnected() {
     if (m_acc == null) return;
-    if (m_versionMismatchDialog != null) return;
-    if (m_serverPanel != null && !m_serverPanel.isProductInfoShowing() && !m_acc.testServerMatch(this)) {
-      SwingUtilities.invokeLater(new Runnable() {
-        public void run() {
-          if (m_server.isConnected()) {
-            disconnect();
-          }
-        }
-      });
-      return;
-    }
     if (isActive()) {
       handleActivation();
     } else if (isPassiveStandby()) {
@@ -132,9 +121,6 @@ public class ServerNode extends ComponentNode {
   }
 
   private void handleDisconnected() {
-    if (m_versionMismatchDialog != null) {
-      m_versionMismatchDialog.setVisible(false);
-    }
     handleDisconnect();
   }
 
@@ -162,20 +148,24 @@ public class ServerNode extends ComponentNode {
     return m_server.getPort();
   }
 
-  public Integer getDSOListenPort() throws Exception {
+  public Integer getDSOListenPort() {
     return m_server.getDSOListenPort();
   }
 
-  String getStatsExportServletURI(String sessionId) throws Exception {
+  public String getPersistenceMode() {
+    return m_server.getPersistenceMode();
+  }
+  
+  public String getFailoverMode() {
+    return m_server.getFailoverMode();
+  }
+  
+  String getStatsExportServletURI(String sessionId) {
     return m_server.getStatsExportServletURI(sessionId);
   }
 
   protected void initMenu() {
     m_popupMenu = new JPopupMenu("Server Actions");
-  }
-
-  void setVersionMismatchDialog(JDialog dialog) {
-    m_versionMismatchDialog = dialog;
   }
 
   boolean isConnected() {

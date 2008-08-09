@@ -14,4 +14,6 @@ public interface L2DumperMBean extends TerracottaMBean {
   void setThreadDumpCount(int count);
 
   void setThreadDumpInterval(long interval);
+
+  void dumpClusterState();
 }

@@ -186,7 +186,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       }
     }
     logger.info("Running lock GC took " + (System.currentTimeMillis() - runGCStartTime) + " ms " + iterationCount
-                + "iterations for GCing " + totalGCCount + " locks. gcCandidates remaining = " + gcCandidates.size()
+                + " iterations for GCing " + totalGCCount + " locks. gcCandidates remaining = " + gcCandidates.size()
                 + " total locks remaining = " + locksByID.size());
   }
 
@@ -530,6 +530,14 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return c;
   }
 
+  public synchronized void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks) {
+    for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
+      ClientLock lock = (ClientLock) i.next();
+      lock.addHoldersToAsLockRequests(heldLocks);
+      lock.addAllPendingLockRequestsTo(pendingLocks);
+    }
+  }
+
   public synchronized Collection addAllPendingTryLockRequestsTo(Collection c) {
     assertStarting();
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
@@ -655,7 +663,10 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.println(getClass().getName());
-    out.indent().print("locks: ").visit(locksByID).println();
+    out.indent().println("locks: " + locksByID.size());
+    for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
+      out.println(i.next());
+    }
     return out;
   }
 }

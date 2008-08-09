@@ -24,9 +24,10 @@ import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ManagedObjectFaultingContext;
 import com.tc.objectserver.context.ManagedObjectFlushingContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
-import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.core.impl.NullGarbageCollector;
+import com.tc.objectserver.dgc.api.GarbageCollector;
+import com.tc.objectserver.dgc.impl.GarbageCollectorThread;
+import com.tc.objectserver.dgc.impl.NullGarbageCollector;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.objectserver.managedobject.ManagedObjectImpl;
@@ -247,6 +248,24 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       return null;
     }
     return mo;
+  }
+  
+  /**
+   * This method returns null if you are looking up a newly created object that is not yet initialized or an Object that
+   * is not in cache. This is mainly used by DGC.
+   */
+  public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id) {
+    if(isObjectInCache(id)) {
+      // There is still a small race where this call might fault objects that were just flushed to disk, but we can live with that.
+      return getObjectByIDOrNull(id);
+    } else {
+      // Not in cache.
+      return null;
+    }
+  }
+
+  private synchronized boolean isObjectInCache(ObjectID id) {
+    return references.containsKey(id);
   }
 
   private void markReferenced(ManagedObjectReference reference) {
