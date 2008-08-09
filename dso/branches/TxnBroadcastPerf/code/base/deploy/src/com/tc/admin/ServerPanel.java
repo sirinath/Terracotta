@@ -5,6 +5,7 @@
 package com.tc.admin;
 
 import org.dijon.ContainerResource;
+import org.dijon.Item;
 import org.dijon.ScrollPane;
 import org.dijon.TabbedPane;
 
@@ -40,6 +41,11 @@ public class ServerPanel extends XContainer {
 
     m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
 
+    if(!m_serverNode.getPersistenceMode().equals("permanent-store")) {
+      String warning = m_acc.getString("server.non-restartable.warning");
+      PersistenceModeWarningPanel restartabilityInfoPanel = new PersistenceModeWarningPanel(warning);
+      ((Item) findComponent("RestartabilityInfoItem")).setChild(restartabilityInfoPanel);
+    }
     m_propertyTable = (PropertyTable) findComponent("ServerInfoTable");
     DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
     m_propertyTable.setDefaultRenderer(Long.class, renderer);
@@ -247,8 +253,9 @@ public class ServerPanel extends XContainer {
    */
   private void showProductInfo(String version, String copyright) {
     String[] fields = { "CanonicalHostName", "HostAddress", "Port", "DSOListenPort", "ProductVersion",
-        "ProductBuildID", "ProductLicense" };
-    String[] headings = { "Host", "Address", "JMX port", "DSO port", "Version", "Build", "License" };
+        "ProductBuildID", "ProductLicense", "PersistenceMode", "FailoverMode" };
+    String[] headings = { "Host", "Address", "JMX port", "DSO port", "Version", "Build", "License", "Persistence mode",
+        "Failover mode" };
     m_propertyTable.setModel(new PropertyTableModel(m_serverNode, fields, headings));
     m_propertyTable.getAncestorOfClass(ScrollPane.class).setVisible(true);
 

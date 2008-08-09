@@ -45,6 +45,10 @@ public interface IServer extends IClusterNode {
 
   Integer getDSOListenPort();
 
+  String getPersistenceMode();
+  
+  String getFailoverMode();
+  
   String getProductVersion();
 
   String getProductBuildID();
@@ -122,6 +126,8 @@ public interface IServer extends IClusterNode {
   void runGC();
 
   int getLiveObjectCount();
+
+  boolean isDBBackupSupported();
   
   void addDBBackupListener(DBBackupListener listener);
   

@@ -25,9 +25,10 @@ import java.util.Map;
 /**
  * Implementation of {@link Modules} that uses a cached XML file as its data source.
  */
-class CachedModules implements Modules {
+public class CachedModules implements Modules {
 
   private Map<ModuleId, Module> modules;
+  private List<Module>          qualifiedModules;
 
   private final String          tcVersion;
   private final DataLoader      dataLoader;
@@ -56,7 +57,6 @@ class CachedModules implements Modules {
       List<Element> children = root.getChildren();
       for (Element child : children) {
         Module module = Module.create(this, child);
-        if (!qualify(module)) continue;
         this.modules.put(module.getId(), module);
       }
     }
@@ -75,8 +75,14 @@ class CachedModules implements Modules {
   }
 
   public List<Module> list() {
-    List<Module> list = new ArrayList<Module>(this.modules.values());
+    if (this.qualifiedModules != null) return this.qualifiedModules;
+
+    List<Module> list = new ArrayList<Module>();
+    for (Module module : this.modules.values()) {
+      if (qualify(module)) list.add(module);
+    }
     Collections.sort(list);
+    this.qualifiedModules = list;
     return list;
   }
 

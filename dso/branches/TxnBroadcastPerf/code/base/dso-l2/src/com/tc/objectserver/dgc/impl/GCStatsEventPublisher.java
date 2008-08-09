@@ -2,11 +2,12 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.core.impl;
+package com.tc.objectserver.dgc.impl;
 
 import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.GCStatsEventListener;
-import com.tc.objectserver.impl.GCStatsImpl;
+import com.tc.objectserver.dgc.api.GCStatsImpl;
+import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.stats.LossyStack;
 
 import java.util.Iterator;
@@ -34,14 +35,12 @@ public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter 
 
   public void garbageCollectorMark(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
-    gcStats.setBeginObjectCount(info.getBeginObjectCount());
     gcStats.setMarkState();
     fireGCStatsEvent(gcStats);
   }
 
   public void garbageCollectorPausing(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
-    gcStats.setMarkStageTime(info.getMarkStageTime());
     gcStats.setPauseState();
     fireGCStatsEvent(gcStats);
 
@@ -49,12 +48,8 @@ public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter 
 
   public void garbageCollectorMarkComplete(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
-    gcStats.setCandidateGarbageCount(info.getCandidateGarbageCount());
-    gcStats.setActualGarbageCount(info.getActualGarbageCount());
-    gcStats.setPausedStageTime(info.getPausedStageTime());
     gcStats.setMarkCompleteState();
     fireGCStatsEvent(gcStats);
-
   }
 
   public void garbageCollectorDelete(GarbageCollectionInfo info) {
@@ -65,8 +60,6 @@ public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter 
 
   public void garbageCollectorCompleted(GarbageCollectionInfo info) {
     GCStatsImpl gcStats = getGCStats(info);
-    gcStats.setDeleteStageTime(info.getDeleteStageTime());
-    gcStats.setElapsedTime(info.getElapsedTime());
     gcStats.setCompleteState();
     push(gcStats);
     fireGCStatsEvent(gcStats);
@@ -78,6 +71,13 @@ public class GCStatsEventPublisher extends GarbageCollectorEventListenerAdapter 
       gcStats = new GCStatsImpl(info.getIteration(), info.isFullGC(), info.getStartTime());
       info.setObject(gcStats);
     }
+    gcStats.setActualGarbageCount(info.getActualGarbageCount());
+    gcStats.setBeginObjectCount(info.getBeginObjectCount());
+    gcStats.setCandidateGarbageCount(info.getCandidateGarbageCount());
+    gcStats.setDeleteStageTime(info.getDeleteStageTime());
+    gcStats.setElapsedTime(info.getElapsedTime());
+    gcStats.setMarkStageTime(info.getMarkStageTime());
+    gcStats.setPausedStageTime(info.getPausedStageTime());
     return gcStats;
   }
 
