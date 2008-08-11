@@ -124,6 +124,8 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
         }
       }
     };
+    
+    createL2DataByGroup();
   }
 
   private int getL2IntDefault(String xpath) {
@@ -137,8 +139,12 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
   public ObjectArrayConfigItem l2Data() {
     return this.l2Data;
   }
-
+  
   public ObjectArrayConfigItem[] getL2DataByGroup() {
+    return l2DataByGroup;
+  }
+
+  private void createL2DataByGroup() {
     Set keys = this.l2DataByGroupId.keySet();
     Assert.assertTrue(keys.size() > 0);
 
@@ -162,7 +168,6 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
       };
       l2DataByGroupPosition++;
     }
-    return this.l2DataByGroup;
   }
 
 }
