@@ -123,9 +123,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
           }
         }
       }
-    };
-    
-    createL2DataByGroup();
+    };    
   }
 
   private int getL2IntDefault(String xpath) {
@@ -141,6 +139,9 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
   }
   
   public ObjectArrayConfigItem[] getL2DataByGroup() {
+    if(l2DataByGroup == null)
+      createL2DataByGroup();
+
     return l2DataByGroup;
   }
 
