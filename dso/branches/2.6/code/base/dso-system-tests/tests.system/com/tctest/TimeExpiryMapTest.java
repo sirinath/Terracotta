@@ -12,7 +12,7 @@ public class TimeExpiryMapTest extends TransparentTestBase {
   
   public TimeExpiryMapTest() {
     // MNK-341
-    disableAllUntil("2008-06-30");
+    disableAllUntil("2009-06-30");
   }
 
   public void setUp() throws Exception {
