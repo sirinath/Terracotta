@@ -20,5 +20,5 @@ public interface ClientMessageChannel extends MessageChannel {
   public int getConnectAttemptCount();
 
   public ChannelIDProvider getChannelIDProvider();
-    
+  
 }

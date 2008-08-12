@@ -105,7 +105,6 @@ public class ActivePassiveServerConfigCreator {
     L2ConfigBuilder[] l2s = new L2ConfigBuilder[serverCount];
     for (int i = 0; i < serverCount; i++) {
       L2ConfigBuilder l2 = new L2ConfigBuilder();
-
       if (serverDiskless) {
         dataLocations[i] = dataLocationHome + File.separator + "server-" + i;
         l2.setData(dataLocations[i]);
@@ -132,6 +131,7 @@ public class ActivePassiveServerConfigCreator {
     } else {
       ha.setMode(HaConfigBuilder.HA_MODE_DISK_BASED_ACTIVE_PASSIVE);
     }
+
     L2SConfigBuilder l2sConfigbuilder = new L2SConfigBuilder();
     l2sConfigbuilder.setL2s(l2s);
     l2sConfigbuilder.setHa(ha);
