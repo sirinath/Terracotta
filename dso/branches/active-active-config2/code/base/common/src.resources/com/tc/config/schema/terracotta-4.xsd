@@ -902,7 +902,7 @@
         <xs:documentation>
         </xs:documentation>
     </xs:annotation>
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+    <xs:sequence minOccurs="1" maxOccurs="unbounded">
       <xs:element name="member" type="non-blank-token" />
     </xs:sequence>
   </xs:complexType>
