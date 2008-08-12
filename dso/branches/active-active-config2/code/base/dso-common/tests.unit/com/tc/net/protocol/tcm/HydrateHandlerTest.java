@@ -203,6 +203,7 @@ public class HydrateHandlerTest extends TCTestCase {
     public void send() {
       throw new ImplementMe();
     }
+
   }
 
 }
