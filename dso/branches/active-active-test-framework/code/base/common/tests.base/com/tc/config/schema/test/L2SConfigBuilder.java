@@ -60,11 +60,11 @@ public class L2SConfigBuilder extends BaseConfigBuilder {
     if (isSet("l2s")) {
       out += l2sToString();
     }
-    if (isSet("ha")) {
-      out += ha.toString();
-    }
     if (isSet("groups")) {
       out += groups.toString();
+    }
+    if (isSet("ha")) {
+      out += ha.toString();
     }
     if(isSet("update-check")){
       out += updateCheck.toString();
