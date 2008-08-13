@@ -48,7 +48,7 @@ abstract public class AbstractAgentSRACorrectnessTestCase extends BaseDSOTestCas
   }
 
   protected DistributedObjectClient startupClient(final int dsoPort, final int jmxPort, final TestPauseListener pauseListener) throws ConfigurationSetupException {
-    configFactory().addServerToL1Config(null, dsoPort, jmxPort);
+    configFactory().addServerToL1Config(null, dsoPort, jmxPort, true);
     L1TVSConfigurationSetupManager manager = super.createL1ConfigManager();
 
     DistributedObjectClient client = new DistributedObjectClient(
