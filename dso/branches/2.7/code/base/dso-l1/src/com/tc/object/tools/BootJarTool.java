@@ -373,11 +373,10 @@ public class BootJarTool {
       return result;
     } catch (InvalidBootJarMetaDataException e) {
       throw e;
-    } catch (BootJarException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      exit(e.getMessage());
     }
+    return null;
   }
 
   /**
@@ -407,10 +406,8 @@ public class BootJarTool {
         message.append("  - " + entry.getKey() + " [" + entry.getValue() + "]" + nl);
       }
       Assert.assertTrue(message, offendingClasses.isEmpty());
-    } catch (BootJarException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      exit(e.getMessage());
     }
   }
 
