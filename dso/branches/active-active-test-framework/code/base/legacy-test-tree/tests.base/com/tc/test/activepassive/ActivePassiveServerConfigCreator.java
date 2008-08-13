@@ -156,13 +156,16 @@ public class ActivePassiveServerConfigCreator {
     L2SConfigBuilder l2sConfigbuilder = new L2SConfigBuilder();
     l2sConfigbuilder.setL2s(l2s);
     l2sConfigbuilder.setHa(ha);
-
+    
     int indent = 7;
     GroupsConfigBuilder groupsConfigBuilder = new GroupsConfigBuilder();
     for (int i = 0; i < this.groups.length; i++) {
       GroupConfigBuilder group = new GroupConfigBuilder();
       HaConfigBuilder groupHa = new HaConfigBuilder(indent);
-      groupHa.setMode(this.setupManager.getGroupServerShareDataMode(i));
+      String mode = null;
+      if (this.setupManager.getGroupServerShareDataMode(i).equals(ActivePassiveSharedDataMode.DISK)) mode = HaConfigBuilder.HA_MODE_DISK_BASED_ACTIVE_PASSIVE;
+      else mode = HaConfigBuilder.HA_MODE_NETWORKED_ACTIVE_PASSIVE;
+      groupHa.setMode(mode);
       groupHa.setElectionTime("" + this.setupManager.getGroupElectionTime(i));
       MembersConfigBuilder members = new MembersConfigBuilder();
       for (Iterator iter = groups[i].iterator(); iter.hasNext();) {
@@ -174,7 +177,7 @@ public class ActivePassiveServerConfigCreator {
       groupsConfigBuilder.addGroupConfigBuilder(group);
     }
     l2sConfigbuilder.setGroups(groupsConfigBuilder);
-    
+
     ApplicationConfigBuilder app = ApplicationConfigBuilder.newMinimalInstance();
 
     TerracottaConfigBuilder configBuilder = new TerracottaConfigBuilder();
