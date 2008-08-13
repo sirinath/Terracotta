@@ -6,10 +6,8 @@ package com.terracotta.session.util;
 
 import com.terracotta.session.SessionId;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -234,11 +232,9 @@ public class DefaultCookieWriter implements SessionCookieWriter {
   }
 
   private static String encodeSafely(final String source) {
-    try {
-      return URLEncoder.encode(source, "UTF-8");
-    } catch (IOException e) {
-      return source;
-    }
+    UEncoder encoder = new UEncoder();
+    encoder.addSafeCharacter('/');
+    return encoder.encodeURL(source);
   }
 
   protected Cookie createCookie(HttpServletRequest req, SessionId id) {
@@ -252,7 +248,6 @@ public class DefaultCookieWriter implements SessionCookieWriter {
     if (cookieDomain != null) c.setDomain(cookieDomain);
     if (cookieComment != null) c.setComment(cookieComment);
 
-    Assert.post(c != null);
     return c;
   }
 

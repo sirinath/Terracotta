@@ -4,10 +4,17 @@
  */
 package com.tctest.server.appserver.load;
 
+import com.tc.test.server.appserver.deployment.ServerTestSetup;
+
+import junit.framework.Test;
 
 public class NonStickyMultiNodeLoadTest extends MultiNodeLoadTest {
 
-  public void testFourNodeLoad() throws Throwable {
-    runFourNodeLoad(false);
+  public static Test suite() {
+    return new ServerTestSetup(NonStickyMultiNodeLoadTest.class);
+  }
+
+  boolean isSticky() {
+    return false;
   }
 }

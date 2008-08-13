@@ -5,6 +5,7 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
+import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.deployment.AbstractOneServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.util.TcConfigBuilder;
@@ -21,15 +22,21 @@ public class SessionIDFromURLTest extends AbstractOneServerDeploymentTest {
   }
 
   public SessionIDFromURLTest() {
-    //
+    if (appServerInfo().getId() == AppServerInfo.WEBSPHERE) {
+      disableAllUntil("2008-12-14");
+    }
   }
 
   public void testURLSessionId() throws Exception {
-    String encodedURL = server0.ping("/" + CONTEXT + "/" + SERVLET + "?cmd=new").getText().trim();
+    String encodedURL;
 
+    encodedURL = server0.ping("/" + CONTEXT + "/" + SERVLET + "?cmd=new").getText().trim();
+    encodedURL = "http://localhost:" + server0.getPort() + "/" + CONTEXT + "/" + encodedURL + "?cmd=query";
+    assertEquals("OK", new WebConversation().getResponse(encodedURL).getText().trim());
+
+    encodedURL = server0.ping("/" + CONTEXT + "/" + SERVLET + "?cmd=new&abs=true").getText().trim();
     encodedURL = encodedURL.concat("?cmd=query");
-    String response = new WebConversation().getResponse(encodedURL).getText().trim();
-    assertEquals("OK", response);
+    assertEquals("OK", new WebConversation().getResponse(encodedURL).getText().trim());
   }
 
   private static class SessionIDFromURLTestSetup extends OneServerTestSetup {

@@ -4,9 +4,6 @@
  */
 package com.tc.objectserver.impl;
 
-import bsh.EvalError;
-import bsh.Interpreter;
-
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -107,9 +104,12 @@ import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.core.impl.MarkAndSweepGarbageCollector;
 import com.tc.objectserver.core.impl.ServerConfigurationContextImpl;
 import com.tc.objectserver.core.impl.ServerManagementContext;
+import com.tc.objectserver.dgc.impl.GCComptrollerImpl;
+import com.tc.objectserver.dgc.impl.GCStatisticsAgentSubSystemEventListener;
+import com.tc.objectserver.dgc.impl.GCStatsEventPublisher;
+import com.tc.objectserver.dgc.impl.MarkAndSweepGarbageCollector;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
 import com.tc.objectserver.handler.ApplyCompleteTransactionHandler;
@@ -185,6 +185,7 @@ import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
 import com.tc.statistics.retrieval.actions.SRADistributedGC;
+import com.tc.statistics.retrieval.actions.SRAL1ReferenceCount;
 import com.tc.statistics.retrieval.actions.SRAL1ToL2FlushRate;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastCount;
 import com.tc.statistics.retrieval.actions.SRAL2BroadcastPerTransaction;
@@ -230,10 +231,11 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 /**
  * Startup and shutdown point. Builds and starts the server
- * 
- * @author steve
  */
 public class DistributedObjectServer implements TCDumper {
   private final ConnectionPolicy               connectionPolicy;
@@ -284,6 +286,8 @@ public class DistributedObjectServer implements TCDumper {
 
   private ReconnectConfig                      l1ReconnectConfig;
 
+  GCStatsEventPublisher                        gcStatsEventPublisher;
+
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
@@ -319,11 +323,11 @@ public class DistributedObjectServer implements TCDumper {
     }
 
     if (this.txnObjectManager != null) {
-      this.objectManager.dumpToLogger();
+      this.txnObjectManager.dumpToLogger();
     }
 
     if (this.transactionManager != null) {
-      this.objectManager.dumpToLogger();
+      this.transactionManager.dumpToLogger();
     }
   }
 
@@ -574,19 +578,30 @@ public class DistributedObjectServer implements TCDumper {
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
                                                              managedObjectFlushHandler, (persistent ? 1 : l2Properties
                                                                  .getInt("seda.flushstage.threads")), -1);
+    TCProperties youngDGCProperties = objManagerProperties.getPropertiesFor("dgc").getPropertiesFor("young");
+    boolean enableYoungGenDGC = youngDGCProperties.getBoolean("enabled");
+    long youngGenDGCFrequency = youngDGCProperties.getLong("frequencyInMillis");
 
     ObjectManagerConfig objectManagerConfig = new ObjectManagerConfig(gcInterval * 1000, gcEnabled, verboseGC,
-                                                                      persistent);
+                                                                      persistent, enableYoungGenDGC,
+                                                                      youngGenDGCFrequency);
     objectManager = new ObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore, swapCache,
                                           persistenceTransactionProvider, faultManagedObjectStage.getSink(),
                                           flushManagedObjectStage.getSink());
     objectManager.setStatsListener(objMgrStats);
-    objectManager.setGarbageCollector(new MarkAndSweepGarbageCollector(objectManager, clientStateManager, verboseGC,
-                                                                       statisticsAgentSubSystem));
+    MarkAndSweepGarbageCollector markAndSweepGarbageCollector = new MarkAndSweepGarbageCollector(objectManager,
+                                                                                                 clientStateManager,
+                                                                                                 objectManagerConfig);
+
+    markAndSweepGarbageCollector.addListener(new GCStatisticsAgentSubSystemEventListener(statisticsAgentSubSystem));
+    gcStatsEventPublisher = new GCStatsEventPublisher();
+    markAndSweepGarbageCollector.addListener(gcStatsEventPublisher);
+    objectManager.setGarbageCollector(markAndSweepGarbageCollector);
     managedObjectChangeListenerProvider.setListener(objectManager);
 
-    l2Management.findObjectManagementMonitorMBean()
-        .registerGCController(new GCComptrollerImpl(objectManagerConfig, objectManager.getGarbageCollector()));
+    l2Management.findObjectManagementMonitorMBean().registerGCController(
+                                                                         new GCComptrollerImpl(objectManager
+                                                                             .getGarbageCollector()));
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
     if (cacheManagerProperties.getBoolean("enabled")) {
@@ -904,6 +919,7 @@ public class DistributedObjectServer implements TCDumper {
       registry.registerActionInstance(new SRAL1ToL2FlushRate(serverStats));
       registry.registerActionInstance(new SRAL2PendingTransactions(txnManager));
       registry.registerActionInstance(new SRAServerTransactionSequencer(serverTransactionSequencerStats));
+      registry.registerActionInstance(new SRAL1ReferenceCount(clientStateManager));
     }
   }
 
@@ -1130,6 +1146,10 @@ public class DistributedObjectServer implements TCDumper {
 
   public StatisticsGatewayMBeanImpl getStatisticsGateway() {
     return statisticsGateway;
+  }
+
+  public GCStatsEventPublisher getGcStatsEventPublisher() {
+    return gcStatsEventPublisher;
   }
 
   private void startJMXServer(InetAddress bind, int jmxPort) throws Exception {

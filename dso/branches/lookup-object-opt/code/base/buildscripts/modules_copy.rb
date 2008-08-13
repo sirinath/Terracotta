@@ -11,9 +11,11 @@ class BuildSubtree
   # Copies all .class files from this subtree into the given destdir. If there
   # aren't any -- for example, if you haven't called #compile first -- this will
   # do absolutely nothing.
-  def copy_classes(build_results, destdir, ant, excludes='')
+  def copy_classes(build_results, destdir, ant, opts = {})
+    fileset = opts
+    fileset[:dir] = build_results.classes_directory(self).to_s
     ant.copy(:todir => destdir.to_s) {
-      ant.fileset(:dir => build_results.classes_directory(self).to_s, :excludes => excludes)
+      ant.fileset(fileset)
     } if FileTest.directory?(build_results.classes_directory(self).to_s)
   end
 

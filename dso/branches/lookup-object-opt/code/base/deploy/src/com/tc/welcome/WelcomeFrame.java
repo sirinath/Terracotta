@@ -27,6 +27,8 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.Timer;
 import javax.swing.UIManager;
@@ -37,34 +39,29 @@ import javax.swing.text.Element;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
 
-public class WelcomeFrame extends HyperlinkFrame
-  implements HyperlinkListener,
-             PropertyChangeListener
-{
+public class WelcomeFrame extends HyperlinkFrame implements HyperlinkListener, PropertyChangeListener {
   private static String[]             PRODUCTS       = { "Pojo", "Spring", "Sessions" };
   private static ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(WelcomeFrame.class);
-  
-  private TabbedPane m_tabbedPane;
-  private ArrayList  m_startupList;
 
-  public WelcomeFrame() {
-    super();
+  private TabbedPane                  m_tabbedPane;
+  private ArrayList                   m_startupList;
 
-    if(Os.isMac()) {
+  public WelcomeFrame(String[] args) {
+    super(getBundleString("welcome.title"));
+
+    if (Os.isMac()) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
       System.setProperty("apple.awt.showGrowBox", "true");
       System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
     }
 
-    setTitle(getBundleString("welcome.title"));
-
     m_startupList = new ArrayList();
 
     Container cp = getContentPane();
     cp.setLayout(new BorderLayout());
     cp.add(m_tabbedPane = new TabbedPane());
-    
+
     addWindowListener(new WindowAdapter() {
       public void windowDeactivated(WindowEvent e) {
         setTextPaneCursor(Cursor.DEFAULT_CURSOR);
@@ -97,7 +94,7 @@ public class WelcomeFrame extends HyperlinkFrame
     }
   }
 
-  private String getBundleString(String key) {
+  private static String getBundleString(String key) {
     return m_bundleHelper.getString(key);
   }
 
@@ -122,11 +119,7 @@ public class WelcomeFrame extends HyperlinkFrame
     HyperlinkEvent.EventType type = e.getEventType();
     Element elem = e.getSourceElement();
 
-    if (elem == null ||
-        type == HyperlinkEvent.EventType.ENTERED ||
-        type == HyperlinkEvent.EventType.EXITED) {
-      return;
-    }
+    if (elem == null || type == HyperlinkEvent.EventType.ENTERED || type == HyperlinkEvent.EventType.EXITED) { return; }
 
     if (textPane.getCursor().getType() != Cursor.WAIT_CURSOR) {
       AttributeSet a = elem.getAttributes();
@@ -146,8 +139,7 @@ public class WelcomeFrame extends HyperlinkFrame
 
     try {
       String[] cmdarray = { getJavaCmd().getAbsolutePath(), "-Dtc.config=tc-config.xml",
-          "-Dtc.install-root=" + getInstallRoot().getAbsolutePath(),
-          "-cp", getTCLib().getAbsolutePath(),
+          "-Dtc.install-root=" + getInstallRoot().getAbsolutePath(), "-cp", getTCLib().getAbsolutePath(),
           "com.tc.welcome.DSOSamplesFrame" };
 
       Process p = exec(cmdarray, null, getProductDirectory());
@@ -267,10 +259,12 @@ public class WelcomeFrame extends HyperlinkFrame
     if (m_startupList.isEmpty()) {
       pack();
       center();
-      Timer t = new Timer(2000, new ActionListener() {
+      Timer t = new Timer(splashProc != null ? 1000 : 0, new ActionListener() {
         public void actionPerformed(ActionEvent ae) {
           setVisible(true);
-          splashProc.destroy();
+          if (splashProc != null) {
+            splashProc.destroy();
+          }
         }
       });
       t.setRepeats(false);
@@ -279,17 +273,38 @@ public class WelcomeFrame extends HyperlinkFrame
   }
 
   private static Process splashProc;
-  
-  public static void main(final String[] args) throws Exception {
-    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-    splashProc = Splash.start("Starting Terracotta Welcome...", new Runnable() {
-      public void run() {
-        ApplicationManager.parseLAFArgs(args);
-        WelcomeFrame welcome = new WelcomeFrame();
-        welcome.setResizable(false);
+  private static class StartupAction implements Runnable {
+    private final String[] args;
+
+    StartupAction(String[] args) {
+      this.args = args;
+    }
+
+    public void run() {
+      String[] finalArgs;
+      if (System.getProperty("swing.defaultlaf") == null) {
+        finalArgs = ApplicationManager.parseLAFArgs(args);
+      } else {
+        finalArgs = args;
       }
-    });
-    splashProc.waitFor();
+      WelcomeFrame welcome = new WelcomeFrame(finalArgs);
+      welcome.setResizable(false);
+    }
+  }
+
+  public static void main(final String[] args) throws Exception {
+    if (System.getProperty("swing.defaultlaf") == null) {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    }
+
+    List<String> argList = Arrays.asList(args);
+    if (argList.remove("-showSplash")) {
+      StartupAction starter = new StartupAction(argList.toArray(new String[argList.size()]));
+      splashProc = Splash.start("Starting Terracotta Welcome...", starter);
+      splashProc.waitFor();
+    } else {
+      new StartupAction(args).run();
+    }
   }
 }

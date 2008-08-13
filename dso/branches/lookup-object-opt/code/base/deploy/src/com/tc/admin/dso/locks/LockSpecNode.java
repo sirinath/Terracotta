@@ -14,10 +14,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class LockSpecNode extends BasicLockNode {
-  LockSpec   fLockSpec;
-  LockNode[] fChildren;
-  String     fLabel;
-  
+  private LockSpec   fLockSpec;
+  private LockNode[] fChildren;
+  private String     fLabel;
+
   LockSpecNode(LockSpec spec) {
     fLockSpec = spec;
 
@@ -35,7 +35,7 @@ public class LockSpecNode extends BasicLockNode {
 
     fLabel = fLockSpec.getLockID().asString();
     String objectType = fLockSpec.getObjectType();
-    if(objectType != null && objectType.length() > 0) {
+    if (objectType != null && objectType.length() > 0) {
       fLabel += " (" + objectType + ")";
     }
   }

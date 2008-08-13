@@ -19,6 +19,11 @@ import java.util.SortedSet;
 
 public interface ManagedObjectStore extends ManagedObjectProvider, ObjectIDSequence, PrettyPrintable {
 
+  /**
+   * synchronous
+   */
+  public int getObjectCount();
+  
   public void addNewObject(ManagedObject managed);
 
   public void commitObject(PersistenceTransaction tx, ManagedObject object);
@@ -36,7 +41,7 @@ public interface ManagedObjectStore extends ManagedObjectProvider, ObjectIDSeque
   public ObjectIDSet getAllObjectIDs();
 
   public boolean containsObject(ObjectID id);
-
+  
   public ObjectID getRootID(String name);
 
   public Set getRoots();
