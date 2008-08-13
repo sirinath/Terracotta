@@ -11,8 +11,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.dijon.Button;
+import org.dijon.CheckBox;
 import org.dijon.ContainerResource;
-import org.dijon.Item;
 import org.dijon.List;
 import org.dijon.Spinner;
 import org.dijon.ToggleButton;
@@ -22,7 +22,9 @@ import EDU.oswego.cs.dl.util.concurrent.misc.SwingWorker;
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.BrowserLauncher;
 import com.tc.admin.common.ExceptionHelper;
+import com.tc.admin.common.ProgressDialog;
 import com.tc.admin.common.XContainer;
+import com.tc.admin.model.IClusterModel;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
 import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.config.StatisticsConfig;
@@ -38,6 +40,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -66,7 +70,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
@@ -75,7 +78,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
-public class StatsRecorderPanel extends XContainer {
+public class StatsRecorderPanel extends XContainer implements PropertyChangeListener {
   private AdminClientContext           m_acc;
   private StatsRecorderNode            m_statsRecorderNode;
 
@@ -84,8 +87,9 @@ public class StatsRecorderPanel extends XContainer {
   private ToggleButton                 m_stopGatheringStatsButton;
   private List                         m_statsSessionsList;
   private DefaultListModel             m_statsSessionsListModel;
-  private XContainer                   m_statsConfigPanel;
+  private XContainer                   m_availableStatsArea;
   private HashMap                      m_statsControls;
+  private CheckBox                     m_selectAllToggle;
   private Spinner                      m_samplePeriodSpinner;
   private Button                       m_importStatsConfigButton;
   private Button                       m_exportStatsConfigButton;
@@ -94,7 +98,6 @@ public class StatsRecorderPanel extends XContainer {
   private boolean                      m_isRecording;
   private Button                       m_exportStatsButton;
   private Button                       m_viewStatsButton;
-  private JProgressBar                 m_progressBar;
   private File                         m_lastExportDir;
   private Button                       m_clearStatsSessionButton;
   private Button                       m_clearAllStatsSessionsButton;
@@ -111,7 +114,7 @@ public class StatsRecorderPanel extends XContainer {
     m_acc = AdminClient.getContext();
     m_statsRecorderNode = statsRecorderNode;
 
-    load((ContainerResource) m_acc.topRes.getComponent("StatsRecorderPanel"));
+    load((ContainerResource) m_acc.getComponent("StatsRecorderPanel"));
 
     m_startGatheringStatsButton = (ToggleButton) findComponent("StartGatheringStatsButton");
     m_startGatheringStatsButton.addActionListener(new StartGatheringStatsAction());
@@ -124,7 +127,12 @@ public class StatsRecorderPanel extends XContainer {
     m_statsSessionsList.setModel(m_statsSessionsListModel = new DefaultListModel());
     m_statsSessionsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    m_statsConfigPanel = (XContainer) findComponent("StatsConfigPanel");
+    m_availableStatsArea = (XContainer) findComponent("AvailableStatsArea");
+    m_availableStatsArea.setLayout(new GridLayout(0, 2));
+
+    m_selectAllToggle = (CheckBox) findComponent("SelectAllToggle");
+    m_selectAllToggle.addActionListener(new SelectAllHandler());
+
     m_samplePeriodSpinner = (Spinner) findComponent("SamplePeriodSpinner");
     m_samplePeriodSpinner.setModel(new SpinnerNumberModel(Integer.valueOf(DEFAULT_STATS_POLL_PERIOD_SECONDS), Integer
         .valueOf(1), null, Integer.valueOf(1)));
@@ -147,21 +155,25 @@ public class StatsRecorderPanel extends XContainer {
     m_viewStatsButton = (Button) findComponent("ViewStatsSessionsButton");
     m_viewStatsButton.addActionListener(new ViewStatsSessionsHandler());
 
-    Item exportProgressBarHolder = (Item) findComponent("ExportProgressBarHolder");
-    exportProgressBarHolder.add(m_progressBar = new JProgressBar());
-    m_progressBar.setIndeterminate(true);
-    m_progressBar.setVisible(false);
-
     setVisible(false);
-    initiateStatsGathererConnectWorker();
+    
+    IClusterModel clusterModel = statsRecorderNode.getClusterModel();
+    if(clusterModel.isActive()) {
+      initiateStatsGathererConnectWorker();
+    }
+    clusterModel.addPropertyChangeListener(this);    
   }
 
+  public void propertyChange(PropertyChangeEvent evt) {
+    if(IClusterModel.PROP_ACTIVE_SERVER.equals(evt.getPropertyName())) {
+      if (((IClusterModel) evt.getSource()).getActiveServer() != null) {
+        initiateStatsGathererConnectWorker();
+      }
+    }
+  }
+  
   private void initiateStatsGathererConnectWorker() {
-    m_acc.executorService.execute(new StatsGathererConnectWorker());
-  }
-
-  void newConnectionContext() {
-    initiateStatsGathererConnectWorker();
+    m_acc.execute(new StatsGathererConnectWorker());
   }
 
   void testTriggerThreadDumpSRA() {
@@ -191,14 +203,14 @@ public class StatsRecorderPanel extends XContainer {
       });
     }
 
-    private boolean isAlreadyConnectionException(Throwable t) {
+    private boolean isAlreadyConnectedException(Throwable t) {
       return ExceptionHelper.getCauseOfType(t, StatisticsGathererAlreadyConnectedException.class) != null;
     }
 
     protected void finished() {
       Exception e = getException();
       if (e != null) {
-        if (isAlreadyConnectionException(e)) {
+        if (isAlreadyConnectedException(e)) {
           gathererConnected();
         } else {
           m_statsRecorderNode.makeUnavailable();
@@ -209,10 +221,10 @@ public class StatsRecorderPanel extends XContainer {
 
   private void gathererConnected() {
     m_statsSessionsListModel.clear();
-    m_acc.executorService.execute(new GathererConnectedWorker());
+    m_acc.execute(new GathererConnectedWorker());
   }
 
-  class GathererConnectedState {
+  private static class GathererConnectedState {
     private boolean  fIsCapturing;
     private String[] fSessions;
     private String   fActiveStatsSessionId;
@@ -304,7 +316,7 @@ public class StatsRecorderPanel extends XContainer {
       m_stopGatheringStatsButton.setEnabled(recording);
 
       updateSessionsControls();
-      m_statsRecorderNode.notifyChanged();
+      m_statsRecorderNode.showRecording(recording);
     }
 
     private void showRecordingInProgress() {
@@ -368,8 +380,7 @@ public class StatsRecorderPanel extends XContainer {
   }
 
   private void setupStatsConfigPanel(String[] stats) {
-    m_statsConfigPanel.removeAll();
-    m_statsConfigPanel.setLayout(new GridLayout(0, 3));
+    m_availableStatsArea.removeAll();
     if (m_statsControls == null) {
       m_statsControls = new HashMap();
     } else {
@@ -380,8 +391,18 @@ public class StatsRecorderPanel extends XContainer {
       control.setText(stat);
       control.setName(stat);
       m_statsControls.put(stat, control);
-      m_statsConfigPanel.add(control);
+      m_availableStatsArea.add(control);
       control.setSelected(true);
+    }
+  }
+
+  private class SelectAllHandler implements ActionListener {
+    public void actionPerformed(ActionEvent ae) {
+      boolean selected = m_selectAllToggle.isSelected();
+      Iterator<JCheckBox> iter = m_statsControls.values().iterator();
+      while (iter.hasNext()) {
+        iter.next().setSelected(selected);
+      }
     }
   }
 
@@ -426,7 +447,7 @@ public class StatsRecorderPanel extends XContainer {
       String[] stats = statList.toArray(new String[0]);
       long samplePeriodMillis = getSamplePeriodMillis();
 
-      m_acc.executorService.execute(new StartGatheringStatsWorker(stats, samplePeriodMillis));
+      m_acc.execute(new StartGatheringStatsWorker(stats, samplePeriodMillis));
     }
   }
 
@@ -437,8 +458,8 @@ public class StatsRecorderPanel extends XContainer {
           m_currentStatsSessionId = new Date().toString();
           m_statisticsGathererMBean.createSession(m_currentStatsSessionId);
           m_statisticsGathererMBean.enableStatistics(stats);
-          m_statisticsGathererMBean.setSessionParam(StatisticsConfig.KEY_RETRIEVER_SCHEDULE_INTERVAL,
-                                                    new Long(samplePeriodMillis));
+          m_statisticsGathererMBean.setSessionParam(StatisticsConfig.KEY_RETRIEVER_SCHEDULE_INTERVAL, Long
+              .valueOf(samplePeriodMillis));
           m_statisticsGathererMBean.startCapturing();
           return null;
         }
@@ -458,7 +479,7 @@ public class StatsRecorderPanel extends XContainer {
   class StopGatheringStatsAction implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
       m_startGatheringStatsButton.setSelected(false);
-      m_acc.executorService.execute(new StopGatheringStatsWorker());
+      m_acc.execute(new StopGatheringStatsWorker());
     }
   }
 
@@ -498,7 +519,7 @@ public class StatsRecorderPanel extends XContainer {
     }
   }
 
-  class StatsSessionListItem {
+  private static class StatsSessionListItem {
     private String fSessionId;
 
     StatsSessionListItem(String sessionId) {
@@ -549,6 +570,8 @@ public class StatsRecorderPanel extends XContainer {
         if (tcStatsConfig.isSetEnabledStatistics()) {
           setSelectedStats(tcStatsConfig.getEnabledStatistics().getNameArray());
         }
+      } catch (RuntimeException re) {
+        throw re;
       } catch (Exception e) {
         Frame frame = (Frame) getAncestorOfClass(Frame.class);
         String msg = "Unable to parse '" + file.getName() + "' as a Terracotta stats config document";
@@ -589,7 +612,7 @@ public class StatsRecorderPanel extends XContainer {
     }
   }
 
-  class ZipFileFilter extends FileFilter {
+  private static class ZipFileFilter extends FileFilter {
     public boolean accept(File file) {
       return file.isDirectory() || file.getName().endsWith(".zip");
     }
@@ -616,7 +639,7 @@ public class StatsRecorderPanel extends XContainer {
       if (m_statsSessionsListModel.getSize() == 0) return;
       JFileChooser chooser = createFileChooser();
       if (chooser.showSaveDialog(StatsRecorderPanel.this) != JFileChooser.APPROVE_OPTION) return;
-      File file = chooser.getSelectedFile();
+      final File file = chooser.getSelectedFile();
       m_lastExportDir = file.getParentFile();
       GetMethod get = null;
       try {
@@ -647,47 +670,20 @@ public class StatsRecorderPanel extends XContainer {
                     + HttpStatus.getStatusText(status));
           return;
         }
-        m_progressBar.setVisible(true);
-        new Thread(new StreamCopierRunnable(get, file)).start();
+        Frame frame = (Frame) getAncestorOfClass(Frame.class);
+        final ProgressDialog progressDialog = showProgressDialog(frame, "Exporting statistics to '" + file.getName()
+                                                                        + ".' Please wait...");
+        final GetMethod get2 = get;
+        progressDialog.addWindowListener(new WindowAdapter() {
+          public void windowOpened(WindowEvent e) {
+            new Thread(new StreamCopierRunnable(get2, file, progressDialog)).start();
+          }
+        });
       } catch (Exception e) {
         m_acc.log(e);
         if (get != null) {
           get.releaseConnection();
         }
-      }
-    }
-
-    private class LoginPanel extends JPanel {
-      private JTextField     m_userNameField;
-      private JPasswordField m_passwordField;
-
-      private LoginPanel() {
-        super();
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = gbc.gridy = 0;
-        gbc.insets = new Insets(2, 2, 2, 2);
-        add(new JLabel("Username:"), gbc);
-        gbc.gridx++;
-        m_userNameField = new JTextField(20);
-        add(m_userNameField, gbc);
-        gbc.gridx--;
-        gbc.gridy++;
-        add(new JLabel("Password:"), gbc);
-        gbc.gridx++;
-        m_passwordField = new JPasswordField(20);
-        add(m_passwordField, gbc);
-
-        m_userNameField.requestFocusInWindow();
-      }
-
-      String getUserName() {
-        return m_userNameField.getText();
-      }
-
-      String getPassword() {
-        return new String(m_passwordField.getPassword());
       }
     }
 
@@ -706,12 +702,14 @@ public class StatsRecorderPanel extends XContainer {
   }
 
   class StreamCopierRunnable implements Runnable {
-    GetMethod fGetMethod;
-    File      fOutFile;
+    GetMethod      fGetMethod;
+    File           fOutFile;
+    ProgressDialog fProgressDialog;
 
-    StreamCopierRunnable(GetMethod getMethod, File outFile) {
+    StreamCopierRunnable(GetMethod getMethod, File outFile, ProgressDialog progressDialog) {
       fGetMethod = getMethod;
       fOutFile = outFile;
+      fProgressDialog = progressDialog;
     }
 
     public void run() {
@@ -730,7 +728,7 @@ public class StatsRecorderPanel extends XContainer {
         } finally {
           SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-              m_progressBar.setVisible(false);
+              fProgressDialog.setVisible(false);
               m_acc.setStatus("Wrote '" + fOutFile.getAbsolutePath() + "'");
             }
           });
@@ -755,7 +753,8 @@ public class StatsRecorderPanel extends XContainer {
         int result = JOptionPane.showConfirmDialog(StatsRecorderPanel.this, msg, frame.getTitle(),
                                                    JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-          m_progressBar.setVisible(true);
+          final ProgressDialog progressDialog = showProgressDialog(frame, "Clearing statistics from session '" + item
+                                                                          + ".' Please wait...");
           SwingWorker worker = new SwingWorker() {
             public Object construct() throws Exception {
               m_statisticsGathererMBean.clearStatistics(item.getSessionId());
@@ -763,7 +762,7 @@ public class StatsRecorderPanel extends XContainer {
             }
 
             public void finished() {
-              m_progressBar.setVisible(false);
+              progressDialog.setVisible(false);
               InvocationTargetException ite = getException();
               if (ite != null) {
                 Throwable cause = ite.getCause();
@@ -785,7 +784,8 @@ public class StatsRecorderPanel extends XContainer {
       int result = JOptionPane.showConfirmDialog(StatsRecorderPanel.this, msg, frame.getTitle(),
                                                  JOptionPane.OK_CANCEL_OPTION);
       if (result == JOptionPane.OK_OPTION) {
-        m_progressBar.setVisible(true);
+        final ProgressDialog progressDialog = showProgressDialog(frame,
+                                                                 "Clearing all recorded statistics. Please wait...");
         SwingWorker worker = new SwingWorker() {
           public Object construct() throws Exception {
             m_statisticsGathererMBean.clearAllStatistics();
@@ -793,7 +793,7 @@ public class StatsRecorderPanel extends XContainer {
           }
 
           public void finished() {
-            m_progressBar.setVisible(false);
+            progressDialog.setVisible(false);
             InvocationTargetException ite = getException();
             if (ite != null) {
               Throwable cause = ite.getCause();
@@ -805,6 +805,14 @@ public class StatsRecorderPanel extends XContainer {
         worker.start();
       }
     }
+  }
+
+  private ProgressDialog showProgressDialog(Frame owner, String msg) {
+    ProgressDialog progressDialog = new ProgressDialog(owner, "Statistics recorder", msg);
+    progressDialog.pack();
+    progressDialog.center(owner);
+    progressDialog.setVisible(true);
+    return progressDialog;
   }
 
   class ViewStatsSessionsHandler implements ActionListener, PropertyChangeListener {
@@ -834,7 +842,7 @@ public class StatsRecorderPanel extends XContainer {
           } catch (Exception e) {
             log(e);
           }
-        } catch (ClassNotFoundException cnfe) {
+        } catch (Exception e) {
           BrowserLauncher.openURL(getSvtUrl());
           return;
         }
@@ -886,9 +894,14 @@ public class StatsRecorderPanel extends XContainer {
   }
 
   public void tearDown() {
+    IClusterModel clusterModel = m_statsRecorderNode.getClusterModel();
+    if(clusterModel != null) {
+      clusterModel.removePropertyChangeListener(this);    
+    }
+    
     super.tearDown();
 
-    m_statsConfigPanel.tearDown();
+    m_availableStatsArea.tearDown();
 
     m_acc = null;
     m_statsGathererListener = null;
@@ -896,7 +909,7 @@ public class StatsRecorderPanel extends XContainer {
     m_stopGatheringStatsButton = null;
     m_statsSessionsList = null;
     m_statsSessionsListModel = null;
-    m_statsConfigPanel = null;
+    m_availableStatsArea = null;
     m_statsControls = null;
     m_samplePeriodSpinner = null;
     m_importStatsConfigButton = null;
@@ -905,9 +918,42 @@ public class StatsRecorderPanel extends XContainer {
     m_currentStatsSessionId = null;
     m_exportStatsButton = null;
     m_viewStatsButton = null;
-    m_progressBar = null;
     m_lastExportDir = null;
     m_clearStatsSessionButton = null;
     m_clearAllStatsSessionsButton = null;
+  }
+
+  private static class LoginPanel extends JPanel {
+    private JTextField     m_userNameField;
+    private JPasswordField m_passwordField;
+
+    private LoginPanel() {
+      super();
+      setLayout(new GridBagLayout());
+      GridBagConstraints gbc = new GridBagConstraints();
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.gridx = gbc.gridy = 0;
+      gbc.insets = new Insets(2, 2, 2, 2);
+      add(new JLabel("Username:"), gbc);
+      gbc.gridx++;
+      m_userNameField = new JTextField(20);
+      add(m_userNameField, gbc);
+      gbc.gridx--;
+      gbc.gridy++;
+      add(new JLabel("Password:"), gbc);
+      gbc.gridx++;
+      m_passwordField = new JPasswordField(20);
+      add(m_passwordField, gbc);
+
+      m_userNameField.requestFocusInWindow();
+    }
+
+    String getUserName() {
+      return m_userNameField.getText();
+    }
+
+    String getPassword() {
+      return new String(m_passwordField.getPassword());
+    }
   }
 }

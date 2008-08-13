@@ -99,8 +99,8 @@ public class TCObjectImplTest extends BaseDSOTestCase {
   }
 
   public class TestTCClass implements TCClass {
-    private TCFieldFactory                fieldFactory;
-    private Map                           fields = new HashMap();
+    private final TCFieldFactory          fieldFactory;
+    private final Map                     fields = new HashMap();
     private final TestClientObjectManager objectManager;
 
     public Field getParentField() {
@@ -258,6 +258,10 @@ public class TCObjectImplTest extends BaseDSOTestCase {
 
     public boolean isPortableField(long fieldOffset) {
       throw new ImplementMe();
+    }
+
+    public boolean useResolveLockWhileClearing() {
+      return true;
     }
   }
 }

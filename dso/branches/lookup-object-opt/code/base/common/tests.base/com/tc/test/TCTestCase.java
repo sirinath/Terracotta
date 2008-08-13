@@ -98,9 +98,10 @@ public class TCTestCase extends TestCase {
   }
 
   // called by timer thread (ie. NOT the main thread of test case)
-  private void timeoutCallback() {
+  private void timeoutCallback(long elapsedTime) {
     String bar = "***************************************";
-    System.err.println("\n" + bar + "\n+ TCTestCase timeout alarm going off at " + new Date() + "\n" + bar + "\n");
+    System.err.println("\n" + bar + "\n+ TCTestCase timeout alarm going off after " + millisToMinutes(elapsedTime)
+                       + " minutes at " + new Date() + "\n" + bar + "\n");
     System.err.flush();
 
     doDumpServerDetails();
@@ -130,13 +131,16 @@ public class TCTestCase extends TestCase {
   }
 
   public void runBare() throws Throwable {
-    if (isAllDisabled()) {
-      System.out.println("NOTE: ALL tests in " + this.getClass().getName() + " are disabled until "
-                         + this.allDisabledUntil);
-      System.out.flush();
-      return;
+    if (allDisabledUntil != null) {
+      if (new Date().before(this.allDisabledUntil)) {
+        System.out.println("NOTE: ALL tests in " + this.getClass().getName() + " are disabled until "
+                           + this.allDisabledUntil);
+        return;
+      } else {
+        throw new Exception("Timebomb has expired on " + allDisabledUntil);
+      }
     }
-
+    
     final String testMethod = getName();
     if (isTestDisabled(testMethod)) {
       System.out.println("NOTE: Test method " + testMethod + "() is disabled until "
@@ -207,15 +211,19 @@ public class TCTestCase extends TestCase {
       timeoutThreshold = MIN_THRESH;
     }
 
-    long delay = junitTimeout - timeoutThreshold;
+    final long delay = junitTimeout - timeoutThreshold;
 
-    System.err.println("Timeout task is scheduled to run in " + (delay / (1000 * 60)) + " minutes");
+    System.err.println("Timeout task is scheduled to run in " + millisToMinutes(delay) + " minutes");
 
     timeoutTimer.schedule(new TimerTask() {
       public void run() {
-        timeoutCallback();
+        timeoutCallback(delay);
       }
     }, delay);
+  }
+
+  private long millisToMinutes(final long timeInMilliseconds) {
+    return (timeInMilliseconds / (1000 * 60));
   }
 
   public void setThreadDumpInterval(long interval) {
@@ -248,11 +256,7 @@ public class TCTestCase extends TestCase {
 
   protected final synchronized DataDirectoryHelper getDataDirectoryHelper() {
     if (dataDirectoryHelper == null) {
-      try {
-        dataDirectoryHelper = new DataDirectoryHelper(getClass());
-      } catch (IOException ioe) {
-        throw new TCRuntimeException(ioe.getLocalizedMessage(), ioe);
-      }
+      dataDirectoryHelper = new DataDirectoryHelper(getClass());
     }
 
     return dataDirectoryHelper;

@@ -10,41 +10,38 @@ import org.dijon.PopupMenu;
 
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
-import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.ExceptionHelper;
-import com.tc.admin.common.MBeanServerInvocationProxy;
 import com.tc.admin.common.XAbstractAction;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XObjectTable;
-import com.tc.management.beans.L2MBeanNames;
-import com.tc.management.beans.object.ObjectManagementMonitorMBean;
+import com.tc.admin.model.DGCListener;
+import com.tc.admin.model.IClusterModel;
 import com.tc.objectserver.api.GCStats;
-import com.tc.stats.DSOMBean;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.concurrent.Callable;
 
-import javax.management.Notification;
-import javax.management.NotificationListener;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
-public class GCStatsPanel extends XContainer implements NotificationListener {
-  private AdminClientContext           m_acc;
-  private GCStatsNode                  m_gcStatsNode;
-  private XObjectTable                 m_table;
-  private PopupMenu                    m_popupMenu;
-  private RunGCAction                  m_gcAction;
-  private ObjectManagementMonitorMBean m_objectManagementMonitor;
+public class GCStatsPanel extends XContainer implements DGCListener, PropertyChangeListener {
+  private AdminClientContext m_acc;
+  private GCStatsNode        m_gcStatsNode;
+  private XObjectTable       m_table;
+  private PopupMenu          m_popupMenu;
+  private RunGCAction        m_gcAction;
 
   public GCStatsPanel(GCStatsNode gcStatsNode) {
     super();
 
     m_acc = AdminClient.getContext();
-    load((ContainerResource) m_acc.topRes.getComponent("GCStatsPanel"));
+    load((ContainerResource) m_acc.getComponent("GCStatsPanel"));
 
     m_gcStatsNode = gcStatsNode;
     m_table = (XObjectTable) findComponent("GCStatsTable");
@@ -59,41 +56,46 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
     m_table.add(m_popupMenu);
     m_table.addMouseListener(new TableMouseHandler());
 
-    m_acc.executorService.execute(new InitWorker(true));
+    m_acc.execute(new InitWorker());
+    gcStatsNode.getClusterModel().addDGCListener(this);
+    gcStatsNode.getClusterModel().addPropertyChangeListener(this);
+  }
+
+  public void propertyChange(PropertyChangeEvent evt) {
+    if (IClusterModel.PROP_ACTIVE_SERVER.equals(evt.getPropertyName())) {
+      if (((IClusterModel) evt.getSource()).getActiveServer() != null) {
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            if (m_table != null) {
+              GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
+              model.clear();
+              model.fireTableDataChanged();
+            }
+          }
+        });
+      }
+    }
   }
 
   private class InitWorker extends BasicWorker<GCStats[]> {
-    private boolean getStats;
-
-    private InitWorker(final boolean getStats) {
+    private InitWorker() {
       super(new Callable<GCStats[]>() {
         public GCStats[] call() throws Exception {
-          DSOHelper helper = DSOHelper.getHelper();
-          ConnectionContext cc = m_gcStatsNode.getConnectionContext();
-          cc.addNotificationListener(helper.getDSOMBean(cc), GCStatsPanel.this);
-          m_objectManagementMonitor = (ObjectManagementMonitorMBean) MBeanServerInvocationProxy
-              .newProxyInstance(cc.mbsc, L2MBeanNames.OBJECT_MANAGEMENT, ObjectManagementMonitorMBean.class, false);
-          return getStats ? DSOHelper.getHelper().getGCStats(cc) : null;
+          return m_gcStatsNode.getClusterModel().getGCStats();
         }
       });
-      this.getStats = getStats;
     }
 
     protected void finished() {
       Exception e = getException();
       if (e != null) {
         m_acc.log(e);
-      } else if (getStats) {
+      } else {
         GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
         model.setGCStats(getResult());
       }
       m_gcAction.setEnabled(true);
     }
-  }
-
-  void newConnectionContext() {
-    m_gcAction.setEnabled(false);
-    m_acc.executorService.execute(new InitWorker(false));
   }
 
   class TableMouseHandler extends MouseAdapter {
@@ -122,12 +124,20 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
     }
   }
 
-  public void handleNotification(Notification notice, Object notUsed) {
-    String type = notice.getType();
+  public void statusUpdate(GCStats gcStats) {
+    SwingUtilities.invokeLater(new ModelUpdater(gcStats));
+  }
 
-    if (DSOMBean.GC_COMPLETED.equals(type)) {
-      GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
-      model.addGCStats((GCStats) notice.getSource());
+  private class ModelUpdater implements Runnable {
+    private GCStats m_gcStats;
+
+    private ModelUpdater(GCStats gcStats) {
+      m_gcStats = gcStats;
+    }
+
+    public void run() {
+      m_gcAction.setEnabled(m_gcStats.getElapsedTime() != -1);
+      ((GCStatsTableModel) m_table.getModel()).addGCStats(m_gcStats);
     }
   }
 
@@ -135,7 +145,7 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
     private RunGCWorker() {
       super(new Callable<Void>() {
         public Void call() {
-          m_objectManagementMonitor.runGC();
+          m_gcStatsNode.getClusterModel().runGC();
           return null;
         }
       });
@@ -155,18 +165,12 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
   }
 
   private void runGC() {
-    m_acc.executorService.execute(new RunGCWorker());
+    m_acc.execute(new RunGCWorker());
   }
 
   public void tearDown() {
-    try {
-      ConnectionContext cc = m_gcStatsNode.getConnectionContext();
-      if (cc != null && cc.isConnected()) {
-        DSOHelper helper = DSOHelper.getHelper();
-        cc.removeNotificationListener(helper.getDSOMBean(cc), this);
-      }
-    } catch (Exception e) {/**/
-    }
+    m_gcStatsNode.getClusterModel().removeDGCListener(this);
+    m_gcStatsNode.getClusterModel().removePropertyChangeListener(this);
 
     super.tearDown();
 
@@ -175,6 +179,5 @@ public class GCStatsPanel extends XContainer implements NotificationListener {
     m_table = null;
     m_popupMenu = null;
     m_gcAction = null;
-    m_objectManagementMonitor = null;
   }
 }

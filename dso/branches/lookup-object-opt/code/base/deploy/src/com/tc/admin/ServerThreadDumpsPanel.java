@@ -1,9 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
-import java.util.prefs.Preferences;
+import com.tc.admin.model.IServer;
 
 public class ServerThreadDumpsPanel extends AbstractThreadDumpsPanel {
   private ServerThreadDumpsNode m_serverThreadDumpsNode;
@@ -14,14 +15,13 @@ public class ServerThreadDumpsPanel extends AbstractThreadDumpsPanel {
   }
 
   protected String getThreadDumpText() throws Exception {
-    long requestMillis = System.currentTimeMillis();
-    ConnectionContext cc = m_serverThreadDumpsNode.getConnectionContext();
-    return ServerHelper.getHelper().takeThreadDump(cc, requestMillis);
-  }
-
-  protected Preferences getPreferences() {
-    AdminClientContext acc = AdminClient.getContext();
-    return acc.prefs.node("ServerThreadDumpsPanel");
+    if(m_serverThreadDumpsNode != null) {
+      IServer server = m_serverThreadDumpsNode.getServer();
+      if(server != null) {
+        return server.takeThreadDump(System.currentTimeMillis());
+      }
+    }
+    return "";
   }
 
   public void tearDown() {

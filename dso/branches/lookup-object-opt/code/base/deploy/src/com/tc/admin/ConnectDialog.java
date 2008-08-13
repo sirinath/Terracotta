@@ -11,6 +11,8 @@ import org.dijon.DialogResource;
 import org.dijon.Label;
 import org.dijon.TextField;
 
+import com.tc.admin.model.IServer;
+
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
@@ -36,7 +38,7 @@ public final class ConnectDialog extends Dialog {
                                                                         .longValue();
 
   private AdminClientContext         m_acc;
-  private ServerConnectionManager    m_connectManager;
+  private IServer                    m_server;
   private long                       m_timeout;
   private ConnectionListener         m_listener;
   private AuthenticatingJMXConnector m_jmxc;
@@ -53,18 +55,18 @@ public final class ConnectDialog extends Dialog {
   private final Container            m_emptyPanel;
   private final Container            m_authPanel;
 
-  public ConnectDialog(Frame parent, ServerConnectionManager scm, ConnectionListener listener) {
+  public ConnectDialog(Frame parent, IServer server, ConnectionListener listener) {
     super(parent, true);
 
     m_acc = AdminClient.getContext();
-    m_connectManager = scm;
-    m_jmxc = new AuthenticatingJMXConnector(m_connectManager);
+    m_server = server;
+    m_jmxc = new AuthenticatingJMXConnector(m_server);
     m_timeout = CONNECT_TIMEOUT_MILLIS;
     m_listener = listener;
 
-    load((DialogResource) m_acc.topRes.child("ConnectDialog"));
+    load((DialogResource) m_acc.childResource("ConnectDialog"));
     m_label = (Label) findComponent("ConnectLabel");
-    m_label.setText("Connecting to " + scm + ". Please wait...");
+    m_label.setText("Connecting to " + server + ". Please wait...");
     pack();
 
     m_cancelButton = (Button) findComponent("CancelButton");
@@ -74,7 +76,7 @@ public final class ConnectDialog extends Dialog {
     m_emptyPanel = (Container) findComponent("EmptyPanel");
     m_emptyPanel.setLayout(new BorderLayout());
 
-    m_authPanel = (Container) AdminClient.getContext().topRes.resolve("AuthPanel");
+    m_authPanel = (Container) AdminClient.getContext().resolveResource("AuthPanel");
 
     Container credentialsPanel = (Container) m_authPanel.findComponent("CredentialsPanel");
     m_authPanel.setVisible(false);
@@ -113,7 +115,7 @@ public final class ConnectDialog extends Dialog {
     public void actionPerformed(ActionEvent ae) {
       String username = m_usernameField.getText().trim();
       String password = new String(m_passwordField.getPassword()).trim();
-      m_connectManager.setCredentials(username, password);
+      m_server.setConnectionCredentials(new String[] { username, password });
       disableAuthenticationDialog();
       initiateConnectAction();
     }
@@ -121,7 +123,7 @@ public final class ConnectDialog extends Dialog {
 
   private void initiateConnectAction() {
     m_cancelButton.setEnabled(true);
-    m_connectInitiator = m_acc.executorService.submit(new ConnectInitiator());
+    m_connectInitiator = m_acc.submit(new ConnectInitiator());
   }
 
   class DialogCloserTask implements ActionListener {
@@ -157,15 +159,15 @@ public final class ConnectDialog extends Dialog {
     m_usernameField.grabFocus();
   }
 
-  public void setServerConnectionManager(ServerConnectionManager scm) {
-    m_connectManager = scm;
-    m_jmxc = new AuthenticatingJMXConnector(m_connectManager);
-    m_label.setText("Connecting to " + scm + ". Please wait...");
+  public void setServer(IServer server) {
+    m_server = server;
+    m_jmxc = new AuthenticatingJMXConnector(m_server);
+    m_label.setText("Connecting to " + server + ". Please wait...");
     pack();
   }
 
-  public ServerConnectionManager getServerConnectionManager() {
-    return m_connectManager;
+  public IServer getServer() {
+    return m_server;
   }
 
   public void setTimeout(long millis) {
@@ -223,7 +225,7 @@ public final class ConnectDialog extends Dialog {
 
   private class ConnectInitiator implements Runnable {
     public void run() {
-      Future f = m_acc.executorService.submit(new ConnectAction());
+      Future f = m_acc.submitTask(new ConnectAction());
 
       m_error = null;
       try {
@@ -258,13 +260,13 @@ public final class ConnectDialog extends Dialog {
   }
 
   void tearDown() {
-    Map env = m_connectManager.getConnectionEnvironment();
+    Map env = m_server.getConnectionEnvironment();
     if (env != null) {
       env.clear();
     }
 
     m_acc = null;
-    m_connectManager = null;
+    m_server = null;
     m_listener = null;
     m_jmxc = null;
     m_connectInitiator = null;
