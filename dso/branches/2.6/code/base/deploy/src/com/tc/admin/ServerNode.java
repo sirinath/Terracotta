@@ -13,6 +13,7 @@ import com.tc.admin.common.MBeanServerInvocationProxy;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XTreeNode;
 import com.tc.admin.dso.DSOHelper;
+import com.tc.admin.model.ServerVersion;
 import com.tc.config.schema.L2Info;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
@@ -47,10 +48,9 @@ import javax.swing.SwingUtilities;
 /**
  * All connection actions go through the ServerConnectionManager, which calls back through ConnectionListener. The
  * ServerConnectionManager handles auto-connecting, active-connection monitoring, and connection-state messaging. A JMX
- * notification handler (handleNotification) informs when the server goes from started->active state.
- *
- * TODO: this class and ClusterNode have much in common as ClusterNode was derived from ServerNode.
- * The commonality should be reduced through a refactoring.
+ * notification handler (handleNotification) informs when the server goes from started->active state. TODO: this class
+ * and ClusterNode have much in common as ClusterNode was derived from ServerNode. The commonality should be reduced
+ * through a refactoring.
  */
 
 public class ServerNode extends ComponentNode implements ConnectionListener, NotificationListener {
@@ -67,7 +67,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
   protected long                    m_activateTime;
   protected String                  m_environment;
   protected String                  m_config;
-  protected ProductInfo             m_productInfo;
+  protected ServerVersion           m_productInfo;
   protected ServerPanel             m_serverPanel;
   protected ConnectDialog           m_connectDialog;
   protected JDialog                 m_versionMismatchDialog;
@@ -106,7 +106,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
       m_connectManager.setCredentials(creds);
     }
   }
-  
+
   /**
    * We need to use invokeLater here because this is being called from a background thread and all Swing stuff has to be
    * done in the primary event loop.
@@ -182,7 +182,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
   public String getHost() {
     return m_l2Info.host();
   }
-  
+
   public String getCanonicalHostName() {
     return m_connectManager.safeGetHostName();
   }
@@ -190,7 +190,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
   public String getHostAddress() {
     return m_connectManager.safeGetHostAddress();
   }
-  
+
   public int getPort() {
     return m_l2Info.jmxPort();
   }
@@ -526,7 +526,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
     return m_serverInfoBean;
   }
 
-  public ProductInfo getProductInfo() {
+  public ServerVersion getProductInfo() {
     if (m_productInfo != null) return m_productInfo;
 
     try {
@@ -537,25 +537,25 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
       String license = serverInfo.getDescriptionOfCapabilities();
       String copyright = serverInfo.getCopyright();
 
-      m_productInfo = new ProductInfo(version, buildID, license, copyright);
+      m_productInfo = new ServerVersion(version, buildID, license, copyright);
     } catch (Exception e) {
       m_acc.log(e);
-      m_productInfo = new ProductInfo();
+      m_productInfo = new ServerVersion("[unknown]","[unknown]","[unknown]","[unknown]");
     }
 
     return m_productInfo;
   }
 
   public String getProductVersion() {
-    return getProductInfo().getVersion();
+    return getProductInfo().version();
   }
 
   public String getProductBuildID() {
-    return getProductInfo().getBuildID();
+    return getProductInfo().buildID();
   }
 
   public String getProductLicense() {
-    return getProductInfo().getLicense();
+    return getProductInfo().license();
   }
 
   String getEnvironment() {
@@ -615,7 +615,7 @@ public class ServerNode extends ComponentNode implements ConnectionListener, Not
               try {
                 addChildren(getConnectionContext());
                 m_acc.controller.nodeStructureChanged(ServerNode.this);
-//                m_acc.controller.expand(ServerNode.this);
+                // m_acc.controller.expand(ServerNode.this);
                 m_acc.controller.nodeChanged(ServerNode.this);
               } catch (Exception e) {
                 // just wait for disconnect message to come in

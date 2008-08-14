@@ -7,6 +7,7 @@ import org.dijon.ContainerResource;
 import org.dijon.Label;
 
 import com.tc.admin.common.XContainer;
+import com.tc.admin.model.ServerVersion;
 
 /**
  * This component is displayed on the ServerPanel after connecting to the
@@ -31,9 +32,9 @@ public class ProductInfoPanel extends XContainer {
     m_copyright = (Label)findComponent("Copyright");
   }
   
-  public void init(ProductInfo productInfo) {
-    m_version.setText(productInfo.getVersion());
-    m_copyright.setText(productInfo.getCopyright());
+  public void init(ServerVersion productInfo) {
+    m_version.setText(productInfo.version());
+    m_copyright.setText(productInfo.copyright());
   }
   
   public void tearDown() {

@@ -8,11 +8,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
-import org.dijon.Button;
 import org.dijon.CheckBox;
 import org.dijon.Container;
 import org.dijon.Dialog;
-import org.dijon.DialogResource;
 import org.dijon.FrameResource;
 import org.dijon.Label;
 import org.dijon.ScrollPane;
@@ -21,6 +19,7 @@ import org.dijon.TextArea;
 import org.dijon.TextPane;
 import org.dijon.UndoMonger;
 
+import com.tc.admin.common.AboutDialog;
 import com.tc.admin.common.BrowserLauncher;
 import com.tc.admin.common.ComponentNode;
 import com.tc.admin.common.ContactTerracottaAction;
@@ -35,6 +34,8 @@ import com.tc.admin.common.XTabbedPane;
 import com.tc.admin.common.XTextField;
 import com.tc.admin.common.XTreeModel;
 import com.tc.admin.common.XTreeNode;
+import com.tc.admin.model.ServerVersion;
+import com.tc.util.ProductInfo;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -663,10 +664,10 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     if (com.tc.util.ProductInfo.getInstance().isDevMode() || m_versionCheckAction == null
         || !m_versionCheckAction.isVersionCheckEnabled()) { return true; }
 
-    ProductInfo consoleInfo = new ProductInfo();
-    String consoleVersion = consoleInfo.getVersion();
-    ProductInfo serverInfo = clusterNode.getProductInfo();
-    String serverVersion = serverInfo.getVersion();
+    ProductInfo consoleInfo = ProductInfo.getInstance();
+    String consoleVersion = consoleInfo.version();
+    ServerVersion serverInfo = clusterNode.getProductInfo();
+    String serverVersion = serverInfo.version();
     int spaceIndex = serverVersion.lastIndexOf(" ");
 
     // The version string that comes from the server is of the form "Terracotta 2.4", while
@@ -688,10 +689,10 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     if (com.tc.util.ProductInfo.getInstance().isDevMode() || m_versionCheckAction == null
         || !m_versionCheckAction.isVersionCheckEnabled()) { return true; }
 
-    ProductInfo consoleInfo = new ProductInfo();
-    String consoleVersion = consoleInfo.getVersion();
-    ProductInfo serverInfo = serverNode.getProductInfo();
-    String serverVersion = serverInfo.getVersion();
+    ProductInfo consoleInfo = ProductInfo.getInstance();
+    String consoleVersion = consoleInfo.version();
+    ServerVersion serverInfo = serverNode.getProductInfo();
+    String serverVersion = serverInfo.version();
     int spaceIndex = serverVersion.lastIndexOf(" ");
 
     // The version string that comes from the server is of the form "Terracotta 2.4", while
@@ -824,9 +825,9 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     sb.append("&platform=");
     sb.append(URLEncoder.encode(System.getProperty("os.arch")));
     sb.append("&tc-version=");
-    sb.append(URLEncoder.encode(productInfo.getVersion()));
+    sb.append(URLEncoder.encode(productInfo.version()));
     sb.append("&tc-product=");
-    sb.append(productInfo.getLicense().equals(ProductInfo.DEFAULT_LICENSE) ? "oss" : "ee");
+    sb.append(productInfo.license().equals(ProductInfo.DEFAULT_LICENSE) ? "oss" : "ee");
     sb.append("&source=console");
 
     return new URL(sb.toString());
@@ -889,7 +890,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
     ProductInfo getProductInfo() {
       if (m_productInfo == null) {
-        m_productInfo = new ProductInfo();
+        m_productInfo = ProductInfo.getInstance();
       }
       return m_productInfo;
     }
@@ -945,7 +946,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
 
           try {
             StringBuffer sb = new StringBuffer();
-            String version = getProductInfo().getVersion();
+            String version = getProductInfo().version();
 
             if (version.indexOf('.') != -1) {
               URL url = constructCheckURL();
@@ -1081,29 +1082,13 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     }
 
     public void actionPerformed(ActionEvent ae) {
+      Frame frame = getFrame();
       if (m_aboutDialog == null) {
-        AdminClientContext acc = AdminClient.getContext();
-
-        m_aboutDialog = new Dialog(getFrame(), true);
-        m_aboutDialog.load((DialogResource) acc.topRes.child("AboutDialog"));
-
-        AdminClientInfoPanel info;
-        String title = getBundleString("title");
-        info = (AdminClientInfoPanel) m_aboutDialog.findComponent("AdminClientInfoPanel");
-        info.init(title, new ProductInfo());
-        Label monikerLabel = (Label) m_aboutDialog.findComponent("MonikerLabel");
-        monikerLabel.setText(title);
-        Button okButton = (Button) m_aboutDialog.findComponent("OKButton");
-        m_aboutDialog.getRootPane().setDefaultButton(okButton);
-        okButton.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent ae2) {
-            m_aboutDialog.setVisible(false);
-          }
-        });
+        m_aboutDialog = new AboutDialog(frame);
       }
 
       m_aboutDialog.pack();
-      m_aboutDialog.center(AdminClientPanel.this);
+      m_aboutDialog.center(frame);
       m_aboutDialog.setVisible(true);
     }
   }
