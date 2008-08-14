@@ -14,6 +14,7 @@ import com.tc.admin.common.PropertyTableModel;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XTextArea;
+import com.tc.admin.model.ServerVersion;
 
 import java.util.Date;
 import java.util.concurrent.Callable;
@@ -63,14 +64,14 @@ public class ServerPanel extends XContainer {
   }
 
   class ServerState {
-    private Date        fStartDate;
-    private Date        fActivateDate;
-    private ProductInfo fProductInfo;
-    private String      fEnvironment;
-    private String      fConfig;
-    private Integer     fDSOListenPort;
+    private Date          fStartDate;
+    private Date          fActivateDate;
+    private ServerVersion fProductInfo;
+    private String        fEnvironment;
+    private String        fConfig;
+    private Integer       fDSOListenPort;
 
-    ServerState(Date startDate, Date activateDate, ProductInfo productInfo, String environment, String config, Integer dsoListenPort) {
+    ServerState(Date startDate, Date activateDate, ServerVersion productInfo, String environment, String config, Integer dsoListenPort) {
       fStartDate = startDate;
       fActivateDate = activateDate;
       fProductInfo = productInfo;
@@ -86,7 +87,7 @@ public class ServerPanel extends XContainer {
       return fActivateDate;
     }
 
-    ProductInfo getProductInfo() {
+    ServerVersion getProductInfo() {
       return fProductInfo;
     }
 
@@ -109,7 +110,7 @@ public class ServerPanel extends XContainer {
         public ServerState call() {
           Date startDate = new Date(m_serverNode.getStartTime());
           Date activateDate = new Date(m_serverNode.getActivateTime());
-          ProductInfo productInfo = m_serverNode.getProductInfo();
+          ServerVersion productInfo = m_serverNode.getProductInfo();
           String environment = m_serverNode.getEnvironment();
           String config = m_serverNode.getConfig();
           Integer dsoListenPort = m_serverNode.getDSOListenPort();
@@ -240,7 +241,7 @@ public class ServerPanel extends XContainer {
    * PropertyTable uses reflection to access values to display.
    * TODO: i18n
    */
-  private void showProductInfo(ProductInfo productInfo) {
+  private void showProductInfo(ServerVersion productInfo) {
     String[] fields = { "CanonicalHostName", "HostAddress", "Port", "DSOListenPort", "ProductVersion", "ProductBuildID", "ProductLicense" };
     String[] headings = { "Host", "Address", "JMX port", "DSO port", "Version", "Build", "License" };
     m_propertyTable.setModel(new PropertyTableModel(m_serverNode, fields, headings));

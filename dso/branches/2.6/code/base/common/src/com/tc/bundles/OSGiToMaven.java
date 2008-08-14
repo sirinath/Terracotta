@@ -34,7 +34,10 @@ public class OSGiToMaven {
     return version + qualifier;
   }
 
-  public static String makeBundleFilename(final String symbolicName, final String version) {
+  public static String makeBundleFilename(String symbolicName, final String version) {
+    if(symbolicName == null) {
+      symbolicName = "null";
+    }
     return makeBundleFilename(symbolicName, version, true);
   }
 
