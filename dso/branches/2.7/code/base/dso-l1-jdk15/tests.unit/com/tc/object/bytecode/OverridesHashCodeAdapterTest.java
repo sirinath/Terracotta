@@ -39,15 +39,6 @@ public class OverridesHashCodeAdapterTest extends TestCase {
                                                                               + newInterfaces); }
   }
 
-  public void testString() throws Exception {
-    String className = "java.lang.String";
-    assertDoesNotHaveOverridesHashCodeInterface(className);
-
-    List newInterfaces = instrumentAndGetInterfaces(className);
-
-    assertTrue(newInterfaces.toString(), newInterfaces.contains(OVERRIDES_HASHCODE_INTERFACE));
-  }
-
   public void testDoesOverride() throws Exception {
     String className = DoesOverride.class.getName();
     assertDoesNotHaveOverridesHashCodeInterface(className);
