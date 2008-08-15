@@ -201,10 +201,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final boolean isCreationInProgress() {
-    return false;
-  }
-
   public final boolean isPhysicallyInstrumented(Class clazz) {
     return false;
   }

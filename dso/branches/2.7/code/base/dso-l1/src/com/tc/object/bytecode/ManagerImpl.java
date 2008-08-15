@@ -633,13 +633,6 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isCreationInProgress() {
-    // I think the condition this.txManager.isTransactionLoggingDisabled() is not necessary and is causing the
-    // problem in DEV-602.
-    // return this.objectManager.isCreationInProgress() || this.txManager.isTransactionLoggingDisabled();
-    return this.objectManager.isCreationInProgress();
-  }
-
   public TCObject shareObjectIfNecessary(Object pojo) {
     TCObject tobj = lookupExistingOrNull(pojo);
     if (tobj != null) { return tobj; }

@@ -54,22 +54,10 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
    * won't work correctly
    */
   protected int __tc_hash(Object obj) {
-    return __tc_hash(obj, true);
-  }
-
-  protected int __tc_hash(Object obj, boolean flag) {
     int i = obj.hashCode();
 
     if (__tc_isManaged()) {
-      boolean useObjectIDHashCode = false;
-
-      if (!ManagerUtil.overridesHashCode(obj)) {
-        if (flag) {
-          if (ManagerUtil.isCreationInProgress()) useObjectIDHashCode = true;
-        } else {
-          useObjectIDHashCode = true;
-        }
-      }
+      boolean useObjectIDHashCode = !ManagerUtil.overridesHashCode(obj);
 
       if (useObjectIDHashCode) {
         TCObject tcobject = ManagerUtil.shareObjectIfNecessary(obj);

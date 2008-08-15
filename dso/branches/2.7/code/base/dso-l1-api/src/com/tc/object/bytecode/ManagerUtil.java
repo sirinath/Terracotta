@@ -589,15 +589,6 @@ public class ManagerUtil {
     return getManager().waitLength(obj);
   }
 
-  /**
-   * Check whether a creation is in progress. This flag is set on a per-thread basis while hydrating an object from DNA.
-   * 
-   * @return True if in progress
-   */
-  public static boolean isCreationInProgress() {
-    return getManager().isCreationInProgress();
-  }
-
   private ManagerUtil() {
     // not for public instantiation
   }
