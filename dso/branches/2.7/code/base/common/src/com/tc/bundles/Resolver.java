@@ -311,7 +311,7 @@ public class Resolver {
         ensureBundle(spec, stack);
       } catch (MissingBundleException e) {
         throw new MissingBundleException(e.getMessage(), spec.getGroupId(), spec.getName(), spec.getVersion(),
-                                         repositories, dependencyStack);
+        repositories, dependencyStack);
       }
     }
     addToRegistry(location, manifest);
