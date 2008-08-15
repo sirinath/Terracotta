@@ -77,20 +77,20 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
         new OriginalGetMethodAdapter(super.visitMethod(ACC_SYNTHETIC|ACC_PUBLIC, TC_ORIG_GET_METHOD_NAME, TC_ORIG_GET_METHOD_DESC, null, null)),
         new ConcurrentHashMapMethodAdapter(new GetMethodAdapter(mv))});
     }
-    
+
     if ("put".equals(name) && "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;".equals(desc)) {
       mv = new MulticastMethodVisitor(new MethodVisitor[] {
-        mv,
+          mv,
         new ApplicatorPutMethodAdapter(super.visitMethod(ACC_SYNTHETIC|ACC_PUBLIC, TC_APPLICATOR_PUT_METHOD_NAME, TC_APPLICATOR_PUT_METHOD_DESC, null, null))});
     } else if ("clear".equals(name) && "()V".equals(desc)) {
       mv = new MulticastMethodVisitor(new MethodVisitor[] {
-        mv,
+          mv,
         new ApplicatorClearMethodAdapter(super.visitMethod(ACC_SYNTHETIC|ACC_PUBLIC, TC_APPLICATOR_CLEAR_METHOD_NAME, TC_APPLICATOR_CLEAR_METHOD_DESC, null, null))});
     } else if ("containsKey".equals(name) && "(Ljava/lang/Object;)Z".equals(desc)) {
       mv = new ContainsKeyMethodAdapter(mv);
     } else if ("remove".equals(name) && "(Ljava/lang/Object;)Ljava/lang/Object;".equals(desc)) {
       mv = new MulticastMethodVisitor(new MethodVisitor[] {
-        new SimpleRemoveMethodAdapter(mv),
+          new SimpleRemoveMethodAdapter(mv),
         new ApplicatorRemoveMethodAdapter(super.visitMethod(ACC_SYNTHETIC|ACC_PUBLIC, TC_APPLICATOR_REMOVE_METHOD_NAME, TC_APPLICATOR_REMOVE_METHOD_DESC, null, null)),
         new RemoveLogicalMethodAdapter(super.visitMethod(ACC_SYNTHETIC|ACC_PUBLIC, TC_REMOVE_LOGICAL_METHOD_NAME, TC_REMOVE_LOGICAL_METHOD_DESC, null, null))});
     } else if ("remove".equals(name) && "(Ljava/lang/Object;Ljava/lang/Object;)Z".equals(desc)) {
@@ -111,7 +111,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     createTCRehashAndSupportMethods();
     createTCFullyReadLockMethod();
     createTCFullyReadUnlockMethod();
-    
+
     super.visitEnd();
   }
 
@@ -324,7 +324,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     String desc = TC_REHASH_METHOD_DESC;
     MethodVisitor mv = super.visitMethod(access, name, desc, null, null);
     mv = new JavaUtilConcurrentHashMapLazyValuesMethodAdapter(access, desc, mv, false);
-    
+
     mv.visitCode();
     Label l0 = new Label();
     Label l1 = new Label();
@@ -616,12 +616,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
   }
-  
+
   private static class ApplicatorClearMethodAdapter extends MethodAdapter implements Opcodes {
     public ApplicatorClearMethodAdapter(MethodVisitor mv) {
       super(mv);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
@@ -633,12 +633,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
   }
-  
+
   private static class ApplicatorPutMethodAdapter extends MethodAdapter implements Opcodes {
     public ApplicatorPutMethodAdapter(MethodVisitor mv) {
       super(mv);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
@@ -661,12 +661,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
   }
-  
+
   private static class OriginalGetMethodAdapter extends MethodAdapter implements Opcodes {
     public OriginalGetMethodAdapter(MethodVisitor mv) {
       super(mv);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
@@ -679,12 +679,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
   }
-  
+
   private static class ApplicatorRemoveMethodAdapter extends MethodAdapter implements Opcodes {
     public ApplicatorRemoveMethodAdapter(MethodVisitor mv) {
       super(mv);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
@@ -707,12 +707,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
   }
-  
+
   private static class RemoveLogicalMethodAdapter extends MethodAdapter implements Opcodes {
     public RemoveLogicalMethodAdapter(MethodVisitor mv) {
       super(mv);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
@@ -760,7 +760,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       mv.visitMethodInsn(INVOKESPECIAL, CONCURRENT_HASH_MAP_SLASH, TC_IS_DSO_HASH_REQUIRED_METHOD_NAME,
                          TC_IS_DSO_HASH_REQUIRED_METHOD_DESC);
       Label l1 = new Label();
-      mv.visitJumpInsn(IFNE, l1);
+      mv.visitJumpInsn(IFEQ, l1);
       Label l2 = new Label();
       mv.visitLabel(l2);
       mv.visitInsn(ICONST_0);
@@ -768,7 +768,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       mv.visitLabel(l1);
     }
   }
-  
+
   private static class GetMethodAdapter extends AddCheckManagedKeyMethodAdapter {
     public GetMethodAdapter(MethodVisitor mv) {
       super(mv);
@@ -780,7 +780,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       mv.visitMethodInsn(INVOKESPECIAL, CONCURRENT_HASH_MAP_SLASH, TC_IS_DSO_HASH_REQUIRED_METHOD_NAME,
                          TC_IS_DSO_HASH_REQUIRED_METHOD_DESC);
       Label l1 = new Label();
-      mv.visitJumpInsn(IFNE, l1);
+      mv.visitJumpInsn(IFEQ, l1);
       Label l2 = new Label();
       mv.visitLabel(l2);
       mv.visitInsn(ACONST_NULL);
@@ -832,7 +832,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       mv.visitMethodInsn(INVOKESPECIAL, CONCURRENT_HASH_MAP_SLASH, TC_IS_DSO_HASH_REQUIRED_METHOD_NAME,
                          TC_IS_DSO_HASH_REQUIRED_METHOD_DESC);
       Label l1 = new Label();
-      mv.visitJumpInsn(IFNE, l1);
+      mv.visitJumpInsn(IFEQ, l1);
       Label l2 = new Label();
       mv.visitLabel(l2);
       mv.visitInsn(ICONST_0);
