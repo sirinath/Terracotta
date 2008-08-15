@@ -30,7 +30,6 @@ public class TIMUtil {
   public static final String      WEBSPHERE_6_1_0_7;
   public static final String      WICKET_1_3;
   public static final String      MODULES_COMMON;
-  public static final String      JETTY_6_1;
 
   private static final Properties modules = new Properties();
 
@@ -54,7 +53,6 @@ public class TIMUtil {
     WEBSPHERE_6_1_0_7 = lookup(".*websphere-6.1.0.7");
     WICKET_1_3 = lookup(".*wicket-1.3");
     MODULES_COMMON = lookup("modules-common");
-    JETTY_6_1 = lookup(".*jetty-6.1.4");
   }
 
   private TIMUtil() {
@@ -102,13 +100,5 @@ public class TIMUtil {
 
   public static Set getModuleNames() {
     return modules.keySet();
-  }
-
-  public static void main(String[] args) {
-    System.out.println("Jetty group id: " + TIMUtil.getGroupId(JETTY_6_1));
-    System.out.println("Jetty version: " + TIMUtil.getVersion(JETTY_6_1));
-
-    System.out.println("modules-common group id: " + TIMUtil.getGroupId(MODULES_COMMON));
-    System.out.println("modules-common version: " + TIMUtil.getVersion(MODULES_COMMON));
   }
 }
