@@ -805,7 +805,8 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
         assertCollectionsEqual(set2, set1);
       } else {
         // fault in one root locally
-        map.get(keyRoots[0]);
+        Object value = map.get(keyRoots[0]);
+        Assert.assertNotNull(value);
 
         Collection set1a = map.entrySet();
         Collection set1b = ((TCMap) map).__tc_getAllLocalEntriesSnapshot();

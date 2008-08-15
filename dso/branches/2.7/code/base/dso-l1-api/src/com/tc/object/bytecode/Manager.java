@@ -419,13 +419,6 @@ public interface Manager {
   public int waitLength(Object obj);
 
   /**
-   * Check whether a creation is in progress. This flag is set on a per-thread basis while hydrating an object from DNA.
-   * 
-   * @return True if in progress
-   */
-  public boolean isCreationInProgress();
-
-  /**
    * Get JVM Client identifier
    * 
    * @return Client identifier
