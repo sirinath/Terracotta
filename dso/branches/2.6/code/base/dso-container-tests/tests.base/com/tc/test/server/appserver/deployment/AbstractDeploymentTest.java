@@ -31,12 +31,6 @@ public abstract class AbstractDeploymentTest extends TCTestCase {
   List                     disabledJavaVersion = new ArrayList();
 
   public AbstractDeploymentTest() {
-    // need more work to run tests with Jetty
-    // disable for now
-    if (appServerInfo().getId() == AppServerInfo.JETTY) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
-    }
-
     if (isSessionTest() && (appServerInfo().getId() == AppServerInfo.GLASSFISH)) {
       disableAllTests();
     }
