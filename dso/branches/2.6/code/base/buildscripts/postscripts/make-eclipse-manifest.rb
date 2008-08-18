@@ -21,7 +21,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     manifest_path = FilePath.new(meta_directory, 'MANIFEST.MF')
     File.open(manifest_path.to_s, 'w') do |out|
       out.puts "Manifest-Version: 1.0"
-      out.puts "Eclipse-LazyStart: true"
+      out.puts "Bundle-ActivationPolicy: lazy"
       out.puts "Bundle-ManifestVersion: 2"
       out.puts "Bundle-Name: Terracotta Plugin"
       out.puts "Bundle-SymbolicName: org.terracotta.dso; singleton:=true"
