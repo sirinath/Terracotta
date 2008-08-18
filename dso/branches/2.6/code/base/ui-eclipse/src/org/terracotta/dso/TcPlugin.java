@@ -466,7 +466,7 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       wc.setAttribute(ATTR_CLASSPATH_PROVIDER, "org.terracotta.dso.classpathProvider");
       wc.setAttribute(ATTR_WORKING_DIRECTORY, project.getLocation().makeAbsolute().toOSString());
 
-      return wc.launch(ILaunchManager.DEBUG_MODE, monitor);
+      return wc.launch(ILaunchManager.RUN_MODE, monitor);
     } else {
       System.out.println("No config file specified.  Set in project properties");
       return null;
@@ -534,10 +534,10 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
 
       if (servers != null) {
         Server launchServer = createLaunchServer(launch);
-        Server[] serverArr = servers.getServerArray();
+        Server[] serverArray = servers.getServerArray();
 
-        for (int i = 0; i < serverArr.length; i++) {
-          Server server = serverArr[i];
+        for (int i = 0; i < serverArray.length; i++) {
+          Server server = serverArray[i];
           Server serverCopy = (Server) server.copy();
           replacePatterns(serverCopy);
           if(areEquivalentServers(launchServer, serverCopy)) {
@@ -550,6 +550,11 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
     return null;
   }
   
+  /**
+   * This should not be called with a configuration server or any patterns will be overwritten with whatever values
+   * apply at call-time. Clone the configuration server first: Server serverCopy = (Server) server.copy(); Further,
+   * identity comparison should not be used on servers, rather use areEquivalentServers(Server1, Server2).
+   */
   public void replacePatterns(Server server) {
     if(server != null) {
       if(server.isSetName()) {
@@ -572,11 +577,12 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       Servers servers = config.getServers();
 
       if (servers != null) {
-        Server[] serverArr = servers.getServerArray();
+        Server[] serverArray = servers.getServerArray();
 
-        if (serverArr.length > 0) {
-          replacePatterns(serverArr[0]);
-          return serverArr[0];
+        if (serverArray.length > 0) {
+          Server server = (Server) serverArray[0].copy();
+          replacePatterns(server);
+          return server;
         }
       }
     }
@@ -645,9 +651,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       }
 
       setBootClassHelper(project, new BootClassHelper(JavaCore.create(project)));
-
-      getConfigurationHelper(project).validateAll();
-      fireConfigurationChange(project);
     }
   }
 
@@ -835,9 +838,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       }
 
       setBootClassHelper(project, new BootClassHelper(JavaCore.create(project)));
-
-      getConfigurationHelper(project).validateAll();
-      fireConfigurationChange(project);
     }
   }
 
@@ -1008,12 +1008,15 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
   public TcConfig getConfiguration(IProject project) {
     if (project == null) return null;
 
+    boolean fireChanged = false;
+    TcConfig config = null;
     synchronized (project) {
-      TcConfig config = (TcConfig) getSessionProperty(project, CONFIGURATION);
+      config = (TcConfig) getSessionProperty(project, CONFIGURATION);
 
       if (config == null) {
         try {
           loadConfiguration(project);
+          fireChanged = true;
         } catch (XmlException e) {
           LineLengths lineLengths = getConfigurationLineLengths(project);
           handleXmlException(getConfigurationFile(project), lineLengths, e);
@@ -1026,12 +1029,19 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
         if (config == null) {
           config = BAD_CONFIG;
           setSessionProperty(project, CONFIGURATION, config);
-          fireConfigurationChange(project);
+          fireChanged = true;
         }
       }
-
-      return config;
     }
+
+    if (fireChanged) {
+      if (config != BAD_CONFIG) {
+        getConfigurationHelper(project).validateAll();
+      }
+      fireConfigurationChange(project);
+    }
+
+    return config;
   }
 
   public void handleXmlException(IFile configFile, LineLengths lineLengths, XmlException e) {
