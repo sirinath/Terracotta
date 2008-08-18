@@ -10,6 +10,9 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
@@ -96,6 +99,7 @@ import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.MergeTCToJavaClassAdapter;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.NullTCObject;
+import com.tc.object.bytecode.OverridesHashCode;
 import com.tc.object.bytecode.ReentrantLockClassAdapter;
 import com.tc.object.bytecode.ReentrantReadWriteLockClassAdapter;
 import com.tc.object.bytecode.SetRemoveMethodAdapter;
@@ -167,14 +171,11 @@ import com.tcclient.util.MapEntrySetWrapper;
 import gnu.trove.TLinkable;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.AccessibleObject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -222,7 +223,8 @@ public class BootJarTool {
 
   private static final TCLogger       consoleLogger                    = CustomerLogging.getConsoleLogger();
 
-  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider, boolean quiet) {
+  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider, boolean quiet)
+      throws Exception {
     this.configHelper = configuration;
     this.outputFile = outputFile;
     this.systemLoader = systemProvider;
@@ -230,11 +232,10 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.configHelper);
-
     loadModules();
   }
 
-  private void loadModules() {
+  private void loadModules() throws Exception {
     // remove the user defined specs already load from config while modules are running so that specs created take
     // precedence from user defined specs
     List userSpecs = new ArrayList();
@@ -259,7 +260,7 @@ public class BootJarTool {
     }
   }
 
-  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider) {
+  public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider) throws Exception {
     this(configuration, outputFile, systemProvider, false);
   }
 
@@ -282,28 +283,28 @@ public class BootJarTool {
    * tc-config's <additional-boot-jar-classes/> section. Program execution halts if it fails these checks.
    */
   private final void scanJar(File bootJarFile) {
-    if (!bootJarFile.exists()) {
-      consoleLogger.fatal("\nDSO boot JAR file not found: '" + bootJarFile
-                          + "'; you can specify the boot JAR file to scan using the -o or --bootjar-file option.");
-      System.exit(1);
-    }
-    final String MESSAGE0 = "\nYour boot JAR file might be out of date or invalid.";
-    final String MESSAGE1 = "\nThe following classes was declared in the <additional-boot-jar-classes/> section "
-                            + "of your tc-config file but is not a part of your boot JAR file:";
-    final String MESSAGE2 = "\nThe following user-classes were found in the boot JAR but was not declared in the "
-                            + "<additional-boot-jar-classes/> section of your tc-config file:";
-    final String MESSAGE3 = "\nUse the make-boot-jar tool to re-create your boot JAR.";
+    String MESSAGE0 = "\nYour boot JAR file might be out of date or invalid.";
+    String MESSAGE1 = "\nThe following classes was declared in the <additional-boot-jar-classes/> section "
+                      + "of your tc-config file but is not a part of your boot JAR file:";
+    String MESSAGE2 = "\nThe following user-classes were found in the boot JAR but was not declared in the "
+                      + "<additional-boot-jar-classes/> section of your tc-config file:";
+    String MESSAGE3 = "\nUse the make-boot-jar tool to re-create your boot JAR.";
     try {
-      final Map result = compareBootJarContentsToUserSpec(bootJarFile);
-      final Set missing = (Set) result.get(MISSING_CLASSES);
-      final Set excess = (Set) result.get(EXCESS_CLASSES);
+      if (!bootJarFile.exists()) throw new FileNotFoundException();
+
+      Map result = compareBootJarContentsToUserSpec(bootJarFile);
+      Set missing = (Set) result.get(MISSING_CLASSES);
+      Set excess = (Set) result.get(EXCESS_CLASSES);
+
       if (!missing.isEmpty() || !excess.isEmpty()) {
         consoleLogger.fatal(MESSAGE0);
+
         if (!missing.isEmpty()) {
           consoleLogger.error(MESSAGE1);
           for (Iterator i = missing.iterator(); i.hasNext();)
             consoleLogger.error("- " + i.next());
         }
+
         if (!excess.isEmpty()) {
           consoleLogger.error(MESSAGE2);
           for (Iterator i = missing.iterator(); i.hasNext();)
@@ -312,6 +313,10 @@ public class BootJarTool {
         consoleLogger.error(MESSAGE3);
         System.exit(1);
       }
+    } catch (FileNotFoundException e) {
+      consoleLogger.fatal("\nDSO boot JAR file not found: '" + bootJarFile
+                          + "'; you can specify the boot JAR file to scan using the -o or --bootjar-file option.");
+      System.exit(1);
     } catch (InvalidBootJarMetaDataException e) {
       consoleLogger.fatal(e.getMessage());
       consoleLogger.fatal(MESSAGE3);
@@ -368,11 +373,10 @@ public class BootJarTool {
       return result;
     } catch (InvalidBootJarMetaDataException e) {
       throw e;
-    } catch (BootJarException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      exit(e.getMessage());
     }
+    return null;
   }
 
   /**
@@ -380,8 +384,8 @@ public class BootJarTool {
    */
   private final void verifyJar(File bootJarFile) {
     try {
-      final BootJar bootJarLocal = BootJar.getBootJarForReading(bootJarFile);
-      final Set bootJarClassNames = bootJarLocal.getAllClasses();
+      BootJar bootJarLocal = BootJar.getBootJarForReading(bootJarFile);
+      Set bootJarClassNames = bootJarLocal.getAllClasses();
       Map offendingClasses = new HashMap();
       for (Iterator i = bootJarClassNames.iterator(); i.hasNext();) {
         final String className = (String) i.next();
@@ -391,21 +395,19 @@ public class BootJarTool {
         cr.accept(cv, ClassReader.SKIP_FRAMES);
       }
 
-      String nl = System.getProperty("line.separator");
-      StringBuffer message = new StringBuffer(
-                                              nl
-                                                  + nl
-                                                  + "The following Terracotta classes needs to be included in the boot jar:"
-                                                  + nl + nl);
+      String newline = System.getProperty("line.separator");
+      StringBuffer msg = new StringBuffer();
+      msg.append(newline).append(newline);
+      msg.append("The following Terracotta classes needs to be included in the boot jar:");
+      msg.append(newline).append(newline);
+
       for (Iterator i = offendingClasses.entrySet().iterator(); i.hasNext();) {
         Map.Entry entry = (Map.Entry) i.next();
-        message.append("  - " + entry.getKey() + " [" + entry.getValue() + "]" + nl);
+        msg.append("  - " + entry.getKey() + " [" + entry.getValue() + "]" + newline);
       }
-      Assert.assertTrue(message, offendingClasses.isEmpty());
-    } catch (BootJarException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      Assert.assertTrue(msg, offendingClasses.isEmpty());
+    } catch (Exception e) {
+      exit(e.getMessage());
     }
   }
 
@@ -414,7 +416,7 @@ public class BootJarTool {
     try {
       bootJarHandler.validateDirectoryExists();
     } catch (BootJarHandlerException e) {
-      exit(e.getMessage(), e.getCause());
+      exit(e.getMessage(), e);
     }
 
     if (!quiet) {
@@ -464,6 +466,7 @@ public class BootJarTool {
 
       loadTerracottaClass(Manageable.class.getName());
       loadTerracottaClass(Clearable.class.getName());
+      loadTerracottaClass(OverridesHashCode.class.getName());
       loadTerracottaClass(Manager.class.getName());
       loadTerracottaClass(InstrumentationLogger.class.getName());
       loadTerracottaClass(NullInstrumentationLogger.class.getName());
@@ -544,6 +547,8 @@ public class BootJarTool {
 
       addRuntimeClasses();
 
+      addLiterals();
+
       addInstrumentedLogManager();
       addSunStandardLoaders();
       addInstrumentedAccessibleObject();
@@ -583,6 +588,22 @@ public class BootJarTool {
     } catch (BootJarHandlerException e) {
       exit(e.getMessage(), e.getCause());
     }
+  }
+
+  private void addLiterals() {
+    bootJar.loadClassIntoJar("java.lang.Boolean", getSystemBytes("java.lang.Boolean"), false);
+    bootJar.loadClassIntoJar("java.lang.Byte", getSystemBytes("java.lang.Byte"), false);
+    bootJar.loadClassIntoJar("java.lang.Character", getSystemBytes("java.lang.Character"), false);
+    bootJar.loadClassIntoJar("java.lang.Double", getSystemBytes("java.lang.Double"), false);
+    bootJar.loadClassIntoJar("java.lang.Float", getSystemBytes("java.lang.Float"), false);
+    bootJar.loadClassIntoJar("java.lang.Integer", getSystemBytes("java.lang.Integer"), false);
+    bootJar.loadClassIntoJar("java.lang.Long", getSystemBytes("java.lang.Long"), false);
+    bootJar.loadClassIntoJar("java.lang.Short", getSystemBytes("java.lang.Short"), false);
+
+    bootJar.loadClassIntoJar("java.math.BigInteger", getSystemBytes("java.math.BigInteger"), false);
+    bootJar.loadClassIntoJar("java.math.BigDecimal", getSystemBytes("java.math.BigDecimal"), false);
+
+    bootJar.loadClassIntoJar("java.lang.StackTraceElement", getSystemBytes("java.lang.StackTraceElement"), false);
   }
 
   private void addIBMSpecific() {
@@ -1220,7 +1241,7 @@ public class BootJarTool {
     if (!classes.isEmpty()) {
       Banner.errorBanner("Boot jar creation failed.  The following set of classes " + desc + ". Please " + verb
                          + " them in the <additional-boot-jar-classes> section of the terracotta config: " + classes);
-      exit(shortDesc + classes, null);
+      exit(shortDesc + classes);
     }
   }
 
@@ -1380,83 +1401,83 @@ public class BootJarTool {
   private final byte[] getBytes(String className, ClassLoader provider) {
     try {
       return getBytesForClass(className, provider);
-    } catch (ClassNotFoundException e) {
-      throw exit("Error sourcing bytes for class " + className, e);
+    } catch (Exception e) {
+      exit("Error sourcing bytes for class " + className, e);
     }
+    return null;
   }
 
   public static final byte[] getBytesForClass(String className, ClassLoader loader) throws ClassNotFoundException {
-    String resource = BootJar.classNameToFileName(className);
-    final InputStream is = loader.getResourceAsStream(resource);
-    if (is == null) { throw new ClassNotFoundException("No resource found for class: " + className); }
+    InputStream input = null;
+    String resource = null;
     try {
-      return getBytesForClass(is);
+      resource = BootJar.classNameToFileName(className);
+      input = loader.getResourceAsStream(resource);
+      if (input == null) throw new ClassNotFoundException("No resource found for class: " + className);
+      return IOUtils.toByteArray(input);
     } catch (IOException e) {
-      throw new ClassNotFoundException("Error reading bytes for " + resource, e);
-    }
-  }
-
-  public static final byte[] getBytesForClass(final InputStream is) throws IOException {
-    final int size = 4096;
-    byte[] buffer = new byte[size];
-    ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
-
-    int read;
-    try {
-      while ((read = is.read(buffer, 0, size)) > 0) {
-        baos.write(buffer, 0, read);
-      }
+      throw new ClassNotFoundException("Error reading bytes from " + resource, e);
     } finally {
-      try {
-        is.close();
-      } catch (IOException ioe) {
-        // ignore
-      }
+      IOUtils.closeQuietly(input);
     }
-
-    return baos.toByteArray();
   }
 
-  private final RuntimeException exit(String msg, Throwable t) {
+  /**
+   * Locates the root most cause of an Exception and returns its error message.
+   * 
+   * @param throwable The exception whose root cause message is extracted.
+   * @return The message of the root cause of an exception.
+   */
+  private static String rootCauseMessage(Throwable throwable) {
+    if (throwable == null) return "";
+
+    Throwable rootCause = throwable;
+    while (rootCause.getCause() != null) {
+      rootCause = rootCause.getCause();
+    }
+    return rootCause.getMessage();
+  }
+
+  /**
+   * Convenience method. Will delegate to exit(msg, null)
+   * 
+   * @param msg The custom message to print
+   */
+  private final void exit(String msg) {
+    exit(msg, null);
+  }
+
+  /**
+   * Print custom error message and abort the application. The exit code is set to a non-zero value.
+   * 
+   * @param msg The custom message to print
+   * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
+   *        from the exception is also printed.
+   */
+  private final void exit(String msg, Throwable throwable) {
     if (!WRITE_OUT_TEMP_FILE) {
       bootJar.setCreationErrorOccurred(true);
     }
+    BootJar.closeQuietly(bootJar);
 
-    if (bootJar != null) {
-      try {
-        bootJar.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+    String newline = System.getProperty("line.separator");
+    String cause = rootCauseMessage(throwable);
+    StringBuffer errmsg = new StringBuffer();
+    errmsg.append(newline).append(StringUtils.center(" ERROR DETAILS ", 77, "-")).append(newline);
+    if (!StringUtils.isEmpty(msg)) {
+      errmsg.append("+ ").append(msg).append(newline);
     }
-
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
-
-    if (t != null) {
-      t.printStackTrace(pw);
+    if (!StringUtils.isEmpty(cause)) {
+      errmsg.append("+ ").append(cause).append(newline);
     }
+    errmsg.append(StringUtils.repeat("-", 77));
 
-    if (msg != null) {
-      pw.println("\n*************** ERROR ***************\n* " + msg + "\n*************************************");
-    }
-
-    String output = sw.toString();
-    if (output.length() == 0) {
-      new Throwable("Unspecified error creating boot jar").printStackTrace(pw);
-      output = sw.toString();
-    }
-
-    System.err.println(output);
-    System.err.flush();
+    System.err.println(errmsg.toString());
     System.exit(1);
-
-    return new RuntimeException("VM Should have exited");
   }
 
   private final void addInstrumentedJavaLangStringBuffer() {
     boolean makePortable = shouldIncludeStringBufferAndFriends();
-
     if (makePortable) {
       addPortableStringBuffer();
     } else {
@@ -2426,15 +2447,14 @@ public class BootJarTool {
     ClassReader cr = new ClassReader(orig);
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
 
-    ClassVisitor cv;
     try {
-      cv = (ClassVisitor) adapter.getConstructor(new Class[] { ClassVisitor.class }).newInstance(new Object[] { cw });
+      ClassVisitor cv = (ClassVisitor) adapter.getConstructor(new Class[] { ClassVisitor.class })
+          .newInstance(new Object[] { cw });
+      cr.accept(cv, ClassReader.SKIP_FRAMES);
+      loadClassIntoJar(className, cw.toByteArray(), false);
     } catch (Exception e) {
-      throw exit("Can't instaniate class apapter using class " + adapter, e);
+      exit("Can't instaniate class apapter using class " + adapter, e);
     }
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    loadClassIntoJar(className, cw.toByteArray(), false);
   }
 
   protected void announce(String msg) {
@@ -2458,7 +2478,7 @@ public class BootJarTool {
   private static final String SCAN_MODE         = "scan";
   private static final String MAKE_OR_SCAN_MODE = "<" + MAKE_MODE + "|" + SCAN_MODE + ">";
 
-  public final static void main(String[] args) throws Exception {
+  public final static void main(String[] args) {
     File installDir = getInstallationDir();
     String outputFileOptionMsg = "path to boot JAR file"
                                  + (installDir != null ? "\ndefault: [TC_INSTALL_DIR]/lib/dso-boot" : "");
@@ -2502,60 +2522,65 @@ public class BootJarTool {
       showHelpAndExit(options, 1);
     }
 
-    if (cmdLine.hasOption("h") || (!mode.equals(MAKE_MODE) && !mode.equals(SCAN_MODE))) showHelpAndExit(options, 1);
-    if (!cmdLine.hasOption("f")
-        && System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME) == null) {
-      String cwd = System.getProperty("user.dir");
-      File localConfig = new File(cwd, DEFAULT_CONFIG_SPEC);
-      String configSpec = localConfig.exists() ? localConfig.getAbsolutePath()
-          : StandardTVSConfigurationSetupManagerFactory.DEFAULT_CONFIG_URI;
-      String[] newArgs = new String[args.length + 2];
-      System.arraycopy(args, 0, newArgs, 0, args.length);
-      newArgs[newArgs.length - 2] = "-f";
-      newArgs[newArgs.length - 1] = configSpec;
-
-      cmdLine = new PosixParser().parse(options, newArgs);
+    if (cmdLine.hasOption("h") || (!mode.equals(MAKE_MODE) && !mode.equals(SCAN_MODE))) {
+      showHelpAndExit(options, 1);
     }
 
-    StandardTVSConfigurationSetupManagerFactory factory;
-    factory = new StandardTVSConfigurationSetupManagerFactory(cmdLine, false,
-                                                              new FatalIllegalConfigurationChangeHandler());
-    boolean verbose = cmdLine.hasOption("v");
-    TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();
-    L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(logger);
-
-    File targetFile;
-
-    if (cmdLine.hasOption(TARGET_FILE_OPTION)) {
-      targetFile = new File(cmdLine.getOptionValue(TARGET_FILE_OPTION)).getAbsoluteFile();
-    } else {
-      File libDir = new File(installDir, "lib");
-      targetFile = new File(libDir, "dso-boot");
-      if (!targetFile.exists()) targetFile.mkdirs();
-    }
-
-    if (targetFile.isDirectory()) targetFile = new File(targetFile, BootJarSignature.getBootJarNameForThisVM());
-
-    // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
-    // That requirement is no more, but might come back, so I'm leaving at least this much scaffolding in place
-    // WAS: systemProvider = new RuntimeJarBytesProvider(...)
-    ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
-    BootJarTool bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile,
-                                         systemLoader, !verbose);
-    if (mode.equals(MAKE_MODE)) {
-      boolean makeItAnyway = cmdLine.hasOption("w");
-      if (makeItAnyway || !targetFile.exists() || (targetFile.exists() && !bjTool.isBootJarComplete(targetFile))) {
-        // Don't reuse boot jar tool instance since its config might have been mutated by isBootJarComplete()
-        bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile, systemLoader,
-                                 !verbose);
-        bjTool.generateJar();
+    try {
+      if (!cmdLine.hasOption("f")
+          && System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME) == null) {
+        String cwd = System.getProperty("user.dir");
+        File localConfig = new File(cwd, DEFAULT_CONFIG_SPEC);
+        String configSpec = localConfig.exists() ? localConfig.getAbsolutePath()
+            : StandardTVSConfigurationSetupManagerFactory.DEFAULT_CONFIG_URI;
+        String[] newArgs = new String[args.length + 2];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[newArgs.length - 2] = "-f";
+        newArgs[newArgs.length - 1] = configSpec;
+        cmdLine = new PosixParser().parse(options, newArgs);
       }
-      bjTool.verifyJar(targetFile);
-    } else if (mode.equals(SCAN_MODE)) {
-      bjTool.scanJar(targetFile);
-    } else {
-      consoleLogger.fatal("\nInvalid mode specified, valid modes are: '" + MAKE_MODE + "' and '" + SCAN_MODE + "';"
-                          + "use the -h option to view the options for this tool.");
+
+      StandardTVSConfigurationSetupManagerFactory factory;
+      factory = new StandardTVSConfigurationSetupManagerFactory(cmdLine, false,
+                                                                new FatalIllegalConfigurationChangeHandler());
+      boolean verbose = cmdLine.hasOption("v");
+      TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();
+      L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(logger);
+
+      File targetFile;
+      if (cmdLine.hasOption(TARGET_FILE_OPTION)) {
+        targetFile = new File(cmdLine.getOptionValue(TARGET_FILE_OPTION)).getAbsoluteFile();
+      } else {
+        targetFile = new File(new File(installDir, "lib"), "dso-boot");
+        FileUtils.forceMkdir(targetFile);
+      }
+
+      if (targetFile.isDirectory()) targetFile = new File(targetFile, BootJarSignature.getBootJarNameForThisVM());
+
+      // This used to be a provider that read from a specified rt.jar (to let us create boot jars for other platforms).
+      // That requirement is no more, but might come back, so I'm leaving at least this much scaffolding in place
+      // WAS: systemProvider = new RuntimeJarBytesProvider(...)
+      ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
+      BootJarTool bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile,
+                                           systemLoader, !verbose);
+      if (mode.equals(MAKE_MODE)) {
+        boolean makeItAnyway = cmdLine.hasOption("w");
+        if (makeItAnyway || !targetFile.exists() || (targetFile.exists() && !bjTool.isBootJarComplete(targetFile))) {
+          // Don't reuse boot jar tool instance since its config might have been mutated by isBootJarComplete()
+          bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile, systemLoader,
+                                   !verbose);
+          bjTool.generateJar();
+        }
+        bjTool.verifyJar(targetFile);
+      } else if (mode.equals(SCAN_MODE)) {
+        bjTool.scanJar(targetFile);
+      } else {
+        consoleLogger.fatal("\nInvalid mode specified, valid modes are: '" + MAKE_MODE + "' and '" + SCAN_MODE + "';"
+                            + "use the -h option to view the options for this tool.");
+        System.exit(1);
+      }
+    } catch (Exception e) {
+      consoleLogger.fatal(e.getMessage());
       System.exit(1);
     }
   }

@@ -86,7 +86,7 @@ public class ModulesLoader {
   }
 
   public static void initModules(final DSOClientConfigHelper configHelper, final ClassProvider classProvider,
-                                 final boolean forBootJar) {
+                                 final boolean forBootJar) throws Exception {
     EmbeddedOSGiRuntime osgiRuntime = null;
     synchronized (lock) {
       final Modules modules = configHelper.getModulesForInitialization();
@@ -103,15 +103,10 @@ public class ModulesLoader {
         }
       } catch (BundleException e) {
         if (e instanceof BundleExceptionSummary) {
-          final String msg = ((BundleExceptionSummary) e).getSummary();
-          consoleLogger.fatal(msg);
-        } else {
-          consoleLogger.fatal(e);
+          String msg = ((BundleExceptionSummary) e).getSummary();
+          e = new BundleException(msg);
         }
-        System.exit(1);
-      } catch (Throwable t) {
-        consoleLogger.error(t); // at least log this exception, it's very frustrating if it is completely swallowed
-        System.exit(-9);
+        throw e;
       } finally {
         if (forBootJar) {
           shutdown(osgiRuntime);
@@ -164,7 +159,7 @@ public class ModulesLoader {
       try {
         bundleURLs[i] = locations[i].toURL();
       } catch (MalformedURLException e) {
-        throw new RuntimeException("Malformed file URL for bundle: " + locations[i].getAbsolutePath(), e);
+        throw new BundleException("Malformed file URL for bundle: " + locations[i].getAbsolutePath(), e);
       }
     }
 
@@ -227,8 +222,8 @@ public class ModulesLoader {
       m.setAccessible(true);
       ClassLoader classLoader = (ClassLoader) m.invoke(bundle, new Object[0]);
       return (NamedClassLoader) classLoader;
-    } catch (Throwable t) {
-      throw new BundleException("Unable to get classloader for bundle.", t);
+    } catch (Exception e) {
+      throw new BundleException("Unable to get classloader for bundle.", e);
     }
   }
 
