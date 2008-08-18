@@ -14,6 +14,7 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.StandardTVSConfigurationSetupManagerFactory;
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.Manageable;
@@ -27,6 +28,7 @@ import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.object.config.UnverifiedBootJarException;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.object.tools.BootJarException;
 import com.tc.plugins.ModulesLoader;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
@@ -44,7 +46,8 @@ import java.util.HashMap;
 
 public class DSOContextImpl implements DSOContext {
 
-  private static final TCLogger                     logger = TCLogging.getLogger(DSOContextImpl.class);
+  private static final TCLogger                     logger        = TCLogging.getLogger(DSOContextImpl.class);
+  private static final TCLogger                     consoleLogger = CustomerLogging.getConsoleLogger();
 
   private static DSOClientConfigHelper              staticConfigHelper;
   private static PreparedComponentsFromL2Connection preparedComponentsFromL2Connection;
@@ -103,36 +106,40 @@ public class DSOContextImpl implements DSOContext {
 
   private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
     checkForProperlyInstrumentedBaseClasses();
-    if (configHelper == null) { throw new NullPointerException(); }
+    Assert.assertNotNull(configHelper);
 
     this.configHelper = configHelper;
     this.manager = manager;
     this.instrumentationLogger = manager.getInstrumentationLogger();
     weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
 
-    ModulesLoader.initModules(configHelper, classProvider, false);
-    validateBootJar();
+    try {
+      ModulesLoader.initModules(configHelper, classProvider, false);
+      validateBootJar();
+    } catch (Exception e) {
+      consoleLogger.fatal(e.getMessage());
+      logger.fatal(e);
+      System.exit(1);
+    }
   }
 
-  private void validateBootJar() {
+  private void validateBootJar() throws BootJarException {
     try {
       configHelper.verifyBootJarContents(null);
-    } catch (final UnverifiedBootJarException ubjex) {
-      final StringBuffer msg = new StringBuffer(ubjex.getMessage() + " ");
+    } catch (final UnverifiedBootJarException e) {
+      StringBuffer msg = new StringBuffer(e.getMessage() + " ");
       msg.append("Unable to verify the contents of the boot jar; ");
       msg.append("Please check the client logs for more information.");
-      logger.error(ubjex);
-      throw new RuntimeException(msg.toString());
-    } catch (final IncompleteBootJarException ibjex) {
-      final StringBuffer msg = new StringBuffer(ibjex.getMessage() + " ");
+      throw new BootJarException(msg.toString(), e);
+    } catch (final IncompleteBootJarException e) {
+      StringBuffer msg = new StringBuffer(e.getMessage() + " ");
       msg.append("The DSO boot jar appears to be incomplete --- some pre-instrumented classes ");
       msg.append("listed in your tc-config is not included in the boot jar file. This could ");
       msg.append("happen if you've modified your DSO clients' tc-config file to specify additional ");
       msg.append("classes for inclusion in the boot jar, but forgot to rebuild the boot jar. Or, you ");
       msg.append("could be a using an older boot jar against a newer Terracotta client installation. ");
       msg.append("Please check the client logs for the list of classes that were not found in your boot jar.");
-      logger.error(ibjex);
-      throw new RuntimeException(msg.toString());
+      throw new BootJarException(msg.toString(), e);
     }
   }
 
@@ -143,7 +150,7 @@ public class DSOContextImpl implements DSOContext {
       msg.append("Generate it using the make-boot-jar script ");
       msg.append("and place the generated jar file in the bootclasspath ");
       msg.append("(i.e. -Xbootclasspath/p:/path/to/terracotta/lib/dso-boot/dso-boot-xxx.jar)");
-      throw new RuntimeException(msg.toString());
+      throw new Error(msg.toString());
     }
   }
 
@@ -154,7 +161,7 @@ public class DSOContextImpl implements DSOContext {
   /**
    * XXX::NOTE:: ClassLoader checks the returned byte array to see if the class is instrumented or not to maintain the
    * offset.
-   *
+   * 
    * @return new byte array if the class is instrumented and same input byte array if not.
    * @see ClassLoaderPreProcessorImpl
    */

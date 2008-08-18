@@ -37,8 +37,6 @@ import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
-import com.tc.object.tx.optimistic.OptimisticTransactionManager;
-import com.tc.object.tx.optimistic.OptimisticTransactionManagerImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
@@ -74,9 +72,8 @@ public class ManagerImpl implements Manager {
   private ClientTransactionManager                 txManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
-  private OptimisticTransactionManager             optimisticTransactionManager;
-  private SerializationUtil                        serializer    = new SerializationUtil();
-  private MethodDisplayNames                       methodDisplay = new MethodDisplayNames(serializer);
+  private final SerializationUtil                  serializer    = new SerializationUtil();
+  private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
 
   public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
                      PreparedComponentsFromL2Connection connectionComponents) {
@@ -179,14 +176,11 @@ public class ManagerImpl implements Manager {
         objectManager = dso.getObjectManager();
         txManager = dso.getTransactionManager();
         runtimeLogger = dso.getRuntimeLogger();
-
-        optimisticTransactionManager = new OptimisticTransactionManagerImpl(objectManager, txManager);
-
         methodCallManager = dso.getDmiManager();
 
-        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(),
-          dso.getStageManager(), dso.getCommunicationsManager(), dso.getChannel(),
-          dso.getClientHandshakeManager(), dso.getStatisticsAgentSubSystem(), connectionComponents);
+        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
+            .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(), dso
+            .getStatisticsAgentSubSystem(), connectionComponents);
       }
     };
 
@@ -633,13 +627,6 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isCreationInProgress() {
-    // I think the condition this.txManager.isTransactionLoggingDisabled() is not necessary and is causing the
-    // problem in DEV-602.
-    // return this.objectManager.isCreationInProgress() || this.txManager.isTransactionLoggingDisabled();
-    return this.objectManager.isCreationInProgress();
-  }
-
   public TCObject shareObjectIfNecessary(Object pojo) {
     TCObject tobj = lookupExistingOrNull(pojo);
     if (tobj != null) { return tobj; }
@@ -781,16 +768,6 @@ public class ManagerImpl implements Manager {
     return false;
   }
 
-  public Object deepCopy(Object source) {
-    Object ret = null;
-    try {
-      ret = this.objectManager.deepCopy(source, optimisticTransactionManager);
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-    return ret;
-  }
-
   public TCProperties getTCProperites() {
     return TCPropertiesImpl.getProperties();
   }
@@ -802,18 +779,6 @@ public class ManagerImpl implements Manager {
 
       shutdown(true);
     }
-  }
-
-  public void optimisticBegin() {
-    this.optimisticTransactionManager.begin();
-  }
-
-  public void optimisticCommit() throws ClassNotFoundException {
-    this.optimisticTransactionManager.commit();
-  }
-
-  public void optimisticRollback() {
-    this.optimisticTransactionManager.rollback();
   }
 
   public boolean isPhysicallyInstrumented(Class clazz) {
@@ -910,6 +875,10 @@ public class ManagerImpl implements Manager {
   public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
     TCObject tcObj = lookupExistingOrNull(pojo);
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
+  }
+
+  public boolean overridesHashCode(Object obj) {
+    return this.portability.overridesHashCode(obj);
   }
 
 }
