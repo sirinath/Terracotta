@@ -121,9 +121,17 @@ public class ActivePassiveServerConfigCreator {
       if (this.testMode.equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE)) {
         // if group's ha mode is diskless than different data file for each member
         // if group's ha mode is diskbased than same data file for all members
-        if (!serverDiskless) {
+        int grpIndex = getGroupIndex(i);
+        String mode = setupManager.getGroupServerShareDataMode(grpIndex);
+        boolean isServerDiskless = !mode.equals(ActivePassiveSharedDataMode.DISK) ? true : false;
+        if (isServerDiskless) {
           dataLocations[i] = dataLocationHome + File.separator + "server-" + i;
           l2.setData(dataLocations[i]);
+        } else {
+          l2.setData(dataLocationHome);
+          if (dataLocations[0] == null) {
+            dataLocations[0] = dataLocationHome;
+          }
         }
       } else if (serverDiskless) {
         dataLocations[i] = dataLocationHome + File.separator + "server-" + i;
@@ -156,7 +164,7 @@ public class ActivePassiveServerConfigCreator {
     L2SConfigBuilder l2sConfigbuilder = new L2SConfigBuilder();
     l2sConfigbuilder.setL2s(l2s);
     l2sConfigbuilder.setHa(ha);
-    
+
     int indent = 7;
     GroupsConfigBuilder groupsConfigBuilder = new GroupsConfigBuilder();
     for (int i = 0; i < this.groups.length; i++) {
@@ -193,5 +201,14 @@ public class ActivePassiveServerConfigCreator {
     out.println(configAsString);
     out.flush();
     out.close();
+  }
+
+  private int getGroupIndex(int serverIndex) {
+    int members = 0;
+    for (int i = 0; i < setupManager.getActiveServerGroupCount(); i++) {
+      members += setupManager.getGroupMemberCount(i);
+      if (serverIndex < members) return i;
+    }
+    return setupManager.getActiveServerGroupCount() - 1;
   }
 }
