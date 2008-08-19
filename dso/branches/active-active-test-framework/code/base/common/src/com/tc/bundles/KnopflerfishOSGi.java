@@ -20,17 +20,15 @@ import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.regex.Pattern;
 
 /**
- * Embedded KnopflerFish OSGi implementation, see the <a href="http://www.knopflerfish.org/">Knopflerfish documentation</a>
- * for more details.
+ * Embedded KnopflerFish OSGi implementation, see the <a href="http://www.knopflerfish.org/">Knopflerfish
+ * documentation</a> for more details.
  */
 final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
 
@@ -86,8 +84,15 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
     if (logger.isDebugEnabled()) {
       info(Message.STARTING_BUNDLE, new Object[] { bundle.getSymbolicName() });
     }
+
     framework.startBundle(bundle.getBundleId());
-    Assert.assertEquals(bundle.getState() & Bundle.ACTIVE, bundle.getState());
+    if ((bundle.getState() & Bundle.ACTIVE) != bundle.getState()) {
+      StringBuffer msg = new StringBuffer();
+      msg.append("Failed to start bundle: ").append(bundle.getSymbolicName());
+      msg.append(" - bundle state remains inactive.");
+      msg.append(" (").append(bundle.getLocation()).append(")");
+      throw new BundleException(msg.toString());
+    }
     handler.callback(bundle);
   }
 
@@ -191,9 +196,7 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
       }
 
       versionCheck(bundle);
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
+    } catch (Exception e) {
       exception(Message.ERROR_BUNDLE_INACCESSIBLE, new Object[] { location.toString() }, e);
     }
   }

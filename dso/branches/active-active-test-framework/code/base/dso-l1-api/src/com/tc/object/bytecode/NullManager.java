@@ -21,16 +21,16 @@ import java.lang.reflect.Field;
  */
 public final class NullManager implements Manager {
 
-  public static final String   CLASS    = "com/tc/object/bytecode/NullManager";
-  public static final String   TYPE     = "L" + CLASS + ";";
+  public static final String                 CLASS                 = "com/tc/object/bytecode/NullManager";
+  public static final String                 TYPE                  = "L" + CLASS + ";";
 
-  private static final Manager INSTANCE = new NullManager();
+  private static final Manager               INSTANCE              = new NullManager();
 
   private static final InstrumentationLogger instrumentationLogger = new NullInstrumentationLogger();
 
   /**
    * Get instance of the null manager
-   *
+   * 
    * @return NullManager
    */
   public static Manager getInstance() {
@@ -133,23 +133,7 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public final Object deepCopy(Object source) {
-    throw new UnsupportedOperationException();
-  }
-
   public final Object lookupRoot(String name) {
-    throw new UnsupportedOperationException();
-  }
-
-  public final void optimisticBegin() {
-    throw new UnsupportedOperationException();
-  }
-
-  public final void optimisticCommit() {
-    throw new UnsupportedOperationException();
-  }
-
-  public final void optimisticRollback() {
     throw new UnsupportedOperationException();
   }
 
@@ -199,10 +183,6 @@ public final class NullManager implements Manager {
 
   public final TCObject shareObjectIfNecessary(Object pojo) {
     throw new UnsupportedOperationException();
-  }
-
-  public final boolean isCreationInProgress() {
-    return false;
   }
 
   public final boolean isPhysicallyInstrumented(Class clazz) {
@@ -269,6 +249,10 @@ public final class NullManager implements Manager {
 
   public InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
+  }
+
+  public boolean overridesHashCode(Object obj) {
+    throw new UnsupportedOperationException();
   }
 
 }
