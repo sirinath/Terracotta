@@ -84,7 +84,7 @@ public class ActivePassiveServerManager {
                                     ActivePassiveTestSetupManager setupManger, File javaHome,
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     String testMode) throws Exception {
-    this(isActiveActive, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, new ArrayList(),
+    this(isActiveActive, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, extraJvmArgs,
          testMode, false);
   }
 
@@ -104,7 +104,7 @@ public class ActivePassiveServerManager {
     serverCount = this.setupManger.getServerCount();
 
     if (serverCount < 2) { throw new AssertionError(
-                                                    "Multiple server tests involve 2 or more DSO servers: serverCount=["
+                                                    "Multiple server tests must involve 2 or more DSO servers: serverCount=["
                                                         + serverCount + "]"); }
 
     this.tempDir = tempDir;
