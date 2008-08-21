@@ -4,9 +4,9 @@
  */
 package com.tctest;
 
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
 public class TransparentSetL1ReconnectCrashTest extends TransparentTestBase implements TestConfigurator {
@@ -36,7 +36,7 @@ public class TransparentSetL1ReconnectCrashTest extends TransparentTestBase impl
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(60);
-    setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
+    setupManager.setServerShareDataMode(MultipleServersSharedDataMode.NETWORK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);
   }
 

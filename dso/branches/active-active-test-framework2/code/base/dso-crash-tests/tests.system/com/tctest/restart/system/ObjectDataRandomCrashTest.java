@@ -4,9 +4,9 @@
  */
 package com.tctest.restart.system;
 
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.TestConfigurator;
 import com.tctest.TransparentTestBase;
@@ -33,7 +33,7 @@ public class ObjectDataRandomCrashTest extends TransparentTestBase implements Te
     setupManager.setServerCount(3);
     setupManager.setServerCrashMode(ActivePassiveCrashMode.RANDOM_SERVER_CRASH);
     setupManager.setServerCrashWaitTimeInSec(20);
-    setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
+    setupManager.setServerShareDataMode(MultipleServersSharedDataMode.NETWORK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);
   }
 }
