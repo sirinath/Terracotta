@@ -8,12 +8,12 @@ import com.tc.test.MultipleServersPersistenceMode;
 
 public class ActivePassiveTestSetupManager {
 
-  private int                          serverCount;
-  private long                         serverCrashWaitTimeInSec = 15;
-  private int                          maxCrashCount            = Integer.MAX_VALUE;
-  private ActivePassiveSharedDataMode  activePassiveMode;
+  private int                            serverCount;
+  private long                           serverCrashWaitTimeInSec = 15;
+  private int                            maxCrashCount            = Integer.MAX_VALUE;
+  private ActivePassiveSharedDataMode    activePassiveMode;
   private MultipleServersPersistenceMode persistenceMode;
-  private ActivePassiveCrashMode       crashMode;
+  private ActivePassiveCrashMode         crashMode;
 
   public void setServerCount(int count) {
     if (count < 2) { throw new AssertionError("Server count must be 2 or more:  count=[" + count + "]"); }
@@ -44,6 +44,10 @@ public class ActivePassiveTestSetupManager {
 
   public void setServerShareDataMode(String mode) {
     activePassiveMode = new ActivePassiveSharedDataMode(mode);
+  }
+
+  public String getServerSharedDataMode() {
+    return activePassiveMode.getMode();
   }
 
   public boolean isNetworkShare() {
