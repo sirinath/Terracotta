@@ -4,8 +4,8 @@
  */
 package com.tctest;
 
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
@@ -35,7 +35,7 @@ public class TreeMapGCActivePassiveTest extends GCTestBase {
     setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(90);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
   }
 
 }

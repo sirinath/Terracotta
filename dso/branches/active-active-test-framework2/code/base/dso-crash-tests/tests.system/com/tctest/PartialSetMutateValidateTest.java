@@ -3,8 +3,8 @@
  */
 package com.tctest;
 
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.runner.TransparentAppConfig;
@@ -32,7 +32,7 @@ public class PartialSetMutateValidateTest extends TransparentTestBase {
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(ActivePassiveCrashMode.CRASH_AFTER_MUTATE);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
   }
 
   protected boolean canRunActivePassive() {

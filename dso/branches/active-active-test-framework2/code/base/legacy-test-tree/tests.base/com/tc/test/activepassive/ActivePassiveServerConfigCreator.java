@@ -15,6 +15,7 @@ import com.tc.config.schema.test.SystemConfigBuilder;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.test.MultipleServersPersistenceMode;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -72,7 +73,7 @@ public class ActivePassiveServerConfigCreator {
   }
 
   private void checkPersistenceAndDiskLessMode() {
-    if (!serverDiskless && serverPersistence.equals(ActivePassivePersistenceMode.TEMPORARY_SWAP_ONLY)) { throw new AssertionError(
+    if (!serverDiskless && serverPersistence.equals(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY)) { throw new AssertionError(
                                                                                                                                   "The servers are not running in diskless mode so persistence mode should be set to permanent-store"); }
   }
 

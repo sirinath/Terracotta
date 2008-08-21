@@ -4,8 +4,8 @@
  */
 package com.tctest.restart.system;
 
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
@@ -71,7 +71,7 @@ public class ObjectDataL2ReconnectActivePassiveTest extends TransparentTestBase 
     setupManager.setServerCrashWaitTimeInSec(30);
 
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.TEMPORARY_SWAP_ONLY);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);
   }
 
 }

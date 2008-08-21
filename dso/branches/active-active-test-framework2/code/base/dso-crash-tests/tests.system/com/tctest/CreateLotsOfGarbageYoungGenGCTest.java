@@ -5,8 +5,8 @@
 package com.tctest;
 
 
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.runtime.Os;
@@ -39,7 +39,7 @@ public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestBase implement
     setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(60);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.TEMPORARY_SWAP_ONLY);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);
   }
 
 }
