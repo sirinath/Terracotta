@@ -360,11 +360,6 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
     }
   }
 
-  public void addServerToL1Config(String name, int dsoPort, int jmxPort, boolean onlyOneServerInvolved) {
-    addServerToL1Config(name, dsoPort, jmxPort);
-    addServerGroupToL1Config();
-  }
-
   public void addServerToL1Config(String name, int dsoPort, int jmxPort) {
     Assert.assertTrue(dsoPort >= 0);
     cleanBeanSetServersIfNeeded(l1_beanSet);
@@ -385,6 +380,8 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
     newL2.setData(BOGUS_FILENAME);
     newL2.setLogs(BOGUS_FILENAME);
+    
+    addServerGroupToL1Config();
   }
 
   // should be called after all servers have been added to l1_beanset
