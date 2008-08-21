@@ -4,13 +4,13 @@
  */
 package com.tc.test.activeactive;
 
-import com.tc.test.TestSetupManagerBase;
+import com.tc.test.MultipleServersTestSetupManager;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ActiveActiveTestSetupManager extends TestSetupManagerBase{
+public class ActiveActiveTestSetupManager extends MultipleServersTestSetupManager{
 
   private int                           electionTime       = 5;
   private List                          activeServerGroups = new ArrayList();

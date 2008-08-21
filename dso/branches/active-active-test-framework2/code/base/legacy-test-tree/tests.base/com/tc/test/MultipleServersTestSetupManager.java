@@ -4,10 +4,9 @@
  */
 package com.tc.test;
 
-import com.tc.test.activepassive.ActivePassiveCrashMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 
-public abstract class TestSetupManagerBase {
+public abstract class MultipleServersTestSetupManager {
 
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
