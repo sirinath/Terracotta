@@ -7,14 +7,14 @@ package com.tc.test;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 
-public class TestSetupManagerBase {
+public abstract class TestSetupManagerBase {
 
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
   private int                            maxCrashCount            = Integer.MAX_VALUE;
   private ActivePassiveSharedDataMode    activePassiveMode;
   private MultipleServersPersistenceMode persistenceMode;
-  private ActivePassiveCrashMode         crashMode;
+  protected MultipleServersCrashMode     crashMode;
 
   public void setServerCount(int count) {
     if (count < 2) { throw new AssertionError("Server count must be 2 or more:  count=[" + count + "]"); }
@@ -25,9 +25,7 @@ public class TestSetupManagerBase {
     return serverCount;
   }
 
-  public void setServerCrashMode(String mode) {
-    crashMode = new ActivePassiveCrashMode(mode);
-  }
+  public abstract void setServerCrashMode(String mode);
 
   public void setMaxCrashCount(int count) {
     if (count < 0) { throw new AssertionError("Max crash count should not be a neg number"); }
