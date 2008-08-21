@@ -51,14 +51,6 @@ public class ActiveActiveTestSetupManager extends TestSetupManagerBase{
     return ((Group) this.activeServerGroups.get(groupIndex)).getMode();
   }
 
-  public boolean isActiveActive() {
-    return getActiveServerGroupCount() > 1;
-  }
-
-  public boolean isActivePassive() {
-    return !isActiveActive();
-  }
-
   private void checkServerCount() {
     int serverCount = this.getServerCount();
     if (this.activeServerGroups.size() == 0) {
@@ -74,6 +66,10 @@ public class ActiveActiveTestSetupManager extends TestSetupManagerBase{
                                                                     "Number of servers indicated does not match the number of active-server-group members:  totalMemberCount=["
                                                                         + totalMemberCount + "] serverCount=["
                                                                         + serverCount + "]."); }
+  }
+  
+  public void setServerCrashMode(String mode) {
+    this.crashMode = new ActiveActiveCrashMode(mode);
   }
 
   private static class Group {
