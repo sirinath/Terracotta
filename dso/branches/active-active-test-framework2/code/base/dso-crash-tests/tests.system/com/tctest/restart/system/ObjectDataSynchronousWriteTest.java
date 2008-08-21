@@ -4,9 +4,9 @@
  */
 package com.tctest.restart.system;
 
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.TestConfigurator;
 import com.tctest.TransparentTestBase;
@@ -47,7 +47,7 @@ public class ObjectDataSynchronousWriteTest extends TransparentTestBase implemen
     setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(30);
     // leaving this as a disk-based active-passive test just so we have one
-    setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.DISK);
+    setupManager.setServerShareDataMode(MultipleServersSharedDataMode.DISK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
   }
 

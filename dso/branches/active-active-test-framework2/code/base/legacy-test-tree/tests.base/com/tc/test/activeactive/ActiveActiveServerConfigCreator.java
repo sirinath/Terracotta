@@ -18,8 +18,8 @@ import com.tc.config.schema.test.SystemConfigBuilder;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -121,7 +121,7 @@ public class ActiveActiveServerConfigCreator {
       // if group's ha mode is diskbased than same data file for all members
       int grpIndex = getGroupIndex(i);
       String mode = setupManager.getGroupServerShareDataMode(grpIndex);
-      boolean isServerDiskless = !mode.equals(ActivePassiveSharedDataMode.DISK) ? true : false;
+      boolean isServerDiskless = !mode.equals(MultipleServersSharedDataMode.DISK) ? true : false;
       if (isServerDiskless) {
         dataLocations[i] = dataLocationHome + File.separator + "server-" + i;
         l2.setData(dataLocations[i]);
@@ -160,7 +160,7 @@ public class ActiveActiveServerConfigCreator {
       GroupConfigBuilder group = new GroupConfigBuilder();
       HaConfigBuilder groupHa = new HaConfigBuilder(indent);
       String mode = null;
-      if (this.setupManager.getGroupServerShareDataMode(i).equals(ActivePassiveSharedDataMode.DISK)) mode = HaConfigBuilder.HA_MODE_DISK_BASED_ACTIVE_PASSIVE;
+      if (this.setupManager.getGroupServerShareDataMode(i).equals(MultipleServersSharedDataMode.DISK)) mode = HaConfigBuilder.HA_MODE_DISK_BASED_ACTIVE_PASSIVE;
       else mode = HaConfigBuilder.HA_MODE_NETWORKED_ACTIVE_PASSIVE;
       groupHa.setMode(mode);
       groupHa.setElectionTime("" + this.setupManager.getGroupElectionTime(i));

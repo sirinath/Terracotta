@@ -4,14 +4,13 @@
  */
 package com.tc.test;
 
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 
 public abstract class MultipleServersTestSetupManager {
 
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
   private int                            maxCrashCount            = Integer.MAX_VALUE;
-  private ActivePassiveSharedDataMode    activePassiveMode;
+  private MultipleServersSharedDataMode    activePassiveMode;
   private MultipleServersPersistenceMode persistenceMode;
   protected MultipleServersCrashMode     crashMode;
 
@@ -41,7 +40,7 @@ public abstract class MultipleServersTestSetupManager {
   }
 
   public void setServerShareDataMode(String mode) {
-    activePassiveMode = new ActivePassiveSharedDataMode(mode);
+    activePassiveMode = new MultipleServersSharedDataMode(mode);
   }
 
   public String getServerSharedDataMode() {
