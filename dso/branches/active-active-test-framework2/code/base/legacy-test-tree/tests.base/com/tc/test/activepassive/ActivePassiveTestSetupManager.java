@@ -4,9 +4,9 @@
  */
 package com.tc.test.activepassive;
 
-import com.tc.test.TestSetupManagerBase;
+import com.tc.test.MultipleServersTestSetupManager;
 
-public class ActivePassiveTestSetupManager extends TestSetupManagerBase {
+public class ActivePassiveTestSetupManager extends MultipleServersTestSetupManager {
 
   public void setServerCrashMode(String mode) {
     this.crashMode = new ActivePassiveCrashMode(mode);
