@@ -12,6 +12,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 import com.tc.test.proxyconnect.ProxyConnectManagerImpl;
 import com.tc.util.PortChooser;
@@ -706,7 +707,7 @@ public class ActivePassiveServerManager {
   }
 
   public void cleanupServerDB(int index) throws Exception {
-    if (serverNetworkShare && serverPersistence.equals(ActivePassivePersistenceMode.PERMANENT_STORE)) {
+    if (serverNetworkShare && serverPersistence.equals(MultipleServersPersistenceMode.PERMANENT_STORE)) {
       System.out.println("Deleting data directory for server=[" + servers[index].getDsoPort() + "]");
       deleteDirectory(serverConfigCreator.getDataLocation(index));
     }

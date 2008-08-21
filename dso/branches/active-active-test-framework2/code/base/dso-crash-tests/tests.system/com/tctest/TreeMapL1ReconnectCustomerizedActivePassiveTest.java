@@ -4,8 +4,8 @@
  */
 package com.tctest;
 
+import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
 import com.tc.test.activepassive.ActivePassiveSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.Assert;
@@ -39,7 +39,7 @@ public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends Transparent
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(ActivePassiveCrashMode.AP_CUSTOMERIZED_CRASH);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
   }
 
   protected void customerizeActivePassiveTest() throws Exception {
