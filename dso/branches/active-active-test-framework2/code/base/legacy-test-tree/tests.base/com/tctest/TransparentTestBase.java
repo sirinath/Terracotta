@@ -521,7 +521,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   /*
    * Can be overwritten for customerizing active passive test
    */
-  protected void customerizeActivePassiveTest() throws Exception {
+  protected void customizeActivePassiveTest() throws Exception {
     apServerManager.startActivePassiveServers();
   }
 
@@ -558,7 +558,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     if (canRun()) {
       if (controlledCrashMode && isActivePassive() && apServerManager != null) {
         // active passive tests
-        customerizeActivePassiveTest();
+        customizeActivePassiveTest();
       } else if (controlledCrashMode && serverControls != null) {
         startServerControlsAndProxies();
       } else if (serverControl != null && crasher == null) {

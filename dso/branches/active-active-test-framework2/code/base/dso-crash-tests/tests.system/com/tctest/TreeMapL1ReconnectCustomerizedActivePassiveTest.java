@@ -37,12 +37,12 @@ public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends Transparent
 
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     setupManager.setServerCount(2);
-    setupManager.setServerCrashMode(ActivePassiveCrashMode.AP_CUSTOMERIZED_CRASH);
+    setupManager.setServerCrashMode(ActivePassiveCrashMode.AP_CUSTOMIZED_CRASH);
     setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.NETWORK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
   }
 
-  protected void customerizeActivePassiveTest() throws Exception {
+  protected void customizeActivePassiveTest() throws Exception {
 
     System.out.println("XXX Start active server[0]");
     apStartServer(0);
