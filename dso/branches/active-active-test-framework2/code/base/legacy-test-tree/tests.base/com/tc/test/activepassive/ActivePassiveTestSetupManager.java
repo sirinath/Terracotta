@@ -11,4 +11,23 @@ public class ActivePassiveTestSetupManager extends MultipleServersTestSetupManag
   public void setServerCrashMode(String mode) {
     this.crashMode = new ActivePassiveCrashMode(mode);
   }
+
+  public String getGroupServerShareDataMode(int groupIndex) {
+    if (groupIndex != 0) throw new AssertionError("Only one group can be present in case of Active Passive Tests");
+    return getServerSharedDataMode();
+  }
+
+  public int getActiveServerGroupCount() {
+    return 1;
+  }
+
+  public int getGroupElectionTime(int groupIndex) {
+    if (groupIndex != 0) throw new AssertionError("Only one group can be present in case of Active Passive Tests");
+    return getElectionTime();
+  }
+
+  public int getGroupMemberCount(int groupIndex) {
+    if (groupIndex != 0) throw new AssertionError("Only one group can be present in case of Active Passive Tests");
+    return getServerCount();
+  }
 }

@@ -10,9 +10,10 @@ public abstract class MultipleServersTestSetupManager {
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
   private int                            maxCrashCount            = Integer.MAX_VALUE;
-  private MultipleServersSharedDataMode    activePassiveMode;
+  private MultipleServersSharedDataMode  activePassiveMode;
   private MultipleServersPersistenceMode persistenceMode;
   protected MultipleServersCrashMode     crashMode;
+  protected int                          electionTime             = 5;
 
   public void setServerCount(int count) {
     if (count < 2) { throw new AssertionError("Server count must be 2 or more:  count=[" + count + "]"); }
@@ -70,4 +71,19 @@ public abstract class MultipleServersTestSetupManager {
     return serverCrashWaitTimeInSec;
   }
 
+  public void setElectionTime(int time) {
+    this.electionTime = time;
+  }
+
+  public int getElectionTime() {
+    return this.electionTime;
+  }
+  
+  public abstract int getActiveServerGroupCount();
+
+  public abstract int getGroupMemberCount(int groupIndex);
+  
+  public abstract int getGroupElectionTime(int groupIndex);
+
+  public abstract String getGroupServerShareDataMode(int groupIndex);
 }

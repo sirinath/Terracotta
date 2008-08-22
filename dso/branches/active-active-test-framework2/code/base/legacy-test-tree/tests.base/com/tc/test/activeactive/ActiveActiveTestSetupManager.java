@@ -10,22 +10,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ActiveActiveTestSetupManager extends MultipleServersTestSetupManager{
+public class ActiveActiveTestSetupManager extends MultipleServersTestSetupManager {
 
-  private int                           electionTime       = 5;
-  private List                          activeServerGroups = new ArrayList();
-
-  public long getServerCrashWaitTimeInSec() {
-    return this.getServerCrashWaitTimeInSec();
-  }
-
-  public void setElectionTime(int time) {
-    this.electionTime = time;
-  }
-
-  public int getElectionTime() {
-    return this.electionTime;
-  }
+  private List activeServerGroups = new ArrayList();
 
   public void addActiveServerGroup(int membersCount, String local_activePassiveMode, int local_electionTime) {
     this.activeServerGroups.add(new Group(membersCount, local_activePassiveMode, local_electionTime));
@@ -67,7 +54,7 @@ public class ActiveActiveTestSetupManager extends MultipleServersTestSetupManage
                                                                         + totalMemberCount + "] serverCount=["
                                                                         + serverCount + "]."); }
   }
-  
+
   public void setServerCrashMode(String mode) {
     this.crashMode = new ActiveActiveCrashMode(mode);
   }
