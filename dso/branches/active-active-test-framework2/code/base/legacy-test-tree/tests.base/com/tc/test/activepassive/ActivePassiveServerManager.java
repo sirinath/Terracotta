@@ -35,11 +35,11 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.remote.JMXConnector;
 
 public class ActivePassiveServerManager {
-  private static final String                   HOST               = "localhost";
-  private static final String                   SERVER_NAME        = "testserver";
-  private static final String                   CONFIG_FILE_NAME   = "active-passive-server-config.xml";
-  private static final boolean                  DEBUG              = false;
-  private static final int                      NULL_VAL           = -1;
+  private static final String                   HOST                = "localhost";
+  private static final String                   SERVER_NAME         = "testserver";
+  private static final String                   CONFIG_FILE_NAME    = "active-passive-server-config.xml";
+  private static final boolean                  DEBUG               = false;
+  private static final int                      NULL_VAL            = -1;
 
   private final File                            tempDir;
   private final PortChooser                     portChooser;
@@ -65,22 +65,23 @@ public class ActivePassiveServerManager {
 
   private final List                            errors;
 
-  private int                                   activeIndex        = NULL_VAL;
-  private int                                   lastCrashedIndex   = NULL_VAL;
+  private int                                   activeIndex         = NULL_VAL;
+  private int                                   lastCrashedIndex    = NULL_VAL;
   private ActivePassiveServerCrasher            serverCrasher;
   private int                                   maxCrashCount;
   private final TestState                       testState;
   private Random                                random;
   private long                                  seed;
   private final File                            javaHome;
-  private int                                   pid                = -1;
-  private List                                  jvmArgs            = null;
+  private int                                   pid                 = -1;
+  private List                                  jvmArgs             = null;
   private final boolean                         isProxyL2groupPorts;
   private final int[]                           proxyL2GroupPorts;
   protected ProxyConnectManager[]               proxyL2Managers;
 
-  // this is used when active-active tests are run. This will help in differentiating between the names in the different groups
-  private int                                   startIndexOfServer = 0;
+  // this is used when active-active tests are run. This will help in differentiating between the names in the different
+  // groups
+  private int                                   startIndexOfServer  = 0;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, MultipleServersTestSetupManager setupManger, File javaHome,
@@ -133,7 +134,7 @@ public class ActivePassiveServerManager {
     dsoPorts = new int[this.serverCount];
     jmxPorts = new int[this.serverCount];
     l2GroupPorts = new int[this.serverCount];
-    proxyL2GroupPorts = isProxyL2GroupPorts ? new int[this.serverCount] : null;
+    proxyL2GroupPorts = new int[this.serverCount];
     serverNames = new String[this.serverCount];
     tcServerInfoMBeans = new TCServerInfoMBean[this.serverCount];
     jmxConnectors = new JMXConnector[this.serverCount];
@@ -706,7 +707,7 @@ public class ActivePassiveServerManager {
   }
 
   public int[] getL2GroupPorts() {
-    return proxyL2GroupPorts == null ? proxyL2GroupPorts : l2GroupPorts;
+    return isProxyL2groupPorts ? proxyL2GroupPorts : l2GroupPorts;
   }
 
   public boolean crashActiveServerAfterMutate() {

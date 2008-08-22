@@ -106,7 +106,8 @@ public class MultipleServersConfigCreator {
     int gcIntervalInSec = configFactory.getGCIntervalInSec();
 
     L2ConfigBuilder[] l2s = new L2ConfigBuilder[serverCount];
-    for (int i = 0, serverIndex = 0; i < groupData.length; i++) {
+    int serverIndex = 0;
+    for (int i = 0; i < groupData.length; i++) {
       for (int j = 0; j < groupData[i].getServerCount(); j++) {
         L2ConfigBuilder l2 = new L2ConfigBuilder();
         String mode = setupManager.getGroupServerShareDataMode(i);
@@ -130,6 +131,7 @@ public class MultipleServersConfigCreator {
         l2.setGCVerbose(gcVerbose);
         l2.setGCInterval(gcIntervalInSec);
         l2s[serverIndex] = l2;
+        serverIndex++;
       }
     }
 
