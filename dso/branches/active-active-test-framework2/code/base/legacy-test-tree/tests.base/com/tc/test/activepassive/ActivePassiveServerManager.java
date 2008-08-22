@@ -12,6 +12,7 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 import com.tc.test.proxyconnect.ProxyConnectManagerImpl;
@@ -147,7 +148,7 @@ public class ActivePassiveServerManager {
     testState = new TestState();
     this.javaHome = javaHome;
 
-    if (serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
+    if (serverCrashMode.equals(MultipleServersCrashMode.RANDOM_SERVER_CRASH)) {
       SecureRandom srandom = SecureRandom.getInstance("SHA1PRNG");
       seed = srandom.nextLong();
       random = new Random(seed);
@@ -317,8 +318,8 @@ public class ActivePassiveServerManager {
 
     activeIndex = getActiveIndex(true);
 
-    if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)
-        || serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
+    if (serverCrashMode.equals(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH)
+        || serverCrashMode.equals(MultipleServersCrashMode.RANDOM_SERVER_CRASH)) {
       startContinuousCrash();
     }
   }
@@ -682,7 +683,7 @@ public class ActivePassiveServerManager {
   }
 
   public boolean crashActiveServerAfterMutate() {
-    if (serverCrashMode.equals(ActivePassiveCrashMode.CRASH_AFTER_MUTATE)) { return true; }
+    if (serverCrashMode.equals(MultipleServersCrashMode.CRASH_AFTER_MUTATE)) { return true; }
     return false;
   }
 
@@ -697,9 +698,9 @@ public class ActivePassiveServerManager {
   }
 
   public void crashServer() throws Exception {
-    if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)) {
+    if (serverCrashMode.equals(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH)) {
       crashActive();
-    } else if (serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
+    } else if (serverCrashMode.equals(MultipleServersCrashMode.RANDOM_SERVER_CRASH)) {
       crashRandomServer();
     }
 

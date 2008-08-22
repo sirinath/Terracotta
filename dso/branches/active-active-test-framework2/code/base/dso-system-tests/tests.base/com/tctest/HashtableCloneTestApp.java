@@ -6,20 +6,20 @@ package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
+import com.tc.object.bytecode.Clearable;
+import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.spec.CyclicBarrierSpec;
-import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.bytecode.Clearable;
-import com.tc.object.bytecode.Manageable;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.Properties;
 import java.util.Hashtable;
+import java.util.Properties;
 
 public class HashtableCloneTestApp extends AbstractErrorCatchingTransparentApp {
 

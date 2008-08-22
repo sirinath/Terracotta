@@ -4,8 +4,8 @@
 package com.tctest.longrunning;
 
 import com.tctest.TestConfigurator;
-import com.tctest.TransparentTestIface;
 import com.tctest.TransparentTestBase;
+import com.tctest.TransparentTestIface;
 
 public class LargeGraphTester extends TransparentTestBase implements TestConfigurator {
 

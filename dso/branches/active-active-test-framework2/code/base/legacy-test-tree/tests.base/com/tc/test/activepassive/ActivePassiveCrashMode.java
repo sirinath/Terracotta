@@ -6,20 +6,14 @@ package com.tc.test.activepassive;
 
 import com.tc.test.MultipleServersCrashMode;
 
-public class ActivePassiveCrashMode implements MultipleServersCrashMode {
-
-  public static final String AP_CUSTOMIZED_CRASH = "active-passive-customized-crash";
-
-  protected String           mode;
+public class ActivePassiveCrashMode extends MultipleServersCrashMode {
 
   public ActivePassiveCrashMode(String mode) {
-    this.mode = mode;
-    if (!mode.equals(CRASH_AFTER_MUTATE) && !mode.equals(CONTINUOUS_ACTIVE_CRASH) && !mode.equals(RANDOM_SERVER_CRASH)
-        && !mode.equals(AP_CUSTOMIZED_CRASH)) { throw new AssertionError("Unrecognized crash mode [" + mode + "]"); }
+    super(mode);
   }
 
-  public String getMode() {
-    if (mode == null) { throw new AssertionError("Mode was not set"); }
-    return mode;
+  public void checkMode() {
+    if (!mode.equals(CRASH_AFTER_MUTATE) && !mode.equals(CONTINUOUS_ACTIVE_CRASH) && !mode.equals(RANDOM_SERVER_CRASH)
+        && !mode.equals(AP_CUSTOMIZED_CRASH)) { throw new AssertionError("Unrecognized crash mode [" + mode + "]"); }
   }
 }

@@ -4,8 +4,8 @@
 package com.tctest;
 
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 
 public class ClientMemoryReaperTest extends TransparentTestBase implements TestConfigurator {
 
