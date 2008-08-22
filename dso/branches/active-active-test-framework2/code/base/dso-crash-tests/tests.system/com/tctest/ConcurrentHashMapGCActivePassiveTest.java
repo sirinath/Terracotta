@@ -4,9 +4,9 @@
  */
 package com.tctest;
 
-import com.tc.test.MultipleServersSharedDataMode;
+import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
-import com.tc.test.activepassive.ActivePassiveCrashMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
 public class ConcurrentHashMapGCActivePassiveTest extends GCTestBase implements TestConfigurator {
@@ -25,7 +25,7 @@ public class ConcurrentHashMapGCActivePassiveTest extends GCTestBase implements 
 
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     setupManager.setServerCount(2);
-    setupManager.setServerCrashMode(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(40);
     setupManager.setServerShareDataMode(MultipleServersSharedDataMode.NETWORK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);

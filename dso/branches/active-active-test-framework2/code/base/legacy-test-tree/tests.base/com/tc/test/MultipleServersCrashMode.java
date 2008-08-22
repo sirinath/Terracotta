@@ -4,11 +4,25 @@
  */
 package com.tc.test;
 
-public interface MultipleServersCrashMode {
+public abstract class MultipleServersCrashMode {
 
   public static final String CRASH_AFTER_MUTATE      = "crash-after-mutate";
   public static final String CONTINUOUS_ACTIVE_CRASH = "continuous-active-crash";
   public static final String RANDOM_SERVER_CRASH     = "random-server-crash";
+  public static final String AP_CUSTOMIZED_CRASH     = "active-passive-customized-crash";
+  public static final String AA_CUSTOMIZED_CRASH     = "active-active-customized-crash";
 
-  public String getMode();
+  protected String           mode;
+
+  protected MultipleServersCrashMode(String mode) {
+    this.mode = mode;
+    checkMode();
+  }
+
+  public String getMode() {
+    if (mode == null) { throw new AssertionError("Mode was not set"); }
+    return mode;
+  }
+
+  public abstract void checkMode();
 }
