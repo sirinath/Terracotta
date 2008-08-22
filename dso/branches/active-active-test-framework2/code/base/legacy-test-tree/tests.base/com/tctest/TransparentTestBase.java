@@ -252,7 +252,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
                                                      MultipleServersConfigCreator.DEV_MODE, apSetupManager,
                                                      javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
-    apServerManager.addServersToL1Config(configFactory());
+    apServerManager.addServersAndGroupToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
   

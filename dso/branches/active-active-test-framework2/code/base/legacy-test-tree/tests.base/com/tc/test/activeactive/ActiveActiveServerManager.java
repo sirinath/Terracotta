@@ -23,6 +23,7 @@ public class ActiveActiveServerManager {
   private ActivePassiveServerManager[] activePassiveServerManagers;
   private ActiveActiveTestSetupManager setupManger;
   private ProxyConnectManager[]        proxyManagers;
+  private GroupData[]                  groupsData;
   private static final String          CONFIG_FILE_NAME = "active-active-server-config.xml";
 
   public ActiveActiveServerManager(File tempDir, PortChooser portChooser, String configModel,
@@ -56,9 +57,9 @@ public class ActiveActiveServerManager {
       setL2ProxyManagers();
     }
 
-    GroupData[] groups = createGroups();
+    groupsData = createGroups();
     // Create a active-active config creator and then write the config
-    MultipleServersConfigCreator creator = new MultipleServersConfigCreator(this.setupManger, groups, configModel,
+    MultipleServersConfigCreator creator = new MultipleServersConfigCreator(this.setupManger, groupsData, configModel,
                                                                             configFile, tempDir, configFactory);
     creator.writeL2Config();
   }
@@ -140,7 +141,6 @@ public class ActiveActiveServerManager {
   }
 
   public void addGroupsToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
-    //
+    configFactory.addServersAndGroupsToL1Config(groupsData);
   }
-
 }

@@ -715,14 +715,13 @@ public class ActivePassiveServerManager {
     return false;
   }
 
-  public void addServersToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
+  public void addServersAndGroupToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     for (int i = 0; i < serverCount; i++) {
 
       debugPrintln("******* adding to L1 config: serverName=[" + serverNames[i] + "] dsoPort=[" + dsoPorts[i]
                    + "] jmxPort=[" + jmxPorts[i] + "]");
-
-      configFactory.addServerToL1Config(serverNames[i], dsoPorts[i], jmxPorts[i]);
     }
+    configFactory.addServersAndGroupToL1Config(serverNames, dsoPorts, jmxPorts);
   }
 
   public void crashServer() throws Exception {
