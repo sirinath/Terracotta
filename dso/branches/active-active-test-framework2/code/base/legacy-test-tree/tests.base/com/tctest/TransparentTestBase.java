@@ -22,9 +22,11 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
+import com.tc.test.MultipleServersConfigCreator;
 import com.tc.test.ProcessInfo;
 import com.tc.test.TestConfigObject;
-import com.tc.test.activepassive.ActivePassiveServerConfigCreator;
+import com.tc.test.activeactive.ActiveActiveServerManager;
+import com.tc.test.activeactive.ActiveActiveTestSetupManager;
 import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
@@ -82,9 +84,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   // for active-passive tests
   private ActivePassiveServerManager    apServerManager;
-  private ActivePassiveTestSetupManager apSetupManager;
   private TestState                     crashTestState;
 
+  // for active-active tests
+  private ActiveActiveServerManager     aaServerManager;
+  
   // used by ResolveTwoActiveServersTest only
   private ServerControl[]               serverControls                  = null;
   private TCPProxy[]                    proxies                         = null;
@@ -187,6 +191,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       serverControl = helper.getServerControl();
     } else if (isActivePassive() && canRunActivePassive()) {
       setUpActivePassiveServers(portChooser, jvmArgs);
+    } else if (isActiveActive() && canRunActiveActive()) {
+      setUpActiveActiveServers(portChooser, jvmArgs);
     } else {
       dsoPort = portChooser.chooseRandomPort();
       adminPort = portChooser.chooseRandomPort();
@@ -240,17 +246,33 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private final void setUpActivePassiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
     controlledCrashMode = true;
     setJavaHome();
-    apSetupManager = new ActivePassiveTestSetupManager();
+    ActivePassiveTestSetupManager apSetupManager = new ActivePassiveTestSetupManager();
     setupActivePassiveTest(apSetupManager);
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
-                                                     ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
+                                                     MultipleServersConfigCreator.DEV_MODE, apSetupManager,
                                                      javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
     apServerManager.addServersToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
+  
+  private final void setUpActiveActiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
+    controlledCrashMode = true;
+    setJavaHome();
+    ActiveActiveTestSetupManager aaSetupManager = new ActiveActiveTestSetupManager();
+    setupActiveActiveTest(aaSetupManager);
+    aaServerManager = new ActiveActiveServerManager(getTempDirectory(), portChooser,
+                                                     MultipleServersConfigCreator.DEV_MODE, aaSetupManager,
+                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
+    aaServerManager.addGroupsToL1Config(configFactory());
+    if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(aaServerManager.getL2ProxyManagers());
+  }
 
   protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+    throw new AssertionError("The sub-class (test) should override this method.");
+  }
+  
+  protected void setupActiveActiveTest(ActiveActiveTestSetupManager setupManager) {
     throw new AssertionError("The sub-class (test) should override this method.");
   }
 
@@ -414,6 +436,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private boolean isActivePassive() {
     return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE.equals(mode());
   }
+  
+  private boolean isActiveActive() {
+    return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE.equals(mode());
+  }
 
   public DistributedTestRunnerConfig getRunnerConfig() {
     return this.runnerConfig;
@@ -474,6 +500,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected boolean canRunActivePassive() {
+    return false;
+  }
+  
+  protected boolean canRunActiveActive() {
     return false;
   }
 

@@ -5,6 +5,8 @@
 package com.tc.test.activeactive;
 
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
+import com.tc.test.GroupData;
+import com.tc.test.MultipleServersConfigCreator;
 import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
@@ -21,6 +23,7 @@ public class ActiveActiveServerManager {
   private ActivePassiveServerManager[] activePassiveServerManagers;
   private ActiveActiveTestSetupManager setupManger;
   private ProxyConnectManager[]        proxyManagers;
+  private static final String          CONFIG_FILE_NAME = "active-active-server-config.xml";
 
   public ActiveActiveServerManager(File tempDir, PortChooser portChooser, String configModel,
                                    ActiveActiveTestSetupManager setupManger, File javaHome,
@@ -36,17 +39,39 @@ public class ActiveActiveServerManager {
     this.setupManger = setupManger;
     int groupCount = setupManger.getActiveServerGroupCount();
     activePassiveServerManagers = new ActivePassiveServerManager[groupCount];
+    String configFileLocation = tempDir + File.separator + CONFIG_FILE_NAME;
+    File configFile = new File(configFileLocation);
 
+    int noOfServers = 0;
     for (int i = 0; i < groupCount; i++) {
       ActivePassiveTestSetupManager activePasssiveTestSetupManager = createActivePassiveTestSetupManager(i);
       activePassiveServerManagers[i] = new ActivePassiveServerManager(true, tempDir, portChooser, configModel,
                                                                       activePasssiveTestSetupManager, javaHome,
-                                                                      configFactory, extraJvmArgs, isProxyL2GroupPorts);
+                                                                      configFactory, extraJvmArgs, isProxyL2GroupPorts,
+                                                                      false, noOfServers);
+      noOfServers += setupManger.getGroupMemberCount(i);
     }
 
     if (isProxyL2GroupPorts) {
       setL2ProxyManagers();
     }
+
+    GroupData[] groups = createGroups();
+    // Create a active-active config creator and then write the config
+    MultipleServersConfigCreator creator = new MultipleServersConfigCreator(this.setupManger, groups, configModel,
+                                                                            configFile, tempDir, configFactory);
+    creator.writeL2Config();
+  }
+
+  private GroupData[] createGroups() {
+    // Create the groups by getting the server names from the ActivePassiveServerManager
+    GroupData[] groups = new GroupData[activePassiveServerManagers.length];
+    for (int i = 0; i < groups.length; i++) {
+      groups[i] = new GroupData(activePassiveServerManagers[i].getDsoPorts(), activePassiveServerManagers[i]
+          .getJmxPorts(), activePassiveServerManagers[i].getL2GroupPorts(), activePassiveServerManagers[i]
+          .getServerNames());
+    }
+    return groups;
   }
 
   private void setL2ProxyManagers() {
@@ -112,6 +137,10 @@ public class ActiveActiveServerManager {
 
   public void crashActive() throws Exception {
     throw new Exception();
+  }
+
+  public void addGroupsToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
+    //
   }
 
 }
