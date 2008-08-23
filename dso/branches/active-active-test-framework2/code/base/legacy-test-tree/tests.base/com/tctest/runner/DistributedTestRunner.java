@@ -26,7 +26,9 @@ import com.tc.simulator.container.ContainerResult;
 import com.tc.simulator.container.ContainerStateFactory;
 import com.tc.simulator.control.Control;
 import com.tc.simulator.listener.ResultsListener;
+import com.tc.test.activeactive.ActiveActiveServerManager;
 import com.tc.test.activepassive.ActivePassiveServerManager;
+import com.tc.util.Assert;
 import com.tcsimulator.ControlImpl;
 import com.tcsimulator.container.ContainerStateFactoryObject;
 import com.tcsimulator.listener.QueuePrinter;
@@ -71,7 +73,9 @@ public class DistributedTestRunner implements ResultsListener {
   private final boolean                                 isMutatorValidatorTest;
   private final int                                     validatorCount;
   private final boolean                                 isActivePassiveTest;
-  private final ActivePassiveServerManager              serverManager;
+  private final ActivePassiveServerManager              apServerManager;
+  private final boolean                                 isActiveActiveTest;
+  private final ActiveActiveServerManager               aaServerManager;
 
   private final int                                     adaptedMutatorCount;
   private final int                                     adaptedValidatorCount;
@@ -81,6 +85,28 @@ public class DistributedTestRunner implements ResultsListener {
   private Container[]                                   containers;
   private Container[]                                   validatorContainers;
 
+  public DistributedTestRunner(DistributedTestRunnerConfig config,
+                               TestTVSConfigurationSetupManagerFactory configFactory,
+                               DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
+                               ApplicationConfig applicationConfig, boolean startServer,
+                               boolean isMutatorValidatorTest, boolean isActivePassiveTest,
+                               ActivePassiveServerManager serverManager, TransparentAppConfig transparentAppConfig)
+      throws Exception {
+    this(config, configFactory, configHelper, applicationClass, optionalAttributes, applicationConfig, startServer,
+         isMutatorValidatorTest, isActivePassiveTest, false, serverManager, null, transparentAppConfig);
+  }
+
+  public DistributedTestRunner(DistributedTestRunnerConfig config,
+                               TestTVSConfigurationSetupManagerFactory configFactory,
+                               DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
+                               ApplicationConfig applicationConfig, boolean startServer,
+                               boolean isMutatorValidatorTest, boolean isActiveActiveTest,
+                               ActiveActiveServerManager serverManager, TransparentAppConfig transparentAppConfig)
+      throws Exception {
+    this(config, configFactory, configHelper, applicationClass, optionalAttributes, applicationConfig, startServer,
+         isMutatorValidatorTest, false, isActiveActiveTest, null, serverManager, transparentAppConfig);
+  }
+
   /**
    * @param applicationClass Class of the application to be executed. It should implement the static method required by
    *        ClassLoaderConfigVisitor.
@@ -89,12 +115,13 @@ public class DistributedTestRunner implements ResultsListener {
    * @param applicationsPerNode Number of application instances per classloader to execute. This counts as number of
    *        threads per classloader.
    */
-  public DistributedTestRunner(DistributedTestRunnerConfig config,
-                               TestTVSConfigurationSetupManagerFactory configFactory,
-                               DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
-                               ApplicationConfig applicationConfig, boolean startServer,
-                               boolean isMutatorValidatorTest, boolean isActivePassiveTest,
-                               ActivePassiveServerManager serverManager, TransparentAppConfig transparentAppConfig)
+  private DistributedTestRunner(DistributedTestRunnerConfig config,
+                                TestTVSConfigurationSetupManagerFactory configFactory,
+                                DSOClientConfigHelper configHelper, Class applicationClass, Map optionalAttributes,
+                                ApplicationConfig applicationConfig, boolean startServer,
+                                boolean isMutatorValidatorTest, boolean isActivePassiveTest,
+                                boolean isActiveActiveTest, ActivePassiveServerManager apServerManager,
+                                ActiveActiveServerManager aaServerManager, TransparentAppConfig transparentAppConfig)
       throws Exception {
     this.optionalAttributes = optionalAttributes;
     this.clientCount = transparentAppConfig.getClientCount();
@@ -106,7 +133,9 @@ public class DistributedTestRunner implements ResultsListener {
     this.isMutatorValidatorTest = isMutatorValidatorTest;
     this.validatorCount = transparentAppConfig.getValidatorCount();
     this.isActivePassiveTest = isActivePassiveTest;
-    this.serverManager = serverManager;
+    this.isActiveActiveTest = isActiveActiveTest;
+    this.apServerManager = apServerManager;
+    this.aaServerManager = aaServerManager;
     this.globalIdGenerator = new TestGlobalIdGenerator();
     this.applicationClass = applicationClass;
     this.applicationConfig = applicationConfig;
@@ -217,7 +246,7 @@ public class DistributedTestRunner implements ResultsListener {
           notifyExecutionTimeout();
         }
 
-        if (isActivePassiveTest) {
+        if (isActivePassiveTest || isActiveActiveTest) {
           checkForErrors();
         }
 
@@ -225,16 +254,22 @@ public class DistributedTestRunner implements ResultsListener {
           new Thread(validatorContainers[i]).start();
         }
 
-        if (isActivePassiveTest && serverManager.crashActiveServerAfterMutate()) {
+        if (isActivePassiveTest && apServerManager.crashActiveServerAfterMutate()) {
           Thread.sleep(5000);
           debugPrintln("***** DTR: Crashing active server");
-          serverManager.crashActive();
+          apServerManager.crashActive();
+          debugPrintln("***** DTR: Notifying the test-wide control");
+          control.notifyValidationStart();
+        } else if (isActiveActiveTest && aaServerManager.crashActiveServersAfterMutate()) {
+          Thread.sleep(5000);
+          debugPrintln("***** DTR: Crashing active server");
+          aaServerManager.crashActiveServers();
           debugPrintln("***** DTR: Notifying the test-wide control");
           control.notifyValidationStart();
         }
       }
 
-      if (isActivePassiveTest) {
+      if (isActivePassiveTest || isActiveActiveTest) {
         checkForErrors();
       }
 
@@ -244,7 +279,7 @@ public class DistributedTestRunner implements ResultsListener {
         notifyExecutionTimeout();
       }
 
-      if (isActivePassiveTest) {
+      if (isActivePassiveTest || isActiveActiveTest) {
         checkForErrors();
       }
     } catch (Throwable t) {
@@ -255,7 +290,8 @@ public class DistributedTestRunner implements ResultsListener {
   }
 
   private void checkForErrors() throws Exception {
-    List l = serverManager.getErrors();
+    Assert.assertFalse(isActiveActiveTest && isActivePassiveTest);
+    List l = isActivePassiveTest ? apServerManager.getErrors() : aaServerManager.getErrors();
     if (l.size() > 0) {
       for (Iterator iter = l.iterator(); iter.hasNext();) {
         Exception e = (Exception) iter.next();
@@ -346,7 +382,9 @@ public class DistributedTestRunner implements ResultsListener {
   private Control newContainerControl() {
     boolean crashActiveServerAfterMutate;
     if (isActivePassiveTest) {
-      crashActiveServerAfterMutate = serverManager.crashActiveServerAfterMutate();
+      crashActiveServerAfterMutate = apServerManager.crashActiveServerAfterMutate();
+    } else if (isActiveActiveTest) {
+      crashActiveServerAfterMutate = aaServerManager.crashActiveServersAfterMutate();
     } else {
       crashActiveServerAfterMutate = false;
     }

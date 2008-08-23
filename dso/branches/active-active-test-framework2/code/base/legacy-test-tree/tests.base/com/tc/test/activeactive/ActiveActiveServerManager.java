@@ -7,6 +7,7 @@ package com.tc.test.activeactive;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.test.GroupData;
 import com.tc.test.MultipleServersConfigCreator;
+import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
@@ -135,12 +136,21 @@ public class ActiveActiveServerManager {
       activePassiveServerManagers[i].dumpAllServers(currentPid, dumpCount, dumpInterval);
     }
   }
-
-  public void crashActive() throws Exception {
-    throw new Exception();
+  
+  public boolean crashActiveServersAfterMutate() {
+    if (this.setupManger.getServerCrashMode().equals(MultipleServersCrashMode.CRASH_AFTER_MUTATE)) { return true; }
+    return false;
   }
 
   public void addGroupsToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     configFactory.addServersAndGroupsToL1Config(groupsData);
+  }
+
+  public void crashActiveServers() throws Exception {
+    int grpCount = setupManger.getActiveServerGroupCount();
+
+    for (int i = 0; i < grpCount; i++) {
+      activePassiveServerManagers[i].crashActive();
+    }
   }
 }
