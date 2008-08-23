@@ -61,40 +61,40 @@ import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
 
-  public static final int               DEFAULT_CLIENT_COUNT            = 2;
-  public static final int               DEFAULT_INTENSITY               = 10;
-  public static final int               DEFAULT_VALIDATOR_COUNT         = 0;
-  public static final int               DEFAULT_ADAPTED_MUTATOR_COUNT   = 0;
-  public static final int               DEFAULT_ADAPTED_VALIDATOR_COUNT = 0;
+  public static final int             DEFAULT_CLIENT_COUNT            = 2;
+  public static final int             DEFAULT_INTENSITY               = 10;
+  public static final int             DEFAULT_VALIDATOR_COUNT         = 0;
+  public static final int             DEFAULT_ADAPTED_MUTATOR_COUNT   = 0;
+  public static final int             DEFAULT_ADAPTED_VALIDATOR_COUNT = 0;
 
-  protected DistributedTestRunner       runner;
+  protected DistributedTestRunner     runner;
 
-  private DistributedTestRunnerConfig   runnerConfig                    = new DistributedTestRunnerConfig(
-                                                                                                          getTimeoutValueInSeconds());
-  private TransparentAppConfig          transparentAppConfig;
-  private ApplicationConfigBuilder      possibleApplicationConfigBuilder;
+  private DistributedTestRunnerConfig runnerConfig                    = new DistributedTestRunnerConfig(
+                                                                                                        getTimeoutValueInSeconds());
+  private TransparentAppConfig        transparentAppConfig;
+  private ApplicationConfigBuilder    possibleApplicationConfigBuilder;
 
-  private String                        mode;
-  private ServerControl                 serverControl;
-  private boolean                       controlledCrashMode             = false;
-  private ServerCrasher                 crasher;
-  private File                          javaHome;
-  private int                           pid                             = -1;
-  private final ProxyConnectManager     proxyMgr                        = new ProxyConnectManagerImpl();
+  private String                      mode;
+  private ServerControl               serverControl;
+  private boolean                     controlledCrashMode             = false;
+  private ServerCrasher               crasher;
+  private File                        javaHome;
+  private int                         pid                             = -1;
+  private final ProxyConnectManager   proxyMgr                        = new ProxyConnectManagerImpl();
 
   // for active-passive tests
-  private ActivePassiveServerManager    apServerManager;
-  private TestState                     crashTestState;
+  private ActivePassiveServerManager  apServerManager;
+  private TestState                   crashTestState;
 
   // for active-active tests
-  private ActiveActiveServerManager     aaServerManager;
-  
-  // used by ResolveTwoActiveServersTest only
-  private ServerControl[]               serverControls                  = null;
-  private TCPProxy[]                    proxies                         = null;
+  private ActiveActiveServerManager   aaServerManager;
 
-  private int                           dsoPort                         = -1;
-  private int                           adminPort                       = -1;
+  // used by ResolveTwoActiveServersTest only
+  private ServerControl[]             serverControls                  = null;
+  private TCPProxy[]                  proxies                         = null;
+
+  private int                         dsoPort                         = -1;
+  private int                         adminPort                       = -1;
 
   protected TestConfigObject getTestConfigObject() {
     return TestConfigObject.getInstance();
@@ -250,20 +250,20 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     setupActivePassiveTest(apSetupManager);
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
-                                                     MultipleServersConfigCreator.DEV_MODE, apSetupManager,
-                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
+                                                     MultipleServersConfigCreator.DEV_MODE, apSetupManager, javaHome,
+                                                     configFactory(), jvmArgs, canRunL2ProxyConnect());
     apServerManager.addServersAndGroupToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
-  
+
   private final void setUpActiveActiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
     controlledCrashMode = true;
     setJavaHome();
     ActiveActiveTestSetupManager aaSetupManager = new ActiveActiveTestSetupManager();
     setupActiveActiveTest(aaSetupManager);
     aaServerManager = new ActiveActiveServerManager(getTempDirectory(), portChooser,
-                                                     MultipleServersConfigCreator.DEV_MODE, aaSetupManager,
-                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
+                                                    MultipleServersConfigCreator.DEV_MODE, aaSetupManager, javaHome,
+                                                    configFactory(), jvmArgs, canRunL2ProxyConnect());
     aaServerManager.addGroupsToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(aaServerManager.getL2ProxyManagers());
   }
@@ -271,7 +271,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     throw new AssertionError("The sub-class (test) should override this method.");
   }
-  
+
   protected void setupActiveActiveTest(ActiveActiveTestSetupManager setupManager) {
     throw new AssertionError("The sub-class (test) should override this method.");
   }
@@ -436,7 +436,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private boolean isActivePassive() {
     return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE.equals(mode());
   }
-  
+
   private boolean isActiveActive() {
     return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE.equals(mode());
   }
@@ -478,11 +478,21 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
-    this.runner = new DistributedTestRunner(runnerConfig, configFactory(), configHelper(), getApplicationClass(),
-                                            getOptionalAttributes(), getApplicationConfigBuilder()
-                                                .newApplicationConfig(), getStartServer(), isMutateValidateTest,
-                                            (isActivePassive() && canRunActivePassive()), apServerManager,
-                                            transparentAppConfig);
+    if (isActivePassive()) runner = new DistributedTestRunner(
+                                                                   runnerConfig,
+                                                                   configFactory(),
+                                                                   configHelper(),
+                                                                   getApplicationClass(),
+                                                                   getOptionalAttributes(),
+                                                                   getApplicationConfigBuilder().newApplicationConfig(),
+                                                                   getStartServer(), isMutateValidateTest,
+                                                                   (isActivePassive() && canRunActivePassive()),
+                                                                   apServerManager, transparentAppConfig);
+    else runner = new DistributedTestRunner(runnerConfig, configFactory(), configHelper(), getApplicationClass(),
+                                                 getOptionalAttributes(), getApplicationConfigBuilder()
+                                                     .newApplicationConfig(), getStartServer(), isMutateValidateTest,
+                                                 (isActiveActive() && canRunActiveActive()), aaServerManager,
+                                                 transparentAppConfig);
   }
 
   protected boolean canRun() {
@@ -502,7 +512,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected boolean canRunActivePassive() {
     return false;
   }
-  
+
   protected boolean canRunActiveActive() {
     return false;
   }
@@ -555,6 +565,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     apServerManager.startActivePassiveServers();
   }
 
+  protected void customizeActiveActiveTest() throws Exception {
+    aaServerManager.startActiveActiveServers();
+  }
+
   protected void apStartServer(int index) throws Exception {
     apServerManager.startServer(index);
   }
@@ -589,6 +603,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       if (controlledCrashMode && isActivePassive() && apServerManager != null) {
         // active passive tests
         customizeActivePassiveTest();
+      } else if (controlledCrashMode && isActiveActive() && aaServerManager != null) {
+        customizeActiveActiveTest();
       } else if (controlledCrashMode && serverControls != null) {
         startServerControlsAndProxies();
       } else if (serverControl != null && crasher == null) {
@@ -646,6 +662,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       pid = apServerManager.getPid();
     }
 
+    if (aaServerManager != null) {
+      aaServerManager.dumpAllServers(pid, getThreadDumpCount(), getThreadDumpInterval());
+    }
+
     if (serverControls != null) {
       for (int i = 0; i < serverControls.length; i++) {
         dumpServerControl(serverControls[i]);
@@ -688,6 +708,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       if (isActivePassive() && canRunActivePassive()) {
         System.out.println("Currently running java processes: " + ProcessInfo.ps_grep_java());
         apServerManager.stopAllServers();
+      } else if (isActiveActive() && canRunActiveActive()) {
+        aaServerManager.stopAllServers();
       } else if (isCrashy() && canRunCrash()) {
         synchronized (crashTestState) {
           crashTestState.setTestState(TestState.STOPPING);
