@@ -13,6 +13,7 @@ import com.tc.objectserver.control.ExtraProcessServerControl;
 import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.test.GroupData;
+import com.tc.test.MultipleServerManager;
 import com.tc.test.MultipleServersConfigCreator;
 import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
@@ -34,12 +35,12 @@ import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.remote.JMXConnector;
 
-public class ActivePassiveServerManager {
-  private static final String                   HOST                = "localhost";
-  private static final String                   SERVER_NAME         = "testserver";
-  private static final String                   CONFIG_FILE_NAME    = "active-passive-server-config.xml";
-  private static final boolean                  DEBUG               = false;
-  private static final int                      NULL_VAL            = -1;
+public class ActivePassiveServerManager implements MultipleServerManager {
+  private static final String                   HOST               = "localhost";
+  private static final String                   SERVER_NAME        = "testserver";
+  private static final String                   CONFIG_FILE_NAME   = "active-passive-server-config.xml";
+  private static final boolean                  DEBUG              = false;
+  private static final int                      NULL_VAL           = -1;
 
   private final File                            tempDir;
   private final PortChooser                     portChooser;
@@ -65,23 +66,23 @@ public class ActivePassiveServerManager {
 
   private final List                            errors;
 
-  private int                                   activeIndex         = NULL_VAL;
-  private int                                   lastCrashedIndex    = NULL_VAL;
+  private int                                   activeIndex        = NULL_VAL;
+  private int                                   lastCrashedIndex   = NULL_VAL;
   private ActivePassiveServerCrasher            serverCrasher;
   private int                                   maxCrashCount;
   private final TestState                       testState;
   private Random                                random;
   private long                                  seed;
   private final File                            javaHome;
-  private int                                   pid                 = -1;
-  private List                                  jvmArgs             = null;
+  private int                                   pid                = -1;
+  private List                                  jvmArgs            = null;
   private final boolean                         isProxyL2groupPorts;
   private final int[]                           proxyL2GroupPorts;
   protected ProxyConnectManager[]               proxyL2Managers;
 
   // this is used when active-active tests are run. This will help in differentiating between the names in the different
   // groups
-  private int                                   startIndexOfServer  = 0;
+  private int                                   startIndexOfServer = 0;
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, MultipleServersTestSetupManager setupManger, File javaHome,
@@ -95,7 +96,7 @@ public class ActivePassiveServerManager {
                                     String configModel, MultipleServersTestSetupManager setupManger, File javaHome,
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     boolean isProxyL2GroupPorts) throws Exception {
-    this(isActivePassiveTest, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, new ArrayList(),
+    this(isActivePassiveTest, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, extraJvmArgs,
          false, true, 0);
   }
 
@@ -819,6 +820,14 @@ public class ActivePassiveServerManager {
     public String getLogLocation() {
       return logLocation;
     }
+  }
+
+  public void crashActiveServers() throws Exception {
+    crashActive();
+  }
+
+  public boolean crashActiveServersAfterMutate() {
+    return crashActiveServerAfterMutate();
   }
 
 }
