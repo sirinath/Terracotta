@@ -22,6 +22,7 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
+import com.tc.test.MultipleServerManager;
 import com.tc.test.MultipleServersConfigCreator;
 import com.tc.test.ProcessInfo;
 import com.tc.test.TestConfigObject;
@@ -478,21 +479,19 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
-    if (isActivePassive()) runner = new DistributedTestRunner(
-                                                                   runnerConfig,
-                                                                   configFactory(),
-                                                                   configHelper(),
-                                                                   getApplicationClass(),
-                                                                   getOptionalAttributes(),
-                                                                   getApplicationConfigBuilder().newApplicationConfig(),
-                                                                   getStartServer(), isMutateValidateTest,
-                                                                   (isActivePassive() && canRunActivePassive()),
-                                                                   apServerManager, transparentAppConfig);
-    else runner = new DistributedTestRunner(runnerConfig, configFactory(), configHelper(), getApplicationClass(),
-                                                 getOptionalAttributes(), getApplicationConfigBuilder()
-                                                     .newApplicationConfig(), getStartServer(), isMutateValidateTest,
-                                                 (isActiveActive() && canRunActiveActive()), aaServerManager,
-                                                 transparentAppConfig);
+    MultipleServerManager serverManager = null;
+    boolean isMultipleServerTest = false;
+    if (isActiveActive() && canRunActiveActive()) {
+      isMultipleServerTest = true;
+      serverManager = aaServerManager;
+    } else if (isActivePassive() && canRunActivePassive()) {
+      isMultipleServerTest = true;
+      serverManager = apServerManager;
+    }
+    runner = new DistributedTestRunner(runnerConfig, configFactory(), configHelper(), getApplicationClass(),
+                                       getOptionalAttributes(), getApplicationConfigBuilder().newApplicationConfig(),
+                                       getStartServer(), isMutateValidateTest, isMultipleServerTest, serverManager,
+                                       transparentAppConfig);
   }
 
   protected boolean canRun() {

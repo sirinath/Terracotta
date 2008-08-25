@@ -6,6 +6,7 @@ package com.tc.test.activeactive;
 
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.test.GroupData;
+import com.tc.test.MultipleServerManager;
 import com.tc.test.MultipleServersConfigCreator;
 import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.activepassive.ActivePassiveServerManager;
@@ -17,7 +18,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActiveActiveServerManager {
+public class ActiveActiveServerManager implements MultipleServerManager {
   /**
    * One <code>ActivePassiveServerManager</code> for each group since they logically form a group
    */
