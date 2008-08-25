@@ -4,24 +4,29 @@
  */
 package com.tc.test;
 
+import com.tc.exception.ImplementMe;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 
 import java.util.List;
 
-public interface MultipleServerManager {
+public abstract class MultipleServerManager {
 
   public static final String CONFIG_FILE_NAME = "multiple-servers-config.xml";
 
-  public ProxyConnectManager[] getL2ProxyManagers();
+  public abstract ProxyConnectManager[] getL2ProxyManagers();
 
-  public List getErrors();
+  public abstract List getErrors();
 
-  public void stopAllServers() throws Exception;
+  public abstract void stopAllServers() throws Exception;
 
-  public void dumpAllServers(int currentPid, int dumpCount, long dumpInterval) throws Exception;
+  public abstract void dumpAllServers(int currentPid, int dumpCount, long dumpInterval) throws Exception;
 
-  public boolean crashActiveServersAfterMutate();
+  public abstract boolean crashActiveServersAfterMutate();
 
-  public void crashActiveServers() throws Exception;
+  public abstract void crashActiveServers() throws Exception;
+
+  public int getPid() {
+    throw new ImplementMe();
+  }
 
 }
