@@ -283,6 +283,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
       throw new ImplementMe();
 
     }
+
   }
 
   private static class TestClientChannel implements DSOClientMessageChannel {

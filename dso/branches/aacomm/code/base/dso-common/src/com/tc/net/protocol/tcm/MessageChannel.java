@@ -5,6 +5,8 @@ package com.tc.net.protocol.tcm;
 
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.groups.ClientID;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.util.TCTimeoutException;
@@ -33,7 +35,7 @@ public interface MessageChannel {
   public boolean isClosed();
 
   public TCMessage createMessage(TCMessageType type);
-
+  
   public Object getAttachment(String key);
 
   /**
@@ -63,5 +65,13 @@ public interface MessageChannel {
       IOException;
 
   public void close();
+  
+  public ClientID getClientID();
+  
+  public void setClientID(ClientID source);
+  
+  public NodeID getServerID();
+  
+  public void setServerID(NodeID destination);
 
 }

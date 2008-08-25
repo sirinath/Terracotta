@@ -185,7 +185,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
       if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
-    } else if (isActivePassive() && canRunActivePassive()) {
+    } else if (isActivePassive() && canRunActivePassive() || (isActiveActive() && canRunActiveActive())) {
       setUpActivePassiveServers(portChooser, jvmArgs);
     } else {
       dsoPort = portChooser.chooseRandomPort();
@@ -241,11 +241,15 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     controlledCrashMode = true;
     setJavaHome();
     apSetupManager = new ActivePassiveTestSetupManager();
-    setupActivePassiveTest(apSetupManager);
+    if (isActiveActive() && canRunActiveActive()) {
+      setupActiveActiveTest(apSetupManager);
+    } else {
+      setupActivePassiveTest(apSetupManager);
+    }
     apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
                                                      ActivePassiveServerConfigCreator.DEV_MODE, apSetupManager,
-                                                     javaHome, configFactory(), jvmArgs, canRunL2ProxyConnect());
+                                                     javaHome, configFactory(), jvmArgs, mode(), canRunL2ProxyConnect());
     apServerManager.addServersToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
   }
@@ -254,7 +258,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     throw new AssertionError("The sub-class (test) should override this method.");
   }
 
-  protected void setupConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
+  protected void setupActiveActiveTest(ActivePassiveTestSetupManager setupManager) {
+    throw new AssertionError("The sub-class (test) should override this method.");
+  }
+
+ protected void setupConfig(TestTVSConfigurationSetupManagerFactory configFactory) {
     // do nothing
   }
 
@@ -371,7 +379,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     ((SettableConfigItem) configFactory().l2DSOConfig().listenPort()).setValue(serverPort);
     ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
-    configFactory().addServerToL1Config(null, serverPort, adminPort);
   }
 
   private final void setUpTransparent(TestTVSConfigurationSetupManagerFactory factory, DSOClientConfigHelper helper)
@@ -413,6 +420,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private boolean isActivePassive() {
     return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE.equals(mode());
+  }
+  
+  private boolean isActiveActive() {
+    return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE.equals(mode());
   }
 
   public DistributedTestRunnerConfig getRunnerConfig() {
@@ -462,11 +473,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   protected boolean canRun() {
     return (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL) && canRunNormal())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH) && canRunCrash())
-           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive());
+           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive())
+           || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE) && canRunActiveActive());
   }
 
   protected boolean canRunNormal() {
     return true;
+  }
+  
+  protected boolean canRunActiveActive() {
+    return false;
   }
 
   protected boolean canRunCrash() {
@@ -559,6 +575,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       if (controlledCrashMode && isActivePassive() && apServerManager != null) {
         // active passive tests
         customerizeActivePassiveTest();
+      } else if (controlledCrashMode && isActiveActive() && apServerManager != null) {
+        // active-active tests
+        apServerManager.startActiveActiveServers();
       } else if (controlledCrashMode && serverControls != null) {
         startServerControlsAndProxies();
       } else if (serverControl != null && crasher == null) {

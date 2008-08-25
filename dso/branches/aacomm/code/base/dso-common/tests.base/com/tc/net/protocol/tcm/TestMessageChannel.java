@@ -1,11 +1,14 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.groups.ClientID;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
@@ -20,10 +23,28 @@ public class TestMessageChannel implements MessageChannel {
   public List                   createMessageContexts = new ArrayList();
   public NoExceptionLinkedQueue sendQueue             = new NoExceptionLinkedQueue();
   public TCMessage              message;
-  public ChannelID channelID;
+  public ChannelID              channelID;
+  private ClientID              source;
+  private NodeID                destination;
 
   public void addListener(ChannelEventListener listener) {
     return;
+  }
+
+  public ClientID getClientID() {
+    return source;
+  }
+
+  public void setClientID(ClientID source) {
+    this.source = source;
+  }
+
+  public NodeID getServerID() {
+    return destination;
+  }
+
+  public void setServerID(NodeID destination) {
+    this.destination = destination;
   }
 
   public boolean isConnected() {

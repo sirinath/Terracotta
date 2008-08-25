@@ -7,12 +7,16 @@ package com.tc.objectserver.impl;
 import bsh.EvalError;
 import bsh.Interpreter;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.NullSink;
-import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.config.HaConfig;
+import com.tc.config.HaConfigImpl;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.exception.CleanDirtyDatabaseException;
 import com.tc.exception.TCRuntimeException;
@@ -248,6 +252,7 @@ public class DistributedObjectServer implements TCDumper {
   private static final int                     MAX_DEFAULT_COMM_THREADS = 16;
 
   private final L2TVSConfigurationSetupManager configSetupManager;
+  private final HaConfig                       haConfig;
   private final Sink                           httpSink;
   private NetworkListener                      l1Listener;
   private CommunicationsManager                communicationsManager;
@@ -306,6 +311,7 @@ public class DistributedObjectServer implements TCDumper {
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
     this.configSetupManager = configSetupManager;
+    this.haConfig = new HaConfigImpl(this.configSetupManager);
     this.connectionPolicy = connectionPolicy;
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
@@ -836,8 +842,10 @@ public class DistributedObjectServer implements TCDumper {
                                                                                            reconnectTimeout,
                                                                                            persistent, consoleLogger);
 
-    boolean networkedHA = configSetupManager.haConfig().isNetworkedActivePassive();
+    boolean networkedHA = this.haConfig.isNetworkedActivePassive();
     if (networkedHA) {
+      this.haConfig.makeAllNodes();
+
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(configSetupManager, consoleLogger, this, stageManager, persistor
           .getClusterStateStore(), objectManager, transactionManager, gtxm, channelManager, configSetupManager
@@ -870,9 +878,8 @@ public class DistributedObjectServer implements TCDumper {
     lockStatsManager.start(channelManager);
 
     if (networkedHA) {
-      final Node thisNode = makeThisNode(bind);
-      final Node[] allNodes = makeAllNodes();
-      l2Coordinator.start(thisNode, allNodes);
+      final Node thisNode = this.haConfig.makeThisNode();
+      l2Coordinator.start(thisNode, this.haConfig.getAllNodes());
     } else {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
@@ -928,37 +935,6 @@ public class DistributedObjectServer implements TCDumper {
 
   public boolean isBlocking() {
     return startupLock != null && startupLock.isBlocking();
-  }
-
-  private Node[] makeAllNodes() {
-    String[] l2s = configSetupManager.allCurrentlyKnownServers();
-    Node[] rv = new Node[l2s.length];
-    for (int i = 0; i < l2s.length; i++) {
-      NewL2DSOConfig l2;
-      try {
-        l2 = configSetupManager.dsoL2ConfigFor(l2s[i]);
-      } catch (ConfigurationSetupException e) {
-        throw new RuntimeException("Error getting l2 config for: " + l2s[i], e);
-      }
-      rv[i] = makeNode(l2, null);
-    }
-    return rv;
-  }
-
-  private static Node makeNode(NewL2DSOConfig l2, String bind) {
-    // NOTE: until we resolve Tribes stepping on TCComm's port
-    // we'll use TCComm.port + 1 in Tribes
-    int dsoPort = l2.listenPort().getInt();
-    if (dsoPort == 0) {
-      return new Node(l2.host().getString(), dsoPort, bind);
-    } else {
-      return new Node(l2.host().getString(), l2.l2GroupPort().getInt(), bind);
-    }
-  }
-
-  private Node makeThisNode(InetAddress bind) {
-    NewL2DSOConfig l2 = configSetupManager.dsoL2Config();
-    return makeNode(l2, bind.getHostAddress());
   }
 
   public boolean startActiveMode() throws IOException {
