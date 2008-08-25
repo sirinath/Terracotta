@@ -35,7 +35,7 @@ import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.remote.JMXConnector;
 
-public class ActivePassiveServerManager implements MultipleServerManager {
+public class ActivePassiveServerManager extends MultipleServerManager {
   private static final String                   HOST               = "localhost";
   private static final String                   SERVER_NAME        = "testserver";
   private static final boolean                  DEBUG              = false;

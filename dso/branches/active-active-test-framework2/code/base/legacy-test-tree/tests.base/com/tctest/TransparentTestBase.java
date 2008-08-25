@@ -83,12 +83,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private int                         pid                             = -1;
   private final ProxyConnectManager   proxyMgr                        = new ProxyConnectManagerImpl();
 
-  // for active-passive tests
-  private ActivePassiveServerManager  apServerManager;
+  // for active-passive tests and for active-active tests
+  private MultipleServerManager       multipleServerManager;
   private TestState                   crashTestState;
-
-  // for active-active tests
-  private ActiveActiveServerManager   aaServerManager;
 
   // used by ResolveTwoActiveServersTest only
   private ServerControl[]             serverControls                  = null;
@@ -190,10 +187,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       ((SettableConfigItem) configFactory().l2CommonConfig().jmxPort()).setValue(adminPort);
       if (!canRunL1ProxyConnect()) configFactory().addServerToL1Config(null, dsoPort, adminPort);
       serverControl = helper.getServerControl();
-    } else if (isActivePassive() && canRunActivePassive()) {
-      setUpActivePassiveServers(portChooser, jvmArgs);
-    } else if (isActiveActive() && canRunActiveActive()) {
-      setUpActiveActiveServers(portChooser, jvmArgs);
+    } else if (isMultipleServerTest()) {
+      setUpMultipleServersTest(portChooser, jvmArgs);
     } else {
       dsoPort = portChooser.chooseRandomPort();
       adminPort = portChooser.chooseRandomPort();
@@ -244,17 +239,29 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     jvmArgs.add("-Dcom.tc.properties=" + pathToTestTcProperties);
   }
 
+  private final void setUpMultipleServersTest(PortChooser portChooser, List jvmArgs) throws Exception {
+    if (isActivePassive() && canRunActivePassive()) {
+      setUpActivePassiveServers(portChooser, jvmArgs);
+    } else if (isActiveActive() && canRunActiveActive()) {
+      setUpActiveActiveServers(portChooser, jvmArgs);
+    }
+  }
+
   private final void setUpActivePassiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
     controlledCrashMode = true;
     setJavaHome();
     ActivePassiveTestSetupManager apSetupManager = new ActivePassiveTestSetupManager();
     setupActivePassiveTest(apSetupManager);
-    apServerManager = new ActivePassiveServerManager(mode()
+    ActivePassiveServerManager apServerManager = new ActivePassiveServerManager(mode()
         .equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE), getTempDirectory(), portChooser,
-                                                     MultipleServersConfigCreator.DEV_MODE, apSetupManager, javaHome,
-                                                     configFactory(), jvmArgs, canRunL2ProxyConnect());
+                                                                                MultipleServersConfigCreator.DEV_MODE,
+                                                                                apSetupManager, javaHome,
+                                                                                configFactory(), jvmArgs,
+                                                                                canRunL2ProxyConnect());
     apServerManager.addServersAndGroupToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(apServerManager.getL2ProxyManagers());
+
+    multipleServerManager = apServerManager;
   }
 
   private final void setUpActiveActiveServers(PortChooser portChooser, List jvmArgs) throws Exception {
@@ -262,11 +269,15 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     setJavaHome();
     ActiveActiveTestSetupManager aaSetupManager = new ActiveActiveTestSetupManager();
     setupActiveActiveTest(aaSetupManager);
-    aaServerManager = new ActiveActiveServerManager(getTempDirectory(), portChooser,
-                                                    MultipleServersConfigCreator.DEV_MODE, aaSetupManager, javaHome,
-                                                    configFactory(), jvmArgs, canRunL2ProxyConnect());
+    ActiveActiveServerManager aaServerManager = new ActiveActiveServerManager(getTempDirectory(), portChooser,
+                                                                              MultipleServersConfigCreator.DEV_MODE,
+                                                                              aaSetupManager, javaHome,
+                                                                              configFactory(), jvmArgs,
+                                                                              canRunL2ProxyConnect());
     aaServerManager.addGroupsToL1Config(configFactory());
     if (canRunL2ProxyConnect()) setupL2ProxyConnectTest(aaServerManager.getL2ProxyManagers());
+
+    multipleServerManager = aaServerManager;
   }
 
   protected void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
@@ -474,24 +485,20 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
            && !controlledCrashMode && !useExternalProcess();
   }
 
+  public boolean isMultipleServerTest() {
+    if ((isActiveActive() && canRunActiveActive()) || (isActivePassive() && canRunActivePassive())) { return true; }
+    return false;
+  }
+
   public void initializeTestRunner() throws Exception {
     initializeTestRunner(false);
   }
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
-    MultipleServerManager serverManager = null;
-    boolean isMultipleServerTest = false;
-    if (isActiveActive() && canRunActiveActive()) {
-      isMultipleServerTest = true;
-      serverManager = aaServerManager;
-    } else if (isActivePassive() && canRunActivePassive()) {
-      isMultipleServerTest = true;
-      serverManager = apServerManager;
-    }
     runner = new DistributedTestRunner(runnerConfig, configFactory(), configHelper(), getApplicationClass(),
                                        getOptionalAttributes(), getApplicationConfigBuilder().newApplicationConfig(),
-                                       getStartServer(), isMutateValidateTest, isMultipleServerTest, serverManager,
-                                       transparentAppConfig);
+                                       getStartServer(), isMutateValidateTest, isMultipleServerTest(),
+                                       multipleServerManager, transparentAppConfig);
   }
 
   protected boolean canRun() {
@@ -561,37 +568,17 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   /*
    * Can be overwritten for customerizing active passive test
    */
-  protected void customizeActivePassiveTest() throws Exception {
-    apServerManager.startActivePassiveServers();
+  protected void customizeActivePassiveTest(ActivePassiveServerManager manager) throws Exception {
+    manager.startActivePassiveServers();
   }
 
-  protected void customizeActiveActiveTest() throws Exception {
-    aaServerManager.startActiveActiveServers();
+  protected void customizeActiveActiveTest(ActiveActiveServerManager manager) throws Exception {
+    manager.startActiveActiveServers();
   }
 
-  protected void apStartServer(int index) throws Exception {
-    apServerManager.startServer(index);
-  }
-
-  protected void apStopServer(int index) throws Exception {
-    apServerManager.stopServer(index);
-  }
-
-  protected void apCleanupServerDB(int index) throws Exception {
-    apServerManager.cleanupServerDB(index);
-  }
-
-  protected void apCrashActiveserver() throws Exception {
-    apServerManager.crashActive();
-  }
-
-  protected int apGetActiveIndex() throws Exception {
-    return apServerManager.getAndUpdateActiveIndex();
-  }
-
-  protected void waitServerIsPassiveStandby(int index, int waitSeconds) throws Exception {
-    boolean isStandby = apServerManager.waitServerIsPassiveStandby(index, waitSeconds);
-    Assert.assertTrue(isStandby);
+  private void runMultipleServersTest() throws Exception {
+    if (isActiveActive()) customizeActiveActiveTest((ActiveActiveServerManager) multipleServerManager);
+    else if (isActivePassive()) customizeActivePassiveTest((ActivePassiveServerManager) multipleServerManager);
   }
 
   protected void duringRunningCluster() throws Exception {
@@ -600,11 +587,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void test() throws Exception {
     if (canRun()) {
-      if (controlledCrashMode && isActivePassive() && apServerManager != null) {
-        // active passive tests
-        customizeActivePassiveTest();
-      } else if (controlledCrashMode && isActiveActive() && aaServerManager != null) {
-        customizeActiveActiveTest();
+      if (controlledCrashMode && isMultipleServerTest() && multipleServerManager != null) {
+        // active passive tests and active-active tests
+        runMultipleServersTest();
       } else if (controlledCrashMode && serverControls != null) {
         startServerControlsAndProxies();
       } else if (serverControl != null && crasher == null) {
@@ -657,13 +642,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       dumpServerControl(serverControl);
     }
 
-    if (apServerManager != null) {
-      apServerManager.dumpAllServers(pid, getThreadDumpCount(), getThreadDumpInterval());
-      pid = apServerManager.getPid();
-    }
-
-    if (aaServerManager != null) {
-      aaServerManager.dumpAllServers(pid, getThreadDumpCount(), getThreadDumpInterval());
+    if (multipleServerManager != null) {
+      multipleServerManager.dumpAllServers(pid, getThreadDumpCount(), getThreadDumpInterval());
+      pid = multipleServerManager.getPid();
     }
 
     if (serverControls != null) {
@@ -707,9 +688,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     if (controlledCrashMode) {
       if (isActivePassive() && canRunActivePassive()) {
         System.out.println("Currently running java processes: " + ProcessInfo.ps_grep_java());
-        apServerManager.stopAllServers();
-      } else if (isActiveActive() && canRunActiveActive()) {
-        aaServerManager.stopAllServers();
+        multipleServerManager.stopAllServers();
       } else if (isCrashy() && canRunCrash()) {
         synchronized (crashTestState) {
           crashTestState.setTestState(TestState.STOPPING);

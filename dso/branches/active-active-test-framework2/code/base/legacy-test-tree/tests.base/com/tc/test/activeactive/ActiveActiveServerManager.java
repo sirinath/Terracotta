@@ -18,7 +18,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActiveActiveServerManager implements MultipleServerManager {
+public class ActiveActiveServerManager extends MultipleServerManager {
   /**
    * One <code>ActivePassiveServerManager</code> for each group since they logically form a group
    */
