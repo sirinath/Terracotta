@@ -38,7 +38,6 @@ import javax.management.remote.JMXConnector;
 public class ActivePassiveServerManager implements MultipleServerManager {
   private static final String                   HOST               = "localhost";
   private static final String                   SERVER_NAME        = "testserver";
-  private static final String                   CONFIG_FILE_NAME   = "active-passive-server-config.xml";
   private static final boolean                  DEBUG              = false;
   private static final int                      NULL_VAL           = -1;
 
@@ -97,14 +96,14 @@ public class ActivePassiveServerManager implements MultipleServerManager {
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     boolean isProxyL2GroupPorts) throws Exception {
     this(isActivePassiveTest, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, extraJvmArgs,
-         false, true, 0);
+         isProxyL2GroupPorts, false, 0);
   }
 
   // Should be called directly when an active-active test is to be run
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, MultipleServersTestSetupManager setupManger, File javaHome,
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
-                                    boolean isProxyL2GroupPorts, boolean isConfigToBeWritten, int startIndexOfServer)
+                                    boolean isProxyL2GroupPorts, boolean isActiveActive, int startIndexOfServer)
       throws Exception {
     this.isProxyL2groupPorts = isProxyL2GroupPorts;
     this.jvmArgs = extraJvmArgs;
@@ -142,7 +141,7 @@ public class ActivePassiveServerManager implements MultipleServerManager {
     this.startIndexOfServer = startIndexOfServer;
     createServers(this.startIndexOfServer);
 
-    if (isConfigToBeWritten) {
+    if (!isActiveActive) {
       GroupData[] groupList = new GroupData[1];
       groupList[0] = new GroupData(dsoPorts, jmxPorts, (isProxyL2GroupPorts) ? proxyL2GroupPorts : l2GroupPorts,
                                    serverNames);

@@ -26,7 +26,6 @@ public class ActiveActiveServerManager implements MultipleServerManager {
   private ActiveActiveTestSetupManager setupManger;
   private ProxyConnectManager[]        proxyManagers;
   private GroupData[]                  groupsData;
-  private static final String          CONFIG_FILE_NAME = "active-active-server-config.xml";
 
   public ActiveActiveServerManager(File tempDir, PortChooser portChooser, String configModel,
                                    ActiveActiveTestSetupManager setupManger, File javaHome,
@@ -45,13 +44,17 @@ public class ActiveActiveServerManager implements MultipleServerManager {
     String configFileLocation = tempDir + File.separator + CONFIG_FILE_NAME;
     File configFile = new File(configFileLocation);
 
+    if (this.setupManger.getServerCount() < 2) { throw new AssertionError(
+                                                                          "Active-test tests involve 2 or more DSO servers: serverCount=["
+                                                                              + this.setupManger.getServerCount() + "]"); }
+
     int noOfServers = 0;
     for (int i = 0; i < groupCount; i++) {
       ActivePassiveTestSetupManager activePasssiveTestSetupManager = createActivePassiveTestSetupManager(i);
       activePassiveServerManagers[i] = new ActivePassiveServerManager(true, tempDir, portChooser, configModel,
                                                                       activePasssiveTestSetupManager, javaHome,
                                                                       configFactory, extraJvmArgs, isProxyL2GroupPorts,
-                                                                      false, noOfServers);
+                                                                      true, noOfServers);
       noOfServers += setupManger.getGroupMemberCount(i);
     }
 
@@ -137,7 +140,7 @@ public class ActiveActiveServerManager implements MultipleServerManager {
       activePassiveServerManagers[i].dumpAllServers(currentPid, dumpCount, dumpInterval);
     }
   }
-  
+
   public boolean crashActiveServersAfterMutate() {
     if (this.setupManger.getServerCrashMode().equals(MultipleServersCrashMode.CRASH_AFTER_MUTATE)) { return true; }
     return false;
