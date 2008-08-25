@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface MultipleServerManager {
 
+  public static final String CONFIG_FILE_NAME = "multiple-servers-config.xml";
+
   public ProxyConnectManager[] getL2ProxyManagers();
 
   public List getErrors();

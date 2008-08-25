@@ -16,7 +16,6 @@ public abstract class MultipleServersTestSetupManager {
   protected int                          electionTime             = 5;
 
   public void setServerCount(int count) {
-    if (count < 2) { throw new AssertionError("Server count must be 2 or more:  count=[" + count + "]"); }
     serverCount = count;
   }
 
