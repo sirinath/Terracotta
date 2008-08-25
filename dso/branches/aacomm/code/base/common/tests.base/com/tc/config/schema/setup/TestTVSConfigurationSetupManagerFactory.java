@@ -144,34 +144,34 @@ import java.util.Set;
  */
 public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfigurationSetupManagerFactory {
 
-  public static final int                MODE_CENTRALIZED_CONFIG = 0;
-  public static final int                MODE_DISTRIBUTED_CONFIG = 1;
+  public static final int                   MODE_CENTRALIZED_CONFIG = 0;
+  public static final int                   MODE_DISTRIBUTED_CONFIG = 1;
 
-  private final TestConfigBeanSet        beanSet;
-  private final TestConfigBeanSet        l1_beanSet;
+  private final TestConfigBeanSet           beanSet;
+  private final TestConfigBeanSet           l1_beanSet;
 
-  private final TestConfigurationCreator l1ConfigurationCreator;
-  private final TestConfigurationCreator l2ConfigurationCreator;
+  private final TestConfigurationCreator    l1ConfigurationCreator;
+  private final TestConfigurationCreator    l2ConfigurationCreator;
 
-  private final NewSystemConfig          sampleSystem;
-  private final NewCommonL1Config        sampleL1Common;
-  private final NewL1DSOConfig           sampleL1DSO;
-  private final NewCommonL2Config        sampleL2Common;
-  private final NewL2DSOConfig           sampleL2DSO;
-  private final NewDSOApplicationConfig  sampleDSOApplication;
-  private final ActiveServerGroupsConfig sampleActiveServerGroups;
-  private final NewHaConfig              sampleHa;
+  private final NewSystemConfig             sampleSystem;
+  private final NewCommonL1Config           sampleL1Common;
+  private final NewL1DSOConfig              sampleL1DSO;
+  private final NewCommonL2Config           sampleL2Common;
+  private final NewL2DSOConfig              sampleL2DSO;
+  private final NewDSOApplicationConfig     sampleDSOApplication;
+  private final NewHaConfig                 sampleHa;
+  private final ActiveServerGroupsConfig    sampleActiveServerGroups;
 
-  private final String                   defaultL2Identifier;
+  private final String                      defaultL2Identifier;
 
-  private final int                      mode;
+  private final int                         mode;
 
   // TODO: fix the way settableObjects are used
   // this is temporary
-  private Enum                           persistenceMode         = PersistenceMode.TEMPORARY_SWAP_ONLY;
-  private boolean                        gcEnabled               = true;
-  private boolean                        gcVerbose               = false;
-  private int                            gcIntervalInSec         = 3600;
+  private Enum                              persistenceMode         = PersistenceMode.TEMPORARY_SWAP_ONLY;
+  private boolean                           gcEnabled               = true;
+  private boolean                           gcVerbose               = false;
+  private int                               gcIntervalInSec         = 3600;
 
   public TestTVSConfigurationSetupManagerFactory(int mode, String l2Identifier,
                                                  IllegalConfigurationChangeHandler illegalConfigurationChangeHandler) {
@@ -342,7 +342,6 @@ public class TestTVSConfigurationSetupManagerFactory extends BaseTVSConfiguratio
 
     Servers l2s = beanSetArg.serversBean();
     ActiveServerGroups groups = l2s.getActiveServerGroups();
-    Assert.assertNotNull(groups);
     if (groups != null) {
       ActiveServerGroup[] groupArray = groups.getActiveServerGroupArray();
 

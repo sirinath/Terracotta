@@ -20,16 +20,15 @@ import java.io.IOException;
  */
 public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements TCMessage {
 
-  private final MessageMonitor    monitor;
-  private final SetOnceFlag       processed = new SetOnceFlag();
-  private final SetOnceFlag       isSent    = new SetOnceFlag();
-  private final TCMessageType     type;
-  private final MessageChannel    channel;
-  private int                     nvCount;
-
+  private final MessageMonitor     monitor;
+  private final SetOnceFlag        processed = new SetOnceFlag();
+  private final SetOnceFlag        isSent    = new SetOnceFlag();
+  private final TCMessageType      type;
+  private final MessageChannel     channel;
+  private int                      nvCount;
   private TCByteBufferOutputStream out;
-  private TCByteBufferInputStream bbis;
-  private int                     messageVersion;
+  private TCByteBufferInputStream  bbis;
+  private int                      messageVersion;
 
   /**
    * Creates a new TCMessage to write data into (ie. to send to the network)
@@ -78,8 +77,8 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   protected TCByteBufferInputStream getInputStream() {
     return this.bbis;
   }
-  
-//use me to write directly to the message data (as opposed to using the name-value mechanism)
+
+  // use me to write directly to the message data (as opposed to using the name-value mechanism)
   protected TCByteBufferOutputStream getOutputStream() {
     return this.out;
   }
@@ -97,20 +96,15 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
    * Prepares all instance data into the payload byte buffer array in preparation for sending it.
    */
   public void dehydrate() {
+    dehydrate(null);
+  }
+  
+  private void dehydrate(TCByteBuffer[] nvData) {
     if (processed.attemptSet()) {
       try {
-        dehydrateValues();
-
-        final TCByteBuffer[] nvData = out.toArray();
-
-        Assert.eval(nvData.length > 0);
-        nvData[0].putInt(0, nvCount);
+        if(nvData == null) nvData = nvToTCByteBufferArray();
         setPayload(nvData);
-
-        TCMessageHeader hdr = (TCMessageHeader) getHeader();
-        hdr.setMessageType(getMessageType().getType());
-        hdr.setMessageTypeVersion(getMessageVersion());
-
+        populateHeader();
         seal();
       } catch (Throwable t) {
         t.printStackTrace();
@@ -121,7 +115,23 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
       }
     }
   }
+  
+  private final TCByteBuffer[] nvToTCByteBufferArray() {
+    dehydrateValues();
 
+    final TCByteBuffer[] nvData = out.toArray();
+
+    Assert.eval(nvData.length > 0);
+    nvData[0].putInt(0, nvCount);
+    return nvData;
+  }
+
+  private void populateHeader() {
+    TCMessageHeader hdr = (TCMessageHeader) getHeader();
+    hdr.setMessageType(getMessageType().getType());
+    hdr.setMessageTypeVersion(getMessageVersion());
+  }
+  
   /**
    * Reads the payload byte buffer data and sets instance data. This should be called after the message is read from the
    * network before it is released to the client for use. XXX:: This synchronization is there to create proper memory
@@ -326,6 +336,16 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
     monitor.newOutgoingMessage(this);
   }
 
+  /*
+   * send with payload from a dehydrated message
+   */
+  protected void cloneAndSend(TCMessageImpl message) {
+    if (isSent.attemptSet()) {
+      dehydrate(message.getPayload());
+      basicSend();
+    }
+  }
+  
   // FIXME:: This is here till them tc-comms merge.
   // TODO:: Remove this method once getSourceID and getDestinationID is merged into truck. You can use those methods
   // instead.

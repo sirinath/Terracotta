@@ -19,6 +19,10 @@ public class DefaultConnectionIdFactory implements ConnectionIDFactory {
   public synchronized ConnectionID nextConnectionId() {
     return new ConnectionID(sequence++, uid);
   }
+  
+  public ConnectionID makeConnectionId(long channelID) {
+    throw new UnsupportedOperationException();
+  }
 
   public Set loadConnectionIDs() {
     return Collections.EMPTY_SET;

@@ -41,7 +41,7 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
 
     // for some test cases to enable l1reconnect
     if (enableL1Reconnect()) {
-      setJvmArgsL1Reconnect((ArrayList)jvmArgs);
+      setJvmArgsL1Reconnect((ArrayList) jvmArgs);
     }
     
     if (enableL2Reconnect()) {
