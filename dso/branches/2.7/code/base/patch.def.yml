@@ -15,4 +15,3 @@ level: 1
 #- lib/tc.jar
 files: 
  - lib/tc.jar
- - bin/version.sh
