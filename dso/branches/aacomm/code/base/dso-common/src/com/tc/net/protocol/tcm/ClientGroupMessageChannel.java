@@ -4,13 +4,15 @@
  */
 package com.tc.net.protocol.tcm;
 
+import com.tc.net.groups.GroupID;
+
 public interface ClientGroupMessageChannel extends ClientMessageChannel {
 
   public ClientMessageChannel[] getChannels();
 
-  public Integer[] getGroupIDs();
+  public GroupID[] getGroupIDs();
 
-  public TCMessage createMessage(Integer groupID, TCMessageType type);
+  public TCMessage createMessage(GroupID groupID, TCMessageType type);
 
   public void broadcast(final TCMessageImpl message);
 
