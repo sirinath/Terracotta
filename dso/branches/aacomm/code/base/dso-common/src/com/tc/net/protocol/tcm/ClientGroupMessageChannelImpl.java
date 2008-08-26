@@ -32,7 +32,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
   private final SessionProvider       sessionProvider;
 
   private final CommunicationsManager communicationsManager;
-  private final Integer[]             groupIDs;
+  private final GroupID[]             groupIDs;
   private final HashMap               groupToChannelMap = new HashMap();
 
   public ClientGroupMessageChannelImpl(TCMessageFactory msgFactory, SessionProvider sessionProvider,
@@ -43,7 +43,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     this.sessionProvider = sessionProvider;
 
     this.communicationsManager = communicationsManager;
-    this.groupIDs = new Integer[addressProviders.length];
+    this.groupIDs = new GroupID[addressProviders.length];
 
     logger.info("Create active channels");
     for (int i = 0; i < addressProviders.length; ++i) {
@@ -51,7 +51,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
           .createClientChannel(this.sessionProvider, -1, null, 0, 10000, addressProviders[i],
                                TransportHandshakeMessage.NO_CALLBACK_PORT, null, this.msgFactory,
                                new TCMessageRouterImpl());
-      Integer groupID = new Integer(addressProviders[i].getGroupId());
+      GroupID groupID = new GroupID(addressProviders[i].getGroupId());
       groupIDs[i] = groupID;
       groupToChannelMap.put(groupID, channel);
       logger.info("Created sub-channel[" + i + "]:" + addressProviders[i]);
@@ -85,11 +85,11 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     return (ClientMessageChannel[]) groupToChannelMap.values().toArray();
   }
 
-  public Integer[] getGroupIDs() {
+  public GroupID[] getGroupIDs() {
     return groupIDs;
   }
 
-  public TCMessage createMessage(Integer groupID, TCMessageType type) {
+  public TCMessage createMessage(GroupID groupID, TCMessageType type) {
     ClientMessageChannel ch = (ClientMessageChannel) groupToChannelMap.get(groupID);
     Assert.assertNotNull(ch);
     TCMessage rv = msgFactory.createMessage(ch, type);
@@ -97,9 +97,9 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
   }
 
   public TCMessage createMessage(TCMessageType type) {
-    return createMessage(new Integer(0), type);
+    return createMessage(new GroupID(0), type);
   }
-  
+
   private String connectionInfo(ClientMessageChannel ch) {
     return (ch.getLocalAddress() + " -> " + ch.getRemoteAddress());
   }

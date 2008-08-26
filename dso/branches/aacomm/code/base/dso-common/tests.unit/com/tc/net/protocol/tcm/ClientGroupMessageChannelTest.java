@@ -11,6 +11,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
+import com.tc.net.groups.GroupID;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.msgs.PingMessage;
@@ -44,7 +45,7 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
   CommunicationsManager          clientComms;
   CommunicationsManager[]        serverComms     = new CommunicationsManager[L2_COUNT];
   NetworkListener[]              lsnr            = new NetworkListener[L2_COUNT];
-  Integer[]                      groupIDs;
+  GroupID[]                      groupIDs;
   ClientGroupMessageChannel      groupChannel;
   SequenceGenerator              sequence;
   MessageSendAndReceiveWatcher[] clientWatcheres = new MessageSendAndReceiveWatcher[L2_COUNT];
@@ -432,7 +433,7 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     return ch;
   }
 
-  private PingMessage createMessage(Integer groupID) {
+  private PingMessage createMessage(GroupID groupID) {
     PingMessage ping = (PingMessage) groupChannel.createMessage(groupID, TCMessageType.PING_MESSAGE);
     ping.initialize(sq);
     return ping;
