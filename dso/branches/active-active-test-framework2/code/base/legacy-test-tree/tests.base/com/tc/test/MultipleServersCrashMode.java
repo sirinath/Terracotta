@@ -6,6 +6,7 @@ package com.tc.test;
 
 public abstract class MultipleServersCrashMode {
 
+  public static final String NO_CRASH                = "no-crash";
   public static final String CRASH_AFTER_MUTATE      = "crash-after-mutate";
   public static final String CONTINUOUS_ACTIVE_CRASH = "continuous-active-crash";
   public static final String RANDOM_SERVER_CRASH     = "random-server-crash";

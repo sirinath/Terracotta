@@ -44,7 +44,6 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   private final File                            tempDir;
   private final PortChooser                     portChooser;
   private final String                          configModel;
-  private final MultipleServersTestSetupManager setupManger;
 
   private final int                             serverCount;
   private final String                          serverCrashMode;
@@ -105,12 +104,12 @@ public class ActivePassiveServerManager extends MultipleServerManager {
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     boolean isProxyL2GroupPorts, boolean isActiveActive, int startIndexOfServer)
       throws Exception {
+    super(setupManger);
+    
     this.isProxyL2groupPorts = isProxyL2GroupPorts;
     this.jvmArgs = extraJvmArgs;
 
     if (!isActivePassiveTest) { throw new AssertionError("A non-ActivePassiveTest is trying to use this class."); }
-
-    this.setupManger = setupManger;
 
     serverCount = this.setupManger.getServerCount();
 
@@ -709,12 +708,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   public int[] getL2GroupPorts() {
     return isProxyL2groupPorts ? proxyL2GroupPorts : l2GroupPorts;
   }
-
-  public boolean crashActiveServerAfterMutate() {
-    if (serverCrashMode.equals(MultipleServersCrashMode.CRASH_AFTER_MUTATE)) { return true; }
-    return false;
-  }
-
+  
   public void addServersAndGroupToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
     for (int i = 0; i < serverCount; i++) {
 
@@ -824,9 +818,4 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   public void crashActiveServers() throws Exception {
     crashActive();
   }
-
-  public boolean crashActiveServersAfterMutate() {
-    return crashActiveServerAfterMutate();
-  }
-
 }

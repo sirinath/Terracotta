@@ -12,6 +12,12 @@ import java.util.List;
 public abstract class MultipleServerManager {
 
   public static final String CONFIG_FILE_NAME = "multiple-servers-config.xml";
+  
+  protected final MultipleServersTestSetupManager setupManger;
+  
+  public MultipleServerManager(MultipleServersTestSetupManager setupManger) {
+    this.setupManger = setupManger;
+  }
 
   public abstract ProxyConnectManager[] getL2ProxyManagers();
 
@@ -21,7 +27,9 @@ public abstract class MultipleServerManager {
 
   public abstract void dumpAllServers(int currentPid, int dumpCount, long dumpInterval) throws Exception;
 
-  public abstract boolean crashActiveServersAfterMutate();
+  public MultipleServersTestSetupManager getMultipleServersTestManager() {
+    return setupManger;
+  }
 
   public abstract void crashActiveServers() throws Exception;
 
