@@ -1,20 +1,17 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.common;
 
-import java.awt.Component;
+import org.dijon.Component;
 
-import javax.swing.JComponent;
-
-public class ComponentNode extends XTreeNode implements IComponentProvider {
+public class ComponentNode extends XTreeNode {
   private String    m_label;
   private Component m_component;
 
   public ComponentNode() {
     super();
-  }
+  }    
 
   public ComponentNode(String label) {
     this(label, null);
@@ -22,7 +19,7 @@ public class ComponentNode extends XTreeNode implements IComponentProvider {
 
   public ComponentNode(String label, Component component) {
     this();
-
+      
     setLabel(label);
     setComponent(component);
   }
@@ -36,18 +33,16 @@ public class ComponentNode extends XTreeNode implements IComponentProvider {
   }
 
   public void setComponent(Component comp) {
-    if (m_component instanceof XContainer) {
-      ((XContainer) m_component).tearDown();
+    if(m_component instanceof XContainer) {
+      ((XContainer)m_component).tearDown();
     }
     m_component = comp;
-    if (comp != null) {
-      if (comp instanceof JComponent) {
-        ((JComponent) comp).revalidate();
-      }
+    if(comp != null) {
+      comp.revalidate();
       comp.repaint();
     }
   }
-
+    
   public Component getComponent() {
     return m_component;
   }
@@ -59,3 +54,4 @@ public class ComponentNode extends XTreeNode implements IComponentProvider {
     setComponent(null);
   }
 }
+  

@@ -5,7 +5,6 @@
 package com.tc.admin;
 
 import org.dijon.ContainerResource;
-import org.dijon.Item;
 import org.dijon.ScrollPane;
 import org.dijon.TabbedPane;
 
@@ -15,6 +14,7 @@ import com.tc.admin.common.PropertyTableModel;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XTextArea;
+import com.tc.util.ProductInfo;
 
 import java.util.Date;
 import java.util.concurrent.Callable;
@@ -22,14 +22,14 @@ import java.util.concurrent.Callable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class ServerPanel extends XContainer {
-  private AdminClientContext m_acc;
-  private ServerNode         m_serverNode;
-  private PropertyTable      m_propertyTable;
-  private StatusView         m_statusView;
-  private ProductInfoPanel   m_productInfoPanel;
-  private TabbedPane         m_tabbedPane;
-  private XTextArea          m_environmentTextArea;
-  private XTextArea          m_configTextArea;
+  private AdminClientContext      m_acc;
+  private ServerNode              m_serverNode;
+  private PropertyTable           m_propertyTable;
+  private StatusView              m_statusView;
+  private ProductInfoPanel        m_productInfoPanel;
+  private TabbedPane              m_tabbedPane;
+  private XTextArea               m_environmentTextArea;
+  private XTextArea               m_configTextArea;
 
   public ServerPanel(ServerNode serverNode) {
     super(serverNode);
@@ -37,15 +37,10 @@ public class ServerPanel extends XContainer {
     m_serverNode = serverNode;
     m_acc = AdminClient.getContext();
 
-    load((ContainerResource) m_acc.getTopRes().getComponent("ServerPanel"));
+    load((ContainerResource) m_acc.topRes.getComponent("ServerPanel"));
 
     m_tabbedPane = (TabbedPane) findComponent("TabbedPane");
 
-    if(!m_serverNode.getPersistenceMode().equals("permanent-store")) {
-      String warning = m_acc.getString("server.non-restartable.warning");
-      PersistenceModeWarningPanel restartabilityInfoPanel = new PersistenceModeWarningPanel(warning);
-      ((Item) findComponent("RestartabilityInfoItem")).setChild(restartabilityInfoPanel);
-    }
     m_propertyTable = (PropertyTable) findComponent("ServerInfoTable");
     DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
     m_propertyTable.setDefaultRenderer(Long.class, renderer);
@@ -64,27 +59,24 @@ public class ServerPanel extends XContainer {
   }
 
   protected void storePreferences() {
-    m_acc.storePrefs();
+    AdminClientContext acc = AdminClient.getContext();
+    acc.client.storePrefs();
   }
 
-  private static class ServerState {
-    private Date    fStartDate;
-    private Date    fActivateDate;
-    private String  fVersion;
-    private String  fCopyright;
-    private String  fEnvironment;
-    private String  fConfig;
-    private Integer fDSOListenPort;
+  class ServerState {
+    private Date        fStartDate;
+    private Date        fActivateDate;
+    private ProductInfo fProductInfo;
+    private String      fEnvironment;
+    private String      fConfig;
+    private Integer     fDSOListenPort;
 
-    ServerState(Date startDate, Date activateDate, String version, String copyright, String environment, String config,
-                Integer dsoListenPort) {
+    ServerState(Date startDate, Date activateDate, ProductInfo productInfo, String environment, String config, Integer dsoListenPort) {
       fStartDate = startDate;
       fActivateDate = activateDate;
-      fVersion = version;
-      fCopyright = copyright;
+      fProductInfo = productInfo;
       fEnvironment = environment;
       fConfig = config;
-      fDSOListenPort = dsoListenPort;
     }
 
     Date getStartDate() {
@@ -95,12 +87,8 @@ public class ServerPanel extends XContainer {
       return fActivateDate;
     }
 
-    String getVersion() {
-      return fVersion;
-    }
-
-    String getCopyright() {
-      return fCopyright;
+    ProductInfo getProductInfo() {
+      return fProductInfo;
     }
 
     String getEnvironment() {
@@ -110,7 +98,7 @@ public class ServerPanel extends XContainer {
     String getConfig() {
       return fConfig;
     }
-
+    
     Integer getDSOListenPort() {
       return fDSOListenPort;
     }
@@ -119,16 +107,15 @@ public class ServerPanel extends XContainer {
   private class ServerStateWorker extends BasicWorker<ServerState> {
     private ServerStateWorker() {
       super(new Callable<ServerState>() {
-        public ServerState call() throws Exception {
+        public ServerState call() {
           Date startDate = new Date(m_serverNode.getStartTime());
           Date activateDate = new Date(m_serverNode.getActivateTime());
-          String version = m_serverNode.getProductVersion();
-          String copyright = m_serverNode.getProductCopyright();
+          ProductInfo productInfo = m_serverNode.getProductInfo();
           String environment = m_serverNode.getEnvironment();
           String config = m_serverNode.getConfig();
           Integer dsoListenPort = m_serverNode.getDSOListenPort();
-
-          return new ServerState(startDate, activateDate, version, copyright, environment, config, dsoListenPort);
+          
+          return new ServerState(startDate, activateDate, productInfo, environment, config, dsoListenPort);
         }
       });
     }
@@ -139,7 +126,7 @@ public class ServerPanel extends XContainer {
         m_acc.log(e);
       } else {
         ServerState serverState = getResult();
-        showProductInfo(serverState.getVersion(), serverState.getCopyright());
+        showProductInfo(serverState.getProductInfo());
         m_environmentTextArea.setText(serverState.getEnvironment());
         m_configTextArea.setText(serverState.getConfig());
       }
@@ -152,10 +139,8 @@ public class ServerPanel extends XContainer {
       if (getException() == null) {
         ServerState serverState = getResult();
         String startTime = serverState.getStartDate().toString();
-        setStatusLabel(m_acc.format("server.started.label", startTime));
-        m_acc.setStatus(m_acc.format("server.started.status", m_serverNode, startTime));
-      } else {
-        m_acc.log(getException());
+        setStatusLabel(m_acc.format("server.started.label", new Object[] { startTime }));
+        m_acc.controller.setStatus(m_acc.format("server.started.status", new Object[] { m_serverNode, startTime }));
       }
     }
   }
@@ -166,10 +151,11 @@ public class ServerPanel extends XContainer {
       if (getException() == null) {
         ServerState serverState = getResult();
         String activateTime = serverState.getActivateDate().toString();
-        setStatusLabel(m_acc.format("server.activated.label", activateTime));
-        m_acc.setStatus(m_acc.format("server.activated.status", m_serverNode, activateTime));
-      } else {
-        m_acc.log(getException());
+
+        setStatusLabel(m_acc.format("server.activated.label", new Object[] { activateTime }));
+        m_acc.controller.addServerLog(m_serverNode.getConnectionContext());
+        m_acc.controller
+            .setStatus(m_acc.format("server.activated.status", new Object[] { m_serverNode, activateTime }));
       }
     }
   }
@@ -179,8 +165,9 @@ public class ServerPanel extends XContainer {
       super.finished();
       if (getException() == null) {
         String startTime = new Date().toString();
-        setStatusLabel(m_acc.format("server.initializing.label", startTime));
-        m_acc.setStatus(m_acc.format("server.initializing.status", m_serverNode, startTime));
+        setStatusLabel(m_acc.format("server.initializing.label", new Object[] { startTime }));
+        m_acc.controller
+            .setStatus(m_acc.format("server.initializing.status", new Object[] { m_serverNode, startTime }));
       }
     }
   }
@@ -190,8 +177,8 @@ public class ServerPanel extends XContainer {
       super.finished();
       if (getException() == null) {
         String startTime = new Date().toString();
-        setStatusLabel(m_acc.format("server.standingby.label", startTime));
-        m_acc.setStatus(m_acc.format("server.standingby.status", m_serverNode, startTime));
+        setStatusLabel(m_acc.format("server.standingby.label", new Object[] { startTime }));
+        m_acc.controller.setStatus(m_acc.format("server.standingby.status", new Object[] { m_serverNode, startTime }));
       }
     }
   }
@@ -201,27 +188,29 @@ public class ServerPanel extends XContainer {
    * activated() under the presumption that a non-active server won't be saying anything.
    */
   void started() {
-    m_acc.execute(new StartedWorker());
+    m_acc.executorService.execute(new StartedWorker());
   }
 
   void activated() {
-    m_acc.execute(new ActivatedWorker());
+    m_acc.executorService.execute(new ActivatedWorker());
   }
 
   void passiveUninitialized() {
-    m_acc.execute(new PassiveUninitializedWorker());
+    m_acc.executorService.execute(new PassiveUninitializedWorker());
   }
 
   void passiveStandby() {
-    m_acc.execute(new PassiveStandbyWorker());
+    m_acc.executorService.execute(new PassiveStandbyWorker());
   }
 
   void disconnected() {
     String startTime = new Date().toString();
 
-    setStatusLabel(m_acc.format("server.disconnected.label", startTime));
+    setStatusLabel(m_acc.format("server.disconnected.label", new Object[] { startTime }));
     hideProductInfo();
-    m_acc.setStatus(m_acc.format("server.disconnected.status", m_serverNode, startTime));
+
+    m_acc.controller.removeServerLog(m_serverNode.getConnectionContext());
+    m_acc.controller.setStatus(m_acc.format("server.disconnected.status", new Object[] { m_serverNode, startTime }));
   }
 
   private void setTabbedPaneEnabled(boolean enabled) {
@@ -249,17 +238,16 @@ public class ServerPanel extends XContainer {
 
   /**
    * The fields listed below are on ProductNode. If those methods change, so will these fields need to change.
-   * PropertyTable uses reflection to access values to display. TODO: i18n
+   * PropertyTable uses reflection to access values to display.
+   * TODO: i18n
    */
-  private void showProductInfo(String version, String copyright) {
-    String[] fields = { "CanonicalHostName", "HostAddress", "Port", "DSOListenPort", "ProductVersion",
-        "ProductBuildID", "ProductLicense", "PersistenceMode", "FailoverMode" };
-    String[] headings = { "Host", "Address", "JMX port", "DSO port", "Version", "Build", "License", "Persistence mode",
-        "Failover mode" };
+  private void showProductInfo(ProductInfo productInfo) {
+    String[] fields = { "CanonicalHostName", "HostAddress", "Port", "DSOListenPort", "ProductVersion", "ProductBuildID", "ProductLicense" };
+    String[] headings = { "Host", "Address", "JMX port", "DSO port", "Version", "Build", "License" };
     m_propertyTable.setModel(new PropertyTableModel(m_serverNode, fields, headings));
     m_propertyTable.getAncestorOfClass(ScrollPane.class).setVisible(true);
 
-    m_productInfoPanel.init(version, copyright);
+    m_productInfoPanel.init(productInfo);
     m_productInfoPanel.setVisible(true);
     setTabbedPaneEnabled(true);
 
@@ -292,5 +280,5 @@ public class ServerPanel extends XContainer {
     m_tabbedPane = null;
     m_environmentTextArea = null;
     m_configTextArea = null;
-  }
+ }
 }

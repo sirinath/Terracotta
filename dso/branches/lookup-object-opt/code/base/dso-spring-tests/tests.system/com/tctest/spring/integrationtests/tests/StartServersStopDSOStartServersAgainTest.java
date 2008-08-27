@@ -25,7 +25,6 @@ public class StartServersStopDSOStartServersAgainTest extends SpringDeploymentTe
   }
 
   public StartServersStopDSOStartServersAgainTest() {
-    //
   }
 
   public void testStartServersStopDSOStartServersAgain() throws Exception {

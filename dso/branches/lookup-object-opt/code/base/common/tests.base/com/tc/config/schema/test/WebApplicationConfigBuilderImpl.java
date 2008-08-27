@@ -14,7 +14,8 @@ import java.util.Map;
  */
 public class WebApplicationConfigBuilderImpl extends BaseConfigBuilder implements WebApplicationConfigBuilder {
 
-  private static final String TAG_NAME = "web-application";
+  private static final String TAG_NAME       = "web-application";
+  private static final String ATTRIBUTE_NAME = "synchronous-write";
 
   private Map                 attributes;
 

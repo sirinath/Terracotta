@@ -18,15 +18,20 @@ import java.util.List;
 
 public abstract class ServerCrashingAppBase extends AbstractErrorCatchingTransparentApp {
 
-  public static final String      CONFIG_FILE = "config-file";
-  public static final String      PORT_NUMBER = "port-number";
-  public static final String      HOST_NAME   = "host-name";
+  public static final String CONFIG_FILE = "config-file";
+  public static final String PORT_NUMBER = "port-number";
+  public static final String HOST_NAME   = "host-name";
 
-  private final ApplicationConfig config;
+  private ApplicationConfig  config;
 
   public ServerCrashingAppBase(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
     super(appId, config, listenerProvider);
     this.config = config;
+  }
+
+  // used by external clients
+  public ServerCrashingAppBase() {
+    super();
   }
 
   public ApplicationConfig getConfig() {

@@ -1,9 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.stats;
 
+import com.tc.objectserver.api.GCStats;
+import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.impl.ServerManagementContext;
@@ -18,7 +19,7 @@ import java.lang.reflect.Method;
 
 /**
  * This is the root interface to the global DSO Server statistics.
- * 
+ *
  * @see StatsSupport
  * @see DSOStats
  */
@@ -30,8 +31,10 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
   private final SampledCounter       flushRate;
   private final ObjectManagerStats   objMgrStats;
   private final SampledCounter       txnRate;
+  private final ObjectManagerMBean   objManager;
 
   public DSOStatsImpl(ServerManagementContext context) {
+    this.objManager = context.getObjectManager();
     this.serverStats = context.getServerStats();
     this.objMgrStats = serverStats.getObjectManagerStats();
     this.faultRate = serverStats.getObjectFaultCounter();
@@ -57,10 +60,11 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
     rv.setDoubleValue(value);
     return rv;
   }
-
+  
   public CountStatistic getCacheMissRate() {
-    return StatsUtil.makeCountStat(objMgrStats.getCacheMissRate());
+    return StatsUtil.makeCountStat( objMgrStats.getCacheMissRate());
   }
+
 
   public Statistic[] getStatistics(String[] names) {
     int count = names.length;
@@ -78,4 +82,9 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
 
     return result;
   }
+
+  public GCStats[] getGarbageCollectorStats() {
+    return this.objManager.getGarbageCollectorStats();
+  }
+
 }

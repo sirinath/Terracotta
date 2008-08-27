@@ -434,7 +434,7 @@ public class StatisticData implements Serializable {
       return line.charAt(position++);
     }
 
-    private void setField(final StatisticData data, final int position, final String value) {
+    private void setField(final StatisticData data, final int position, final String value) throws ParseException {
       if (null == value) {
         return;
       }

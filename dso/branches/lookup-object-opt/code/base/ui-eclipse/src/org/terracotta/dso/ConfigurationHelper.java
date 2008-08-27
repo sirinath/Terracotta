@@ -472,7 +472,7 @@ public class ConfigurationHelper {
       }
 
       IType parentType = type;
-      while (true) {
+      while (parentType != null) {
         try {
           String superTypeSig = parentType.getSuperclassTypeSignature();
 

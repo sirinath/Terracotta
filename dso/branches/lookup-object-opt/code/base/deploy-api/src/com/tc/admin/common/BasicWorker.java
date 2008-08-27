@@ -23,7 +23,7 @@ public abstract class BasicWorker<T> implements Runnable {
   protected abstract void finished();
  
   protected BasicWorker(Callable<T> callable) {
-    this(callable, Long.MAX_VALUE, TimeUnit.SECONDS);
+    this(callable, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
   
   protected BasicWorker(Callable<T> callable, long timeout, TimeUnit timeUnit) {

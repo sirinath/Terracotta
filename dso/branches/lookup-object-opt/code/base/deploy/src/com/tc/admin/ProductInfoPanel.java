@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin;
 
@@ -8,9 +7,11 @@ import org.dijon.ContainerResource;
 import org.dijon.Label;
 
 import com.tc.admin.common.XContainer;
+import com.tc.util.ProductInfo;
 
 /**
- * This component is displayed on the ServerPanel after connecting to the associated server.
+ * This component is displayed on the ServerPanel after connecting to the
+ * associated server.
  */
 
 public class ProductInfoPanel extends XContainer {
@@ -19,23 +20,27 @@ public class ProductInfoPanel extends XContainer {
 
   public ProductInfoPanel() {
     super();
-    load(AdminClient.getContext().getComponent("ProductInfoPanel"));
+    
+    AdminClientContext cc = AdminClient.getContext();
+    load(cc.topRes.getComponent("ProductInfoPanel"));
   }
 
   public void load(ContainerResource containerRes) {
     super.load(containerRes);
-    m_version = (Label) findComponent("Version");
-    m_copyright = (Label) findComponent("Copyright");
-  }
 
-  public void init(String version, String copyright) {
-    m_version.setText(version);
-    m_copyright.setText(copyright);
+    m_version   = (Label)findComponent("Version");
+    m_copyright = (Label)findComponent("Copyright");
   }
-
+  
+  public void init(ProductInfo productInfo) {
+    m_version.setText(productInfo.version());
+    m_copyright.setText(productInfo.copyright());
+  }
+  
   public void tearDown() {
     super.tearDown();
-    m_version = null;
+    
+    m_version   = null;
     m_copyright = null;
   }
 }

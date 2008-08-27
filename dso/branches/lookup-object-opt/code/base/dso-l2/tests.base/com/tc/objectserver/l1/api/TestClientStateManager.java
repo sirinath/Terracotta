@@ -7,20 +7,22 @@ package com.tc.objectserver.l1.api;
 import com.tc.exception.ImplementMe;
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
-import com.tc.object.dna.api.DNA;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.text.PrettyPrinter;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 public class TestClientStateManager implements ClientStateManager {
 
-  public NodeID                     shutdownClient    = null;
-  public List<AddReferenceContext>  addReferenceCalls = new ArrayList<AddReferenceContext>();
+  public NodeID     shutdownClient    = null;
+  public Collection allClientIDs      = new HashSet();
+  public List       addReferenceCalls = new ArrayList();
 
   public void shutdownNode(NodeID deadNode) {
     this.shutdownClient = deadNode;
@@ -40,13 +42,13 @@ public class TestClientStateManager implements ClientStateManager {
     }
   }
 
-  public void removeReferences(NodeID nodeID, Set<ObjectID> removed) {
+  public void removeReferences(NodeID nodeID, Set removed) {
     //
   }
 
-  public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, BackReferences includeIDs, NodeID clientID,
-                                                  Set<ObjectID> objectIDs) {
-    return Collections.emptyList();
+  public List createPrunedChangesAndAddObjectIDTo(Collection changes, BackReferences includeIDs, NodeID clientID,
+                                                  Set objectIDs) {
+    return Collections.EMPTY_LIST;
   }
 
   public boolean hasReference(NodeID nodeID, ObjectID objectID) {
@@ -54,16 +56,17 @@ public class TestClientStateManager implements ClientStateManager {
     return false;
   }
 
-  public void addAllReferencedIdsTo(Set<ObjectID> rescueIds) {
-    //
-  }
-  
-  public int getReferenceCount(NodeID node) {
-    return 0;
+  public void addAllReferencedIdsTo(Set rescueIds) {
+    throw new ImplementMe();
+
   }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
     return out.print(getClass().getName());
+  }
+
+  public Collection getAllClientIDs() {
+    return allClientIDs;
   }
 
   public void stop() {
@@ -71,13 +74,14 @@ public class TestClientStateManager implements ClientStateManager {
 
   }
 
-  public void removeReferencedFrom(NodeID nodeID, Set<ObjectID> secondPass) {
+  public void removeReferencedFrom(NodeID nodeID, Set secondPass) {
     throw new ImplementMe();
 
   }
 
-  public Set<ObjectID> addReferences(NodeID nodeID, Set<ObjectID> oids) {
-    for (final ObjectID oid : oids) {
+  public Set addReferences(NodeID nodeID, Set oids) {
+    for (Iterator i = oids.iterator(); i.hasNext();) {
+      ObjectID oid = (ObjectID) i.next();
       addReferenceCalls.add(new AddReferenceContext(nodeID, oid));
     }
     return oids;
@@ -87,7 +91,4 @@ public class TestClientStateManager implements ClientStateManager {
     // NOP
   }
 
-  public Set<NodeID> getConnectedClientIDs() {
-    throw new ImplementMe();
-  }
 }

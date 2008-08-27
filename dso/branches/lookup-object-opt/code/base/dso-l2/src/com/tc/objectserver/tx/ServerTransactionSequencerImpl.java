@@ -114,29 +114,26 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
     return false;
   }
 
-  
-  /**
-   * ===========================================================================
-   * Stats Interface 
-   * ===========================================================================
-   */
-
-  public synchronized int getBlockedObjectsCount() {
-    return objects.getCount();
+  public synchronized String dumpBlockedQ() {
+    return blockedQ.toString();
   }
 
-  public synchronized int getBlockedTxnsCount() {
-    return blockedQ.size();
+  public synchronized String dumpObjects() {
+    return objects.toString();
   }
 
-  public synchronized int getPendingTxnsCount() {
-    return pendingTxns.size();
+  public synchronized String dumpPendingTxns() {
+    return pendingTxns.toString();
   }
 
-  public synchronized int getTxnsCount() {
-    return txnsCount;
+  public synchronized String dumpTxnQ() {
+    return txnQ.toString();
   }
-  
+
+  public synchronized String reconcileStatus() {
+    return String.valueOf(reconcile);
+  }
+
   private static final class BlockedSet {
 
     Set cause  = new HashSet();
@@ -148,10 +145,6 @@ public class ServerTransactionSequencerImpl implements ServerTransactionSequence
         if (cause.contains(o) || effect.contains(o)) { return true; }
       }
       return false;
-    }
-
-    public int getCount() {
-      return cause.size() + effect.size();
     }
 
     public void makePending(Collection keys) {

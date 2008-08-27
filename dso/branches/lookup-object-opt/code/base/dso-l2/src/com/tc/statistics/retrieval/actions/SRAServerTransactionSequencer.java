@@ -12,15 +12,17 @@ import com.tc.util.Assert;
 
 public class SRAServerTransactionSequencer implements StatisticRetrievalAction {
 
-  public final static String                    ACTION_NAME           = "l2 transaction sequencer";
+  public final static String                    ACTION_NAME       = "server transaction sequencer stats";
 
-  private final static String                   TXN_COUNT             = "txn count";
+  private final static String                   DUMP_BLOCKEDQ     = "dumpBlockedQ";
 
-  private final static String                   PENDING_TXN_COUNT     = "pending transactions count";
+  private final static String                   DUMP_TXNQ         = "dumpTxnQ";
 
-  private final static String                   BLOCKED_TXN_COUNT     = "blocked transactions count";
+  private final static String                   DUMP_OBJECTS      = "dumpObjects";
 
-  private final static String                   BLOCKED_OBJECTS_COUNT = "blocked objects count";
+  private final static String                   DUMP_PENDING_TXNS = "dumpPendingTxns";
+
+  private final static String                   RECONCILE_STATUS  = "reconcileStatus";
 
   private final ServerTransactionSequencerStats serverTransactionSequencerStats;
 
@@ -34,16 +36,15 @@ public class SRAServerTransactionSequencer implements StatisticRetrievalAction {
   }
 
   public StatisticType getType() {
-    return StatisticType.SNAPSHOT;
+    return StatisticType.TRIGGERED;
   }
 
   public StatisticData[] retrieveStatisticData() {
-    return new StatisticData[] {
-        new StatisticData(ACTION_NAME, TXN_COUNT, (long) serverTransactionSequencerStats.getTxnsCount()),
-        new StatisticData(ACTION_NAME, PENDING_TXN_COUNT, (long) serverTransactionSequencerStats.getPendingTxnsCount()),
-        new StatisticData(ACTION_NAME, BLOCKED_TXN_COUNT, (long) serverTransactionSequencerStats.getBlockedTxnsCount()),
-        new StatisticData(ACTION_NAME, BLOCKED_OBJECTS_COUNT, (long) serverTransactionSequencerStats
-            .getBlockedObjectsCount()) };
+    return new StatisticData[] { new StatisticData(DUMP_BLOCKEDQ, serverTransactionSequencerStats.dumpBlockedQ()),
+        new StatisticData(DUMP_TXNQ, serverTransactionSequencerStats.dumpTxnQ()),
+        new StatisticData(DUMP_OBJECTS, serverTransactionSequencerStats.dumpObjects()),
+        new StatisticData(DUMP_PENDING_TXNS, serverTransactionSequencerStats.dumpPendingTxns()),
+        new StatisticData(RECONCILE_STATUS, serverTransactionSequencerStats.reconcileStatus()) };
 
   }
 }

@@ -36,9 +36,9 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 
 public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInfoMBean, StateChangeListener {
-  private static final TCLogger                logger          = TCLogging.getLogger(TCServerInfo.class);
+  private static final TCLogger                logger = TCLogging.getLogger(TCServerInfo.class);
 
-  private static final boolean                 DEBUG           = false;
+  private static final boolean                 DEBUG  = false;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
   static {
@@ -58,8 +58,6 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   private final JVMMemoryManager               manager;
   private StatisticRetrievalAction             cpuSRA;
   private String[]                             cpuNames;
-
-  private static final String[]                EMPTY_CPU_NAMES = {};
 
   public TCServerInfo(final TCServer server, final L2State l2State) throws NotCompliantMBeanException {
     super(TCServerInfoMBean.class, true);
@@ -141,7 +139,7 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   }
 
   public MBeanNotificationInfo[] getNotificationInfo() {
-    return Arrays.asList(NOTIFICATION_INFO).toArray(EMPTY_NOTIFICATION_INFO);
+    return NOTIFICATION_INFO;
   }
 
   public void startBeanShell(int port) {
@@ -166,14 +164,6 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return buildID;
   }
 
-  public String getPatchVersion() {
-    return productInfo.toShortPatchString();
-  }
-
-  public String getPatchBuildID() {
-    return productInfo.patchBuildID();
-  }
-
   public String getCopyright() {
     return productInfo.copyright();
   }
@@ -191,8 +181,8 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   }
 
   public String[] getCpuStatNames() {
-    if (cpuNames != null) return Arrays.asList(cpuNames).toArray(EMPTY_CPU_NAMES);
-    if (cpuSRA == null) return cpuNames = EMPTY_CPU_NAMES;
+    if (cpuNames != null) return cpuNames;
+    if (cpuSRA == null) return cpuNames = new String[0];
 
     List list = new ArrayList();
     StatisticData[] statsData = cpuSRA.retrieveStatisticData();
@@ -201,15 +191,15 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
         list.add(statsData[i].getElement());
       }
     }
-    return cpuNames = (String[]) list.toArray(EMPTY_CPU_NAMES);
+    return cpuNames = (String[]) list.toArray(new String[0]);
   }
 
   public Map getStatistics() {
     HashMap<String, Object> map = new HashMap<String, Object>();
     MemoryUsage usage = manager.getMemoryUsage();
 
-    map.put(MEMORY_USED, Long.valueOf(usage.getUsedMemory()));
-    map.put(MEMORY_MAX, Long.valueOf(usage.getMaxMemory()));
+    map.put(MEMORY_USED, new Long(usage.getUsedMemory()));
+    map.put(MEMORY_MAX, new Long(usage.getMaxMemory()));
 
     if (cpuSRA != null) {
       StatisticData[] statsData = getCpuUsage();
@@ -221,15 +211,9 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return map;
   }
 
-  private long             lastCpuUpdateTime        = System.currentTimeMillis();
-  private StatisticData[]  lastCpuUpdate;
-  private static final int CPU_UPDATE_WINDOW_MILLIS = 1000;
-
   public StatisticData[] getCpuUsage() {
-    if (cpuSRA == null) return null;
-    if (System.currentTimeMillis() - lastCpuUpdateTime < CPU_UPDATE_WINDOW_MILLIS) { return lastCpuUpdate; }
-    lastCpuUpdateTime = System.currentTimeMillis();
-    return lastCpuUpdate = cpuSRA.retrieveStatisticData();
+    if (cpuSRA != null) { return cpuSRA.retrieveStatisticData(); }
+    return null;
   }
 
   public String takeThreadDump(long requestMillis) {
@@ -276,14 +260,6 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return sb.toString();
   }
 
-  public String getPersistenceMode() {
-    return server.getPersistenceMode();
-  }
-  
-  public String getFailoverMode() {
-    return server.getFailoverMode();
-  }
-  
   public String getConfig() {
     return server.getConfig();
   }

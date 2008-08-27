@@ -42,7 +42,7 @@ import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RespondToObjectRequestContext;
-import com.tc.objectserver.dgc.api.GarbageCollector;
+import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.TestDNA;
 import com.tc.objectserver.core.api.TestDNACursor;
@@ -825,6 +825,10 @@ public class ObjectRequestManagerTest extends TestCase {
 
   private static class TestClientStateManager implements ClientStateManager {
 
+    public void addAllReferencedIdsTo(Set rescueIds) {
+      throw new NotImplementedException(TestClientStateManager.class);
+    }
+
     public void addReference(NodeID nodeID, ObjectID objectID) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
@@ -864,18 +868,6 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {
-      throw new NotImplementedException(TestClientStateManager.class);
-    }
-
-    public void addAllReferencedIdsTo(Set<ObjectID> rescueIds) {
-      throw new NotImplementedException(TestClientStateManager.class);
-    }
-
-    public Set<NodeID> getConnectedClientIDs() {
-      throw new NotImplementedException(TestClientStateManager.class);
-    }
-
-    public int getReferenceCount(NodeID nodeID) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
 
@@ -1009,19 +1001,6 @@ public class ObjectRequestManagerTest extends TestCase {
     public ManagedObject getObjectByID(ObjectID id) {
       throw new NotImplementedException(TestObjectManager.class);
     }
-
-   
-
-    public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id) {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
-    public ObjectIDSet getObjectIDsInCache() {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
-  
-    
 
   }
 

@@ -23,6 +23,5 @@ public class NullStatisticsAgentSubSystem implements StatisticsAgentSubSystem {
   }
 
   public void cleanup() throws Exception {
-    //
   }
 }

@@ -42,9 +42,7 @@ public class Main {
   }
 
   public static void main(String[] args) throws Exception {
-    System.out.println("Running eclipsegen...");
     new Main(resolveModulesDef()).generate();
-    System.out.println("Done!");
   }
 
   private void generate() throws Exception {
@@ -170,7 +168,6 @@ public class Main {
   private void writeDotClassPath(File modDir, Module module, String[] src, String[] jars, String[] moduleJars)
       throws IOException {
 
-    boolean isUiEclipse = module.getName().equals("ui-eclipse");
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(baos);
     ps.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -184,8 +181,8 @@ public class Main {
         output = output.substring(0, output.lastIndexOf(".resources"));
       }
 
-      ps.println("\t<classpathentry excluding=\"**/.svn/*\" kind=\"src\" output=\"build.eclipse/" + output
-                 + ".classes\" path=\"" + path + "\"/>");
+      ps.println("\t<classpathentry kind=\"src\" output=\"build.eclipse/" + output + ".classes\" path=\"" + path
+                 + "\"/>");
     }
 
     // JDK
@@ -194,13 +191,10 @@ public class Main {
                  + module.getJdk().getEclipse() + "\"/>");
 
     // jars
-    if (isUiEclipse) {
-      ps.println("\t<classpathentry kind=\"con\" path=\"org.eclipse.pde.core.requiredPlugins\"/>");
-    } else {
-      for (int i = 0; i < jars.length; i++) {
-        String jar = jars[i];
-        ps.println("\t<classpathentry exported=\"true\" kind=\"lib\" path=\"/dependencies/lib/" + jar + "\"/>");
-      }
+    for (int i = 0; i < jars.length; i++) {
+      String jar = jars[i];
+      ps.println("\t<classpathentry exported=\"true\" kind=\"lib\" path=\"/dependencies/lib/" + jar + "\"/>");
+
     }
 
     // modules dependencies
@@ -214,8 +208,6 @@ public class Main {
       ps.println("\t<classpathentry exported=\"true\" kind=\"lib\" path=\"" + jar + "\"/>");
 
     }
-
-    // ps.println("\t<classpathentry kind=\"output\" path=\"bin\"/>");
 
     ps.println("</classpath>");
     ps.close();
@@ -301,9 +293,8 @@ public class Main {
     String actualModuleAttr = info.getAttributes().getNamedItem("module").getNodeValue();
     if (!expectedIvyModuleAttr.equals(actualModuleAttr)) {
       //
-      throw new RuntimeException("wrong \"module\" name (" + actualModuleAttr + ") in "
-                                 + ivyFile.getParentFile().getName() + "/" + ivyFile.getName() + ", expected "
-                                 + expectedIvyModuleAttr);
+      throw new RuntimeException("wrong \"module\" name (" + actualModuleAttr + ") in " + ivyFile.getParentFile().getName() + "/"
+                                 + ivyFile.getName() + ", expected " + expectedIvyModuleAttr);
     }
 
     NodeList depsList = ivyDoc.getElementsByTagName("dependencies");

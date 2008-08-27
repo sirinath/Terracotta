@@ -11,6 +11,7 @@ import org.jboss.mx.util.MBeanServerLocator;
 
 import com.tctest.service.DirectoryMonitorMBean;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class JBossSarServlet extends HttpServlet {
   private List       list = new ArrayList();
   private static Log log  = LogFactory.getLog(JBossSarServlet.class);
 
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException {
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     try {
       synchronized (list) {
         while (list.size() < 2) {

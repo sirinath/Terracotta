@@ -11,13 +11,13 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.GCStatsEventListener;
+import com.tc.objectserver.api.ObjectManagerEventListener;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
+import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.impl.TestManagedObject;
-import com.tc.objectserver.dgc.api.GarbageCollector;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.text.PrettyPrinterImpl;
@@ -76,9 +76,10 @@ public class TestObjectManager implements ObjectManager {
     basicLookup((NodeID) args[0], (ObjectManagerResultsContext) args[1], -1);
   }
 
-  private Map<ObjectID, ManagedObject> createLookResults(Collection<ObjectID> ids) {
-    Map<ObjectID, ManagedObject> results = new HashMap<ObjectID, ManagedObject>();
-    for (final ObjectID id : ids) {
+  private Map createLookResults(Collection ids) {
+    Map results = new HashMap();
+    for (Iterator i = ids.iterator(); i.hasNext();) {
+      ObjectID id = (ObjectID) i.next();
       TestManagedObject tmo = new TestManagedObject(id);
       results.put(id, tmo);
     }
@@ -105,7 +106,7 @@ public class TestObjectManager implements ObjectManager {
     throw new ImplementMe();
   }
 
-  public void addListener(GCStatsEventListener listener) {
+  public void addListener(ObjectManagerEventListener listener) {
     throw new ImplementMe();
   }
 
@@ -222,14 +223,6 @@ public class TestObjectManager implements ObjectManager {
   }
 
   public ManagedObject getObjectByIDOrNull(ObjectID id) {
-    throw new ImplementMe();
-  }
-
-  public ObjectIDSet getObjectIDsInCache() {
-    throw new ImplementMe();
-  }
-
-  public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id) {
     throw new ImplementMe();
   }
 

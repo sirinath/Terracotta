@@ -5,8 +5,6 @@
 package com.tc.object;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
-import bsh.EvalError;
-import bsh.Interpreter;
 
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
@@ -23,7 +21,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Management;
-import com.tc.management.TCClient;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
@@ -142,8 +139,6 @@ import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.concurrent.ThreadUtil;
-import com.tc.util.runtime.ThreadIDMap;
-import com.tc.util.runtime.ThreadIDMapUtil;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -156,7 +151,7 @@ import java.util.Collections;
 /**
  * This is the main point of entry into the DSO client.
  */
-public class DistributedObjectClient extends SEDA implements TCClient {
+public class DistributedObjectClient extends SEDA {
 
   private static final TCLogger                    logger                     = CustomerLogging.getDSOGenericLogger();
   private static final TCLogger                    consoleLogger              = CustomerLogging.getConsoleLogger();
@@ -184,7 +179,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private DmiManager                               dmiManager;
   private boolean                                  createDedicatedMBeanServer = false;
   private CounterManager                           sampledCounterManager;
-  private final ThreadIDMap                        threadIDMap;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -199,11 +193,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.cluster = cluster;
     this.threadGroup = threadGroup;
     this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
-    this.threadIDMap = ThreadIDMapUtil.getInstance();
-  }
-
-  public ThreadIDMap getThreadIDMap() {
-    return this.threadIDMap;
   }
 
   public void setCreateDedicatedMBeanServer(boolean createDedicatedMBeanServer) {
@@ -259,10 +248,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final boolean useOOOLayer = l1ReconnectConfig.getReconnectEnabled();
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (useOOOLayer) {
-      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE,
-                                                          new OOOEventHandler(), 1, maxSize);
-      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE,
-                                                             new OOOEventHandler(), 1, maxSize);
+      final Stage oooSendStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_SEND_STAGE, new OOOEventHandler(), 1, maxSize);
+      final Stage oooReceiveStage = stageManager.createStage(ClientConfigurationContext.OOO_NET_RECEIVE_STAGE, new OOOEventHandler(), 1, maxSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
                                                                      oooSendStage.getSink(), oooReceiveStage.getSink(),
@@ -382,12 +369,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = new TunnelingEventHandler(channel.channel());
     l1Management = new L1Management(teh, statisticsAgentSubSystem, runtimeLogger, manager.getInstrumentationLogger(),
-                                    config.rawConfigText(), this);
+                                    config.rawConfigText());
     l1Management.start(createDedicatedMBeanServer);
 
     txManager = new ClientTransactionManagerImpl(channel.getChannelIDProvider(), objectManager,
-                                                 new ThreadLockManagerImpl(lockManager, threadIDMap), txFactory,
-                                                 rtxManager, runtimeLogger, l1Management.findClientTxMonitorMBean());
+                                                 new ThreadLockManagerImpl(lockManager), txFactory, rtxManager,
+                                                 runtimeLogger, l1Management.findClientTxMonitorMBean());
 
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(txManager));
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
@@ -531,18 +518,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     }
 
     cluster.addClusterEventListener(l1Management.getTerracottaCluster());
-    if (useOOOLayer) {
-      setReconnectCloseOnExit(channel);
-    }
     setLoggerOnExit();
-  }
-
-  private void setReconnectCloseOnExit(final DSOClientMessageChannel channel) {
-    CommonShutDownHook.addShutdownHook(new Runnable() {
-      public void run() {
-        channel.close();
-      }
-    });
   }
 
   private void setLoggerOnExit() {
@@ -606,33 +582,4 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     return statisticsAgentSubSystem;
   }
 
-  public void dump() {
-    if (this.lockManager != null) {
-      this.lockManager.dumpToLogger();
-    }
-
-    if (this.txManager != null) {
-      this.txManager.dumpToLogger();
-    }
-
-    if (this.objectManager != null) {
-      this.objectManager.dumpToLogger();
-    }
-  }
-
-  public void startBeanShell(int port) {
-    try {
-      Interpreter i = new Interpreter();
-      i.set("client", this);
-      i.set("objectManager", objectManager);
-      i.set("lockmanager", lockManager);
-      i.set("txManager", txManager);
-      i.set("portnum", port);
-      i.eval("setAccessibility(true)"); // turn off access restrictions
-      i.eval("server(portnum)");
-      consoleLogger.info("Bean shell is started on port " + port);
-    } catch (EvalError e) {
-      e.printStackTrace();
-    }
-  }
 }

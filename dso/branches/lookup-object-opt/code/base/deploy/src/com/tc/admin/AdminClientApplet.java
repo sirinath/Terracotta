@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin;
 
@@ -9,11 +8,12 @@ import org.dijon.Container;
 import com.tc.admin.common.XApplet;
 import com.tc.admin.common.XMenuBar;
 import com.tc.admin.common.XTreeNode;
-import com.tc.admin.model.IServer;
 
 import java.awt.BorderLayout;
 
-public class AdminClientApplet extends XApplet implements AdminClientController {
+public class AdminClientApplet extends XApplet
+  implements AdminClientController
+{
   private AdminClientPanel m_mainPanel;
 
   public AdminClientApplet() {
@@ -21,7 +21,7 @@ public class AdminClientApplet extends XApplet implements AdminClientController 
 
     getContentPane().setLayout(new BorderLayout());
     getContentPane().add(m_mainPanel = new AdminClientPanel());
-
+    
     XMenuBar menuBar;
     m_mainPanel.initMenubar(menuBar = new XMenuBar());
     setMenubar(menuBar);
@@ -55,11 +55,15 @@ public class AdminClientApplet extends XApplet implements AdminClientController 
     m_mainPanel.nodeChanged(node);
   }
 
-  public boolean testServerMatch(ClusterNode node) {
+  public boolean testServerMatch(ServerNode node) {
     return m_mainPanel.testServerMatch(node);
   }
 
-  public void updateServerPrefs() {
+  public boolean testServerMatch(ClusterNode node) {
+    return m_mainPanel.testServerMatch(node);
+  }
+  
+ public void updateServerPrefs() {
     m_mainPanel.updateServerPrefs();
   }
 
@@ -83,21 +87,18 @@ public class AdminClientApplet extends XApplet implements AdminClientController 
     m_mainPanel.clearStatus();
   }
 
-  public void addServerLog(IServer server) {
-    m_mainPanel.addServerLog(server);
+  public void addServerLog(ConnectionContext cc) {
+    m_mainPanel.addServerLog(cc);
   }
 
-  public void removeServerLog(IServer server) {
-    m_mainPanel.removeServerLog(server);
+  public void removeServerLog(ConnectionContext cc) {
+    m_mainPanel.removeServerLog(cc);
   }
-
+  
   public Container getActivityArea() {
     return m_mainPanel.getActivityArea();
   }
-
-  public void block() {/**/
-  }
-
-  public void unblock() {/**/
-  }
+  
+  public void block() {/**/}
+  public void unblock() {/**/}
 }

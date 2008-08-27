@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.dso;
 
@@ -13,25 +12,12 @@ public class GCStatsWrapper implements GCStats {
   private Date    m_startDate;
 
   GCStatsWrapper(GCStats gcStats) {
-
-    set(gcStats);
-  }
-
-  void set(GCStats gcStats) {
-    m_gcStats = gcStats;
+    m_gcStats   = gcStats;
     m_startDate = new Date(gcStats.getStartTime());
   }
-  
+
   public int getIteration() {
     return m_gcStats.getIteration();
-  }
-
-  public String getType() {
-    return m_gcStats.getType();
-  }
-
-  public String getStatus() {
-    return m_gcStats.getStatus();
   }
 
   public long getStartTime() {
@@ -39,7 +25,7 @@ public class GCStatsWrapper implements GCStats {
   }
 
   public Date getStartDate() {
-    return new Date(m_startDate.getTime());
+    return m_startDate;
   }
 
   public long getElapsedTime() {
@@ -50,24 +36,19 @@ public class GCStatsWrapper implements GCStats {
     return m_gcStats.getBeginObjectCount();
   }
 
-  public long getPausedStageTime() {
-    return m_gcStats.getPausedStageTime();
-  }
-
-  public long getMarkStageTime() {
-    return m_gcStats.getMarkStageTime();
+  public long getCandidateGarbageCount() {
+    return m_gcStats.getCandidateGarbageCount();
   }
 
   public long getActualGarbageCount() {
     return m_gcStats.getActualGarbageCount();
   }
 
-  public long getDeleteStageTime() {
-    return m_gcStats.getDeleteStageTime();
+  public long getDeleteTime() {
+    return m_gcStats.getDeleteTime();
   }
-  
-  // No longer used
-  public long getCandidateGarbageCount() {
-    return m_gcStats.getCandidateGarbageCount();
+
+  public long getPausedTime() {
+    return m_gcStats.getPausedTime();
   }
 }

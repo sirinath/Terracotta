@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tctest.runner;
 
@@ -18,10 +17,14 @@ import java.util.Set;
 
 public abstract class AbstractTransparentApp implements Application {
 
-  private final TransparentAppCoordinator coordinator;
-  private final int                       intensity;
-  private final ListenerProvider          listenerProvider;
-  private final Set                       appIds = new HashSet();
+  private TransparentAppCoordinator coordinator;
+  private int                       intensity;
+  private ListenerProvider          listenerProvider;
+  private Set                       appIds = new HashSet();
+
+  public AbstractTransparentApp() {
+    // niladic for instance Configuration only!
+  }
 
   public AbstractTransparentApp(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
     synchronized (appIds) {

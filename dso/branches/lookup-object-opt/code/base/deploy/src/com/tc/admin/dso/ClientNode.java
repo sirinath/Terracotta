@@ -4,28 +4,23 @@
  */
 package com.tc.admin.dso;
 
-import com.tc.admin.common.ComponentNode;
-import com.tc.admin.model.IClient;
+import org.dijon.Component;
 
-import java.awt.Component;
+import com.tc.admin.common.ComponentNode;
+import com.tc.management.beans.l1.L1InfoMBean;
 
 public class ClientNode extends ComponentNode {
   protected ClientsNode            m_clientsNode;
-  protected IClient                m_client;
+  protected DSOClient              m_client;
   protected ClientPanel            m_clientPanel;
   protected ClientThreadDumpsNode  m_threadDumpsNode;
   protected ClientRuntimeStatsNode m_runtimeStatsNode;
-  protected ClientRootsNode        m_rootsNode;
 
-  public ClientNode(ClientsNode clientsNode, IClient client) {
+  public ClientNode(ClientsNode clientsNode, DSOClient client) {
     super(client.getRemoteAddress());
     m_clientsNode = clientsNode;
     m_client = client;
     addChildren();
-  }
-
-  ClientsNode getClientsNode() {
-    return m_clientsNode;
   }
 
   protected ClientPanel createClientPanel() {
@@ -40,7 +35,6 @@ public class ClientNode extends ComponentNode {
   }
 
   protected void addChildren() {
-    add(m_rootsNode = createClientRootsNode());
     add(m_runtimeStatsNode = createRuntimeStatsNode());
     add(m_threadDumpsNode = createThreadDumpsNode());
   }
@@ -53,12 +47,12 @@ public class ClientNode extends ComponentNode {
     return new ClientThreadDumpsNode(this);
   }
 
-  protected ClientRootsNode createClientRootsNode() {
-    return new ClientRootsNode(this);
+  public DSOClient getClient() {
+    return m_client;
   }
 
-  public IClient getClient() {
-    return m_client;
+  L1InfoMBean getL1InfoBean() throws Exception {
+    return m_client.getL1InfoBean();
   }
 
   public void tearDown() {
@@ -71,7 +65,6 @@ public class ClientNode extends ComponentNode {
 
     m_clientsNode = null;
     m_client = null;
-    m_rootsNode = null;
     m_threadDumpsNode = null;
     m_runtimeStatsNode = null;
   }

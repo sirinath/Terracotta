@@ -68,8 +68,7 @@ public class OidLongArrayTest extends TCTestCase {
     int destSize = 4;
     OidLongArray bits = new OidLongArray(arySize, oid);
     for(int i = 0; i < bits.length(); ++i) {
-      long j = i;
-      bits.set(i,j);
+      bits.set(i,(long)i);
     }
     
     OidLongArray dest = new OidLongArray(destSize, oid);
@@ -77,7 +76,7 @@ public class OidLongArrayTest extends TCTestCase {
     bits.copyOut(dest, offset);
     
     // verify
-    long expected = offset;
+    long expected = (long)offset;
     for(int i = 0; i < destSize; ++i) {    
       Assert.assertTrue("Failed copyOut"+expected+" got "+dest.get(i), 
                         expected == dest.get(i));
@@ -97,13 +96,6 @@ public class OidLongArrayTest extends TCTestCase {
       Assert.assertTrue("Failed applyIn expected "+expected+" got "+bits.get(offset+i), 
                         expected == bits.get(offset+i));
     }
-  }
-  
-  public void testKeyToBytes() {
-    long oid = 1000;
-    OidLongArray bits = new OidLongArray(8, oid);
-    byte[] keyBytes = bits.keyToBytes(1);
-    Assert.assertEquals(oid + 1, Conversion.bytes2Long(keyBytes));
   }
 
 }

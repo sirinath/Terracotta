@@ -29,18 +29,26 @@ import java.util.TreeSet;
 
 public class ObjectIDSetTest extends TCTestCase {
 
-  public Set create() {
-    return new ObjectIDSet();
+  interface SetCreator {
+    public Set create();
+
+    public Set create(Collection c);
   }
 
-  public Set create(Collection c) {
-    return new ObjectIDSet(c);
+  private class SetCreatorImpl implements SetCreator {
+    public Set create() {
+      return new ObjectIDSet();
+    }
+
+    public Set create(Collection c) {
+      return new ObjectIDSet(c);
+    }
   }
 
-  public void basicTest() {
-    basicTest(100000, 100000);
-    basicTest(500000, 100000);
-    basicTest(100000, 1000000);
+  public void basicTest(SetCreator creator) {
+    basicTest(creator, 100000, 100000);
+    basicTest(creator, 500000, 100000);
+    basicTest(creator, 100000, 1000000);
   }
 
   public void testSortedSetObjectIDSet() throws Exception {
@@ -68,10 +76,10 @@ public class ObjectIDSetTest extends TCTestCase {
     }
   }
 
-  public void basicTest(int distRange, int iterationCount) {
+  public void basicTest(SetCreator creator, int distRange, int iterationCount) {
     long test_start = System.currentTimeMillis();
     Set s = new HashSet();
-    Set small = create();
+    Set small = creator.create();
     String cname = small.getClass().getName();
     System.err.println("Running tests for " + cname + " distRange = " + distRange + " iterationCount = "
                        + iterationCount);
@@ -117,11 +125,11 @@ public class ObjectIDSetTest extends TCTestCase {
 
     // test new set creation (which uses cloning
     long start = System.currentTimeMillis();
-    Set copy = create(all);
+    Set copy = creator.create(all);
     System.err.println("Time to add all IDs from a collection to a new " + cname + " = "
                        + (System.currentTimeMillis() - start) + " ms");
     start = System.currentTimeMillis();
-    Set clone = create(small);
+    Set clone = creator.create(small);
     System.err.println("Time to add all IDs from an ObjectIDSet to a new " + cname + " = "
                        + (System.currentTimeMillis() - start) + " ms");
 
@@ -198,7 +206,7 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   public void testObjectIDSet() {
-    basicTest();
+    basicTest(new SetCreatorImpl());
   }
 
   public void testObjectIDSetDump() {
@@ -268,11 +276,12 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   public void testObjectIDSetIteratorFullRemove() {
+    SetCreator creator = new SetCreatorImpl();
     SecureRandom sr = new SecureRandom();
     long seed = sr.nextLong();
 
     Set all = new HashSet();
-    Set oidSet = create();
+    Set oidSet = creator.create();
     System.err.println("Running iteratorRemoveTest for " + oidSet.getClass().getName() + " and seed is " + seed);
     Random r = new Random(seed);
     for (int i = 0; i < 5000; i++) {
@@ -297,9 +306,10 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   public void testObjectIDSetIteratorSparseRemove() {
+    SetCreator creator = new SetCreatorImpl();
     SecureRandom sr = new SecureRandom();
     long seed = sr.nextLong();
-    Set oidSet = create();
+    Set oidSet = creator.create();
     System.err.println("Running iteratorRemoveTest for " + oidSet.getClass().getName() + " and seed is " + seed);
     Random r = new Random(seed);
     for (int i = 0; i < 1000; i++) {
@@ -383,7 +393,7 @@ public class ObjectIDSetTest extends TCTestCase {
      * Range(23,23) Range(25,29) Range(33,33) Range(35,35) Range(47,47) Range(56,56)]
      */
 
-    Set objectIDSet = create(longList);
+    Set objectIDSet = new SetCreatorImpl().create(longList);
     int totalElements = longList.size() - 1;
 
     Iterator i = objectIDSet.iterator();
@@ -414,9 +424,9 @@ public class ObjectIDSetTest extends TCTestCase {
     // remove the max element; element will be removed, but while going to next element, exception expected
     try {
       removeElementFromIterator(objectIDSet.iterator(), totalElements, longSortList.indexOf(new ObjectID(56)) + 1, -99);
-      throw new AssertionError("Expected to throw an exception");
+      throw new AssertionError("XXX we are suppose to go somewhere else ... ");
     } catch (NoSuchElementException noSE) {
-      // expected
+      System.out.println("XXX Got the expected Exception " + noSE);
     } finally {
       objectIDSet.add(new ObjectID(56));
     }
@@ -424,9 +434,9 @@ public class ObjectIDSetTest extends TCTestCase {
     // remove the non existing element; exception expected
     try {
       removeElementFromIterator(objectIDSet.iterator(), totalElements, longSortList.indexOf(new ObjectID(16)) + 1, -99);
-      throw new AssertionError("Expected to throw an exception");
+      throw new AssertionError("XXX we are suppose to go somewhere else ... ");
     } catch (IllegalStateException ise) {
-      // expected
+      System.out.println("XXX Got the expected Exception " + ise);
     }
 
     i = objectIDSet.iterator();
@@ -434,9 +444,10 @@ public class ObjectIDSetTest extends TCTestCase {
     objectIDSet.add(new ObjectID(99));
     try {
       assertEquals(5, iterateElements(i, 1));
-      throw new AssertionError("Expected to throw an exception");
+      throw new AssertionError("XXX we are suppose to go somewhere else ... ");
     } catch (ConcurrentModificationException cme) {
-      // expected
+      System.out.println("XXX Got the expected Exception " + cme);
+
     } finally {
       objectIDSet.remove(new ObjectID(99));
     }

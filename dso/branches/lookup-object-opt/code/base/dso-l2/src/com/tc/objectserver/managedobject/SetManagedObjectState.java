@@ -11,24 +11,24 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.objectserver.mgmt.LogicalManagedObjectFacade;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
-import com.tc.objectserver.persistence.sleepycat.PersistableCollection;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * ManagedObjectState for sets.
  */
-public class SetManagedObjectState extends LogicalManagedObjectState implements PersistableObjectState {
+public class SetManagedObjectState extends LogicalManagedObjectState {
   protected Set references;
 
-  SetManagedObjectState(long classID, Set set) {
+  SetManagedObjectState(long classID) {
     super(classID);
-    this.references = set;
+    this.references = new LinkedHashSet(1, 0.75f); // Accommodating LinkedHashSet.
   }
 
   protected SetManagedObjectState(ObjectInput in) throws IOException {
@@ -47,7 +47,7 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
   protected void apply(ObjectID objectID, int method, Object[] params, BackReferences includeIDs) {
     switch (method) {
       case SerializationUtil.ADD:
-        Object v = params[0];
+        Object v = getValue(params);
         addChangeToCollector(objectID, v, includeIDs);
         references.add(v);
         break;
@@ -65,6 +65,11 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     }
   }
 
+  private Object getValue(Object[] params) {
+    // hack for trove sets which replace the old set value (java ones do the opposite) clean this up
+    return params.length == 2 ? params[1] : params[0];
+  }
+
   private void addChangeToCollector(ObjectID objectID, Object newValue, BackReferences includeIDs) {
     if (newValue instanceof ObjectID) {
       getListener().changed(objectID, null, (ObjectID) newValue);
@@ -79,7 +84,6 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     }
   }
 
-  @Override
   protected void addAllObjectReferencesTo(Set refs) {
     addAllObjectReferencesFromIteratorTo(this.references.iterator(), refs);
   }
@@ -107,38 +111,26 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
     return SET_TYPE;
   }
 
-  @Override
   protected void basicWriteTo(ObjectOutput out) throws IOException {
-    // for removing warning
-    if (false) throw new IOException();
+    out.writeInt(references.size());
+    for (Iterator i = references.iterator(); i.hasNext();) {
+      out.writeObject(i.next());
+    }
   }
 
-  @Override
   protected boolean basicEquals(LogicalManagedObjectState o) {
     SetManagedObjectState mo = (SetManagedObjectState) o;
     return references.equals(mo.references);
   }
 
-  public void setSet(Set set) {
-    if (this.references != null) { throw new AssertionError("The references map is already set ! " + references); }
-    this.references = set;
-  }
-
-  public PersistableCollection getPersistentCollection() {
-    return (PersistableCollection) references;
-  }
-
-  public void setPersistentCollection(PersistableCollection collection) {
-    if (this.references != null) { throw new AssertionError("The references map is already set ! " + references); }
-    this.references = (Set) collection;
-  }
-
   static SetManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
-    if (false) {
-      // This is added to make the compiler happy. For some reason if I have readFrom() method throw
-      // ClassNotFoundException in LinkedHashMapManagedObjectState, it shows as an error !!
-      throw new ClassNotFoundException();
+    SetManagedObjectState setmo = new SetManagedObjectState(in);
+    int size = in.readInt();
+    Set set = new LinkedHashSet(size, 0.75f);
+    for (int i = 0; i < size; i++) {
+      set.add(in.readObject());
     }
-    return new SetManagedObjectState(in);
+    setmo.references = set;
+    return setmo;
   }
 }

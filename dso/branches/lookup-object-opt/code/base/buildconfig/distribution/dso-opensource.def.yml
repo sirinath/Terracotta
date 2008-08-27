@@ -112,19 +112,23 @@ bundled_components:
         - modules-common
         - thirdparty
         - thirdparty-api
-        - tim-update-center:
-            kit-resources:
-              - tim-get.properties
         - ui-configurator
 bundled_modules:
   - core:
       install_directory: modules
       manifest:
+        - clustered-apache-struts-1.1
+        - clustered-cglib-2.1.3
         - clustered-commons-collections-3.1
-        - clustered-glassfish-2.0
+        - clustered-glassfish-1.0
+        - clustered-hibernate-3.1.2
+        - clustered-hibernate-3.2.5
+        - clustered-iBatis-2.2.0
+        - clustered-lucene-2.0.0
+        - clustered-rife-1.6.0
         - clustered-surefire-2.3
         - clustered-websphere-6.1.0.7
-        - clustered-apache-struts-1.1
+        - clustered-wicket-1.3
         - excludes-config
         - guimodels-config
         - jdk15-preinst-config
@@ -141,12 +145,6 @@ packaging:
 postscripts:
   - fix-bin-perms
   - inject-copyright
-  - make-build-data:
-      args:
-        - lib/resources
-  - install-forge-tims:
-      args:
-        - tim-apache-struts-1.1
   - include-schemas:
       args:
         - schema
@@ -164,7 +162,6 @@ postscripts:
         - artifact: terracotta
           file: lib/tc.jar
           pom: poms/terracotta-pom.xml
-          inject: lib/resources/build-data.txt
         - artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
           pom: poms/tcconfig-pom.xml
@@ -180,9 +177,6 @@ postscripts:
         - artifact: terracotta-api
           file: lib/terracotta-api-version-PREALPHA.jar
           pom: poms/terracotta-api-pom.xml
-          inject: lib/resources/build-data.txt
         - artifact: terracotta-jmx-api
           file: lib/terracotta-jmx-api.jar
           pom: poms/terracotta-jmx-api-pom.xml
-          inject: lib/resources/build-data.txt
-          

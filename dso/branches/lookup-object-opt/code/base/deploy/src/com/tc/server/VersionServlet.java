@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.server;
 
@@ -19,11 +18,7 @@ public class VersionServlet extends HttpServlet {
 
     PrintWriter writer = response.getWriter();
     writer.println("<html><title>Version Information</title><body><pre>");
-    writer.println(productInfo.toLongString());
-    if (productInfo.isPatched()) {
-      writer.println("<br>");
-      writer.println(productInfo.toLongPatchString());
-    }
+    response.getWriter().println(productInfo.toLongString());
     writer.println("</pre></body></html>");
   }
 }

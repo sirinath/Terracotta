@@ -12,9 +12,10 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.util.DbBackup;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.config.schema.NewL2DSOConfig;
+import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.stats.AbstractNotifyingMBean;
@@ -54,29 +55,21 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
 
     isBackupRunning = new SynchronizedBoolean(false);
 
-    String destDir = safeFilePath(configSetupManager.commonl2Config().serverDbBackupPath().getFile());
+    String destDir = configSetupManager.commonl2Config().serverDbBackupPath().getFile().getAbsolutePath();
     throttleTime = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.L2_DATA_BACKUP_THROTTLE_TIME, 0);
 
     if (destDir == null) {
-      destDir = safeFilePath(configSetupManager.commonl2Config().dataPath().getFile());
+      destDir = configSetupManager.commonl2Config().dataPath().getFile().getAbsolutePath();
       destDir = destDir + File.separator + "backup";
     }
 
     defaultPathForBackup = destDir;
   }
 
-  private static String safeFilePath(File file) {
-    try {
-      return file.getCanonicalPath();
-    } catch(IOException ioe) {
-      return file.getAbsolutePath();
-    }
-  }
-  
   private void checkEnabled() {
     if (!isBackupEnabled()) {
       RuntimeException e = new RuntimeException(
-                                                "The Terracotta Server might not have been started in persistent mode. So the requested operation cannot be performed.");
+                                                "The bean is still not enabled. So the requested operation cannot be performed.");
 
       backupFailed(e);
       throw e;
@@ -89,7 +82,7 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
   }
 
   public String getDefaultPathForBackup() {
-//    checkEnabled();
+    checkEnabled();
     return defaultPathForBackup;
   }
 
@@ -99,13 +92,10 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
   }
 
   public void runBackUp(String destinationDir) throws IOException {
-    if (destinationDir == null) destinationDir = defaultPathForBackup;
-
     backupFileLogger = new FileLoggerForBackup(destinationDir);
 
-    destinationDir = destinationDir + File.separator + NewL2DSOConfig.OBJECTDB_DIRNAME;
     backupFileLogger.logStartMessage();
-    logger.info("Starting backup");
+    logger.log(LogLevel.INFO, "Starting backup");
 
     checkEnabled();
 
@@ -115,13 +105,15 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
       throw e;
     }
 
-    logger.info("The destination directory is:" + destinationDir);
+    if (destinationDir == null) destinationDir = defaultPathForBackup;
+
+    logger.log(LogLevel.INFO, "The destination directory is:" + destinationDir);
 
     try {
       sendNotification(BACKUP_STARTED, this);
       performBackup(destinationDir);
     } catch (DatabaseException e) {
-      logger.warn(e);
+      logger.log(LogLevel.WARN, e);
       backupFailed(e);
       throw new IOException(e.getMessage());
     } catch (IOException e) {
@@ -130,7 +122,7 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
     } finally {
       isBackupRunning.set(false);
     }
-    logger.info("Backup Successfully Completed");
+    logger.log(LogLevel.INFO, "Backup Successfully Completed");
     backupFileLogger.logStopMessage();
     sendNotification(BACKUP_COMPLETED, this);
   }
@@ -153,7 +145,7 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
       backupFileLogger.logMessage("Taking Full Backup");
     }
 
-    logger.info("Total Number of files to be copied:" + filesForBackup.length);
+    logger.log(LogLevel.INFO, "Total Number of files to be copied:" + filesForBackup.length);
 
     // Copy the files to archival storage.
     copyFiles(filesForBackup, envHome, destinationDir);
@@ -243,12 +235,13 @@ public class ServerDBBackup extends AbstractNotifyingMBean implements ServerDBBa
   private void backupFailed(Exception e) {
     backupFileLogger.logExceptions(e);
     backupFileLogger.logStopMessage();
-    logger.warn(e.getMessage());
+    //for debugging purpose - to be removed
+    System.out.println(" Sending Notification for Backup failed ");
     sendNotification(BACKUP_FAILED, this, e.getMessage());
   }
 
   class FileLoggerForBackup {
-    private final String       logFilePath;
+    private String             logFilePath;
     public final static String BACKUP_STARTED_MSG = "Backup Started at ";
     public final static String BACKUP_STOPPED_MSG = "Backup Stopped at ";
 

@@ -4,14 +4,13 @@
 
 package com.tc.admin;
 
-import com.tc.admin.common.MBeanServerInvocationProxy;
+import com.tc.admin.dso.DSOHelper;
+import com.tc.admin.dso.DSORoot;
+import com.tc.admin.dso.RootsHelper;
 import com.tc.management.JMXConnectorProxy;
-import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.MapEntryFacade;
-import com.tc.stats.DSOMBean;
-import com.tc.stats.DSORootMBean;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -29,7 +28,6 @@ import javax.management.remote.JMXConnector;
 public class RootsTool {
   private ConnectionContext context;
   private JMXConnector      jmxc;
-  private DSOMBean          dsoBean;
 
   public RootsTool(String host, int port) throws Exception {
     context = new ConnectionContext(host, port);
@@ -40,7 +38,6 @@ public class RootsTool {
 
     context.jmxc = jmxc;
     context.mbsc = jmxc.getMBeanServerConnection();
-    dsoBean = MBeanServerInvocationProxy.newMBeanProxy(context.mbsc, L2MBeanNames.DSO, DSOMBean.class, false);
   }
 
   private void disconnect() throws IOException {
@@ -50,20 +47,18 @@ public class RootsTool {
   private void print(PrintWriter w) throws Exception {
     connect();
     try {
-      ObjectName[] rootBeanNames = dsoBean.getRoots();
-      for (int i = 0; i < rootBeanNames.length; i++) {
-        ObjectName objectName = rootBeanNames[i];
-        DSORootMBean rootBean = MBeanServerInvocationProxy.newMBeanProxy(context.mbsc, objectName, DSORootMBean.class,
-                                                                         false);
-        ManagedObjectFacade facade = rootBean.lookupFacade(10);
-        String rootId = facade.getObjectId().toString();
-        w.println(i + " " + rootBean.getRootName() + " id=" + rootId);
+      DSORoot[] roots = RootsHelper.getHelper().getRoots(context);
+      for (int i = 0; i < roots.length; i++) {
+        DSORoot root = roots[i];
+        ObjectName objectName = root.getObjectName();
+        String rootId = objectName.getKeyProperty("rootID");
+        w.println(i + " " + root + " id=" + rootId);
 
-        String[] fieldNames = facade.getFields();
+        String[] fieldNames = root.getFieldNames();
         for (int j = 0; j < fieldNames.length; j++) {
           String fieldName = fieldNames[i];
-          Object fieldValue = facade.getFieldValue(fieldName);
-          printValue(w, "  ", fieldName, facade.getFieldType(fieldName), fieldValue, new HashSet());
+          Object fieldValue = root.getFieldValue(fieldName);
+          printValue(w, "  ", fieldName, root.getFieldType(fieldName), fieldValue, new HashSet());
         }
       }
     } finally {
@@ -80,7 +75,7 @@ public class RootsTool {
         w.println(off + "  " + name + " = null");
         return;
       }
-      facade = dsoBean.lookupFacade(objectId, 10);
+      facade = DSOHelper.getHelper().lookupFacade(context, objectId, 10);
       if (facade.isArray()) {
         int arrayLength = facade.getArrayLength();
         if (arrayLength > 0 && facade.isPrimitive("0")) {

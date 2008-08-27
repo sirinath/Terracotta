@@ -550,7 +550,14 @@ public class ManagerImpl implements Manager {
     TCObject tco = lookupExistingOrNull(obj);
 
     try {
-      TimerSpec timeout = createTimerSpecFromNanos(timeoutInNanos);
+      TimerSpec timeout = null;
+      if (timeoutInNanos <= 0) {
+        timeout = new TimerSpec(0);
+      } else {
+        long mills = Util.getMillis(timeoutInNanos);
+        int nanos = Util.getNanos(timeoutInNanos, mills);
+        timeout = new TimerSpec(mills, nanos);
+      }
 
       if (tco != null) {
         if (tco.autoLockingDisabled()) { return false; }
@@ -563,24 +570,8 @@ public class ManagerImpl implements Manager {
     return false;
   }
 
-  private TimerSpec createTimerSpecFromNanos(final long timeoutInNanos) {
-    TimerSpec timeout = null;
-    if (timeoutInNanos <= 0) {
-      timeout = new TimerSpec(0);
-    } else {
-      long mills = Util.getMillis(timeoutInNanos);
-      int nanos = Util.getNanos(timeoutInNanos, mills);
-      timeout = new TimerSpec(mills, nanos);
-    }
-    return timeout;
-  }
-
   public boolean tryBeginLock(String lockID, int type) {
     return tryBegin(lockID, type, null, null);
-  }
-
-  public boolean tryBeginLock(String lockID, long timeoutInNanos, int type) {
-    return tryBegin(lockID, type, createTimerSpecFromNanos(timeoutInNanos), null);
   }
 
   public int localHeldCount(Object obj, int lockLevel) {

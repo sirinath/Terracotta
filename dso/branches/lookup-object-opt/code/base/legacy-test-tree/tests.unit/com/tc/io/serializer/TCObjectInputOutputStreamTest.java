@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Random;
 
 public class TCObjectInputOutputStreamTest extends TCTestCase {
-  
-  public TCObjectInputOutputStreamTest() {
-    //
-  }
 
   public void testBasic() throws IOException, ClassNotFoundException {
     ByteArrayOutputStream bao = new ByteArrayOutputStream(1024);
@@ -54,14 +50,14 @@ public class TCObjectInputOutputStreamTest extends TCTestCase {
     try {
       os.writeObject(new Object());
       failed = true;
-    } catch (AssertionError ae) {
+    } catch (Exception ex) {
       // this is normal
     }
     Assert.assertFalse(failed);
     try {
       os.writeObject(l);
       failed = true;
-    } catch (AssertionError ae) {
+    } catch (Exception ex) {
       // this is normal
     }
     Assert.assertFalse(failed);

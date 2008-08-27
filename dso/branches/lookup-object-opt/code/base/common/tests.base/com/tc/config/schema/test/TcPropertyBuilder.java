@@ -9,15 +9,23 @@ public class TcPropertyBuilder extends BaseConfigBuilder{
   private String name;
   private String value;
   
+  public TcPropertyBuilder() {
+    super(1, ALL_PROPERTIES);
+  }
+
   public TcPropertyBuilder(String name, String value){
-    super(3, ALL_PROPERTIES);
+    this();
     this.name = name;
     this.value = value;
+    setProperty("name", name);
+    setProperty("value", value);
   }
   
   public void setTcProperty(String name, String value){
     this.name = name;
     this.value = value;
+    setProperty("name", name);
+    setProperty("value", value);
   }
   
   public String toString() {

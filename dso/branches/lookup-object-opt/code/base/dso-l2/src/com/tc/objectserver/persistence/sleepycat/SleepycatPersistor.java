@@ -64,6 +64,8 @@ public class SleepycatPersistor implements Persistor {
 
     sanityCheckAndClean(env, l2DataPath, logger);
 
+    CursorConfig dbCursorConfig = new CursorConfig();
+    dbCursorConfig.setReadCommitted(true);
     CursorConfig rootDBCursorConfig = new CursorConfig();
     rootDBCursorConfig.setReadCommitted(true);
     CursorConfig stringIndexCursorConfig = new CursorConfig();
@@ -79,7 +81,11 @@ public class SleepycatPersistor implements Persistor {
                                                                  logger,
                                                                  env.getClassCatalogWrapper().getClassCatalog(),
                                                                  serializationAdapterFactory,
-                                                                 env,
+                                                                 env.getObjectDatabase(),
+                                                                 env.getOidDatabase(),
+                                                                 env.getOidLogDatabase(),
+                                                                 env.getOidLogSequeneceDB(),
+                                                                 dbCursorConfig,
                                                                  new SleepycatSequence(
                                                                                        this.persistenceTransactionProvider,
                                                                                        logger, 1, 1000, env
@@ -112,7 +118,7 @@ public class SleepycatPersistor implements Persistor {
                                                                   + "  Since the integrity of the data cannot be assured, "
                                                                   + "the server is refusing to start."
                                                                   + "  Please remove the database files in the following directory and restart "
-                                                                  + "the server: " + dbenv.getEnvironmentHome()); }
+                                                                  + "the server: " + env.getEnvironmentHome()); }
   }
 
   private void sanityCheckAndClean(DBEnvironment dbenv, File l2DataPath, TCLogger logger) throws TCDatabaseException {

@@ -215,7 +215,9 @@ public class ClientsPanel extends ConfigurationEditorPanel implements Configurat
     public void widgetSelected(SelectionEvent e) {
       IFolder folder = SWTUtil.openSelectFolderDialog(m_project, "Select logs folder", "Choose a folder for the log area");
       if(folder != null) {
-        setStringField(m_layout.m_logsLocation, folder.getProjectRelativePath().toString());
+        m_layout.m_logsLocation.setText(folder.getProjectRelativePath().toString());
+        m_layout.m_logsLocation.selectAll();
+        m_layout.m_logsLocation.forceFocus();
       }
     }
   }
@@ -224,7 +226,9 @@ public class ClientsPanel extends ConfigurationEditorPanel implements Configurat
     public void widgetSelected(SelectionEvent e) {
       IFolder folder = SWTUtil.openSelectFolderDialog(m_project, "Select statistics folder", "Choose a folder for the statistics database area");
       if(folder != null) {
-        setStringField(m_layout.m_statisticsLocation, folder.getProjectRelativePath().toString());
+        m_layout.m_statisticsLocation.setText(folder.getProjectRelativePath().toString());
+        m_layout.m_statisticsLocation.selectAll();
+        m_layout.m_statisticsLocation.forceFocus();
       }
     }
   }

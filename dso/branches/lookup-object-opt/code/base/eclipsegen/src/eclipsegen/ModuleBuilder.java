@@ -20,10 +20,7 @@ public class ModuleBuilder {
   }
 
   public void addDependency(String depName) {
-    boolean added = deps.add(depName);
-    if (!added) {
-      System.err.println("WARN: Duplicate dependency [" + depName + "] in module " + moduleName);
-    }
+    deps.add(depName);
   }
 
   public Module build() {

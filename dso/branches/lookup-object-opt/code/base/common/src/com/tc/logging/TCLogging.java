@@ -438,18 +438,9 @@ public class TCLogging {
   }
 
   private static void writeVersion() {
-    ProductInfo info = ProductInfo.getInstance();    
-    TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
-
-    // Write build info always
-    String longProductString = info.toLongString();
-    consoleLogger.info(longProductString);
-    
-    // Write patch info, if any
-    if(info.isPatched()) {
-      String longPatchString = info.toLongPatchString();
-      consoleLogger.info(longPatchString);
-    }
+    ProductInfo info = ProductInfo.getInstance();
+    CustomerLogging.getConsoleLogger().info(info.toLongString());
+    getLogger(TCLogging.class).info(info.toLongString());
   }
 
   private static void writeSystemProperties() {
@@ -464,11 +455,13 @@ public class TCLogging {
         Object objKey = entry.getKey();
         Object objValue = entry.getValue();
 
-        // Filter out any bad non-String keys or values in system properties 
+        // It's possible someone is being bad and shoving non-String keys or values into system props
         if (objKey instanceof String && objValue instanceof String) {
           String key = (String) objKey;
-          keys.add(key);
-          maxKeyLength = Math.max(maxKeyLength, key.length());
+          if (key != null) {
+            keys.add(key);
+          }
+          maxKeyLength = Math.max(maxKeyLength, key == null ? 0 : key.length());
         }
       }
 

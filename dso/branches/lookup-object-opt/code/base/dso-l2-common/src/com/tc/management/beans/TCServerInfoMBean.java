@@ -36,10 +36,6 @@ public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticCons
   String getVersion();
 
   String getBuildID();
-  
-  String getPatchVersion();
-  
-  String getPatchBuildID();
 
   String getCopyright();
 
@@ -50,10 +46,6 @@ public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticCons
   L2Info[] getL2Info();
 
   int getDSOListenPort();
-  
-  String getPersistenceMode();
-  
-  String getFailoverMode();
   
   String[] getCpuStatNames();
   

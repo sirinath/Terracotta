@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="**/.svn/*" kind="src" output="build.eclipse/tests.base.classes" path="tests.base"/>
-	<classpathentry excluding="**/.svn/*" kind="src" output="build.eclipse/tests.system.classes" path="tests.system"/>
-	<classpathentry excluding="**/.svn/*" kind="src" output="build.eclipse/tests.system.classes" path="tests.system.resources"/>
+	<classpathentry kind="src" output="build.eclipse/tests.base.classes" path="tests.base"/>
+	<classpathentry kind="src" output="build.eclipse/tests.system.classes" path="tests.system"/>
+	<classpathentry kind="src" output="build.eclipse/tests.system.classes" path="tests.system.resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.4"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/cglib-nodep-2.1_3.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/commons-collections-3.1.jar"/>
@@ -35,7 +35,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/legacy-test-tree"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/management"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/management-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/sigarstats"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/simulator"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty-api"/>

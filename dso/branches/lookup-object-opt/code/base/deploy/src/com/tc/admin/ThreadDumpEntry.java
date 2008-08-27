@@ -22,7 +22,7 @@ public class ThreadDumpEntry {
   }
 
   public Date getTime() {
-    return new Date(m_time.getTime());
+    return m_time;
   }
 
   public void setViewPosition(Point pos) {

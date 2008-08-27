@@ -40,7 +40,6 @@ import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.io.TCByteArrayOutputStream;
 import com.tc.jboss.JBossLoaderNaming;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.LogLevel;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.TerracottaMBean;
@@ -176,7 +175,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.AccessibleObject;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -214,8 +212,8 @@ public class BootJarTool {
 
   private InstrumentationLogger       instrumentationLogger;
   private BootJar                     bootJar;
-  private final BootJarHandler        bootJarHandler;
-  private final boolean               quiet;
+  private BootJarHandler              bootJarHandler;
+  private boolean                     quiet;
 
   public static final String          SYSTEM_CLASSLOADER_NAME_PROPERTY = "com.tc.loader.system.name";
   public static final String          EXT_CLASSLOADER_NAME_PROPERTY    = "com.tc.loader.ext.name";
@@ -230,33 +228,7 @@ public class BootJarTool {
     this.bootJarHandler = new BootJarHandler(WRITE_OUT_TEMP_FILE, this.outputFile);
     this.quiet = quiet;
     this.portability = new PortabilityImpl(this.configHelper);
-
-    loadModules();
-  }
-
-  private void loadModules() {
-    // remove the user defined specs already load from config while modules are running so that specs created take
-    // precedence from user defined specs
-    List userSpecs = new ArrayList();
-    for (Iterator i = configHelper.getAllUserDefinedBootSpecs(); i.hasNext();) {
-      userSpecs.add(i.next());
-    }
-
-    for (Iterator i = userSpecs.iterator(); i.hasNext();) {
-      configHelper.removeSpec(((TransparencyClassSpec) i.next()).getClassName());
-    }
-
-    // load the modules
     ModulesLoader.initModules(this.configHelper, null, true);
-
-    // put the user defined specs back not already included by modules
-    for (Iterator i = userSpecs.iterator(); i.hasNext();) {
-      TransparencyClassSpec userSpec = (TransparencyClassSpec) i.next();
-
-      if (configHelper.getSpec(userSpec.getClassName()) == null) {
-        configHelper.addUserDefinedBootSpec(userSpec.getClassName(), userSpec);
-      }
-    }
   }
 
   public BootJarTool(DSOClientConfigHelper configuration, File outputFile, ClassLoader systemProvider) {
@@ -485,7 +457,6 @@ public class BootJarTool {
       loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TomcatLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
-      loadTerracottaClass(LogLevel.class.getName());
       loadTerracottaClass(Banner.class.getName());
       loadTerracottaClass(StandardClassProvider.class.getName());
       loadTerracottaClass(StandardClassProvider.SystemLoaderHolder.class.getName());
@@ -493,7 +464,7 @@ public class BootJarTool {
       loadTerracottaClass(ClassProcessorHelper.class.getName());
       loadTerracottaClass(ClassProcessorHelperJDK15.class.getName());
       loadTerracottaClass(ClassProcessorHelper.State.class.getName());
-      loadTerracottaClass(ClassProcessorHelper.TcCommonLibQualifier.class.getName());
+      loadTerracottaClass(ClassProcessorHelper.JarFilter.class.getName());
       loadTerracottaClass(ClassProcessor.class.getName());
       loadTerracottaClass(ClassPreProcessor.class.getName());
       loadTerracottaClass(ClassPostProcessor.class.getName());

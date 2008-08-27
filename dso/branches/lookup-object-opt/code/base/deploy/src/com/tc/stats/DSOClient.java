@@ -18,9 +18,7 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.object.ObjectID;
 import com.tc.object.net.ChannelStats;
-import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.statistics.StatisticData;
 import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -28,7 +26,6 @@ import com.tc.stats.statistics.CountStatistic;
 import com.tc.stats.statistics.Statistic;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +61,6 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private final Counter                        pendingTransactions;
   private final SynchronizedLong               sequenceNumber = new SynchronizedLong(0L);
   private final ClientID                       clientID;
-  private final ClientStateManager             stateManager;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
@@ -76,13 +72,12 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   }
 
   public DSOClient(final MBeanServer mbeanServer, final MessageChannel channel, final ChannelStats channelStats,
-                   ClientID clientID, ClientStateManager stateManager) throws NotCompliantMBeanException {
+                   ClientID clientID) throws NotCompliantMBeanException {
     super(DSOClientMBean.class, true);
 
     this.mbeanServer = mbeanServer;
     this.channel = channel;
     this.clientID = clientID;
-    this.stateManager = stateManager;
     this.txnRate = (SampledCounter) channelStats.getCounter(channel, ChannelStats.TXN_RATE);
     this.flushRate = (SampledCounter) channelStats.getCounter(channel, ChannelStats.OBJECT_FLUSH_RATE);
     this.faultRate = (SampledCounter) channelStats.getCounter(channel, ChannelStats.OBJECT_REQUEST_RATE);
@@ -381,15 +376,7 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     return l1InfoBean.takeThreadDump(requestMillis);
   }
 
-  public int getLiveObjectCount() {
-    return stateManager.getReferenceCount(clientID);
-  }
-
-  public boolean isResident(ObjectID oid) {
-    return stateManager.hasReference(clientID, oid);
-  }
-
   public MBeanNotificationInfo[] getNotificationInfo() {
-    return Arrays.asList(NOTIFICATION_INFO).toArray(EMPTY_NOTIFICATION_INFO);
+    return NOTIFICATION_INFO;
   }
 }

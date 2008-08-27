@@ -13,11 +13,10 @@ import com.sleepycat.je.OperationStatus;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor.SleepycatPersistorBase;
-import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Conversion;
 import com.tc.util.ObjectIDSet;
@@ -33,34 +32,29 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
   private final CursorConfig                   dBCursorConfig;
   private final boolean                        isMeasurePerf;
 
-  public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp) {
+  public PlainObjectIDManagerImpl(Database objectDB, PersistenceTransactionProvider ptp,
+                                  CursorConfig dBCursorConfig) {
     this.objectDB = objectDB;
     this.ptp = ptp;
-    this.dBCursorConfig = new CursorConfig();
-    this.dBCursorConfig.setReadCommitted(true);
-
-    isMeasurePerf = TCPropertiesImpl.getProperties()
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF, false);
-
+    this.dBCursorConfig = dBCursorConfig;
+    
+    TCProperties loadObjProp = TCPropertiesImpl.getProperties().getPropertiesFor(FastObjectIDManagerImpl.LOAD_OBJECTID_PROPERTIES);
+    isMeasurePerf = loadObjProp.getBoolean(FastObjectIDManagerImpl.MEASURE_PERF, false);
   }
 
   public Runnable getObjectIDReader(SyncObjectIdSet rv) {
     return new ObjectIdReader(rv);
   }
 
-  public Runnable getMapsObjectIDReader(SyncObjectIdSet rv) {
-    return null;
-  }
-
   public OperationStatus deleteAll(PersistenceTransaction tx, Set<ObjectID> oidSet) {
     return OperationStatus.SUCCESS;
   }
 
-  public OperationStatus put(PersistenceTransaction tx, ManagedObject mo) {
+  public OperationStatus put(PersistenceTransaction tx, ObjectID objectID) {
     return OperationStatus.SUCCESS;
   }
 
-  public void prePutAll(Set<ObjectID> oidSet, ManagedObject mo) {
+  public void prePutAll(Set<ObjectID> oidSet, ObjectID objectID) {
     return;
   }
 
@@ -73,7 +67,7 @@ public class PlainObjectIDManagerImpl extends SleepycatPersistorBase implements 
    */
   private class ObjectIdReader implements Runnable {
     protected final SyncObjectIdSet set;
-    long                            startTime;
+    long startTime;
 
     public ObjectIdReader(SyncObjectIdSet set) {
       this.set = set;

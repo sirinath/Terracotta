@@ -5,12 +5,15 @@ package com.tc.objectserver.tx;
 
 public interface ServerTransactionSequencerStats {
   
-  public int getTxnsCount();
+  public String dumpPendingTxns();
   
-  public int getPendingTxnsCount();
+  public String dumpTxnQ();
   
-  public int getBlockedTxnsCount();
+  public String dumpBlockedQ();
   
-  public int getBlockedObjectsCount();
+  public String dumpObjects();
   
+  public String reconcileStatus();
+
+
 }

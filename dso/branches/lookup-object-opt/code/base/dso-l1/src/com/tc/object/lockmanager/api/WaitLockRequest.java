@@ -17,8 +17,4 @@ public class WaitLockRequest extends LockRequest {
   public TimerSpec getTimerSpec() {
     return call;
   }
-
-  public String toString() {
-    return getClass().getName() + "[" + lockID() + ", " + threadID() + ", lockLevel=" + lockLevel() + ", " + call + "]";
-  }
 }

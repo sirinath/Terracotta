@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.net;
 
@@ -21,15 +20,16 @@ public class TCSocketAddressTest extends TestCase {
   }
 
   public void testPortRanges() {
-    TCSocketAddress s3 = new TCSocketAddress(0);
-    System.err.println("Silence the warning : " + s3);
-    
-    s3 = new TCSocketAddress(65535);
+    TCSocketAddress s1 = new TCSocketAddress(0);
+    TCSocketAddress s2 = new TCSocketAddress(65535);
+    if (s1 != null) s1 = null; // silence warning
+    if (s2 != null) s2 = null; // silence warning
 
     boolean exception = false;
 
     try {
-      s3 = new TCSocketAddress(-1);
+      TCSocketAddress s3 = new TCSocketAddress(-1);
+      if (s3 != null) s3 = null; // silence warning
     } catch (IllegalArgumentException e) {
       exception = true;
     }
@@ -37,7 +37,8 @@ public class TCSocketAddressTest extends TestCase {
 
     exception = false;
     try {
-      s3 = new TCSocketAddress(65536);
+      TCSocketAddress s3 = new TCSocketAddress(65536);
+      if (s3 != null) s3 = null; // silence warning
     } catch (IllegalArgumentException e) {
       exception = true;
     }

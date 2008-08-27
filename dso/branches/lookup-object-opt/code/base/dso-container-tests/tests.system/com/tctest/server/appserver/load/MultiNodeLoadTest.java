@@ -7,16 +7,12 @@ package com.tctest.server.appserver.load;
 import com.tc.test.server.appserver.deployment.AbstractDeploymentTest;
 import com.tc.test.server.appserver.deployment.Deployment;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
-import com.tc.test.server.appserver.deployment.ServerTestSetup;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.appserver.load.LowMemWorkaround;
 import com.tc.test.server.appserver.load.Node;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.CounterServlet;
 
 import java.net.URL;
-
-import junit.framework.Test;
 
 public class MultiNodeLoadTest extends AbstractDeploymentTest {
   private static final String CONTEXT           = "MultiNodeLoadTest";
@@ -27,10 +23,6 @@ public class MultiNodeLoadTest extends AbstractDeploymentTest {
 
   private Deployment          deployment;
   private TcConfigBuilder     configBuilder;
-
-  public static Test suite() {
-    return new ServerTestSetup(MultiNodeLoadTest.class);
-  }
 
   private Deployment makeDeployment() throws Exception {
     DeploymentBuilder builder = makeDeploymentBuilder(CONTEXT + ".war");
@@ -47,18 +39,13 @@ public class MultiNodeLoadTest extends AbstractDeploymentTest {
     }
   }
 
-  public void testLoad() throws Throwable {
-    runLoad(isSticky());
+  public void testFourNodeLoad() throws Throwable {
+    runFourNodeLoad(true);
   }
 
-  boolean isSticky() {
-    return true;
-  }
-
-  protected final void runLoad(boolean sticky) throws Throwable {
-    int numNodes = LowMemWorkaround.computeNumberOfNodes(4, 2, appServerInfo());
+  protected void runFourNodeLoad(boolean sticky) throws Throwable {
     assertTimeDirection();
-    runNodes(numNodes, sticky);
+    runNodes(4, sticky);
   }
 
   private WebApplicationServer createAndStartServer() throws Exception {

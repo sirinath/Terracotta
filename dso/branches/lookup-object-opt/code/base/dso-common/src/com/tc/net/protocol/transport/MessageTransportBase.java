@@ -224,7 +224,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   }
 
   protected ConnectionAttacher getConnectionAttacher() {
-    return new DefaultConnectionAttacher(this, getLogger());
+    return new DefaultConnectionAttacher(this);
   }
 
   protected interface ConnectionAttacher {
@@ -234,11 +234,9 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   private static final class DefaultConnectionAttacher implements ConnectionAttacher {
 
     private final MessageTransportBase transport;
-    private final TCLogger             logger;
 
-    private DefaultConnectionAttacher(MessageTransportBase transport, TCLogger logger) {
+    private DefaultConnectionAttacher(MessageTransportBase transport) {
       this.transport = transport;
-      this.logger = logger;
     }
 
     public void attachNewConnection(TCConnectionEvent closeEvent, TCConnection oldConnection, TCConnection newConnection) {
@@ -246,13 +244,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       if (closeEvent == null || closeEvent.getSource() != oldConnection) {
         // We either didn't receive a close event or we received a close event
         // from a connection that isn't our current connection.
-        if (transport.isConnected()) {
-          // DEV-1689 : Don't bother for connections which actually didn't make up to Transport Establishment.
-          this.transport.status.reset();
-          this.transport.fireTransportDisconnectedEvent();
-        } else {
-          logger.warn("Old connection " + oldConnection + "might not have been Transport Established ");
-        }
+        this.transport.fireTransportDisconnectedEvent();
       }
       // remove the transport as a listener for the old connection
       if (oldConnection != null && oldConnection != transport.connection) {

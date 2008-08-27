@@ -14,8 +14,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class RootLockNode extends BasicLockNode {
-  private LockStats  fStats = new LockStats();
-  private LockNode[] fChildren;
+  LockStats                  fStats = new LockStats();
+  LockNode[]                 fChildren;
 
   RootLockNode(Collection<LockSpec> lockInfos) {
     ArrayList<LockSpecNode> list = new ArrayList<LockSpecNode>();

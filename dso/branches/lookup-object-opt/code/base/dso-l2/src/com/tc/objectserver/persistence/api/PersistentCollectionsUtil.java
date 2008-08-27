@@ -4,10 +4,7 @@
  */
 package com.tc.objectserver.persistence.api;
 
-import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObjectState;
-import com.tc.objectserver.persistence.sleepycat.PersistableCollection;
-import com.tc.objectserver.persistence.sleepycat.SleepycatCollectionFactory;
 
 public class PersistentCollectionsUtil {
 
@@ -17,28 +14,12 @@ public class PersistentCollectionsUtil {
       case ManagedObjectState.PARTIAL_MAP_TYPE:
       case ManagedObjectState.TREE_MAP_TYPE:
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
-      case ManagedObjectState.SET_TYPE:
-      case ManagedObjectState.TREE_SET_TYPE:
         return true;
       default:
         return false;
     }
-  }
 
-  public static PersistableCollection createPersistableCollection(ObjectID id, SleepycatCollectionFactory collectionFactory,
-                                                            byte type) {
-    switch (type) {
-      case ManagedObjectState.MAP_TYPE:
-      case ManagedObjectState.PARTIAL_MAP_TYPE:
-      case ManagedObjectState.TREE_MAP_TYPE:
-      case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
-        return (PersistableCollection) collectionFactory.createPersistentMap(id);
-      case ManagedObjectState.SET_TYPE:
-      case ManagedObjectState.TREE_SET_TYPE:
-        return (PersistableCollection) collectionFactory.createPersistentSet(id);
-      default:
-        return null;
-    }
+    // unreachable
   }
 
 }

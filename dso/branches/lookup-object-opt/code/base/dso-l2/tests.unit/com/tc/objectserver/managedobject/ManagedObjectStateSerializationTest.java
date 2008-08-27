@@ -53,9 +53,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.LIST_TYPE:
             testList();
             break;
-          case ManagedObjectState.LINKED_HASHSET_TYPE:
-            testLinkedHashSet();
-            break;
           case ManagedObjectState.SET_TYPE:
             testSet();
             break;
@@ -94,8 +91,7 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
 
     TestDNACursor cursor = new TestDNACursor();
 
-    cursor.addPhysicalAction(CLASSLOADER_FIELD_NAME, new ClassLoaderInstance(new UTF8ByteDataHolder("loader desc")),
-                             true);
+    cursor.addPhysicalAction(CLASSLOADER_FIELD_NAME, new ClassLoaderInstance(new UTF8ByteDataHolder("loader desc")), true);
     cursor.addPhysicalAction(INTERFACES_FIELD_NAME, myProxy.getClass().getInterfaces(), true);
     cursor.addPhysicalAction(INVOCATION_HANDLER_FIELD_NAME, new ObjectID(2002), true);
 
@@ -190,18 +186,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.SET_TYPE);
-  }
-  
-  public void testLinkedHashSet() throws Exception {
-    String className = "java.util.LinkedHashSet";
-    TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
-
-    ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.LINKED_HASHSET_TYPE);
   }
 
   public void testTreeSet() throws Exception {

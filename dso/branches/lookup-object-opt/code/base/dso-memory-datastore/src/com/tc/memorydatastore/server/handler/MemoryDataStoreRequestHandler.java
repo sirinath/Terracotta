@@ -5,6 +5,7 @@ package com.tc.memorydatastore.server.handler;
 
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
+import com.tc.async.api.EventHandlerException;
 import com.tc.memorydatastore.message.MemoryDataStoreRequestMessage;
 import com.tc.memorydatastore.message.MemoryDataStoreResponseMessage;
 import com.tc.memorydatastore.server.MemoryDataStore;
@@ -24,11 +25,11 @@ public class MemoryDataStoreRequestHandler extends AbstractEventHandler {
   private long totalTimeProcessed = 0; 
 
 
-  public void handleEvent(EventContext context) {
+  public void handleEvent(EventContext context) throws EventHandlerException {
     long startTime = System.currentTimeMillis();
     
     MemoryDataStoreRequestMessage message = (MemoryDataStoreRequestMessage)context;
-    MemoryDataStoreRequestMessage dataStoreRequestMessage = message;
+    MemoryDataStoreRequestMessage dataStoreRequestMessage = (MemoryDataStoreRequestMessage) message;
 
     MessageChannel channel = message.getChannel();
 

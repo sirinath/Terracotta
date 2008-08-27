@@ -93,33 +93,12 @@ public class GreedyLockManagerTest extends TestCase {
     super.tearDown();
   }
 
-  static class MyChannelManager extends NullChannelManager {
-
-    private final ClientID       cid;
-    private final MessageChannel channel;
-
-    MyChannelManager(ClientID cid, MessageChannel channel) {
-      this.cid = cid;
-      this.channel = channel;
-    }
-
-    public MessageChannel getChannel(ChannelID id) {
-      if (cid.equals(id)) { return channel; }
-      return null;
-    }
-
-    public String getChannelAddress(NodeID nid) {
-      if (cid.equals(nid)) { return "127.0.0.1:6969"; }
-      return "no longer connected";
-    }
-  }
-
   public void testLockMBean() throws IOException {
 
-    MessageChannel channel = new TestMessageChannel();
+    final MessageChannel channel = new TestMessageChannel();
 
     final long start = System.currentTimeMillis();
-    ClientID cid1 = new ClientID(new ChannelID(1));
+    final ClientID cid1 = new ClientID(new ChannelID(1));
     ClientID cid2 = new ClientID(new ChannelID(2));
     ClientID cid3 = new ClientID(new ChannelID(3));
     LockID lid1 = new LockID("1");
@@ -128,7 +107,17 @@ public class GreedyLockManagerTest extends TestCase {
     ThreadID tid1 = new ThreadID(1);
     TimerSpec wait = new TimerSpec(Integer.MAX_VALUE);
 
-    lockManager = new LockManagerImpl(new MyChannelManager(cid1, channel), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
+    lockManager = new LockManagerImpl(new NullChannelManager() {
+      public MessageChannel getChannel(ChannelID id) {
+        if (cid1.equals(id)) { return channel; }
+        return null;
+      }
+
+      public String getChannelAddress(NodeID nid) {
+        if (cid1.equals(nid)) { return "127.0.0.1:6969"; }
+        return "no longer connected";
+      }
+    }, L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
 
     lockManager.start();
 

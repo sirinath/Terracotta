@@ -24,9 +24,6 @@ bundled_components:
 packaging:
   - mvn
 postscripts:
-  - make-build-data:
-      args:
-        - lib/resources
   - make-terracotta-api-pom:
       args:
         - version-PREALPHA
@@ -35,8 +32,6 @@ postscripts:
         - artifact: terracotta-api
           file: terracotta-api-version-PREALPHA.jar
           pom: poms/terracotta-api-pom.xml
-          inject: lib/resources/build-data.txt
         - artifact: tc.test-compile
           file: tc.test-compile-version-PREALPHA.jar
           pom: poms/tc.test-compile-pom.xml
-          inject: lib/resources/build-data.txt

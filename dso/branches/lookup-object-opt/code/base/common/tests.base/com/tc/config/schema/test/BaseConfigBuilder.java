@@ -203,7 +203,6 @@ public abstract class BaseConfigBuilder {
     Assert.assertNotBlank(propertyName);
 
     if (isSet(propertyName)) {
-//      return openElement(tagName) + getProperty(propertyName) + closeElement(tagName);
       return indent() + "<" + tagName + ">" + getProperty(propertyName) + "</" + tagName + ">";
     }
     else return "";
@@ -243,7 +242,7 @@ public abstract class BaseConfigBuilder {
 
   protected final String closeElement(String tagName) {
     --this.currentIndentLevel;
-    return indent() + "</" + tagName + ">" + "\n";
+    return indent() + "\n</" + tagName + ">";
   }
 
   protected final String closeElement(String tagName, String[] properties) {

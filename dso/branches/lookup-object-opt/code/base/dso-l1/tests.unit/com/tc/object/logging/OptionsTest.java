@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.logging;
 
@@ -172,6 +171,14 @@ public class OptionsTest extends TestCase {
     }
 
     public void warn(Object message, Throwable t) {
+      throw new ImplementMe();
+    }
+
+    public void log(LogLevel level, Object message) {
+      throw new ImplementMe();
+    }
+
+    public void log(LogLevel level, Object message, Throwable t) {
       throw new ImplementMe();
     }
 

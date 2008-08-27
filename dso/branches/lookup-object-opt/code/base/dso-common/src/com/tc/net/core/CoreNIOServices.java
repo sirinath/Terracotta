@@ -321,6 +321,9 @@ class CoreNIOServices extends Thread implements TCListenerEventListener {
         }
       }
     }
+
+    // drop any old selector tasks
+    localSelectorTasks = new LinkedQueue();
   }
 
   private void selectLoop() throws IOException {

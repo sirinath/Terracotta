@@ -238,26 +238,6 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     end
   end
 
-  # Produces Javadoc documentation in the build/doc/api directory.
-  # The set of modules to include is specified in modules.def.yml
-  def javadoc
-    depends :init
-
-    javadoc_dir = @build_results.javadoc_directory.delete
-    javadoc_dir.delete
-
-    @ant.javadoc(:destdir => javadoc_dir.to_s,
-                 :author => true, :version => true, :use => true,
-                 :windowtitle => "Terracotta API Documentation") do
-      modules = @module_set.find_all {|mod| mod.javadoc?}
-      modules.each do |mod|
-        @ant.fileset(:dir => mod.name, :defaultexcludes => true) do
-          @ant.include(:name => 'src/**')
-        end
-      end
-    end
-  end
-
   # Runs all tests; you can use check_modules, check_types, check_patterns, etc. (as documented
   # in ConfigSpecifiedTestSet) to alter exactly what gets run.
   def check
@@ -539,24 +519,6 @@ END
       compare_maven_version(maven_version, pom, '/project/parent/version')
     end
     compare_maven_version(maven_version, 'pom.xml', '/project/properties/tcVersion')
-  end
-  
-  def eclipse_gen
-    build_module_name = 'eclipsegen'
-    subtree_name = 'src'
-    build_module = @module_set[build_module_name]
-    subtree = build_module.subtree(subtree_name)
-
-    build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
-
-    if config_jre = config_source['jdk']
-      jvm = @jvm_set[config_jre]
-    else
-      jvm = build_module.jdk
-    end
-    arguments = all_remaining_arguments
-    jvmargs = config_source.as_array('jvmargs') || [ ]
-    do_run_class(jvm, "eclipsegen.Main", arguments, jvmargs, subtree, FilePath.new(@basedir, build_module_name))    
   end
 
   # Runs a class, as specified on the command line. Takes one argument, which is the name of the test;
@@ -882,17 +844,18 @@ END
 
   # Runs the given class, using the given JVM, with the given arguments and JVM arguments, against the
   # given subtree.
-  def do_run_class(jvm, classname, arguments, jvmargs, subtree, home=nil)
-    home ||= FilePath.new(@basedir)
+  def do_run_class(jvm, classname, arguments, jvmargs, subtree)
+    home = TerracottaHome.new(@static_resources, @build_results.tools_home).prepare(ant)
+
     puts "Running:"
     puts "    against module '%s', subtree '%s'," % [ subtree.build_module.name, subtree.name ]
     puts "    using the JVM at '%s'," % jvm.home.to_s
-    puts "    in directory '%s'" % home.to_s
+    puts "    in directory '%s'" % home.dir.to_s
     puts ""
     puts "    java %s %s %s" % [ jvmargs.join(" "), classname, arguments.join(" ") ]
     puts ""
 
-    subtree.run_java(ant, classname, home, jvm, jvmargs, arguments, { }, @build_results, @build_environment)
+    subtree.run_java(ant, classname, home.dir, jvm, jvmargs, arguments, { }, @build_results, @build_environment)
   end
 
   # Where should we aggregate test result files (XML files) to? This is used so that CruiseControl can

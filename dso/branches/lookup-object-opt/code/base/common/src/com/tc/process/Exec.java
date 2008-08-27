@@ -60,7 +60,7 @@ public class Exec {
 
       final int exitCode = process.waitFor();
 
-      inputThread.join();
+      if (inputThread != null) inputThread.join();
 
       if (outputLogger != null) {
         outputLogger.finish();

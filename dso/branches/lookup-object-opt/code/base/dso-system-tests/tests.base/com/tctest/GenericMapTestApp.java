@@ -17,6 +17,7 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.TIMUtil;
 import com.tc.util.runtime.Vm;
+import com.tcclient.ehcache.TimeExpiryMap;
 
 import gnu.trove.THashMap;
 import gnu.trove.TObjectFunction;
@@ -59,7 +60,7 @@ public class GenericMapTestApp extends GenericTestApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals(24 + (Vm.isJDK15Compliant() ? 1 : 0), maps.size());
+    Assert.assertEquals(25 + (Vm.isJDK15Compliant() ? 1 : 0), maps.size());
 
     return maps.iterator();
   }
@@ -93,6 +94,7 @@ public class GenericMapTestApp extends GenericTestApp {
     maps.add(new MyProperties());
     maps.add(new MyProperties2());
     maps.add(new MyProperties3());
+    maps.add(new TimeExpiryMap(1, 100, 200, "testMap")); // no invalidator is running
 
     if (Vm.isJDK15Compliant()) {
       maps.add(makeConcurrentHashMap());
@@ -138,6 +140,7 @@ public class GenericMapTestApp extends GenericTestApp {
     nonSharedArrayMap.put("arrayforMyProperties", new Object[4]);
     nonSharedArrayMap.put("arrayforMyProperties2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyProperties3", new Object[4]);
+    nonSharedArrayMap.put("arrayforTimeExpiryMap", new Object[4]);
     sharedMap.put("arrayforConcurrentHashMap", new Object[4]);
   }
 
@@ -162,6 +165,9 @@ public class GenericMapTestApp extends GenericTestApp {
     config.addIncludePattern(NullTolerantComparator.class.getName());
     config.addIncludePattern(SimpleEntry.class.getName());
     config.addExcludePattern(MyNonPortableObject.class.getName());
+
+    // this is just a quick way to add TimeExpiryMap to the instrumentation list
+    config.addModule(TIMUtil.EHCACHE_1_2_4, TIMUtil.getVersion(TIMUtil.EHCACHE_1_2_4));
   }
 
   // This method is kind of like a macro, it returns an element (E == element) to be used
@@ -185,6 +191,7 @@ public class GenericMapTestApp extends GenericTestApp {
   void testBasicUnSynchronizedPut(Map map, boolean validate, int v) {
     // if (map instanceof Hashtable) { return; }
     if (map instanceof FastHashMap) { return; }
+    if (map instanceof TimeExpiryMap) { return; }
     if (isCHM(map)) { return; }
 
     if (validate) {
@@ -378,8 +385,8 @@ public class GenericMapTestApp extends GenericTestApp {
    * expectedMap.put("key2", "val2"); expectedMap.put("key3", "val3"); assertMappings(expectedMap, map); } else {
    * synchronized (map) { Properties data = new Properties(); data.setProperty("key1", "val1"); data.setProperty("key2",
    * "val2"); data.setProperty("key3", "val3"); ByteArrayOutputStream outputStream = new ByteArrayOutputStream(); try {
-   * data.storeToXML(outputStream, null); } catch (IOException ioe) { Assert.fail(); } ByteArrayInputStream inputStream
-   * = new ByteArrayInputStream(outputStream.toByteArray()); try { ((Properties)map).loadFromXML(inputStream); } catch
+   * data.storeToXML(outputStream, null); } catch (IOException ioe) { Assert.fail(); } ByteArrayInputStream inputStream =
+   * new ByteArrayInputStream(outputStream.toByteArray()); try { ((Properties)map).loadFromXML(inputStream); } catch
    * (IOException ioe) { Assert.fail(); } } } }
    */
 
@@ -1818,7 +1825,7 @@ public class GenericMapTestApp extends GenericTestApp {
   }
 
   private boolean canTestSharedArray(Map map) {
-    return !(map instanceof HashMap) && !(map instanceof LinkedHashMap) && !(map instanceof Hashtable);
+    return (!(map instanceof HashMap) && !(map instanceof LinkedHashMap) && !(map instanceof Hashtable) && !(map instanceof TimeExpiryMap));
   }
 
   private boolean canTestNonPortableObject(Map map) {
@@ -1826,7 +1833,7 @@ public class GenericMapTestApp extends GenericTestApp {
   }
 
   private boolean canTestReadOnly(Map map) {
-    return (!(map instanceof Hashtable) && !(map instanceof FastHashMap) && !(isCHM(map)));
+    return (!(map instanceof Hashtable) && !(map instanceof FastHashMap) && !(map instanceof TimeExpiryMap) && !(isCHM(map)));
   }
 
   /**
@@ -1834,6 +1841,7 @@ public class GenericMapTestApp extends GenericTestApp {
    * LinkedHashMap.
    */
   private Object getMySubclassArray(Map map) {
+    if (map instanceof TimeExpiryMap) { return nonSharedArrayMap.get("arrayforTimeExpiryMap"); }
     if (map instanceof MyLinkedHashMap3) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap3"); }
     if (map instanceof MyLinkedHashMap2) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap2"); }
     if (map instanceof MyLinkedHashMap) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap"); }
@@ -2024,7 +2032,7 @@ public class GenericMapTestApp extends GenericTestApp {
   }
 
   private static boolean allowsNull(Map map) {
-    return !(map instanceof Hashtable) && !(isCHM(map));
+    return !(map instanceof Hashtable) && !(map instanceof TimeExpiryMap) && !(isCHM(map));
   }
 
   private static class Key implements Comparable {
@@ -2175,7 +2183,7 @@ public class GenericMapTestApp extends GenericTestApp {
   }
 
   private static class MyHashMap3 extends HashMap {
-    private final int i;
+    private int i;
 
     public MyHashMap3(int i) {
       super();
