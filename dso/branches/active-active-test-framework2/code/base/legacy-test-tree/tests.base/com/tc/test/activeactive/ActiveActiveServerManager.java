@@ -8,7 +8,6 @@ import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.test.GroupData;
 import com.tc.test.MultipleServerManager;
 import com.tc.test.MultipleServersConfigCreator;
-import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
@@ -23,7 +22,6 @@ public class ActiveActiveServerManager extends MultipleServerManager {
    * One <code>ActivePassiveServerManager</code> for each group since they logically form a group
    */
   private ActivePassiveServerManager[] activePassiveServerManagers;
-  private ActiveActiveTestSetupManager setupManger;
   private ProxyConnectManager[]        proxyManagers;
   private GroupData[]                  groupsData;
 
@@ -38,7 +36,7 @@ public class ActiveActiveServerManager extends MultipleServerManager {
                                    ActiveActiveTestSetupManager setupManger, File javaHome,
                                    TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                    boolean isProxyL2GroupPorts) throws Exception {
-    this.setupManger = setupManger;
+    super(setupManger);
     int groupCount = setupManger.getActiveServerGroupCount();
     activePassiveServerManagers = new ActivePassiveServerManager[groupCount];
     String configFileLocation = tempDir + File.separator + CONFIG_FILE_NAME;
@@ -139,11 +137,6 @@ public class ActiveActiveServerManager extends MultipleServerManager {
     for (int i = 0; i < grpCount; i++) {
       activePassiveServerManagers[i].dumpAllServers(currentPid, dumpCount, dumpInterval);
     }
-  }
-
-  public boolean crashActiveServersAfterMutate() {
-    if (this.setupManger.getServerCrashMode().equals(MultipleServersCrashMode.CRASH_AFTER_MUTATE)) { return true; }
-    return false;
   }
 
   public void addGroupsToL1Config(TestTVSConfigurationSetupManagerFactory configFactory) {
