@@ -22,10 +22,10 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
 import com.tc.net.groups.NodeID;
+import com.tc.objectserver.api.GCStats;
 import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectManagerEventListener;
 import com.tc.objectserver.context.GCResultContext;
-import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
-import com.tc.objectserver.dgc.impl.GarbageCollectorEventListenerAdapter;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
 import com.tc.util.Assert;
@@ -245,16 +245,14 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
 
   private static final Object ADDED = new Object();
 
-  private final class GCMonitor extends GarbageCollectorEventListenerAdapter {
+  private final class GCMonitor implements ObjectManagerEventListener {
 
     boolean disabled        = false;
     Map     syncingPassives = new HashMap();
 
-   
-    @Override
-    public void garbageCollectorCycleCompleted(GarbageCollectionInfo info) {
+    public void garbageCollectionComplete(GCStats stats, SortedSet deleted) {
       Map toAdd = null;
-      notifyGCResultToPassives(info.getIteration(), info.getDeleted());
+      notifyGCResultToPassives(stats, deleted);
       synchronized (this) {
         if (syncingPassives.isEmpty()) return;
         toAdd = new LinkedHashMap();
@@ -274,10 +272,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       add2L2StateManager(toAdd);
     }
 
-
-    private void notifyGCResultToPassives(int iteration, final SortedSet deleted) {
+    private void notifyGCResultToPassives(GCStats stats, final SortedSet deleted) {
       if (deleted.isEmpty()) return;
-      final GCResultMessage msg = GCResultMessageFactory.createGCResultMessage(iteration, deleted);
+      final GCResultMessage msg = GCResultMessageFactory.createGCResultMessage(stats.getIteration(), deleted);
       final long id = gcIdGenerator.incrementAndGet();
       transactionManager.callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionLister() {
         public void onCompletion() {

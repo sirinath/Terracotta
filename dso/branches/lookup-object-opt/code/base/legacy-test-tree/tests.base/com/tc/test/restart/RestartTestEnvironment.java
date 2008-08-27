@@ -25,6 +25,7 @@ import com.tctest.restart.TestThreadGroup;
 import com.terracottatech.config.PersistenceMode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -72,10 +73,6 @@ public class RestartTestEnvironment {
       throw new AssertionError("Temp directory is not a directory: " + tempDirectory);
     }
     this.configFile = new File(this.tempDirectory, "restart-test-config.xml");
-  }
-
-  public StandardTVSConfigurationSetupManagerFactory getConfig() {
-    return config;
   }
 
   public void setIsPersistent(boolean b) {
@@ -211,7 +208,7 @@ public class RestartTestEnvironment {
     server.shutdown();
   }
 
-  public ServerControl newExtraProcessServer(List jvmArgs) {
+  public ServerControl newExtraProcessServer(List jvmArgs) throws FileNotFoundException {
     assertServerOff();
     File javaHome = null;
     try {
@@ -227,19 +224,22 @@ public class RestartTestEnvironment {
     return serverWrapper;
   }
 
-  public ServerControl newExtraProcessServer() {
+  public ServerControl newExtraProcessServer() throws FileNotFoundException {
     return (newExtraProcessServer(new ArrayList()));
   }
 
-  /*
-   * Commented out by jvoegele since this method is not called from anywhere and it creates a dependency on the deploy
-   * module. The following imports were also removed as a result of removing this method: import
-   * com.tc.config.schema.setup.ConfigurationSetupException; import
-   * com.tc.objectserver.control.IntraProcessServerControl; public ServerControl newIntraProcessServer() throws
-   * ConfigurationSetupException { assertServerOff(); this.server = new
-   * IntraProcessServerControl(this.config.createL2TVSConfigurationSetupManager(null), "localhost"); return
-   * serverWrapper; }
-   */
+/*
+Commented out by jvoegele since this method is not called from anywhere and it creates a dependency
+on the deploy module.  The following imports were also removed as a result of removing this method:
+import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.objectserver.control.IntraProcessServerControl;
+
+  public ServerControl newIntraProcessServer() throws ConfigurationSetupException {
+    assertServerOff();
+    this.server = new IntraProcessServerControl(this.config.createL2TVSConfigurationSetupManager(null), "localhost");
+    return serverWrapper;
+  }
+*/
 
   private void assertServerNotNull() {
     if (this.server == null) throw new AssertionError("Server is null.");

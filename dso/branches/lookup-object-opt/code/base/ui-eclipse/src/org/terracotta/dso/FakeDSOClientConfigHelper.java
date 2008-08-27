@@ -42,12 +42,13 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
+
 public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper, DSOClientConfigHelper {
 
   public String rawConfigText() {
     return null;
   }
-
+  
   public String[] getMissingRootDeclarations(ClassInfo classInfo) {
     return new String[0];
   }
@@ -377,18 +378,18 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, ClassInfo classInfo,
-                                                           InstrumentationLogger lgr, ClassLoader caller,
-                                                           final boolean forcePortable, boolean honorTransient) {
+                                                    InstrumentationLogger lgr, ClassLoader caller,
+                                                    final boolean forcePortable, boolean honorTransient) {
     return null;
   }
 
   public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
-                                            ClassLoader caller) {
+                                     ClassLoader caller) {
     return null;
   }
 
   public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
-                                            ClassLoader caller, boolean disableSuperClassTypeChecking) {
+                                     ClassLoader caller, boolean disableSuperClassTypeChecking) {
     return null;
   }
 
@@ -417,15 +418,11 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public void addWriteAutolock(String methodPattern, String lockContextInfo) {
-    //
+    //      
   }
 
   public ReconnectConfig getL1ReconnectProperties() {
     throw new ImplementMe();
-  }
-
-  public boolean useResolveLockWhenClearing(Class clazz) {
-    return true;
   }
 
 }

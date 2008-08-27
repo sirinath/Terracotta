@@ -1,104 +1,97 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.dso;
 
-import org.dijon.Button;
-import org.dijon.ContainerResource;
-import org.dijon.Label;
-
-import com.tc.admin.AdminClient;
-import com.tc.admin.common.BrowserLauncher;
+import com.tc.admin.ConnectionContext;
 import com.tc.admin.common.XContainer;
-import com.tc.admin.model.IBasicObject;
-import com.tc.admin.model.IClusterNode;
-import com.tc.util.ProductInfo;
+import com.tc.admin.common.XTree;
+import com.tc.admin.common.XTreeNode;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.io.Serializable;
+
+import javax.swing.JScrollPane;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 public class RootsPanel extends XContainer {
-  protected IClusterNode        m_clusterNode;
-  protected Label               m_liveObjectCountValueLabel;
-  protected BasicObjectSetPanel m_objectSetPanel;
-  protected MouseListener       m_objectSetMouseListener;
+  private ConnectionContext m_cc;
+  private XTree             m_tree;
 
-  public RootsPanel(IClusterNode clusterNode, IBasicObject[] roots) {
-    super();
+  public RootsPanel(ConnectionContext cc, DSORoot[] roots) {
+    super(new BorderLayout());
 
-    load((ContainerResource) AdminClient.getContext().getComponent("RootsPanel"));
+    m_tree = new XTree();
+    m_tree.setShowsRootHandles(true);
+    m_tree.addMouseListener(new MouseAdapter() {
+      public void mouseClicked(MouseEvent me) {
+        TreePath  path = m_tree.getPathForLocation(me.getX(), me.getY());
 
-    m_clusterNode = clusterNode;
-    String tip = AdminClient.getContext().getString("liveObjectCount.tip");
-    ((Label) findComponent("LiveObjectCountLabel")).setToolTipText(tip);
-    m_liveObjectCountValueLabel = (Label) findComponent("LiveObjectCountValueLabel");
-    m_liveObjectCountValueLabel.setToolTipText(tip);
-    ((Button) findComponent("HelpButton")).addActionListener(new LiveObjectHelpAction());
-    m_objectSetPanel = (BasicObjectSetPanel) findComponent("ObjectSetPanel");
+        if(path != null) {
+          m_tree.requestFocus();
 
-    m_objectSetPanel.setObjects(clusterNode, roots);
-    m_objectSetMouseListener = new ObjectSetMouseListener();
-    m_objectSetPanel.getTree().addMouseListener(m_objectSetMouseListener);
+          XTreeNode node = (XTreeNode)path.getLastPathComponent();
+          if(node != null) {
+            node.nodeClicked(me);
+          }
+        }
+      }
+    });
+    m_tree.addTreeSelectionListener(new TreeSelectionListener() {
+      public void valueChanged(TreeSelectionEvent tse) {
+        TreePath  path = tse.getNewLeadSelectionPath();
+        XTreeNode node;
+
+        if(path != null) {
+          m_tree.requestFocus();
+          
+          node = (XTreeNode)path.getLastPathComponent();
+          if(node != null) {
+            node.nodeSelected(tse);
+          }
+        }
+      }
+    });
+    add(new JScrollPane(m_tree), BorderLayout.CENTER);
+    
+    setup(cc, roots);
   }
 
-  private class ObjectSetMouseListener extends MouseAdapter implements Serializable {
-    public void mouseClicked(MouseEvent e) {
-      updateLiveObjectCount();
-    }
+  public void setup(ConnectionContext cc, DSORoot[] roots) {
+    m_cc = cc;
+    setRoots(roots);
   }
-
-  private void updateLiveObjectCount() {
-    m_liveObjectCountValueLabel.setText(Integer.toString(m_clusterNode.getLiveObjectCount()));
-  }
-
-  public void setObjects(IBasicObject[] roots) {
-    updateLiveObjectCount();
-    m_objectSetPanel.setObjects(m_clusterNode, roots);
+  
+  public void setRoots(DSORoot[] roots) {
+    m_tree.setModel(new RootTreeModel(m_cc, roots));
+    m_tree.revalidate();
+    m_tree.repaint();
   }
 
   public void clearModel() {
-    m_objectSetPanel.clearModel();
-  }
-
-  public void refresh() {
-    updateLiveObjectCount();
-    m_objectSetPanel.refresh();
-  }
-
-  public void add(IBasicObject root) {
-    m_objectSetPanel.add(root);
+    m_tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode()));
+    m_tree.revalidate();
+    m_tree.repaint();
   }
   
-  private class LiveObjectHelpAction implements ActionListener {
-    private String getKitID() {
-      String kitID = ProductInfo.getInstance().kitID();
-      if(ProductInfo.UNKNOWN_VALUE.equals(kitID)) {
-        kitID = System.getProperty("com.tc.kitID", "42.0");
-      }
-      return kitID;
-    }
-    
-    public void actionPerformed(ActionEvent e) {
-      String kitID =getKitID();
-      String loc = "http://www.terracotta.org/kit/reflector?kitID=" + kitID
-                   + "&pageID=ConsoleGuide#AdminConsoleGuide-Roots";
-      BrowserLauncher.openURL(loc);
-    }
+  public void refresh() {
+    ((RootTreeModel)m_tree.getModel()).refresh();
   }
 
+  public void add(DSORoot root) {
+    ((RootTreeModel)m_tree.getModel()).add(root);
+    m_tree.revalidate();
+    m_tree.repaint();
+  }
+  
   public void tearDown() {
-    m_objectSetPanel.getTree().removeMouseListener(m_objectSetMouseListener);
-
     super.tearDown();
-
-    m_clusterNode = null;
-    m_liveObjectCountValueLabel = null;
-    m_objectSetPanel = null;
-    m_objectSetMouseListener = null;
+    m_cc = null;
+    m_tree = null;
   }
 }

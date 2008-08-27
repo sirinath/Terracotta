@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.common;
 
@@ -10,7 +9,7 @@ import javax.swing.JPopupMenu;
 
 public class XTextArea extends TextArea {
   protected TextComponentHelper m_helper;
-
+  
   public XTextArea() {
     super();
     m_helper = createHelper();
@@ -31,10 +30,10 @@ public class XTextArea extends TextArea {
   public JPopupMenu getPopupMenu() {
     return m_helper.getPopupMenu();
   }
-
+  
   public void addNotify() {
     super.addNotify();
-    if (getPopupMenu() == null) {
+    if(getPopupMenu() == null) {
       setPopupMenu(createPopup());
     }
   }

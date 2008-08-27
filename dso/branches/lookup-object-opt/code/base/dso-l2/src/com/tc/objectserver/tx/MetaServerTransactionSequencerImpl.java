@@ -10,6 +10,7 @@ import com.tc.util.concurrent.CopyOnWriteArrayMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,39 +106,65 @@ public class MetaServerTransactionSequencerImpl implements ServerTransactionSequ
     return txnSequencers.size();
   }
 
-  public int getBlockedObjectsCount() {
-    int blockedObjectCount = 0;
-    for (Iterator i = txnSequencers.values().iterator(); i.hasNext();) {
-      ServerTransactionSequencerStats stsi = (ServerTransactionSequencerStats) i.next();
-      blockedObjectCount += stsi.getBlockedObjectsCount();
+  public synchronized String dumpBlockedQ() {
+    StringBuffer dumpBuff = new StringBuffer();
+    int i = 0;
+    for(Enumeration enumeration = txnSequencers.elements(); enumeration.hasMoreElements();) {
+      ServerTransactionSequencerImpl stsi = (ServerTransactionSequencerImpl)enumeration.nextElement();
+      dumpBuff.append("MetaServerTransactionSequencerImpl.ServerTransactionSequencerImpl[" + i +"]");
+      dumpBuff.append(stsi.dumpBlockedQ());
+       i++;
     }
-    return blockedObjectCount;
+    return dumpBuff.toString();
   }
 
-  public int getBlockedTxnsCount() {
-    int blockedTxnCount = 0;
-    for (Iterator i = txnSequencers.values().iterator(); i.hasNext();) {
-      ServerTransactionSequencerStats stsi = (ServerTransactionSequencerStats) i.next();
-      blockedTxnCount += stsi.getBlockedTxnsCount();
+  public synchronized String dumpObjects() {
+    StringBuffer dumpBuff = new StringBuffer();
+    int i = 0;
+    for(Enumeration enumeration = txnSequencers.elements(); enumeration.hasMoreElements();) {
+      ServerTransactionSequencerImpl stsi = (ServerTransactionSequencerImpl)enumeration.nextElement();
+      dumpBuff.append("MetaServerTransactionSequencerImpl.ServerTransactionSequencerImpl[" + i +"]");
+      dumpBuff.append(stsi.dumpObjects());
+       i++;
     }
-    return blockedTxnCount;
+    return dumpBuff.toString();
   }
 
-  public int getPendingTxnsCount() {
-    int pendingTxnsCount = 0;
-    for (Iterator i = txnSequencers.values().iterator(); i.hasNext();) {
-      ServerTransactionSequencerStats stsi = (ServerTransactionSequencerStats) i.next();
-      pendingTxnsCount += stsi.getPendingTxnsCount();
+  public synchronized String dumpPendingTxns() {
+    StringBuffer dumpBuff = new StringBuffer();
+    int i = 0;
+    for(Enumeration enumeration = txnSequencers.elements(); enumeration.hasMoreElements();) {
+      ServerTransactionSequencerImpl stsi = (ServerTransactionSequencerImpl)enumeration.nextElement();
+      dumpBuff.append("MetaServerTransactionSequencerImpl.ServerTransactionSequencerImpl[" + i +"]");
+      dumpBuff.append(stsi.dumpPendingTxns());
+       i++;
     }
-    return pendingTxnsCount;
+    return dumpBuff.toString();
   }
 
-  public int getTxnsCount() {
-    int txnsCount = 0;
-    for (Iterator i = txnSequencers.values().iterator(); i.hasNext();) {
-      ServerTransactionSequencerStats stsi = (ServerTransactionSequencerStats) i.next();
-      txnsCount += stsi.getTxnsCount();
+  public synchronized String dumpTxnQ() {
+    StringBuffer dumpBuff = new StringBuffer();
+    int i = 0;
+    for(Enumeration enumeration = txnSequencers.elements(); enumeration.hasMoreElements();) {
+      ServerTransactionSequencerImpl stsi = (ServerTransactionSequencerImpl)enumeration.nextElement();
+      dumpBuff.append("MetaServerTransactionSequencerImpl.ServerTransactionSequencerImpl[" + i +"]");
+      dumpBuff.append(stsi.dumpTxnQ());
+       i++;
     }
-    return txnsCount;
+    return dumpBuff.toString();
   }
+
+  public String reconcileStatus() {
+    StringBuffer dumpBuff = new StringBuffer();
+    int i = 0;
+    for(Enumeration enumeration = txnSequencers.elements(); enumeration.hasMoreElements();) {
+      ServerTransactionSequencerImpl stsi = (ServerTransactionSequencerImpl)enumeration.nextElement();
+      dumpBuff.append("MetaServerTransactionSequencerImpl.ServerTransactionSequencerImpl[" + i +"]");
+      dumpBuff.append(stsi.reconcileStatus());
+       i++;
+    }
+    return dumpBuff.toString();
+  }
+  
+  
 }

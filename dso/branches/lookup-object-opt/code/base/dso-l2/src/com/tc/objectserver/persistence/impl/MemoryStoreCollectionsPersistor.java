@@ -20,14 +20,14 @@ import java.io.ObjectInput;
 
 public class MemoryStoreCollectionsPersistor {
 
-  private final MemoryDataStoreClient        database;
-  private final BasicSerializer              serializer;
-  private final ByteArrayOutputStream        bao;
+  private final MemoryDataStoreClient     database;
+  private final BasicSerializer           serializer;
+  private final ByteArrayOutputStream     bao;
   private final MemoryStoreCollectionFactory collectionFactory;
-  private final TCObjectOutputStream         oo;
+  private final TCObjectOutputStream      oo;
 
   public MemoryStoreCollectionsPersistor(TCLogger logger, MemoryDataStoreClient mapsDatabase,
-                                         MemoryStoreCollectionFactory memoryStoreCollectionFactory) {
+                                      MemoryStoreCollectionFactory memoryStoreCollectionFactory) {
     this.database = mapsDatabase;
     this.collectionFactory = memoryStoreCollectionFactory;
     DSOSerializerPolicy policy = new DSOSerializerPolicy();
@@ -36,7 +36,7 @@ public class MemoryStoreCollectionsPersistor {
     this.oo = new TCObjectOutputStream(bao);
   }
 
-  public void saveMap(MemoryStorePersistableMap map) {
+  public void saveMap(MemoryStorePersistableMap map) throws IOException {
     map.commit(this, database);
   }
 
@@ -48,8 +48,8 @@ public class MemoryStoreCollectionsPersistor {
     bao.reset();
     return b;
   }
-
-  public synchronized byte[] serialize(long id) {
+  
+  public synchronized byte[] serialize(long id) throws IOException {
     oo.writeLong(id);
     oo.flush();
     byte b[] = bao.toByteArray();
@@ -65,7 +65,8 @@ public class MemoryStoreCollectionsPersistor {
     return b;
   }
 
-  public MemoryStorePersistableMap loadMap(ObjectID id) {
+  public MemoryStorePersistableMap loadMap(ObjectID id) throws IOException,
+      ClassNotFoundException {
     MemoryStorePersistableMap map = (MemoryStorePersistableMap) collectionFactory.createPersistentMap(id);
     map.load();
     return map;
@@ -82,7 +83,7 @@ public class MemoryStoreCollectionsPersistor {
     return deserialize(0, data);
   }
 
-  public boolean deleteCollection(ObjectID id) {
+   public boolean deleteCollection(ObjectID id) {
     byte idb[] = Conversion.long2Bytes(id.toLong());
     database.removeAll(idb);
     return true;

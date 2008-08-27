@@ -10,8 +10,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.context.GCResultContext;
-import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
-import com.tc.objectserver.dgc.api.GarbageCollectionInfoPublisher;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -39,12 +37,7 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
 
   public void handleEvent(EventContext context) {
     GCResultContext gcResult = (GCResultContext) context;
-    GarbageCollectionInfo gcInfo = gcResult.getGCInfo();
-    GarbageCollectionInfoPublisher gcPublisher = gcResult.getGCPublisher();
-    
-    logger.info("GC Delete Start : " + gcResult);
-    
-    gcPublisher.fireGCDeleteEvent(gcInfo);
+    logger.info("GC DELETE START : " + gcResult);
     long start = System.currentTimeMillis();
     SortedSet sortedGarbage = gcResult.getGCedObjectIDs();
 
@@ -64,14 +57,7 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
       }
     }
     long elapsed = System.currentTimeMillis() - start;
-    logger.info("GC Delete Complete : " + gcResult + " Removed " + sortedGarbage.size() + " objects in " + elapsed
-                + " ms.");
-    gcInfo.setDeleteStageTime(elapsed); 
-    long endMillis = System.currentTimeMillis();
-    gcInfo.setElapsedTime(endMillis - gcInfo.getStartTime());
-
-    gcPublisher.fireGCCompletedEvent(gcInfo);
-   
+    logger.info("GC DELETE COMPLETE : " + gcResult + " Removed " + sortedGarbage.size() + " objects in " + elapsed + " ms.");
   }
 
   private void removeFromStore(SortedSet<ObjectID> sortedGarbage) {
@@ -86,4 +72,5 @@ public class GarbageDisposeHandler extends AbstractEventHandler {
       logger.info("Removed " + sortedGarbage.size() + " objects in " + elapsed + " ms.");
     }
   }
+
 }

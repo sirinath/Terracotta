@@ -17,13 +17,7 @@ module DistributionUtils
     product_code = product_code.downcase
     flavor = flavor.downcase
     check_if_type_supplied(product_code, flavor)
-    
-    # until DEV-1253 is resolved, all distribution files should be in one place
-    # so changes can be applied to them at one time. 
-    # We decided to have all these files in OSS branch
-    config_directory = @static_resources.distribution_config_directory('OPENSOURCE')
-    
-    filename = FilePath.new(config_directory,
+    filename = FilePath.new(@static_resources.distribution_config_directory(flavor),
       "#{product_code}-#{flavor}.def.yml").canonicalize.to_s
     if File.exist?(filename)
       YAML.load_file(filename)
@@ -52,7 +46,7 @@ module DistributionUtils
     flavor       = (@flavor || @config_source["flavor"]).downcase
 
     @config = product_config(product_code, flavor)
-    @distribution_results = DistributionResults.new(self.dist_directory)
+    @distribution_results = DistributionResults.new(FilePath.new(@build_results.build_dir, "dist"))
   end
 
   def check_if_type_supplied(product_code, flavor)
@@ -60,14 +54,6 @@ module DistributionUtils
     fail 'You need to tell me the flavor of the kit to build: OPENSOURCE|ENTERPRISE?' if flavor.nil?
     @product_code = product_code
     @flavor       = flavor.downcase
-  end
-
-  def patch_descriptor_file
-    @config_source['patch_def_file'] ? FilePath.new(@config_source['patch_def_file']) : FilePath.new(@basedir, 'patch.def.yml')
-  end
-
-  def dist_directory
-    FilePath.new(@build_results.build_dir, "dist")
   end
 
   def product_directory

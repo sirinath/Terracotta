@@ -29,10 +29,6 @@ public interface TCServer {
 
   String getConfig();
   
-  String getPersistenceMode();
-  
-  String getFailoverMode();
-  
   String getDescriptionOfCapabilities();
 
   L2Info[] infoForAllL2s();

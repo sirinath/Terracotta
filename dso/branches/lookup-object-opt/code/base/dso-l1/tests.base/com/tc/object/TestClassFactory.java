@@ -16,7 +16,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 public class TestClassFactory implements TCClassFactory {
-
+  
   public TCClass getOrCreate(Class clazz, ClientObjectManager objectManager) {
     return new MockTCClass();
   }
@@ -26,30 +26,29 @@ public class TestClassFactory implements TCClassFactory {
   }
 
   public static class MockTCClass implements TCClass {
-
+    
     private ClientObjectManager clientObjectManager;
-
-    private boolean             hasOnLoadExecuteScript = false;
-
-    private boolean             hasOnLoadMethod        = false;
-
-    private TCField[]           portableFields         = null;
-
-    private boolean             portable               = false;
+    
+    private boolean hasOnLoadExecuteScript = false;
+    
+    private boolean hasOnLoadMethod = false;
+    
+    private TCField[] portableFields = null;
+    
+    private boolean portable = false;
 
     public MockTCClass() {
       //
     }
-
-    public MockTCClass(ClientObjectManager clientObjectManager, boolean hasOnLoadExecuteScript,
-                       boolean hasOnLoadMethod, boolean portable, TCField[] portableFields) {
+    
+    public MockTCClass(ClientObjectManager clientObjectManager, boolean hasOnLoadExecuteScript, boolean hasOnLoadMethod, boolean portable, TCField [] portableFields  ) {
       this.clientObjectManager = clientObjectManager;
       this.hasOnLoadExecuteScript = hasOnLoadExecuteScript;
       this.hasOnLoadMethod = hasOnLoadMethod;
       this.portable = portable;
       this.portableFields = portableFields;
     }
-
+    
     public boolean hasOnLoadExecuteScript() {
       return hasOnLoadExecuteScript;
     }
@@ -111,9 +110,10 @@ public class TestClassFactory implements TCClassFactory {
     }
 
     public TCField getField(String name) {
-      for (int i = 0; i < portableFields.length; i++) {
+      for(int i = 0; i < portableFields.length; i++ ) {
         TCField field = portableFields[i];
-        if (name.equals(field.getName())) return field;
+        if(name.equals(field.getName()))
+          return field;
       }
       return null;
     }
@@ -178,18 +178,16 @@ public class TestClassFactory implements TCClassFactory {
       throw new ImplementMe();
     }
 
-    public boolean useResolveLockWhileClearing() {
-      return true;
-    }
   }
-
+  
   public static class MockTCField implements TCField {
-
-    private final String name;
-
+    
+    private String name;
+    
     public MockTCField(String name) {
       this.name = name;
     }
+    
 
     public boolean canBeReference() {
       return true;
@@ -197,7 +195,7 @@ public class TestClassFactory implements TCClassFactory {
 
     public TCClass getDeclaringTCClass() {
       throw new ImplementMe();
-    }
+     }
 
     public String getName() {
       return name;
@@ -214,6 +212,6 @@ public class TestClassFactory implements TCClassFactory {
     public boolean isPortable() {
       return true;
     }
-
+    
   }
 }

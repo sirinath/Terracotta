@@ -31,7 +31,7 @@ public class HashSetSubclassTestApp extends AbstractTransparentApp {
 
   public void run() {
     try {
-      barrier.barrier();
+      int index = barrier.barrier();
 
       List hellos = new ArrayList();
 
@@ -41,7 +41,7 @@ public class HashSetSubclassTestApp extends AbstractTransparentApp {
         abc.add("B");
         abc.add("C");
         hellos.add(abc);
-        new MySet("xxx", abc);
+        Set myset = new MySet("xxx", abc);
       }
 
     } catch (Throwable t) {

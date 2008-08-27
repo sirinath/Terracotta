@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package org.terracotta.dso.actions;
 
@@ -66,9 +65,9 @@ public class ManageServerAction extends BaseAction implements IRunnableWithProgr
     super(null);
 
     setJavaElement(javaProject);
-    m_server = (Server) server.copy();
-    TcPlugin.getDefault().replacePatterns(m_server);
-    setText(m_name = buildNameForServer(m_server));
+    m_server = server;
+    TcPlugin.getDefault().replacePatterns(server);
+    setText(m_name = buildNameForServer(server));
 
     ServerTracker serverTracker = ServerTracker.getDefault();
     ServerInfo serverInfo = serverTracker.getServerInfo(javaProject, m_name);
@@ -110,7 +109,7 @@ public class ManageServerAction extends BaseAction implements IRunnableWithProgr
     String msg = MessageFormat.format("Error {0} Terracotta Server:\n\n", isRunning ? "stopping" : "starting");
     MessageDialog.openInformation(shell, "Terracotta", msg + ActionUtil.getStatusMessages(e));
   }
-
+  
   public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
     if (monitor != null && monitor.isCanceled()) throw new InterruptedException("Cancelled server '" + m_name + "'");
 

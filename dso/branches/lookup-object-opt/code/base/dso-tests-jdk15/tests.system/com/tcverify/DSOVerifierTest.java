@@ -169,7 +169,7 @@ public class DSOVerifierTest extends TCTestCase {
   }
 
   protected Collection<String> getExtraJvmArgs() {
-    return Collections.emptyList();
+    return Collections.EMPTY_LIST;
   }
 
   protected boolean isSynchronousWrite() {

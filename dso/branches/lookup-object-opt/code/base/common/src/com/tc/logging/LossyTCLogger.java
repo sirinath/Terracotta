@@ -97,6 +97,18 @@ public class LossyTCLogger implements TCLogger {
     }
   }
 
+  public void log(LogLevel level, Object message) {
+    if (decider.canLog()) {
+      logger.log(level, message);
+    }
+  }
+
+  public void log(LogLevel level, Object message, Throwable t) {
+    if (decider.canLog()) {
+      logger.log(level, message, t);
+    }
+  }
+
   public boolean isDebugEnabled() {
     return logger.isDebugEnabled();
   }
@@ -122,8 +134,8 @@ public class LossyTCLogger implements TCLogger {
   }
 
   static class TimeBasedDecider implements LogOrNot {
-    private final int logInterval;
-    private long      then;
+    private int  logInterval;
+    private long then;
 
     TimeBasedDecider(int logInterval) {
       this.logInterval = logInterval;
@@ -140,8 +152,8 @@ public class LossyTCLogger implements TCLogger {
   }
 
   static class CountBasedDecider implements LogOrNot {
-    private final int logInterval;
-    private int       count;
+    private int logInterval;
+    private int count;
 
     CountBasedDecider(int logInterval) {
       this.logInterval = logInterval;

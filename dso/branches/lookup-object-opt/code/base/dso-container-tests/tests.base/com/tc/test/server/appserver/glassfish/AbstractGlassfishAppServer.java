@@ -11,8 +11,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
 import com.tc.lcp.CargoLinkedChildProcess;
 import com.tc.lcp.HeartBeatService;
 import com.tc.process.Exec;
@@ -23,8 +21,6 @@ import com.tc.test.server.ServerResult;
 import com.tc.test.server.appserver.AbstractAppServer;
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.AppServerResult;
-import com.tc.test.server.appserver.deployment.DeploymentBuilder;
-import com.tc.test.server.appserver.deployment.WARBuilder;
 import com.tc.test.server.util.AppServerUtil;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
@@ -62,9 +58,8 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
 
   private static final String ADMIN_USER         = "admin";
   private static final String PASSWD             = "password";
-  private static final String PINGWAR            = "ping";
 
-  private static final long   START_STOP_TIMEOUT = 1000 * 300;
+  private static final long   START_STOP_TIMEOUT = 1000 * 240;
   private final PortChooser   pc                 = new PortChooser();
   private final int           httpPort           = pc.chooseRandomPort();
   private final int           adminPort          = pc.chooseRandomPort();
@@ -188,84 +183,9 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
 
     System.err.println("Started " + params.instanceName() + " on port " + httpPort);
 
-    waitForAppInstanceRunning(params);
-
     deployWars(params.wars());
 
-    waitForPing();
-
     return new AppServerResult(httpPort, this);
-  }
-
-  private void waitForPing() {
-    String pingUrl = "http://localhost:" + httpPort + "/ping/index.html";
-    WebConversation wc = new WebConversation();
-    wc.setExceptionsThrownOnErrorStatus(false);
-    int tries = 10;
-    for (int i = 0; i < tries; i++) {
-      WebResponse response;
-      try {
-        System.err.println("Pinging " + pingUrl + " - try #" + i);
-        response = wc.getResponse(pingUrl);
-        if (response.getResponseCode() == 200) break;
-      } catch (Exception e) {
-        // ignored
-      }
-      ThreadUtil.reallySleep(2000);
-    }
-  }
-
-  private void waitForAppInstanceRunning(final AppServerParameters params) throws Exception {
-    while (true) {
-      String status = getAppInstanceStatus(params);
-      System.err.println(params.instanceName() + " is " + status);
-      if ("running".equals(status)) {
-        break;
-      }
-      System.err.println("Sleeping for 2 sec before checking again...");
-      ThreadUtil.reallySleep(2000);
-    }
-  }
-
-  private String getAppInstanceStatus(AppServerParameters params) throws Exception {
-    File asAdminScript = getAsadminScript();
-    List cmd = new ArrayList();
-    cmd.add(asAdminScript.getAbsolutePath());
-    cmd.add("list-domains");
-    cmd.add("--domaindir=" + sandboxDirectory());
-
-    Result result = Exec.execute((String[]) cmd.toArray(new String[] {}), null, null, asAdminScript.getParentFile());
-
-    /**
-     * Output should be something like this: <instance_name> <status> where <instance_name> is the name of the instance
-     * <status> is one of {not running, running, starting}
-     */
-    // System.err.println("list-domains output: \n" + result.getStdout());
-    if (result.getStderr().trim().length() > 0) {
-      System.err.println("Error Stream: " + result.getStderr());
-    }
-    System.err.flush();
-
-    if (result.getExitCode() != 0) { throw new RuntimeException(result.toString()); }
-
-    return getStatus(params.instanceName(), result.getStdout());
-  }
-
-  private String getStatus(final String instanceName, final String output) {
-    int start = output.indexOf(instanceName);
-    if (start < 0) { return ""; }
-    String line = output.substring(start);
-
-    int end = line.indexOf("\n");
-    if (end < 0) { throw new RuntimeException("no end: " + line); }
-    line = line.substring(0, end).trim();
-
-    final int delim = line.indexOf(" ");
-    String appName = line.substring(0, delim);
-    String status = line.substring(delim + 1);
-    Assert.assertEquals(appName, instanceName);
-
-    return status.trim();
   }
 
   private static byte[] startupInput() {
@@ -289,30 +209,11 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
   private void deployWars(Map wars) throws Exception {
     for (Iterator iter = wars.entrySet().iterator(); iter.hasNext();) {
       Map.Entry entry = (Entry) iter.next();
+
       String warName = (String) entry.getKey();
       File warFile = (File) entry.getValue();
-      deployWar(warName, warFile);
-    }
 
-    // deploy the ping app so we can test to see
-    // if wars are ready
-    deployWar(PINGWAR, createPingWarFile(PINGWAR + ".war"));
-  }
-
-  private File createPingWarFile(String warName) throws Exception {
-    DeploymentBuilder builder = new WARBuilder(warName, new File(sandboxDirectory(), "war"));
-    builder.addResourceFullpath("/com/tc/test/server/appserver/glassfish", "index.html", "index.html");
-    return builder.makeDeployment().getFileSystemPath().getFile();
-  }
-
-  private void deployWar(String warName, File warFile) throws IOException, Exception {
-    Result result = null;
-
-    // This retry logic is a bit of a hack for sure but. I mostly want to see if waiting some amount and/or retrying
-    // allows the deploy to eventually succeed (if so, then we can search for another indicator of when GF is ready to
-    // accept things)
-    for (int i = 0; i < 3; i++) {
-      System.err.println("Deploying war [" + warName + "] on " + instanceDir.getName() + " [attempt #" + i + "]");
+      System.err.println("Deploying war [" + warName + "] on " + instanceDir.getName());
 
       List cmd = new ArrayList();
       cmd.add(getAsadminScript().getAbsolutePath());
@@ -326,18 +227,16 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
       cmd.add("--port=" + adminPort);
       cmd.add(warFile.getAbsolutePath());
 
-      result = Exec.execute((String[]) cmd.toArray(new String[] {}));
 
-      if (result.getExitCode() == 0) {
-        System.err.println("Deployed war file successfully.");
-        return;
+      for (int i = 10; i > 0; i--) {
+        System.err.println("Deploying war file in " + i + " secs...");
+        ThreadUtil.reallySleep(1000);
       }
 
-      System.err.println("Deploy failed for " + warName + ": " + result);
-      ThreadUtil.reallySleep(5000);
+      Result result = Exec.execute((String[]) cmd.toArray(new String[] {}));
+      if (result.getExitCode() != 0) { throw new RuntimeException("Deploy failed for " + warName + ": " + result); }
+      System.err.println("Deployed war file successfully.");
     }
-
-    throw new RuntimeException("Deploy failed for " + warName + ": " + result);
   }
 
   abstract protected String[] getDisplayCommand(String script);
@@ -470,11 +369,12 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
 
     if (runner != null) {
       runner.join(START_STOP_TIMEOUT);
-      if (runner.isAlive()) {
-        Banner.errorBanner("instance still running on port " + httpPort);
-      } else {
-        System.err.println("Stopped instance on port " + httpPort);
-      }
+    }
+
+    if (runner.isAlive()) {
+      Banner.errorBanner("instance still running on port " + httpPort);
+    } else {
+      System.err.println("Stopped instance on port " + httpPort);
     }
 
   }

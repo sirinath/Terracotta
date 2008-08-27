@@ -21,10 +21,8 @@ public class RespondToObjectRequestHandler extends AbstractEventHandler {
     RespondToObjectRequestContext rtorc = (RespondToObjectRequestContext) context;
     if(logger.isDebugEnabled()) {
       logger.debug("XXX figure out appropriate log message");
-
     }
     objectRequestManager.sendObjects(rtorc.getRequestedNodeID(), rtorc.getObjs(), rtorc.getRequestedObjectIDs(), rtorc.getMissingObjectIDs(), rtorc.isServerInitiated());
-
   }
 
   public void initialize(ConfigurationContext context) {

@@ -36,31 +36,31 @@ public class ClientStateManagerImpl implements ClientStateManager {
 
   private State              state   = STARTED;
 
-  private final Map<NodeID, ClientState>  clientStates;
-  private final TCLogger                  logger;
+  private final Map          clientStates;
+  private final TCLogger     logger;
 
   // for testing
-  public ClientStateManagerImpl(TCLogger logger, Map<NodeID, ClientState> states) {
+  public ClientStateManagerImpl(TCLogger logger, Map states) {
     this.logger = logger;
     this.clientStates = states;
   }
 
   public ClientStateManagerImpl(TCLogger logger) {
-    this(logger, new HashMap<NodeID, ClientState>());
+    this(logger, new HashMap());
   }
 
-  public synchronized List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, BackReferences includeIDs,
-                                                               NodeID id, Set<ObjectID> objectIDs) {
+  public synchronized List createPrunedChangesAndAddObjectIDTo(Collection changes, BackReferences includeIDs,
+                                                               NodeID id, Set objectIDs) {
     assertStarted();
     ClientStateImpl clientState = getClientState(id);
     if (clientState == null) {
       logger.warn(": createPrunedChangesAndAddObjectIDTo : Client state is NULL (probably due to disconnect) : " + id);
-      return Collections.emptyList();
+      return Collections.EMPTY_LIST;
     }
+    LinkedList prunedChanges = new LinkedList();
 
-    List<DNA> prunedChanges = new LinkedList<DNA>();
-
-    for (final DNA dna : changes) {
+    for (Iterator i = changes.iterator(); i.hasNext();) {
+      DNA dna = (DNA) i.next();
       if (clientState.containsReference(dna.getObjectID())) {
         if (dna.isDelta()) {
           prunedChanges.add(dna);
@@ -88,7 +88,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     }
   }
 
-  public synchronized void removeReferences(NodeID id, Set<ObjectID> removed) {
+  public synchronized void removeReferences(NodeID id, Set removed) {
     assertStarted();
     // logger.info("Removing Reference for " + id + " to " + removed);
     ClientStateImpl c = getClientState(id);
@@ -109,25 +109,26 @@ public class ClientStateManagerImpl implements ClientStateManager {
     }
   }
 
-  public synchronized void addAllReferencedIdsTo(Set<ObjectID> ids) {
+  public synchronized void addAllReferencedIdsTo(Set ids) {
     assertStarted();
-    for (final ClientState s : clientStates.values()) {
+    for (Iterator i = clientStates.values().iterator(); i.hasNext();) {
+      ClientStateImpl s = (ClientStateImpl) i.next();
       s.addReferencedIdsTo(ids);
     }
   }
 
-  public synchronized void removeReferencedFrom(NodeID id, Set<ObjectID> oids) {
+  public synchronized void removeReferencedFrom(NodeID id, Set oids) {
     ClientState cs = getClientState(id);
     if (cs == null) {
       logger.warn(": removeReferencedFrom : Client state is NULL (probably due to disconnect) : " + id);
       return;
     }
-    Set<ObjectID> refs = cs.getReferences();
+    Set refs = cs.getReferences();
     // XXX:: This is a work around for THashSet's poor implementation of removeAll
     if (oids.size() >= refs.size()) {
       oids.removeAll(refs);
     } else {
-      for (Iterator<ObjectID> i = oids.iterator(); i.hasNext();) {
+      for (Iterator i = oids.iterator(); i.hasNext();) {
         if (refs.contains(i.next())) {
           i.remove();
         }
@@ -139,19 +140,20 @@ public class ClientStateManagerImpl implements ClientStateManager {
   /*
    * returns newly added references
    */
-  public synchronized Set<ObjectID> addReferences(NodeID id, Set<ObjectID> oids) {
+  public synchronized Set addReferences(NodeID id, Set oids) {
     ClientState cs = getClientState(id);
     if (cs == null) {
       logger.warn(": addReferences : Client state is NULL (probably due to disconnect) : " + id);
-      return Collections.emptySet();
+      return Collections.EMPTY_SET;
     }
-    Set<ObjectID> refs = cs.getReferences();
+    Set refs = cs.getReferences();
     if (refs.isEmpty()) {
       refs.addAll(oids);
       return oids;
     }
-    Set<ObjectID> newReferences = new HashSet<ObjectID>();
-    for (ObjectID oid : oids) {
+    Set newReferences = new HashSet();
+    for (Iterator i = oids.iterator(); i.hasNext();) {
+      Object oid = i.next();
       if (refs.add(oid)) {
         newReferences.add(oid);
       }
@@ -192,31 +194,23 @@ public class ClientStateManagerImpl implements ClientStateManager {
     return (ClientStateImpl) clientStates.get(id);
   }
 
-  public int getReferenceCount(NodeID nodeID) {
-    ClientState clientState = getClientState(nodeID);
-    return clientState != null ? clientState.getReferences().size() : 0;
-  }
-
-  public synchronized Set<NodeID> getConnectedClientIDs() {
-    return clientStates.keySet();
-  }
-
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     PrettyPrinter rv = out;
     out.println(getClass().getName());
     out = out.duplicateAndIndent();
     out.indent().println("client states: ");
     out = out.duplicateAndIndent();
-    for (NodeID key : clientStates.keySet()) {
-      ClientState st = clientStates.get(key);
+    for (Iterator i = clientStates.keySet().iterator(); i.hasNext();) {
+      Object key = i.next();
+      ClientStateImpl st = (ClientStateImpl) clientStates.get(key);
       out.indent().print(key + "=").visit(st).println();
     }
     return rv;
   }
 
   private static class ClientStateImpl implements PrettyPrintable, ClientState {
-    private final NodeID        nodeID;
-    private final Set<ObjectID> managed = new ObjectIDSet();
+    private final NodeID nodeID;
+    private final Set    managed = new ObjectIDSet();
 
     public ClientStateImpl(NodeID nodeID) {
       this.nodeID = nodeID;
@@ -232,7 +226,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
       return "ClientStateImpl[" + nodeID + ", " + managed + "]";
     }
 
-    public Set<ObjectID> getReferences() {
+    public Set getReferences() {
       return managed;
     }
 
@@ -250,11 +244,11 @@ public class ClientStateManagerImpl implements ClientStateManager {
       return managed.contains(id);
     }
 
-    public void removeReferences(Set<ObjectID> references) {
+    public void removeReferences(Set references) {
       managed.removeAll(references);
     }
 
-    public void addReferencedIdsTo(Set<ObjectID> ids) {
+    public void addReferencedIdsTo(Set ids) {
       ids.addAll(managed);
     }
 

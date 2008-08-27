@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.io;
 
@@ -11,6 +10,7 @@ import com.tc.test.TCTestCase;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Random;
 
 public class TCByteBufferInputStreamTest extends TCTestCase {
@@ -570,6 +570,10 @@ public class TCByteBufferInputStreamTest extends TCTestCase {
         // expected
       }
     }
+  }
+
+  private void log(String msg) {
+    System.err.println(new Date() + " - " + msg);
   }
 
   public void testZeroLength() {

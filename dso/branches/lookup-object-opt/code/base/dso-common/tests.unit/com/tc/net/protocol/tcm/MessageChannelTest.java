@@ -51,6 +51,7 @@ public class MessageChannelTest extends TCTestCase {
   CommunicationsManager        clientComms;
   CommunicationsManager        serverComms;
   ClientMessageChannel         clientChannel;
+  SequenceGenerator            sequence;
   MessageSendAndReceiveWatcher clientWatcher;
   MessageSendAndReceiveWatcher serverWatcher;
   SynchronizedRef              error         = new SynchronizedRef(null);
@@ -81,6 +82,8 @@ public class MessageChannelTest extends TCTestCase {
 
     clientWatcher = new MessageSendAndReceiveWatcher();
     serverWatcher = new MessageSendAndReceiveWatcher();
+
+    this.sequence = new SequenceGenerator();
 
     MessageMonitor mm = new NullMessageMonitor();
     clientComms = new CommunicationsManagerImpl(mm, clientStackHarnessFactory, new NullConnectionPolicy(), 0);
@@ -512,7 +515,7 @@ public class MessageChannelTest extends TCTestCase {
     error.set(t);
   }
 
-  public static class MessageSendAndReceiveWatcher {
+  public class MessageSendAndReceiveWatcher {
 
     private TLongHashSet sentSequences     = new TLongHashSet();
     private TLongHashSet receivedSequences = new TLongHashSet();

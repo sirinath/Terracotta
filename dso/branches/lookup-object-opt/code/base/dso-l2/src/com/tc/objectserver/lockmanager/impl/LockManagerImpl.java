@@ -628,10 +628,7 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, TimerCall
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.println(getClass().getName());
-    out.indent().println("locks: " + locks.size());
-    for (Iterator i = locks.values().iterator(); i.hasNext(); ) {
-      out.println(i.next());
-    }
+    out.indent().print("locks: ").visit(locks).println();
     return out;
   }
 

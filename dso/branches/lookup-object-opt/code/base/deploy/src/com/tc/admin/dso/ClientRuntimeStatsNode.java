@@ -4,11 +4,10 @@
  */
 package com.tc.admin.dso;
 
-import com.tc.admin.AdminClient;
-import com.tc.admin.common.ComponentNode;
-import com.tc.admin.model.IClient;
+import org.dijon.Component;
 
-import java.awt.Component;
+import com.tc.admin.common.ComponentNode;
+import com.tc.management.beans.l1.L1InfoMBean;
 
 public class ClientRuntimeStatsNode extends ComponentNode {
   private ClientNode                m_clientNode;
@@ -26,23 +25,24 @@ public class ClientRuntimeStatsNode extends ComponentNode {
 
   public Component getComponent() {
     if (m_runtimeStatsPanel == null) {
-      AdminClient.getContext().block();
       m_runtimeStatsPanel = createRuntimeStatsPanel();
-      AdminClient.getContext().unblock();      
     }
     return m_runtimeStatsPanel;
   }
 
-  IClient getClient() {
+  L1InfoMBean getL1InfoBean() throws Exception {
+    return m_clientNode.getL1InfoBean();
+  }
+
+  DSOClient getClient() {
     return m_clientNode.getClient();
   }
 
   public void tearDown() {
-    super.tearDown();
     if (m_runtimeStatsPanel != null) {
       m_runtimeStatsPanel.tearDown();
       m_runtimeStatsPanel = null;
     }
-    m_clientNode = null;
+    super.tearDown();
   }
 }

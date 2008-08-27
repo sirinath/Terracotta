@@ -16,6 +16,7 @@ import org.codehaus.cargo.container.weblogic.WebLogic9xInstalledLocalContainer;
 
 import com.tc.test.server.appserver.AppServerParameters;
 import com.tc.test.server.appserver.cargo.CargoAppServer;
+import com.tc.util.ReplaceLine;
 import com.tc.util.runtime.Os;
 
 import java.io.File;
@@ -37,7 +38,7 @@ public final class Weblogic9xAppServer extends CargoAppServer {
     return "weblogic9x";
   }
 
-  protected InstalledLocalContainer container(LocalConfiguration config, AppServerParameters params) {
+  protected InstalledLocalContainer container(LocalConfiguration config) {
     return new TCWebLogic9xInstalledLocalContainer(config);
   }
 
@@ -109,8 +110,23 @@ public final class Weblogic9xAppServer extends CargoAppServer {
 
     protected void setState(State state) {
       if (state.equals(State.STARTING)) {
+        adjustConfig();
         setBeaHomeIfNeeded();
         prepareSecurityFile();
+      }
+    }
+
+    private void adjustConfig() {
+      ReplaceLine.Token[] tokens = new ReplaceLine.Token[1];
+      tokens[0] = new ReplaceLine.Token(
+                                        5,
+                                        "(NativeIOEnabled=\"false\")",
+                                        "NativeIOEnabled=\"false\" SocketReaderTimeoutMaxMillis=\"1000\" SocketReaderTimeoutMinMillis=\"1000\" StdoutDebugEnabled=\"true\" StdoutSeverityLevel=\"64\"");
+
+      try {
+        ReplaceLine.parseFile(tokens, new File(getConfiguration().getHome(), "/config/config.xml"));
+      } catch (IOException ioe) {
+        throw new RuntimeException(ioe);
       }
     }
 

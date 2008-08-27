@@ -9,14 +9,8 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 
 public class XmlIntegerField extends XmlStringField {
-  public static XmlIntegerField newInstance(Text text) {
-    XmlIntegerField result = new XmlIntegerField(text);
-    result.addListeners();
-    return result;
-  }
-  
-  protected XmlIntegerField(Text text) {
-    super(text);
+  public XmlIntegerField(Text field) {
+    super(field);
   }
   
   public void set() {
@@ -24,6 +18,7 @@ public class XmlIntegerField extends XmlStringField {
       int i = NumberFormat.getIntegerInstance().parse(getText()).intValue();
       setText(Integer.toString(i));
     } catch(ParseException nfe) {/**/}
+    
     super.set();
   }
 }

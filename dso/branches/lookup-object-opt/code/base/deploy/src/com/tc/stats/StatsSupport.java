@@ -1,23 +1,23 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.stats;
+
+import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.stats.statistics.Statistic;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.AttributeChangeNotification;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotificationBroadcasterSupport;
 
 public class StatsSupport extends NotificationBroadcasterSupport implements Serializable {
-  private final Map        m_stats        = new HashMap();
-  private final AtomicLong sequenceNumber = new AtomicLong();
+  private final Map              m_stats        = new HashMap();
+  private final SynchronizedLong sequenceNumber = new SynchronizedLong(0L);
 
   public synchronized void addStatistic(String id, Statistic statistic) {
     m_stats.put(id, statistic);
@@ -44,7 +44,7 @@ public class StatsSupport extends NotificationBroadcasterSupport implements Seri
   }
 
   protected void sendNotification(String msg, String attr, String type, Object oldVal, Object newVal) {
-    sendNotification(new AttributeChangeNotification(this, sequenceNumber.getAndIncrement(),
-                                                     System.currentTimeMillis(), msg, attr, type, oldVal, newVal));
+    sendNotification(new AttributeChangeNotification(this, sequenceNumber.increment(), System.currentTimeMillis(), msg,
+                                                     attr, type, oldVal, newVal));
   }
 }

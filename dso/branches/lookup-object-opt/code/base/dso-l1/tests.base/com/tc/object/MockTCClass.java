@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 public class MockTCClass implements TCClass {
-  private final String  name = MockTCClass.class.getName();
+  private String        name = MockTCClass.class.getName();
   private final boolean isIndexed;
   private final boolean isLogical;
 
@@ -143,10 +143,6 @@ public class MockTCClass implements TCClass {
 
   public boolean isPortableField(long fieldOffset) {
     throw new ImplementMe();
-  }
-
-  public boolean useResolveLockWhileClearing() {
-    return true;
   }
 
 }

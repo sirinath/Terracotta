@@ -38,9 +38,7 @@ public class ClasspathProvider extends StandardClasspathProvider {
     IPath jarPath = TcPlugin.getDefault().getLibDirPath().append("tc.jar");
 
     if (jarPath.toFile().exists()) {
-      return new IRuntimeClasspathEntry[] {
-          JavaRuntime.newArchiveRuntimeClasspathEntry(jarPath.removeLastSegments(1).append("resources")),
-          JavaRuntime.newArchiveRuntimeClasspathEntry(jarPath.makeAbsolute()) };
+      return new IRuntimeClasspathEntry[] {JavaRuntime.newArchiveRuntimeClasspathEntry(jarPath.makeAbsolute())};
     } else {
       ArrayList<IRuntimeClasspathEntry> list = new ArrayList<IRuntimeClasspathEntry>();
       IPath[] paths = gatherDevClasspathEntries();
@@ -100,6 +98,7 @@ public class ClasspathProvider extends StandardClasspathProvider {
       "dso-l1-jdk15",
       "dso-l2",
       "dso-l2-common",
+      "dso-spring",
       "dso-statistics",
       "dso-statistics-api"};
 
@@ -107,9 +106,6 @@ public class ClasspathProvider extends StandardClasspathProvider {
       list.add(buildPath.append(dirs[i]).append("build.eclipse").append("src.classes"));
     }
 
-    // this is to get access to build-data.txt in dev mode
-    list.add(buildPath.append("common").append("build.eclipse").append("tests.base.classes"));
-    
     final List<File> fileList = new ArrayList<File>();
     File libDir;
 

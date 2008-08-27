@@ -120,8 +120,7 @@ public class SessionValve55 extends ValveBase {
       }
     }
 
-    return new DefaultWebAppConfig(context.getManager().getMaxInactiveInterval(), attrList, sessList, ".", jvmRoute,
-                                   context.getCookies());
+    return new DefaultWebAppConfig(context.getManager().getMaxInactiveInterval(), attrList, sessList, ".", jvmRoute);
   }
 
   private static void sortByType(Object[] listeners, ArrayList sessionListeners, ArrayList attributeListeners) {

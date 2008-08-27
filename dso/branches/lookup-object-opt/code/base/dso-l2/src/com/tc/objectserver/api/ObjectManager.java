@@ -8,8 +8,8 @@ import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
+import com.tc.objectserver.core.api.GarbageCollector;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.dgc.api.GarbageCollector;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.util.ObjectIDSet;
 
@@ -21,6 +21,7 @@ import java.util.Set;
 
 /**
  * manages all access to objects on the server. This will be single threaded and only accessed via it's event handler.
+ * 
  */
 public interface ObjectManager extends ManagedObjectProvider {
 
@@ -36,7 +37,7 @@ public interface ObjectManager extends ManagedObjectProvider {
   /**
    * release all objects
    */
-  public void releaseAllReadOnly(Collection<ManagedObject> objects);
+  public void releaseAllReadOnly(Collection objects);
 
   /**
    * release for objects that can not have changed while checked out
@@ -48,7 +49,7 @@ public interface ObjectManager extends ManagedObjectProvider {
    * 
    * @param collection
    */
-  public void releaseAll(PersistenceTransaction tx, Collection<ManagedObject> collection);
+  public void releaseAll(PersistenceTransaction tx, Collection collection);
 
   /**
    * Looks up the objects associated with the Object Lookups from the clients. What it does is if all the objects are
@@ -57,7 +58,7 @@ public interface ObjectManager extends ManagedObjectProvider {
    * 
    * @param nodeID - nodeID of the client that is interested in lookup
    * @param maxCount - max number of objects reachable from the requested objects that should be looked up
-   * @param responseContext - ResultContext that gets notifications.
+   * @param context - ResultContext that gets notifications.
    * @return true if all the objects are successfully looked up.
    */
   public boolean lookupObjectsAndSubObjectsFor(NodeID nodeID, ObjectManagerResultsContext responseContext, int maxCount);
@@ -84,7 +85,7 @@ public interface ObjectManager extends ManagedObjectProvider {
 
   public void createRoot(String name, ObjectID id);
 
-  public void createNewObjects(Set<ObjectID> ids);
+  public void createNewObjects(Set ids);
 
   public ObjectID lookupRootID(String name);
 
@@ -114,24 +115,15 @@ public interface ObjectManager extends ManagedObjectProvider {
 
   public ObjectIDSet getAllObjectIDs();
 
-  public ObjectIDSet getObjectIDsInCache();
-
   public void addFaultedObject(ObjectID oid, ManagedObject mo, boolean removeOnRelease);
 
   public void flushAndEvict(List objects2Flush);
 
-  public void preFetchObjectsAndCreate(Set<ObjectID> oids, Set<ObjectID> newOids);
+  public void preFetchObjectsAndCreate(Set oids, Set newOids);
 
   /**
    * This method returns null if you are looking up a newly created object that is not yet initialized. This is mainly
    * used by DGC.
    */
   public ManagedObject getObjectByIDOrNull(ObjectID id);
-
-  /**
-   * This method returns null if you are looking up a newly created object that is not yet initialized or an Object that
-   * is not in cache. This is mainly used by DGC.
-   */
-  public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id);
-
 }

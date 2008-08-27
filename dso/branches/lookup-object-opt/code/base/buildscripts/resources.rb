@@ -175,15 +175,6 @@ create_all_packages
     configuration files found under the code/base/buildconfig/distribution
     directory.
 
-patch [level=IDENTIFIER]
-    Creates a patch tar file containing the files specified in patch.def.yml.
-    The patch.def.yml file is a YAML file containing two keys: level and files.
-    The files key must refer to an array of file names relative to the product
-    directory.  The releasenotes.txt file is always auto-included into the patch.
-
-    If specified, the 'level' command-line option overrides the level attribute
-    from patch.def.yml.
-
 DEPLOYING MAVEN ARTIFACTS
 
 dist_maven [maven.repo=URL args...]
@@ -229,11 +220,6 @@ NOTE: The jdk= option, described in the JDK SELECTION section below, can be
 used to specify the JDK used by these targets.
 
 MISCELLANEOUS
-
-javadoc
-    Generates Javadoc API documentation in build/doc/api.
-    The set of modules to include is specified by the javadoc option in
-    modules.def.yml
 
 boot_jar_path=/path/to/your/boot/jar
    Specify this option if you want to run your test with your own bootjar

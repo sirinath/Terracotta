@@ -13,8 +13,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class LockTraceElementNode extends BasicLockNode {
-  private LockTraceElement fTraceElement;
-  private LockNode[]       fChildren;
+  LockTraceElement fTraceElement;
+  LockNode[]       fChildren;
 
   LockTraceElementNode(LockTraceElement element) {
     fTraceElement = element;
@@ -43,7 +43,7 @@ public class LockTraceElementNode extends BasicLockNode {
   public String getConfigText() {
     return fTraceElement.getConfigElement();
   }
-
+  
   public LockNode[] children() {
     return fChildren;
   }

@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.config.schema.repository;
 
@@ -47,8 +46,8 @@ public class ChildBeanRepository implements BeanRepository, ConfigurationChangeL
     if (parentBean == null) return null;
     XmlObject out = this.childFetcher.getChild(parentBean);
     if (out != null) {
-      Assert.eval("Child bean fetcher returned " + "a " + out.getClass() + ", not a " + this.requiredBeanClass,
-                  this.requiredBeanClass.isInstance(out));
+      Assert.eval("Child bean fetcher returned " + (out == null ? "null" : "a " + out.getClass()) + ", not a "
+                  + this.requiredBeanClass, this.requiredBeanClass.isInstance(out));
     }
     return out;
   }

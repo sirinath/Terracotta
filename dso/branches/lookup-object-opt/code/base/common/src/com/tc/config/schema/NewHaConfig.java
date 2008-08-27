@@ -4,14 +4,13 @@
  */
 package com.tc.config.schema;
 
-import com.terracottatech.config.Ha;
+import com.tc.config.schema.dynamic.IntConfigItem;
+import com.tc.config.schema.dynamic.StringConfigItem;
 
 public interface NewHaConfig extends NewConfig {
-  String haMode();
+  StringConfigItem haMode();
 
-  int electionTime();
+  IntConfigItem electionTime();
 
   boolean isNetworkedActivePassive();
-
-  Ha getHa();
 }

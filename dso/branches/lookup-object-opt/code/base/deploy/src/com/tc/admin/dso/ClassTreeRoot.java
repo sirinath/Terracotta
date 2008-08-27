@@ -1,23 +1,24 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.admin.dso;
 
 import com.tc.admin.common.XRootNode;
 
+
 import com.tc.admin.AdminClient;
 import com.tc.stats.DSOClassInfo;
 
 public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
-  private Integer             instanceCount;
+  private Integer instanceCount;
 
-  private static final String NAME = AdminClient.getContext().getMessage("dso.allClasses");
+  private static final String NAME =
+    AdminClient.getContext().getMessage("dso.allClasses");
 
   ClassTreeRoot(DSOClassInfo[] classInfo) {
     super();
 
-    if (classInfo != null) {
+    if(classInfo != null) {
       setClassInfo(classInfo);
     }
   }
@@ -27,24 +28,24 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
 
     tearDownChildren();
 
-    if (classInfo != null) {
-      for (int i = 0; i < classInfo.length; i++) {
-        String className = classInfo[i].getClassName();
-        String[] names = className.split("\\.");
-        ClassTreeNode node = this;
-
-        for (int j = 0; j < names.length - 1; j++) {
+    if(classInfo != null) {
+      for(int i = 0; i < classInfo.length; i++) {
+        String        className = classInfo[i].getClassName();
+        String[]      names     = className.split("\\.");
+        ClassTreeNode node      = this;
+  
+        for(int j = 0; j < names.length-1; j++) {
           node = node.testGetBranch(names[j]);
         }
-
-        ClassTreeLeaf leaf = node.testGetLeaf(names[names.length - 1]);
+  
+        ClassTreeLeaf leaf = node.testGetLeaf(names[names.length-1]);
         leaf.setInstanceCount(classInfo[i].getInstanceCount());
       }
     }
   }
 
   DSOClassInfo[] getInfo() {
-    return (DSOClassInfo[]) getUserObject();
+    return (DSOClassInfo[])getUserObject();
   }
 
   public String getName() {
@@ -56,8 +57,9 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
   }
 
   public int getInstanceCount() {
-    if (instanceCount == null) {
-      instanceCount = Integer.valueOf(ClassesHelper.getHelper().getInstanceCount(this));
+    if(instanceCount == null) {
+      ClassesHelper helper = ClassesHelper.getHelper();
+      instanceCount = new Integer(helper.getInstanceCount(this));
     }
 
     return instanceCount.intValue();

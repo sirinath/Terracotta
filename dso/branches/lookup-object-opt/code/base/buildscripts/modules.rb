@@ -153,8 +153,7 @@ end
 # A build module. This represents the largest-scale division of our codebase, like 'common',
 # 'dso-spring', or 'dso-l2'.
 class BuildModule
-  attr_reader :root, :name, :jdk, :javadoc, :aspectj, :module, :module_set, :dependencies, :groups
-  alias javadoc? javadoc
+  attr_reader :root, :name, :jdk, :aspectj, :module, :module_set, :dependencies, :groups
   alias module? module
     alias aspectj? aspectj
 
@@ -164,8 +163,6 @@ class BuildModule
     #
     # * :name -- the name of this module
     # * :jdk -- The name of a JDK as configured in jdk.def.yml
-    # * :javadoc -- boolean flag indicating whether or not javadoc API documentation
-    #               should be generated for this module
     # * :dependencies -- an array of the names of the modules this module is declared to be dependent on
     #
     # Note that, unlike a subtree, the root directory of a build module must exist. There's
@@ -177,7 +174,6 @@ class BuildModule
       jdk = data[:jdk]
       assert("modules.def.yml: module #{@name} does not have required jdk: attribute") { ! jdk.nil? }
       @jdk = Registry[:jvm_set][jdk]
-      @javadoc = data[:javadoc] || false
       @aspectj = data[:aspectj] || false
       @module = data[:module] || false
       @dependencies = data[:dependencies] || [ ]

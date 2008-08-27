@@ -72,9 +72,6 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
     // being loaded by a child class loader as this would result in a
     // ClassCircularityError exception
     InitialClassDumper dummy = InitialClassDumper.INSTANCE;
-    if (false && dummy != dummy) {
-      // silence eclipse warning
-    }
   }
 
   private static final TCLogger       consoleLogger = CustomerLogging.getConsoleLogger();
@@ -90,9 +87,6 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
     // deploy all system aspect modules
     StandardAspectModuleDeployer.deploy(getClass().getClassLoader(), StandardAspectModuleDeployer.ASPECT_MODULES);
-
-    // workaround for ClassCircularityError in ConcurrentHashMap
-    configHelper.getAspectModules().entrySet().iterator();
   }
 
   /**
@@ -233,7 +227,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         }
 
         // prepare ctor call jp
-        final ClassReader crLookahead = new ClassReader(context.getCurrentBytecode());
+        final ClassReader crLookahead = new ClassReader(bytecode);
         HashMap newInvocationsByCallerMemberHash = null;
         if (!filterForCall) {
           newInvocationsByCallerMemberHash = new HashMap();
@@ -251,7 +245,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
           HandlerVisitor.LookaheadCatchLabelsClassAdapter lookForCatches = //
           new HandlerVisitor.LookaheadCatchLabelsClassAdapter(cv, loader, classInfo, context, catchLabels);
           // we must visit exactly as we will do further on with debug info (that produces extra labels)
-          final ClassReader crLookahead2 = new ClassReader(context.getCurrentBytecode());
+          final ClassReader crLookahead2 = new ClassReader(bytecode);
           crLookahead2.accept(lookForCatches, ClassReader.SKIP_FRAMES);
         }
 
@@ -263,7 +257,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
         // ------------------------------------------------
         // -- Phase 1 -- type change (ITDs)
-        final ClassReader readerPhase1 = new ClassReader(context.getCurrentBytecode());
+        final ClassReader readerPhase1 = new ClassReader(bytecode);
         final ClassWriter writerPhase1 = new ClassWriter(readerPhase1, ClassWriter.COMPUTE_MAXS);
         ClassVisitor reversedChainPhase1 = new AddMixinMethodsVisitor(writerPhase1, classInfo, context, addedMethods);
         reversedChainPhase1 = new AddInterfaceVisitor(reversedChainPhase1, classInfo, context);

@@ -41,7 +41,7 @@ import java.util.List;
 
 public class ManagedObjectStateSerializationTestBase extends TCTestCase {
   private final TCLogger                     logger   = TCLogging.getTestingLogger(getClass());
-  private ObjectID                           objectID = new ObjectID(2000);
+  private final ObjectID                     objectID = new ObjectID(2000);
 
   private DBEnvironment                      env;
   private ManagedObjectPersistorImpl         managedObjectPersistor;
@@ -55,6 +55,7 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
 
     SleepycatPersistor persistor = new SleepycatPersistor(logger, env, sleepycatSerializationAdapterFactory);
 
+    CursorConfig dbCursorConfig = new CursorConfig();
     ptp = new TestPersistenceTransactionProvider();
     CursorConfig rootDBCursorConfig = new CursorConfig();
     SleepycatCollectionFactory sleepycatCollectionFactory = new SleepycatCollectionFactory();
@@ -62,10 +63,12 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
         .getMapsDatabase(), sleepycatCollectionFactory);
 
     managedObjectPersistor = new ManagedObjectPersistorImpl(logger, env.getClassCatalogWrapper().getClassCatalog(),
-                                                            sleepycatSerializationAdapterFactory, env,
-                                                            new TestMutableSequence(), env.getRootDatabase(),
-                                                            rootDBCursorConfig, ptp, sleepycatCollectionsPersistor, env
-                                                                .isParanoidMode());
+                                                            sleepycatSerializationAdapterFactory, env
+                                                                .getObjectDatabase(), env.getOidDatabase(), env
+                                                                .getOidLogDatabase(), env.getOidLogSequeneceDB(),
+                                                            dbCursorConfig, new TestMutableSequence(), env
+                                                                .getRootDatabase(), rootDBCursorConfig, ptp,
+                                                            sleepycatCollectionsPersistor, env.isParanoidMode());
 
     NullManagedObjectChangeListenerProvider listenerProvider = new NullManagedObjectChangeListenerProvider();
     ManagedObjectStateFactory.disableSingleton(true);
@@ -85,7 +88,6 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
   }
 
   protected ManagedObjectState applyValidation(String className, DNACursor dnaCursor) throws Exception {
-    objectID = new ObjectID(objectID.toLong() + 1);
     ManagedObject mo = new ManagedObjectImpl(objectID);
 
     TestDNA dna = new TestDNA(dnaCursor);

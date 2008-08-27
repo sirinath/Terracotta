@@ -5,7 +5,6 @@ package com.tc.objectserver.l1.api;
 
 import com.tc.net.groups.NodeID;
 import com.tc.object.ObjectID;
-import com.tc.object.dna.api.DNA;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.text.PrettyPrintable;
 
@@ -39,7 +38,7 @@ public interface ClientStateManager extends PrettyPrintable {
   /**
    * For the local state of the l1 named clientID remove all the objectIDs that are references
    */
-  public void removeReferences(NodeID nodeID, Set<ObjectID> removed);
+  public void removeReferences(NodeID nodeID, Set removed);
 
   public boolean hasReference(NodeID nodeID, ObjectID objectID);
 
@@ -47,15 +46,12 @@ public interface ClientStateManager extends PrettyPrintable {
    * Prunes the changes list down to include only changes for objects the given client has.
    * @param objectIDs TODO
    */
-  public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, BackReferences references, NodeID clientID, Set<ObjectID> objectIDs);
+  public List createPrunedChangesAndAddObjectIDTo(Collection changes, BackReferences references, NodeID clientID, Set objectIDs);
   
-  public void addAllReferencedIdsTo(Set<ObjectID> rescueIds);
+  public void addAllReferencedIdsTo(Set rescueIds);
 
-  public void removeReferencedFrom(NodeID nodeID, Set<ObjectID> secondPass);
+  public void removeReferencedFrom(NodeID nodeID, Set secondPass);
 
-  public Set<ObjectID> addReferences(NodeID nodeID, Set<ObjectID> oids);
+  public Set addReferences(NodeID nodeID, Set oids);
 
-  public int getReferenceCount(NodeID nodeID);
-
-  public Set<NodeID> getConnectedClientIDs();
 }

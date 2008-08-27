@@ -47,18 +47,13 @@ public class ArrayTestApp extends AbstractTransparentApp {
   }
 
   private void testNullArrayAccess() {
-    Object[] o = returnNull();
+    Object[] o = null;
 
     try {
       if (o[3] == null) { throw new AssertionError(); }
     } catch (NullPointerException npe) {
-      // expected
+      // expecte
     }
-  }
-  
-  // This method is there to suppress Eclipse warning
-  private Object[] returnNull() {
-    return null;
   }
 
   private void arrayIndexTestCase() {

@@ -10,11 +10,12 @@ import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.schema.NewL2DSOConfig;
-import com.tc.object.persistence.api.ClusterStatePersistentMapStore;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.object.persistence.api.ClusterStatePersistentMapStore;
 import com.tc.util.Assert;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -65,14 +66,13 @@ public class DirtyObjectDbCleaner {
         dirtyDbBackupPath.forceMkdir();
       } catch (IOException ioe) {
         throw new TCDatabaseException("Not able to create Dirty DB Backup Directory '"
-                                      + dirtyDbBackupPath.getFile().getAbsolutePath() + "'. Reason:"
-                                      + ioe.getClass().getName());
+                                      + dirtyDbBackupPath.getFile().getAbsolutePath() + "'. Reason:" + ioe.getCause());
       }
     } else {
       logger.info("dirtyDbBackupPath : " + dirtyDbBackupPath.getFile().getAbsolutePath());
     }
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmSS");
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMddHHmmss");
     Date d = new Date();
     String timeStamp = dateFormat.format(d);
     File dirtyDbSourcedir = new File(dataPath + File.separator + NewL2DSOConfig.OBJECTDB_DIRNAME + File.separator);
@@ -85,7 +85,7 @@ public class DirtyObjectDbCleaner {
                                                     + dirtyDbBackupDestDir.getAbsolutePath()); }
     } catch (Exception e) {
       throw new TCDatabaseException("Not able to move dirty objectdbs to " + dirtyDbBackupDestDir.getAbsolutePath()
-                                    + ". Reason: " + e.getClass().getName());
+                                    + ". Reason: " + e.getCause());
     }
 
     Assert.eval(!dirtyDbSourcedir.exists());
@@ -93,9 +93,20 @@ public class DirtyObjectDbCleaner {
       FileUtils.forceMkdir(dirtyDbSourcedir);
     } catch (IOException e) {
       throw new TCDatabaseException("Not able to create dbhome " + dirtyDbSourcedir.getAbsolutePath() + ". Reason: "
-                                    + e.getClass().getName());
+                                    + e.getCause());
     }
 
+    File reasonFile = new File(dirtyDbBackupDestDir, "reason.txt");
+    try {
+      FileOutputStream out = new FileOutputStream(reasonFile);
+      out.write(d.toString().getBytes());
+      // out.write(errorMessage.getBytes());
+      // PrintStream ps = new PrintStream(out);
+      // t.printStackTrace(ps);
+      out.close();
+    } catch (Exception e1) {
+      throw new RuntimeException(e1);
+    }
     logger.info("Successfully moved dirty objectdb to " + dirtyDbBackupDestDir.getAbsolutePath() + ".");
   }
 }

@@ -41,9 +41,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -57,20 +55,21 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
 
 public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener, PropertyChangeListener {
-  private static ResourceBundleHelper m_bundleHelper = new ResourceBundleHelper(DSOSamplesFrame.class);
-  private TextPane                    m_textPane;
-  private TextPane                    m_outputPane;
-  private ArrayList                   m_processList;
+  private ResourceBundleHelper m_bundleHelper;
+  private TextPane             m_textPane;
+  private TextPane             m_outputPane;
+  private ArrayList            m_processList;
 
-  public DSOSamplesFrame(String[] args) {
-    super(m_bundleHelper.getString("frame.title"));
+  public DSOSamplesFrame() {
+    super();
+
+    setTitle(getResourceBundleHelper().getString("frame.title"));
 
     Container cp = getContentPane();
     cp.setLayout(new BorderLayout());
@@ -93,10 +92,17 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
     runServer();
 
     try {
-      m_textPane.setPage(DSOSamplesFrame.class.getResource("SamplesPojo.html"));
+      m_textPane.setPage(getClass().getResource("SamplesPojo.html"));
     } catch (IOException ioe) {
       m_textPane.setText(ioe.getMessage());
     }
+  }
+
+  private ResourceBundleHelper getResourceBundleHelper() {
+    if (m_bundleHelper == null) {
+      m_bundleHelper = new ResourceBundleHelper(DSOSamplesFrame.class);
+    }
+    return m_bundleHelper;
   }
 
   protected void initFileMenu(Menu fileMenu) {
@@ -110,7 +116,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
     JTextField    m_serversListField;
 
     ServersAction() {
-      super(m_bundleHelper.getString("servers.action.name"));
+      super(getResourceBundleHelper().getString("servers.action.name"));
     }
 
     private JPanel createPanel() {
@@ -162,11 +168,11 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
   }
 
   private void toOutputPane(String s) {
+    Document doc = m_outputPane.getDocument();
+
     try {
-      Document doc = m_outputPane.getDocument();
       doc.insertString(doc.getLength(), s + "\n", null);
-    } catch (BadLocationException ble) {
-      throw new AssertionError(ble);
+    } catch (Exception e) {/**/
     }
   }
 
@@ -318,7 +324,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
       m_processList.add(p);
       startFakeWaitPeriod();
 
-      Frame frame = new SampleFrame(this, m_bundleHelper.getString("jvm.coordination"));
+      Frame frame = new SampleFrame(this, getResourceBundleHelper().getString("jvm.coordination"));
       frame.getContentPane().add(new ScrollPane(textPane));
       frame.setSize(new Dimension(500, 300));
       frame.setVisible(true);
@@ -377,7 +383,7 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
       m_processList.add(p);
       startFakeWaitPeriod();
 
-      Frame frame = new SampleFrame(this, m_bundleHelper.getString("shared.work.queue"));
+      Frame frame = new SampleFrame(this, getResourceBundleHelper().getString("shared.work.queue"));
       frame.getContentPane().add(new ScrollPane(textPane));
       frame.setSize(new Dimension(500, 300));
       frame.setVisible(true);
@@ -476,14 +482,12 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
   }
 
   public void propertyChange(PropertyChangeEvent pce) {
-    Timer t = new Timer(splashProc != null ? 1000 : 0, new ActionListener() {
+    Timer t = new Timer(2000, new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
         pack();
         center();
         setVisible(true);
-        if (splashProc != null) {
-          splashProc.destroy();
-        }
+        splashProc.destroy();
       }
     });
     t.setRepeats(false);
@@ -492,45 +496,24 @@ public class DSOSamplesFrame extends HyperlinkFrame implements HyperlinkListener
 
   private static Process splashProc;
 
-  private static class StartupAction implements Runnable {
-    private final String[] args;
-
-    StartupAction(String[] args) {
-      this.args = args;
-    }
-
-    public void run() {
-      String[] finalArgs;
-      if (System.getProperty("swing.defaultlaf") == null) {
-        finalArgs = ApplicationManager.parseLAFArgs(args);
-      } else {
-        finalArgs = args;
-      }
-      new DSOSamplesFrame(finalArgs);
-    }
-  }
-
   public static void main(final String[] args) throws Exception {
-    if (System.getProperty("swing.defaultlaf") == null) {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    }
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-    List<String> argList = Arrays.asList(args);
-    if (argList.remove("-showSplash")) {
-      StartupAction starter = new StartupAction(argList.toArray(new String[argList.size()]));
-      splashProc = Splash.start("Starting Pojo Sample Launcher...", starter);
-      splashProc.waitFor();
-    } else {
-      new StartupAction(args).run();
-    }
+    splashProc = Splash.start("Starting Pojo Sample Launcher...", new Runnable() {
+      public void run() {
+        ApplicationManager.parseLAFArgs(args);
+        new DSOSamplesFrame();
+      }
+    });
+    splashProc.waitFor();
   }
 }
 
 class SampleFrame extends Frame {
   public SampleFrame(Frame parentFrame, String title) {
     super(title);
-
-    if (Os.isMac()) {
+    
+    if(Os.isMac()) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
       System.setProperty("apple.awt.showGrowBox", "true");

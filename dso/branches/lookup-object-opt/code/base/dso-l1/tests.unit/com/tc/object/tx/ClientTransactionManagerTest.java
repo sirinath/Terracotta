@@ -89,4 +89,8 @@ public class ClientTransactionManagerTest extends TestCase {
 
     clientTxnMgr.commit("lock");
   }
+
+  private static class MyObject {
+    public int count = 0;
+  }
 }

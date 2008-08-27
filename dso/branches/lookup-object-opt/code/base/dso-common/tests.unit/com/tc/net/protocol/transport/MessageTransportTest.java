@@ -16,6 +16,7 @@ import com.tc.net.core.MockTCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
+import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.object.session.NullSessionManager;
@@ -30,6 +31,7 @@ import java.util.Collections;
 public class MessageTransportTest extends TCTestCase {
   private SynchronizedRef                  clientErrorRef;
   private SynchronizedRef                  serverErrorRef;
+  private MessageChannel                   channel;
   private ClientHandshakeMessageResponder  clientResponder;
   private ServerHandshakeMessageResponder  serverResponder;
   private LinkedQueue                      clientResponderReceivedQueue;
@@ -78,6 +80,7 @@ public class MessageTransportTest extends TCTestCase {
     super.tearDown();
     assertTrue(this.clientErrorRef.get() == null);
     assertTrue(this.serverErrorRef.get() == null);
+    if (channel != null) channel.close();
     lsnr.stop(5000);
     commsManager.shutdown();
   }

@@ -6,7 +6,6 @@ package com.tc.test.server.appserver;
 
 import com.tc.test.server.ServerParameters;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
@@ -21,6 +20,4 @@ public interface AppServerParameters extends ServerParameters {
   Properties properties();
 
   String instanceName();
-
-  Collection sars(); // jboss only
 }

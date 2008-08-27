@@ -9,7 +9,7 @@ import org.dijon.ContainerResource;
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
-import com.tc.admin.model.ServerVersion;
+import com.tc.util.ProductInfo;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -46,7 +46,7 @@ public class ClusterPanel extends XContainer {
     m_clusterNode = clusterNode;
     m_acc = AdminClient.getContext();
 
-    load((ContainerResource) m_acc.getComponent("ClusterPanel"));
+    load((ContainerResource) m_acc.topRes.getComponent("ClusterPanel"));
 
     m_hostField = (JTextField) findComponent("HostField");
     m_portField = (JTextField) findComponent("PortField");
@@ -77,8 +77,8 @@ public class ClusterPanel extends XContainer {
       String host = m_hostField.getText().trim();
 
       m_clusterNode.setHost(m_originalHost = host);
-      m_acc.nodeChanged(m_clusterNode);
-      m_acc.updateServerPrefs();
+      m_acc.controller.nodeChanged(m_clusterNode);
+      m_acc.controller.updateServerPrefs();
     }
   }
 
@@ -88,11 +88,11 @@ public class ClusterPanel extends XContainer {
 
       try {
         m_clusterNode.setPort(m_originalPort = Integer.parseInt(port));
-        m_acc.nodeChanged(m_clusterNode);
-        m_acc.updateServerPrefs();
+        m_acc.controller.nodeChanged(m_clusterNode);
+        m_acc.controller.updateServerPrefs();
       } catch (Exception e) {
         Toolkit.getDefaultToolkit().beep();
-        m_acc.log("'" + port + "' not a number");
+        m_acc.controller.log("'" + port + "' not a number");
         m_portField.setText(Integer.toString(m_clusterNode.getPort()));
       }
     }
@@ -139,13 +139,13 @@ public class ClusterPanel extends XContainer {
   }
 
   void activated() {
-    m_acc.execute(new ActivatedWorker());
+    m_acc.executorService.execute(new ActivatedWorker());
   }
 
   private class ActivatedWorker extends BasicWorker<Date> {
     private ActivatedWorker() {
       super(new Callable<Date>() {
-        public Date call() throws Exception {
+        public Date call() {
           return new Date(m_clusterNode.getActivateTime());
         }
       });
@@ -159,7 +159,11 @@ public class ClusterPanel extends XContainer {
         m_hostField.setEditable(false);
         m_portField.setEditable(false);
         setupConnectButton();
-        setStatusLabel(m_acc.format("server.activated.label", getResult().toString()));
+
+        Date activateDate = getResult();
+        String activateTime = activateDate.toString();
+        setStatusLabel(m_acc.format("server.activated.label", new Object[] { activateTime }));
+
         testShowProductInfo();
       }
     }
@@ -170,13 +174,13 @@ public class ClusterPanel extends XContainer {
    * activated() under the presumption that a non-active server won't be saying anything.
    */
   void started() {
-    m_acc.execute(new StartedWorker());
+    m_acc.executorService.execute(new StartedWorker());
   }
 
   private class StartedWorker extends BasicWorker<Date> {
     private StartedWorker() {
       super(new Callable<Date>() {
-        public Date call() throws Exception {
+        public Date call() {
           return new Date(m_clusterNode.getStartTime());
         }
       });
@@ -190,7 +194,11 @@ public class ClusterPanel extends XContainer {
         m_hostField.setEditable(false);
         m_portField.setEditable(false);
         setupConnectButton();
-        setStatusLabel(m_acc.format("server.started.label", getResult().toString()));
+
+        Date startDate = getResult();
+        String startTime = startDate.toString();
+        setStatusLabel(m_acc.format("server.started.label", new Object[] { startTime }));
+
         testShowProductInfo();
       }
     }
@@ -200,7 +208,10 @@ public class ClusterPanel extends XContainer {
     m_hostField.setEditable(false);
     m_portField.setEditable(false);
     setupConnectButton();
-    setStatusLabel(m_acc.format("server.initializing.label", new Date().toString()));
+
+    String startTime = new Date().toString();
+    setStatusLabel(m_acc.format("server.initializing.label", new Object[] { startTime }));
+
     testShowProductInfo();
   }
 
@@ -208,7 +219,10 @@ public class ClusterPanel extends XContainer {
     m_hostField.setEditable(false);
     m_portField.setEditable(false);
     setupConnectButton();
-    setStatusLabel(m_acc.format("server.standingby.label", new Date().toString()));
+
+    String startTime = new Date().toString();
+    setStatusLabel(m_acc.format("server.standingby.label", new Object[] { startTime }));
+
     testShowProductInfo();
   }
 
@@ -227,10 +241,10 @@ public class ClusterPanel extends XContainer {
 
     String startTime = new Date().toString();
     setupConnectButton();
-    setStatusLabel(m_acc.format("server.disconnected.label", startTime));
+    setStatusLabel(m_acc.format("server.disconnected.label", new Object[] { startTime }));
     hideProductInfo();
 
-    m_acc.setStatus(m_acc.format("server.disconnected.status", m_clusterNode, startTime));
+    m_acc.controller.setStatus(m_acc.format("server.disconnected.status", new Object[] { m_clusterNode, startTime }));
   }
 
   void setStatusLabel(String msg) {
@@ -244,14 +258,14 @@ public class ClusterPanel extends XContainer {
 
   private void testShowProductInfo() {
     if (!isProductInfoShowing()) {
-      m_acc.execute(new ProductInfoWorker());
+      m_acc.executorService.execute(new ProductInfoWorker());
     }
   }
 
-  private class ProductInfoWorker extends BasicWorker<ServerVersion> {
+  private class ProductInfoWorker extends BasicWorker<ProductInfo> {
     private ProductInfoWorker() {
-      super(new Callable<ServerVersion>() {
-        public ServerVersion call() throws Exception {
+      super(new Callable<ProductInfo>() {
+        public ProductInfo call() {
           return m_clusterNode.getProductInfo();
         }
       });
@@ -267,8 +281,8 @@ public class ClusterPanel extends XContainer {
     }
   }
 
-  private void showProductInfo(ServerVersion productInfo) {
-    m_productInfoPanel.init(productInfo.version(), productInfo.copyright());
+  private void showProductInfo(ProductInfo productInfo) {
+    m_productInfoPanel.init(productInfo);
     m_productInfoPanel.setVisible(true);
     revalidate();
     repaint();

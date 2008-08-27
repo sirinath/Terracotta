@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.tools;
 
@@ -33,10 +32,12 @@ public class ClassLoaderBytesProvider implements ClassBytesProvider {
     } catch (IOException ioe) {
       throw new ClassNotFoundException("Error reading bytes for " + resource, ioe);
     } finally {
-      try {
-        is.close();
-      } catch (IOException ioe) {
-        // ignore
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ioe) {
+          // ignore
+        }
       }
     }
 

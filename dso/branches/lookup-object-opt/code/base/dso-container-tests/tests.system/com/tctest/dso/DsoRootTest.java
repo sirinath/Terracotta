@@ -25,6 +25,10 @@ public class DsoRootTest extends AbstractTwoServerDeploymentTest {
     return new DsoRootTestSetup();
   }
 
+  protected boolean isSessionTest() {
+    return false;
+  }
+
   private int getCount(WebApplicationServer server, WebConversation con) throws Exception {
     return Integer.parseInt(server.ping("/" + CONTEXT + "/" + MAPPING, con).getText().trim());
   }

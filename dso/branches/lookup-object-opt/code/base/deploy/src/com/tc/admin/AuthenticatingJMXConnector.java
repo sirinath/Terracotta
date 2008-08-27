@@ -1,7 +1,5 @@
 package com.tc.admin;
 
-import com.tc.admin.model.IServer;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -17,18 +15,18 @@ import javax.security.auth.Subject;
  */
 public final class AuthenticatingJMXConnector implements JMXConnector {
 
-  private IServer      m_server;
-  private JMXConnector m_connector;
+  private ServerConnectionManager m_connectManager;
+  private JMXConnector            m_connector;
 
-  public AuthenticatingJMXConnector(IServer server) {
-    m_server = server;
+  public AuthenticatingJMXConnector(ServerConnectionManager connectManager) {
+    m_connectManager = connectManager;
   }
 
-  private synchronized JMXConnector getConnector() {
+  private JMXConnector getConnector() {
     return m_connector;
   }
 
-  private synchronized void setConnector(JMXConnector connector) {
+  private void setConnector(JMXConnector connector) {
     this.m_connector = connector;
   }
 
@@ -41,11 +39,12 @@ public final class AuthenticatingJMXConnector implements JMXConnector {
   }
 
   public void connect() throws IOException {
-    connect(m_server.getConnectionEnvironment());
+    setConnector(m_connectManager.getJmxConnector());
+    getConnector().connect(m_connectManager.getConnectionEnvironment());
   }
-
+  
   public synchronized void connect(Map env) throws IOException {
-    setConnector(m_server.getJMXConnector());
+    setConnector(m_connectManager.getJmxConnector());
     getConnector().connect(env);
   }
 

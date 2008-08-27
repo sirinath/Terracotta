@@ -41,12 +41,10 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
     super(appId, cfg, listenerProvider, ConcurrentHashMap.class);
   }
 
-  @Override
   protected Object getTestObject(String test) {
     return sharedMap.get("map");
   }
 
-  @Override
   protected void setupTestObject(String test) {
     List listOfMaps = new ArrayList();
     listOfMaps.add(new ConcurrentHashMap());
@@ -1474,13 +1472,7 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
 
     for (Iterator i = expectEntries.iterator(); i.hasNext();) {
       Entry entry = (Entry) i.next();
-      Object entryValue = entry.getValue();
-      Object entryKey = entry.getKey();
-
-      Object actualValue = actual.get(entryKey);
-      if (actualValue == null) { throw new AssertionError("value in 'actual' map null for key [" + entryKey + "]"); }
-
-      Assert.assertEquals(((DataValue) entryValue).getInt(), ((DataValue) actualValue).getInt());
+      Assert.assertEquals(((DataValue) entry.getValue()).getInt(), ((DataValue) actual.get(entry.getKey())).getInt());
     }
 
     for (Iterator i = actualEntries.iterator(); i.hasNext();) {
@@ -1538,19 +1530,16 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
       return oldValue;
     }
 
-    @Override
     public boolean equals(Object o) {
       if (!(o instanceof Map.Entry)) return false;
       Map.Entry e = (Map.Entry) o;
       return eq(key, e.getKey()) && eq(value, e.getValue());
     }
 
-    @Override
     public int hashCode() {
       return ((key == null) ? 0 : key.hashCode()) ^ ((value == null) ? 0 : value.hashCode());
     }
 
-    @Override
     public String toString() {
       return key + "=" + value;
     }
@@ -1561,7 +1550,7 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
   }
 
   private static class DataKey {
-    private final int i;
+    private int i;
 
     public DataKey(int i) {
       super();
@@ -1574,7 +1563,7 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
   }
 
   private static class DataValue {
-    private final int i;
+    private int i;
 
     public DataValue(int i) {
       super();
@@ -1587,7 +1576,7 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
   }
 
   private static class HashKey {
-    private final int i;
+    private int i;
 
     public HashKey(int i) {
       super();
@@ -1598,12 +1587,10 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
       return this.i;
     }
 
-    @Override
     public int hashCode() {
       return i;
     }
 
-    @Override
     public boolean equals(Object obj) {
       if (obj == null) return false;
       if (!(obj instanceof HashKey)) return false;
@@ -1612,7 +1599,7 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
   }
 
   private static class HashValue {
-    private final int i;
+    private int i;
 
     public HashValue(int i) {
       super();
@@ -1623,19 +1610,16 @@ public class ConcurrentHashMapTestApp extends GenericTestApp {
       return this.i;
     }
 
-    @Override
     public int hashCode() {
       return i;
     }
 
-    @Override
     public boolean equals(Object obj) {
       if (obj == null) return false;
       if (!(obj instanceof HashValue)) return false;
       return ((HashValue) obj).i == i;
     }
 
-    @Override
     public String toString() {
       return super.toString() + ", i: " + i;
     }

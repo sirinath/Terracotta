@@ -19,6 +19,11 @@ public abstract class AbstractErrorCatchingTransparentApp extends AbstractTransp
     super(appId, cfg, listenerProvider);
   }
 
+  // used by external clients
+  public AbstractErrorCatchingTransparentApp() {
+    super();
+  }
+
   public final void run() {
     try {
       runTest();

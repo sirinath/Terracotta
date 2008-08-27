@@ -5,6 +5,8 @@
 package com.tc.objectserver.impl;
 
 import com.tc.async.api.Sink;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.GCResultContext;
@@ -12,10 +14,10 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
-import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
+import com.tc.util.SyncObjectIdSet;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,17 +26,17 @@ import java.util.SortedSet;
 
 public class PersistentManagedObjectStore implements ManagedObjectStore {
 
+  private final static TCLogger        logger = TCLogging.getLogger(PersistentManagedObjectStore.class);
+
+  private final SyncObjectIdSet        extantObjectIDs;
   private final ManagedObjectPersistor objectPersistor;
   private final Sink                   gcDisposerSink;
-  private volatile boolean             inShutdown;
+  private boolean                      inShutdown;
 
   public PersistentManagedObjectStore(ManagedObjectPersistor persistor, Sink gcDisposerSink) {
     this.objectPersistor = persistor;
     this.gcDisposerSink = gcDisposerSink;
-  }
-
-  public int getObjectCount() {
-    return objectPersistor.getObjectCount();
+    this.extantObjectIDs = objectPersistor.getAllObjectIDs();
   }
 
   public long nextObjectIDBatch(int batchSize) {
@@ -68,17 +70,13 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
 
   public boolean containsObject(ObjectID id) {
     assertNotInShutdown();
-    return objectPersistor.containsObject(id);
+    return extantObjectIDs.contains(id);
   }
 
   public void addNewObject(ManagedObject managed) {
     assertNotInShutdown();
-    boolean result = objectPersistor.addNewObject(managed.getID());
+    boolean result = extantObjectIDs.add(managed.getID());
     Assert.eval(result);
-    if (PersistentCollectionsUtil.isPersistableCollectionType(managed.getManagedObjectState().getType())) {
-      result = this.objectPersistor.addMapTypeObject(managed.getID());
-      Assert.eval(result);
-    }
   }
 
   public void commitObject(PersistenceTransaction tx, ManagedObject managed) {
@@ -94,8 +92,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
   public void removeAllObjectsByIDNow(PersistenceTransaction tx, SortedSet<ObjectID> ids) {
     assertNotInShutdown();
     this.objectPersistor.deleteAllObjectsByID(tx, ids);
-    this.objectPersistor.removeAllObjectsByID(ids);
-    this.objectPersistor.removeAllMapTypeObject(ids);
+    this.extantObjectIDs.removeAll(ids);
   }
 
   /**
@@ -103,14 +100,14 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
    */
   public void removeAllObjectsByID(GCResultContext gcResult) {
     assertNotInShutdown();
-    SortedSet<ObjectID> ids = gcResult.getGCedObjectIDs();
-    this.objectPersistor.removeAllObjectsByID(ids);
+    this.extantObjectIDs.removeAll(gcResult.getGCedObjectIDs());
+    logger.info("Scheduling gc results " + gcResult + " to be deleted in the background");
     gcDisposerSink.add(gcResult);
   }
 
   public ObjectIDSet getAllObjectIDs() {
     assertNotInShutdown();
-    return this.objectPersistor.snapshotObjects();
+    return this.extantObjectIDs.snapshot();
   }
 
   public ManagedObject getObjectByID(ObjectID id) {
@@ -123,18 +120,19 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     return rv;
   }
 
-  public void shutdown() {
+  public synchronized void shutdown() {
     assertNotInShutdown();
     this.inShutdown = true;
   }
 
-  public boolean inShutdown() {
+  public synchronized boolean inShutdown() {
     return this.inShutdown;
   }
 
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     PrettyPrinter rv = out;
     out = out.println(getClass().getName()).duplicateAndIndent();
+    out.indent().print("extantObjectIDs: ").visit(extantObjectIDs).println();
     return rv;
   }
 

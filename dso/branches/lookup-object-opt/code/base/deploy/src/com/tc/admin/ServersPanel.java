@@ -8,16 +8,11 @@ import org.dijon.ContainerResource;
 
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XObjectTable;
-import com.tc.admin.model.IClusterModel;
-import com.tc.admin.model.IServer;
-import com.tc.admin.model.ServerStateListener;
-
-import java.beans.PropertyChangeEvent;
 
 import javax.swing.SwingUtilities;
 import javax.swing.table.TableColumnModel;
 
-public class ServersPanel extends XContainer implements ServerStateListener {
+public class ServersPanel extends XContainer {
   protected AdminClientContext      m_acc;
   protected ServersNode             m_serversNode;
   protected ConnectionContext       m_connectionContext;
@@ -31,7 +26,7 @@ public class ServersPanel extends XContainer implements ServerStateListener {
     m_serversNode = serversNode;
     m_connectionContext = serversNode.getConnectionContext();
 
-    load((ContainerResource) m_acc.getComponent("ServersPanel"));
+    load((ContainerResource) m_acc.topRes.getComponent("ServersPanel"));
 
     m_clusterMemberTable = (XObjectTable) findComponent("ClusterMembersTable");
     m_clusterMemberTableModel = new ClusterMemberTableModel();
@@ -42,37 +37,31 @@ public class ServersPanel extends XContainer implements ServerStateListener {
 
     for (int i = 0; i < m_serversNode.getChildCount(); i++) {
       ServerNode serverNode = (ServerNode) m_serversNode.getChildAt(i);
-      m_clusterMemberTableModel.addClusterMember(serverNode.getServer());
+      m_clusterMemberTableModel.addClusterMember(serverNode.getServerConnectionManager());
     }
-
-    serversNode.getClusterModel().addServerStateListener(this);
   }
 
-  synchronized IClusterModel getClusterModel() {
-    return m_serversNode != null ? m_serversNode.getClusterModel() : null;
-  }
-
-  public void serverStateChanged(final IServer server, PropertyChangeEvent e) {
+  void serverStateChanged(final ServerNode serverNode) {
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
-        if (m_clusterMemberTableModel == null) return;
-        int row = m_clusterMemberTableModel.getObjectIndex(server);
-        m_clusterMemberTableModel.fireTableCellUpdated(row, 0);
+        ServerConnectionManager scm = serverNode.getServerConnectionManager();
+        if(scm != null) {
+          int row = m_clusterMemberTableModel.getObjectIndex(scm);
+          m_clusterMemberTableModel.fireTableCellUpdated(row, 0);
+        } else {
+          m_clusterMemberTableModel.fireTableDataChanged();
+        }
       }
     });
   }
 
   public void tearDown() {
-    m_clusterMemberTableModel.clear();
-
     super.tearDown();
 
-    synchronized (this) {
-      m_acc = null;
-      m_serversNode = null;
-      m_connectionContext = null;
-      m_clusterMemberTable = null;
-      m_clusterMemberTableModel = null;
-    }
+    m_acc = null;
+    m_serversNode = null;
+    m_connectionContext = null;
+    m_clusterMemberTable = null;
+    m_clusterMemberTableModel = null;
   }
 }

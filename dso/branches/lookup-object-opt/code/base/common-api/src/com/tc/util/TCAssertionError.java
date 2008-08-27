@@ -3,11 +3,12 @@
  */
 package com.tc.util;
 
+import com.tc.exception.TCRuntimeException;
 
 /**
  * Assertion error thrown by {@link Assert}.
  */
-public class TCAssertionError extends AssertionError {
+public class TCAssertionError extends TCRuntimeException {
 
   public TCAssertionError() {
     super();
@@ -22,8 +23,7 @@ public class TCAssertionError extends AssertionError {
   }
 
   public TCAssertionError(String message, Throwable cause) {
-    super(message);
-    initCause(cause);
+    super(message, cause);
   }
 
 }

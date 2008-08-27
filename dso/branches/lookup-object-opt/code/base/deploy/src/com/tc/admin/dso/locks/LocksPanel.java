@@ -14,13 +14,11 @@ import org.dijon.ToggleButton;
 import com.tc.admin.AdminClient;
 import com.tc.admin.AdminClientContext;
 import com.tc.admin.ConnectionContext;
-import com.tc.admin.SearchPanel;
 import com.tc.admin.common.BasicWorker;
 import com.tc.admin.common.ExceptionHelper;
 import com.tc.admin.common.MBeanServerInvocationProxy;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XObjectTable;
-import com.tc.admin.model.IClusterModel;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.lock.stats.LockSpec;
@@ -32,10 +30,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
@@ -47,6 +42,7 @@ import java.util.concurrent.TimeoutException;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.Notification;
 import javax.management.NotificationListener;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
@@ -62,11 +58,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.TableModel;
 import javax.swing.tree.TreePath;
 
-/**
- * TODO: Retrieve lock stats from ClusterModel instead of going directly through MBean.
- */
-
-public class LocksPanel extends XContainer implements NotificationListener, PropertyChangeListener {
+public class LocksPanel extends XContainer implements NotificationListener {
   private AdminClientContext          fAdminClientContext;
   private ConnectionContext           fConnectionContext;
   private LocksNode                   fLocksNode;
@@ -82,10 +74,14 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
   private JTabbedPane                 fLocksTabbedPane;
   private LockTreeTable               fTreeTable;
   private LockTreeTableModel          fTreeTableModel;
-  private SearchPanel                 fClientSearchPanel;
+  private JTextField                  fClientLocksFindField;
+  private JButton                     fClientLocksFindNextButton;
+  private JButton                     fClientLocksFindPreviousButton;
   private XObjectTable                fServerLocksTable;
   private ServerLockTableModel        fServerLockTableModel;
-  private SearchPanel                 fServerSearchPanel;
+  private JTextField                  fServerLocksFindField;
+  private JButton                     fServerLocksFindNextButton;
+  private JButton                     fServerLocksFindPreviousButton;
   private TextArea                    fTraceText;
   private Label                       fConfigLabel;
   private TextArea                    fConfigText;
@@ -93,7 +89,7 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
   private static Collection<LockSpec> EMPTY_LOCK_SPEC_COLLECTION = new HashSet<LockSpec>();
 
   private static final int            STATUS_TIMEOUT_SECONDS     = 3;
-  private static final int            REFRESH_TIMEOUT_SECONDS    = 10;
+  private static final int            REFRESH_TIMEOUT_SECONDS    = 5;
 
   public LocksPanel(LocksNode locksNode) {
     super();
@@ -102,10 +98,11 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     fConnectionContext = locksNode.getConnectionContext();
     fLocksNode = locksNode;
 
-    load((ContainerResource) fAdminClientContext.getComponent("LocksPanel"));
+    load((ContainerResource) fAdminClientContext.topRes.getComponent("LocksPanel"));
 
-    fLockStats = MBeanServerInvocationProxy.newMBeanProxy(fConnectionContext.mbsc, L2MBeanNames.LOCK_STATISTICS,
-                                                          LockStatisticsMonitorMBean.class, false);
+    fLockStats = (LockStatisticsMonitorMBean) MBeanServerInvocationProxy
+        .newProxyInstance(fConnectionContext.mbsc, L2MBeanNames.LOCK_STATISTICS, LockStatisticsMonitorMBean.class,
+                          false);
 
     // We do this to force an early error if the server we're connecting to is old and doesn't
     // have the LockStatisticsMonitorMBean. DSONode catches the error and doesn't display the LocksNode.
@@ -134,21 +131,29 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     fTreeTableModel = new LockTreeTableModel(EMPTY_LOCK_SPEC_COLLECTION);
     fTreeTable = (LockTreeTable) findComponent("LockTreeTable");
     fTreeTable.setTreeTableModel(fTreeTableModel);
-    fTreeTable.setPreferences(fAdminClientContext.getPrefs().node(fTreeTable.getName()));
+    fTreeTable.setPreferences(fAdminClientContext.prefs.node("LockTreeTable"));
     fTreeTable.addTreeSelectionListener(new LockSelectionHandler());
 
     ActionListener findNextAction = new FindNextHandler();
     ActionListener findPreviousAction = new FindPreviousHandler();
 
-    fClientSearchPanel = (SearchPanel) findComponent("ClientLocksSearchPanel");
-    fClientSearchPanel.setHandlers(findNextAction, findPreviousAction);
+    fClientLocksFindField = (JTextField) findComponent("ClientLocksFindField");
+    fClientLocksFindField.addActionListener(findNextAction);
+    fClientLocksFindNextButton = (JButton) findComponent("ClientLocksFindNextButton");
+    fClientLocksFindNextButton.addActionListener(findNextAction);
+    fClientLocksFindPreviousButton = (JButton) findComponent("ClientLocksFindPreviousButton");
+    fClientLocksFindPreviousButton.addActionListener(findPreviousAction);
 
     fServerLocksTable = (XObjectTable) findComponent("ServerLocksTable");
     fServerLockTableModel = new ServerLockTableModel(EMPTY_LOCK_SPEC_COLLECTION);
     fServerLocksTable.setModel(fServerLockTableModel);
 
-    fServerSearchPanel = (SearchPanel) findComponent("ServerLocksSearchPanel");
-    fServerSearchPanel.setHandlers(findNextAction, findPreviousAction);
+    fServerLocksFindField = (JTextField) findComponent("ServerLocksFindField");
+    fServerLocksFindField.addActionListener(findNextAction);
+    fServerLocksFindNextButton = (JButton) findComponent("ServerLocksFindNextButton");
+    fServerLocksFindNextButton.addActionListener(findNextAction);
+    fServerLocksFindPreviousButton = (JButton) findComponent("ServerLocksFindPreviousButton");
+    fServerLocksFindPreviousButton.addActionListener(findPreviousAction);
 
     fTraceText = (TextArea) findComponent("TraceText");
     fConfigLabel = (Label) findComponent("ConfigLabel");
@@ -160,18 +165,7 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
       throw new RuntimeException(e);
     }
 
-    fAdminClientContext.execute(new LocksPanelEnabledWorker());
-    locksNode.getClusterModel().addPropertyChangeListener(this);
-  }
-
-  public void propertyChange(PropertyChangeEvent evt) {
-    if (IClusterModel.PROP_ACTIVE_SERVER.equals(evt.getPropertyName())) {
-      if (((IClusterModel) evt.getSource()).getActiveServer() != null) {
-        if (fAdminClientContext != null) {
-          fAdminClientContext.execute(new NewConnectionContextWorker());
-        }
-      }
-    }
+    fAdminClientContext.executorService.execute(new LocksPanelEnabledWorker());
   }
 
   private class FindNextHandler implements ActionListener {
@@ -298,6 +292,10 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     }
   }
 
+  void newConnectionContext() {
+    fAdminClientContext.executorService.execute(new NewConnectionContextWorker());
+  }
+
   boolean isProfiling() {
     return fEnableButton.isSelected();
   }
@@ -320,10 +318,10 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     JTextField textfield;
     if (fLocksTabbedPane.getSelectedIndex() == 0) {
       table = fTreeTable;
-      textfield = fClientSearchPanel.getField();
+      textfield = fClientLocksFindField;
     } else {
       table = fServerLocksTable;
-      textfield = fServerSearchPanel.getField();
+      textfield = fServerLocksFindField;
     }
     findLock(table, textfield.getText().trim(), next);
   }
@@ -353,7 +351,7 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     Toolkit.getDefaultToolkit().beep();
   }
 
-  class TraceDepthSpinnerChangeListener implements ChangeListener, Serializable {
+  class TraceDepthSpinnerChangeListener implements ChangeListener {
     public void stateChanged(ChangeEvent e) {
       fTraceDepthChangeTimer.stop();
       fTraceDepthChangeTimer.start();
@@ -394,7 +392,7 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
 
   private void toggleLocksPanelEnabled() {
     boolean lockStatsEnabled = fLocksPanelEnabled ? false : true;
-    fAdminClientContext.execute(new LockStatsStateWorker(lockStatsEnabled));
+    fAdminClientContext.executorService.execute(new LockStatsStateWorker(lockStatsEnabled));
   }
 
   private void setLocksPanelEnabled(boolean enabled) {
@@ -408,14 +406,14 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     fDisableButton.setSelected(!enabled);
     fDisableButton.setEnabled(enabled);
 
-    fLocksNode.showProfiling(enabled);
+    fLocksNode.notifyChanged();
   }
 
   private void refresh() {
     final String label = fRefreshButton.getText();
     fRefreshButton.setText("Wait...");
     fRefreshButton.setEnabled(false);
-    fAdminClientContext.execute(new LockSpecsGetter(label));
+    fAdminClientContext.executorService.execute(new LockSpecsGetter(label));
   }
 
   class LockSpecsGetter extends BasicWorker<Collection<LockSpec>> {
@@ -497,7 +495,7 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
   }
 
   private void setTraceDepth(int traceDepth) {
-    fAdminClientContext.execute(new TraceDepthWorker(traceDepth));
+    fAdminClientContext.executorService.execute(new TraceDepthWorker(traceDepth));
   }
 
   private int getTraceDepth() {
@@ -529,15 +527,10 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
   }
 
   public void tearDown() {
-    IClusterModel clusterModel = fLocksNode.getClusterModel();
-    if (clusterModel != null) {
-      clusterModel.removePropertyChangeListener(this);
-    }
-
     super.tearDown();
 
     try {
-      fConnectionContext.removeNotificationListener(L2MBeanNames.LOCK_STATISTICS, this);
+      fConnectionContext.addNotificationListener(L2MBeanNames.LOCK_STATISTICS, this);
     } catch (Exception e) {
       // ignore
     }
@@ -555,10 +548,14 @@ public class LocksPanel extends XContainer implements NotificationListener, Prop
     fLocksTabbedPane = null;
     fTreeTable = null;
     fTreeTableModel = null;
-    fClientSearchPanel = null;
+    fClientLocksFindField = null;
+    fClientLocksFindNextButton = null;
+    fClientLocksFindPreviousButton = null;
     fServerLocksTable = null;
     fServerLockTableModel = null;
-    fServerSearchPanel = null;
+    fServerLocksFindField = null;
+    fServerLocksFindNextButton = null;
+    fServerLocksFindPreviousButton = null;
     fTraceText = null;
     fConfigLabel = null;
     fConfigText = null;
