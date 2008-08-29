@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin;
 
@@ -29,27 +30,29 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 
 public class AdminClient extends ApplicationManager {
-  private static AdminClient m_client;
-  private AdminClientContext m_cntx;
+  private static AdminClient  m_client;
+  private AdminClientContext  m_cntx;
 
   private static final String PREF_FILE = ".AdminClient.xml";
 
   static {
-    // Silence jmx remote
-    Logger.getLogger("javax.management.remote.generic").setLevel(Level.OFF);
-    Logger.getLogger("javax.management.remote.misc").setLevel(Level.OFF);
-    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
-    Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
-    Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
+    if (!Boolean.getBoolean("javax.management.remote.debug")) {
+      // Silence jmx remote
+      Logger.getLogger("javax.management.remote.generic").setLevel(Level.OFF);
+      Logger.getLogger("javax.management.remote.misc").setLevel(Level.OFF);
+      Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
+      Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
+      Logger.getLogger("javax.management.remote.rmi").setLevel(Level.OFF);
+    }
 
     // Silence httpclient
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
   }
-  
+
   protected AdminClient() {
     super("AdminClient");
 
-    if(Os.isMac()) {
+    if (Os.isMac()) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
       System.setProperty("apple.awt.showGrowBox", "true");
@@ -69,26 +72,26 @@ public class AdminClient extends ApplicationManager {
 
   static byte[] getBytes(String path) {
     byte[] result = null;
-    URL    url    = AdminClient.class.getResource(path);
-    
-    if(url != null) {
+    URL url = AdminClient.class.getResource(path);
+
+    if (url != null) {
       InputStream is = null;
-      
+
       try {
         result = IOUtils.toByteArray(is = url.openStream());
-      } catch(IOException ioe) {
+      } catch (IOException ioe) {
         ioe.printStackTrace();
       } finally {
         IOUtils.closeQuietly(is);
       }
     }
-    
+
     return result;
   }
 
   public static AdminClient getClient() {
-    if(m_client == null) {
-      new AdminClient().parseArgs(new String[]{});
+    if (m_client == null) {
+      new AdminClient().parseArgs(new String[] {});
     }
 
     return m_client;
@@ -108,7 +111,9 @@ public class AdminClient extends ApplicationManager {
   public DictionaryResource loadPreferences() {
     return new DictionaryResource();
   }
-  public void storePreferences() {/**/}
+
+  public void storePreferences() {/**/
+  }
 
   private Preferences loadPrefs() {
     FileInputStream fis = null;
@@ -116,11 +121,11 @@ public class AdminClient extends ApplicationManager {
     try {
       File f = new File(System.getProperty("user.home"), PREF_FILE);
 
-      if(f.exists()) {
+      if (f.exists()) {
         fis = new FileInputStream(f);
         Preferences.importPreferences(fis);
       }
-    } catch(Exception e) {
+    } catch (Exception e) {
       // ignore
     } finally {
       IOUtils.closeQuietly(fis);
@@ -137,7 +142,7 @@ public class AdminClient extends ApplicationManager {
       fos = new FileOutputStream(f);
       m_cntx.prefs.exportSubtree(fos);
       m_cntx.prefs.flush();
-    } catch(Exception e) {
+    } catch (Exception e) {
       e.printStackTrace();
     } finally {
       IOUtils.closeQuietly(fos);
@@ -146,12 +151,12 @@ public class AdminClient extends ApplicationManager {
 
   private DictionaryResource loadTopRes() {
     DictionaryResource topRes = null;
-    InputStream        is     = null;
+    InputStream is = null;
 
     try {
       is = getClass().getResourceAsStream("AdminClient.xml");
       topRes = ApplicationManager.loadResource(is);
-    } catch(Throwable t) {
+    } catch (Throwable t) {
       t.printStackTrace();
       System.exit(-1);
     } finally {
@@ -167,7 +172,7 @@ public class AdminClient extends ApplicationManager {
     m_cntx.controller = frame;
     Timer t = new Timer(250, new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
-        ((AdminClientFrame)m_cntx.controller).setVisible(true);
+        ((AdminClientFrame) m_cntx.controller).setVisible(true);
         splashProc.destroy();
       }
     });
@@ -187,11 +192,9 @@ public class AdminClient extends ApplicationManager {
 
   private static Process splashProc;
 
-  public static final void main(final String[] args)
-    throws Exception
-  {
+  public static final void main(final String[] args) throws Exception {
     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    
+
     splashProc = Splash.start("Starting Terracotta AdminConsole...", new Runnable() {
       public void run() {
         AdminClient client = new AdminClient();
