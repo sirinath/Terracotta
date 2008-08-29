@@ -8,11 +8,11 @@ import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
-import com.tctest.YoungGCTestBase;
+import com.tctest.YoungGCTestAndActivePassiveTest;
 
 
 
-public class CreateRescueCandidatesYoungGCTest extends YoungGCTestBase {
+public class CreateRescueCandidatesYoungGCTest extends YoungGCTestAndActivePassiveTest {
 
  
   public CreateRescueCandidatesYoungGCTest() {

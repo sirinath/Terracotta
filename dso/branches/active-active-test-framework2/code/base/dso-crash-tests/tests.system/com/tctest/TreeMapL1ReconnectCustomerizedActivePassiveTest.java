@@ -11,7 +11,7 @@ import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.Assert;
 
-public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends TransparentTestBase {
+public class TreeMapL1ReconnectCustomerizedActivePassiveTest extends ActivePassiveTransparentTestBase {
 
   private static final int NODE_COUNT = 2;
 

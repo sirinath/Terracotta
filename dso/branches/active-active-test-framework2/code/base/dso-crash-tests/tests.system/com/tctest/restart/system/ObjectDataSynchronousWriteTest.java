@@ -5,17 +5,17 @@
 package com.tctest.restart.system;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tctest.ActivePassiveTransparentTestBase;
 import com.tctest.TestConfigurator;
-import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ObjectDataSynchronousWriteTest extends TransparentTestBase implements TestConfigurator {
+public class ObjectDataSynchronousWriteTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
   private int clientCount = 2;
 

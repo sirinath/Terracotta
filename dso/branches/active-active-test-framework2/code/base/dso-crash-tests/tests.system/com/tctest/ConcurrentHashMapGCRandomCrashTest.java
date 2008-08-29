@@ -9,7 +9,7 @@ import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-public class ConcurrentHashMapGCRandomCrashTest extends GCTestBase {
+public class ConcurrentHashMapGCRandomCrashTest extends GCAndActivePassiveTest {
 
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setAttribute(ConcurrentHashMapSwappingTestApp.GC_TEST_KEY, "true");

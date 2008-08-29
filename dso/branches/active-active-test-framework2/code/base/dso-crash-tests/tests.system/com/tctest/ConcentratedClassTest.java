@@ -16,7 +16,7 @@ import com.terracottatech.config.PersistenceMode;
  * test will prove to me that we have a race condition in GenricTCField.[set/get](). If we do, I'll fix it. And then
  * this test will mostly just be a regression test
  */
-public class ConcentratedClassTest extends TransparentTestBase {
+public class ConcentratedClassTest extends ActivePassiveTransparentTestBase {
 
   public static final int NODE_COUNT = 2;
 

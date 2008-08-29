@@ -8,16 +8,16 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tctest.ActivePassiveTransparentTestBase;
 import com.tctest.TestConfigurator;
-import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
 import java.util.ArrayList;
 
-public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends TransparentTestBase implements TestConfigurator {
+public class ObjectDataSmallSinkL1ReconnectActivePassiveTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
   private int    clientCount    = 6;
   private String smallL2Sink    = "50";

@@ -5,14 +5,14 @@
 package com.tctest.restart.system;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tctest.ActivePassiveTransparentTestBase;
 import com.tctest.TestConfigurator;
-import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
-public class ObjectDataRandomCrashTest extends TransparentTestBase implements TestConfigurator {
+public class ObjectDataRandomCrashTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
   private int clientCount = 2;
 

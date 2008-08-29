@@ -52,7 +52,7 @@ public class ActiveActiveServerManager extends MultipleServerManager {
       activePassiveServerManagers[i] = new ActivePassiveServerManager(true, tempDir, portChooser, configModel,
                                                                       activePasssiveTestSetupManager, javaHome,
                                                                       configFactory, extraJvmArgs, isProxyL2GroupPorts,
-                                                                      true, noOfServers);
+                                                                      false, noOfServers);
       noOfServers += setupManger.getGroupMemberCount(i);
     }
 

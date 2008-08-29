@@ -4,12 +4,12 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.runner.TransparentAppConfig;
 
-public class PartialSetTest extends TransparentTestBase {
+public class PartialSetTest extends ActivePassiveTransparentTestBase {
 
   private static final int NODE_COUNT = 2;
 

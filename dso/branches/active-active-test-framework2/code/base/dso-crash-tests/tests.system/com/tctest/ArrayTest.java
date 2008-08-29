@@ -9,7 +9,7 @@ import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-public class ArrayTest extends TransparentTestBase {
+public class ArrayTest extends ActivePassiveTransparentTestBase {
 
   public static final int NODE_COUNT = 1;
 
