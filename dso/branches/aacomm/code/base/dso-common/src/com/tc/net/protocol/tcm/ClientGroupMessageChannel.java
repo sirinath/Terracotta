@@ -8,7 +8,7 @@ import com.tc.net.groups.GroupID;
 
 public interface ClientGroupMessageChannel extends ClientMessageChannel {
 
-  public ClientMessageChannel[] getChannels();
+  public ClientMessageChannel getChannel(GroupID groupID);
 
   public GroupID[] getGroupIDs();
 

@@ -9,6 +9,7 @@ import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCSerializable;
 import com.tc.net.groups.ClientID;
+import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.AbstractTCNetworkMessage;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
@@ -25,6 +26,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   private final SetOnceFlag        isSent    = new SetOnceFlag();
   private final TCMessageType      type;
   private final MessageChannel     channel;
+  private final boolean            isOutgoing;
   private int                      nvCount;
   private TCByteBufferOutputStream out;
   private TCByteBufferInputStream  bbis;
@@ -33,7 +35,8 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   /**
    * Creates a new TCMessage to write data into (ie. to send to the network)
    */
-  protected TCMessageImpl(MessageMonitor monitor, TCByteBufferOutputStream output, MessageChannel channel, TCMessageType type) {
+  protected TCMessageImpl(MessageMonitor monitor, TCByteBufferOutputStream output, MessageChannel channel,
+                          TCMessageType type) {
     super(new TCMessageHeaderImpl(type), false);
     this.monitor = monitor;
     this.type = type;
@@ -44,6 +47,8 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
 
     // write out a zero. When dehydrated, this space will be replaced with the NV count
     this.out.writeInt(0);
+    
+    this.isOutgoing = true;
   }
 
   /**
@@ -59,6 +64,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
     this.messageVersion = header.getMessageTypeVersion();
     this.bbis = new TCByteBufferInputStream(data);
     this.channel = channel;
+    this.isOutgoing = false;
   }
 
   public TCMessageType getMessageType() {
@@ -98,11 +104,11 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   public void dehydrate() {
     dehydrate(null);
   }
-  
+
   private void dehydrate(TCByteBuffer[] nvData) {
     if (processed.attemptSet()) {
       try {
-        if(nvData == null) nvData = nvToTCByteBufferArray();
+        if (nvData == null) nvData = nvToTCByteBufferArray();
         setPayload(nvData);
         populateHeader();
         seal();
@@ -115,7 +121,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
       }
     }
   }
-  
+
   private final TCByteBuffer[] nvToTCByteBufferArray() {
     dehydrateValues();
 
@@ -131,7 +137,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
     hdr.setMessageType(getMessageType().getType());
     hdr.setMessageTypeVersion(getMessageVersion());
   }
-  
+
   /**
    * Reads the payload byte buffer data and sets instance data. This should be called after the message is read from the
    * network before it is released to the client for use. XXX:: This synchronization is there to create proper memory
@@ -321,7 +327,6 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
 
   /*
    * (non-Javadoc)
-   * 
    * @see com.tc.net.protocol.tcm.ApplicationMessage#send()
    */
   public void send() {
@@ -345,7 +350,15 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
       basicSend();
     }
   }
-  
+
+  public NodeID getSourceNodeID() {
+    return isOutgoing? channel.getLoaclNodeID() : channel.getRemoteNodeID();
+  }
+
+  public NodeID getDestinationNodeID() {
+    return isOutgoing? channel.getRemoteNodeID() : channel.getLoaclNodeID();
+  }
+
   // FIXME:: This is here till them tc-comms merge.
   // TODO:: Remove this method once getSourceID and getDestinationID is merged into truck. You can use those methods
   // instead.

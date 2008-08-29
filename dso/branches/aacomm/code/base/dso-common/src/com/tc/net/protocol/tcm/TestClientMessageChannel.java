@@ -30,8 +30,8 @@ public class TestClientMessageChannel implements ClientMessageChannel {
                                      SessionProvider sessionProvider, ConnectionAddressProvider addrProvider,
                                      ClientGroupMessageChannel multiplex) {
 
-    setClientID(ClientID.NULL_ID);
-    setServerID(GroupID.NULL_ID);
+    setLocalNodeID(ClientID.NULL_ID);
+    setRemoteNodeID(GroupID.NULL_ID);
   }
 
   public boolean isInitConnect() {
@@ -101,7 +101,7 @@ public class TestClientMessageChannel implements ClientMessageChannel {
     throw new ImplementMe();
   }
 
-  public NodeID getServerID() {
+  public NodeID getRemoteNodeID() {
     throw new ImplementMe();
   }
 
@@ -113,7 +113,7 @@ public class TestClientMessageChannel implements ClientMessageChannel {
     throw new ImplementMe();
   }
 
-  public ClientID getClientID() {
+  public NodeID getLoaclNodeID() {
     throw new ImplementMe();
   }
 
@@ -142,11 +142,11 @@ public class TestClientMessageChannel implements ClientMessageChannel {
     
   }
 
-  public void setServerID(NodeID destination) {
+  public void setRemoteNodeID(NodeID destination) {
     throw new ImplementMe();
   }
 
-  public void setClientID(ClientID source) {
+  public void setLocalNodeID(NodeID source) {
     throw new ImplementMe();
   }
 

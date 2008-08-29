@@ -40,8 +40,6 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
     this.msgFactory = msgFactory;
     this.cidProvider = new ChannelIDProviderImpl();
     this.sessionProvider = sessionProvider;
-
-    setClientID(ClientID.NULL_ID);
   }
 
   public NetworkStackID open() throws TCTimeoutException, UnknownHostException, IOException,
@@ -50,11 +48,11 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
 
     synchronized (status) {
       if (status.isOpen()) { throw new IllegalStateException("Channel already open"); }
-      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID(getClientID().getChannelID().toLong()));
+      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID((((ClientID)getLoaclNodeID()).getChannelID().toLong())));
       NetworkStackID id = this.sendLayer.open();
       getStatus().open();
       this.channelID = new ChannelID(id.toLong());
-      setClientID(new ClientID(this.channelID));
+      setLocalNodeID(new ClientID(this.channelID));
       this.cidProvider.setChannelID(this.channelID);
       this.channelSessionID = sessionProvider.getSessionID();
       return id;

@@ -160,20 +160,20 @@ public class HydrateHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public ClientID getClientID() {
+    public NodeID getLoaclNodeID() {
       throw new ImplementMe();
     }
     
-    public void setClientID(ClientID source) {
+    public void setLocalNodeID(NodeID source) {
       throw new ImplementMe();
       
     }
     
-    public NodeID getServerID() {
+    public NodeID getRemoteNodeID() {
       throw new ImplementMe();
     }
 
-    public void setServerID(NodeID destination) {
+    public void setRemoteNodeID(NodeID destination) {
       throw new ImplementMe();
       
     }
@@ -220,6 +220,14 @@ public class HydrateHandlerTest extends TCTestCase {
     }
 
     public void send() {
+      throw new ImplementMe();
+    }
+
+    public NodeID getSourceNodeID() {
+      throw new ImplementMe();
+    }
+
+    public NodeID getDestinationNodeID() {
       throw new ImplementMe();
     }
   }

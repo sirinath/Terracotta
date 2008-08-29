@@ -89,14 +89,7 @@ public class HaConfigImpl implements HaConfig {
   }
 
   private static Node makeNode(NewL2DSOConfig l2) {
-    // NOTE: until we resolve Tribes stepping on TCComm's port
-    // we'll use TCComm.port + 1 in Tribes
-    int dsoPort = l2.listenPort().getInt();
-    if (dsoPort == 0) {
-      return new Node(l2.host().getString(), dsoPort, TCSocketAddress.WILDCARD_IP);
-    } else {
-      return new Node(l2.host().getString(), l2.l2GroupPort().getInt(), TCSocketAddress.WILDCARD_IP);
-    }
+    return new Node(l2.host().getString(), l2.listenPort().getInt(), l2.l2GroupPort().getInt(), TCSocketAddress.WILDCARD_IP);
   }
 
 }

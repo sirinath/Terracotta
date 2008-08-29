@@ -19,9 +19,9 @@ public class DefaultConnectionIdFactory implements ConnectionIDFactory {
   public synchronized ConnectionID nextConnectionId() {
     return new ConnectionID(sequence++, uid);
   }
-  
+
   public ConnectionID makeConnectionId(long channelID) {
-    throw new UnsupportedOperationException();
+    return new ConnectionID(channelID, uid);
   }
 
   public Set loadConnectionIDs() {
@@ -31,7 +31,6 @@ public class DefaultConnectionIdFactory implements ConnectionIDFactory {
   public void init(String clusterID, long nextAvailChannelID, Set connections) {
     throw new ImplementMe();
   }
-
 
   public void registerForConnectionIDEvents(ConnectionIDFactoryListener listener) {
     throw new ImplementMe();
