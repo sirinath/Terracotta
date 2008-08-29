@@ -12,3 +12,14 @@ Support:       http://www.terracotta.org/confluence/display/orgsite/Support
 
 Copyright (c) 2008, Terracotta, Inc.
 http://www.terracotta.org
+
+=============
+PATCH HISTORY
+
+-------------
+Patch Level 1
+
+- Fix for Cluster Statistics Recorder where it was not respecting the bind configuration
+  parameter and could not connect to the server.
+
+
