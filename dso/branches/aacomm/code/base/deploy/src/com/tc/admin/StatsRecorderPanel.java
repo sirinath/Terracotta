@@ -16,6 +16,7 @@ import org.dijon.ContainerResource;
 import org.dijon.List;
 import org.dijon.Spinner;
 import org.dijon.ToggleButton;
+import org.osgi.framework.Version;
 
 import EDU.oswego.cs.dl.util.concurrent.misc.SwingWorker;
 
@@ -53,8 +54,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -156,22 +159,22 @@ public class StatsRecorderPanel extends XContainer implements PropertyChangeList
     m_viewStatsButton.addActionListener(new ViewStatsSessionsHandler());
 
     setVisible(false);
-    
+
     IClusterModel clusterModel = statsRecorderNode.getClusterModel();
-    if(clusterModel.isActive()) {
+    if (clusterModel.isActive()) {
       initiateStatsGathererConnectWorker();
     }
-    clusterModel.addPropertyChangeListener(this);    
+    clusterModel.addPropertyChangeListener(this);
   }
 
   public void propertyChange(PropertyChangeEvent evt) {
-    if(IClusterModel.PROP_ACTIVE_SERVER.equals(evt.getPropertyName())) {
+    if (IClusterModel.PROP_ACTIVE_SERVER.equals(evt.getPropertyName())) {
       if (((IClusterModel) evt.getSource()).getActiveServer() != null) {
         initiateStatsGathererConnectWorker();
       }
     }
   }
-  
+
   private void initiateStatsGathererConnectWorker() {
     m_acc.execute(new StatsGathererConnectWorker());
   }
@@ -327,55 +330,58 @@ public class StatsRecorderPanel extends XContainer implements PropertyChangeList
       setRecording(false);
     }
 
-    public void handleNotification(Notification notification, Object handback) {
-      String type = notification.getType();
-      Object userData = notification.getUserData();
+    public void handleNotification(final Notification notification, final Object handback) {
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+          String type = notification.getType();
+          Object userData = notification.getUserData();
 
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_STARTEDUP_TYPE)) {
-        gathererConnected();
-        return;
-      }
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_STARTEDUP_TYPE)) {
+            gathererConnected();
+            return;
+          }
 
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE)) {
-        m_currentStatsSessionId = (String) userData;
-        return;
-      }
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_SESSION_CREATED_TYPE)) {
+            m_currentStatsSessionId = (String) userData;
+            return;
+          }
 
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE)) {
-        showRecordingInProgress();
-        return;
-      }
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_CAPTURING_STARTED_TYPE)) {
+            showRecordingInProgress();
+            return;
+          }
 
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE)) {
-        String thisSession = (String) userData;
-        if (m_currentStatsSessionId != null && m_currentStatsSessionId.equals(thisSession)) {
-          m_statsSessionsListModel.addElement(new StatsSessionListItem(thisSession));
-          m_statsSessionsList.setSelectedIndex(m_statsSessionsListModel.getSize() - 1);
-          m_currentStatsSessionId = null;
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_CAPTURING_STOPPED_TYPE)) {
+            String thisSession = (String) userData;
+            if (m_currentStatsSessionId != null && m_currentStatsSessionId.equals(thisSession)) {
+              m_statsSessionsListModel.addElement(new StatsSessionListItem(thisSession));
+              m_statsSessionsList.setSelectedIndex(m_statsSessionsListModel.getSize() - 1);
+              m_currentStatsSessionId = null;
+              hideRecordingInProgress();
+              return;
+            }
+          }
 
-          hideRecordingInProgress();
-          return;
-        }
-      }
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_SESSION_CLEARED_TYPE)) {
+            String sessionId = (String) userData;
+            int sessionCount = m_statsSessionsListModel.getSize();
+            for (int i = 0; i < sessionCount; i++) {
+              StatsSessionListItem item = (StatsSessionListItem) m_statsSessionsListModel.elementAt(i);
+              if (sessionId.equals(item.getSessionId())) {
+                m_statsSessionsListModel.remove(i);
+                break;
+              }
+            }
+            return;
+          }
 
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_SESSION_CLEARED_TYPE)) {
-        String sessionId = (String) userData;
-        int sessionCount = m_statsSessionsListModel.getSize();
-        for (int i = 0; i < sessionCount; i++) {
-          StatsSessionListItem item = (StatsSessionListItem) m_statsSessionsListModel.elementAt(i);
-          if (sessionId.equals(item.getSessionId())) {
-            m_statsSessionsListModel.remove(i);
-            break;
+          if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_ALLSESSIONS_CLEARED_TYPE)) {
+            m_statsSessionsListModel.clear();
+            m_currentStatsSessionId = null;
+            return;
           }
         }
-        return;
-      }
-
-      if (type.equals(StatisticsLocalGathererMBean.STATISTICS_LOCALGATHERER_ALLSESSIONS_CLEARED_TYPE)) {
-        m_statsSessionsListModel.clear();
-        m_currentStatsSessionId = null;
-        return;
-      }
+      });
     }
   }
 
@@ -816,10 +822,11 @@ public class StatsRecorderPanel extends XContainer implements PropertyChangeList
   }
 
   class ViewStatsSessionsHandler implements ActionListener, PropertyChangeListener {
-    private JFrame  m_svtFrame;
-    private Method  m_retrieveMethod;
-    private Method  m_setSessionMethod;
-    private boolean m_shouldLogErrors = true;
+    private ClassLoader m_svtClassLoader;
+    private JFrame      m_svtFrame;
+    private Method      m_retrieveMethod;
+    private Method      m_setSessionMethod;
+    private boolean     m_shouldLogErrors = true;
 
     private String getSvtUrl() {
       String kitID = com.tc.util.ProductInfo.getInstance().kitID();
@@ -831,10 +838,97 @@ public class StatsRecorderPanel extends XContainer implements PropertyChangeList
       return MessageFormat.format(GET_SVT_URL, kitID);
     }
 
+    private class VersionMap implements Comparable {
+      final File    versionDir;
+      final Version version;
+      final String  qualifier;
+
+      VersionMap(File versionDir) {
+        this.versionDir = versionDir;
+        String name = versionDir.getName();
+        int dashIndex = name.indexOf('-');
+        if (dashIndex != -1) {
+          qualifier = name.substring(dashIndex + 1);
+          name = name.substring(0, dashIndex);
+        } else {
+          qualifier = null;
+        }
+        this.version = new Version(name);
+      }
+
+      public int compareTo(Object o) {
+        int result = 0;
+        if (o instanceof VersionMap) {
+          VersionMap other = (VersionMap) o;
+          result = version.compareTo(other.version);
+          if (result == 0) {
+            result = qualifier != null ? -1 : 1;
+          }
+        }
+        return result;
+      }
+
+      public String toString() {
+        return "[path=" + versionDir.getAbsolutePath() + ", version=" + version.toString() + ", qualifier=" + qualifier
+               + "]";
+      }
+    }
+
+    /**
+     * Inspect the default kit modules area for the set of tim-svt's, determine the newest one, use it to create an SVT
+     * frame. This assume the user is running the console from a kit and that the tim-svt was installed using the
+     * tim-get script.
+     */
+    private ClassLoader getSVTClassLoader() {
+      if (m_svtClassLoader == null) {
+        String tcInstallRoot = System.getProperty("tc.install-root");
+        if (tcInstallRoot != null) {
+          String timSvtPath = tcInstallRoot + File.separator + "modules" + File.separator + "org" + File.separator
+                              + "terracotta" + File.separator + "modules" + File.separator + "tim-svt";
+          File timSvtRoot = new File(timSvtPath);
+          if (timSvtRoot.exists()) {
+            File[] versions = timSvtRoot.listFiles();
+            ArrayList<VersionMap> vm = new ArrayList<VersionMap>();
+            for (File versionDir : versions) {
+              if (versionDir.isDirectory()) {
+                String name = versionDir.getName();
+                if (name.matches("\\d+\\.\\d+\\.\\d+(-.*+)?")) {
+                  vm.add(new VersionMap(versionDir));
+                }
+              }
+            }
+            VersionMap[] vma = vm.toArray(new VersionMap[vm.size()]);
+            if (vma.length > 0) {
+              Arrays.sort(vma);
+              File newestDir = vma[vma.length - 1].versionDir;
+              File newest = new File(newestDir, "tim-svt-" + newestDir.getName() + ".jar");
+              try {
+                URL[] source = { newest.toURL() };
+                m_svtClassLoader = URLClassLoader.newInstance(source, getClass().getClassLoader());
+              } catch (Exception e) {
+                log(e);
+              }
+            }
+          }
+        }
+      }
+
+      return m_svtClassLoader;
+    }
+
+    private Class getSVTFrameType() throws ClassNotFoundException {
+      ClassLoader cl = getSVTClassLoader();
+      if (cl != null) {
+        return cl.loadClass(SNAPSHOT_VISUALIZER_TYPE);
+      } else {
+        return Class.forName(SNAPSHOT_VISUALIZER_TYPE);
+      }
+    }
+
     public void actionPerformed(ActionEvent ae) {
       if (m_svtFrame == null) {
         try {
-          Class svtFrameType = Class.forName(SNAPSHOT_VISUALIZER_TYPE);
+          Class svtFrameType = getSVTFrameType();
           try {
             Method getOrCreate = svtFrameType.getMethod("getOrCreate");
             m_svtFrame = (JFrame) getOrCreate.invoke(null);
@@ -895,10 +989,10 @@ public class StatsRecorderPanel extends XContainer implements PropertyChangeList
 
   public void tearDown() {
     IClusterModel clusterModel = m_statsRecorderNode.getClusterModel();
-    if(clusterModel != null) {
-      clusterModel.removePropertyChangeListener(this);    
+    if (clusterModel != null) {
+      clusterModel.removePropertyChangeListener(this);
     }
-    
+
     super.tearDown();
 
     m_availableStatsArea.tearDown();
