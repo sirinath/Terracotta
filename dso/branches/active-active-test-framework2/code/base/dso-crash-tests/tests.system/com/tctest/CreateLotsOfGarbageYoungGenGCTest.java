@@ -6,14 +6,14 @@ package com.tctest;
 
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.runtime.Os;
 
 import java.util.Date;
 
-public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestBase implements TestConfigurator {
+public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassiveTest implements TestConfigurator {
 
   public CreateLotsOfGarbageYoungGenGCTest() {
     if (Os.isSolaris()) {

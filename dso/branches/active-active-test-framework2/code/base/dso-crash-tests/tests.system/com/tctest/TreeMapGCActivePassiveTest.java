@@ -9,7 +9,7 @@ import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-public class TreeMapGCActivePassiveTest extends GCTestBase {
+public class TreeMapGCActivePassiveTest extends GCAndActivePassiveTest {
 
   private static final int NODE_COUNT = 3;
 

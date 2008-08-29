@@ -4,12 +4,12 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.runner.TransparentAppConfig;
 
-public class StackMutateValidateTest extends TransparentTestBase {
+public class StackMutateValidateTest extends ActivePassiveTransparentTestBase {
 
   public static final int      MUTATOR_NODE_COUNT      = 2;
   public static final int      VALIDATOR_NODE_COUNT    = 1;

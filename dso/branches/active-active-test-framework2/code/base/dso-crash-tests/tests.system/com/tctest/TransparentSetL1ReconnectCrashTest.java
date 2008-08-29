@@ -5,11 +5,11 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-public class TransparentSetL1ReconnectCrashTest extends TransparentTestBase implements TestConfigurator {
+public class TransparentSetL1ReconnectCrashTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
   private static final int NODE_COUNT           = 3;
   private static final int EXECUTION_COUNT      = 3;
   private static final int LOOP_ITERATION_COUNT = 400;

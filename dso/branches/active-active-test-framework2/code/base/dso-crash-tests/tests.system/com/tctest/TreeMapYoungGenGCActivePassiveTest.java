@@ -5,11 +5,11 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-public class TreeMapYoungGenGCActivePassiveTest extends YoungGCTestBase {
+public class TreeMapYoungGenGCActivePassiveTest extends YoungGCTestAndActivePassiveTest {
 
   private static final int NODE_COUNT = 3;
 

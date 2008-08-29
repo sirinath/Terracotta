@@ -95,14 +95,14 @@ public class ActivePassiveServerManager extends MultipleServerManager {
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     boolean isProxyL2GroupPorts) throws Exception {
     this(isActivePassiveTest, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, extraJvmArgs,
-         isProxyL2GroupPorts, false, 0);
+         isProxyL2GroupPorts, true, 0);
   }
 
   // Should be called directly when an active-active test is to be run
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, MultipleServersTestSetupManager setupManger, File javaHome,
                                     TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
-                                    boolean isProxyL2GroupPorts, boolean isActiveActive, int startIndexOfServer)
+                                    boolean isProxyL2GroupPorts, boolean isConfigToBeWritten, int startIndexOfServer)
       throws Exception {
     super(setupManger);
     
@@ -140,7 +140,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     this.startIndexOfServer = startIndexOfServer;
     createServers(this.startIndexOfServer);
 
-    if (!isActiveActive) {
+    if (isConfigToBeWritten) {
       GroupData[] groupList = new GroupData[1];
       groupList[0] = new GroupData(dsoPorts, jmxPorts, (isProxyL2GroupPorts) ? proxyL2GroupPorts : l2GroupPorts,
                                    serverNames);

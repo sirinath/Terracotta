@@ -5,13 +5,13 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 import com.tc.util.runtime.Os;
 
-public class LinkedBlockingQueueL2ReconnectActivePassiveTest extends TransparentTestBase {
+public class LinkedBlockingQueueL2ReconnectActivePassiveTest extends ActivePassiveTransparentTestBase {
 
   private static final int NODE_COUNT = 4;
   

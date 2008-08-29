@@ -5,19 +5,19 @@
 package com.tctest.restart.system;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.test.proxyconnect.ProxyConnectManager;
 import com.tc.util.runtime.Os;
+import com.tctest.ActivePassiveTransparentTestBase;
 import com.tctest.TestConfigurator;
-import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ObjectDataL2ReconnectActivePassiveTest extends TransparentTestBase implements TestConfigurator {
+public class ObjectDataL2ReconnectActivePassiveTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
   private int clientCount = 2;
 

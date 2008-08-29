@@ -10,7 +10,7 @@ public abstract class MultipleServersTestSetupManager {
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
   private int                            maxCrashCount            = Integer.MAX_VALUE;
-  private MultipleServersSharedDataMode  activePassiveMode;
+  private MultipleServersSharedDataMode  serversSharedDataMode;
   private MultipleServersPersistenceMode persistenceMode;
   protected MultipleServersCrashMode     crashMode;
   protected int                          electionTime             = 5;
@@ -40,16 +40,16 @@ public abstract class MultipleServersTestSetupManager {
   }
 
   public void setServerShareDataMode(String mode) {
-    activePassiveMode = new MultipleServersSharedDataMode(mode);
+    serversSharedDataMode = new MultipleServersSharedDataMode(mode);
   }
 
   public String getServerSharedDataMode() {
-    return activePassiveMode.getMode();
+    return serversSharedDataMode.getMode();
   }
 
   public boolean isNetworkShare() {
-    if (activePassiveMode == null) { throw new AssertionError("Server share mode was not set."); }
-    return activePassiveMode.isNetworkShare();
+    if (serversSharedDataMode == null) { throw new AssertionError("Server share mode was not set."); }
+    return serversSharedDataMode.isNetworkShare();
   }
 
   public void setServerPersistenceMode(String mode) {

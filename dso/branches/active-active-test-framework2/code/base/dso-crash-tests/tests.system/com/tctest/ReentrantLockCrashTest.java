@@ -5,12 +5,12 @@
 package com.tctest;
 
 import com.tc.test.MultipleServersCrashMode;
-import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tctest.runner.TransparentAppConfig;
 
-public class ReentrantLockCrashTest extends TransparentTestBase {
+public class ReentrantLockCrashTest extends ActivePassiveTransparentTestBase {
 
   private static final int NODE_COUNT = 3;
 
