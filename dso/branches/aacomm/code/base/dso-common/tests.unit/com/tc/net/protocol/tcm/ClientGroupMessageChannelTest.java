@@ -60,7 +60,7 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
   }
 
   protected void setUp(int maxReconnectTries) throws Exception {
-    setUp(maxReconnectTries, new PlainNetworkStackHarnessFactory(), new PlainNetworkStackHarnessFactory());
+    setUp(maxReconnectTries, new PlainNetworkStackHarnessFactory(), new PlainNetworkStackHarnessFactory((maxReconnectTries > 0)));
   }
 
   protected void setUp(int maxReconnectTries, NetworkStackHarnessFactory clientStackHarnessFactory,
@@ -80,12 +80,10 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
       ports[i] = lsnr[i].getBindPort();
     }
     groupChannel = createClientMessageChannel(maxReconnectTries);
-    groupChannel.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
-    ClientMessageChannel[] channels = groupChannel.getChannels();
-    for (int i = 0; i < L2_COUNT; ++i) {
-      setUpClientReceiveSink(i, channels[i], serverWatcheres[i]);
-    }
     groupIDs = this.groupChannel.getGroupIDs();
+    for (int i = 0; i < L2_COUNT; ++i) {
+      setUpClientReceiveSink(i, groupChannel.getChannel(groupIDs[i]), serverWatcheres[i]);
+    }
   }
 
   private NetworkListener initListener(int index, final CommunicationsManager serverComm, int port,
@@ -206,6 +204,8 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
       logger.info("testAutomaticReconnect doing channel " + i);
       channelAutomaticReconnect(i);
     }
+    
+    groupChannel.close();
   }
 
   private void waitForMessages(int ch, int count) throws InterruptedException {
@@ -253,6 +253,7 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     }
     groupChannel.open();
     assertTrue(groupChannel.isConnected());
+    groupChannel.close();
   }
 
   public void testSendAfterDisconnect() throws Exception {
@@ -267,6 +268,8 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
 
     // don't explicitly need to do this, but if we wait, it's possible an error will happen on another thread
     ThreadUtil.reallySleep(5000);
+    
+    groupChannel.close();
   }
 
   public void testZeroMaxRetriesDoesntAutoreconnect() throws Exception {
@@ -304,6 +307,8 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     ThreadUtil.reallySleep(WAIT * 4);
     assertTrue(groupChannel.getConnectAttemptCount() + " vs " + count, groupChannel.getConnectAttemptCount() > count);
     assertEquals(L2_COUNT, groupChannel.getConnectCount());
+    
+    groupChannel.close();
   }
 
   public void testGetStatus() throws Exception {
@@ -330,6 +335,8 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     for (int i = 0; i < L2_COUNT; ++i) {
       channelSend(i);
     }
+    
+    groupChannel.close();
   }
 
   public void testSendMultiplex() throws Exception {
@@ -344,6 +351,8 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
 
     for (int ch = 0; ch < L2_COUNT; ++ch)
       waitForMessages(ch, count);
+    
+    groupChannel.close();
   }
 
   public void testBroadcast() throws Exception {
@@ -355,9 +364,11 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     }
 
     for (int ch = 0; ch < L2_COUNT; ++ch) {
-      System.out.print("XXX Wait for channel " + ch);
+      System.out.println("XXX Wait for channel " + ch);
       waitForMessages(ch, count);
     }
+    
+    groupChannel.close();
   }
 
   private PingMessage createMessage() {
@@ -379,11 +390,9 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
     createAndSendMessage();
     waitForMessages(0, 1);
 
-    ClientMessageChannel[] channels = groupChannel.getChannels();
-
     for (int i = 0; i < L2_COUNT; ++i) {
-      TCSocketAddress clientRemote = channels[i].getRemoteAddress();
-      TCSocketAddress clientLocal = channels[i].getLocalAddress();
+      TCSocketAddress clientRemote = groupChannel.getChannel(groupIDs[i]).getRemoteAddress();
+      TCSocketAddress clientLocal = groupChannel.getChannel(groupIDs[i]).getLocalAddress();
 
       MessageChannelInternal[] serverChannels = lsnr[i].getChannelManager().getChannels();
       assertEquals(1, serverChannels.length);
@@ -396,6 +405,7 @@ public class ClientGroupMessageChannelTest extends TCTestCase {
       assertEquals(clientLocal, serverRemote);
     }
 
+    groupChannel.close();
   }
 
   private PingMessage createAndSendMessage() {

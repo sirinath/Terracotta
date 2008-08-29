@@ -213,18 +213,21 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   public void setPauseListener(PauseListener pauseListener) {
     this.pauseListener = pauseListener;
   }
-  
+
   /*
    * Overwrite this routine to do active-active channel
    */
-  protected ClientMessageChannel createChannel(CommunicationsManager commMgr, PreparedComponentsFromL2Connection connComp, SessionProvider sessionProvider) {
+  protected ClientMessageChannel createChannel(CommunicationsManager commMgr,
+                                               PreparedComponentsFromL2Connection connComp,
+                                               SessionProvider sessionProvider) {
     ClientMessageChannel cmc;
     ConfigItem connectionInfoItem = connComp.createConnectionInfoConfigItem();
     ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItem.getObject();
-    cmc = commMgr.createClientChannel(sessionProvider, -1, null, 0, 10000, new ConnectionAddressProvider(connectionInfo));
+    cmc = commMgr.createClientChannel(sessionProvider, -1, null, 0, 10000,
+                                      new ConnectionAddressProvider(connectionInfo));
     return (cmc);
   }
-  
+
   private void populateStatisticsRetrievalRegistry(final StatisticsRetrievalRegistry registry,
                                                    final StageManager stageManager,
                                                    final MessageMonitor messageMonitor,
@@ -301,7 +304,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     int timeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
     if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
 
-    channel = new DSOClientMessageChannelImpl(createChannel(communicationsManager, connectionComponents, sessionProvider));
+    channel = new DSOClientMessageChannelImpl(createChannel(communicationsManager, connectionComponents,
+                                                            sessionProvider));
     ChannelIDLoggerProvider cidLoggerProvider = new ChannelIDLoggerProvider(channel.getChannelIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 

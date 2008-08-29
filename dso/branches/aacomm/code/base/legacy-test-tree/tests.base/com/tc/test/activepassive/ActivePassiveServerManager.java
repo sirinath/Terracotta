@@ -80,7 +80,7 @@ public class ActivePassiveServerManager {
 
   public ActivePassiveServerManager(boolean isActivePassiveTest, File tempDir, PortChooser portChooser,
                                     String configModel, ActivePassiveTestSetupManager setupManger, File javaHome,
-                                    TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs, 
+                                    TestTVSConfigurationSetupManagerFactory configFactory, List extraJvmArgs,
                                     String testMode) throws Exception {
     this(isActivePassiveTest, tempDir, portChooser, configModel, setupManger, javaHome, configFactory, new ArrayList(),
          testMode, false);
@@ -121,7 +121,7 @@ public class ActivePassiveServerManager {
     servers = new ServerInfo[this.serverCount];
     dsoPorts = new int[this.serverCount];
     jmxPorts = new int[this.serverCount];
-    
+
     l2GroupPorts = new int[this.serverCount];
     proxyL2GroupPorts = new int[this.serverCount];
     serverNames = new String[this.serverCount];
@@ -219,7 +219,7 @@ public class ActivePassiveServerManager {
       servers[i] = new ServerInfo(HOST, serverNames[i], dsoPorts[i], jmxPorts[i], l2GroupPorts[i],
                                   getServerControl(dsoPorts[i], jmxPorts[i], serverNames[i], perServerJvmArgs));
     }
-    
+
     int position = 0;
     for (int i = 0; i < groups.length; i++) {
       groups[i] = new ArrayList();
@@ -317,7 +317,7 @@ public class ActivePassiveServerManager {
       Thread.sleep(1000);
     }
     System.out.println("********  index=[" + index + "]  i=[" + index + "] isPassiveStandby=[" + isPassiveStandby
-                 + "]  threadId=[" + Thread.currentThread().getName() + "]");
+                       + "]  threadId=[" + Thread.currentThread().getName() + "]");
     return isPassiveStandby;
   }
 
@@ -333,13 +333,13 @@ public class ActivePassiveServerManager {
                  + "]");
 
     activeIndex = getActiveIndex(true);
-    
+
     if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)
         || serverCrashMode.equals(ActivePassiveCrashMode.RANDOM_SERVER_CRASH)) {
       startContinuousCrash();
     }
   }
-  
+
   public void startActiveActiveServers() throws Exception {
     verifyActiveIndicesUnset();
 
@@ -351,7 +351,6 @@ public class ActivePassiveServerManager {
     debugPrintln("***** startServers():  about to search for active  threadId=[" + Thread.currentThread().getName()
                  + "]");
 
-    
     getActiveIndices();
 
     if (serverCrashMode.equals(ActivePassiveCrashMode.CONTINUOUS_ACTIVE_CRASH)
@@ -364,7 +363,7 @@ public class ActivePassiveServerManager {
     for (int i = 0; i < activeIndices.length; i++) {
       if (activeIndices[i] != NULL_VAL) { throw new AssertionError(
                                                                    "Server(s) has/have been already started: activeIndices=["
-                                                                   + activeIndicesToString() + "]"); }
+                                                                       + activeIndicesToString() + "]"); }
     }
   }
 
@@ -403,14 +402,16 @@ public class ActivePassiveServerManager {
           } catch (Exception e) {
             System.out.println("Need to fetch tcServerInfoMBean for server=[" + dsoPorts[i] + "]...");
             tcServerInfoMBeans[i] = getTcServerInfoMBean(i);
-            isActive = tcServerInfoMBeans[i].isActive();
+            // reset and scan from beginning
+            activeIndicesNextIndex = 0;
+            break;
           }
 
           if (isActive) {
             if (activeIndices.length <= activeIndicesNextIndex) { throw new Exception("More than ["
                                                                                       + activeIndices.length
                                                                                       + "] active servers found."); }
-            
+
             debugPrintln("***** active found index=[" + i + "] activeIndicesNextIndex=[" + activeIndicesNextIndex + "]");
             activeIndices[activeIndicesNextIndex++] = i;
           }
@@ -494,8 +495,8 @@ public class ActivePassiveServerManager {
       Thread.sleep(1000);
     }
   }
-  
-    private boolean activeIndicesContains(int i) {
+
+  private boolean activeIndicesContains(int i) {
     for (int j = 0; j < activeIndices.length; j++) {
       if (activeIndices[j] == i) { return true; }
     }
@@ -617,8 +618,8 @@ public class ActivePassiveServerManager {
   public int getPid() {
     return pid;
   }
-  
-    private String activeIndicesToString() {
+
+  private String activeIndicesToString() {
     StringBuffer buffer = new StringBuffer();
     boolean first = true;
     for (int i = 0; i < activeIndices.length; i++) {
@@ -637,7 +638,7 @@ public class ActivePassiveServerManager {
     int index = 0;
     crashActive(activeIndices[index]);
   }
-  
+
   public void crashActive(int crashIndex) throws Exception {
     if (!testState.isRunning()) {
       debugPrintln("***** test state is not running ... skipping crash active");

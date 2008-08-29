@@ -52,15 +52,20 @@ import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.AddressChecker;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.groups.ClientID;
 import com.tc.net.groups.Node;
+import com.tc.net.groups.NodeIDImpl;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOOEventHandler;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
+import com.tc.net.protocol.tcm.ChannelManager;
+import com.tc.net.protocol.tcm.ChannelManagerEventListener;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.HydrateHandler;
+import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.MessageMonitorImpl;
 import com.tc.net.protocol.tcm.NetworkListener;
@@ -218,6 +223,7 @@ import com.tc.util.SequenceValidator;
 import com.tc.util.StartupLock;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.TCTimerImpl;
+import com.tc.util.UUID;
 import com.tc.util.io.TCFileUtils;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.MutableSequence;
@@ -240,7 +246,8 @@ import javax.management.remote.JMXConnectorServer;
 /**
  * Startup and shutdown point. Builds and starts the server
  */
-public class DistributedObjectServer implements TCDumper {
+public class DistributedObjectServer implements TCDumper, ChannelManagerEventListener {
+  private NodeIDImpl                           thisServerNodeID         = NodeIDImpl.NULL_ID;
   private final ConnectionPolicy               connectionPolicy;
 
   private static final TCLogger                logger                   = CustomerLogging.getDSOGenericLogger();
@@ -338,6 +345,7 @@ public class DistributedObjectServer implements TCDumper {
   public synchronized void start() throws IOException, TCDatabaseException, LocationNotCreatedException,
       FileNotCreatedException {
 
+    thisServerNodeID = makeServerNodeID(configSetupManager.dsoL2Config());
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
 
     try {
@@ -630,6 +638,8 @@ public class DistributedObjectServer implements TCDumper {
 
     l1Listener = communicationsManager.createListener(sessionProvider, new TCSocketAddress(bind, serverPort), true,
                                                       connectionIdFactory, httpSink);
+    // Listen to channel creation/removal
+    l1Listener.getChannelManager().addEventListener(this);
 
     ClientTunnelingEventHandler cteh = new ClientTunnelingEventHandler();
 
@@ -837,7 +847,8 @@ public class DistributedObjectServer implements TCDumper {
                                                                                                            "Reconnect timer",
                                                                                                            true),
                                                                                            reconnectTimeout,
-                                                                                           persistent, consoleLogger);
+                                                                                           persistent, consoleLogger,
+                                                                                           thisServerNodeID);
 
     boolean networkedHA = this.haConfig.isNetworkedActivePassive();
     if (networkedHA) {
@@ -846,7 +857,7 @@ public class DistributedObjectServer implements TCDumper {
       logger.info("L2 Networked HA Enabled ");
       l2Coordinator = new L2HACoordinator(configSetupManager, consoleLogger, this, stageManager, persistor
           .getClusterStateStore(), objectManager, transactionManager, gtxm, channelManager, configSetupManager
-          .haConfig(), recycler);
+          .haConfig(), recycler, thisServerNodeID);
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
@@ -882,6 +893,31 @@ public class DistributedObjectServer implements TCDumper {
       startActiveMode();
     }
     setLoggerOnExit();
+  }
+
+  private NodeIDImpl makeServerNodeID(NewL2DSOConfig l2DSOConfig) {
+    String nodeName = new Node(l2DSOConfig.host().getString(), l2DSOConfig.listenPort().getInt()).getServerNodeName();
+    NodeIDImpl aNodeID = new NodeIDImpl(nodeName, UUID.getUUID().toString().getBytes());
+    logger.info("Creating server nodeID: " + aNodeID);
+    return aNodeID;
+  }
+
+  public void channelCreated(MessageChannel channel) {
+    channel.setLocalNodeID(thisServerNodeID);
+    channel.setRemoteNodeID(new ClientID(channel.getChannelID()));
+  }
+  
+  public NodeIDImpl getServerNodeID() {
+    return thisServerNodeID;
+  }
+  
+  // for testing purpose only
+  public ChannelManager getChannelManager() {
+    return l1Listener.getChannelManager();
+  }
+
+  public void channelRemoved(MessageChannel channel) {
+    // nothing so far
   }
 
   private void setLoggerOnExit() {

@@ -887,8 +887,8 @@
     </xs:annotation>
     <xs:sequence minOccurs="0" maxOccurs="1">
       <xs:element name="server" type="server" maxOccurs="unbounded" />
-      <xs:element name="ha" type="ha" maxOccurs="1" minOccurs="0" />
       <xs:element name="active-server-groups" type="active-server-groups" maxOccurs="1" minOccurs="0" />
+      <xs:element name="ha" type="ha" maxOccurs="1" minOccurs="0" />
       <xs:element name="update-check" type="update-check" maxOccurs="1" minOccurs="0"></xs:element>
     </xs:sequence>
   </xs:complexType>
