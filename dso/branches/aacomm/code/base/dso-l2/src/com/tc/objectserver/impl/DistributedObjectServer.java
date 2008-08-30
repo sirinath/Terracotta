@@ -906,14 +906,19 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
     channel.setLocalNodeID(thisServerNodeID);
     channel.setRemoteNodeID(new ClientID(channel.getChannelID()));
   }
-  
+
   public NodeIDImpl getServerNodeID() {
     return thisServerNodeID;
   }
-  
+
   // for testing purpose only
   public ChannelManager getChannelManager() {
     return l1Listener.getChannelManager();
+  }
+
+  // for testing purpose only
+  public void addClassMapping(TCMessageType type, Class msgClass) {
+    l1Listener.addClassMapping(type, msgClass);
   }
 
   public void channelRemoved(MessageChannel channel) {
