@@ -17,7 +17,13 @@ import com.tc.logging.TCLogging;
 import com.tc.net.groups.ClientID;
 import com.tc.net.groups.NodeID;
 import com.tc.net.groups.NodeIDImpl;
-import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.net.protocol.tcm.ClientMessageChannel;
+import com.tc.net.protocol.tcm.ServerMessageChannelImpl;
+import com.tc.net.protocol.tcm.TCMessage;
+import com.tc.net.protocol.tcm.TCMessageSink;
+import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.tcm.UnsupportedMessageTypeException;
+import com.tc.net.protocol.tcm.msgs.PingMessage;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.PauseListener;
@@ -52,19 +58,52 @@ public class ServerNodeIDSystemTest extends BaseDSOTestCase {
         // Client shall hold the same ServerNodeID as server's
         NodeIDImpl serverNodeID = server.getDSOServer().getServerNodeID();
         System.out.println("XXX ServerNodeID: " + serverNodeID);
-        MessageChannel channel = client.getChannel().channel();
-        NodeID clientServerNodeID = channel.getRemoteNodeID();
+        ClientMessageChannel clientChannel = client.getChannel().channel();
+        NodeID clientServerNodeID = clientChannel.getRemoteNodeID();
         System.out.println("XXX Client's ServerNodeID: " + clientServerNodeID);
         Assert.assertTrue(serverNodeID.equals(clientServerNodeID));
 
         // Server shall hold the same ClientID as client's
-        ClientID clientNodeID = (ClientID) channel.getLoaclNodeID();
+        ClientID clientNodeID = (ClientID) clientChannel.getLoaclNodeID();
         System.out.println("XXX ClientNodeID: " + clientNodeID);
-        NodeID serverClientNodeID = server.getDSOServer().getChannelManager().getChannel(channel.getChannelID())
-            .getRemoteNodeID();
+        ServerMessageChannelImpl serverChannel = (ServerMessageChannelImpl) server.getDSOServer().getChannelManager()
+            .getChannel(clientChannel.getChannelID());
+        NodeID serverClientNodeID = serverChannel.getRemoteNodeID();
         System.out.println("XXX Server's ClientNodeID: " + serverClientNodeID);
         Assert.assertTrue(clientNodeID.equals(serverClientNodeID));
-                          
+        
+        // setup server to send ping message
+        server.getDSOServer().addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
+        PingMessageSink serverSink = new PingMessageSink();
+        serverChannel.routeMessageType(TCMessageType.PING_MESSAGE,  serverSink);
+
+        // set up client to receive ping message
+        clientChannel.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
+        PingMessageSink clientSink = new PingMessageSink();
+        clientChannel.routeMessageType(TCMessageType.PING_MESSAGE, clientSink);
+        
+        // server ping client
+        TCMessage msg = serverChannel.createMessage(TCMessageType.PING_MESSAGE);
+        msg.send();
+        ThreadUtil.reallySleep(100);
+        Assert.assertEquals(1, clientSink.getReceivedCount());
+        PingMessage pingReceived = clientSink.getReceivedPing();
+        Assert.assertTrue(msg.getSourceNodeID().equals(pingReceived.getSourceNodeID()));
+        Assert.assertTrue(msg.getDestinationNodeID().equals(pingReceived.getDestinationNodeID()));
+        Assert.assertTrue(serverNodeID.equals(pingReceived.getSourceNodeID()));
+        Assert.assertTrue(clientNodeID.equals(pingReceived.getDestinationNodeID()));
+        
+        // client ping server
+        msg = clientChannel.createMessage(TCMessageType.PING_MESSAGE);
+        msg.send();
+        ThreadUtil.reallySleep(100);
+        Assert.assertEquals(1, serverSink.getReceivedCount());
+        pingReceived = serverSink.getReceivedPing();
+        Assert.assertTrue(msg.getSourceNodeID().equals(pingReceived.getSourceNodeID()));
+        Assert.assertTrue(msg.getDestinationNodeID().equals(pingReceived.getDestinationNodeID()));
+        Assert.assertTrue(serverNodeID.equals(pingReceived.getDestinationNodeID()));
+        Assert.assertTrue(clientNodeID.equals(pingReceived.getSourceNodeID()));
+
         // sleep a while for JMX TunnelingMessageConnection
         ThreadUtil.reallySleep(3000);
 
@@ -75,6 +114,33 @@ public class ServerNodeIDSystemTest extends BaseDSOTestCase {
     } finally {
       server.stop();
     }
+  }
+
+  private class PingMessageSink implements TCMessageSink {
+    private int         receivedCount = 0;
+    private PingMessage pingReceived;
+
+    public void putMessage(TCMessage message) throws UnsupportedMessageTypeException {
+
+      PingMessage ping = (PingMessage) message;
+
+      try {
+        message.hydrate();
+      } catch (Exception e) {
+        //
+      }
+      ++receivedCount;
+      pingReceived = ping;
+    }
+
+    public int getReceivedCount() {
+      return receivedCount;
+    }
+
+    public PingMessage getReceivedPing() {
+      return pingReceived;
+    }
+
   }
 
   protected TCServer startupServer(final int dsoPort, final int jmxPort) {
