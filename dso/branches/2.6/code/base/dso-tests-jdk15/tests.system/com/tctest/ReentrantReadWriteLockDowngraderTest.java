@@ -21,6 +21,11 @@ public class ReentrantReadWriteLockDowngraderTest extends TransparentTestBase {
   private static final int NODE_COUNT = 3;
   private static final int LOOP_COUNT = 1000;
 
+  public ReentrantReadWriteLockDowngraderTest() {
+    // DEV-1616
+    disableAllUntil("2010-09-01");
+  }
+
   @Override
   protected Class getApplicationClass() {
     return ReentrantReadWriteLockDowngraderTestApp.class;
