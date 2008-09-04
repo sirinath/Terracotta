@@ -5,117 +5,125 @@
 package org.terracotta.modules.tool.commands;
 
 import org.apache.commons.cli.CommandLine;
+import org.terracotta.modules.tool.InstallListener;
+import org.terracotta.modules.tool.InstallOption;
 import org.terracotta.modules.tool.Module;
-import org.terracotta.modules.tool.ModuleId;
+import org.terracotta.modules.tool.ModuleReport;
 import org.terracotta.modules.tool.Modules;
 
 import com.google.inject.Inject;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class InstallCommand extends AbstractCommand {
+public class InstallCommand extends OneOrAllCommand {
 
-  private static final String LONGOPT_ALL       = "all";
-  private static final String LONGOPT_OVERWRITE = "overwrite";
-  private static final String LONGOPT_PRETEND   = "pretend";
-  private static final String LONGOPT_NOVERIFY  = "no-verify";
+  // private static final String LONGOPT_ALL = "all";
+  private static final String             LONGOPT_OVERWRITE = "overwrite";
+  private static final String             LONGOPT_FORCE     = "force";
+  private static final String             LONGOPT_PRETEND   = "pretend";
+  private static final String             LONGOPT_NOVERIFY  = "no-verify";
 
-  private final Modules       modules;
-
-  private boolean             overwrite;
-  private boolean             pretend;
-  private boolean             verify;
+  private final Modules                   modules;
+  private final ModuleReport              report;
+  private final Collection<InstallOption> installOptions;
 
   @Inject
-  public InstallCommand(Modules modules) {
+  public InstallCommand(Modules modules, ModuleReport report) {
     this.modules = modules;
-    assert modules != null : "modules is null";
-    options.addOption(buildOption(LONGOPT_ALL,
-                                  "Install all compatible TIMs, ignoring the name and version arguments if specified"));
-    options.addOption(buildOption(LONGOPT_OVERWRITE, "Overwrite if already installed"));
+    this.report = report;
+    options.addOption(buildOption(LONGOPT_ALL, "Install all compatible TIMs,  all other arguments are ignored"));
+    options.addOption(buildOption(LONGOPT_OVERWRITE, "Install anyway, even if already installed"));
+    options.addOption(buildOption(LONGOPT_FORCE, "Synonym to overwrite"));
     options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
     options.addOption(buildOption(LONGOPT_NOVERIFY, "Skip checksum verification"));
     arguments.put("name", "The name of the integration module");
     arguments.put("version", "(OPTIONAL) The version used to qualify the name");
     arguments.put("group-id", "(OPTIONAL) The group-id used to qualify the name");
+    installOptions = new ArrayList<InstallOption>();
   }
 
+  @Override
   public String syntax() {
     return "<name> [version] [group-id] {options}";
   }
 
+  @Override
   public String description() {
     return "Install an integration module";
   }
 
-  private void install(Module module) {
-    StringWriter sw = new StringWriter();
-    module.printDigest(new PrintWriter(sw));
-    module.install(verify, overwrite, pretend, out);
-  }
-
-  private void installAll() {
+  @Override
+  protected void handleAll() {
     out.println("*** Installing all of the latest integration modules for TC " + modules.tcVersion() + " ***\n");
     List<Module> latest = modules.listLatest();
+    InstallListener listener = new DefaultInstallListener(report, out);
     for (Module module : latest) {
-      install(module);
+      module.install(listener, installOptions);
     }
+    printEpilogue();
+  }
+
+  @Override
+  protected void handleOne(Module module) {
+    InstallListener listener = new DefaultInstallListener(report, out);
+    module.install(listener, installOptions);
+    printEpilogue();
   }
 
   public void execute(CommandLine cli) {
-    overwrite = cli.hasOption(LONGOPT_OVERWRITE);
-    pretend = cli.hasOption(LONGOPT_PRETEND);
-    verify = !cli.hasOption(LONGOPT_NOVERIFY);
+    if (cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.FORCE);
+    if (cli.hasOption(LONGOPT_OVERWRITE) || cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.OVERWRITE);
+    if (cli.hasOption(LONGOPT_PRETEND)) installOptions.add(InstallOption.PRETEND);
+    if (cli.hasOption(LONGOPT_NOVERIFY)) installOptions.add(InstallOption.SKIP_VERIFY);
 
-    // --all was specified, install everything
-    if (cli.hasOption(LONGOPT_ALL)) {
-      installAll();
-      return;
-    }
+    process(cli, modules);
+    // // --all was specified, install everything
+    // if (cli.hasOption(LONGOPT_ALL)) {
+    // installAll();
+    // return;
+    // }
+    //
+    // // no args and --all not specified, ask user to be more specific
+    // List<String> args = cli.getArgList();
+    // if (args.isEmpty()) {
+    // out.println("You need to at least specify the name of the integration module.");
+    // out.println("You could also use the --all option to install the latest of everything that is available.");
+    // return;
+    // }
+    //
+    // // given the artifactId and maybe the version and groupId - find some candidates
+    // // get candidates
+    // Module module = null;
+    // List<Module> candidates = modules.find(args);
+    //
+    // // no candidates found, inform the user
+    // if (candidates.isEmpty()) {
+    // out.println("No module found matching the arguments you specified.");
+    // out.println("Check that you've spelled them correctly.");
+    // return;
+    // }
+    //
+    // // several candidates found, see if we can figure out which one we can retrieve
+    // module = ModuleHelper.getLatest(candidates);
+    // if (module != null) {
+    // install(module);
+    // return;
+    // }
+    //
+    // // we can't figure out which one to retrieve so ask the user to be more specific
+    // out.println("There's more than one integration module found matching the name '" + args.get(0) + "':");
+    // out.println();
+    // for (Module candidate : candidates) {
+    // out.println("  * " + candidate.artifactId() + " " + candidate.version() + " " + candidate.groupId());
+    // }
+    // out.println();
+    // out.println("Try to use both version and group-id arguments in the command to be more specific.");
+  }
 
-    // no args and --all not specified, ask user to be more specific
-    List<String> args = cli.getArgList();
-    if (args.isEmpty()) {
-      out.println("You need to at least specify the name of the integration module.");
-      out.println("You could also use the --all option to install the latest of everything that is available.");
-      return;
-    }
-
-    // given the artifactId and maybe the version and groupId - find some candidates
-    Module module = null;
-    String artifactId = args.remove(0);
-    String version = args.isEmpty() ? null : args.remove(0);
-    String groupId = args.isEmpty() ? null : args.remove(0);
-
-    // get candidates
-    List<Module> candidates = modules.find(artifactId, version, groupId);
-
-    // no candidates found, inform the user
-    if (candidates.isEmpty()) {
-      out.println("No module found matching the arguments you specified.");
-      out.println("Check that you've spelled them correctly.");
-      return;
-    }
-
-    // several candidates found, see if we can figure out which one we can install
-    module = modules.getLatest(candidates);
-    if (module != null) {
-      install(module);
-      return;
-    }
-
-    // we can't figure out which one to update/install
-    // so ask the user to be more specific
-    out.println("There's more than one integration module found matching the name '" + artifactId + "':");
-    out.println();
-    for (Module candidate : candidates) {
-      ModuleId id = candidate.getId();
-      out.println("  * " + id.getArtifactId() + " " + id.getVersion() + " " + id.getGroupId());
-    }
-    out.println();
-    out.println("Try to use both version and group-id arguments in the command to be more specific.");
+  private void printEpilogue() {
+    out.println("\nDone.");
   }
 
 }

@@ -45,7 +45,7 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
   protected boolean cleanTempDir() {
     return false;
   }
-  
+
   /**
    * Test that missing bundle will cause ModulesLoader to throw exception and also that the message thrown
    */
@@ -221,52 +221,51 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
 
   /**
    * Test catch and throw of ConfigSetupException due to root with no field or expression
+   * 
+   * @throws Exception
    */
   public void testBadModuleConfig_rootNoField() throws Exception {
     String badGroupId = "org.terracotta.modules";
     String badArtifactId = "badconfig";
     String badVersion = "1.0.0";
-    String badSymbolicName = badGroupId + "." + badArtifactId;
-
-    // Create bundle jar based on these attributes
+    String badSymbolicName = badGroupId + "." + badArtifactId; // Create bundle jar based on these attributes
     File tempDir = getTempDirectory();
     File generatedJar1 = createBundle(tempDir, badGroupId, badArtifactId, badVersion, badSymbolicName, badVersion,
                                       null, TC_CONFIG_NO_ROOT_FIELD_OR_EXPR);
-
     EmbeddedOSGiRuntime osgiRuntime = null;
     try {
       DSOClientConfigHelper configHelper = configHelper();
-
-      // Add temp dir to list of repository locations to pick up bundle above
+      // Add temp dir to list of repository locations to pick up
+      // bundle above
       configHelper.addRepository(tempDir.getAbsolutePath());
       configHelper.addModule(badArtifactId, badVersion);
       ClassProvider classProvider = new MockClassProvider();
-
       try {
         Modules modules = configHelper.getModulesForInitialization();
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
         ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
         Assert.fail("Should get exception on invalid config");
-
       } catch (BundleException e) {
         checkErrorMessageContainsText(e, badGroupId);
         checkErrorMessageContainsText(e, badArtifactId);
         checkErrorMessageContainsText(e, badVersion);
         checkErrorMessageContainsText(e, "no_expr"); // check root name is in message
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw e;
       }
-
     } finally {
       shutdownAndCleanUpJars(osgiRuntime, new File[] { generatedJar1 });
     }
   }
 
-  private static final String TC_CONFIG_MISSING_FIRST_CHAR    = "?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-                                                                + "<xml-fragment>" + "</xml-fragment>";
-
   private static final String TC_CONFIG_NO_ROOT_FIELD_OR_EXPR = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
                                                                 + "<xml-fragment>" + "<roots>"
                                                                 + "<root><root-name>no_expr</root-name></root>"
                                                                 + "</roots>" + "</xml-fragment>";
+
+  private static final String TC_CONFIG_MISSING_FIRST_CHAR    = "?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+                                                                + "<xml-fragment>" + "</xml-fragment>";
 
   private void shutdownAndCleanUpJars(EmbeddedOSGiRuntime osgiRuntime, File[] jars) {
     // Shutdown and wait for open jar references to get cleaned up

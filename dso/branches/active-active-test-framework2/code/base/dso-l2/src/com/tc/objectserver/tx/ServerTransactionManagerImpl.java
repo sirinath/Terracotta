@@ -476,9 +476,11 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private TransactionAccount getOrCreateTransactionAccount(NodeID source) {
     synchronized (transactionAccounts) {
       TransactionAccount ta = (TransactionAccount) transactionAccounts.get(source);
-      if(ta != null && ta instanceof ObjectSynchTransactionAccount) {
-        throw new AssertionError("Transaction Account is of type ObjectSyncTransactionAccount : " + ta + " source Id  : " + source);
-      }
+      if (ta != null && ta instanceof ObjectSynchTransactionAccount) { throw new AssertionError(
+                                                                                                "Transaction Account is of type ObjectSyncTransactionAccount : "
+                                                                                                    + ta
+                                                                                                    + " source Id  : "
+                                                                                                    + source); }
       if (state == ACTIVE_MODE) {
         if ((ta == null) || (ta instanceof PassiveTransactionAccount)) {
           Object old = transactionAccounts.put(source, (ta = new TransactionAccountImpl(source)));
@@ -533,23 +535,18 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   }
 
   public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
-    boolean callback = false;
+    TxnsInSystemCompletionListenerCallback callBack = new TxnsInSystemCompletionListenerCallback(l);
+    Set txnsInSystem = callBack.getTxnsInSystem();
     synchronized (transactionAccounts) {
-      HashSet txnsInSystem = new HashSet();
+      // DEV-1874, MNK-683 :: Register before adding pending server transaction ids to avoid race.
+      addTransactionListener(callBack);
       for (Iterator i = transactionAccounts.entrySet().iterator(); i.hasNext();) {
         Entry entry = (Entry) i.next();
         TransactionAccount client = (TransactionAccount) entry.getValue();
         client.addAllPendingServerTransactionIDsTo(txnsInSystem);
       }
-      if (txnsInSystem.isEmpty()) {
-        callback = true;
-      } else {
-        addTransactionListener(new TxnsInSystemCompletionListenerCallback(l, txnsInSystem));
-      }
     }
-    if (callback) {
-      l.onCompletion();
-    }
+    callBack.initializationComplete();
   }
 
   private void fireIncomingTransactionsEvent(NodeID nodeID, Set serverTxnIDs) {
@@ -638,11 +635,25 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
     private final TxnsInSystemCompletionLister callback;
     private final Set                          txnsInSystem;
-    public int                                 count = 0;
+    private boolean                            initialized = false;
+    private int                                count       = 0;
+    private int                                lastSize    = -1;
 
-    public TxnsInSystemCompletionListenerCallback(TxnsInSystemCompletionLister callback, Set txnsInSystem) {
+    public TxnsInSystemCompletionListenerCallback(TxnsInSystemCompletionLister callback) {
       this.callback = callback;
-      this.txnsInSystem = txnsInSystem;
+      this.txnsInSystem = Collections.synchronizedSet(new HashSet());
+    }
+
+    public void initializationComplete() {
+      synchronized (txnsInSystem) {
+        initialized = true;
+        lastSize = txnsInSystem.size();
+        callBackIfEmpty();
+      }
+    }
+
+    public Set getTxnsInSystem() {
+      return txnsInSystem;
     }
 
     public void addResentServerTransactionIDs(Collection stxIDs) {
@@ -661,22 +672,48 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       // NOP
     }
 
-    public synchronized void transactionCompleted(ServerTransactionID stxID) {
-      if (txnsInSystem.remove(stxID)) {
-        if (txnsInSystem.isEmpty()) {
-          ServerTransactionManagerImpl.this.removeTransactionListener(this);
-          callback.onCompletion();
+    public void transactionCompleted(ServerTransactionID stxID) {
+      synchronized (txnsInSystem) {
+        if (txnsInSystem.remove(stxID) && initialized) {
+          callBackIfEmpty();
+        }
+        if (++count % 1000 == 0) {
+          if (lastSize == txnsInSystem.size()) {
+            logger.warn("TxnsInSystemCompletionLister :: Still waiting for completion of " + txnsInSystem.size()
+                        + " txns to call callback " + callback + " count = " + count + " lastSize = " + lastSize
+                        + " No change in size. Txns = " + shortDesc(txnsInSystem));
+          } else {
+            lastSize = txnsInSystem.size();
+          }
         }
       }
-      if (count++ % 100 == 0) {
-        logger.warn("TxnsInSystemCompletionLister :: Still waiting for completion of " + txnsInSystem.size()
-                    + " txns to call callback " + callback + " count = " + count);
+    }
+
+    private void callBackIfEmpty() {
+      if (txnsInSystem.isEmpty()) {
+        ServerTransactionManagerImpl.this.removeTransactionListener(this);
+        callback.onCompletion();
+      }
+    }
+
+    private String shortDesc(Set txns) {
+      if (txns == null) {
+        return "null";
+      } else if (txns.size() < 11) {
+        return txns.toString();
+      } else {
+        StringBuilder sb = new StringBuilder("{");
+        int j = 0;
+        for (Iterator i = txns.iterator(); j < 11 && i.hasNext(); j++) {
+          sb.append(i.next()).append(",");
+        }
+        sb.append("....<more> }");
+        return sb.toString();
       }
     }
 
     public void transactionManagerStarted(Set cids) {
       // NOP
     }
-
   }
 }

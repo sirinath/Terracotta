@@ -345,6 +345,21 @@ class SubtreeTestRunRecord
   end
     
   private
+  
+  def create_abnormal_junit_report(filename, classname)
+    File.open(filename, "w") do |file|
+      file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      file << "<testsuite errors=\"0\" failures=\"1\" name=\"#{classname.escape(:xml_attribute)}\" tests=\"1\" time=\"0.000\">\n"
+      file << "<testcase classname=\"#{classname.xml_escape}\" name='test' time='0.0'>\n"
+      file << "  <failure type='junit.framework.AssertionFailedError' message=\"Failed abnormally\">\n"
+      file << "      Failed abnormally\n"
+      file << "   </failure>\n"
+      file << "</testcase>\n"
+      file << "<system-out/><system-err/>\n"
+      file << "</testsuite>\n"
+    end
+  end
+  
   # Reads in all the XML files for tests in this subtree, analyzes them, and stores the
   # data in this object. This only will happen once (lazy-init), so it's always safe to
   # call this function. 
@@ -375,11 +390,11 @@ class SubtreeTestRunRecord
                 @total_suites += 1
                 @total_suites_passed += 1 unless testsuite_run.failed?
               rescue => e
-                STDERR.puts("Test #{file_classname} failed abnormally. Result file can't be parsed. Check log for exception.")
                 testsuite_run = UnparseableTestSuiteRunRecord.new(filename, file_classname, e)
                 @testsuites[file_classname] = testsuite_run
                 @total_suites += 1
-                @total_tests += 1 # unknown, set to 1 as default                               
+                @total_tests += 1 # unknown, set to 1 as default     
+                create_abnormal_junit_report(filename.to_s, file_classname)
               end
                            
               @failed = @failed || testsuite_run.failed?
