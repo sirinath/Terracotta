@@ -406,6 +406,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     totalPendingTransactions.addAndGet(txnIDs.size());
     for (Iterator i = txns.iterator(); i.hasNext();) {
       final ServerTransaction txn = (ServerTransaction) i.next();
+      System.out.println("XXX incomingTxn source:" + source + " newObjectIDs:" + txn.getNewObjectIDs());     
       final ServerTransactionID stxnID = txn.getServerTransactionID();
       final TransactionID txnID = stxnID.getClientTransactionID();
       if (active && !relayed) {
