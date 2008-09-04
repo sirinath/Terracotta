@@ -25,7 +25,7 @@ import java.util.Map.Entry;
 public class TransactionAccountImpl implements TransactionAccount {
   final NodeID               sourceID;
   private final Map          waitees = Collections.synchronizedMap(new HashMap());
-  private boolean            dead    = false;
+  private volatile boolean   dead    = false;
   private CallBackOnComplete callBack;
 
   public TransactionAccountImpl(NodeID source) {
@@ -144,7 +144,7 @@ public class TransactionAccountImpl implements TransactionAccount {
     }
   }
 
-  public void addAllPendingServerTransactionIDsTo(HashSet txnIDs) {
+  public void addAllPendingServerTransactionIDsTo(Set txnIDs) {
     synchronized (waitees) {
       for (Iterator i = waitees.keySet().iterator(); i.hasNext();) {
         TransactionID txnID = (TransactionID) i.next();

@@ -57,6 +57,7 @@ public class DSOVerifierTest extends TCTestCase {
     // disableAllUntil("2007-09-11");
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
 
@@ -71,6 +72,7 @@ public class DSOVerifierTest extends TCTestCase {
     server.start();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (server != null) {
       server.stop();
@@ -211,6 +213,7 @@ public class DSOVerifierTest extends TCTestCase {
     config.getApplication().getDSO().setLocks(new LockConfigBuilder[] { lock1, lock2 });
 
     RootConfigBuilder root = new RootConfigBuilderImpl();
+
     root.setFieldName("com.tcverify.DSOVerifier.verifierMap");
     root.setRootName("verifierMap");
 

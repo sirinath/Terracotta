@@ -7,9 +7,13 @@ package org.terracotta.modules.tool.commands;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.terracotta.modules.tool.InstallListener;
+import org.terracotta.modules.tool.InstallOption;
 import org.terracotta.modules.tool.Module;
-import org.terracotta.modules.tool.ModuleId;
+import org.terracotta.modules.tool.ModuleHelper;
+import org.terracotta.modules.tool.ModuleReport;
 import org.terracotta.modules.tool.Modules;
+import org.terracotta.modules.tool.Reference;
 
 import com.google.inject.Inject;
 import com.tc.bundles.OSGiToMaven;
@@ -20,38 +24,37 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
-public class UpdateCommand extends AbstractCommand {
+public class UpdateCommand extends OneOrAllCommand {
 
-  private static final String LONGOPT_ALL       = "all";
-  private static final String LONGOPT_OVERWRITE = "overwrite";
-  private static final String LONGOPT_FORCE     = "force";
-  private static final String LONGOPT_PRETEND   = "pretend";
-  private static final String LONGOPT_NOVERIFY  = "no-verify";
+  // private static final String LONGOPT_ALL = "all";
+  private static final String             LONGOPT_OVERWRITE = "overwrite";
+  private static final String             LONGOPT_FORCE     = "force";
+  private static final String             LONGOPT_PRETEND   = "pretend";
+  private static final String             LONGOPT_NOVERIFY  = "no-verify";
 
-  private final Modules       modules;
-
-  private boolean             force;
-  private boolean             overwrite;
-  private boolean             pretend;
-  private boolean             verify;
+  private final Modules                   modules;
+  private final ModuleReport              report;
+  private final Collection<InstallOption> installOptions;
 
   @Inject
-  public UpdateCommand(Modules modules) {
+  public UpdateCommand(Modules modules, ModuleReport report) {
     this.modules = modules;
-    assert modules != null : "modules is null";
-    options.addOption(buildOption(LONGOPT_ALL,
-                                  "Update all installed TIMs, ignoring the name and version arguments if specified"));
+    this.report = report;
+    options.addOption(buildOption(LONGOPT_ALL, "Update all installed TIMs, all other arguments are ignored"));
     options.addOption(buildOption(LONGOPT_FORCE, "Update anyway, even if update is already installed"));
     options.addOption(buildOption(LONGOPT_OVERWRITE, "Overwrite if already installed"));
     options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
     options.addOption(buildOption(LONGOPT_NOVERIFY, "Skip checksum verification"));
     arguments.put("name", "The name of the integration module");
     arguments.put("group-id", "(OPTIONAL) The group-id used to qualify the name");
+    installOptions = new ArrayList<InstallOption>();
   }
 
   @Override
@@ -62,6 +65,108 @@ public class UpdateCommand extends AbstractCommand {
   @Override
   public String description() {
     return "Update to the latest version of an integration module";
+  }
+
+  @Override
+  protected void handleAll() {
+    out.println("*** Updating installed integration modules for TC " + modules.tcVersion() + " ***\n");
+
+    // construct list of updateable TIMs
+    List<Module> manifest = new ArrayList<Module>();
+    List<Reference> localModules = localModules();
+
+    if (localModules.isEmpty()) {
+      out.println("It appears to me that there are no integration modules installed - no updates can be performed.");
+      out.println("Please check if the path to your local repository exists: " + modules.repository());
+      return;
+    }
+
+    for (Reference entry : localModules) {
+      List<Module> siblings = modules.getSiblings(entry.symbolicName());
+      Module latest = ModuleHelper.getLatest(siblings);
+
+      // installed but not available from the list -
+      // or already installed and --force was not specified then skip it
+      if ((latest == null) || (latest.isInstalled() && !installOptions.contains(InstallOption.FORCE))) continue;
+
+      // installed and available from the list, install the latest
+      manifest.add(latest);
+    }
+
+    if (manifest.isEmpty()) {
+      out.println("No updates found.");
+      return;
+    }
+
+    InstallListener listener = new DefaultInstallListener(report, out);
+    for (Module module : manifest) {
+      module.install(listener, installOptions);
+    }
+    printEpilogue();
+  }
+
+  @Override
+  protected void handleOne(Module module) {
+    if (module.isInstalled() && !installOptions.contains(InstallOption.FORCE)) {
+      out.println("No updates found.");
+      return;
+    }
+
+    // update found, install it
+    InstallListener listener = new DefaultInstallListener(report, out);
+    module.install(listener, installOptions);
+    printEpilogue();
+  }
+
+  public void execute(CommandLine cli) {
+    if (cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.FORCE);
+    if (cli.hasOption(LONGOPT_OVERWRITE) || cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.OVERWRITE);
+    if (cli.hasOption(LONGOPT_PRETEND)) installOptions.add(InstallOption.PRETEND);
+    if (cli.hasOption(LONGOPT_NOVERIFY)) installOptions.add(InstallOption.SKIP_VERIFY);
+
+    process(cli, modules);
+
+    // // --all was specified, update everything that is installed
+    // if (cli.hasOption(LONGOPT_ALL)) {
+    // updateAll();
+    // return;
+    // }
+    //
+    // // no args and --all not specified, ask user to be more specific
+    // List<String> args = cli.getArgList();
+    // if (args.isEmpty()) {
+    // out.println("You need to at least specify the name of the integration module.");
+    // out.println("You could also just use the --all option to update everything you have installed.");
+    // return;
+    // }
+    //
+    // // given the artifactId and maybe the version and groupId - find some candidates
+    // // get candidates
+    // Module module = null;
+    // List<Module> candidates = modules.find(args);
+    //
+    // // no candidates found, inform the user
+    // if (candidates.isEmpty()) {
+    // out.println("No module found matching the arguments you specified.");
+    // out.println("Check that you've spelled them correctly.");
+    // return;
+    // }
+    //
+    // // several candidates found, see if we can figure out which one we can retrieve
+    // module = ModuleHelper.getLatest(candidates);
+    // if (module != null) {
+    // update(module);
+    // return;
+    // }
+    //
+    // // we can't figure out which one to retrieve so ask the user to be more specific
+    // out.println("There's more than one integration module found matching the name '" + args.get(0) + "':");
+    // out.println();
+    // for (Module candidate : candidates) {
+    // out.println("  * " + candidate.artifactId() + " " + candidate.version() + " " + candidate.groupId());
+    // }
+    // out.println();
+    // out.println("Try to use both version and group-id arguments in the command to be more specific.");
   }
 
   private Attributes readAttributes(File jarfile) {
@@ -77,109 +182,35 @@ public class UpdateCommand extends AbstractCommand {
     }
   }
 
-  private List<ModuleId> installedModules() throws CommandException {
-    File repository = Module.repositoryPath();
-    if (!repository.exists()) {
-      String msg = "The local TIM repository '" + repository + "' does not exist";
-      throw new CommandException(msg);
-    }
+  private List<Reference> localModules() {
+    List<Reference> list = new ArrayList<Reference>();
+
+    File repository = modules.repository();
+    if (!repository.exists()) return list;
 
     Collection<File> jarfiles = FileUtils.listFiles(repository, new String[] { "jar" }, true);
-    List<ModuleId> list = new ArrayList<ModuleId>();
     for (File jarfile : jarfiles) {
-      Attributes attrs = readAttributes(jarfile);
+      Attributes manifest = readAttributes(jarfile);
+      if ((manifest == null) || !"Terracotta Integration Module".equals(manifest.getValue("Bundle-Category"))) continue;
 
-      if (attrs == null) continue;
-      if (!"Terracotta Integration Module".equals(attrs.getValue("Bundle-Category"))) continue;
-
-      String symbolicName = attrs.getValue("Bundle-SymbolicName");
-      String version = attrs.getValue("Bundle-Version");
+      String symbolicName = manifest.getValue("Bundle-SymbolicName");
+      String version = manifest.getValue("Bundle-Version");
       String artifactId = OSGiToMaven.artifactIdFromSymbolicName(symbolicName);
       String groupId = OSGiToMaven.groupIdFromSymbolicName(symbolicName);
-      list.add(ModuleId.create(groupId, artifactId, version));
+
+      Map<String, Object> attributes = new HashMap<String, Object>();
+      attributes.put("groupId", groupId);
+      attributes.put("artifactId", artifactId);
+      attributes.put("version", version);
+      list.add(new Reference(null, attributes));
     }
 
     Collections.sort(list);
     return list;
   }
 
-  private void update(Module module, boolean verbose) {
-    // latest already installed, skip it (unless force flag is set)
-    assert module.isLatest() : module + " is not the latest";
-    if (module.isInstalled() && !force) {
-      if (verbose) out.println("No updates found.");
-      return;
-    }
-
-    // update found, install it
-    module.install(verify, overwrite, pretend, out);
-  }
-
-  private void updateAll() throws CommandException {
-    out.println("*** Updating installed integration modules for TC " + modules.tcVersion() + " ***\n");
-    for (ModuleId entry : installedModules()) {
-      Module latest = modules.getLatest(entry.getGroupId(), entry.getArtifactId());
-
-      // installed but not available from the list, skip it.
-      if (latest == null) continue;
-
-      // installed and available from the list, install the latest
-      update(latest, false);
-    }
-  }
-
-  public void execute(CommandLine cli) throws CommandException {
-    List<String> args = cli.getArgList();
-    force = cli.hasOption(LONGOPT_FORCE);
-    overwrite = cli.hasOption(LONGOPT_OVERWRITE) || force;
-    pretend = cli.hasOption(LONGOPT_PRETEND);
-    verify = !cli.hasOption(LONGOPT_NOVERIFY);
-
-    // --all was specified, update everything that is installed
-    if (cli.hasOption(LONGOPT_ALL)) {
-      updateAll();
-      return;
-    }
-
-    // no args and --all not specified, ask user to be more specific
-    if (args.isEmpty()) {
-      out.println("You need to at least specify the name of the integration module.");
-      out.println("You could also just use the --all option to update everything you have installed.");
-      return;
-    }
-
-    // given the artifactId and maybe the groupId - find some candidates
-    Module module = null;
-    String artifactId = args.remove(0);
-    String groupId = args.isEmpty() ? null : args.remove(0);
-
-    // get candidates
-    List<Module> candidates = modules.find(artifactId, null, groupId);
-
-    // no candidates found, inform the user
-    if (candidates.isEmpty()) {
-      out.println("No module found matching the arguments you specified.");
-      out.println("Check that you've spelled them correctly.");
-      return;
-    }
-
-    // several candidates found, see if we can figure out which one we can install
-    module = modules.getLatest(candidates);
-    if (module != null) {
-      update(module, true);
-      return;
-    }
-
-    // we can't figure out which one to update/install
-    // so ask the user to be more specific
-    out.println("There's more than one integration module found matching the name '" + artifactId + "':");
-    out.println();
-    for (Module candidate : candidates) {
-      ModuleId id = candidate.getId();
-      out.println("  * " + id.getArtifactId() + " " + id.getGroupId());
-    }
-    out.println();
-    out.println("Pass the group-id argument in the command to be more specific.");
+  private void printEpilogue() {
+    out.println("\nDone.");
   }
 
 }
