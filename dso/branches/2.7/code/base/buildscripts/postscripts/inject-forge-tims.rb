@@ -32,7 +32,6 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
       data.gsub!(/[()]/, '')
       data = data.split
       data.shift
-      puts "[xxx] #{data.first}: #{data.last}"
       tims[data.first] = data.last
     end
     
