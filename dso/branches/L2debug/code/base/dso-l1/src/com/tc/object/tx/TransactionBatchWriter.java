@@ -132,7 +132,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       final boolean scanForClose = (txn.getNewRoots().size() > 0) || (txn.getDmiDescriptors().size() > 0)
                                    || (txn.getNotifies().size() > 0) || exceedsLimits;
 
-      if (DEBUG) log_incomingTxn(txn, exceedsLimits, scanForClose);
+      if (true) log_incomingTxn(txn, exceedsLimits, scanForClose);
 
       if (scanForClose) {
         scanForClose(txn);
@@ -322,6 +322,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage();
     msg.setBatch(this, serializer);
     msg.send();
+    logger.info("XXX client batch txn sent clientID:" + msg.getClientID() + " batchID:" + batchID);
   }
 
   public synchronized Collection addTransactionIDsTo(Collection c) {
