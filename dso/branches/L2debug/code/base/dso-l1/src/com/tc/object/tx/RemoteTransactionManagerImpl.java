@@ -355,6 +355,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         return;
       }
 
+      logger.info("XXX Received ACK for batch = " + txnBatchID);
       waitUntilRunning();
       outStandingBatches--;
       outstandingBatchesCounter.decrement();
@@ -379,6 +380,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         ClientTransactionBatch containingBatch = (ClientTransactionBatch) incompleteBatches.get(container);
         containingBatch.removeTransaction(txID);
         TxnBatchID completed = batchAccounting.acknowledge(txID);
+        logger.info("XXX received txn ack txID:" + txID);
         if (!completed.isNull()) {
           incompleteBatches.remove(completed);
           if (status == STOP_INITIATED && incompleteBatches.size() == 0) {
