@@ -7,6 +7,6 @@ Bundle-Name: Terracotta Configuration for RIFE 1.6.0
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-SymbolicName: org.terracotta.modules.clustered-rife-1.6.0
 Bundle-Vendor: Terracotta, Inc.
-Bundle-Version: 2.6.4
-Require-Bundle: org.terracotta.modules.modules-common;bundle-version:=2.6.4
-Terracotta-RequireVersion: 2.6.4
+Bundle-Version: 2.6.5.SNAPSHOT
+Require-Bundle: org.terracotta.modules.modules-common;bundle-version:=2.6.5.SNAPSHOT
+Terracotta-RequireVersion: 2.6.5.SNAPSHOT
