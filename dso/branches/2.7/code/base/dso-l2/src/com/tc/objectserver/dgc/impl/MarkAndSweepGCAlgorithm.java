@@ -61,10 +61,8 @@ final class MarkAndSweepGCAlgorithm {
     gcPublisher.fireGCMarkEvent(gcInfo);
 
     if (gcState.isStopRequested()) { return; }
-    
-    System.out.println("XXX RootID: " + rootIDs);
+
     ObjectIDSet gcResults = collect(gcHook.getCollectCycleFilter(candidateIDs), rootIDs, candidateIDs, gcState);
-    System.out.println("XXX prerecue gcResults: " + gcResults);
     gcInfo.setPreRescueCount(gcResults.size());
     gcPublisher.fireGCMarkResultsEvent(gcInfo);
 
@@ -73,7 +71,6 @@ final class MarkAndSweepGCAlgorithm {
     List rescueTimes = new ArrayList();
 
     gcResults = rescue(gcResults, rescueTimes);
-    System.out.println("XXX postrecue 1 gcResults: " + gcResults);
     gcInfo.setRescue1Count(gcResults.size());
     gcInfo.setMarkStageTime(System.currentTimeMillis() - startMillis);
     gcPublisher.fireGCRescue1CompleteEvent(gcInfo);
@@ -101,7 +98,6 @@ final class MarkAndSweepGCAlgorithm {
     gcInfo.setCandidateGarbageCount(gcResults.size());
     gcPublisher.fireGCRescue2StartEvent(gcInfo);
     SortedSet toDelete = Collections.unmodifiableSortedSet(rescue(new ObjectIDSet(gcResults), rescueTimes));
-    
     gcInfo.setRescueTimes(rescueTimes);
     gcInfo.setDeleted(toDelete);
 
@@ -114,7 +110,6 @@ final class MarkAndSweepGCAlgorithm {
     gcPublisher.fireGCMarkCompleteEvent(gcInfo);
 
     // Delete Garbage
-    System.out.println("XXX toDelete: " + toDelete);
     collector.deleteGarbage(new GCResultContext(gcIteration, toDelete, gcInfo, gcPublisher));
 
     long endMillis = System.currentTimeMillis();

@@ -369,12 +369,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
       Set rescueIds = new ObjectIDSet();
       stateManager.addAllReferencedIdsTo(rescueIds);
       int stateManagerIds = rescueIds.size();
-      System.out.println("XXX rescueIds from state manager: " + rescueIds);
 
       collector.addNewReferencesTo(rescueIds);
-      
-      System.out.println("XXX rescueIds after new references: " + rescueIds);
-      
       int referenceCollectorIds = rescueIds.size() - stateManagerIds;
 
       logger.debug("rescueIds: " + rescueIds.size() + ", stateManagerIds: " + stateManagerIds
