@@ -98,11 +98,13 @@ public class LocksPanel extends XContainer implements NotificationListener {
   private JTabbedPane                 fLocksTabbedPane;
   private LockTreeTable               fTreeTable;
   private LockTreeTableModel          fTreeTableModel;
+  private ClientLockSelectionHandler  fClientLockSelectionHandler;
   private JTextField                  fClientLocksFindField;
   private JButton                     fClientLocksFindNextButton;
   private JButton                     fClientLocksFindPreviousButton;
   private XObjectTable                fServerLocksTable;
   private ServerLockTableModel        fServerLockTableModel;
+  private ServerLockSelectionHandler  fServerLockSelectionHandler;
   private JTextField                  fServerLocksFindField;
   private JButton                     fServerLocksFindNextButton;
   private JButton                     fServerLocksFindPreviousButton;
@@ -160,7 +162,8 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fTreeTable = (LockTreeTable) findComponent("LockTreeTable");
     fTreeTable.setTreeTableModel(fTreeTableModel);
     fTreeTable.setPreferences(fAdminClientContext.prefs.node("LockTreeTable"));
-    fTreeTable.addTreeSelectionListener(new ClientLockSelectionHandler());
+    fClientLockSelectionHandler = new ClientLockSelectionHandler();
+    fTreeTable.addTreeSelectionListener(fClientLockSelectionHandler);
     JPopupMenu clientLocksPopup = new JPopupMenu();
     clientLocksPopup.add(fInspectLockObjectAction);
     fTreeTable.setPopupMenu(clientLocksPopup);
@@ -180,7 +183,8 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fServerLockTableModel = new ServerLockTableModel(EMPTY_LOCK_SPEC_COLLECTION);
     fServerLocksTable.setModel(fServerLockTableModel);
     fServerLocksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    fServerLocksTable.getSelectionModel().addListSelectionListener(new ServerLockSelectionHandler());
+    fServerLockSelectionHandler = new ServerLockSelectionHandler();
+    fServerLocksTable.getSelectionModel().addListSelectionListener(fServerLockSelectionHandler);
     JPopupMenu serverLocksPopup = new JPopupMenu();
     serverLocksPopup.add(fInspectLockObjectAction);
     fServerLocksTable.setPopupMenu(serverLocksPopup);
@@ -329,11 +333,13 @@ public class LocksPanel extends XContainer implements NotificationListener {
       LockSpec lockSpec = lockSpecNode.getSpec();
       LockID lockID = lockSpec.getLockID();
       int index = fServerLockTableModel.wrapperIndex(lockID);
+      fServerLocksTable.getSelectionModel().removeListSelectionListener(fServerLockSelectionHandler);
       fServerLocksTable.setSelectedRows(new int[] { index });
       Rectangle cellRect = fServerLocksTable.getCellRect(index, 0, false);
       if (cellRect != null) {
         fServerLocksTable.scrollRectToVisible(cellRect);
       }
+      fServerLocksTable.getSelectionModel().addListSelectionListener(fServerLockSelectionHandler);
 
       fInspectLockObjectAction.setLockID(lockID);
     }
@@ -347,12 +353,14 @@ public class LocksPanel extends XContainer implements NotificationListener {
         LockID lockID = lockSpecWrapper.getLockID();
         TreePath lockNodePath = fTreeTableModel.getLockNodePath(lockID);
         if (lockNodePath != null) {
+          fTreeTable.removeTreeSelectionListener(fClientLockSelectionHandler);
           fTreeTable.getTree().setSelectionPath(lockNodePath);
           int row = fTreeTable.getTree().getRowForPath(lockNodePath);
           Rectangle cellRect = fTreeTable.getCellRect(row, 0, false);
           if (cellRect != null) {
             fTreeTable.scrollRectToVisible(cellRect);
           }
+          fTreeTable.addTreeSelectionListener(fClientLockSelectionHandler);
         }
         fInspectLockObjectAction.setLockID(lockID);
       }
@@ -688,11 +696,13 @@ public class LocksPanel extends XContainer implements NotificationListener {
     fLocksTabbedPane = null;
     fTreeTable = null;
     fTreeTableModel = null;
+    fClientLockSelectionHandler = null;
     fClientLocksFindField = null;
     fClientLocksFindNextButton = null;
     fClientLocksFindPreviousButton = null;
     fServerLocksTable = null;
     fServerLockTableModel = null;
+    fServerLockSelectionHandler = null;
     fServerLocksFindField = null;
     fServerLocksFindNextButton = null;
     fServerLocksFindPreviousButton = null;
