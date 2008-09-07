@@ -5,7 +5,7 @@
 #
 # Example:
 # level: 1
-level: 1
+level: 2
 
 # List of files to include in the patch tar.  File paths listed here are
 # relative to the kit root directory.  Use the YAML syntax for lists:
