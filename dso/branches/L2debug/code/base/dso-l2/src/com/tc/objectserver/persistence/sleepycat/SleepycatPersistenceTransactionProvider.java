@@ -7,6 +7,7 @@ package com.tc.objectserver.persistence.sleepycat;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import com.sleepycat.je.TransactionConfig;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 
@@ -31,6 +32,8 @@ final class SleepycatPersistenceTransactionProvider implements PersistenceTransa
   }
 
   private Transaction newNativeTransaction() throws DatabaseException {
-    return this.env.beginTransaction(null, null);
+    TransactionConfig txnConfig = new TransactionConfig();
+    txnConfig.setSync(true);
+    return this.env.beginTransaction(null, txnConfig);
   }
 }
