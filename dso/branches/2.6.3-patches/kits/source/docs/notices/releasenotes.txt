@@ -1,5 +1,5 @@
 
-Terracotta 2.6
+Terracotta 2.6.3
 
 
 Release Notes: http://www.terracotta.org/confluence/display/docs1/Release+Notes+2.6
@@ -22,4 +22,18 @@ Patch Level 1
 - Fix for Cluster Statistics Recorder where it was not respecting the bind configuration
   parameter and could not connect to the server.
 
+-------------
+Patch Level 2
 
+- https://jira.terracotta.org/jira/browse/CDV-874
+- The JMX connection URL created by the AdminConsole replaces the passed in server hostname 
+  with the actual host addresss. This bypasses ssh tunneling. It's a simple fix to just use the user-specified server host when creating the JMX connection URL
+
+-------------
+Patch Level 3
+
+- https://jira.terracotta.org/jira/browse/CDV-882
+- made lock refresh cancelable, synchronize the selection
+  of server locks with client locks and vice versa, added Inspect lock object
+  context menu item.
+  
