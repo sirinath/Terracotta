@@ -142,6 +142,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return true; }
 
+    final TxnType txnType = getTxnTypeFromLockLevel(lockLevel);
     ClientTransaction currentTransaction = getTransactionOrNull();
 
     if ((currentTransaction != null) && lockLevel == LockLevel.CONCURRENT) {
@@ -153,7 +154,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     boolean isLocked = lockManager.tryLock(lockID, timeout, lockLevel, lockObjectType);
     if (!isLocked) { return isLocked; }
 
-    pushTxContext(currentTransaction, lockID, lockLevel);
+    pushTxContext(lockID, txnType);
 
     if (currentTransaction == null) {
       createTxAndInitContext();
@@ -169,11 +170,12 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
     if (isTransactionLoggingDisabled() || objectManager.isCreationInProgress()) { return false; }
 
+    final TxnType txnType = getTxnTypeFromLockLevel(lockLevel);
     ClientTransaction currentTransaction = getTransactionOrNull();
 
     final LockID lockID = lockManager.lockIDFor(lockName);
 
-    pushTxContext(currentTransaction, lockID, lockLevel);
+    pushTxContext(lockID, txnType);
 
     if (currentTransaction == null) {
       createTxAndInitContext();
@@ -405,23 +407,9 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return (tc.getLockID().equals(lockID));
   }
 
-  private void pushTxContext(ClientTransaction currentTransaction, LockID lockID, int lockLevel) {
+  private void pushTxContext(LockID lockID, TxnType txnType) {
     ThreadTransactionContext ttc = getThreadTransactionContext();
-
-    final TxnType txnType = getTxnTypeFromLockLevel(lockLevel);
-    // If the currently active transaction context already has the NORMAL type
-    // (which corresponds to a 'write' level) and the type of a new transaction
-    // context is READ_ONLY (which has less isolation), preserve the already
-    // present NORMAL type.
-    // Note that this doesn't change the type of the new transaction itself, it
-    // merely preserves the 'write' level isolation that was already granted
-    // by a previous transaction in the context.
-    if (currentTransaction != null && TxnType.READ_ONLY == txnType
-        && TxnType.NORMAL == currentTransaction.getTransactionType()) {
-      ttc.pushContext(lockID, TxnType.NORMAL);
-    } else {
-      ttc.pushContext(lockID, txnType);
-    }
+    ttc.pushContext(lockID, txnType);
   }
 
   private void logCommit0() {
