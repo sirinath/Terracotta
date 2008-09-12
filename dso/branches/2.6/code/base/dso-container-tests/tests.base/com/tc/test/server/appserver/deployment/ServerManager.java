@@ -162,7 +162,8 @@ public class ServerManager {
         aCopy.addModule(TIMUtil.WEBSPHERE_6_1_0_7, TIMUtil.getVersion(TIMUtil.WEBSPHERE_6_1_0_7));
         break;
       case AppServerInfo.JETTY:
-        aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
+        // XXX: Can't do this right now. System tests in tim-jetty use this and add their own jetty module to config (resulting in two jetty TIMs being used!)
+        // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
         break;
       default:
         // nothing for now
