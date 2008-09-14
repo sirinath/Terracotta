@@ -4,10 +4,10 @@
  */
 package com.tctest;
 
-import com.tc.test.activepassive.ActivePassiveCrashMode;
-import com.tc.test.activepassive.ActivePassivePersistenceMode;
-import com.tc.test.activepassive.ActivePassiveSharedDataMode;
-import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tc.test.MultipleServersCrashMode;
+import com.tc.test.MultipleServersPersistenceMode;
+import com.tc.test.MultipleServersSharedDataMode;
+import com.tc.test.activeactive.ActiveActiveTestSetupManager;
 
 public class LinkedBlockingQueueActiveActiveTest extends TransparentTestBase {
 
@@ -23,17 +23,13 @@ public class LinkedBlockingQueueActiveActiveTest extends TransparentTestBase {
     return LinkedBlockingQueueCrashTestApp.class;
   }
 
-  protected boolean canRunActiveActive() {
-    return true;
-  }
-
-  public void setupActiveActiveTest(ActivePassiveTestSetupManager setupManager) {
-    setupManager.setServerCount(2);
-    setupManager.setServerCrashMode(ActivePassiveCrashMode.NO_CRASH);
-    setupManager.setServerShareDataMode(ActivePassiveSharedDataMode.DISK);
-    setupManager.setServerPersistenceMode(ActivePassivePersistenceMode.PERMANENT_STORE);
-    setupManager.addActiveServerGroup(1, ActivePassiveSharedDataMode.DISK, electionTime);
-    setupManager.addActiveServerGroup(1, ActivePassiveSharedDataMode.DISK, electionTime);
+  public void setupActiveActiveTest(ActiveActiveTestSetupManager setupManager) {
+    setupManager.setServerCount(4);
+    setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerShareDataMode(MultipleServersSharedDataMode.DISK);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
+    setupManager.addActiveServerGroup(2, MultipleServersSharedDataMode.DISK, electionTime);
+    setupManager.addActiveServerGroup(2, MultipleServersSharedDataMode.DISK, electionTime);
   }
 
 }
