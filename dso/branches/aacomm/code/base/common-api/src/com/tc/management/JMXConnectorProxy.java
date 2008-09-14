@@ -4,6 +4,10 @@
  */
 package com.tc.management;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -23,16 +27,21 @@ import javax.management.remote.JMXServiceURL;
 import javax.security.auth.Subject;
 
 public class JMXConnectorProxy implements JMXConnector {
-  private String             m_host;
-  private int                m_port;
-  private Map                m_env;
+  private final String       m_host;
+  private final int          m_port;
+  private final Map          m_env;
   private JMXServiceURL      m_serviceURL;
   private JMXConnector       m_connector;
-  private JMXConnector       m_connectorProxy;
+  private final JMXConnector m_connectorProxy;
 
   public static final String JMXMP_URI_PATTERN  = "service:jmx:jmxmp://{0}:{1}";
   public static final String JMXRMI_URI_PATTERN = "service:jmx:rmi:///jndi/rmi://{0}:{1}/jmxrmi";
 
+  static {
+    // Silence httpclient
+    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
+  }
+  
   public JMXConnectorProxy(final String host, final int port, final Map env) {
     m_host = host;
     m_port = port;
@@ -46,7 +55,8 @@ public class JMXConnectorProxy implements JMXConnector {
 
   private JMXConnector getConnectorProxy() {
     JMXConnector connector = (JMXConnector) Proxy.newProxyInstance(JMXConnector.class.getClassLoader(),
-        new Class[] { JMXConnector.class }, new ConnectorInvocationHandler());
+                                                                   new Class[] { JMXConnector.class },
+                                                                   new ConnectorInvocationHandler());
     return connector;
   }
 
@@ -75,8 +85,32 @@ public class JMXConnectorProxy implements JMXConnector {
     }
   }
 
+  /*
+   * This method is here to guard against trying to use the DSO port for JMX. This class first tries to connect using
+   * the RMI protocol (authentication) and failing that tries again using the JMXMP protocol (simple, we like). With RMI
+   * the client speaks first but with JMXMP the server speaks first. So, when we get to JMXMP, an attempt to talk JMX
+   * over the DSO port will hang. This method makes an HTTP request to the config servlet and if it succeeds it throws
+   * an exception.
+   */
+  private void testForDsoPort() {
+    HttpClient client = new HttpClient();
+    String url = MessageFormat.format("http://{0}:{1}/config", new Object[] { m_host, Integer.toString(m_port) });
+    GetMethod get = new GetMethod(url);
+    try {
+      int status = client.executeMethod(get);
+      if (status == HttpStatus.SC_OK) { throw new RuntimeException("Please specify the JMX port, not the DSO port"); }
+    } catch (IOException ioe) {
+      /* this is good */
+    } catch (Throwable t) {
+      t.printStackTrace();
+    } finally {
+      get.releaseConnection();
+    }
+  }
+
   private void ensureConnector() throws Exception {
     if (m_connector == null) {
+      testForDsoPort();
       determineConnector();
     }
   }

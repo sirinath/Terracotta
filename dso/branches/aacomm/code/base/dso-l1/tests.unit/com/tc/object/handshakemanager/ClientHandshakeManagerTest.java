@@ -365,10 +365,6 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       return;
     }
 
-    public void runGC() {
-      return;
-    }
-
     public int queueLength(LockID lockID, ThreadID threadID) {
       throw new ImplementMe();
     }

@@ -89,7 +89,6 @@ public class ResolveTwoActiveServersTest extends TransparentTestBase {
     for (int i = 0; i < SERVERS; i++) {
       factory.addServerToL1Config(null, dsoPorts[i], jmxPorts[i]);
     }
-    factory.addServerGroupToL1Config();
   }
 
   private void writeConfigFile(File configFile, int index) {
