@@ -68,8 +68,7 @@ public class MessageTransportTest extends TCTestCase {
     connManager = new MockConnectionManager();
     connManager.setConnection(clientConnection);
     commsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), new PlainNetworkStackHarnessFactory(),
-                                                 connManager, new NullConnectionPolicy(), 0,
-                                                 new DisabledHealthCheckerConfigImpl());
+                                                 connManager, new NullConnectionPolicy(), 0, new DisabledHealthCheckerConfigImpl());
     lsnr = commsManager.createListener(new NullSessionManager(), new TCSocketAddress(0), true,
                                        new DefaultConnectionIdFactory());
     lsnr.start(Collections.EMPTY_SET);
@@ -153,6 +152,11 @@ public class MessageTransportTest extends TCTestCase {
   public void testServerTransportEvents() throws Exception {
     createServerTransport();
     assertFalse(serverEventMonitor.waitForConnect(500));
+    
+    // to establish connection, the status checked at closing
+    TransportHandshakeMessage ack = this.transportHandshakeMessageFactory.createAck(connectionId, this.serverTransport
+                                                                                    .getConnection());
+    this.serverTransport.receiveTransportMessage(ack);
 
     // add an extra event monitor to make sur ethat, if there are multiple
     // listeners,
@@ -162,8 +166,6 @@ public class MessageTransportTest extends TCTestCase {
 
     TCConnectionEvent event = new TCConnectionEvent(serverConnection);
 
-    // if the Transport is not ESTABLISHED, closeEvents cannot climb the stack : DEV-1856
-    serverTransport.status.established();
     serverTransport.closeEvent(event);
     assertTrue(serverEventMonitor.waitForDisconnect(1000));
     assertTrue(extraMonitor.waitForDisconnect(1000));
@@ -235,8 +237,7 @@ public class MessageTransportTest extends TCTestCase {
 
     this.clientTransport = new ClientMessageTransport(cce, createHandshakeErrorHandler(),
                                                       this.transportHandshakeMessageFactory,
-                                                      new WireProtocolAdaptorFactoryImpl(),
-                                                      TransportHandshakeMessage.NO_CALLBACK_PORT);
+                                                      new WireProtocolAdaptorFactoryImpl(), TransportHandshakeMessage.NO_CALLBACK_PORT);
     this.clientResponder = new ClientHandshakeMessageResponder(this.clientResponderSentQueue,
                                                                this.clientResponderReceivedQueue,
                                                                this.transportHandshakeMessageFactory,
