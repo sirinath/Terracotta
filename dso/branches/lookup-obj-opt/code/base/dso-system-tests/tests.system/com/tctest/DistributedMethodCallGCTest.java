@@ -19,9 +19,15 @@ import java.util.Set;
 
 public class DistributedMethodCallGCTest extends GCTestBase {
 
+  public DistributedMethodCallGCTest() {
+    // MNK-714
+    disableAllUntil("2008-09-19");
+  }
+  
   public void doSetUp(TransparentTestIface t) throws Exception {
     super.doSetUp(t);
-    t.getTransparentAppConfig().setAttribute("gc-interval-ms", new Long(getGarbageCollectionInterval() * 1000));
+    t.getTransparentAppConfig().setAttribute("gc-interval-ms",
+                                             new Long(gcConfigHelper.getGarbageCollectionInterval() * 1000));
   }
 
   protected Class getApplicationClass() {
