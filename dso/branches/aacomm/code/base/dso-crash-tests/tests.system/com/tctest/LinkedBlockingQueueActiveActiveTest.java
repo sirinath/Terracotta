@@ -14,6 +14,10 @@ public class LinkedBlockingQueueActiveActiveTest extends ActiveActiveTransparent
   private static final int NODE_COUNT   = 1;
   private final int        electionTime = 5;
 
+  public LinkedBlockingQueueActiveActiveTest() {
+    disableAllUntil("2008-10-01");
+  }
+
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
     t.initializeTestRunner();
@@ -25,7 +29,7 @@ public class LinkedBlockingQueueActiveActiveTest extends ActiveActiveTransparent
 
   public void setupActiveActiveTest(ActiveActiveTestSetupManager setupManager) {
     setupManager.setServerCount(4);
-    setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashMode(MultipleServersCrashMode.NO_CRASH);
     setupManager.setServerShareDataMode(MultipleServersSharedDataMode.DISK);
     setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.PERMANENT_STORE);
     setupManager.addActiveServerGroup(2, MultipleServersSharedDataMode.DISK, electionTime);
