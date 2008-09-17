@@ -79,10 +79,10 @@ public class ObjectManagementMonitor extends AbstractTerracottaMBean implements
 		if (gcController.isGCDisabled()) {
 			throw new UnsupportedOperationException(
 					"Cannot run DGC externally because PASSIVE server(s) are currently synching state "
-							+ "with this ACTIVE server and GC is disabled.");
+							+ "with this ACTIVE server and DGC is disabled.");
 		}
 		if (isGCRunning()) {
-			throw new UnsupportedOperationException(
+			logger.warn(
 					"Cannot run DGC because DGC is already running.");
 		}
 
