@@ -121,6 +121,6 @@ public class MockMessageTransport implements MessageTransport {
   }
 
   public void initConnectionID(ConnectionID cid) {
-    throw new ImplementMe();
+    connectionId = cid;
   }
 }
