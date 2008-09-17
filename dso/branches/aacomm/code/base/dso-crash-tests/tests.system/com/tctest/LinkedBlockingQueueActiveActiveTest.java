@@ -35,5 +35,4 @@ public class LinkedBlockingQueueActiveActiveTest extends ActiveActiveTransparent
     setupManager.addActiveServerGroup(2, MultipleServersSharedDataMode.DISK, electionTime);
     setupManager.addActiveServerGroup(2, MultipleServersSharedDataMode.DISK, electionTime);
   }
-
 }
