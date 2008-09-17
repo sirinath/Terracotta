@@ -12,8 +12,9 @@ import java.util.Collection;
 public class ServerManagerUtil {
 
   protected static Log logger = LogFactory.getLog(ServerManagerUtil.class);
+  private static ServerManager theServerManager;
 
-  private static ServerManager start(Class testClass, boolean withPersistentStore, Collection extraJvmArgs)
+  private static synchronized ServerManager start(Class testClass, boolean withPersistentStore, Collection extraJvmArgs)
       throws Exception {
     ServerManager existingServerManager = getExistingServerManager();
     if (existingServerManager != null) {
@@ -26,7 +27,7 @@ public class ServerManagerUtil {
     return serverManager;
   }
 
-  public static void stop(ServerManager serverManager) {
+  public static synchronized void stop(ServerManager serverManager) {
     ServerManager existingServerManager = getExistingServerManager();
     if (existingServerManager != null) {
       logger.debug("Not stopping existing ServerManager");
@@ -36,25 +37,23 @@ public class ServerManagerUtil {
     serverManager.stop();
   }
 
-  private static ThreadLocal serverManagerHolder = new ThreadLocal();
-
-  private static ServerManager getExistingServerManager() {
-    return (ServerManager) serverManagerHolder.get();
+  private static synchronized ServerManager getExistingServerManager() {
+    return theServerManager;
   }
 
-  public static ServerManager startAndBind(Class testClass, boolean withPersistentStore, Collection extraJvmArgs)
+  public static synchronized ServerManager startAndBind(Class testClass, boolean withPersistentStore, Collection extraJvmArgs)
       throws Exception {
     ServerManager sm = start(testClass, withPersistentStore, extraJvmArgs);
-    serverManagerHolder.set(sm);
+    theServerManager = sm;
     return sm;
   }
 
-  public static void stopAndRelease(ServerManager sm) {
-    serverManagerHolder.set(null);
+  public static synchronized void stopAndRelease(ServerManager sm) {
+    theServerManager = null;
     stop(sm);
   }
 
-  public static void stopAllWebServers(ServerManager serverManager) {
+  public static synchronized void stopAllWebServers(ServerManager serverManager) {
     getExistingServerManager().stopAllWebServers();
   }
 
