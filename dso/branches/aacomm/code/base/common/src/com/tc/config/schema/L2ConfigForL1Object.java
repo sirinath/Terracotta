@@ -86,6 +86,8 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
             data[i] = new L2Data(host, dsoPort);
             l2DataByName.put(name, data[i]);
           }
+          // remove duplicate data
+          data = (L2Data[]) l2DataByName.values().toArray(new L2Data[l2DataByName.size()]);
         }
 
         organizeByGroup(xmlObject);
