@@ -34,19 +34,19 @@ public class ObjectManagementMonitor extends AbstractTerracottaMBean implements
 			private synchronized void setRunningState() {
 				if (isRunning) {
 					throw new UnsupportedOperationException(
-							"Cannot run GC because GC is already running.");
+							"Cannot run DGC because DGC is already running.");
 				}
 				isRunning = true;
-				logger.info("Running GC.");
+				logger.info("Running DGC.");
 			}
 
 			private synchronized void setStopState() {
 				if (!isRunning) {
 					throw new UnsupportedOperationException(
-							"Cannot stop GC because GC is not running.");
+							"Cannot stop DGC because DGC is not running.");
 				}
 				isRunning = false;
-				logger.info("GC finished.");
+				logger.info("DGC finished.");
 			}
 
 			public synchronized boolean isGCRunning() {
@@ -62,7 +62,7 @@ public class ObjectManagementMonitor extends AbstractTerracottaMBean implements
 	public synchronized void runGC() {
 		if (!isEnabled()) {
 			throw new UnsupportedOperationException(
-					"Cannot run GC because mBean is not enabled.");
+					"Cannot run DGC because mBean is not enabled.");
 		}
 		if (gcController == null) {
 			throw new RuntimeException("Failure: see log for more information");
@@ -70,20 +70,20 @@ public class ObjectManagementMonitor extends AbstractTerracottaMBean implements
 		
 		if (!gcController.isGCStarted()) {
 			throw new UnsupportedOperationException(
-					"Cannot run GC externally because this server "
-							+ "is in PASSIVE state and GC is disabled.");
+					"Cannot run DGC externally because this server "
+							+ "is in PASSIVE state and DGC is disabled.");
 		}
 		// XXX::Note:: There is potencially a rare here, one could check to see
 		// if it is disabled and before GC is started it could be disabled. In
 		// which case it will not be run, just logged in the log file.
 		if (gcController.isGCDisabled()) {
 			throw new UnsupportedOperationException(
-					"Cannot run GC externally because PASSIVE server(s) are currently synching state "
+					"Cannot run DGC externally because PASSIVE server(s) are currently synching state "
 							+ "with this ACTIVE server and GC is disabled.");
 		}
 		if (isGCRunning()) {
 			throw new UnsupportedOperationException(
-					"Cannot run GC because GC is already running.");
+					"Cannot run DGC because DGC is already running.");
 		}
 
 		Thread gcRunnerThread = new Thread(gcRunner);
