@@ -7,7 +7,6 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.async.api.Sink;
 import com.tc.net.groups.ClientID;
 import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -17,8 +16,8 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.msg.BroadcastTransactionMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.context.BroadcastChangeContext;
-import com.tc.objectserver.context.ManagedObjectRequestContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -38,9 +37,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
   private DSOChannelManager        channelManager;
   private ClientStateManager       clientStateManager;
   private ServerTransactionManager transactionManager;
-  private Sink                     managedObjectRequestSink;
-  private Sink                     respondObjectRequestSink;
-
+  private ObjectRequestManager     objectRequestManager;
   private SampledCounter           broadcastCounter;
   private SampledCounter           changeCounter;
 
@@ -78,10 +75,9 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
           || includeDmi) {
         transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
         if (lookupObjectIDs.size() > 0) {
-          ManagedObjectRequestContext.createAndAddManagedObjectRequestContextsTo(this.managedObjectRequestSink,
-                                                                                 clientID, ObjectRequestID.NULL_ID,
-                                                                                 lookupObjectIDs, -1,
-                                                                                 this.respondObjectRequestSink);
+          // this used to be createAndManagedObjectRequestContextTo
+          objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, ObjectRequestID.NULL_ID, lookupObjectIDs, -1, true, Thread
+              .currentThread().getName());
         }
         final DmiDescriptor[] dmi = (includeDmi) ? prunedDmis : DmiDescriptor.EMPTY_ARRAY;
         BroadcastTransactionMessage responseMessage = (BroadcastTransactionMessage) client
@@ -127,7 +123,6 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
     this.channelManager = scc.getChannelManager();
     this.clientStateManager = scc.getClientStateManager();
     this.transactionManager = scc.getTransactionManager();
-    this.managedObjectRequestSink = scc.getStage(ServerConfigurationContext.MANAGED_OBJECT_REQUEST_STAGE).getSink();
-    this.respondObjectRequestSink = scc.getStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE).getSink();
+    this.objectRequestManager = scc.getObjectRequestManager();
   }
 }
