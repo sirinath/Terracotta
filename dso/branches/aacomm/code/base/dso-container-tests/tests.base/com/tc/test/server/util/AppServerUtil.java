@@ -78,6 +78,7 @@ public class AppServerUtil {
   public static void forceShutdownAndArchive(File from, File to) {
     System.out.println("Send kill signal to app servers...");
     HeartBeatService.sendKillSignalToChildren();
+    ThreadUtil.reallySleep(1000);
     archive(from, to);
   }
 
