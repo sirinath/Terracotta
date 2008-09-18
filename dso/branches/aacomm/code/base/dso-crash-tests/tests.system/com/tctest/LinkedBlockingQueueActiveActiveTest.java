@@ -15,7 +15,7 @@ public class LinkedBlockingQueueActiveActiveTest extends ActiveActiveTransparent
   private final int        electionTime = 5;
 
   public LinkedBlockingQueueActiveActiveTest() {
-    disableAllUntil("2008-10-01");
+//    disableAllUntil("2008-10-01");
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
