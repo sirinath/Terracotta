@@ -13,7 +13,6 @@ import com.tc.object.TestRequestManagedObjectMessage;
 import com.tc.object.net.ChannelStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
-import com.tc.objectserver.impl.TestObjectRequestManager;
 import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.CounterImpl;
@@ -39,8 +38,7 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     context.addStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, new MockStage("yo"));
     context.channelStats = channelStats;
 
-    ManagedObjectRequestHandler handler = new ManagedObjectRequestHandler(requestCounter, removeCounter,
-                                                                          new TestObjectRequestManager());
+    ManagedObjectRequestHandler handler = new ManagedObjectRequestHandler(requestCounter, removeCounter);
     handler.initializeContext(context);
 
     TestRequestManagedObjectMessage msg = new TestRequestManagedObjectMessage();

@@ -4,7 +4,7 @@
 package com.tc.objectserver.impl;
 
 import com.tc.objectserver.api.ObjectRequestMonitor;
-import com.tc.objectserver.context.ManagedObjectRequestContext;
+import com.tc.objectserver.context.RespondToObjectRequestContext;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.WindowUtil;
 
@@ -16,7 +16,7 @@ public class WindowObjectRequestMonitor implements ObjectRequestMonitor {
     window = new WindowUtil(size); 
   }
   
-  public void notifyObjectRequest(ManagedObjectRequestContext ctxt) {
+  public void notifyObjectRequest(RespondToObjectRequestContext ctxt) {
     window.add(ctxt);
   }
 
