@@ -371,7 +371,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     while (index < 0) {
       System.out.println("Searching for active server... ");
       for (int i = 0; i < jmxPorts.length; i++) {
-        if (i != lastCrashedIndex || jmxPorts.length == 1) {
+        if (i != lastCrashedIndex) {
           if (!servers[i].getServerControl().isRunning()) {
             if (allMustBeRunning) {
               throw new AssertionError("Server[" + servers[i].getDsoPort() + "] is not running as expected!");
@@ -381,7 +381,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
           }
           boolean isActive;
           try {
-            isActive = (jmxPorts.length == 1)? true : tcServerInfoMBeans[i].isActive();
+            isActive = tcServerInfoMBeans[i].isActive();
           } catch (Exception e) {
             System.out.println("Need to fetch tcServerInfoMBean for server=[" + dsoPorts[i] + "]...");
             tcServerInfoMBeans[i] = getTcServerInfoMBean(i);
