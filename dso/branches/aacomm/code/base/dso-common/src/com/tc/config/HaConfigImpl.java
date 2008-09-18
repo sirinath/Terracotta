@@ -4,6 +4,7 @@
  */
 package com.tc.config;
 
+import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
@@ -11,6 +12,7 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.Node;
 import com.tc.net.groups.ServerGroup;
 import com.tc.object.config.schema.NewL2DSOConfig;
+import com.tc.util.Assert;
 
 public class HaConfigImpl implements HaConfig {
 
@@ -37,7 +39,7 @@ public class HaConfigImpl implements HaConfig {
   }
 
   public boolean isNetworkedActivePassive() {
-    return !isActiveActive() && this.configSetupManager.haConfig().isNetworkedActivePassive();
+    return this.configSetupManager.haConfig().isNetworkedActivePassive();
   }
 
   public ServerGroup getActiveCoordinatorGroup() {
@@ -49,7 +51,9 @@ public class HaConfigImpl implements HaConfig {
   }
 
   public Node[] makeAllNodes() {
-    String[] l2Names = configSetupManager.allCurrentlyKnownServers();
+    ActiveServerGroupConfig asgc = configSetupManager.getActiveServerGroupForThisL2();
+    Assert.assertNotNull(asgc);
+    String[] l2Names = asgc.getMembers().getMemberArray();
     Node[] rv = new Node[l2Names.length];
 
     for (int i = 0; i < l2Names.length; i++) {
