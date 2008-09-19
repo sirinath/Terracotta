@@ -443,7 +443,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public synchronized void sendMissingObjects(Set missingObjectIDs, Set ids) {
       Set missingObjectsInClient = new HashSet();
-      for (Iterator iter = missingObjectIDs.iterator(); iter.hasNext();) {
+      for (Iterator iter = ids.iterator(); iter.hasNext();) {
         ObjectID id = (ObjectID) iter.next();
         if (missingObjectIDs.contains(id)) {
           missingObjectsInClient.add(id);
