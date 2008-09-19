@@ -6,7 +6,7 @@ package com.tctest;
 
 public class GenericMapTest extends TransparentTestBase {
 
-  private static final int NODE_COUNT = 3;
+  private static final int NODE_COUNT = 5;
 
   public GenericMapTest() {
     //
