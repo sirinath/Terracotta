@@ -944,7 +944,7 @@ public class GreedyLockManagerTest extends TestCase {
       throw new ImplementMe();
     }
     
-    public ClientID getLoaclNodeID() {
+    public ClientID getLocalNodeID() {
       throw new ImplementMe();
     }
     

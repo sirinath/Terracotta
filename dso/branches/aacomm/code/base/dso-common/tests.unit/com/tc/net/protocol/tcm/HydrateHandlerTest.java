@@ -160,7 +160,7 @@ public class HydrateHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public NodeID getLoaclNodeID() {
+    public NodeID getLocalNodeID() {
       throw new ImplementMe();
     }
     

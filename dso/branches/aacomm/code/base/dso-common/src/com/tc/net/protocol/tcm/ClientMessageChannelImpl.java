@@ -48,7 +48,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
 
     synchronized (status) {
       if (status.isOpen()) { throw new IllegalStateException("Channel already open"); }
-      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID((((ClientID)getLoaclNodeID()).getChannelID().toLong())));
+      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID((((ClientID)getLocalNodeID()).getChannelID().toLong())));
       NetworkStackID id = this.sendLayer.open();
       getStatus().open();
       this.channelID = new ChannelID(id.toLong());

@@ -113,7 +113,7 @@ public class TestClientMessageChannel implements ClientMessageChannel {
     throw new ImplementMe();
   }
 
-  public NodeID getLoaclNodeID() {
+  public NodeID getLocalNodeID() {
     throw new ImplementMe();
   }
 
