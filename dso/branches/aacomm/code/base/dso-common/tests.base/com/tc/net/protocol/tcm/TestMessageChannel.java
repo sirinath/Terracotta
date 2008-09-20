@@ -30,7 +30,7 @@ public class TestMessageChannel implements MessageChannel {
     return;
   }
 
-  public NodeID getLoaclNodeID() {
+  public NodeID getLocalNodeID() {
     return source;
   }
 

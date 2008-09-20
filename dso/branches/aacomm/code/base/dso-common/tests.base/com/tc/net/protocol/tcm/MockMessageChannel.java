@@ -192,7 +192,7 @@ public class MockMessageChannel implements MessageChannelInternal {
     throw new ImplementMe();
   }
 
-  public NodeID getLoaclNodeID() {
+  public NodeID getLocalNodeID() {
     return source;
   }
 

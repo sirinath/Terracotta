@@ -65,7 +65,7 @@ public interface MessageChannel {
 
   public void close();
   
-  public NodeID getLoaclNodeID();
+  public NodeID getLocalNodeID();
   
   public void setLocalNodeID(NodeID source);
   

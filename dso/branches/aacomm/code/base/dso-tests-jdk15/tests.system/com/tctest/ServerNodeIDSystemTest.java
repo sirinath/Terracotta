@@ -64,7 +64,7 @@ public class ServerNodeIDSystemTest extends BaseDSOTestCase {
         Assert.assertTrue(serverNodeID.equals(clientServerNodeID));
 
         // Server shall hold the same ClientID as client's
-        ClientID clientNodeID = (ClientID) clientChannel.getLoaclNodeID();
+        ClientID clientNodeID = (ClientID) clientChannel.getLocalNodeID();
         System.out.println("XXX ClientNodeID: " + clientNodeID);
         ServerMessageChannelImpl serverChannel = (ServerMessageChannelImpl) server.getDSOServer().getChannelManager()
             .getChannel(clientChannel.getChannelID());

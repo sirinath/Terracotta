@@ -101,13 +101,13 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
       ch = getChannel(coordinatorGroupID);
       nid = ch.open();
       setLocalNodeID(new ClientID(getChannelID()));
-      logger.info("Opened sub-channel: " + connectionInfo(ch));
+      logger.info("Opened sub-channel(coordinator): " + connectionInfo(ch));
 
       for (Iterator i = groupChannelMap.keySet().iterator(); i.hasNext();) {
         GroupID id = (GroupID) i.next();
         if (id == coordinatorGroupID) continue;
         ch = getChannel(id);
-        ch.setLocalNodeID(getLoaclNodeID());
+        ch.setLocalNodeID(getLocalNodeID());
         ch.open();
         logger.info("Opened sub-channel: " + connectionInfo(ch));
       }
@@ -221,34 +221,34 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
    * when any channel closed
    */
   private class ClientGroupMessageChannelEventListener implements ChannelEventListener {
-    private final ChannelEventListener listener;
-    private HashSet                    connectedSet = new HashSet();
-    private final ClientMessageChannel channel;
+    private final ChannelEventListener      listener;
+    private HashSet                         connectedSet = new HashSet();
+    private final ClientGroupMessageChannel groupChannel;
 
-    public ClientGroupMessageChannelEventListener(ChannelEventListener listener, ClientMessageChannel channel) {
+    public ClientGroupMessageChannelEventListener(ChannelEventListener listener, ClientGroupMessageChannel channel) {
       this.listener = listener;
-      this.channel = channel;
+      this.groupChannel = channel;
     }
 
     public void notifyChannelEvent(ChannelEvent event) {
       if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
         if (connectedSet.remove(event.getChannel())) {
-          fireEvent(event);
+          fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, groupChannel));
         }
       } else if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
         connectedSet.add(event.getChannel());
         if (connectedSet.size() == groupChannelMap.size()) {
-          fireEvent(event);
+          fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, groupChannel));
         }
       } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
         if (connectedSet.remove(event.getChannel())) {
-          fireEvent(event);
+          fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, groupChannel));
         }
       }
     }
 
     private void fireEvent(ChannelEvent event) {
-      listener.notifyChannelEvent(new ChannelEventImpl(event.getType(), channel));
+      listener.notifyChannelEvent(new ChannelEventImpl(event.getType(), groupChannel));
     }
   }
 

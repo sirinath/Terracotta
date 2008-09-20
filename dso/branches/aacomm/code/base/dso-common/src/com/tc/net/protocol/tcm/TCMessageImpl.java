@@ -352,11 +352,11 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
   }
 
   public NodeID getSourceNodeID() {
-    return isOutgoing? channel.getLoaclNodeID() : channel.getRemoteNodeID();
+    return isOutgoing? channel.getLocalNodeID() : channel.getRemoteNodeID();
   }
 
   public NodeID getDestinationNodeID() {
-    return isOutgoing? channel.getRemoteNodeID() : channel.getLoaclNodeID();
+    return isOutgoing? channel.getRemoteNodeID() : channel.getLocalNodeID();
   }
 
   // FIXME:: This is here till them tc-comms merge.

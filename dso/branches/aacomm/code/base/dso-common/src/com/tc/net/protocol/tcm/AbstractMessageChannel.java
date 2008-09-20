@@ -89,7 +89,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     listeners.add(listener);
   }
 
-  public NodeID getLoaclNodeID() {
+  public NodeID getLocalNodeID() {
     return localNodeID;
   }
 
