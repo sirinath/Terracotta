@@ -27,7 +27,10 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     tim_getpath.gsub!(/\\/, '/')
     timnames.each do |entry|
       output = %x[#{tim_getpath} list #{entry}].split("\n")
-      output.delete_if { |line| !line.index(entry) }
+      output.delete_if { |line| 
+        puts "[xxx] #{line}"
+        !line.index(entry) 
+      }
       data = output.last
       data.gsub!(/[()]/, '')
       data = data.split
