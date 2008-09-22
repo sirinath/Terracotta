@@ -18,7 +18,7 @@ public class ObjectDataActiveActiveTest extends ActiveActiveTransparentTestBase 
   private final int electionTime = 5;
   
   public ObjectDataActiveActiveTest() {
-    disableAllUntil("2019-10-01");
+//    disableAllUntil("2019-10-01");
   }
 
   protected Class<ObjectDataTestApp> getApplicationClass() {

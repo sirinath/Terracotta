@@ -20,6 +20,7 @@ import com.tc.logging.TCLogging;
 import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
+import com.tc.object.DistributedObjectActiveActiveClient;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
@@ -168,7 +169,11 @@ public class ManagerImpl implements Manager {
 
     StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
-        dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster);
+        if (connectionComponents.isActiveActive()) {
+          dso = new DistributedObjectActiveActiveClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster);
+        } else {
+          dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster);
+        }
         if (forTests) {
           dso.setCreateDedicatedMBeanServer(true);
         }
