@@ -9,6 +9,9 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.io.serializer.TCObjectInputStream;
 import com.tc.io.serializer.TCObjectOutputStream;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -55,7 +58,7 @@ public class NodeIDSerializer implements TCSerializable {
       case NodeID.L1_NODE_TYPE:
         return new ClientID();
       case NodeID.L2_NODE_TYPE:
-        return new NodeIDImpl();
+        return new ServerID();
       default:
         throw new AssertionError("Unknown type : " + type);
     }

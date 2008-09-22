@@ -8,11 +8,13 @@ import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.concurrent.ThreadUtil;
@@ -56,11 +58,11 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   private String getNodeName(Node node) {
-    return (TCGroupManagerImpl.makeGroupNodeName(node.getHost(), node.getPort()));
+    return (node.getServerNodeName());
   }
 
   public boolean isValidClusterNode(NodeID nodeID) {
-    String nodeName = ((NodeIDImpl) nodeID).getName();
+    String nodeName = ((ServerID) nodeID).getName();
     return (nodeStateMap.get(nodeName) != null);
   }
 
@@ -78,7 +80,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     try {
       if (logger.isDebugEnabled()) logger.debug(getLocalNodeID().toString() + " opens channel to " + node);
       incConnectingCount();
-      manager.openChannel(node.getHost(), node.getPort(), stateMachine);
+      manager.openChannel(node.getHost(), node.getGroupPort(), stateMachine);
       stateMachine.connected();
     } catch (TCTimeoutException e) {
       stateMachine.connectTimeout();
@@ -181,14 +183,14 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
   }
 
   public synchronized void nodeJoined(NodeID nodeID) {
-    String nodeName = ((NodeIDImpl) nodeID).getName();
+    String nodeName = ((ServerID) nodeID).getName();
     nodeStateMap.get(nodeName).nodeJoined();
     joinedNodes++;
   }
 
   public synchronized void nodeLeft(NodeID nodeID) {
     joinedNodes--;
-    String nodeName = ((NodeIDImpl) nodeID).getName();
+    String nodeName = ((ServerID) nodeID).getName();
     nodeStateMap.get(nodeName).nodeLeft();
     notifyAll();
   }

@@ -2,8 +2,11 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.net.groups;
+package com.tc.net;
 
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.util.UUID;
 
@@ -23,7 +26,7 @@ import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
-public class NodeIDImplTest extends TestCase {
+public class ServerIDTest extends TestCase {
 
   public void test() throws Exception {
 
@@ -61,8 +64,8 @@ public class NodeIDImplTest extends TestCase {
     System.err.println("Written : " + n3);
     oo.writeObject(n4);
     System.err.println("Written : " + n3);
-    oo.writeObject(NodeIDImpl.NULL_ID);
-    System.err.println("Written : " + NodeIDImpl.NULL_ID);
+    oo.writeObject(ServerID.NULL_ID);
+    System.err.println("Written : " + ServerID.NULL_ID);
 
     ByteArrayInputStream bi = new ByteArrayInputStream(bo.toByteArray());
     ObjectInput oi = new ObjectInputStream(bi);
@@ -80,12 +83,12 @@ public class NodeIDImplTest extends TestCase {
     assertEquals(n4, r4);
     NodeID r5 = (NodeID) oi.readObject();
     System.err.println("Read : " + r5);
-    assertEquals(NodeIDImpl.NULL_ID, r5);
+    assertEquals(ServerID.NULL_ID, r5);
 
   }
 
-  private NodeIDImpl makeNodeID(String name) {
-    return (new NodeIDImpl(name, UUID.getUUID().toString().getBytes()));
+  private ServerID makeNodeID(String name) {
+    return (new ServerID(name, UUID.getUUID().toString().getBytes()));
   }
 
   public void testSortOrder() throws Exception {
@@ -103,7 +106,7 @@ public class NodeIDImplTest extends TestCase {
     ss.add(n1);
     ss.add(n2);
     for (int i = 0; i < 100; i++) {
-      NodeIDImpl n = makeNodeID("node-" + i);
+      ServerID n = makeNodeID("node-" + i);
       all.add(n);
       ss.add(n);
     }
@@ -113,9 +116,9 @@ public class NodeIDImplTest extends TestCase {
   }
 
   private void assertIsSorted(Collection nodeIDs) {
-    NodeIDImpl last = null;
+    ServerID last = null;
     for (Iterator i = nodeIDs.iterator(); i.hasNext();) {
-      NodeIDImpl next = (NodeIDImpl) i.next();
+      ServerID next = (ServerID) i.next();
       if (last == null) {
         last = next;
       } else {
@@ -125,7 +128,7 @@ public class NodeIDImplTest extends TestCase {
     }
   }
 
-  private void assertIsNotGreater(NodeIDImpl last, NodeIDImpl next) {
+  private void assertIsNotGreater(ServerID last, ServerID next) {
     byte[] luid = last.getUID();
     byte[] nuid = next.getUID();
     assertTrue(luid.length <= nuid.length);

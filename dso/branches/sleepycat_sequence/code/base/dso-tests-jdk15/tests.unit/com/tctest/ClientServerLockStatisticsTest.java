@@ -17,8 +17,8 @@ import com.tc.management.lock.stats.LockStatElement;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.management.lock.stats.TCStackTraceElement;
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -284,6 +284,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
       throw new ImplementMe();
 
     }
+
   }
 
   private static class TestClientChannel implements DSOClientMessageChannel {

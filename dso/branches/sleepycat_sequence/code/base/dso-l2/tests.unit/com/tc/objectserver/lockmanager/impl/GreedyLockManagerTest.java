@@ -10,9 +10,9 @@ import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.ImplementMe;
 import com.tc.management.L2LockStatsManager;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
 import com.tc.net.TCSocketAddress;
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
@@ -942,6 +942,27 @@ public class GreedyLockManagerTest extends TestCase {
 
     public void close() {
       throw new ImplementMe();
+    }
+    
+    public ClientID getLocalNodeID() {
+      throw new ImplementMe();
+    }
+    
+    public void setLocalNodeID(ClientID source) {
+      throw new ImplementMe();
+    }
+    
+    public NodeID getRemoteNodeID() {
+      throw new ImplementMe();
+    }
+    
+    public void setRemoteNodeID(NodeID destination) {
+      throw new ImplementMe();
+    }
+
+    public void setLocalNodeID(NodeID source) {
+      throw new ImplementMe();
+      
     }
 
   }

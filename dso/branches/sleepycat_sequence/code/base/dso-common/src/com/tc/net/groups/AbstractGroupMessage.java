@@ -8,6 +8,8 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 
@@ -25,7 +27,7 @@ public abstract class AbstractGroupMessage implements GroupMessage {
   private MessageID        id;
   private MessageID        requestID;
 
-  private transient NodeID messageOrginator = NodeIDImpl.NULL_ID;
+  private transient NodeID messageOrginator = ServerID.NULL_ID;
 
   protected AbstractGroupMessage(int type) {
     this.type = type;
