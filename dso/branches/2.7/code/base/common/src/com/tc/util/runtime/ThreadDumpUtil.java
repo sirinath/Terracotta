@@ -24,14 +24,17 @@ public class ThreadDumpUtil {
       try {
         threadDumpUtilJdk15Type = Class.forName("com.tc.util.runtime.ThreadDumpUtilJdk15");
       } catch (ClassNotFoundException cnfe) {
+        logger.warn("Unable to load com.tc.util.runtime.ThreadDumpUtilJdk15", cnfe);
         threadDumpUtilJdk15Type = null;
       }
 
-      try {
-        threadDumpUtilJdk16Type = Class.forName("com.tc.util.runtime.ThreadDumpUtilJdk16");
-      } catch (ClassNotFoundException cnfe) {
-        if (Vm.isJDK16Compliant()) logger.warn("Unable to load com.tc.util.runtime.ThreadDumpUtilJdk16", cnfe);
-        threadDumpUtilJdk16Type = null;
+      if (Vm.isJDK16Compliant()) {
+        try {
+          threadDumpUtilJdk16Type = Class.forName("com.tc.util.runtime.ThreadDumpUtilJdk16");
+        } catch (ClassNotFoundException cnfe) {
+          logger.warn("Unable to load com.tc.util.runtime.ThreadDumpUtilJdk16", cnfe);
+          threadDumpUtilJdk16Type = null;
+        }
       }
     } else {
       // Thread dumps require JRE-1.5 or greater
