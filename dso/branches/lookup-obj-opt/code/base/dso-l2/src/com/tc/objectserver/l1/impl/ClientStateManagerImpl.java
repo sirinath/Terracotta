@@ -145,12 +145,15 @@ public class ClientStateManagerImpl implements ClientStateManager {
       logger.warn(": addReferences : Client state is NULL (probably due to disconnect) : " + id);
       return Collections.emptySet();
     }
+    Set<ObjectID> newReferences = new HashSet<ObjectID>();
+    
     Set<ObjectID> refs = cs.getReferences();
+    
     if (refs.isEmpty()) {
       refs.addAll(oids);
-      return oids;
+      newReferences.addAll(oids);
+      return newReferences;
     }
-    Set<ObjectID> newReferences = new HashSet<ObjectID>();
     for (ObjectID oid : oids) {
       if (refs.add(oid)) {
         newReferences.add(oid);
