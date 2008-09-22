@@ -5,6 +5,8 @@
 package com.tc.net.groups;
 
 import com.tc.async.api.Sink;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +34,7 @@ public class SingleNodeGroupManager implements GroupManager {
 
   public NodeID join(final Node thisN, final Node[] allNodes) throws GroupException {
     if (thisNode != null) { throw new GroupException("Already Joined !"); }
-    this.thisNode = new NodeIDImpl("CurrentNode", CURRENT_NODE_ID);
+    this.thisNode = new ServerID("CurrentNode", CURRENT_NODE_ID);
     return this.thisNode;
   }
 

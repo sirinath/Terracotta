@@ -16,12 +16,12 @@ import com.tc.l2.msg.ObjectSyncCompleteMessageFactory;
 import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.NodeID;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
-import com.tc.net.groups.NodeID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
@@ -173,9 +173,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
                                                                                 .getErrorString(new Throwable()));
   }
 
-  private void handleObjectListResponse(NodeID nodeID, ObjectListSyncMessage clusterMsg) {
+  private void handleObjectListResponse(final NodeID nodeID, ObjectListSyncMessage clusterMsg) {
     Assert.assertTrue(stateManager.isActiveCoordinator());
-    Set oids = clusterMsg.getObjectIDs();
+    final Set oids = clusterMsg.getObjectIDs();
     if (!oids.isEmpty()) {
       String error = "Nodes joining the cluster after startup shouldnt have any Objects. " + nodeID + " contains "
                      + oids.size() + " Objects !!!";
@@ -183,7 +183,13 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       groupManager.zapNode(nodeID, L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
                            error + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
     } else {
-      gcMonitor.add2L2StateManagerWhenGCDisabled(nodeID, oids);
+      // DEV-1944 : We don't want newly joined nodes to be syncing the Objects while the active is receiving the resent transactions.
+      // If we do that there is a race where passive can apply already applied transactions twice. XXX:: 3 passives - partial sync.
+      transactionManager.callBackOnResentTxnsInSystemCompletion(new TxnsInSystemCompletionLister() {
+        public void onCompletion() {
+          gcMonitor.add2L2StateManagerWhenGCDisabled(nodeID, oids);
+        }
+      });
     }
   }
 

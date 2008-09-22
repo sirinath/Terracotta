@@ -4,13 +4,14 @@
  */
 package com.tc.net.groups;
 
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.MessageChannel;
 
 public interface TCGroupMember {
 
-  public NodeIDImpl getLocalNodeID();
+  public ServerID getLocalNodeID();
 
-  public NodeIDImpl getPeerNodeID();
+  public ServerID getPeerNodeID();
 
   public MessageChannel getChannel();
 

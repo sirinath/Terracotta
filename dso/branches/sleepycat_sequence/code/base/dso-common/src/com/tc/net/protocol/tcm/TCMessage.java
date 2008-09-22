@@ -4,7 +4,8 @@
 package com.tc.net.protocol.tcm;
 
 import com.tc.async.api.EventContext;
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
 import com.tc.object.session.SessionID;
 
 import java.io.IOException;
@@ -28,6 +29,10 @@ public interface TCMessage extends EventContext {
   public MessageChannel getChannel();
 
   public ClientID getClientID();
+  
+  public NodeID getSourceNodeID();
+  
+  public NodeID getDestinationNodeID();
 
   /**
    * The local session id is the session on the local side of the message bus. E.g., if this is a client, then it's the

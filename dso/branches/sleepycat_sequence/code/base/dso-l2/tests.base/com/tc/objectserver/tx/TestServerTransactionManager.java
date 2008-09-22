@@ -5,7 +5,7 @@
 package com.tc.objectserver.tx;
 
 import com.tc.exception.ImplementMe;
-import com.tc.net.groups.NodeID;
+import com.tc.net.NodeID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
@@ -125,6 +125,10 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   }
 
   public void objectsSynched(NodeID node, ServerTransactionID tid) {
+    throw new ImplementMe();
+  }
+
+  public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
     throw new ImplementMe();
   }
 }
