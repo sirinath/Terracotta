@@ -183,7 +183,7 @@ public class ObjectRequestManagerTest extends TestCase {
     assertEquals(ids.size(), respondToObjectRequestContext.getObjs().size());
 
   }
-  
+
   public void testCreateAndAddManagedObjectRequestContextsTo() {
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
@@ -200,18 +200,19 @@ public class ObjectRequestManagerTest extends TestCase {
     objectRequestManager.transactionManagerStarted(new HashSet());
     objectRequestManager.clearAllTransactionsFor(clientID);
 
-    objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, requestID, ids, -1, false, Thread.currentThread().getName());
-    
+    objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, requestID, ids, -1, false, Thread
+        .currentThread().getName());
+
     assertEquals(2, requestSink.size());
-    
-    for(int i =0; i < 2; i++) {
+
+    for (int i = 0; i < 2; i++) {
       LookupContext lookupContext;
       try {
-        lookupContext = (LookupContext)requestSink.take();
+        lookupContext = (LookupContext) requestSink.take();
       } catch (InterruptedException e) {
         throw new AssertionError(e);
       }
-      assertEquals(lookupContext.getLookupIDs().size(), ids.size());
+      assertEquals(lookupContext.getLookupIDs().size(), 50);
       assertEquals(-1, lookupContext.getMaxRequestDepth());
       assertEquals(clientID, lookupContext.getRequestedNodeID());
       assertEquals(requestID, lookupContext.getRequestID());
@@ -296,7 +297,7 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     Set sendSet = TestRequestManagedObjectResponseMessage.sendSet;
-    assertEquals(sendSet.size(), 10);
+    assertEquals(10, sendSet.size());
 
     int i = 0;
     for (Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
@@ -764,7 +765,7 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public void objectsSynched(NodeID node, ServerTransactionID tid) {
-      throw new NotImplementedException(TestServerTransactionManager.class); 
+      throw new NotImplementedException(TestServerTransactionManager.class);
     }
 
   }
@@ -825,6 +826,8 @@ public class ObjectRequestManagerTest extends TestCase {
   }
 
   private static class TestClientStateManager implements ClientStateManager {
+    
+    private Map clientStateMap = new HashMap();
 
     public void addReference(NodeID nodeID, ObjectID objectID) {
       throw new NotImplementedException(TestClientStateManager.class);
@@ -833,7 +836,7 @@ public class ObjectRequestManagerTest extends TestCase {
     public boolean hasReference(NodeID nodeID, ObjectID objectID) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
-  
+
     public void shutdownNode(NodeID deadNode) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
@@ -851,18 +854,38 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public void addAllReferencedIdsTo(Set<ObjectID> rescueIds) {
-      throw new NotImplementedException(TestClientStateManager.class); 
+      throw new NotImplementedException(TestClientStateManager.class);
     }
 
     public Set<ObjectID> addReferences(NodeID nodeID, Set<ObjectID> oids) {
-      throw new NotImplementedException(TestClientStateManager.class);
+      
+      Set<ObjectID> refs = (Set)clientStateMap.get(nodeID);
+      
+      if(refs == null) {
+        clientStateMap.put(nodeID, (refs = new HashSet()));
+      }
+      Set<ObjectID> newReferences = new HashSet<ObjectID>();
+      
+      
+      if (refs.isEmpty()) {
+        refs.addAll(oids);
+        newReferences.addAll(oids);
+        return newReferences;
+      }
+      
+      for (ObjectID oid : oids) {
+        if (refs.add(oid)) {
+          newReferences.add(oid);
+        }
+      }
+      return newReferences;
     }
 
     public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, BackReferences references,
                                                          NodeID clientID, Set<ObjectID> objectIDs) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
-    
+
     public Set<NodeID> getConnectedClientIDs() {
       throw new NotImplementedException(TestClientStateManager.class);
     }
@@ -890,7 +913,7 @@ public class ObjectRequestManagerTest extends TestCase {
     public void addFaultedObject(ObjectID oid, ManagedObject mo, boolean removeOnRelease) {
       throw new NotImplementedException(TestObjectManager.class);
     }
-    
+
     public void createRoot(String name, ObjectID id) {
       throw new NotImplementedException(TestObjectManager.class);
     }
