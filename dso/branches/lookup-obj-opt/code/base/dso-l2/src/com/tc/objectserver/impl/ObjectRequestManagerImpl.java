@@ -190,7 +190,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       for (Iterator iter = ids.iterator(); iter.hasNext();) {
         ObjectID id = (ObjectID) iter.next();
         if (objectRequestCache.add(clientID, id)) {
-     
+          System.out.println("SERVER " + clientID + " LOOKUP id: " + id );
           lookupIDs.add(id);
         }
       }
@@ -276,8 +276,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
             
             batchAndSend.sendObject(m, i.hasNext());
-            requestedIDs.remove(m.getID());
-            newIds.remove(m.getID());
+//            requestedIDs.remove(m.getID());
+//            newIds.remove(m.getID());
           } else if (requestedObjectIDs.contains(m.getID())) {
            //
           }
@@ -342,6 +342,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       
       boolean notInCache = objectRequestSet.add(id);
 
+      System.out.println("SERVER: CHECK CACHE " + clientID + " DID NOT EXIST: " + notInCache + " ID: " + id);
       Set ids = (Set) objectRequestMap.get(clientID);
       if (ids == null) {
         objectRequestMap.put(clientID, (ids = new HashSet()));
