@@ -552,6 +552,43 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
   }
+  
+  public void testObjectRequestCache2() {
+    ObjectRequestCache c = new ObjectRequestCache();
+    
+    ClientID clientID = new ClientID(new ChannelID(1));
+    
+    Set objIDSet = createObjectIDSet();
+    
+    Set removeSet = new ObjectIDSet();
+    Iterator iter = objIDSet.iterator();
+    for(int i = 0; i < 10; i++) {
+      ObjectID id = (ObjectID)iter.next();
+      removeSet.add(id);
+      c.add(clientID, id);
+    }
+    
+    assertEquals(100, objIDSet.size());
+    assertEquals(10, c.cacheSize());
+    assertEquals(1, c.clientSize());
+    assertEquals(10, removeSet.size());
+    
+    c.remove(removeSet);
+    assertEquals(10, removeSet.size());
+    assertEquals(100, objIDSet.size());
+    assertEquals(0, c.cacheSize());
+    assertEquals(0, c.clientSize());
+    
+    for(int i = 0; i < 10; i++) {
+      ObjectID id = (ObjectID)iter.next();
+      removeSet.add(id);
+      c.add(clientID, id);
+      c.add(clientID, id);
+    }   
+    assertEquals(10, c.cacheSize());
+    
+    
+  }
 
   private Set createObjectIDSet() {
     Set set = new HashSet();
@@ -864,14 +901,14 @@ public class ObjectRequestManagerTest extends TestCase {
       if(refs == null) {
         clientStateMap.put(nodeID, (refs = new HashSet()));
       }
-      Set<ObjectID> newReferences = new HashSet<ObjectID>();
       
       
       if (refs.isEmpty()) {
         refs.addAll(oids);
-        newReferences.addAll(oids);
-        return newReferences;
+         return oids;
       }
+      
+      Set<ObjectID> newReferences = new HashSet<ObjectID>();
       
       for (ObjectID oid : oids) {
         if (refs.add(oid)) {
