@@ -45,7 +45,6 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
         next unless FileTest.file?(path) && File.basename(path) =~ /^tc-config.xml$/
         config = File.read(path)
         tims.each do |k, v|
-          v = '1.2.0'
           value = "<module name=\"#{k}\" version=\"#{v}\"/>"
           regex = /<module *name *= *"#{Regexp.escape(k)}" *version *= *"@tim.version@" *\/>/
           File.open(path, 'w') {|f| f.write(config) } if config.gsub!(regex, value)

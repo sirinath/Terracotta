@@ -17,6 +17,7 @@ public class Config {
   public static final String KEYSPACE = "org.terracotta.modules.tool.";
 
   private String tcVersion;
+  private boolean ignoreSnapshots;
   private URL    proxyUrl;
   private File   modulesDirectory;
   private URL    dataFileUrl;
@@ -29,6 +30,7 @@ public class Config {
   public Config(Properties properties) {
     properties = new PropertiesInterpolator().interpolated(properties);
     this.setTcVersion(getProperty(properties, "tcVersion"));
+    this.setIgnoreSnapshots(Boolean.parseBoolean(getProperty(properties, "ignoreSnapshots")));
     this.setDataFile(new File(getProperty(properties, "dataFile")));
     this.setDataFileUrl(createUrl(getProperty(properties, "dataFileUrl"),
                           "dataFileUrl is not a valid URL"));
@@ -69,8 +71,14 @@ public class Config {
   public String getTcVersion() {
     return tcVersion;
   }
+  public boolean getIgnoreSnapshots() {
+    return ignoreSnapshots;
+  }
   public void setTcVersion(String tcVersion) {
     this.tcVersion = tcVersion;
+  }
+  public void setIgnoreSnapshots(boolean ignoreSnapshots) {
+    this.ignoreSnapshots = ignoreSnapshots;
   }
   public File getModulesDirectory() {
     return modulesDirectory;
