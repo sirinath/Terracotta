@@ -20,7 +20,7 @@ public class DelegatingProxyAopProxy_Test extends TCTestCase {
 
   public DelegatingProxyAopProxy_Test(String name) {
     super(name);
-    disableAllUntil("2008-09-18");  // XXX timebombed
+    disableAllUntil("2008-10-18");  // XXX timebombed
   }
 
   public static void testBeforeAdvice() {

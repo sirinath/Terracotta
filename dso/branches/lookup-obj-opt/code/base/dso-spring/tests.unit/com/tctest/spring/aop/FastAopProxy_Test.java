@@ -23,7 +23,7 @@ public class FastAopProxy_Test extends TCTestCase {
   FastAopProxy     fastProxy          = null;
 
   public FastAopProxy_Test() {
-    disableAllUntil("2008-09-18"); // XXX timebombed
+    disableAllUntil("2008-10-18"); // XXX timebombed
   }
 
   public void setUp() {
