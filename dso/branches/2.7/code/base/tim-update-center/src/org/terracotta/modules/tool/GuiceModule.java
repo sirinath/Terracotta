@@ -5,6 +5,7 @@ package org.terracotta.modules.tool;
 
 import org.terracotta.modules.tool.commands.CommandRegistry;
 import org.terracotta.modules.tool.config.Config;
+import org.terracotta.modules.tool.config.IgnoreSnapshots;
 import org.terracotta.modules.tool.config.TerracottaVersion;
 import org.terracotta.modules.tool.util.DataLoader;
 import org.terracotta.modules.tool.util.DataLoader.CacheRefreshPolicy;
@@ -37,6 +38,9 @@ public class GuiceModule implements Module {
   public void configure(Binder binder) {
     // Inject the tcVersion anywhere the @TerracottaVersion annotation is used
     binder.bindConstant().annotatedWith(TerracottaVersion.class).to(config.getTcVersion());
+
+    // Inject the ignoreSnapshots anywhere the @TerracottaVersion annotation is used
+    binder.bindConstant().annotatedWith(IgnoreSnapshots.class).to(config.getIgnoreSnapshots());
 
     // Make our Config object available to anybody that needs it
     binder.bind(Config.class).in(Scopes.SINGLETON);

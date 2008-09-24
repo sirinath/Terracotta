@@ -8,6 +8,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
+import org.terracotta.modules.tool.config.IgnoreSnapshots;
 import org.terracotta.modules.tool.config.TerracottaVersion;
 import org.terracotta.modules.tool.util.DataLoader;
 
@@ -32,18 +33,22 @@ class CachedModules implements Modules {
 
   private final String          tcVersion;
   private final DataLoader      dataLoader;
+  
+  private final boolean ignoreSnapshots;
 
-  public CachedModules(@TerracottaVersion String tcVersion, InputStream dataInputStream) throws JDOMException,
+  public CachedModules(@TerracottaVersion String tcVersion, @IgnoreSnapshots boolean ignoreSnapshots, InputStream dataInputStream) throws JDOMException,
       IOException {
     this.tcVersion = tcVersion;
     this.dataLoader = null;
+    this.ignoreSnapshots = ignoreSnapshots;
     loadData(dataInputStream);
   }
 
   @Inject
-  public CachedModules(@TerracottaVersion String tcVersion, DataLoader dataLoader) throws JDOMException, IOException {
+  public CachedModules(@TerracottaVersion String tcVersion, @IgnoreSnapshots boolean ignoreSnapshots,  DataLoader dataLoader) throws JDOMException, IOException {
     this.tcVersion = tcVersion;
     this.dataLoader = dataLoader;
+    this.ignoreSnapshots = ignoreSnapshots;
     loadData(new FileInputStream(this.dataLoader.getDataFile()));
   }
 
@@ -75,14 +80,15 @@ class CachedModules implements Modules {
   }
 
   public List<Module> list() {
-    if (this.qualifiedModules != null) return this.qualifiedModules;
+    if (qualifiedModules != null) return qualifiedModules;
     
     List<Module> list = new ArrayList<Module>();
-    for(Module module : this.modules.values()) {
+    for(Module module : modules.values()) {
+      if (ignoreSnapshots && module.getId().getVersion().endsWith("-SNAPSHOT")) continue;
       if (qualify(module)) list.add(module);
     }
     Collections.sort(list);
-    this.qualifiedModules = list;
+    qualifiedModules = list;
     return list;
   }
 
