@@ -116,7 +116,7 @@ public class CachedModulesTest extends TestCase {
     try {
       InputStream data = this.getClass().getResourceAsStream(file);
       assertNotNull(data);
-      return new CachedModules(tcversion, false, data);
+      return new CachedModules(tcversion, true, data);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
