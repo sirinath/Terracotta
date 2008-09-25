@@ -17,6 +17,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @BindingAnnotation
-public @interface IgnoreSnapshots {
+public @interface IncludeSnapshots {
   // Marker annotation for use with Guice
 }
