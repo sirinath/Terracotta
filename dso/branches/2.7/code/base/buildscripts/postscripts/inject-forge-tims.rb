@@ -22,11 +22,16 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
         !line.index(entry) 
       }
       data = output.last
-      data.gsub!(/[()]/, '')
-      data = data.split
-      data.shift
-      tims[data.first] = data.last
+      unless data.nil?
+        data.gsub!(/[()]/, '')
+        data = data.split
+        data.shift
+        tims[data.first] = data.last
+      end
     end
+
+    puts "WARNING: Unable to locate all of the TIMs listed in the distribution config - only some TIM info will be injected." if !tims.empty? && timnames.size != tims.size
+    puts "WARNING: Unable to locate any TIMs - no TIM info will be injected." if tims.empty?
 
     dirnames = args[1]['dest']
     dirnames.each do |entry|
