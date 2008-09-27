@@ -32,7 +32,7 @@ public class TestObjectRequestManager implements ObjectRequestManager {
 
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                          boolean isServerInitiated) {
+                          boolean isServerInitiated, int maxRequestDepth) {
    //not implemented
   }
 

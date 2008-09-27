@@ -214,8 +214,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     // on resend. Since the only way we request for more than one ObjectID in 1 message is when someone initiate
     // non-blocking lookups. So if we loose those requests on restart it is still ok.
     this.outstandingObjectRequests.put(id, ctxt);
-    System.out.println("CLIENT " + ctxt.getClientID() + " REQUESTED: Request object requested: " + id);
-    		
+    
     rmom.send();
     requestMonitor.notifyObjectRequest(ctxt);
   }
@@ -319,10 +318,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
   private void basicAddObject(DNA dna) {
     dnaRequests.put(dna.getObjectID(), dna);
-    Object obj = outstandingObjectRequests.remove(dna.getObjectID());
-    if(obj != null) {
-      System.out.println("CLIENT " + cip.getClientID() +  " FULLFILLED: Request object fullfilled: " + dna.getObjectID());
-    }
+    outstandingObjectRequests.remove(dna.getObjectID());
   }
 
   public synchronized void removed(ObjectID id) {

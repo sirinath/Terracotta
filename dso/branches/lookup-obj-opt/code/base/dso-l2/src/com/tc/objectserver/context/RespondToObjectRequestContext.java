@@ -22,4 +22,5 @@ public interface RespondToObjectRequestContext extends EventContext {
 
   public boolean isServerInitiated();
 
+  public int getRequestDepth();
 }
