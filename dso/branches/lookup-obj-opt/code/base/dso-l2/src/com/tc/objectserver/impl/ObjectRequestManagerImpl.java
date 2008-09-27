@@ -38,15 +38,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  //TODO read from l2 property
-  private static final int               MAX_OBJECTS_TO_LOOKUP = 50;
+  // TODO read from l2 property
+  public static final int                MAX_OBJECTS_TO_LOOKUP = 5;
 
   private final static TCLogger          logger                = TCLogging.getLogger(ObjectRequestManagerImpl.class);
 
@@ -113,9 +115,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
   }
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                          boolean isServerInitiated) {
+                          boolean isServerInitiated, int maxRequestDepth) {
 
-    basicSendObjects(requestedNodeID, objs, requestedObjectIDs, missingObjectIDs, isServerInitiated);
+    basicSendObjects(requestedNodeID, objs, requestedObjectIDs, missingObjectIDs, isServerInitiated, maxRequestDepth);
   }
 
   public synchronized void addResentServerTransactionIDs(Collection sTxIDs) {
@@ -184,36 +186,55 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   private void basicRequestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
                                    boolean serverInitiated, String requestingThreadName) {
-    Set lookupIDs = new HashSet();
- 
+    TreeSet<ObjectID> sortedIDs = new TreeSet<ObjectID>();
+    TreeSet<ObjectID> split = new TreeSet<ObjectID>();
+
     synchronized (this) {
+      int splitIndex = 1;
       for (Iterator iter = ids.iterator(); iter.hasNext();) {
-        ObjectID id = (ObjectID) iter.next();
-        if (objectRequestCache.add(clientID, id)) {
-          System.out.println("SERVER " + clientID + " LOOKUP id: " + id );
-          lookupIDs.add(id);
+        sortedIDs.add((ObjectID) iter.next());
+      }
+
+      for (Iterator iter = sortedIDs.iterator(); iter.hasNext();) {
+        split.add((ObjectID) iter.next());
+        if (splitIndex == MAX_OBJECTS_TO_LOOKUP) {
+          RequestedObject reqObj = new RequestedObject(split, maxRequestDepth);
+          if (objectRequestCache.add(reqObj, clientID)) {
+            LookupContext lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth,
+                                                            requestingThreadName, serverInitiated,
+                                                            respondObjectRequestSink);
+
+            objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
+          }
+          splitIndex = 0;
+          split = new TreeSet<ObjectID>();
+        }
+        splitIndex++;
+      }
+      if (split.size() > 0) {
+        RequestedObject reqObj = new RequestedObject(split, maxRequestDepth);
+        if (objectRequestCache.add(reqObj, clientID)) {
+          LookupContext lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth,
+                                                          requestingThreadName, serverInitiated,
+                                                          respondObjectRequestSink);
+
+          objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
         }
       }
-    }
-    if (lookupIDs.size() > 0) {
-      LookupContext lookupContext = new LookupContext(this, clientID, requestID, lookupIDs, maxRequestDepth,
-                                                      requestingThreadName, serverInitiated, respondObjectRequestSink);
-      
-      objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
     }
   }
 
   private void basicSendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs,
-                                Set missingObjectIDs, boolean isServerInitiated) {
-    
+                                Set missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
+
     Map messageMap = new HashMap();
+
     Map clientObjectIDMap = new HashMap();
-    Map clientNewIDsMap = new HashMap();
+    Map clientNewIDsMap = new HashMap(); // will contain the object which are not present in the client out of the
+    // returned ones
 
     LinkedList objectsInOrder = new LinkedList();
     try {
-
-      long batchID = batchIDSequence.next();
 
       Set ids = new HashSet(Math.max((int) (objs.size() / .75f) + 1, 16));
       synchronized (this) {
@@ -227,82 +248,67 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           }
         }
 
-        // prepare clients
-        for (Iterator iter = objectRequestCache.clients().iterator(); iter.hasNext();) {
-          ClientID clientID = (ClientID) iter.next();
+        long batchID = batchIDSequence.next();
 
-          // clientID -> ids in request
-          clientObjectIDMap.put(clientID, objectRequestCache.ids(clientID));
+        // sort the requested Objects
+        TreeSet<ObjectID> sortedRequestedIDs = new TreeSet<ObjectID>();
+        for (Iterator iter = requestedObjectIDs.iterator(); iter.hasNext();) {
+          sortedRequestedIDs.add((ObjectID) iter.next());
+        }
+
+        RequestedObject reqObj = new RequestedObject(sortedRequestedIDs, maxRequestDepth);
+        LinkedHashSet<ClientID> clientList = this.objectRequestCache.getClientsForRequest(reqObj);
+
+        // prepare clients
+        for (Iterator iter = clientList.iterator(); iter.hasNext();) {
+          ClientID clientID = (ClientID) iter.next();
 
           Set newIds = stateManager.addReferences(clientID, ids);
           clientNewIDsMap.put(clientID, newIds);
-          
+
           // make batch and send object for each client.
           MessageChannel channel = channelManager.getActiveChannel(clientID);
           messageMap.put(clientID, new BatchAndSend(channel, batchID));
         }
 
-        // remove missing objects from cache
+        for (Iterator iter = objectsInOrder.iterator(); iter.hasNext();) {
+          ManagedObject mo = (ManagedObject) iter.next();
+
+          for (Iterator i = clientList.iterator(); i.hasNext();) {
+            ClientID clientID = (ClientID) i.next();
+            Set newIDs = (Set) clientNewIDsMap.get(clientID);
+            if (newIDs.contains(mo.getID())) {
+              BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
+
+              batchAndSend.sendObject(mo, iter.hasNext());
+              // remove this id from the new ID
+              newIDs.remove(mo.getID());
+            } else {
+              logger.info("Client " + clientID + " already contains " + mo.getID() + ". So not sending it.");
+            }
+          }
+          objectManager.releaseReadOnly(mo);
+        }
+        this.objectRequestCache.remove(reqObj);
+
         if (!missingObjectIDs.isEmpty()) {
-          objectRequestCache.remove(missingObjectIDs);
-        }
-
-        // remove found objects from cache, since we are going to send them
-        if (!ids.isEmpty()) {
-          objectRequestCache.remove(ids);
-        }
-
-      }
-
-      // Only send objects that are NOT already there in the client. Look at the comment below.
-
-      for (Iterator i = objectsInOrder.iterator(); i.hasNext();) {
-
-        ManagedObject m = (ManagedObject) i.next();
-        i.remove();
-        // We dont want to send any object twice to the client even the client requested it 'coz it only means
-        // that the object is on its way to the client. This is true because we process the removeObjectIDs and
-        // lookups in Order. Earlier the if condition used to look like ...
-        // if (ids.contains(m.getID()) || morc.getObjectIDs().contains(m.getID())) {}
-        Set currentRequestedIDs = (Set) clientObjectIDMap.get(requestedNodeID);
-        for (Iterator cIter = messageMap.keySet().iterator(); cIter.hasNext();) {
-          ClientID clientID = (ClientID) cIter.next();
-          Set requestedIDs = (Set) clientObjectIDMap.get(clientID);
-          Set newIds = (Set)clientNewIDsMap.get(clientID);
-          // does this id need to be sent to the client, and is it also an id that has been requested by the client
-          // 
-          if (newIds.contains(m.getID()) && (requestedNodeID.equals(clientID) || (requestedIDs.contains(m.getID()) || !currentRequestedIDs.contains(m.getID())))) {
-            
-            BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
-            
-            batchAndSend.sendObject(m, i.hasNext());
-//            requestedIDs.remove(m.getID());
-//            newIds.remove(m.getID());
-          } else if (requestedObjectIDs.contains(m.getID())) {
-           //
-          }
-        }
-        objectManager.releaseReadOnly(m);
-      }
-
-      if (!missingObjectIDs.isEmpty()) {
-        if (isServerInitiated) {
-          // This is a possible case where changes are flying in and server is initiating some lookups and the lookups
-          // go pending and in the meantime the changes made those looked up objects garbage and DGC removes those
-          // objects. Now we dont want to send those missing objects to clients. Its not really an issue as the clients
-          // should never lookup those objects, but still why send them ?
-          logger.warn("Server Initiated lookup. Ignoring Missing Objects : " + missingObjectIDs);
-        } else {
-          for (Iterator missingIterator = messageMap.keySet().iterator(); missingIterator.hasNext();) {
-            ClientID clientID = (ClientID) missingIterator.next();
-            BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
-            Set missingIDsForClient = (Set) clientObjectIDMap.get(clientID);
-            batchAndSend.sendMissingObjects(missingObjectIDs, missingIDsForClient);
-            logger.info("sending missing ids: + " + missingIDsForClient.size() + " , to client: " + clientID);
+          if (isServerInitiated) {
+            // This is a possible case where changes are flying in and server is initiating some lookups and the lookups
+            // go pending and in the meantime the changes made those looked up objects garbage and DGC removes those
+            // objects. Now we dont want to send those missing objects to clients. Its not really an issue as the
+            // clients should never lookup those objects, but still why send them ?
+            logger.warn("Server Initiated lookup. Ignoring Missing Objects : " + missingObjectIDs);
+          } else {
+            for (Iterator missingIterator = messageMap.keySet().iterator(); missingIterator.hasNext();) {
+              ClientID clientID = (ClientID) missingIterator.next();
+              BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
+              Set missingIDsForClient = (Set) clientObjectIDMap.get(clientID);
+              batchAndSend.sendMissingObjects(missingObjectIDs, missingIDsForClient);
+              logger.info("sending missing ids: + " + missingIDsForClient.size() + " , to client: " + clientID);
+            }
           }
         }
       }
-
     } catch (NoSuchChannelException e) {
       for (Iterator i = objectsInOrder.iterator(); i.hasNext();) {
         objectManager.releaseReadOnly((ManagedObject) i.next());
@@ -316,85 +322,108 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  protected synchronized int getObjectRequestCacheSize() {
-    return objectRequestCache.cacheSize();
+  protected synchronized int getTotalRequestedObjects() {
+    return objectRequestCache.numberOfRequestedObjects();
   }
 
   protected synchronized int getObjectRequestCacheClientSize() {
     return objectRequestCache.clientSize();
   }
 
-  protected static class ObjectRequestCache {
+  protected static class RequestedObject {
 
-    private Set objectRequestSet = new HashSet();
-    private Map objectRequestMap = new HashMap();
+    private final TreeSet<ObjectID> oIdSet;
 
-    protected int cacheSize() {
-      return objectRequestSet.size();
+    private final int               depth;
+
+    public RequestedObject(TreeSet<ObjectID> oIdSet, int depth) {
+      this.oIdSet = oIdSet;
+      this.depth = depth;
     }
 
-    protected int clientSize() {
+    public TreeSet<ObjectID> getOIdSet() {
+      return oIdSet;
+    }
+
+    public int getDepth() {
+      return depth;
+    }
+
+    public boolean equals(Object obj) {
+      RequestedObject reqObj = (RequestedObject) obj;
+      if (this.oIdSet.equals(reqObj.getOIdSet()) && this.depth == reqObj.getDepth()) { return true; }
+      return false;
+    }
+
+    public int hashCode() {
+      return this.oIdSet.hashCode();
+    }
+
+    public String toString() {
+      String msg = "";
+      for (Iterator iter = this.oIdSet.iterator(); iter.hasNext();) {
+        msg += " Object: " + iter.next();
+      }
+      return msg;
+    }
+  }
+
+  protected static class ObjectRequestCache {
+
+    private Map<RequestedObject, LinkedHashSet<ClientID>> objectRequestMap = new HashMap();
+
+    protected int numberOfRequestedObjects() {
+      int val = 0;
+      for (Iterator iter = this.objectRequestMap.keySet().iterator(); iter.hasNext();) {
+        val += ((RequestedObject) iter.next()).getOIdSet().size();
+      }
+      return val;
+    }
+
+    protected int cacheSize() {
       return objectRequestMap.size();
     }
 
-    public boolean add(ClientID clientID, ObjectID id) {
+    protected int clientSize() {
+      return clients().size();
+    }
+
+    public boolean add(RequestedObject reqObjects, ClientID clientID) {
       // check already been requested.
-      
-      boolean notInCache = objectRequestSet.add(id);
 
-      System.out.println("SERVER: CHECK CACHE " + clientID + " DID NOT EXIST: " + notInCache + " ID: " + id);
-      Set ids = (Set) objectRequestMap.get(clientID);
-      if (ids == null) {
-        objectRequestMap.put(clientID, (ids = new HashSet()));
+      LinkedHashSet<ClientID> clientList = this.objectRequestMap.get(reqObjects);
+      if (clientList == null) {
+        clientList = new LinkedHashSet<ClientID>();
+        clientList.add(clientID);
+        this.objectRequestMap.put(reqObjects, clientList);
+        return true;
+      } else {
+        clientList.add(clientID);
+        return false;
       }
-      ids.add(id);
+    }
 
-      return notInCache;
+    public boolean contains(RequestedObject reqObj) {
+      return this.objectRequestMap.containsKey(reqObj);
     }
 
     public Set clients() {
-      Set clients = new HashSet();
+      Set clients = new LinkedHashSet();
       for (Iterator i = objectRequestMap.keySet().iterator(); i.hasNext();) {
-        ClientID clientID = (ClientID) i.next();
-        clients.add(clientID);
+        LinkedHashSet<ClientID> clientList = this.objectRequestMap.get(i.next());
+        clients.addAll(clientList);
       }
       return clients;
     }
 
-    public Set ids(ClientID id) {
-      Set set = new HashSet();
-
-      if (objectRequestMap.containsKey(id)) {
-        Iterator iter = ((Set) objectRequestMap.get(id)).iterator();
-        for (; iter.hasNext();) {
-          ObjectID oid = (ObjectID)iter.next();
-          set.add(oid);
-        }
-      }
-      return set;
+    public LinkedHashSet<ClientID> getClientsForRequest(RequestedObject reqObj) {
+      return this.objectRequestMap.get(reqObj);
     }
 
-    public void remove(Set ids) {
-      for (Iterator i = ids.iterator(); i.hasNext();) {
-        remove((ObjectID)i.next());
-      }
-    }
-
-    private void remove(ObjectID oid) {
-
-      for (Iterator i = objectRequestMap.keySet().iterator(); i.hasNext();) {
-        ClientID clientID = (ClientID) i.next();
-        Set ids = (Set) objectRequestMap.get(clientID);
-        ids.remove(oid);
-        if (ids.size() < 1) {
-          i.remove();
-        }
-      }
-      objectRequestSet.remove(oid);
-
+    public void remove(RequestedObject reqObj) {
+      this.objectRequestMap.remove(reqObj);
     }
   }
-  
 
   protected static class BatchAndSend {
 
@@ -527,7 +556,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             .getLookupPendingObjectIDs(), -1, true, this.requestingThreadName);
       }
       ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.lookupIDs,
-                                                            this.missingObjects, this.serverInitiated);
+                                                            this.missingObjects, this.serverInitiated,
+                                                            this.maxRequestDepth);
       respondObjectRequestSink.add(responseContext);
       if (logger.isDebugEnabled()) {
         logger.debug("adding to respondSink , clientID = " + clientID + " , requestID = " + requestID + " "
@@ -582,13 +612,16 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     private boolean    serverInitiated;
 
+    private final int  maxRequestDepth;
+
     public ResponseContext(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                           boolean serverInitiated) {
+                           boolean serverInitiated, int maxDepth) {
       this.requestedNodeID = requestedNodeID;
       this.objs = objs;
       this.requestedObjectIDs = requestedObjectIDs;
       this.missingObjectIDs = missingObjectIDs;
       this.serverInitiated = serverInitiated;
+      this.maxRequestDepth = maxDepth;
     }
 
     public ClientID getRequestedNodeID() {
@@ -609,6 +642,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     public boolean isServerInitiated() {
       return serverInitiated;
+    }
+
+    public int getRequestDepth() {
+      return maxRequestDepth;
     }
 
     @Override

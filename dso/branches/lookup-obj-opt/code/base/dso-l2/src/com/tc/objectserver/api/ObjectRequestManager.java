@@ -16,7 +16,7 @@ public interface ObjectRequestManager {
                              boolean serverInitiated, String requestingThreadName);
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                          boolean isServerInitiated);
+                          boolean isServerInitiated, int maxRequestDepth);
   
   public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
                                                          int maxRequestDepth, boolean serverInitiated,

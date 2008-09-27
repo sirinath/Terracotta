@@ -31,22 +31,21 @@ import java.util.Set;
  */
 public class ManagedObjectRequestHandler extends AbstractEventHandler {
 
-  private ClientStateManager         stateManager;
-  private ChannelStats               channelStats;
+  private ClientStateManager    stateManager;
+  private ChannelStats          channelStats;
 
-  private final Counter              globalObjectRequestCounter;
-  private final Counter              globalObjectFlushCounter;
-  private ObjectRequestManager objectRequestManager;
+  private final Counter         globalObjectRequestCounter;
+  private final Counter         globalObjectFlushCounter;
+  private ObjectRequestManager  objectRequestManager;
 
-  private static final TCLogger      logger = TCLogging.getLogger(ManagedObjectRequestHandler.class);
+  private static final TCLogger logger = TCLogging.getLogger(ManagedObjectRequestHandler.class);
 
   public ManagedObjectRequestHandler(Counter globalObjectRequestCounter, Counter globalObjectFlushCounter) {
     this.globalObjectRequestCounter = globalObjectRequestCounter;
     this.globalObjectFlushCounter = globalObjectFlushCounter;
-   }
+  }
 
   public void handleEvent(EventContext context) {
-    System.out.println("");
     if (context instanceof RequestManagedObjectMessage) {
       handleEventFromClient((RequestManagedObjectMessage) context);
     } else if (context instanceof ObjectManagerRequestContext) {
