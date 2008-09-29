@@ -15,11 +15,11 @@ public class TestObjectFactory implements TCObjectFactory {
     return;
   }
 
-  public TCObject getNewInstance(ObjectID id, Object peer, Class clazz, boolean isNew) {
+  public TCObject getNewInstance(ObjectID id, Object peer, TCObject tcoContext, Class clazz, boolean isNew) {
     return tcObject;
   }
 
-  public TCObject getNewInstance(ObjectID id, Class clazz, boolean isNew) {
+  public TCObject getNewInstance(ObjectID id, TCObject tcoContext, Class clazz, boolean isNew) {
     return tcObject;
   }
 
@@ -35,7 +35,7 @@ public class TestObjectFactory implements TCObjectFactory {
    return peerObject;
   }
 
-  public Object getNewPeerObject(TCClass type, DNA dna) {
+  public Object getNewPeerObject(TCClass type, TCObject tcoContext, DNA dna) {
     return peerObject;
   }
 

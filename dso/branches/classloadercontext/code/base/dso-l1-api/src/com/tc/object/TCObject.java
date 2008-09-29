@@ -7,6 +7,7 @@ package com.tc.object;
 import com.tc.object.cache.Cacheable;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.util.ToggleableStrongReference;
 
 import gnu.trove.TLinkable;
@@ -71,6 +72,17 @@ public interface TCObject extends Cacheable {
    * @return The TCClass for this TCObject. The TCClass is a peer of the Class of the peer Object.
    */
   public TCClass getTCClass();
+  
+  /**
+   * @return The ClassloaderContext associated with this TCObject.  The ClassloaderContext keeps track
+   * of various classloaders that might be involved with creation of this object.
+   */
+  public ClassloaderContext getClassloaderContext();
+
+  /**
+   * Set the classloader context.
+   */
+  public void setClassloaderContext(ClassloaderContext classloaderContext);
 
   /**
    * Clear memory references up to toClear limit
@@ -356,5 +368,22 @@ public interface TCObject extends Cacheable {
    * Dehydate the entire state of the peer object to the given writer
    */
   public void dehydrate(DNAWriter writer);
+
+  /**
+   * Propagate information through the distributed object graph, from an existing TCObject to this one. The information
+   * propagated is not specified, but an example might be classloader context that is ultimately derived from a root.
+   * This method will be called whenever an object is added to the existing distributed object graph.
+   * <p>
+   * TODO: Should this method be guaranteed to only be called when an object is first added to the graph, or may it be
+   * called at other times (e.g., every time an object is referenced, or every time it is assigned to a field of a
+   * distributed object, or ...)? If it may be called multiple times, then a TCObject may be the target of multiple,
+   * potentially conflicting, propagateFrom() requests, and in this case it is not specified which one will succeed.
+   * <p>
+   * TODO: if this method is only called once, when a new TCObject is added to the graph, then perhaps TCObject
+   * constructors should just take a TCObject, and do the propagation then (in which case 'null' would have to be valid). 
+   * 
+   * @param existing must be non-null.
+   */
+  public void propagateFrom(TCObject existing);
 
 }

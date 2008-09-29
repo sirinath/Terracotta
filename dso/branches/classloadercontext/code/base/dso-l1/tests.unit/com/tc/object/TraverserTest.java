@@ -27,23 +27,25 @@ public class TraverserTest extends BaseDSOTestCase {
     TestB tb1 = new TestB(ta1, null, ta1, null);
     TestA ta2 = new TestA(ta1, tb1);
     final ArrayList results = new ArrayList();
-    new Traverser(new TraversalAction() {
-      public void visit(List objects) {
+    Traverser ta2Traverser = new Traverser(new TraversalAction() {
+      public void visit(List objects, Object v) {
         System.out.println("Adding:" + objects);
         results.addAll(objects);
       }
-    }, new TestPortableObjectProvider()).traverse(ta2);
+    }, new TestPortableObjectProvider());
+    ta2Traverser.traverse(ta2, null);
     assertTrue("Expected 3 but got:" + results.size(), results.size() == 3);
     assertTrue(results.contains(ta1));
     assertTrue(results.contains(ta2));
     assertTrue(results.contains(tb1));
 
     String[] strings = new String[] { "one", "two", "three" };
-    new Traverser(new TraversalAction() {
-      public void visit(List objects) {
+    Traverser stringsTraverser = new Traverser(new TraversalAction() {
+      public void visit(List objects, Object v) {
         results.add(objects);
       }
-    }, new TestPortableObjectProvider()).traverse(strings);
+    }, new TestPortableObjectProvider());
+    stringsTraverser.traverse(strings, null);
 
     // Test stack overflows don't happen
     final LinkedList list = new LinkedList();
@@ -52,11 +54,12 @@ public class TraverserTest extends BaseDSOTestCase {
       list.add(new Object());
     }
     try {
-      new Traverser(new TraversalAction() {
-        public void visit(List objects) {
+      Traverser listTraverser = new Traverser(new TraversalAction() {
+        public void visit(List objects, Object v) {
           //
         }
-      }, new TestPortableObjectProvider()).traverse(list);
+      }, new TestPortableObjectProvider());
+      listTraverser.traverse(list, null);
       System.out.println("Traversed");
       assertTrue(true);
     } catch (StackOverflowError e) {

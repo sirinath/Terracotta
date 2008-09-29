@@ -12,6 +12,7 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.FieldUtils;
 
@@ -42,7 +43,8 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object pojo) throws IOException,
       ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       Object action = cursor.getAction();
       if (action instanceof PhysicalAction) {
         PhysicalAction physicalAction = (PhysicalAction) action;
@@ -52,7 +54,7 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
         LogicalAction logicalAction = (LogicalAction) action;
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
-        apply(objectManager, pojo, method, params);
+        apply(objectManager, tcObject, pojo, method, params);
       }
     }
   }
@@ -65,13 +67,13 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
     }
   }
 
-  protected void apply(ClientObjectManager objectManager, Object pojo, int method, Object[] params) throws ClassNotFoundException {
+  protected void apply(ClientObjectManager objectManager, TCObject tcoRequestor, Object pojo, int method, Object[] params) throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.GET:
         ((LinkedHashMap) pojo).get(params[0]);
         break;
       default:
-        super.apply(objectManager, pojo, method, params);
+        super.apply(objectManager, tcoRequestor, pojo, method, params);
     }
   }
 
@@ -88,9 +90,9 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
     super.dehydrate(objectManager, tcObject, writer, pojo);
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, ClassloaderContext requestorContext, DNA dna) throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
-    if (!cursor.next(encoding)) { throw new AssertionError(
+    if (!cursor.next(encoding, requestorContext)) { throw new AssertionError(
                                                            "Cursor is empty in LinkedHashMapApplicator.getNewInstance()"); }
     PhysicalAction physicalAction = cursor.getPhysicalAction();
 

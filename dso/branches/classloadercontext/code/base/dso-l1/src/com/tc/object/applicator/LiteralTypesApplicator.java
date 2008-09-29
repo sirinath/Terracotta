@@ -13,6 +13,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LiteralAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -33,7 +34,8 @@ public class LiteralTypesApplicator extends BaseApplicator {
       ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       LiteralAction a = (LiteralAction) cursor.getAction();
       Object value = a.getObject();
 
@@ -46,11 +48,12 @@ public class LiteralTypesApplicator extends BaseApplicator {
     writer.addLiteralValue(pojo);
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     Assert.assertEquals(1, cursor.getActionCount());
 
-    cursor.next(encoding);
+    ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
+    cursor.next(encoding, requestorContext);
     LiteralAction a = (LiteralAction) cursor.getAction();
     Object value = a.getObject();
 

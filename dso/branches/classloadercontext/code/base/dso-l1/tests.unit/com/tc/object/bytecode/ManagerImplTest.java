@@ -16,7 +16,8 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
-import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.loaders.ClassloaderContext;
+import com.tc.object.loaders.StandardClassLoaderRegistry;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
@@ -41,7 +42,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
     ClientObjectManager objMgr = new ObjMgr();
     ClientTransactionManager txnMgr = new TxnMgr();
 
-    Manager manager = new ManagerImpl(false, objMgr, txnMgr, this.configHelper(), new StandardClassProvider(), null);
+    Manager manager = new ManagerImpl(false, objMgr, txnMgr, this.configHelper(), new StandardClassLoaderRegistry(), null);
 
     manager.monitorEnter(getClass(), Manager.LOCK_TYPE_WRITE);
 
@@ -196,7 +197,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
   private static class ObjMgr implements ClientObjectManager {
 
-    public Class getClassFor(String className, String loaderDesc) {
+    public Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) {
       throw new ImplementMe();
     }
 
@@ -225,15 +226,15 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public Object lookupObject(ObjectID id) {
+    public Object lookupObject(ObjectID id, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 
-    public Object lookupObject(ObjectID id, ObjectID parentContext) {
+    public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 
-    public TCObject lookupOrCreate(Object obj) {
+    public TCObject lookupOrCreate(Object obj, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 
@@ -253,7 +254,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public TCObject lookup(ObjectID id) {
+    public TCObject lookup(ObjectID id, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 
@@ -265,11 +266,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public WeakReference createNewPeer(TCClass clazz, DNA dna) {
+    public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, DNA dna) {
       throw new ImplementMe();
     }
 
-    public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID) {
+    public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, int size, ObjectID id, ObjectID parentID) {
       throw new ImplementMe();
     }
 
@@ -314,7 +315,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public TCObject lookupOrShare(Object pojo) {
+    public TCObject lookupOrShare(Object pojo, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 
@@ -331,7 +332,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public Object lookupObjectNoDepth(ObjectID id) {
+    public Object lookupObjectNoDepth(ObjectID id, TCObject tcoRequestor) {
       throw new ImplementMe();
     }
 

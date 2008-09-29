@@ -15,6 +15,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.persistence.impl.InMemoryPersistor;
 import com.tc.util.Assert;
@@ -307,7 +308,7 @@ public abstract class AbstractTestManagedObjectState extends TestCase {
       return (PhysicalAction) actions.get(current);
     }
 
-    public boolean next(DNAEncoding encoding) {
+    public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
       throw new ImplementMe();
     }
 

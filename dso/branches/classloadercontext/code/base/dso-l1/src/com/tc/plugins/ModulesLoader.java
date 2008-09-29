@@ -25,7 +25,7 @@ import com.tc.object.config.ConfigLoader;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.ModuleSpec;
 import com.tc.object.config.StandardDSOClientConfigHelper;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.util.JarResourceLoader;
@@ -85,7 +85,8 @@ public class ModulesLoader {
     // cannot be instantiated
   }
 
-  public static void initModules(final DSOClientConfigHelper configHelper, final ClassProvider classProvider,
+  public static void initModules(final DSOClientConfigHelper configHelper, 
+                                 final ClassLoaderRegistry classProviderContext,
                                  final boolean forBootJar) throws Exception {
     EmbeddedOSGiRuntime osgiRuntime = null;
     synchronized (lock) {
@@ -97,7 +98,7 @@ public class ModulesLoader {
 
       try {
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), forBootJar);
+        initModules(osgiRuntime, configHelper, classProviderContext, modules.getModuleArray(), forBootJar);
         if (!forBootJar) {
           getModulesCustomApplicatorSpecs(osgiRuntime, configHelper);
         }
@@ -122,7 +123,7 @@ public class ModulesLoader {
   }
 
   static void initModules(final EmbeddedOSGiRuntime osgiRuntime, final DSOClientConfigHelper configHelper,
-                          final ClassProvider classProvider, final Module[] modules, final boolean forBootJar)
+                          final ClassLoaderRegistry classProviderContext, final Module[] modules, final boolean forBootJar)
       throws BundleException {
 
     if (configHelper instanceof StandardDSOClientConfigHelper) {
@@ -138,7 +139,7 @@ public class ModulesLoader {
         Assert.assertTrue(payload instanceof Bundle);
         Bundle bundle = (Bundle) payload;
         if (bundle != null) {
-          if (!forBootJar) registerClassLoader(classProvider, bundle);
+          if (!forBootJar) registerClassLoader(classProviderContext, bundle);
           loadConfiguration(configHelper, bundle);
         }
       }
@@ -207,13 +208,13 @@ public class ModulesLoader {
     return modules;
   }
 
-  private static void registerClassLoader(final ClassProvider classProvider, final Bundle bundle)
+  private static void registerClassLoader(final ClassLoaderRegistry classProviderContext, final Bundle bundle)
       throws BundleException {
     NamedClassLoader ncl = getClassLoader(bundle);
 
     String loaderName = Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, ncl.toString());
     ncl.__tc_setClassLoaderName(loaderName);
-    classProvider.registerNamedLoader(ncl);
+    classProviderContext.registerNamedLoader(ncl);
   }
 
   private static NamedClassLoader getClassLoader(Bundle bundle) throws BundleException {

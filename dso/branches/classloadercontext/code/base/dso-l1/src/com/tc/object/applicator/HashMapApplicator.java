@@ -15,6 +15,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -50,25 +51,27 @@ public class HashMapApplicator extends BaseApplicator {
   public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
+    
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
 
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, requestorContext)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      apply(objectManager, po, method, params);
+      apply(objectManager, tcObject, po, method, params);
     }
   }
 
-  protected void apply(ClientObjectManager objectManager, Object po, int method, Object[] params)
+  protected void apply(ClientObjectManager objectManager, TCObject tcoRequestor, Object po, int method, Object[] params)
       throws ClassNotFoundException {
     Map m = (Map) po;
     switch (method) {
       case SerializationUtil.PUT:
         Object k = getKey(params);
         Object v = getValue(params);
-        Object pkey = getObjectForKey(objectManager, k);
+        Object pkey = getObjectForKey(objectManager, tcoRequestor, k);
 
-        Object value = getObjectForValue(objectManager, v);
+        Object value = getObjectForValue(objectManager, tcoRequestor, v);
 
         if (m instanceof TCMap) {
           ((TCMap) m).__tc_applicator_put(pkey, value);
@@ -78,7 +81,7 @@ public class HashMapApplicator extends BaseApplicator {
 
         break;
       case SerializationUtil.REMOVE:
-        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
+        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0], tcoRequestor) : params[0];
         if (m instanceof TCMap) {
           ((TCMap) m).__tc_applicator_remove(rkey);
         } else {
@@ -99,13 +102,13 @@ public class HashMapApplicator extends BaseApplicator {
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForValue(ClientObjectManager objectManager, Object v) throws ClassNotFoundException {
-    return (v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v);
+  protected Object getObjectForValue(ClientObjectManager objectManager, TCObject tcoRequestor, Object v) throws ClassNotFoundException {
+    return (v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v, tcoRequestor) : v);
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForKey(ClientObjectManager objectManager, Object k) throws ClassNotFoundException {
-    return (k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k);
+  protected Object getObjectForKey(ClientObjectManager objectManager, TCObject tcoRequestor, Object k) throws ClassNotFoundException {
+    return (k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k, tcoRequestor) : k);
   }
 
   private Object getValue(Object[] params) {
@@ -143,7 +146,7 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
     if (false) { throw new IOException(); } // silence compiler warning
     if (false) { throw new ClassNotFoundException(); } // silence compiler warning
     throw new UnsupportedOperationException();

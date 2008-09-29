@@ -16,6 +16,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.field.TCField;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -57,7 +58,8 @@ public class PhysicalApplicator extends BaseApplicator {
     String fieldName;
     Object fieldValue;
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       PhysicalAction a = cursor.getPhysicalAction();
       Assert.eval(a.isTruePhysical());
       fieldName = a.getFieldName();
@@ -127,7 +129,7 @@ public class PhysicalApplicator extends BaseApplicator {
 
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

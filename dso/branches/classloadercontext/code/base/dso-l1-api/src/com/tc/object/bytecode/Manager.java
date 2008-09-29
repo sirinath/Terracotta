@@ -146,20 +146,23 @@ public interface Manager {
    * Look up object by ID, faulting into the JVM if necessary
    * 
    * @param id Object identifier
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The actual object
    */
-  public Object lookupObject(ObjectID id) throws ClassNotFoundException;
+  public Object lookupObject(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
    * more intelligent prefetching is possible at the L2.
    * 
    * @param id Object identifier of the object we are looking up
-   * @param parentContext Object identifier of the parent object
+   * @param parentContext Object identifier of the containing class instance, if the object is
+   * an instance of a non-static inner class.
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The actual object
    * @throws TCClassNotFoundException If a class is not found during faulting
    */
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException;
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Find managed object, which may be null
@@ -173,15 +176,17 @@ public interface Manager {
    * Find or create new TCObject
    * 
    * @param obj The object instance
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The TCObject
    */
-  public TCObject lookupOrCreate(Object obj);
+  public TCObject lookupOrCreate(Object obj, TCObject tcoRequestor);
 
   /**
    * @param pojo Object instance
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return TCObject for pojo
    */
-  public TCObject shareObjectIfNecessary(Object pojo);
+  public TCObject shareObjectIfNecessary(Object pojo, TCObject tcoRequestor);
 
   /**
    * Perform notify on obj

@@ -14,6 +14,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,28 +36,29 @@ public class HashSetApplicator extends BaseApplicator {
     Set set = (Set) pojo;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      apply(objectManager, set, method, params);
+      apply(objectManager, tcObject, set, method, params);
     }
   }
 
-  protected void apply(ClientObjectManager objectManager, Set set, int method, Object[] params)
+  protected void apply(ClientObjectManager objectManager, TCObject tcoRequestor, Set set, int method, Object[] params)
       throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.ADD:
         Object v = params[0];
-        Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
+        Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v, tcoRequestor) : v;
         set.add(value);
         break;
       case SerializationUtil.REMOVE:
-        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
+        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0], tcoRequestor) : params[0];
         set.remove(rkey);
         break;
       case SerializationUtil.REMOVE_ALL:
-        set.removeAll(getObjectParams(objectManager, params));
+        set.removeAll(getObjectParams(objectManager, tcoRequestor, params));
         break;
       case SerializationUtil.CLEAR:
         set.clear();
@@ -66,11 +68,11 @@ public class HashSetApplicator extends BaseApplicator {
     }
   }
 
-  private List getObjectParams(ClientObjectManager objectManager, Object[] params) throws ClassNotFoundException {
+  private List getObjectParams(ClientObjectManager objectManager, TCObject tcoRequestor, Object[] params) throws ClassNotFoundException {
     List retParams = new ArrayList(params.length);
 
     for (int i = 0; i < params.length; i++) {
-      retParams.add(params[i] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[i]) : params[i]);
+      retParams.add(params[i] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[i], tcoRequestor) : params[i]);
     }
     return retParams;
   }
@@ -104,7 +106,7 @@ public class HashSetApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

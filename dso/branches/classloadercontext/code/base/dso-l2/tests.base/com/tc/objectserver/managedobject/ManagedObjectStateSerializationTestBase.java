@@ -16,6 +16,7 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.NullObjectInstanceMonitor;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -314,7 +315,7 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
       return (PhysicalAction) actions.get(current);
     }
 
-    public boolean next(DNAEncoding encoding) {
+    public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
       throw new ImplementMe();
     }
 

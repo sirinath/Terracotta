@@ -14,7 +14,9 @@ import com.tc.object.ObjectID;
 import com.tc.object.compression.CompressedData;
 import com.tc.object.compression.StringCompressionUtil;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.util.Assert;
@@ -106,15 +108,24 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
                                                                               .getInt(
                                                                                       TCPropertiesConsts.L1_TRANSACTIONMANAGER_STRINGS_COMPRESS_MINSIZE);
 
+  /**
+   * Used when decoding
+   */
   protected final ClassProvider      classProvider;
+  
+  /**
+   * Used when encoding
+   */
+  protected final ClassLoaderRegistry classLoaderRegistry;
 
   public BaseDNAEncodingImpl(ClassProvider classProvider) {
     this.classProvider = classProvider;
+    this.classLoaderRegistry = classProvider.getRegistry();
   }
 
   public void encodeClassLoader(ClassLoader value, TCDataOutput output) {
     output.writeByte(TYPE_ID_JAVA_LANG_CLASSLOADER);
-    writeString(classProvider.getLoaderDescriptionFor(value), output);
+    writeString(classLoaderRegistry.getLoaderDescriptionFor(value), output);
   }
 
   /**
@@ -160,7 +171,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
         output.writeByte(TYPE_ID_ENUM);
         Class enumClass = getEnumDeclaringClass(value);
         writeString(enumClass.getName(), output);
-        writeString(classProvider.getLoaderDescriptionFor(enumClass), output);
+        writeString(classLoaderRegistry.getLoaderDescriptionFor(enumClass.getClassLoader()), output);
 
         Object name = getEnumName(value);
         writeString((String) name, output);
@@ -180,7 +191,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS);
         Class c = (Class) value;
         writeString(c.getName(), output);
-        writeString(classProvider.getLoaderDescriptionFor(c), output);
+        writeString(classLoaderRegistry.getLoaderDescriptionFor(c.getClassLoader()), output);
         break;
       case LiteralValues.JAVA_LANG_CLASS_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS_HOLDER);
@@ -379,24 +390,24 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     return array;
   }
 
-  public Object decode(TCDataInput input) throws IOException, ClassNotFoundException {
+  public Object decode(TCDataInput input, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     final byte type = input.readByte();
 
     switch (type) {
       case TYPE_ID_CURRENCY:
         return readCurrency(input, type);
       case TYPE_ID_ENUM:
-        return readEnum(input, type);
+        return readEnum(input, type, requestorContext);
       case TYPE_ID_ENUM_HOLDER:
-        return readEnum(input, type);
+        return readEnum(input, type, requestorContext);
       case TYPE_ID_JAVA_LANG_CLASSLOADER:
         return readClassLoader(input, type);
       case TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER:
         return readClassLoader(input, type);
       case TYPE_ID_JAVA_LANG_CLASS:
-        return readClass(input, type);
+        return readClass(input, type, requestorContext);
       case TYPE_ID_JAVA_LANG_CLASS_HOLDER:
-        return readClass(input, type);
+        return readClass(input, type, requestorContext);
       case TYPE_ID_BOOLEAN:
         return new Boolean(input.readBoolean());
       case TYPE_ID_BYTE:
@@ -422,7 +433,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
       case TYPE_ID_REFERENCE:
         return new ObjectID(input.readLong());
       case TYPE_ID_ARRAY:
-        return decodeArray(input);
+        return decodeArray(input, requestorContext);
       case TYPE_ID_STACK_TRACE_ELEMENT:
         return readStackTraceElement(input);
       case TYPE_ID_BIG_INTEGER:
@@ -662,7 +673,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     }
   }
 
-  private Object decodeArray(TCDataInput input) throws IOException, ClassNotFoundException {
+  private Object decodeArray(TCDataInput input, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     final int len = input.readInt();
     if (len < 0) { return null; }
 
@@ -671,7 +682,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
       case ARRAY_TYPE_PRIMITIVE:
         return decodePrimitiveArray(len, input);
       case ARRAY_TYPE_NON_PRIMITIVE:
-        return decodeNonPrimitiveArray(len, input);
+        return decodeNonPrimitiveArray(len, input, requestorContext);
       default:
         throw Assert.failure("unknown array type: " + arrayType);
     }
@@ -679,11 +690,11 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     // unreachable
   }
 
-  private Object[] decodeNonPrimitiveArray(int len, TCDataInput input) throws IOException, ClassNotFoundException {
+  private Object[] decodeNonPrimitiveArray(int len, TCDataInput input, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     checkSize(Object.class, REF_WARN, len);
     Object[] rv = new Object[len];
     for (int i = 0, n = rv.length; i < n; i++) {
-      rv[i] = decode(input);
+      rv[i] = decode(input, requestorContext);
     }
 
     return rv;
@@ -839,13 +850,13 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     return Currency.getInstance(currencyCode);
   }
 
-  private Object readEnum(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
+  private Object readEnum(TCDataInput input, byte type, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
     byte[] data = readByteArray(input);
 
     if (useStringEnumRead(type)) {
-      Class enumType = new ClassInstance(name, def).asClass(classProvider);
+      Class enumType = new ClassInstance(name, def).asClass(classProvider, requestorContext);
 
       String enumName = new String(data, "UTF-8");
       return enumValueOf(enumType, enumName);
@@ -862,7 +873,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
     if (useClassProvider(type, TYPE_ID_JAVA_LANG_CLASSLOADER)) {
-      return new ClassLoaderInstance(def).asClassLoader(classProvider);
+      return new ClassLoaderInstance(def).asClassLoader(classLoaderRegistry);
     } else {
       return new ClassLoaderInstance(def);
     }
@@ -870,12 +881,12 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
 
   protected abstract boolean useClassProvider(byte type, byte typeToCheck);
 
-  private Object readClass(TCDataInput input, byte type) throws IOException, ClassNotFoundException {
+  private Object readClass(TCDataInput input, byte type, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(readByteArray(input));
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
     if (useClassProvider(type, TYPE_ID_JAVA_LANG_CLASS)) {
-      return new ClassInstance(name, def).asClass(classProvider);
+      return new ClassInstance(name, def).asClass(classProvider, requestorContext);
     } else {
       return new ClassInstance(name, def);
     }

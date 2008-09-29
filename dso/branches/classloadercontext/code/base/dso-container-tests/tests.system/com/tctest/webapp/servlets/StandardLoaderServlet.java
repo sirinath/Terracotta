@@ -49,7 +49,7 @@ public class StandardLoaderServlet extends HttpServlet {
 
     } else if (PUT_STANDARD_LOADER_OBJECT_INSTANCE.equals(cmd)) {
       synchronized (sharedMap) {
-        Object dummyObj = crateDummyObjectUsingSystemLoader();
+        Object dummyObj = createDummyObjectUsingSystemLoader();
         Assert.assertEquals("Object must be in standard class path", ClassLoader.getSystemClassLoader(), dummyObj
             .getClass().getClassLoader());
         sharedMap.put("3", dummyObj);
@@ -62,7 +62,7 @@ public class StandardLoaderServlet extends HttpServlet {
     }
   }
 
-  private Object crateDummyObjectUsingSystemLoader() {
+  private Object createDummyObjectUsingSystemLoader() {
     try {
       ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
       Class dummyClass = systemClassLoader.loadClass(StandardClasspathDummyClass.class.getName());

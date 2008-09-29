@@ -30,9 +30,9 @@ public class TCObjectImplTest extends BaseDSOTestCase {
     TestObject to2 = new TestObject("TestObject2", null);
     ObjectID id1 = new ObjectID(1);
     ObjectID id2 = new ObjectID(2);
-    objectManager.add(id2, new TCObjectPhysical(objectManager.getReferenceQueue(), id2, to2, clazz, false));
+    objectManager.add(id2, new TCObjectPhysical(objectManager.getReferenceQueue(), id2, to2, null, clazz, false));
 
-    TCObjectImpl tcObj = new TCObjectPhysical(objectManager.getReferenceQueue(), id1, to1, clazz, false);
+    TCObjectImpl tcObj = new TCObjectPhysical(objectManager.getReferenceQueue(), id1, to1, null, clazz, false);
     tcObj.resolveReference(TestObject.class.getName() + ".test1");
     tcObj.resolveReference(TestObject.class.getName() + ".test2");
     assertTrue(to1.test1 == null);// nothing should happen from that
@@ -198,7 +198,7 @@ public class TCObjectImplTest extends BaseDSOTestCase {
       return false;
     }
 
-    public TCObject createTCObject(ObjectID id, Object peer, boolean isNew) {
+    public TCObject createTCObject(ObjectID id, Object peer, TCObject tcoContext, boolean isNew) {
       throw new ImplementMe();
     }
 
@@ -223,7 +223,7 @@ public class TCObjectImplTest extends BaseDSOTestCase {
       return false;
     }
 
-    public Object getNewInstanceFromNonDefaultConstructor(DNA dna) {
+    public Object getNewInstanceFromNonDefaultConstructor(TCObject tcoContext, DNA dna) {
       return null;
     }
 

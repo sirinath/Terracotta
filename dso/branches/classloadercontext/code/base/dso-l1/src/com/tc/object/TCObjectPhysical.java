@@ -19,8 +19,8 @@ import java.util.Map;
 public class TCObjectPhysical extends TCObjectImpl {
   private Map references = null;
 
-  public TCObjectPhysical(ReferenceQueue queue, ObjectID id, Object peer, TCClass tcc, boolean isNew) {
-    super(queue, id, peer, tcc, isNew);
+  public TCObjectPhysical(ReferenceQueue queue, ObjectID id, Object peer, TCObject tcoContext, TCClass tcc, boolean isNew) {
+    super(queue, id, peer, tcoContext, tcc, isNew);
   }
 
   private Map getReferences() {
@@ -81,7 +81,7 @@ public class TCObjectPhysical extends TCObjectImpl {
     } else {
       Object o;
       try {
-        o = getObjectManager().lookupObject(id);
+        o = getObjectManager().lookupObject(id, this);
       } catch (ClassNotFoundException e) {
         throw new TCClassNotFoundException(e);
       }
@@ -130,7 +130,7 @@ public class TCObjectPhysical extends TCObjectImpl {
       Object setObject = null;
       if (!id.isNull()) {
         try {
-          setObject = getObjectManager().lookupObject(id);
+          setObject = getObjectManager().lookupObject(id, this);
         } catch (ClassNotFoundException e) {
           throw new TCClassNotFoundException(e);
         }

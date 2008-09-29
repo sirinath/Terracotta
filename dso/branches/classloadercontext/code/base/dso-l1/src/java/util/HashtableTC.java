@@ -228,10 +228,10 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
   }
 
-  private static Object wrapValueIfNecessary(Object value) {
+  private Object wrapValueIfNecessary(Object value) {
     if (value instanceof ObjectID) {
       // value cant be NULL_ID as Hashtable doesnt handle null !
-      return new ValuesWrapper(value);
+      return new ValuesWrapper(value, __tc_managed());
     } else {
       return value;
     }
@@ -476,9 +476,12 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   private static class ValuesWrapper {
 
     private Object value;
+    x; // TODO: adding this tcoContext makes this object twice as big.
+    private TCObject tcoContext; // provides DSO graph context in case classloading is necessary
 
-    public ValuesWrapper(Object value) {
+    public ValuesWrapper(Object value, TCObject tcoContext) {
       this.value = value;
+      this.tcoContext = tcoContext;
     }
 
     public boolean equals(Object obj) {
@@ -488,7 +491,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     Object getValue() {
       if (value instanceof ObjectID) {
         try {
-          value = ManagerUtil.lookupObject((ObjectID) value);
+          value = ManagerUtil.lookupObject((ObjectID) value, tcoContext);
         } catch (TCObjectNotFoundException onfe) {
           throw new ConcurrentModificationException(onfe.getMessage());
         }
@@ -499,7 +502,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     public Object getValueFaultBreadth(ObjectID parentContext) {
       if (value instanceof ObjectID) {
         try {
-          value = ManagerUtil.lookupObjectWithParentContext((ObjectID) value, parentContext);
+          value = ManagerUtil.lookupObjectWithParentContext((ObjectID) value, parentContext, tcoContext);
         } catch (TCObjectNotFoundException onfe) {
           throw new ConcurrentModificationException(onfe.getMessage());
         }

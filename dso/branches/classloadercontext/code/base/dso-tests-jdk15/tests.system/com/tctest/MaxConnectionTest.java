@@ -18,7 +18,7 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.ConnectionPolicyImpl;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
-import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.bytecode.MockClassLoaderRegistry;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -41,7 +41,7 @@ public class MaxConnectionTest extends BaseDSOTestCase {
 
     PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(manager);
     DistributedObjectClient client = new DistributedObjectClient(configHelper, new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class))), new MockClassProvider(), components, NullManager.getInstance(),
+        .getLogger(DistributedObjectClient.class))), new MockClassLoaderRegistry(), components, NullManager.getInstance(),
                                        new Cluster());
     client.setCreateDedicatedMBeanServer(true);
     return client;

@@ -13,9 +13,9 @@ import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.NamedClassLoader;
-import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.loaders.StandardClassLoaderRegistry;
 import com.tc.object.partitions.PartitionManager;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
@@ -85,7 +85,7 @@ public class ClassProcessorHelper {
   private static final Map                   contextMap                = new WeakHashMap();
   private static final Map                   partitionedContextMap     = new HashMap();
 
-  private static final StandardClassProvider globalProvider            = new StandardClassProvider();
+  private static final ClassLoaderRegistry   globalLoaderContext = new StandardClassLoaderRegistry();
 
   private static URLClassLoader              tcLoader;
   private static DSOContext                  globalContext;
@@ -410,10 +410,6 @@ public class ClassProcessorHelper {
 
         tcLoader = createTCLoader();
 
-        if (USE_GLOBAL_CONTEXT || USE_GLOBAL_CONTEXT) {
-          registerStandardLoaders();
-        }
-
         // do this before doing anything with the TC loader
         initTCLogging();
 
@@ -422,7 +418,7 @@ public class ClassProcessorHelper {
         }
 
         if (USE_PARTITIONED_CONTEXT) {
-          initParitionedContexts();
+          initPartitionedContexts();
         }
         initState.initialized();
 
@@ -435,7 +431,7 @@ public class ClassProcessorHelper {
     }
   }
 
-  private static void initParitionedContexts() throws Exception {
+  private static void initPartitionedContexts() throws Exception {
     String tcConfig = System.getProperty(TVSConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME);
 
     Assert.assertNotNull(tcConfig);
@@ -443,8 +439,8 @@ public class ClassProcessorHelper {
 
     String partitionedConfigSpecs[] = tcConfig.split(PARTITIONED_MODE_SEP);
     for (int i = 0; i < partitionedConfigSpecs.length; i++) {
-      Method m = getContextMethod("createContext", new Class[] { String.class, ClassProvider.class });
-      DSOContext context = (DSOContext) m.invoke(null, new Object[] { partitionedConfigSpecs[i], globalProvider });
+      Method m = getContextMethod("createContext", new Class[] { String.class, ClassLoaderRegistry.class });
+      DSOContext context = (DSOContext) m.invoke(null, new Object[] { partitionedConfigSpecs[i], globalLoaderContext });
       context.getManager().init();
       synchronized (partitionedContextMap) {
         partitionedContextMap.put("Partition" + i, context);
@@ -460,26 +456,6 @@ public class ClassProcessorHelper {
     }
 
     return 1;
-  }
-
-  private static void registerStandardLoaders() {
-    ClassLoader loader1 = ClassLoader.getSystemClassLoader();
-    ClassLoader loader2 = loader1.getParent();
-    ClassLoader loader3 = loader2.getParent();
-
-    final ClassLoader sunSystemLoader;
-    final ClassLoader extSystemLoader;
-
-    if (loader3 != null) { // user is using alternate system loader
-      sunSystemLoader = loader2;
-      extSystemLoader = loader3;
-    } else {
-      sunSystemLoader = loader1;
-      extSystemLoader = loader2;
-    }
-
-    registerGlobalLoader((NamedClassLoader) sunSystemLoader);
-    registerGlobalLoader((NamedClassLoader) extSystemLoader);
   }
 
   private static void initTCLogging() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException,
@@ -514,7 +490,7 @@ public class ClassProcessorHelper {
     if (!USE_GLOBAL_CONTEXT && !USE_PARTITIONED_CONTEXT) { throw new IllegalStateException(
                                                                                            "Not global/partitioned DSO mode"); }
     if (TRACE) traceNamedLoader(loader);
-    globalProvider.registerNamedLoader(loader);
+    globalLoaderContext.registerNamedLoader(loader);
   }
 
   /**
@@ -566,7 +542,7 @@ public class ClassProcessorHelper {
    * WARNING: Used by test framework only
    * 
    * @param loader Loader
-   * @param context DSOContext
+   * @param registry DSOContext
    */
   public static void setContext(ClassLoader loader, DSOContext context) {
     if (USE_GLOBAL_CONTEXT || USE_PARTITIONED_CONTEXT) { throw new IllegalStateException(
@@ -574,7 +550,7 @@ public class ClassProcessorHelper {
 
     if ((loader == null) || (context == null)) {
       // bad dog
-      throw new IllegalArgumentException("Loader and/or context may not be null");
+      throw new IllegalArgumentException("Loader and/or registry may not be null");
     }
 
     synchronized (contextMap) {
@@ -629,8 +605,8 @@ public class ClassProcessorHelper {
 
   private static DSOContext createGlobalContext() {
     try {
-      Method m = getContextMethod("createGlobalContext", new Class[] { ClassProvider.class });
-      DSOContext context = (DSOContext) m.invoke(null, new Object[] { globalProvider });
+      Method m = getContextMethod("createGlobalContext", new Class[] { ClassLoaderRegistry.class });
+      DSOContext context = (DSOContext) m.invoke(null, new Object[] { globalLoaderContext });
       context.getManager().init();
       return context;
     } catch (Throwable t) {
@@ -748,7 +724,7 @@ public class ClassProcessorHelper {
   /**
    * Get type of lock used by sessions
    * 
-   * @param appName Web app context
+   * @param appName Web app registry
    * @return Lock type
    */
   public static int getSessionLockType(String appName) {

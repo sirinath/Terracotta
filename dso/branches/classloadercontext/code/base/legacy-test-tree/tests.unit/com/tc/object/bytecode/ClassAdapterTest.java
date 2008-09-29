@@ -1338,7 +1338,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
 
     if (instance instanceof Manageable) {
       if (testClientObjectManager.isManaged(instance)) {
-        ((Manageable) instance).__tc_managed(testClientObjectManager.lookupOrCreate(instance));
+        ((Manageable) instance).__tc_managed(testClientObjectManager.lookupOrCreate(instance, null));
       }
     }
 

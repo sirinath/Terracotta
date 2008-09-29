@@ -18,6 +18,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
@@ -46,13 +47,21 @@ public abstract class TCObjectImpl implements TCObject {
 
   private final ObjectID        objectID;
   protected final TCClass       tcClazz;
+  private ClassloaderContext    classloaderContext;
   private WeakReference         peerObject;
   private TLinkable             next;
   private TLinkable             previous;
   private byte                  flags                       = 0;
   private static final TCLogger consoleLogger               = CustomerLogging.getConsoleLogger();
 
-  protected TCObjectImpl(ReferenceQueue queue, ObjectID id, Object peer, TCClass clazz, boolean isNew) {
+  /**
+   * @param peer the POJO that this TCObject manages
+   * 
+   * @param tcoContext a TCObject that will be used to determine classloader context for the new TCObject; or null, if
+   *        there is no context (e.g., if this TCO if for a root), in which case context will be determined from the
+   *        thread.
+   */
+  protected TCObjectImpl(ReferenceQueue queue, ObjectID id, Object peer, TCObject tcoContext, TCClass clazz, boolean isNew) {
     this.objectID = id;
     this.tcClazz = clazz;
     if (peer != null) {
@@ -60,6 +69,14 @@ public abstract class TCObjectImpl implements TCObject {
     }
 
     setFlag(IS_NEW_OFFSET, isNew);
+    if (null != tcoContext) {
+      propagateFrom(tcoContext);
+    } else {
+      // This TCObject is not being added to an existing DSO graph, i.e., it's a root.
+      // Set its classloader context, and any other information that is to be pushed
+      // through the graph via propagateFrom() when other objects are shared.
+      initializePropagatedInfo();
+    }
   }
 
   public boolean isShared() {
@@ -94,6 +111,14 @@ public abstract class TCObjectImpl implements TCObject {
   public TCClass getTCClass() {
     return tcClazz;
   }
+  
+  public ClassloaderContext getClassloaderContext() {
+    return classloaderContext;
+  }
+  
+  public void setClassloaderContext(ClassloaderContext classloaderContext) {
+    this.classloaderContext = classloaderContext;
+  }
 
   public void dehydrate(DNAWriter writer) {
     tcClazz.dehydrate(this, writer, getPeerObject());
@@ -109,7 +134,7 @@ public abstract class TCObjectImpl implements TCObject {
   public void hydrate(DNA from, boolean force) throws ClassNotFoundException {
     synchronized (getResolveLock()) {
       boolean isNewLoad = isNull();
-      createPeerObjectIfNecessary(from);
+      createPeerObjectIfNecessary(this, from);
 
       Object po = getPeerObject();
       if (po == null) return;
@@ -178,10 +203,10 @@ public abstract class TCObjectImpl implements TCObject {
     return Conversion.getFlag(flags, offset);
   }
 
-  private void createPeerObjectIfNecessary(DNA from) {
+  private void createPeerObjectIfNecessary(TCObject tcoContext, DNA from) {
     if (isNull()) {
       // TODO: set created and modified version id
-      setPeerObject(getObjectManager().createNewPeer(tcClazz, from));
+      setPeerObject(getObjectManager().createNewPeer(tcClazz, tcoContext, from));
     }
   }
 
@@ -249,11 +274,11 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public void resolveArrayReference(int index) {
-    throw new AssertionError("shouldn't be called");
+    throw new AssertionError("base class shouldn't be called");
   }
 
   public ArrayIndexOutOfBoundsException checkArrayIndex(int index) {
-    throw new AssertionError("shouldn't be called");
+    throw new AssertionError("base class shouldn't be called");
   }
 
   public void clearArrayReference(int index) {
@@ -364,6 +389,24 @@ public abstract class TCObjectImpl implements TCObject {
   public void primitiveArrayChanged(int startPos, Object array, int length) {
     this.markAccessed();
     getObjectManager().getTransactionManager().arrayChanged(this, startPos, array, length);
+  }
+  
+  /**
+   * Initialize the information that will be passed from object to object when
+   * {@link #propagateFrom(TCObject)} is called. This gets called for the first
+   * TCObject in a shared graph.
+   */
+  protected void initializePropagatedInfo() {
+    ClassLoader rootContextClassLoader = Thread.currentThread().getContextClassLoader();
+    classloaderContext = ClassloaderContext.getClassloaderContext(rootContextClassLoader);
+  }
+
+  /*
+   * Any information propagated in this method should be initialized in
+   * initializePropagatedInfo().
+   */
+  public void propagateFrom(TCObject existing) {
+    setClassloaderContext(existing.getClassloaderContext());
   }
 
   public void setNext(TLinkable link) {

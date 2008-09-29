@@ -52,8 +52,13 @@ public interface ChangeApplicator {
    * Instantiate a new instance of the object from DNA. May not be supported on all applicators.
    * 
    * @param objectManager The client-side object manager
+   * @param tcoRequestor the object that the new instance will be assigned to. This object may
+   * be queried for classloader context information, if creating the new instance requires loading
+   * a new class. This must be non-null.
    * @param dna The DNA for the new object
    * @return The new instance
    */
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException;
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException;
+
 }
+

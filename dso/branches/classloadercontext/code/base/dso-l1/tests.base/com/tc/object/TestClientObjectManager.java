@@ -10,6 +10,7 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.text.PrettyPrinter;
@@ -62,11 +63,14 @@ public class TestClientObjectManager implements ClientObjectManager {
 
   public void sharedIfManaged(Object pojo) {
     if (isManaged(pojo)) {
-      lookupOrCreate(pojo);
+      lookupOrCreate(pojo, null);
     }
   }
 
-  public synchronized TCObject lookupOrCreate(Object obj) {
+  /**
+   * @param tcoRequestor is ignored
+   */
+  public synchronized TCObject lookupOrCreate(Object obj, TCObject tcoRequestor) {
     // System.out.println(this + ".lookupOrCreate(" + obj + ")");
     TCObject rv = lookup(obj);
     if (rv == null) {
@@ -104,20 +108,20 @@ public class TestClientObjectManager implements ClientObjectManager {
     return c;
   }
 
-  public TCObject lookup(ObjectID id) {
+  public TCObject lookup(ObjectID id, TCObject tcoRequestor) {
     System.out.println(this + ".lookup(" + id + ")");
     return (TCObject) objects.get(id);
   }
 
-  public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID) {
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, int size, ObjectID id, ObjectID parentID) {
     throw new ImplementMe();
   }
 
-  public Object lookupObject(ObjectID id) {
+  public Object lookupObject(ObjectID id, TCObject tcoRequestor) {
     return ((TCObject) objects.get(id)).getPeerObject();
   }
 
-  public Object lookupObject(ObjectID id, ObjectID parentContext) {
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) {
     return ((TCObject) objects.get(id)).getPeerObject();
   }
 
@@ -153,7 +157,7 @@ public class TestClientObjectManager implements ClientObjectManager {
     return txManager;
   }
 
-  public Class getClassFor(String className, String loaderDesc) {
+  public Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) {
     throw new ImplementMe();
   }
 
@@ -190,7 +194,7 @@ public class TestClientObjectManager implements ClientObjectManager {
     return;
   }
 
-  public WeakReference createNewPeer(TCClass clazz, DNA dna) {
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, DNA dna) {
     throw new ImplementMe();
   }
 
@@ -202,7 +206,7 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
-  public TCObject lookupOrShare(Object pojo) {
+  public TCObject lookupOrShare(Object pojo, TCObject tcoRequestor) {
     throw new ImplementMe();
   }
 
@@ -218,7 +222,7 @@ public class TestClientObjectManager implements ClientObjectManager {
     return false;
   }
 
-  public Object lookupObjectNoDepth(ObjectID id) {
+  public Object lookupObjectNoDepth(ObjectID id, TCObject tcoRequestor) {
     throw new ImplementMe();
   }
 

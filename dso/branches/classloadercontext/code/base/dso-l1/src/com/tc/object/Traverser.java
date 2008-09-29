@@ -67,11 +67,15 @@ public class Traverser {
     return false;
   }
 
-  public void traverse(Object object) {
-    traverse(object, NULL_TEST, null);
+  /**
+   * @param start the object whose referenced objects will be traversed
+   * @param v a value that will be passed to {@link TraversalAction#visit(List, Object)}
+   */
+  public void traverse(Object start, Object v) {
+    traverse(start, v, NULL_TEST, null);
   }
 
-  public void traverse(Object object, TraverseTest traverseTest, NonPortableEventContext ctx) {
+  public void traverse(Object object, Object v, TraverseTest traverseTest, NonPortableEventContext ctx) {
     Map visited = new IdentityHashMap();
     List toAdd = new ArrayList();
 
@@ -92,6 +96,6 @@ public class Traverser {
         // objects are obtained.
       }
     }
-    action.visit(toAdd);
+    action.visit(toAdd, v);
   }
 }

@@ -35,7 +35,7 @@ public class DNAEncodingTest extends TestCase {
     encoding.encode(getClass(), output);
     Class c = Object.class;
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(c.getName());
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getLoaderDescriptionFor(c));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getRegistry().getLoaderDescriptionFor(c.getClassLoader()));
     ClassInstance ci = new ClassInstance(name, def);
     encoding.encode(ci, output);
 
@@ -43,9 +43,9 @@ public class DNAEncodingTest extends TestCase {
 
     encoding = getSerializerEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    c = (Class) encoding.decode(input);
+    c = (Class) encoding.decode(input, null);
     assertEquals(getClass(), c);
-    ClassInstance holder = (ClassInstance) encoding.decode(input);
+    ClassInstance holder = (ClassInstance) encoding.decode(input, null);
     assertEquals(ci, holder);
     assertEquals(0, input.available());
   }

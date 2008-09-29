@@ -47,7 +47,7 @@ public class DEV1588Test extends TransparentTestBase {
 
     private void shareObject() {
       // This is a separate method to make sure the local Object can be GC'd
-      ManagerUtil.shareObjectIfNecessary(new Object());
+      ManagerUtil.shareObjectIfNecessary(new Object(), null);
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {

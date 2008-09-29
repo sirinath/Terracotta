@@ -327,6 +327,31 @@
     </xs:all>
   </xs:complexType>
 
+  <xs:complexType name="classloader-compatibility">
+    <xs:annotation>
+      <xs:documentation>
+        Defines a strategy for loading classes when nodes do not have the same
+        set of classloaders available. By default, a class is associated with a
+        particular named classloader; in the case of an application server, the
+        classloader name may in turn be associated with a particular EAR, so it is
+        not possible to share objects between different applications or between
+        a web app and a plain Java app. By defining a classloader-compatibility
+        strategy, it is possible for a class to be loaded by different classloaders
+        on different client nodes.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:choice>
+      <xs:element name="classloader-from-named-root" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            If a named classloader is not available, use the classloader from the specified
+            root. The content of the element is the name of the root.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="dso-client-data">
     <xs:all>
       <xs:element name="fault-count" type="non-negative-int" default="500" minOccurs="0" />
@@ -397,6 +422,7 @@
       <xs:element name="web-applications" type="web-applications" minOccurs="0" />
 
       <xs:element name="dso-reflection-enabled" type="xs:boolean" minOccurs="0" default="true"/>
+      <xs:element name="classloader-compatibility" type="classloader-compatibility" minOccurs="0" />
     </xs:all>
   </xs:complexType>
 

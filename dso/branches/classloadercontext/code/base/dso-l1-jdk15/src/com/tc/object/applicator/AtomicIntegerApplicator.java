@@ -38,9 +38,10 @@ public class AtomicIntegerApplicator extends BaseApplicator {
     DNACursor cursor = dna.getCursor();
 
     Assert.assertTrue(po.getClass().getName(), po instanceof AtomicInteger);
-
+    
+    // null classloader context: hydrating an AtomicInteger cannot cause a class to be loaded.
     // You can get multiple actions for an AtomicInteger if txn get folded in the client
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       PhysicalAction a = cursor.getPhysicalAction();
       Integer value = (Integer) a.getObject();
       ((AtomicInteger) po).set(value.intValue());
@@ -54,7 +55,7 @@ public class AtomicIntegerApplicator extends BaseApplicator {
     writer.addPhysicalAction(AtomicIntegerAdapter.VALUE_FIELD_NAME, new Integer(value));
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

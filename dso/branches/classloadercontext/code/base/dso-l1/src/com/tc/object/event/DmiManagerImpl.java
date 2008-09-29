@@ -146,7 +146,11 @@ public class DmiManagerImpl implements DmiManager {
     Assert.pre(classSpecs != null);
     for (int i = 0; i < classSpecs.length; i++) {
       DmiClassSpec s = classSpecs[i];
-      classProvider.getClassFor(s.getClassName(), s.getClassLoaderDesc());
+      // TODO: ahem.  In this case I don't have a clue about what the "requestor" is.  
+      // We're on a network event thread, and we're just throwing away the class we get back;
+      // at this point we're just asking a hypothetical question about whether some class
+      // will be loadable later on.  Unfortunately, the answer to that depends on who asks.
+      classProvider.getClassFor(s.getClassName(), s.getClassLoaderDesc(), requestorContext);
     }
   }
 
@@ -169,7 +173,7 @@ public class DmiManagerImpl implements DmiManager {
   private static Object getClassSpec(ClassProvider classProvider, Object obj) {
     Assert.pre(classProvider != null);
     Assert.pre(obj != null);
-    final String classLoader = classProvider.getLoaderDescriptionFor(obj.getClass());
+    final String classLoader = classProvider.getRegistry().getLoaderDescriptionFor(obj.getClass().getClassLoader());
     final String className = obj.getClass().getName();
     return new DmiClassSpec(classLoader, className);
   }

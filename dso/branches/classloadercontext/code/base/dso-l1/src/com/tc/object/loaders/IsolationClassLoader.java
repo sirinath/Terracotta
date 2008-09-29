@@ -28,7 +28,7 @@ import java.util.Map;
 
 /**
  * DSO Class loader for internal testing. The main purpose of this loader is to force test classes to be be defined
- * specifically in this loader (and consequently within an isolated DSO context)
+ * specifically in this loader (and consequently within an isolated DSO registry)
  */
 public class IsolationClassLoader extends URLClassLoader implements NamedClassLoader {
   private static final ClassLoader    SYSTEM_LOADER = ClassLoader.getSystemClassLoader();
@@ -36,7 +36,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   private final Manager               manager;
   private final DSOClientConfigHelper config;
   private final Map                   onLoadErrors;
-  private final StandardClassProvider classProvider;
+  private final ClassLoaderRegistry   classLoaderRegistry;
   private final Map                   adapters      = new HashMap();
 
   public IsolationClassLoader(DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
@@ -53,14 +53,14 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
                                PreparedComponentsFromL2Connection connectionComponents) {
     super(getSystemURLS(), null);
     this.config = config;
-    this.classProvider = new StandardClassProvider();
+    this.classLoaderRegistry = new StandardClassLoaderRegistry();
     this.manager = createManager(startClient, objectManager, txManager, config, connectionComponents);
     this.onLoadErrors = new HashMap();
   }
 
   public void init() {
     manager.initForTests();
-    ClassProcessorHelper.setContext(this, DSOContextImpl.createContext(config, classProvider, manager));
+    ClassProcessorHelper.setContext(this, DSOContextImpl.createContext(config, classLoaderRegistry, manager));
   }
 
   private static URL[] getSystemURLS() {
@@ -70,8 +70,8 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   private Manager createManager(boolean startClient, ClientObjectManager objectManager,
                                 ClientTransactionManager txManager, DSOClientConfigHelper theConfig,
                                 PreparedComponentsFromL2Connection connectionComponents) {
-    classProvider.registerNamedLoader(this);
-    return new ManagerImpl(startClient, objectManager, txManager, theConfig, classProvider, connectionComponents, false);
+    classLoaderRegistry.registerNamedLoader(this);
+    return new ManagerImpl(startClient, objectManager, txManager, theConfig, classLoaderRegistry, connectionComponents, false);
   }
 
   public void stop() {

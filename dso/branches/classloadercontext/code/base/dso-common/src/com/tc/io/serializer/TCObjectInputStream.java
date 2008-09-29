@@ -47,7 +47,8 @@ public class TCObjectInputStream implements ObjectInput, TCDataInput {
    * @see LiteralValues, DNAEncoding
    */
   public Object readObject() throws ClassNotFoundException, IOException {
-    return SERIALIZER_ENCODING.decode(this);
+    // SerializerDNAEncodingImpl uses a LocalClassProvider, which does not need a ClassloaderContext.
+    return SERIALIZER_ENCODING.decode(this, null);
   }
 
   public int read() throws IOException {

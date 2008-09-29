@@ -29,7 +29,7 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.event.DmiManager;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
@@ -60,7 +60,7 @@ public class ManagerImpl implements Manager {
 
   private final SetOnceFlag                        clientStarted                = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
-  private final ClassProvider                      classProvider;
+  private final ClassLoaderRegistry                classProviderContext;
   private final boolean                            startClient;
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Thread                             shutdownAction;
@@ -78,21 +78,21 @@ public class ManagerImpl implements Manager {
   private final SerializationUtil                  serializer                   = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay                = new MethodDisplayNames(serializer);
 
-  public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
+  public ManagerImpl(DSOClientConfigHelper config, ClassLoaderRegistry classProviderContext,
                      PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, config, classProvider, connectionComponents, true);
+    this(true, null, null, config, classProviderContext, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
+                     DSOClientConfigHelper config, ClassLoaderRegistry classProviderContext,
                      PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, config, classProvider, connectionComponents, true);
+    this(startClient, objectManager, txManager, config, classProviderContext, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
+                     DSOClientConfigHelper config, ClassLoaderRegistry classProviderContext,
                      PreparedComponentsFromL2Connection connectionComponents, boolean shutdownActionRequired) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
@@ -100,7 +100,7 @@ public class ManagerImpl implements Manager {
     this.config = config;
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
-    this.classProvider = classProvider;
+    this.classProviderContext = classProviderContext;
     this.connectionComponents = connectionComponents;
     this.cluster = new Cluster();
     if (shutdownActionRequired) {
@@ -173,10 +173,10 @@ public class ManagerImpl implements Manager {
       public void execute() throws Throwable {
         if (connectionComponents.isActiveActive()) {
           // TODO::Find a better a way of doing this
-          dso = createDistributeObjectClientForEE(config, group, classProvider, connectionComponents, ManagerImpl.this,
+          dso = createDistributedObjectClientForEE(config, group, classProviderContext, connectionComponents, ManagerImpl.this,
                                                   cluster);
         } else {
-          dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
+          dso = new DistributedObjectClient(config, group, classProviderContext, connectionComponents, ManagerImpl.this,
                                             cluster);
         }
         if (forTests) {
@@ -200,15 +200,15 @@ public class ManagerImpl implements Manager {
   }
 
   //NOTE::Using reflection to create EE version, TODO:: find better ways of doing this 
-  private DistributedObjectClient createDistributeObjectClientForEE(
+  private DistributedObjectClient createDistributedObjectClientForEE(
                                                                     DSOClientConfigHelper lconfig,
                                                                     TCThreadGroup lgroup,
-                                                                    ClassProvider lclassProvider,
+                                                                    ClassLoaderRegistry lclassloaderRegistry,
                                                                     PreparedComponentsFromL2Connection lconnectionComponents,
                                                                     Manager lmanager, Cluster lcluster) {
-    Class classArgs[] = new Class[] { DSOClientConfigHelper.class, TCThreadGroup.class, ClassProvider.class,
+    Class classArgs[] = new Class[] { DSOClientConfigHelper.class, TCThreadGroup.class, ClassLoaderRegistry.class,
         PreparedComponentsFromL2Connection.class, Manager.class, Cluster.class };
-    Object args[] = new Object[] { lconfig, lgroup, lclassProvider, lconnectionComponents, lmanager, lcluster };
+    Object args[] = new Object[] { lconfig, lgroup, lclassloaderRegistry, lconnectionComponents, lmanager, lcluster };
     try {
       Class c = Class.forName(DISTRIBUTED_OBJECT_CLIENT_EE);
       Constructor constructor = c.getConstructor(classArgs);
@@ -502,7 +502,7 @@ public class ManagerImpl implements Manager {
       logger
           .info("Object "
                 + o
-                + " is a shared object, but a shared lock is not obtained within a locking context. This usually means the object get shared within a synchronized block/method.");
+                + " is a shared object, but a shared lock is not obtained within a locking registry. This usually means the object get shared within a synchronized block/method.");
     }
 
     return dsoMonitorEntered;
@@ -658,12 +658,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public TCObject shareObjectIfNecessary(Object pojo) {
+  public TCObject shareObjectIfNecessary(Object pojo, TCObject tcoRequestor) {
     TCObject tobj = lookupExistingOrNull(pojo);
     if (tobj != null) { return tobj; }
 
     try {
-      return this.objectManager.lookupOrShare(pojo);
+      return this.objectManager.lookupOrShare(pojo, tcoRequestor);
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
 
@@ -672,9 +672,9 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public TCObject lookupOrCreate(Object obj) {
+  public TCObject lookupOrCreate(Object obj, TCObject tcoRequestor) {
     if (obj instanceof Manageable) { return ((Manageable) obj).__tc_managed(); }
-    return this.objectManager.lookupOrCreate(obj);
+    return this.objectManager.lookupOrCreate(obj, tcoRequestor);
   }
 
   public TCObject lookupExistingOrNull(Object pojo) {
@@ -690,12 +690,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Object lookupObject(ObjectID id) throws ClassNotFoundException {
-    return this.objectManager.lookupObject(id);
+  public Object lookupObject(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException {
+    return this.objectManager.lookupObject(id, tcoRequestor);
   }
 
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException {
-    return this.objectManager.lookupObject(id, parentContext);
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) throws ClassNotFoundException {
+    return this.objectManager.lookupObject(id, parentContext, tcoRequestor);
   }
 
   public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
@@ -718,7 +718,7 @@ public class ManagerImpl implements Manager {
   }
 
   public void checkWriteAccess(Object context) {
-    // XXX: make sure that "context" is the ALWAYS the right object to check here, and then rename it
+    // XXX: make sure that "registry" is the ALWAYS the right object to check here, and then rename it
     if (isManaged(context)) {
       try {
         txManager.checkWriteAccess(context);

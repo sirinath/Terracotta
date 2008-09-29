@@ -13,6 +13,7 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.FieldUtils;
 
@@ -53,17 +54,18 @@ public class TreeSetApplicator extends HashSetApplicator {
     TreeSet set = (TreeSet) pojo;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       Object action = cursor.getAction();
       if (action instanceof PhysicalAction) {
         PhysicalAction pa = (PhysicalAction) action;
         Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-        setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject()));
+        setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject(), tcObject));
       } else {
         LogicalAction la = (LogicalAction) action;
         int method = la.getMethod();
         Object[] params = la.getParameters();
-        super.apply(objectManager, set, method, params);
+        super.apply(objectManager, tcObject, set, method, params);
       }
     }
   }

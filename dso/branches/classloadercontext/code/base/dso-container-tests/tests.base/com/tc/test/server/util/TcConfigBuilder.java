@@ -5,6 +5,7 @@ import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.Loader;
 import com.terracottatech.config.Autolock;
+import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
@@ -132,6 +133,20 @@ public class TcConfigBuilder {
     tcConfig.getClients().setStatistics(path);
   }
 
+  /**
+   * Create a &lt;classloader-compatibility&gt; element that specifies
+   * &lt;classloader-from-named-root&gt;. This will remove any other
+   * classloader-compatibility strategy that may have been present.
+   */
+  public void setNamedRootLoaderStrategy(String rootName) {
+    ensureDso();
+    DsoApplication dso = tcConfig.getApplication().getDso();
+    if (dso.isSetClassloaderCompatibility()) {
+      dso.unsetClassloaderCompatibility();
+    }
+    dso.addNewClassloaderCompatibility().setClassloaderFromNamedRoot(rootName);
+  }
+
   public void addAutoLock(String pattern, String lockLevel) {
     addAutoLock(pattern, lockLevel, false);
   }
@@ -184,7 +199,7 @@ public class TcConfigBuilder {
     newModule.setGroupId(groupId);
     newModule.setVersion(version);
   }
-
+  
   public void addModule(String name, String version) {
     addModule(name, "org.terracotta.modules", version);
   }

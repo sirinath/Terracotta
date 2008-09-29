@@ -33,7 +33,8 @@ public class URLApplicator extends BaseApplicator {
     TCURL url = (TCURL) pojo;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    // Null requestor context: hydrating an URL can't cause a class to be loaded.
+    while (cursor.next(encoding, null)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
@@ -101,7 +102,7 @@ public class URLApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

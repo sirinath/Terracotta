@@ -232,8 +232,8 @@ public class ManagerUtil {
    * @param pojo Object instance
    * @return TCObject for pojo
    */
-  public static TCObject shareObjectIfNecessary(Object pojo) {
-    return getManager().shareObjectIfNecessary(pojo);
+  public static TCObject shareObjectIfNecessary(Object pojo, TCObject tcoRequestor) {
+    return getManager().shareObjectIfNecessary(pojo, tcoRequestor);
   }
 
   /**
@@ -302,12 +302,13 @@ public class ManagerUtil {
    * Look up object by ID, faulting into the JVM if necessary
    * 
    * @param id Object identifier
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The actual object
    * @throws TCClassNotFoundException If a class is not found during faulting
    */
-  public static Object lookupObject(ObjectID id) {
+  public static Object lookupObject(ObjectID id, TCObject tcoRequestor) {
     try {
-      return getManager().lookupObject(id);
+      return getManager().lookupObject(id, tcoRequestor);
     } catch (ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
@@ -320,12 +321,13 @@ public class ManagerUtil {
    * 
    * @param id Object identifier of the object we are looking up
    * @param parentContext Object identifier of the parent object
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The actual object
    * @throws TCClassNotFoundException If a class is not found during faulting
    */
-  public static Object lookupObjectWithParentContext(ObjectID id, ObjectID parentContext) {
+  public static Object lookupObjectWithParentContext(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) {
     try {
-      return getManager().lookupObject(id, parentContext);
+      return getManager().lookupObject(id, parentContext, tcoRequestor);
     } catch (ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
@@ -335,10 +337,11 @@ public class ManagerUtil {
    * Find or create new TCObject
    * 
    * @param obj The object instance
+   * @param tcoRequestor a TCObject which can be queried for classloader context.
    * @return The TCObject
    */
-  public static TCObject lookupOrCreate(Object obj) {
-    return getManager().lookupOrCreate(obj);
+  public static TCObject lookupOrCreate(Object obj, TCObject tcoRequestor) {
+    return getManager().lookupOrCreate(obj, tcoRequestor);
   }
 
   /**

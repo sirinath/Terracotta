@@ -8,6 +8,7 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.util.ToggleableStrongReference;
 
 import gnu.trove.TLinkable;
@@ -25,6 +26,7 @@ public class MockTCObject implements TCObject {
   private final Object     resolveLock      = new Object();
   private long             version          = 0;
   private TCClass          tcClazz;
+  private ClassloaderContext classloaderContext = null;
   private boolean          accessed         = false;
   private boolean          isNew            = false;
   private RuntimeException hydrateException = null;
@@ -277,5 +279,17 @@ public class MockTCObject implements TCObject {
 
   public void dehydrate(DNAWriter writer) {
     //
+  }
+
+  public ClassloaderContext getClassloaderContext() {
+    return classloaderContext;
+  }
+
+  public void setClassloaderContext(ClassloaderContext classloaderContext) {
+    this.classloaderContext = classloaderContext;
+  }
+
+  public void propagateFrom(TCObject existing) {
+    setClassloaderContext(existing.getClassloaderContext());
   }
 }

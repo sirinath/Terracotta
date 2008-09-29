@@ -60,7 +60,7 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
       boolean useObjectIDHashCode = !ManagerUtil.overridesHashCode(obj);
 
       if (useObjectIDHashCode) {
-        TCObject tcobject = ManagerUtil.shareObjectIfNecessary(obj);
+        TCObject tcobject = ManagerUtil.shareObjectIfNecessary(obj, __tc_managed());
         if (tcobject != null) {
           i = tcobject.getObjectID().hashCode();
         }

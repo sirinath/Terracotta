@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may
+ * otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.loaders;
 
@@ -7,40 +8,33 @@ package com.tc.object.loaders;
  * Manage loading relationship between named classloaders and classes
  */
 public interface ClassProvider {
+  
+  /**
+   * @return the StandardClassLoaderRegistry that was set with {@link #setRegistry(StandardClassLoaderRegistry)}.
+   */
+  ClassLoaderRegistry getRegistry();
 
+  /**
+   * Set the class provider's registry. Depending on the class provider
+   * implementation, different facets of the registry may be used to
+   * choose which classloader to load a class with, but in general the
+   * class provider will not be useful until it has a working registry.
+   * Class provider implementations may throw IllegalStateException if
+   * asked to provide a class before the registry is set.
+   */
+  void setRegistry(ClassLoaderRegistry context);
+  
   /**
    * Given a class name and a classloader name, load the class
    * @param className Class name
-   * @param loaderDesc Classloader name
+   * @param loaderDesc Classloader name.
+   * @param requestorContext the ClassloaderContext of the object requesting this class
+   * (e.g., an object whose field is being assigned to an instance of the class to be
+   * loaded).  Not all class providers make use of this information.
    * @return Class
    * @throws ClassNotFoundException If class not found through loader
+   * @throws IllegalStateException if called before setProviderContext.
    */
-  Class getClassFor(String className, String loaderDesc) throws ClassNotFoundException;
+  Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) throws ClassNotFoundException;
 
-  /**
-   * Get classloader name that loads class
-   * @param clazz Class
-   * @return Classloader name
-   */
-  String getLoaderDescriptionFor(Class clazz);
-
-  /**
-   * Get classloader by name
-   * @param loaderDesc Classloader name
-   * @return Classloader
-   */
-  ClassLoader getClassLoader(String loaderDesc);
-
-  /**
-   * Get name for classloader
-   * @param loader Loader
-   * @return Name
-   */
-  String getLoaderDescriptionFor(ClassLoader loader);
-  
-  /**
-   * Register named loader
-   * @param loader Loader
-   */
-  void registerNamedLoader(NamedClassLoader loader);
 }

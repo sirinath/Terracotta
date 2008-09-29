@@ -14,6 +14,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -44,14 +45,15 @@ public class ProxyApplicator extends BaseApplicator {
     String fieldName;
     Object fieldValue;
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       PhysicalAction a = cursor.getPhysicalAction();
       Assert.eval(a.isTruePhysical());
       fieldName = a.getFieldName();
       fieldValue = a.getObject();
 
       if (fieldName.equals(INVOCATION_HANDLER_FIELD_NAME)) {
-        fieldValue = objectManager.lookupObject((ObjectID) fieldValue);
+        fieldValue = objectManager.lookupObject((ObjectID) fieldValue, tcObject);
         ((TransparentAccess) po).__tc_setfield(fieldName, fieldValue);
       }
     }
@@ -67,25 +69,27 @@ public class ProxyApplicator extends BaseApplicator {
     writer.addPhysicalAction(INVOCATION_HANDLER_FIELD_NAME, dehydratableHandler);
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     Assert.assertEquals(3, cursor.getActionCount());
+    
+    ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     PhysicalAction a = cursor.getPhysicalAction();
     ClassLoader loader = (ClassLoader) a.getObject();
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     a = cursor.getPhysicalAction();
     Object[] values = (Object[]) a.getObject();
     Class[] interfaces = new Class[values.length];
     System.arraycopy(values, 0, interfaces, 0, values.length);
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     a = cursor.getPhysicalAction();
-    Object handler = a.getObject();
+    Object handlerId = a.getObject();
 
-    handler = objectManager.lookupObject((ObjectID) handler);
+    Object handler = objectManager.lookupObject((ObjectID) handlerId, tcoRequestor);
 
     return Proxy.newProxyInstance(loader, interfaces, (InvocationHandler) handler);
   }
