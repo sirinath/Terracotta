@@ -229,7 +229,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     Map messageMap = new HashMap();
 
-    Map clientObjectIDMap = new HashMap();
     Map clientNewIDsMap = new HashMap(); // will contain the object which are not present in the client out of the
     // returned ones
 
@@ -262,9 +261,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         // prepare clients
         for (Iterator iter = clientList.iterator(); iter.hasNext();) {
           ClientID clientID = (ClientID) iter.next();
-
-          // clientID -> ids in request
-          clientObjectIDMap.put(clientID, reqObj.getOIdSet());
 
           Set newIds = stateManager.addReferences(clientID, ids);
           clientNewIDsMap.put(clientID, newIds);
@@ -305,9 +301,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             for (Iterator missingIterator = messageMap.keySet().iterator(); missingIterator.hasNext();) {
               ClientID clientID = (ClientID) missingIterator.next();
               BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
-              Set missingIDsForClient = (Set) clientObjectIDMap.get(clientID);
-              logger.info("sending missing ids: + " + missingIDsForClient.size() + " , to client: " + clientID);
-              batchAndSend.sendMissingObjects(missingObjectIDs, missingIDsForClient);
+              Set requestedIdsForClient = reqObj.getOIdSet();
+              logger.info("sending missing ids: + " + requestedIdsForClient.size() + " , to client: " + clientID);
+              batchAndSend.sendMissingObjects(missingObjectIDs, requestedIdsForClient);
             }
           }
         }
