@@ -263,6 +263,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         for (Iterator iter = clientList.iterator(); iter.hasNext();) {
           ClientID clientID = (ClientID) iter.next();
 
+          // clientID -> ids in request
+          clientObjectIDMap.put(clientID, reqObj.getOIdSet());
+
           Set newIds = stateManager.addReferences(clientID, ids);
           clientNewIDsMap.put(clientID, newIds);
 
@@ -303,8 +306,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
               ClientID clientID = (ClientID) missingIterator.next();
               BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
               Set missingIDsForClient = (Set) clientObjectIDMap.get(clientID);
-              batchAndSend.sendMissingObjects(missingObjectIDs, missingIDsForClient);
               logger.info("sending missing ids: + " + missingIDsForClient.size() + " , to client: " + clientID);
+              batchAndSend.sendMissingObjects(missingObjectIDs, missingIDsForClient);
             }
           }
         }
