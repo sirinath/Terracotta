@@ -241,7 +241,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
   }
 
-  public void FixtestMultipleRequestResponseObjects() {
+  public void testMultipleRequestResponseObjects() {
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
@@ -335,7 +335,7 @@ public class ObjectRequestManagerTest extends TestCase {
 
   }
 
-  public void FixtestMissingObjects() {
+  public void testMissingObjects() {
 
     TestObjectManager objectManager = new TestObjectManager() {
 
@@ -697,6 +697,7 @@ public class ObjectRequestManagerTest extends TestCase {
       }
       RespondToObjectRequestContext respondToObjectRequestContext = null;
       int respondSinkSize = sink.size();
+      Iterator testReqManObjResMsgIter = TestRequestManagedObjectResponseMessage.sendSet.iterator();
       for (int i = 0; i < respondSinkSize; i++) {
         try {
           respondToObjectRequestContext = (RespondToObjectRequestContext) sink.take();
@@ -710,12 +711,9 @@ public class ObjectRequestManagerTest extends TestCase {
                                                .getRequestedObjectIDs(), respondToObjectRequestContext
                                                .getMissingObjectIDs(), respondToObjectRequestContext
                                                .isServerInitiated(), respondToObjectRequestContext.getRequestDepth());
-          if (TestRequestManagedObjectResponseMessage.sendSet.size() == 1) {
-            TestRequestManagedObjectResponseMessage message = (TestRequestManagedObjectResponseMessage) TestRequestManagedObjectResponseMessage.sendSet
-                .iterator().next();
+          if(testReqManObjResMsgIter.hasNext()){
+            TestRequestManagedObjectResponseMessage message = (TestRequestManagedObjectResponseMessage) testReqManObjResMsgIter.next();
             assertEquals(respondToObjectRequestContext.getObjs().size(), message.getObjects().size());
-          } else {
-            new AssertionError("should have one sent message in the queue");
           }
         }
       }
