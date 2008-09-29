@@ -45,7 +45,8 @@ public class FileApplicator extends PhysicalApplicator {
     boolean remoteFileSeparatorObtained = false;
     char sepChar = 0;
 
-    while (cursor.next(encoding)) {
+    // null classloader context; hydrating a File can't cause a class to be loaded.
+    while (cursor.next(encoding, null)) {
       PhysicalAction a = cursor.getPhysicalAction();
       Assert.eval(a.isTruePhysical());
       String fieldName = a.getFieldName();

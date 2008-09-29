@@ -61,29 +61,29 @@ public class VersionizedDNAWrapperTest extends TestCase {
     vdna = new VersionizedDNAWrapper(dna, 10, true);
     DNACursor cursor = vdna.getCursor();
     cursor.reset();
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action1, cursor.getPhysicalAction());
     cursor.reset();
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action1, cursor.getPhysicalAction());
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action2, cursor.getLogicalAction());
     cursor.reset();
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action1, cursor.getPhysicalAction());
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action2, cursor.getLogicalAction());
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action3, cursor.getPhysicalAction());
-    assertFalse(cursor.next(encoding));
+    assertFalse(cursor.next(encoding, null));
     cursor.reset();
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action1, cursor.getPhysicalAction());
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action2, cursor.getLogicalAction());
-    assertTrue(cursor.next(encoding));
+    assertTrue(cursor.next(encoding, null));
     compareAction(action3, cursor.getPhysicalAction());
-    assertFalse(cursor.next(encoding));
+    assertFalse(cursor.next(encoding, null));
   }
 
   protected DNAImpl createDNAImpl(ObjectStringSerializer serializer, boolean b) {

@@ -11,8 +11,8 @@ import java.lang.ref.ReferenceQueue;
 
 public class TCObjectLogical extends TCObjectImpl {
 
-  public TCObjectLogical(ReferenceQueue queue, ObjectID id, Object peer, TCClass tcc, boolean isNew) {
-    super(queue, id, peer, tcc, isNew);
+  public TCObjectLogical(ReferenceQueue queue, ObjectID id, Object peer, TCObject tcoContext, TCClass tcc, boolean isNew) {
+    super(queue, id, peer, tcoContext, tcc, isNew);
   }
 
   public void logicalInvoke(int method, String methodName, Object[] parameters) {

@@ -321,11 +321,11 @@ public class TCClassImpl implements TCClass {
     return objectManager;
   }
 
-  public TCObject createTCObject(ObjectID id, Object pojo, boolean isNew) {
+  public TCObject createTCObject(ObjectID id, Object pojo, TCObject tcoContext, boolean isNew) {
     if (isLogical) {
-      return new TCObjectLogical(objectManager.getReferenceQueue(), id, pojo, this, isNew);
+      return new TCObjectLogical(objectManager.getReferenceQueue(), id, pojo, tcoContext, this, isNew);
     } else {
-      return new TCObjectPhysical(objectManager.getReferenceQueue(), id, pojo, this, isNew);
+      return new TCObjectPhysical(objectManager.getReferenceQueue(), id, pojo, tcoContext, this, isNew);
     }
   }
 
@@ -337,8 +337,8 @@ public class TCClassImpl implements TCClass {
     return useNonDefaultConstructor;
   }
 
-  public Object getNewInstanceFromNonDefaultConstructor(DNA dna) throws IOException, ClassNotFoundException {
-    Object o = applicator.getNewInstance(objectManager, dna);
+  public Object getNewInstanceFromNonDefaultConstructor(TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
+    Object o = applicator.getNewInstance(objectManager, tcoRequestor, dna);
 
     if (o == null) { throw new AssertionError("Can't find suitable constructor for class: " + getName() + "."); }
     return o;

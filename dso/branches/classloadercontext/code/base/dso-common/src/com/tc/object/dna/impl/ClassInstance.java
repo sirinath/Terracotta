@@ -5,6 +5,7 @@
 package com.tc.object.dna.impl;
 
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -42,12 +43,14 @@ public class ClassInstance implements Serializable {
     loaderDef = loaderDefinition;
   }
 
-  public Class asClass(ClassProvider classProvider) throws ClassNotFoundException {
+  public Class asClass(ClassProvider classProvider, ClassloaderContext requestorContext) throws ClassNotFoundException {
     String classLoaderdef = loaderDef.asString();
     String className = name.asString();
     Class clazz = getPrimitiveClass(className);
-    if (clazz != null) { return clazz; }
-    return classProvider.getClassFor(className, classLoaderdef);
+    if (clazz != null) { 
+      return clazz; 
+    }
+    return classProvider.getClassFor(className, classLoaderdef, requestorContext);
   }
 
   public boolean equals(Object obj) {

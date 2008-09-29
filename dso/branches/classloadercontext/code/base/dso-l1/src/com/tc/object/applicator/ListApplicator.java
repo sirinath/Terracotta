@@ -16,6 +16,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -44,7 +45,8 @@ public class ListApplicator extends BaseApplicator {
     List list = (List) po;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
@@ -52,7 +54,7 @@ public class ListApplicator extends BaseApplicator {
       for (int i = 0, n = params.length; i < n; i++) {
         Object param = params[i];
         if (param instanceof ObjectID) {
-          params[i] = objectManager.lookupObject((ObjectID) param);
+          params[i] = objectManager.lookupObject((ObjectID) param, tcObject);
         }
       }
 
@@ -166,7 +168,7 @@ public class ListApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

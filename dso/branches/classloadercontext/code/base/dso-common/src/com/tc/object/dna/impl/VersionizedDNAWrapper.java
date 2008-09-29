@@ -10,6 +10,7 @@ import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,11 +97,11 @@ public class VersionizedDNAWrapper implements DNA {
       return success;
     }
 
-    public boolean next(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+    public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
       if(++index < actions.size()) {
         return true;
       }
-      boolean success = cursor.next(encoding);
+      boolean success = cursor.next(encoding, requestorContext);
       if (success) {
         actions.add(cursor.getAction());
       }

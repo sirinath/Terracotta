@@ -181,7 +181,7 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject shareObjectIfNecessary(Object pojo) {
+  public final TCObject shareObjectIfNecessary(Object pojo, TCObject tcoRequestor) {
     throw new UnsupportedOperationException();
   }
 
@@ -203,15 +203,15 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject lookupOrCreate(Object obj) {
+  public final TCObject lookupOrCreate(Object obj, TCObject tcoRequestor) {
     throw new UnsupportedOperationException();
   }
 
-  public final Object lookupObject(ObjectID id) {
+  public final Object lookupObject(ObjectID id, TCObject tcoRequestor) {
     throw new UnsupportedOperationException();
   }
 
-  public Object lookupObject(ObjectID id, ObjectID parentContext) {
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) {
     throw new UnsupportedOperationException();
   }
 

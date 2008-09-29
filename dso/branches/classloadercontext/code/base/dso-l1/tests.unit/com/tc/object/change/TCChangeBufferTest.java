@@ -53,7 +53,7 @@ public class TCChangeBufferTest extends TestCase {
 
     int count = 0;
     DNACursor cursor = dna.getCursor();
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       count++;
       LogicalAction action = dna.getLogicalAction();
 
@@ -93,7 +93,7 @@ public class TCChangeBufferTest extends TestCase {
 
     int count = 0;
     DNACursor cursor = dna.getCursor();
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       count++;
       PhysicalAction action = dna.getPhysicalAction();
 
@@ -133,7 +133,7 @@ public class TCChangeBufferTest extends TestCase {
 
     int count = 0;
     DNACursor cursor = dna.getCursor();
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       count++;
       PhysicalAction action = dna.getPhysicalAction();
 

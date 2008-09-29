@@ -132,7 +132,7 @@ public class TestClassFactory implements TCClassFactory {
       return null;
     }
 
-    public TCObject createTCObject(ObjectID id, Object peer, boolean isNew) {
+    public TCObject createTCObject(ObjectID id, Object peer, TCObject tcoContext, boolean isNew) {
       return null;
     }
 
@@ -140,7 +140,7 @@ public class TestClassFactory implements TCClassFactory {
       return false;
     }
 
-    public Object getNewInstanceFromNonDefaultConstructor(DNA dna) {
+    public Object getNewInstanceFromNonDefaultConstructor(TCObject tcoContext, DNA dna) {
       return null;
     }
 

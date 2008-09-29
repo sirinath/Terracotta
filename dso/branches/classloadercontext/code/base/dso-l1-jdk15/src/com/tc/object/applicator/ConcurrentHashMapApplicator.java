@@ -16,6 +16,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.FieldUtils;
 
@@ -93,14 +94,15 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
       ClassNotFoundException {
     Object[] segments = null;
     DNACursor cursor = dna.getCursor();
-
-    while (cursor.next(encoding)) {
+    
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       Object action = cursor.getAction();
       if (action instanceof LogicalAction) {
         LogicalAction logicalAction = cursor.getLogicalAction();
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
-        apply(objectManager, po, method, params);
+        apply(objectManager, tcObject, po, method, params);
       } else if (action instanceof PhysicalAction) {
         // Physical fields are shared only when the DNA is not a delta.
         Assert.assertFalse(dna.isDelta());
@@ -108,7 +110,7 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
         PhysicalAction physicalAction = cursor.getPhysicalAction();
         if (physicalAction.isEntireArray()) {
           segments = (Object[]) physicalAction.getObject();
-          segments = resolveReferences(objectManager, segments);
+          segments = resolveReferences(objectManager, tcObject, segments);
           setSegmentField(segments, po);
         } else {
           Assert.assertTrue(physicalAction.isTruePhysical());
@@ -130,12 +132,12 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
     }
   }
 
-  private Object[] resolveReferences(ClientObjectManager objectManager, Object[] sids) throws ClassNotFoundException {
-    Object segment = objectManager.lookupObject((ObjectID) sids[0]);
+  private Object[] resolveReferences(ClientObjectManager objectManager, TCObject tcoRequestor, Object[] sids) throws ClassNotFoundException {
+    Object segment = objectManager.lookupObject((ObjectID) sids[0], tcoRequestor);
     Object[] segments = (Object[]) Array.newInstance(segment.getClass(), sids.length);
     segments[0] = segment;
     for (int i = 1; i < sids.length; i++) {
-      segments[i] = objectManager.lookupObject((ObjectID) sids[i]);
+      segments[i] = objectManager.lookupObject((ObjectID) sids[i], tcoRequestor);
     }
     return segments;
   }

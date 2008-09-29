@@ -16,6 +16,7 @@ import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
@@ -70,17 +71,18 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
 
   public boolean next() throws IOException {
     try {
-      return next(DNA_STORAGE_ENCODING);
+      // StorageDNAEncodingImpl uses a FailureClassProvider, so it does not need a ClassloaderContext
+      return next(DNA_STORAGE_ENCODING, null);
     } catch (ClassNotFoundException e) {
       // This shouldn't happen when expand is "false"
       throw Assert.failure("Internal error");
     }
   }
 
-  public boolean next(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     boolean hasNext = actionCount > 0;
     if (hasNext) {
-      parseNext(encoding);
+      parseNext(encoding, requestorContext);
       actionCount--;
     } else {
       if (input.available() > 0) { throw new IOException(input.available() + " bytes remaining (expect 0)"); }
@@ -88,30 +90,30 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     return hasNext;
   }
 
-  private void parseNext(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  private void parseNext(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     byte recordType = input.readByte();
 
     switch (recordType) {
       case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE:
-        parsePhysical(encoding, false);
+        parsePhysical(encoding, requestorContext, false);
         return;
       case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT:
-        parsePhysical(encoding, true);
+        parsePhysical(encoding, requestorContext, true);
         return;
       case BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE:
-        parseLogical(encoding);
+        parseLogical(encoding, requestorContext);
         return;
       case BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE:
-        parseArrayElement(encoding);
+        parseArrayElement(encoding, requestorContext);
         return;
       case BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE:
-        parseEntireArray(encoding);
+        parseEntireArray(encoding, requestorContext);
         return;
       case BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE:
-        parseLiteralValue(encoding);
+        parseLiteralValue(encoding, requestorContext);
         return;
       case BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE:
-        parseSubArray(encoding);
+        parseSubArray(encoding, requestorContext);
         return;
       default:
         throw new IOException("Invalid record type: " + recordType);
@@ -120,42 +122,42 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     // unreachable
   }
 
-  private void parseSubArray(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  private void parseSubArray(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     int startPos = input.readInt();
-    Object subArray = encoding.decode(input);
+    Object subArray = encoding.decode(input, requestorContext);
     currentAction = new PhysicalAction(subArray, startPos);
   }
 
-  private void parseEntireArray(DNAEncoding encoding) throws IOException, ClassNotFoundException {
-    Object array = encoding.decode(input);
+  private void parseEntireArray(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
+    Object array = encoding.decode(input, requestorContext);
     currentAction = new PhysicalAction(array);
   }
 
-  private void parseLiteralValue(DNAEncoding encoding) throws IOException, ClassNotFoundException {
-    Object value = encoding.decode(input);
+  private void parseLiteralValue(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
+    Object value = encoding.decode(input, requestorContext);
     currentAction = new LiteralAction(value);
   }
 
-  private void parseArrayElement(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  private void parseArrayElement(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     int index = input.readInt();
-    Object value = encoding.decode(input);
+    Object value = encoding.decode(input, requestorContext);
     currentAction = new PhysicalAction(index, value, value instanceof ObjectID);
   }
 
-  private void parsePhysical(DNAEncoding encoding, boolean isReference) throws IOException, ClassNotFoundException {
+  private void parsePhysical(DNAEncoding encoding, ClassloaderContext requestorContext, boolean isReference) throws IOException, ClassNotFoundException {
     String fieldName = serializer.readFieldName(input);
 
-    Object value = encoding.decode(input);
+    Object value = encoding.decode(input, requestorContext);
     currentAction = new PhysicalAction(fieldName, value, value instanceof ObjectID || isReference);
   }
 
-  private void parseLogical(DNAEncoding encoding) throws IOException, ClassNotFoundException {
+  private void parseLogical(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException {
     int method = input.readInt();
     int paramCount = input.read();
     if (paramCount < 0) throw new AssertionError("Invalid param count:" + paramCount);
     Object[] params = new Object[paramCount];
     for (int i = 0; i < params.length; i++) {
-      params[i] = encoding.decode(input);
+      params[i] = encoding.decode(input, requestorContext);
     }
     currentAction = new LogicalAction(method, params);
   }

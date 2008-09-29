@@ -14,12 +14,15 @@ import com.tc.logging.TCLogger;
 import com.tc.object.config.schema.ExcludedInstrumentedClass;
 import com.tc.object.config.schema.IncludeOnLoad;
 import com.tc.object.config.schema.IncludedInstrumentedClass;
+import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.NamedRootClassProvider;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Autolock;
 import com.terracottatech.config.ClassExpression;
+import com.terracottatech.config.ClassloaderCompatibility;
 import com.terracottatech.config.DistributedMethods;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Include;
@@ -50,6 +53,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Utility to process the contents of the configuration file
+ * (as expressed via the XMLBeans wrapper around the config file schema)
+ * and accumulate it into a DSOClientConfigHelper which can then be
+ * queried for config information. Multiple ConfigLoaders may be used
+ * to sequentially process multiple config file fragments into a single 
+ * DSOClientConfigHelper.
+ */
 public class ConfigLoader {
   private final DSOClientConfigHelper config;
   private final TCLogger              logger;
@@ -59,6 +70,10 @@ public class ConfigLoader {
     this.logger = logger;
   }
 
+  /**
+   * Load the contents of dsoApplication and accumulate them into the DSOClientConfigHelper
+   * that was passed in to the constructor.
+   */
   public void loadDsoConfig(DsoApplication dsoApplication) throws ConfigurationSetupException {
     if (dsoApplication == null) return;
 
@@ -69,6 +84,7 @@ public class ConfigLoader {
     loadTransientFields(dsoApplication.getTransientFields());
     loadInstrumentedClasses(dsoApplication.getInstrumentedClasses());
     loadDistributedMethods(dsoApplication.getDistributedMethods());
+    loadClassloaderCompatibility(dsoApplication.getClassloaderCompatibility());
 
     addAdditionalBootJarClasses(dsoApplication.getAdditionalBootJarClasses());
   }
@@ -342,6 +358,33 @@ public class ConfigLoader {
         final DistributedMethodSpec dms = new DistributedMethodSpec(me.getStringValue(), me.getRunOnAllNodes());
         config.addDistributedMethodCall(dms);
       }
+    }
+  }
+
+  private void loadClassloaderCompatibility(ClassloaderCompatibility classloaderCompatibility) throws ConfigurationSetupException {
+    if (classloaderCompatibility == null) {
+      return;
+    }
+    
+    // NamedRoot classloader strategy
+    String namedRoot = classloaderCompatibility.getClassloaderFromNamedRoot();
+    if (namedRoot != null) {
+      if (namedRoot.length() > 0) {
+        ClassProvider oldProvider = config.getClassProvider();
+        if (oldProvider != null) {
+          throw new ConfigurationSetupException(
+              "attempted to set classloader-compatibility strategy, but it has already been set");
+        }
+        config.setClassProvider(new NamedRootClassProvider(namedRoot));
+      } else {
+        throw new ConfigurationSetupException(
+            "classloader-compatibility strategy was specified as named-root, but root name was empty");
+      }
+    } 
+    
+    // Unknown strategy - is this code out of sync with the tc-config schema?
+    else {
+      throw new ConfigurationSetupException("An unsupported classloader-compatibility strategy was specified");
     }
   }
 

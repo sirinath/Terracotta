@@ -11,6 +11,7 @@ import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.util.ToggleableStrongReference;
 
 import gnu.trove.TLinkable;
@@ -59,6 +60,10 @@ public class NullTCObject implements TCObject {
 
   public TCClass getTCClass() {
     // do nothing
+    return null;
+  }
+  
+  public ClassloaderContext getClassloaderContext() {
     return null;
   }
 
@@ -237,4 +242,13 @@ public class NullTCObject implements TCObject {
   public void dehydrate(DNAWriter writer) {
     throw new AssertionError();
   }
+
+  public void setClassloaderContext(ClassloaderContext classloaderContext) {
+    //
+  }
+  
+  public void propagateFrom(TCObject existing) {
+    //
+  }
+  
 }

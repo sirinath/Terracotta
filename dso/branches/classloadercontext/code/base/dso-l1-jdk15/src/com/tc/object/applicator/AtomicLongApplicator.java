@@ -38,9 +38,10 @@ public class AtomicLongApplicator extends BaseApplicator {
     DNACursor cursor = dna.getCursor();
 
     Assert.assertTrue(po.getClass().getName(), po instanceof AtomicLong);
-
+    
+    // null classloader context: hydrating an AtomicLong cannot cause a class to be loaded.
     // You can get multiple actions for an AtomicLong if txn get folded in the client
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       PhysicalAction a = (PhysicalAction) cursor.getAction();
       Long value = (Long) a.getObject();
       ((AtomicLong) po).set(value.longValue());
@@ -54,7 +55,7 @@ public class AtomicLongApplicator extends BaseApplicator {
     writer.addPhysicalAction(AtomicLongAdapter.VALUE_FIELD_NAME, new Long(value));
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

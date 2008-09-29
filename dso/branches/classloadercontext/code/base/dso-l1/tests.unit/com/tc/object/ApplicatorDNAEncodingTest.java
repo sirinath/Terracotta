@@ -51,7 +51,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     IOUtils.copy(new TCByteBufferInputStream(output.toArray()), baos);
     TCObjectInputStream input = new TCObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
 
-    assertTrue(Arrays.equals(b, (byte[]) encoding.decode(input)));
+    assertTrue(Arrays.equals(b, (byte[]) encoding.decode(input, null)));
 
     assertEquals(0, input.available());
   }
@@ -68,8 +68,8 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     TCByteBufferInputStream input = new TCByteBufferInputStream(output.toArray());
 
-    assertTrue(Arrays.equals(array, (Object[]) encoding.decode(input)));
-    assertTrue(Arrays.equals(array2, (Object[]) encoding.decode(input)));
+    assertTrue(Arrays.equals(array, (Object[]) encoding.decode(input, null)));
+    assertTrue(Arrays.equals(array2, (Object[]) encoding.decode(input, null)));
 
     assertEquals(0, input.available());
   }
@@ -89,7 +89,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     TCByteBufferInputStream input = new TCByteBufferInputStream(output.toArray());
 
-    assertTrue(Arrays.equals(array, (Object[]) encoding.decode(input)));
+    assertTrue(Arrays.equals(array, (Object[]) encoding.decode(input, null)));
 
     assertEquals(0, input.available());
   }
@@ -101,7 +101,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     encoding.encodeArray(null, output);
     TCByteBufferInputStream input = new TCByteBufferInputStream(output.toArray());
 
-    assertNull(encoding.decode(input));
+    assertNull(encoding.decode(input, null));
 
     assertEquals(0, input.available());
   }
@@ -132,14 +132,14 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
       TCByteBufferInputStream input = new TCByteBufferInputStream(output.toArray());
 
-      assertTrue(Arrays.equals(b, (byte[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(c, (char[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(d, (double[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(f, (float[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(i, (int[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(j, (long[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(s, (short[]) encoding.decode(input)));
-      assertTrue(Arrays.equals(z, (boolean[]) encoding.decode(input)));
+      assertTrue(Arrays.equals(b, (byte[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(c, (char[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(d, (double[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(f, (float[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(i, (int[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(j, (long[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(s, (short[]) encoding.decode(input, null)));
+      assertTrue(Arrays.equals(z, (boolean[]) encoding.decode(input, null)));
 
       assertEquals(0, input.available());
     }
@@ -256,7 +256,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     // Decode string from data using storage encoding (into UTF8ByteDataHolder) into decoded
     DNAEncoding storageEncoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input);
+    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) storageEncoding.decode(input, null);
 
     if (compressed) {
       assertTrue(decoded instanceof UTF8ByteCompressedDataHolder);
@@ -276,17 +276,17 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     // Decode UTF8ByteDataHolder from data2 into decoded2 using storage encoding
     input = new TCByteBufferInputStream(data2);
-    UTF8ByteDataHolder decoded2 = (UTF8ByteDataHolder) storageEncoding.decode(input);
+    UTF8ByteDataHolder decoded2 = (UTF8ByteDataHolder) storageEncoding.decode(input, null);
     assertEquals(decoded, decoded2);
 
     // Decode from original data using applicator encoding into str
     input = new TCByteBufferInputStream(data);
-    String str = (String) applicatorEncoding.decode(input);
+    String str = (String) applicatorEncoding.decode(input, null);
     assertEquals(s, str);
 
     // Decode from data2 using applicator encoding into str2
     input = new TCByteBufferInputStream(data2);
-    String str2 = (String) applicatorEncoding.decode(input);
+    String str2 = (String) applicatorEncoding.decode(input, null);
     assertEquals(s, str2);
 
   }
@@ -312,25 +312,25 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     encoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertTrue(Arrays.equals("timmy".getBytes("UTF-8"), decoded.getBytes()));
-    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertTrue(Arrays.equals("teck".getBytes("UTF-8"), decoded.getBytes()));
     assertEquals(0, input.available());
 
     encoding = getApplicatorEncoding();
     input = new TCByteBufferInputStream(data);
-    String str = (String) encoding.decode(input);
+    String str = (String) encoding.decode(input, null);
     assertEquals("timmy", str);
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals("teck", str);
     assertEquals(0, input.available());
 
     encoding = getSerializerEncoder();
     input = new TCByteBufferInputStream(data);
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals("timmy", str);
-    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertEquals(orgUTF, decoded);
     assertEquals(0, input.available());
   }
@@ -367,39 +367,39 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     encoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    UTF8ByteDataHolder decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertTrue(decoded.isInterned());
     assertTrue(Arrays.equals(orgStr.getBytes("UTF-8"), decoded.getBytes()));
-    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertTrue(decoded.isInterned());
     assertTrue(Arrays.equals(orgUTF.getBytes(), decoded.getBytes()));
-    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertFalse(decoded.isInterned());
     assertTrue(Arrays.equals(orgNonIntStr.getBytes("UTF-8"), decoded.getBytes()));
     assertEquals(0, input.available());
 
     encoding = getApplicatorEncoding();
     input = new TCByteBufferInputStream(data);
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals(orgStr, str);
     assertTrue(StringTCUtil.isInterned(str));
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals(orgUTF.asString(), str);
     assertTrue(StringTCUtil.isInterned(str));
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals(orgNonIntStr, str);
     assertFalse(StringTCUtil.isInterned(str));
     assertEquals(0, input.available());
 
     encoding = getSerializerEncoder();
     input = new TCByteBufferInputStream(data);
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals(orgStr, str);
     assertTrue(StringTCUtil.isInterned(str));
-    decoded = (UTF8ByteDataHolder) encoding.decode(input);
+    decoded = (UTF8ByteDataHolder) encoding.decode(input, null);
     assertEquals(orgUTF, decoded);
     assertTrue(decoded.isInterned());
-    str = (String) encoding.decode(input);
+    str = (String) encoding.decode(input, null);
     assertEquals(orgNonIntStr, str);
     assertFalse(StringTCUtil.isInterned(str));
     assertEquals(0, input.available());
@@ -420,7 +420,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     encoding.encode(getClass(), output);
     Class c = Object.class;
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(c.getName());
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getLoaderDescriptionFor(c));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getRegistry().getLoaderDescriptionFor(c.getClassLoader()));
     ClassInstance ci = new ClassInstance(name, def);
     encoding.encode(ci, output);
 
@@ -428,11 +428,12 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     encoding = getStorageEncoder();
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
-    ClassInstance holder = (ClassInstance) encoding.decode(input);
+    ClassInstance holder = (ClassInstance) encoding.decode(input, null);
     assertEquals(getClass().getName(), holder.getName().asString());
-    assertEquals(classProvider.getLoaderDescriptionFor(getClass()), holder.getLoaderDef().asString());
+    assertEquals(classProvider.getRegistry().getLoaderDescriptionFor(getClass().getClassLoader()), 
+                 holder.getLoaderDef().asString());
 
-    holder = (ClassInstance) encoding.decode(input);
+    holder = (ClassInstance) encoding.decode(input, null);
     assertEquals(name, holder.getName());
     assertEquals(def, holder.getLoaderDef());
 
@@ -440,9 +441,9 @@ public class ApplicatorDNAEncodingTest extends TestCase {
 
     encoding = getApplicatorEncoding();
     input = new TCByteBufferInputStream(data);
-    c = (Class) encoding.decode(input);
+    c = (Class) encoding.decode(input, null);
     assertEquals(getClass(), c);
-    c = (Class) encoding.decode(input);
+    c = (Class) encoding.decode(input, null);
     assertEquals(Object.class, c);
     assertEquals(0, input.available());
 
@@ -482,7 +483,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     TCByteBufferInputStream input = new TCByteBufferInputStream(output.toArray());
     for (Iterator i = data.iterator(); i.hasNext();) {
       Object orig = i.next();
-      Object decoded = encoding.decode(input);
+      Object decoded = encoding.decode(input, null);
 
       assertEquals(orig, decoded);
     }

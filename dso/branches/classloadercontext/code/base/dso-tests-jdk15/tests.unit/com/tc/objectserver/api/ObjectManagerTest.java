@@ -32,6 +32,7 @@ import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -771,7 +772,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
         return count >= 0;
       }
 
-      public boolean next(DNAEncoding encoding) {
+      public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
         throw new ImplementMe();
       }
 
@@ -1619,7 +1620,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           }
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 
@@ -1701,7 +1702,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           throw new ImplementMe();
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 
@@ -1794,7 +1795,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           throw new ImplementMe();
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 
@@ -1879,7 +1880,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           throw new ImplementMe();
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 
@@ -2052,7 +2053,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 
@@ -2148,7 +2149,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
           throw new ImplementMe();
         }
 
-        public boolean next(DNAEncoding encoding) {
+        public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) {
           throw new ImplementMe();
         }
 

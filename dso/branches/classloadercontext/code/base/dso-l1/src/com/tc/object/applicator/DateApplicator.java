@@ -33,7 +33,7 @@ public class DateApplicator extends BaseApplicator {
     Date date = (Date) pojo;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
@@ -64,7 +64,7 @@ public class DateApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

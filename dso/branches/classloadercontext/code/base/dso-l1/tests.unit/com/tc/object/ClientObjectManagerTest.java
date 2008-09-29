@@ -155,7 +155,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
         assertNotNull(clientTransactionManager);
         assertNotNull(oid);
         assertFalse(clientTransactionManager.isTransactionLoggingDisabled());
-        TestObject testObject = (TestObject) clientObjectManager.lookupObject(oid);
+        TestObject testObject = (TestObject) clientObjectManager.lookupObject(oid, null);
         assertNotNull(testObject);
         assertNotNull(testObject.object);
         assertFalse(clientTransactionManager.isTransactionLoggingDisabled());
@@ -193,7 +193,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     prepareObjectLookupResults(dna);
 
     try {
-      mgr.lookup(objectID);
+      mgr.lookup(objectID, this.tcObject);
       fail("no exception");
     } catch (Exception e) {
       if (! (e == expect || e.getCause() == expect)) {
@@ -205,7 +205,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     prepareObjectLookupResults(dna);
 
     try {
-      mgr.lookup(objectID);
+      mgr.lookup(objectID, this.tcObject);
       fail("no exception");
     } catch (Exception e) {
       if (! (e == expect || e.getCause() == expect)) {
@@ -418,7 +418,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
       return new TestObject();
     }
 
-    public Object getNewPeerObject(TCClass type, DNA dna) {
+    public Object getNewPeerObject(TCClass type, TCObject tcoContext, DNA dna) {
       return new TestObject();
     }
 
@@ -426,36 +426,36 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
       return (Counter) localDepthCounter.get();
     }
 
-    public TCObject getNewInstance(ObjectID id, Object peer, Class clazz, boolean isNew) {
+    public TCObject getNewInstance(ObjectID id, Object peer, TCObject tcoContext, Class clazz, boolean isNew) {
       throw new ImplementMe();
     }
 
-    public TCObject getNewInstance(ObjectID id, Class clazz, boolean isNew) {
+    public TCObject getNewInstance(ObjectID id, TCObject tcoContext, Class clazz, boolean isNew) {
       TCObjectPhysical tcObj = null;
       if (id.toLong() == 1) {
         if (getLocalDepthCounter().get() == 0) {
           TCField[] tcFields = new TCField[] { new MockTCField("object") };
           TCClass tcClass = new MockTCClass(clientObjectManager, true, true, true, tcFields);
-          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcoContext, tcClass, isNew);
           tcObj.setReference("object", new ObjectID(2));
           getLocalDepthCounter().increment();
         } else {
           TCField[] tcFields = new TCField[] { new MockTCField("object") };
           TCClass tcClass = new MockTCClass(clientObjectManager, true, true, true, tcFields);
-          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcoContext, tcClass, isNew);
           getLocalDepthCounter().increment();
         }
       } else if (id.toLong() == 2) {
         if (getLocalDepthCounter().get() == 0) {
           TCField[] tcFields = new TCField[] { new MockTCField("object") };
           TCClass tcClass = new MockTCClass(clientObjectManager, true, true, true, tcFields);
-          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcoContext, tcClass, isNew);
           tcObj.setReference("object", new ObjectID(1));
           getLocalDepthCounter().increment();
         } else {
           TCField[] tcFields = new TCField[] { new MockTCField("object") };
           TCClass tcClass = new MockTCClass(clientObjectManager, true, true, true, tcFields);
-          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(clientObjectManager.getReferenceQueue(), id, null, tcoContext, tcClass, isNew);
           getLocalDepthCounter().increment();
         }
       }

@@ -82,7 +82,7 @@ public class MockTCClass implements TCClass {
     throw new ImplementMe();
   }
 
-  public TCObject createTCObject(ObjectID id, Object peer, boolean isNew) {
+  public TCObject createTCObject(ObjectID id, Object peer, TCObject tcoContext, boolean isNew) {
     throw new ImplementMe();
   }
 
@@ -107,7 +107,7 @@ public class MockTCClass implements TCClass {
     return false;
   }
 
-  public Object getNewInstanceFromNonDefaultConstructor(DNA dna) {
+  public Object getNewInstanceFromNonDefaultConstructor(TCObject tcoContext, DNA dna) {
     throw new ImplementMe();
   }
 

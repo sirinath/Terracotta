@@ -10,6 +10,7 @@ import com.tc.logging.DumpHandler;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.text.PrettyPrintable;
@@ -28,10 +29,12 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * 
    * @param className Class name
    * @param loaderDesc Classloader name
+   * @param requestorContext the classloader context of the object requesting the class to be loaded.
+   * Depending on the class provider strategy being used, this information may not be used.
    * @return Class, never null
    * @throws ClassNotFoundException If class not found
    */
-  public Class getClassFor(String className, String loaderDesc) throws ClassNotFoundException;
+  public Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) throws ClassNotFoundException;
 
   /**
    * Determine whether this instance is managed.
@@ -103,7 +106,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @return Instance for the id
    * @throws ClassNotFoundException If class can't be found in this VM
    */
-  public Object lookupObject(ObjectID id) throws ClassNotFoundException;
+  public Object lookupObject(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
@@ -115,7 +118,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @return The actual object
    * @throws TCClassNotFoundException If a class is not found during faulting
    */
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException;
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Find object by ID. If necessary, the object will be faulted into the JVM. No fault-count depth will be used and all
@@ -125,7 +128,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @return Instance for the id
    * @throws ClassNotFoundException If class can't be found in this VM
    */
-  public Object lookupObjectNoDepth(ObjectID id) throws ClassNotFoundException;
+  public Object lookupObjectNoDepth(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Find the managed object for this instance or create a new one if it does not yet exist.
@@ -133,7 +136,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @param obj Instance
    * @return Managed object, may be new. Should never be null, but might be object representing null TCObject.
    */
-  public TCObject lookupOrCreate(Object obj);
+  public TCObject lookupOrCreate(Object obj, TCObject tcoRequestor);
 
   /**
    * Find the managed object for this instance or share. This method is (exclusively?) used when implementing
@@ -142,7 +145,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @param obj Instance
    * @return Should never be null, but might be object representing null TCObject.
    */
-  public TCObject lookupOrShare(Object pojo);
+  public TCObject lookupOrShare(Object pojo, TCObject tcoRequestor);
 
   /**
    * Find identifier for existing instance
@@ -206,7 +209,7 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @return Managed object
    * @throws ClassNotFoundException If a class needed to hydrate cannot be found
    */
-  public TCObject lookup(ObjectID id) throws ClassNotFoundException;
+  public TCObject lookup(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException;
 
   /**
    * Find managed object by instance, which may be null
@@ -228,10 +231,11 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * Create new peer object instance for the clazz, referred to through a WeakReference.
    * 
    * @param clazz The kind of class
+   * @param tcoContext the TCObject whose context info will be used if a class must be loaded.
    * @param dna The dna defining the object instance
    * @return Weak reference referring to the peer
    */
-  public WeakReference createNewPeer(TCClass clazz, DNA dna);
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, DNA dna);
 
   // public WeakObjectReference createNewPeer(TCClass clazz, DNA dna);
 
@@ -239,12 +243,13 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * Create new peer object instance for the clazz, referred to through a WeakReference.
    * 
    * @param clazz The kind of class
+   * @param tcoContext the TCObject whose context info will be used if a class must be loaded.
    * @param size The size if this is an array
    * @param id The object identifier
    * @param parentID The parent object, if this is an inner object
    * @return Weak reference referring to the peer
    */
-  public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, int size, ObjectID id, ObjectID parentID);
 
   // public WeakObjectReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
 

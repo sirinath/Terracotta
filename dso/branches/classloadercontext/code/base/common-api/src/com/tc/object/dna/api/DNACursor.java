@@ -3,6 +3,8 @@
  */
 package com.tc.object.dna.api;
 
+import com.tc.object.loaders.ClassloaderContext;
+
 import java.io.IOException;
 
 /**
@@ -31,11 +33,13 @@ public interface DNACursor {
   /**
    * Move to next action and use specific encoding
    * @param encoding The DNA encoding
+   * @param requestorContext will be used in the event that the action requires a
+   * ClassProvider to produce a new Class, if the ClassProvider uses a ClassloaderContext.
    * @return True if there is a next action, false if no more actions
    * @throws IOException If an IO error occurs while moving the cursor
    * @throws ClassNotFoundException If a class is not found while deserializing DNA
    */
-  public boolean next(DNAEncoding encoding) throws IOException, ClassNotFoundException;
+  public boolean next(DNAEncoding encoding, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException;
 
   /**
    * Reset the cursor

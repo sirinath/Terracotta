@@ -5,6 +5,7 @@ package com.tc.object.dna.api;
 
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 
@@ -55,8 +56,11 @@ public interface DNAEncoding {
   /**
    * Decode an object from an input stream
    * @param input The input stream
+   * @param requestorContext if the object being decoded requires that
+   * a new Class must be loaded, the DNAEncoding's ClassProvider will
+   * be used; some ClassProviders require a ClassloaderContext.
    */
-  public abstract Object decode(TCDataInput input) throws IOException, ClassNotFoundException;
+  public abstract Object decode(TCDataInput input, ClassloaderContext requestorContext) throws IOException, ClassNotFoundException;
 
   /**
    * Encode an array onto an output stream, automatically determine array length

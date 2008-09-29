@@ -3,35 +3,29 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.loaders.ClassloaderContext;
 
 
 public class MockClassProvider implements ClassProvider {
-
+  
+  private ClassLoaderRegistry registry = new MockClassLoaderRegistry();
+  
   public MockClassProvider() {
     super();
   }
 
-  public Class getClassFor(String className, String loaderDesc) throws ClassNotFoundException {
+  public Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) throws ClassNotFoundException {
     return getClass().getClassLoader().loadClass(className);
-
   }
 
-  public String getLoaderDescriptionFor(Class clazz) {
-    return "";
+  public void setRegistry(ClassLoaderRegistry context) {
+    throw new AssertionError("Shouldn't set ClassLoaderRegistry for a MockClassProvider; it is already set");
   }
 
-  public ClassLoader getClassLoader(String loaderDesc) {
-    return getClass().getClassLoader();
-  }
-
-  public String getLoaderDescriptionFor(ClassLoader loader) {
-    return "";
-  }
-
-  public void registerNamedLoader(NamedClassLoader loader) {
-    // do nothing
+  public ClassLoaderRegistry getRegistry() {
+    return registry;
   }
 
 }

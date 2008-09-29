@@ -31,10 +31,10 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
     this.objectManager = objectManager;
   }
 
-  public TCObject getNewInstance(ObjectID id, Object peer, Class clazz, boolean isNew) {
+  public TCObject getNewInstance(ObjectID id, Object peer, TCObject tcoContext, Class clazz, boolean isNew) {
     TCClass tcc = clazzFactory.getOrCreate(clazz, objectManager);
-    TCObject rv = tcc.createTCObject(id, peer, isNew);
-
+    TCObject rv = tcc.createTCObject(id, peer, tcoContext, isNew);
+    
     if (peer instanceof Manageable) {
       ((Manageable) peer).__tc_managed(rv);
     }
@@ -42,12 +42,12 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
     return rv;
   }
 
-  public TCObject getNewInstance(ObjectID id, Class clazz, boolean isNew) {
-    return getNewInstance(id, null, clazz, isNew);
+  public TCObject getNewInstance(ObjectID id, TCObject tcoContext, Class clazz, boolean isNew) {
+    return getNewInstance(id, null, tcoContext, clazz, isNew);
   }
 
-  public Object getNewPeerObject(TCClass type, DNA dna) throws IOException, ClassNotFoundException {
-    return type.getNewInstanceFromNonDefaultConstructor(dna);
+  public Object getNewPeerObject(TCClass type, TCObject tcoContext, DNA dna) throws IOException, ClassNotFoundException {
+    return type.getNewInstanceFromNonDefaultConstructor(tcoContext, dna);
   }
 
   public Object getNewPeerObject(TCClass type, Object parent) throws IllegalArgumentException, SecurityException,

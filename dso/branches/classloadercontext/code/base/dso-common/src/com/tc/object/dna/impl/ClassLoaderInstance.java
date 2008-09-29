@@ -3,7 +3,7 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 
 import java.io.Serializable;
 
@@ -23,9 +23,15 @@ public class ClassLoaderInstance implements Serializable {
     return false;
   }
 
-  public ClassLoader asClassLoader(ClassProvider classProvider) {
+  /**
+   * Note that this gets the classloader from the registry, not from a
+   * ClassProvider. If the ClassProvider in use has a fallback strategy,
+   * the ClassLoader that it actually uses to provide classes for any
+   * particular class may or may not be the one specified by loaderDef.
+   */
+  public ClassLoader asClassLoader(ClassLoaderRegistry classLoaderRegistry) {
     String classLoaderdef = loaderDef.asString();
-    return classProvider.getClassLoader(classLoaderdef);
+    return classLoaderRegistry.lookupLoader(classLoaderdef);
   }
 
   public int hashCode() {

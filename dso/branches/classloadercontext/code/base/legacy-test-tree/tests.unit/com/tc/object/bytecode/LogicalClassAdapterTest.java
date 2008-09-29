@@ -11,7 +11,7 @@ import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.DSOContextImpl;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.tx.MockTransactionManager;
 import com.tc.util.runtime.Vm;
 
@@ -46,12 +46,13 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
 
     DSOClientConfigHelper config = configHelper();
 
-    ClassProvider classProvider = new MockClassProvider();
-    DSOContext context = DSOContextImpl.createContext(config, classProvider,
+    ClassLoaderRegistry registry = new MockClassLoaderRegistry();
+    DSOContext context = DSOContextImpl.createContext(config, registry,
                                                       new ManagerImpl(false, objManager, new MockTransactionManager(),
-                                                                      config, classProvider, null));
+                                                                      config, registry, null));
 
     ClassProcessorHelper.setContext(Thread.currentThread().getContextClassLoader(), context);
+    // TODO: create tcoRoot, so as to have a lookup context for the lookupOrCreate calls?
   }
 
   protected void tearDown() throws Exception {
@@ -64,13 +65,13 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     clazz = Hashtable.class;
     instance = clazz.newInstance();
 
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.PUT_SIGNATURE, new Class[] { Object.class, Object.class },
                  new Object[] { new Integer(1), new Integer(2) });
     invokeMethod(clazz, instance, SerializationUtil.REMOVE_KEY_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(3, history.size());
 
@@ -96,13 +97,13 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
   public void testHashMap() throws Exception {
     clazz = HashMap.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.PUT_SIGNATURE, new Class[] { Object.class, Object.class },
                  new Object[] { new Integer(1), new Integer(2) });
     invokeMethod(clazz, instance, SerializationUtil.REMOVE_KEY_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(3, history.size());
 
@@ -128,13 +129,13 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
   public void testIdentityHashMap() throws Exception {
     clazz = IdentityHashMap.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.PUT_SIGNATURE, new Class[] { Object.class, Object.class },
                  new Object[] { new Integer(1), new Integer(2) });
     invokeMethod(clazz, instance, SerializationUtil.REMOVE_KEY_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(3, history.size());
 
@@ -160,7 +161,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
   public void testVector() throws Exception {
     clazz = Vector.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.ADD_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.ADD_AT_SIGNATURE, new Class[] { int.class, Object.class },
@@ -183,7 +184,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
 
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
 
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(10, history.size());
 
@@ -253,13 +254,13 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
   public void testStack() throws Exception {
     clazz = Stack.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
 
     invokeMethod(clazz, instance, SerializationUtil.PUSH_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.POP_SIGNATURE, new Class[] {}, new Object[] {});
 
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(2, history.size());
 
@@ -276,7 +277,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     // ArrayList
     clazz = ArrayList.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.ADD_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.ADD_AT_SIGNATURE, new Class[] { int.class, Object.class },
@@ -294,7 +295,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
                  new Object[] { new Integer(1), new Integer(2) });
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
 
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(9, history.size());
 
@@ -344,7 +345,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     // LinkedList
     clazz = LinkedList.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     invokeMethod(clazz, instance, SerializationUtil.ADD_SIGNATURE, new Class[] { Object.class },
                  new Object[] { new Integer(1) });
     invokeMethod(clazz, instance, SerializationUtil.ADD_AT_SIGNATURE, new Class[] { int.class, Object.class },
@@ -369,7 +370,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
                  new Object[] { new Integer(1), new Integer(2) });
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
 
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
     assertEquals(12, history.size());
 
@@ -431,7 +432,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
   public void testHashSet() throws Exception {
     clazz = HashSet.class;
     instance = clazz.newInstance();
-    objManager.lookupOrCreate(instance);
+    objManager.lookupOrCreate(instance, null);
     int callCount = 0;
     int checkCount = 0;
     invokeMethod(clazz, instance, SerializationUtil.ADD_SIGNATURE, new Class[] { Object.class },
@@ -446,7 +447,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
     callCount++;
 
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
+    tcObject = (MockTCObject) objManager.lookupOrCreate(instance, null);
     history = tcObject.getHistory();
 
     assertEquals(callCount, history.size());

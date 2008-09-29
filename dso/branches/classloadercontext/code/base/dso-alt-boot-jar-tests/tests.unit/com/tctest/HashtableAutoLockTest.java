@@ -82,7 +82,7 @@ public class HashtableAutoLockTest extends TCTestCase {
   public void testClearReferences() throws Exception {
     testClientObjectManager.setIsManaged(true);
     Hashtable ht = (Hashtable)createMap("java.util.Hashtable");
-    testClientObjectManager.lookupOrCreate(ht);
+    testClientObjectManager.lookupOrCreate(ht, null);
     ((Clearable)ht).__tc_clearReferences(100);
     System.err.println("# of begins: " + testTransactionManager.getBegins().size());
     Assert.assertEquals(0, testTransactionManager.getBegins().size());

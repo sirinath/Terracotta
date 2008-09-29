@@ -15,6 +15,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.FieldUtils;
 
@@ -72,13 +73,14 @@ public class TreeMapApplicator extends BaseApplicator {
     Map m = (Map) po;
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       Object action = cursor.getAction();
       if (action instanceof PhysicalAction) {
         // This is done so that subclass of TreeMaps can work
         PhysicalAction pa = (PhysicalAction) action;
         Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-        Comparator c = (Comparator) objectManager.lookupObject((ObjectID) pa.getObject());
+        Comparator c = (Comparator) objectManager.lookupObject((ObjectID) pa.getObject(), tcObject);
         setComparator(po, c);
       } else {
         LogicalAction la = (LogicalAction) action;
@@ -88,12 +90,12 @@ public class TreeMapApplicator extends BaseApplicator {
           case SerializationUtil.PUT:
             Object k = params[0];
             Object v = params[1];
-            Object pkey = k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k;
-            Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
+            Object pkey = k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k, tcObject) : k;
+            Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v, tcObject) : v;
             m.put(pkey, value);
             break;
           case SerializationUtil.REMOVE:
-            Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
+            Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0], tcObject) : params[0];
             m.remove(rkey);
             break;
           case SerializationUtil.CLEAR:
@@ -147,12 +149,13 @@ public class TreeMapApplicator extends BaseApplicator {
 
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
-    if (!cursor.next(encoding)) { throw new AssertionError("Cursor is empty in TreeMap.getNewInstance()"); }
+    ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
+    if (!cursor.next(encoding, requestorContext)) { throw new AssertionError("Cursor is empty in TreeMap.getNewInstance()"); }
     PhysicalAction physicalAction = cursor.getPhysicalAction();
     Assert.assertEquals(COMPARATOR_FIELDNAME, physicalAction.getFieldName());
-    Comparator c = (Comparator) objectManager.lookupObject((ObjectID) physicalAction.getObject());
+    Comparator c = (Comparator) objectManager.lookupObject((ObjectID) physicalAction.getObject(), tcoRequestor);
     return (c == null ? new TreeMap() : new TreeMap(c));
   }
 }

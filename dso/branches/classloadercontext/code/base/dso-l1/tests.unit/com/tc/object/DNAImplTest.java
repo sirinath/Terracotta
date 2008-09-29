@@ -71,7 +71,7 @@ public class DNAImplTest extends TestCase {
     assertEquals(0, in.available());
     DNACursor cursor = dna.getCursor();
     int count = 1;
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, null)) {
       switch (count) {
         case 1:
           compareAction(action1, cursor.getPhysicalAction());

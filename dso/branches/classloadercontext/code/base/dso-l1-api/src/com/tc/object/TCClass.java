@@ -143,12 +143,15 @@ public interface TCClass {
   /**
    * Construct a new instance from a DNA strand using a non-default constructor
    * 
+   * @param tcoRequestor the object to which the new instance will be assigned.
+   * This may be queried for classloader context if creating the new instance requires a
+   * class to be loaded (e.g., the object type is Class).
    * @param dna The DNA with the data to use
    * @return The new instance
    * @throws IOException Reading DNA
    * @throws ClassNotFoundException Can't instantiate a class
    */
-  public Object getNewInstanceFromNonDefaultConstructor(DNA dna) throws IOException, ClassNotFoundException;
+  public Object getNewInstanceFromNonDefaultConstructor(TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException;
 
   /**
    * Get TCField for this class
@@ -167,6 +170,7 @@ public interface TCClass {
    * Reconstitute object from DNA
    * 
    * @param tcObject The object manager
+   * @param tcoRequestor the TCObject of the pojo which will own the newly hydrated object.
    * @param dna The DNA to read
    * @param pojo The new instance of the pojo to reconstitute (will be modified)
    * @param force Set to true to force an update to the DNA version, regardless of the local version
@@ -192,10 +196,12 @@ public interface TCClass {
    * Create a new TCObject
    * 
    * @param id The object identifier
-   * @param peer The object
+   * @param peer The object, or null
+   * @param tcoContext a TCObject that will be used to get classloader context
+   * for the newly created TCObject; or null, to use thread context.
    * @param isNew true whether this TCObject is for a newly shared pojo peer
    */
-  public TCObject createTCObject(ObjectID id, Object peer, boolean isNew);
+  public TCObject createTCObject(ObjectID id, Object peer, TCObject tcoContext, boolean isNew);
 
   /**
    * Get a field name by offset into an index of fields

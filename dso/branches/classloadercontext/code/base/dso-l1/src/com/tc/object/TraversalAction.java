@@ -7,5 +7,12 @@ import java.util.List;
 
 public interface TraversalAction {
 
-  public void visit(List objects);
+  /**
+   * {@link Traverser} will call this method, passing in a list of
+   * referenced portable POJOs.
+   * @param objects a list of POJOs gathered by traversing the
+   * distributed object graph
+   * @param v the parameter passed in to {@link Traverser#traverse(Object)}
+   */
+  public void visit(List objects, Object v);
 }

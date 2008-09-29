@@ -19,6 +19,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.util.Assert;
 import com.tc.util.FieldUtils;
 
@@ -114,7 +115,8 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     Object takeLock = null;
     Object putLock = null;
     Object capacity = null;
-    while (cursor.next(encoding)) {
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
+    while (cursor.next(encoding, requestorContext)) {
       Object action = cursor.getAction();
       if (action instanceof LogicalAction) {
 
@@ -139,9 +141,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         Object value = physicalAction.getObject();
 
         if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + TAKE_LOCK_FIELD_NAME)) {
-          takeLock = objectManager.lookupObject((ObjectID) value);
+          takeLock = objectManager.lookupObject((ObjectID) value, tcObject);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + PUT_LOCK_FIELD_NAME)) {
-          putLock = objectManager.lookupObject((ObjectID) value);
+          putLock = objectManager.lookupObject((ObjectID) value, tcObject);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + CAPACITY_FIELD_NAME)) {
           capacity = value;
         }
@@ -271,7 +273,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

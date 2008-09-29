@@ -71,7 +71,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         if (value != null) {
           // XXX:: This is tied closely to HashMap implementation which calls equals on the passed value rather than the
           // other way around
-          return super.containsValue(new ValueWrapper(value));
+          return super.containsValue(new ValueWrapper(value, __tc_managed()));
         } else {
           // It is a little weird to do this like this, o well...
           return super.containsValue(value) || super.containsValue(ObjectID.NULL_ID);
@@ -129,10 +129,14 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
   }
 
-  private static Object lookUpIfNecessary(Object o) {
+  private Object lookUpIfNecessary(Object o) {
+    return lookUpIfNecessary(o, __tc_managed());
+  }
+  
+  private static Object lookUpIfNecessary(Object o, TCObject tcoContext) {
     if (o instanceof ObjectID) {
       try {
-        return ManagerUtil.lookupObject((ObjectID) o);
+        return ManagerUtil.lookupObject((ObjectID) o, tcoContext);
       } catch (TCObjectNotFoundException onfe) {
         throw new ConcurrentModificationException(onfe.getMessage());
       }
@@ -143,7 +147,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   private Object lookUpFaultBreadthIfNecessary(Object o) {
     if (o instanceof ObjectID) {
       try {
-        return ManagerUtil.lookupObjectWithParentContext((ObjectID) o, __tc_managed().getObjectID());
+        return ManagerUtil.lookupObjectWithParentContext((ObjectID) o, __tc_managed().getObjectID(), __tc_managed());
       } catch (TCObjectNotFoundException onfe) {
         throw new ConcurrentModificationException(onfe.getMessage());
       }
@@ -434,9 +438,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   static class ValueWrapper {
 
     private final Object value;
+    x; // TODO: adding this tcoContext makes this object twice as big.
+    private final TCObject tcoContext;
 
-    public ValueWrapper(Object value) {
+    public ValueWrapper(Object value, TCObject tcoContext) {
       this.value = value;
+      this.tcoContext = tcoContext;
     }
 
     public int hashCode() {
@@ -444,7 +451,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     }
 
     public boolean equals(Object o) {
-      Object pojo = lookUpIfNecessary(o); // XXX:: This is not stored in the Map since we dont know the key
+      Object pojo = lookUpIfNecessary(o, tcoContext); // XXX:: This is not stored in the Map since we dont know the key
       return pojo == value || value.equals(pojo);
     }
   }
@@ -695,7 +702,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         synchronized (__tc_managed().getResolveLock()) {
           // Managed version
           if (o != null) {
-            return _values.contains(new ValueWrapper(o));
+            return _values.contains(new ValueWrapper(o, __tc_managed()));
           } else {
             return _values.contains(o);
           }

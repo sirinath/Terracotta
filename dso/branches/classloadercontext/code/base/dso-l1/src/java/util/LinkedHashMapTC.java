@@ -29,7 +29,7 @@ public abstract class LinkedHashMapTC extends LinkedHashMap implements Manageabl
         if (value != null) {
           // XXX:: This is tied closely to HashMap implementation which calls equals on the passed value rather than the
           // other way around
-          return super.containsValue(new ValueWrapper(value));
+          return super.containsValue(new ValueWrapper(value, __tc_managed()));
         } else {
           return super.containsValue(value);
         }
@@ -86,10 +86,10 @@ public abstract class LinkedHashMapTC extends LinkedHashMap implements Manageabl
     }
   }
 
-  private static Object lookUpIfNecessary(Object o) {
+  private Object lookUpIfNecessary(Object o) {
     if (o instanceof ObjectID) {
       try {
-        return ManagerUtil.lookupObject((ObjectID) o);
+        return ManagerUtil.lookupObject((ObjectID) o, __tc_managed());
       } catch (TCObjectNotFoundException onfe) {
         throw new ConcurrentModificationException(onfe.getMessage());
       }

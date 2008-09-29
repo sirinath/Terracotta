@@ -481,6 +481,13 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       Assert.assertTrue(dna.isDelta());
 
       try {
+        x; // What's the right tcoRequestor to pass to this lookup?  We're trying to apply some
+        // changes to this object, so first we've got to look it up.  It itself might not yet
+        // be faulted in, so we might have to create it.  It's not (on average) a root.  We're
+        // on a network thread.  But note that the next thing we're going to do is hydrate it.
+        // So we don't really have to fault in the object; we're just trying to get its TCO.
+        // But we might have to create a brand-new TCO for it, and to do that we'd have to give
+        // it some graph context.  Where can we get that from??
         tcobj = objectManager.lookup(dna.getObjectID());
       } catch (ClassNotFoundException cnfe) {
         logger.warn("Could not apply change because class not local: " + dna.getTypeName());
@@ -605,8 +612,8 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
           objectManager.checkPortabilityOfField(newValue, fieldname, pojo);
         }
 
-        TCObject tco = objectManager.lookupOrCreate(newValue);
-
+        TCObject tco = objectManager.lookupOrCreate(newValue, source);
+        
         tx.fieldChanged(source, classname, fieldname, tco.getObjectID(), index);
 
         // record the reference in this transaction -- This is to solve the race condition of transactions
@@ -658,7 +665,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
           if (!literalValues.isLiteralInstance(element)) {
             if (element != null) objectManager.checkPortabilityOfField(element, String.valueOf(i), pojo);
 
-            TCObject tco = objectManager.lookupOrCreate(element);
+            TCObject tco = objectManager.lookupOrCreate(element, source);
             objArray[i] = tco.getObjectID();
             // record the reference in this transaction -- This is to solve the race condition of transactions
             // that reference objects newly "created" in other transactions that may not commit before us
@@ -721,7 +728,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
             objectManager.checkPortabilityOfLogicalAction(parameters, i, methodName, pojo);
           }
 
-          TCObject tco = objectManager.lookupOrCreate(p);
+          TCObject tco = objectManager.lookupOrCreate(p, source);
           parameters[i] = tco.getObjectID();
           if (p != null) {
             // record the reference in this transaction -- This is to solve the race condition of transactions

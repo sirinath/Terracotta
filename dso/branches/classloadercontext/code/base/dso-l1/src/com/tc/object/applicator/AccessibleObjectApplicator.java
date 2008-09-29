@@ -12,6 +12,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.loaders.ClassloaderContext;
 
 import java.io.IOException;
 import java.lang.reflect.AccessibleObject;
@@ -55,8 +56,9 @@ public class AccessibleObjectApplicator extends BaseApplicator {
   public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
       IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
+    ClassloaderContext requestorContext = tcObject.getClassloaderContext();
 
-    while (cursor.next(encoding)) {
+    while (cursor.next(encoding, requestorContext)) {
       PhysicalAction a = (PhysicalAction) cursor.getAction();
       Boolean value = (Boolean) a.getObject();
       ((AccessibleObject) po).setAccessible(value.booleanValue());
@@ -93,29 +95,30 @@ public class AccessibleObjectApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, TCObject tcoRequestor, DNA dna) throws IOException, ClassNotFoundException {
     Class[] parameterTypes = null;
 
     DNACursor cursor = dna.getCursor();
 
-    cursor.next(encoding);
+    ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
+    cursor.next(encoding, requestorContext);
     PhysicalAction a = cursor.getPhysicalAction();
     String objectType = (String) a.getObject();
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     a = cursor.getPhysicalAction();
     Class declaringClass = (Class) a.getObject();
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     a = cursor.getPhysicalAction();
     String name = (String) a.getObject();
 
-    cursor.next(encoding);
+    cursor.next(encoding, requestorContext);
     a = cursor.getPhysicalAction();
     Boolean override = (Boolean) a.getObject();
 
     if (!FIELD_CLASS_NAME.equals(objectType)) {
-      cursor.next(encoding);
+      cursor.next(encoding, requestorContext);
       a = cursor.getPhysicalAction();
       Object[] values = (Object[]) a.getObject();
       parameterTypes = new Class[values.length];

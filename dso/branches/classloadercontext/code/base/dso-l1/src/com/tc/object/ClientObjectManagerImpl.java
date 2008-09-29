@@ -29,6 +29,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.JMXMessage;
@@ -168,8 +169,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     new LocalLookupContext();
   }
 
-  public Class getClassFor(String className, String loaderDesc) throws ClassNotFoundException {
-    return classProvider.getClassFor(className, loaderDesc);
+  public Class getClassFor(String className, String loaderDesc, ClassloaderContext requestorContext) throws ClassNotFoundException {
+    return classProvider.getClassFor(className, loaderDesc, requestorContext);
   }
 
   public synchronized void pause() {
@@ -263,13 +264,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return objectLatchStateMap;
   }
 
-  private TCObject create(Object pojo, NonPortableEventContext context) {
-    addToManagedFromRoot(pojo, context);
+  private TCObject create(Object pojo, TCObject tcoContext, NonPortableEventContext context) {
+    addToManagedFromRoot(pojo, tcoContext, context);
     return basicLookup(pojo);
   }
 
-  private TCObject share(Object pojo, NonPortableEventContext context) {
-    addToSharedFromRoot(pojo, context);
+  private TCObject share(Object pojo, TCObject tcoContext, NonPortableEventContext context) {
+    addToSharedFromRoot(pojo, tcoContext, context);
     return basicLookup(pojo);
   }
 
@@ -299,36 +300,43 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
   }
 
-  public TCObject lookupOrCreate(Object pojo) {
+  /**
+   * Look up the TCObject for <code>pojo</code>, or create one if it doesn't exist
+   * already.
+   * @param pojoOwner if non-null, this object's context information will be
+   * propagated to the new pojo and, transitively, to its object graph, via
+   * TCObject.propagateContext().
+   */
+  public TCObject lookupOrCreate(Object pojo, TCObject tcoRequestor) {
     if (pojo == null) return TCObjectFactory.NULL_TC_OBJECT;
-    return lookupOrCreateIfNecesary(pojo, this.appEventContextFactory.createNonPortableEventContext(pojo));
+    return lookupOrCreateIfNecesary(pojo, tcoRequestor, this.appEventContextFactory.createNonPortableEventContext(pojo));
   }
 
-  private TCObject lookupOrCreate(Object pojo, NonPortableEventContext context) {
+  private TCObject lookupOrCreate(Object pojo, TCObject tcoRequestor, NonPortableEventContext context) {
     if (pojo == null) return TCObjectFactory.NULL_TC_OBJECT;
-    return lookupOrCreateIfNecesary(pojo, context);
+    return lookupOrCreateIfNecesary(pojo, tcoRequestor, context);
   }
 
-  public TCObject lookupOrShare(Object pojo) {
+  public TCObject lookupOrShare(Object pojo, TCObject tcoRequestor) {
     if (pojo == null) return TCObjectFactory.NULL_TC_OBJECT;
-    return lookupOrShareIfNecesary(pojo, this.appEventContextFactory.createNonPortableEventContext(pojo));
+    return lookupOrShareIfNecesary(pojo, tcoRequestor, this.appEventContextFactory.createNonPortableEventContext(pojo));
   }
 
-  private TCObject lookupOrShareIfNecesary(Object pojo, NonPortableEventContext context) {
+  private TCObject lookupOrShareIfNecesary(Object pojo, TCObject tcoContext, NonPortableEventContext context) {
     Assert.assertNotNull(pojo);
     TCObject obj = basicLookup(pojo);
     if (obj == null || obj.isNew()) {
-      obj = share(pojo, context);
+      obj = share(pojo, tcoContext, context);
     }
     return obj;
   }
 
-  private TCObject lookupOrCreateIfNecesary(Object pojo, NonPortableEventContext context) {
+  private TCObject lookupOrCreateIfNecesary(Object pojo, TCObject tcoContext, NonPortableEventContext context) {
     Assert.assertNotNull(pojo);
     TCObject obj = basicLookup(pojo);
     if (obj == null || obj.isNew()) {
       executePreCreateMethod(pojo);
-      obj = create(pojo, context);
+      obj = create(pojo, tcoContext, context);
     }
     return obj;
   }
@@ -393,23 +401,23 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     cache.markReferenced(tcobj);
   }
 
-  public Object lookupObjectNoDepth(ObjectID id) throws ClassNotFoundException {
-    return lookupObject(id, null, true);
+  public Object lookupObjectNoDepth(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException {
+    return lookupObject(id, null, tcoRequestor, true);
   }
 
-  public Object lookupObject(ObjectID objectID) throws ClassNotFoundException {
-    return lookupObject(objectID, null, false);
+  public Object lookupObject(ObjectID objectID, TCObject tcoRequestor) throws ClassNotFoundException {
+    return lookupObject(objectID, null, tcoRequestor, false);
   }
 
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException {
-    return lookupObject(id, parentContext, false);
+  public Object lookupObject(ObjectID id, ObjectID parentContext, TCObject tcoRequestor) throws ClassNotFoundException {
+    return lookupObject(id, parentContext, tcoRequestor, false);
   }
 
-  private Object lookupObject(ObjectID objectID, ObjectID parentContext, boolean noDepth) throws ClassNotFoundException {
+  private Object lookupObject(ObjectID objectID, ObjectID parentContext, TCObject tcoRequestor, boolean noDepth) throws ClassNotFoundException {
     if (objectID.isNull()) return null;
     Object o = null;
     while (o == null) {
-      final TCObject tco = lookup(objectID, parentContext, noDepth);
+      final TCObject tco = lookup(objectID, parentContext, tcoRequestor, noDepth);
       if (tco == null) throw new AssertionError("TCObject was null for " + objectID);// continue;
 
       o = tco.getPeerObject();
@@ -446,12 +454,20 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
   // Done
 
-  public TCObject lookup(ObjectID id) throws ClassNotFoundException {
-    return lookup(id, null, false);
+  public TCObject lookup(ObjectID id, TCObject tcoRequestor) throws ClassNotFoundException {
+    return lookup(id, null, tcoRequestor, false);
   }
 
-  private TCObject lookup(ObjectID id, ObjectID parentContext, boolean noDepth) throws ClassNotFoundException {
-    TCObject obj = null;
+  /**
+   * Look up an object by id, faulting it in if necessary.
+   * @param id the object to look up
+   * @param parentContext if the object is a non-static inner class, the id
+   * of the outer class instance that contains it
+   * @param tcoRequestor the object requesting this lookup, which will be
+   * used to find a context classloader if necessary
+   */
+  private TCObject lookup(ObjectID id, ObjectID parentContext, TCObject tcoRequestor, boolean noDepth) throws ClassNotFoundException {
+    TCObject tco = null;
     boolean retrieveNeeded = false;
     boolean isInterrupted = false;
 
@@ -468,10 +484,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       synchronized (this) {
         while (true) {
           ols = getObjectLatchState(id);
-          obj = basicLookupByID(id);
-          if (obj != null) {
+          tco = basicLookupByID(id);
+          if (tco != null) {
             // object exists in local cache
-            return obj;
+            return tco;
           } else if (ols != null && ols.isCreateState()) {
             // if the object is being created, add to the wait set and return the object
             lookupContext.getObjectLatchWaitSet().add(ols);
@@ -500,16 +516,19 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
         try {
           DNA dna = noDepth ? remoteObjectManager.retrieve(id, NO_DEPTH) : (parentContext == null ? remoteObjectManager
               .retrieve(id) : remoteObjectManager.retrieveWithParentContext(id, parentContext));
-          obj = factory.getNewInstance(id, classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
-              .getTypeName()), dna.getDefiningLoaderDescription()), false);
+          // We need the requesting object, in order to get its classloader context
+          ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
+          Class clazz = classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
+              .getTypeName()), dna.getDefiningLoaderDescription(), requestorContext);
+          tco = factory.getNewInstance(id, tcoRequestor, clazz, false);
 
           // object is retrieved, now you want to make this as Creation in progress
-          markCreateInProgress(ols, obj, lookupContext);
+          markCreateInProgress(ols, tco, lookupContext);
           createInProgressSet = true;
 
           Assert.assertFalse(dna.isDelta());
           // now hydrate the object, this could call resolveReferences which would call this method recursively
-          obj.hydrate(dna, false);
+          tco.hydrate(dna, false);
         } catch (Exception e) {
           // remove the object creating in progress from the list.
           if (createInProgressSet) removeCreateInProgress(id);
@@ -517,7 +536,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
           if (e instanceof ClassNotFoundException) { throw (ClassNotFoundException) e; }
           throw new RuntimeException(e);
         }
-        basicAddLocal(obj, true);
+        basicAddLocal(tco, true);
       }
     } finally {
       if (lookupContext.getCallStackCount().decrement() == 0) {
@@ -529,7 +548,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
         txManager.enableTransactionLogging();
       }
     }
-    return obj;
+    return tco;
 
   }
 
@@ -828,28 +847,36 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       rootID = remoteObjectManager.retrieveRootID(rootName);
     }
 
+    TCObject tcoRoot = null;
     if (rootID.isNull() && create) {
       Assert.assertNotNull(rootPojo);
       // TODO:: Optimize this, do lazy instantiation
-      TCObject root = null;
       if (isLiteralPojo(rootPojo)) {
-        root = basicCreateIfNecessary(rootPojo);
+        tcoRoot = basicCreateIfNecessary(rootPojo, null);
       } else {
-        root = lookupOrCreate(rootPojo, this.appEventContextFactory.createNonPortableRootContext(rootName, rootPojo));
+        tcoRoot = lookupOrCreate(rootPojo, null,
+                                 this.appEventContextFactory.createNonPortableRootContext(rootName, rootPojo));
       }
-      rootID = root.getObjectID();
+      rootID = tcoRoot.getObjectID();
       txManager.createRoot(rootName, rootID);
     }
 
     synchronized (this) {
-      if (isNew && !rootID.isNull()) roots.put(rootName, rootID);
+      if (isNew && !rootID.isNull()) {
+        roots.put(rootName, rootID);
+      }
       if (lookupInProgress) {
         markRootLookupNotInProgress(rootName);
         notifyAll();
       }
     }
-
-    return lookupObject(rootID, null, noDepth);
+    
+    // The root TCO either already existed or has just been created
+    if (tcoRoot == null) {
+      tcoRoot = basicLookupByID(rootID);
+    }
+    Object root = lookupObject(rootID, null, tcoRoot, noDepth);
+    return root;
   }
 
   private TCObject basicLookupByID(ObjectID id) {
@@ -906,8 +933,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
   }
 
-  private void addToManagedFromRoot(Object root, NonPortableEventContext context) {
-    traverser.traverse(root, traverseTest, context);
+  /**
+   * @param start the starting point of traversal - not necessarily a TC root
+   */
+  private void addToManagedFromRoot(Object start, TCObject tcoContext, NonPortableEventContext context) {
+    traverser.traverse(start, tcoContext, traverseTest, context);
   }
 
   private void dumpObjectHierarchy(Object root, NonPortableEventContext context) {
@@ -947,26 +977,27 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
   }
 
-  private void addToSharedFromRoot(Object root, NonPortableEventContext context) {
-    shareObjectsTraverser.traverse(root, traverseTest, context);
+  private void addToSharedFromRoot(Object root, TCObject tcoContext, NonPortableEventContext context) {
+    shareObjectsTraverser.traverse(root, tcoContext, traverseTest, context);
   }
 
   public ToggleableStrongReference getOrCreateToggleRef(ObjectID id, Object peer) {
     return referenceManager.getOrCreateFor(id, peer);
   }
-
+  
   private class AddManagedObjectAction implements TraversalAction {
-    public void visit(List objects) {
-      List tcObjects = basicCreateIfNecessary(objects);
+    public void visit(List objects, Object v) {
+      List tcObjects = basicCreateIfNecessary(objects, (TCObject)v);
       for (Iterator i = tcObjects.iterator(); i.hasNext();) {
-        txManager.createObject((TCObject) i.next());
+        TCObject tco = (TCObject) i.next();
+        txManager.createObject(tco);
       }
     }
   }
 
   private class SharedObjectsAction implements TraversalAction {
-    public void visit(List objects) {
-      basicShareObjectsIfNecessary(objects);
+    public void visit(List objects, Object v) {
+      basicShareObjectsIfNecessary(objects, (TCObject)v);
     }
   }
 
@@ -988,11 +1019,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     }
   }
 
-  private TCObject basicCreateIfNecessary(Object pojo) {
+  private TCObject basicCreateIfNecessary(Object pojo, TCObject tcoRequestor) {
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
-      obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
+      obj = factory.getNewInstance(nextObjectID(), pojo, tcoRequestor, pojo.getClass(), true);
       txManager.createObject(obj);
       basicAddLocal(obj, false);
       executePostCreateMethod(pojo);
@@ -1003,20 +1034,20 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return obj;
   }
 
-  private synchronized List basicCreateIfNecessary(List pojos) {
+  private synchronized List basicCreateIfNecessary(List pojos, TCObject tcoRequestor) {
     waitUntilRunning();
     List tcObjects = new ArrayList(pojos.size());
     for (Iterator i = pojos.iterator(); i.hasNext();) {
-      tcObjects.add(basicCreateIfNecessary(i.next()));
+      tcObjects.add(basicCreateIfNecessary(i.next(), tcoRequestor));
     }
     return tcObjects;
   }
 
-  private TCObject basicShareObjectIfNecessary(Object pojo) {
+  private TCObject basicShareObjectIfNecessary(Object pojo, TCObject tcoRequestor) {
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
-      obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
+      obj = factory.getNewInstance(nextObjectID(), pojo, tcoRequestor, pojo.getClass(), true);
       pendingCreateTCObjects.add(obj);
       pendingCreatePojos.add(pojo);
       basicAddLocal(obj, false);
@@ -1024,11 +1055,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return obj;
   }
 
-  private synchronized List basicShareObjectsIfNecessary(List pojos) {
+  private synchronized List basicShareObjectsIfNecessary(List pojos, TCObject tcoRequestor) {
     waitUntilRunning();
     List tcObjects = new ArrayList(pojos.size());
     for (Iterator i = pojos.iterator(); i.hasNext();) {
-      tcObjects.add(basicShareObjectIfNecessary(i.next()));
+      tcObjects.add(basicShareObjectIfNecessary(i.next(), tcoRequestor));
     }
     return tcObjects;
   }
@@ -1050,7 +1081,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return idProvider.next();
   }
 
-  public WeakReference createNewPeer(TCClass clazz, DNA dna) {
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, DNA dna) {
     if (clazz.isUseNonDefaultConstructor()) {
       try {
         return new WeakObjectReference(dna.getObjectID(), factory.getNewPeerObject(clazz, dna), referenceQueue);
@@ -1058,11 +1089,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
         throw new TCRuntimeException(e);
       }
     } else {
-      return createNewPeer(clazz, dna.getArraySize(), dna.getObjectID(), dna.getParentObjectID());
+      return createNewPeer(clazz, tcoContext, dna.getArraySize(), dna.getObjectID(), dna.getParentObjectID());
     }
   }
 
-  public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID) {
+  public WeakReference createNewPeer(TCClass clazz, TCObject tcoContext, int size, ObjectID id, ObjectID parentID) {
     try {
       if (clazz.isIndexed()) {
         Object array = factory.getNewArrayInstance(clazz, size);
@@ -1070,7 +1101,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       } else if (parentID.isNull()) {
         return new WeakObjectReference(id, factory.getNewPeerObject(clazz), referenceQueue);
       } else {
-        return new WeakObjectReference(id, factory.getNewPeerObject(clazz, lookupObject(parentID)), referenceQueue);
+        Object parent = lookupObject(parentID, tcoContext);
+        return new WeakObjectReference(id, factory.getNewPeerObject(clazz, parent), referenceQueue);
       }
     } catch (Exception e) {
       throw new TCRuntimeException(e);

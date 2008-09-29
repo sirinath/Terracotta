@@ -25,7 +25,7 @@ import com.tc.net.protocol.tcm.msgs.PingMessage;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.PauseListener;
-import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.bytecode.MockClassLoaderRegistry;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
@@ -144,7 +144,7 @@ public class TwoDisconnectEventsTest extends BaseDSOTestCase {
     DistributedObjectClient client = new DistributedObjectClient(new StandardDSOClientConfigHelperImpl(manager),
                                                                  new TCThreadGroup(new ThrowableHandler(TCLogging
                                                                      .getLogger(DistributedObjectClient.class))),
-                                                                 new MockClassProvider(),
+                                                                 new MockClassLoaderRegistry(),
                                                                  new PreparedComponentsFromL2Connection(manager),
                                                                  NullManager.getInstance(), new Cluster());
     client.setPauseListener(pauseListener);

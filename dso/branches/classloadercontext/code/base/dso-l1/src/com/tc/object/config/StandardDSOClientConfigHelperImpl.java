@@ -60,6 +60,7 @@ import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
+import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
@@ -193,6 +194,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private volatile boolean                       allowCGLIBInstrumentation          = false;
 
   private ReconnectConfig                        l1ReconnectConfig                  = null;
+  
+  private ClassProvider                          classProvider                      = null;
 
   public StandardDSOClientConfigHelperImpl(L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -1830,6 +1833,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // If this condition ever needs to be true for any other classes besides ConcurrentHashMap, this setting should be
     // move into the TransparencyClassSpec (as opposed to growing the list of classes here)
     return !clazz.getName().equals("java.util.concurrent.ConcurrentHashMap");
+  }
+
+  public ClassProvider getClassProvider() {
+    return classProvider;
+  }
+
+  public void setClassProvider(ClassProvider provider) {
+    classProvider = provider;
   }
 
 }

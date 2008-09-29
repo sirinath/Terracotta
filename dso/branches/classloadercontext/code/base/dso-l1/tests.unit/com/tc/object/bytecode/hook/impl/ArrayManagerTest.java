@@ -11,6 +11,7 @@ import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.loaders.ClassloaderContext;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -386,6 +387,20 @@ public class ArrayManagerTest extends TestCase {
 
     public void dehydrate(DNAWriter writer) {
       throw new ImplementMe();
+    }
+
+    public ClassloaderContext getClassloaderContext() {
+      throw new ImplementMe();
+    }
+
+    public void setClassloaderContext(ClassloaderContext classloaderContext) {
+      throw new ImplementMe();
+      
+    }
+
+    public void propagateFrom(TCObject existing) {
+      throw new ImplementMe();
+      
     }
   }
 
