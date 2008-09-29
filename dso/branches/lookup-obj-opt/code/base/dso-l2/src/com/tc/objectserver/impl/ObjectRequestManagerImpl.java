@@ -283,7 +283,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
               // remove this id from the new ID
               newIDs.remove(mo.getID());
             } else {
-              logger.info("Client " + clientID + " already contains " + mo.getID() + ". So not sending it.");
+//              logger.info("Client " + clientID + " already contains " + mo.getID() + ". So not sending it.");
             }
           }
           objectManager.releaseReadOnly(mo);
