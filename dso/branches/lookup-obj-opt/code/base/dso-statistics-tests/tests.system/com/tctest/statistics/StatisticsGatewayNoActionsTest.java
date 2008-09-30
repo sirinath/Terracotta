@@ -57,7 +57,7 @@ public class StatisticsGatewayNoActionsTest extends TransparentTestBase {
         listener.wait(2000);
       }
     }
-
+    
     // disable the notification and detach the listener
     stat_gateway.disable();
     mbsc.removeNotificationListener(StatisticsMBeanNames.STATISTICS_GATEWAY, listener);

@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.protocol.tcm;
 
@@ -9,6 +10,9 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.NetworkLayer;
 import com.tc.net.protocol.NetworkStackID;
@@ -32,10 +36,14 @@ public class MockMessageChannel implements MessageChannelInternal {
   private int              numSends;
   private TCNetworkMessage lastSentMessage;
 
+  private NodeID           source      = ClientID.NULL_ID;
+  private NodeID           destination = ServerID.NULL_ID;
+
   public MockMessageChannel(ChannelID channelId) {
     this.channelId = channelId;
     this.knownMessageTypes = new HashMap();
     reset();
+    source = new ClientID(channelId);
   }
 
   public void registerType(TCMessageType messageType, Class theClass) {
@@ -108,9 +116,9 @@ public class MockMessageChannel implements MessageChannelInternal {
   public NetworkStackID open() {
     throw new ImplementMe();
   }
-  
+
   public Class getRegisteredMessageClass(TCMessageType type) {
-    return (Class)this.knownMessageTypes.get(type);
+    return (Class) this.knownMessageTypes.get(type);
   }
 
   public TCMessage createMessage(TCMessageType type) {
@@ -175,7 +183,7 @@ public class MockMessageChannel implements MessageChannelInternal {
     throw new ImplementMe();
   }
 
-  public short getStackLayerFlag(){
+  public short getStackLayerFlag() {
     throw new ImplementMe();
   }
 
@@ -185,6 +193,22 @@ public class MockMessageChannel implements MessageChannelInternal {
 
   public NetworkLayer getReceiveLayer() {
     throw new ImplementMe();
+  }
+
+  public NodeID getLocalNodeID() {
+    return source;
+  }
+
+  public void setLocalNodeID(NodeID source) {
+    this.source = source;
+  }
+
+  public NodeID getRemoteNodeID() {
+    return destination;
+  }
+
+  public void setRemoteNodeID(NodeID destination) {
+    this.destination = destination;
   }
 
 }

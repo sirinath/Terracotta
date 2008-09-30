@@ -18,7 +18,10 @@ public abstract class AbstractWorkState {
   }
 
   public AbstractResolutionAction[] getActions() {
-    return Arrays.asList(fResolutionActions).toArray(EMPTY_RESOLUTION_ACTIONS);
+    if(fResolutionActions != null) {
+      return Arrays.asList(fResolutionActions).toArray(EMPTY_RESOLUTION_ACTIONS);
+    }
+    return null;
   }
 
   public boolean hasSelectedActions() {

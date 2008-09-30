@@ -3,9 +3,9 @@
  */
 package com.tc.objectserver.api;
 
-import com.tc.objectserver.context.RespondToObjectRequestContext;
+import com.tc.objectserver.context.ManagedObjectRequestContext;
 import com.tc.text.PrettyPrintable;
 
 public interface ObjectRequestMonitor extends PrettyPrintable {
-  public void notifyObjectRequest(RespondToObjectRequestContext ctxt);
+  public void notifyObjectRequest(ManagedObjectRequestContext ctxt);
 }

@@ -8,8 +8,8 @@ import com.tc.async.api.Sink;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
@@ -49,21 +49,20 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   // TODO read from l2 property
   public static final int                MAX_OBJECTS_TO_LOOKUP = 5;
+  private final static TCLogger          logger               = TCLogging.getLogger(ObjectRequestManagerImpl.class);
 
-  private final static TCLogger          logger                = TCLogging.getLogger(ObjectRequestManagerImpl.class);
-
-  private final static State             INIT                  = new State("INITIAL");
-  private final static State             STARTING              = new State("STARTING");
-  private final static State             STARTED               = new State("STARTED");
+  private final static State             INIT                 = new State("INITIAL");
+  private final static State             STARTING             = new State("STARTING");
+  private final static State             STARTED              = new State("STARTED");
 
   private final ObjectManager            objectManager;
   private final ServerTransactionManager transactionManager;
 
-  private final List                     pendingRequests       = new LinkedList();
-  private final Set                      resentTransactionIDs  = new HashSet();
+  private final List                     pendingRequests      = new LinkedList();
+  private final Set                      resentTransactionIDs = new HashSet();
+  private volatile State                 state                = INIT;
   private final Sink                     managedObjectRequestSink;
   private final Sink                     respondObjectRequestSink;
-  private volatile State                 state                 = INIT;
   private DSOChannelManager              channelManager;
   private ClientStateManager             stateManager;
   private Sequence                       batchIDSequence       = new SimpleSequence();
@@ -82,6 +81,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     transactionManager.addTransactionListener(this);
 
   }
+
 
   public synchronized void transactionManagerStarted(Set cids) {
     state = STARTING;
@@ -161,7 +161,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     resentTransactionIDs.remove(stxID);
     moveToStartedIfPossible();
   }
-
+  
   // Utility method to create 1 or more server initiated requests.
   public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
                                                          int maxRequestDepth, boolean serverInitiated,
@@ -188,13 +188,13 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
                                    boolean serverInitiated, String requestingThreadName) {
     TreeSet<ObjectID> sortedIDs = new TreeSet<ObjectID>();
     TreeSet<ObjectID> split = new TreeSet<ObjectID>();
-
+    
     synchronized (this) {
       int splitIndex = 1;
       for (Iterator iter = ids.iterator(); iter.hasNext();) {
         sortedIDs.add((ObjectID) iter.next());
       }
-
+      
       for (Iterator iter = sortedIDs.iterator(); iter.hasNext();) {
         split.add((ObjectID) iter.next());
         if (splitIndex == MAX_OBJECTS_TO_LOOKUP) {
@@ -203,7 +203,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             LookupContext lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth,
                                                             requestingThreadName, serverInitiated,
                                                             respondObjectRequestSink);
-
+            
             objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
           }
           splitIndex = 0;
@@ -217,24 +217,24 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           LookupContext lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth,
                                                           requestingThreadName, serverInitiated,
                                                           respondObjectRequestSink);
-
+          
           objectManager.lookupObjectsAndSubObjectsFor(clientID, lookupContext, maxRequestDepth);
         }
       }
     }
   }
-
+  
   private void basicSendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs,
                                 Set missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
-
+    
     Map messageMap = new HashMap();
-
+    
     Map clientNewIDsMap = new HashMap(); // will contain the object which are not present in the client out of the
     // returned ones
-
+    
     LinkedList objectsInOrder = new LinkedList();
     try {
-
+      
       Set ids = new HashSet(Math.max((int) (objs.size() / .75f) + 1, 16));
       synchronized (this) {
         for (Iterator i = objs.iterator(); i.hasNext();) {
@@ -246,39 +246,39 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
             objectsInOrder.addFirst(mo);
           }
         }
-
+        
         long batchID = batchIDSequence.next();
-
+        
         // sort the requested Objects
         TreeSet<ObjectID> sortedRequestedIDs = new TreeSet<ObjectID>();
         for (Iterator iter = requestedObjectIDs.iterator(); iter.hasNext();) {
           sortedRequestedIDs.add((ObjectID) iter.next());
         }
-
+        
         RequestedObject reqObj = new RequestedObject(sortedRequestedIDs, maxRequestDepth);
         LinkedHashSet<ClientID> clientList = this.objectRequestCache.getClientsForRequest(reqObj);
-
+        
         // prepare clients
         for (Iterator iter = clientList.iterator(); iter.hasNext();) {
           ClientID clientID = (ClientID) iter.next();
-
+          
           Set newIds = stateManager.addReferences(clientID, ids);
           clientNewIDsMap.put(clientID, newIds);
-
+          
           // make batch and send object for each client.
           MessageChannel channel = channelManager.getActiveChannel(clientID);
           messageMap.put(clientID, new BatchAndSend(channel, batchID));
         }
-
+        
         for (Iterator iter = objectsInOrder.iterator(); iter.hasNext();) {
           ManagedObject mo = (ManagedObject) iter.next();
-
+          
           for (Iterator i = clientList.iterator(); i.hasNext();) {
             ClientID clientID = (ClientID) i.next();
             Set newIDs = (Set) clientNewIDsMap.get(clientID);
             if (newIDs.contains(mo.getID())) {
               BatchAndSend batchAndSend = (BatchAndSend) messageMap.get(clientID);
-
+              
               batchAndSend.sendObject(mo, iter.hasNext());
               // remove this id from the new ID
               newIDs.remove(mo.getID());
@@ -289,7 +289,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           objectManager.releaseReadOnly(mo);
         }
         this.objectRequestCache.remove(reqObj);
-
+        
         if (!missingObjectIDs.isEmpty()) {
           if (isServerInitiated) {
             // This is a possible case where changes are flying in and server is initiating some lookups and the lookups
@@ -320,11 +320,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       }
     }
   }
-
   protected synchronized int getTotalRequestedObjects() {
     return objectRequestCache.numberOfRequestedObjects();
   }
-
+  
   protected synchronized int getObjectRequestCacheClientSize() {
     return objectRequestCache.clientSize();
   }
@@ -343,7 +342,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     public TreeSet<ObjectID> getOIdSet() {
       return oIdSet;
     }
-
+    
     public int getDepth() {
       return depth;
     }
@@ -424,8 +423,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  protected static class BatchAndSend {
 
+  protected static class BatchAndSend {
     private final MessageChannel     channel;
 
     private Integer                  sendCount  = 0;

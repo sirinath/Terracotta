@@ -4,8 +4,7 @@
  */
 package com.tc.object.msg;
 
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
+import com.tc.net.NodeID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
 
@@ -19,8 +18,8 @@ public interface AcknowledgeTransactionMessage {
 
   public void send();
 
-  public ClientID getClientID();
-
+  public NodeID getSourceNodeID();
+  
   public SessionID getLocalSessionID();
 
 }

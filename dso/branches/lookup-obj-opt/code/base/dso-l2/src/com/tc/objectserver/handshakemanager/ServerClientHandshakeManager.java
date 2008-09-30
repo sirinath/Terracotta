@@ -8,8 +8,9 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.logging.TCLogger;
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.object.lockmanager.api.LockContext;
@@ -56,12 +57,13 @@ public class ServerClientHandshakeManager {
   private final boolean                  persistent;
   private final ServerTransactionManager transactionManager;
   private final TCLogger                 consoleLogger;
+  private final ServerID                 serverNodeID;
 
   public ServerClientHandshakeManager(TCLogger logger, DSOChannelManager channelManager,
                                       ServerTransactionManager transactionManager, SequenceValidator sequenceValidator,
                                       ClientStateManager clientStateManager, LockManager lockManager,
                                       Sink lockResponseSink, Sink oidRequestSink, TCTimer timer, long reconnectTimeout,
-                                      boolean persistent, TCLogger consoleLogger) {
+                                      boolean persistent, TCLogger consoleLogger, ServerID serverNodeID) {
     this.logger = logger;
     this.channelManager = channelManager;
     this.transactionManager = transactionManager;
@@ -75,6 +77,7 @@ public class ServerClientHandshakeManager {
     this.persistent = persistent;
     this.consoleLogger = consoleLogger;
     this.reconnectTimerTask = new ReconnectTimerTask(this, timer);
+    this.serverNodeID = serverNodeID;
   }
 
   public synchronized boolean isStarting() {
@@ -86,7 +89,7 @@ public class ServerClientHandshakeManager {
   }
 
   public void notifyClientConnect(ClientHandshakeMessage handshake) throws ClientHandshakeException {
-    ClientID clientID = handshake.getClientID();
+    ClientID clientID = (ClientID) handshake.getSourceNodeID();
     logger.info("Client connected " + clientID);
     synchronized (this) {
       logger.debug("Handling client handshake...");
@@ -169,8 +172,8 @@ public class ServerClientHandshakeManager {
 
     // NOTE: handshake ack message initialize()/send() must be done atomically with making the channel active
     // and is thus done inside this channel manager call
-    channelManager.makeChannelActive(clientID, persistent);
-    
+    channelManager.makeChannelActive(clientID, persistent, serverNodeID);
+
     if (clientsRequestingObjectIDSequence.remove(clientID)) {
       oidRequestSink.add(new ObjectIDBatchRequestImpl(clientID, BATCH_SEQUENCE_SIZE));
     }
@@ -263,10 +266,10 @@ public class ServerClientHandshakeManager {
 
   private static class ObjectIDBatchRequestImpl implements ObjectIDBatchRequest, EventContext {
 
-    private final ClientID clientID;
-    private final int      batchSize;
+    private final NodeID clientID;
+    private final int    batchSize;
 
-    public ObjectIDBatchRequestImpl(ClientID clientID, int batchSize) {
+    public ObjectIDBatchRequestImpl(NodeID clientID, int batchSize) {
       this.clientID = clientID;
       this.batchSize = batchSize;
     }

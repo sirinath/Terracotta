@@ -13,26 +13,34 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   def postscript(ant, build_environment, product_directory, *args)
     return if @no_demo
 
-    tim_get = FilePath.new(product_directory, 'bin', 'tim-get').script_extension
-    unless File.exist?(tim_get.to_s)
-      raise("Cannot find tim-get executable at expected location: #{tim_get}")
-    end
-    unless File.executable?(tim_get.to_s)
-      raise("tim-get script exists, but is not executable")
-    end
-    
     tims     = {}
     timnames = args[0]['tims']
-    tim_getpath = tim_get.to_s
-    tim_getpath.gsub!(/\\/, '/')
     timnames.each do |entry|
-      output = %x[#{tim_getpath} list #{entry}].split("\n")
-      output.delete_if { |line| !line.index(entry) }
+      output = tim_get_output(:list, entry).split("\n")
+      output.delete_if { |line| 
+        puts "[xxx] #{line}"
+        !line.index(entry) 
+      }
       data = output.last
-      data.gsub!(/[()]/, '')
-      data = data.split
-      data.shift
-      tims[data.first] = data.last
+      unless data.nil?
+        data.gsub!(/[()]/, '')
+        data = data.split
+        data.shift
+        tims[data.first] = data.last
+      end
+    end
+
+    if !tims.empty? && timnames.size != tims.size
+      msg  = "Unable to locate all of the TIMs listed in the distribution config - only some TIM info will be injected.\n" 
+      msg << "What got installed: #{tims.keys.join(', ')}\n"
+      msg << "What was specified: #{timnames.join(', ')}"
+      fail msg
+    end
+  
+    if tims.empty? 
+      msg = "Unable to locate any TIMs - no TIM info will be injected.\n"
+      msg << "What was specified: #{timnames.join(', ')}"
+      fail msg
     end
     
     dirnames = args[1]['dest']
@@ -41,7 +49,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
       Find.find(srcdir.to_s) do |path|
         next unless FileTest.file?(path) && File.basename(path) =~ /^tc-config.xml$/
         config = File.read(path)
-        tims.each do |k, v|
+          tims.each do |k, v|
           value = "<module name=\"#{k}\" version=\"#{v}\"/>"
           regex = /<module *name *= *"#{Regexp.escape(k)}" *version *= *"@tim.version@" *\/>/
           File.open(path, 'w') {|f| f.write(config) } if config.gsub!(regex, value)

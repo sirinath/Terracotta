@@ -40,9 +40,10 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
   private final TransactionalObjectManager    txnObjectManager;
   private final L2Coordinator                 l2Coordinator;
 
-  public ServerConfigurationContextImpl(StageManager stageManager, ObjectManager objectManager, ObjectRequestManager objectRequestManager,
-                                        ManagedObjectStore objectStore, LockManager lockManager,
-                                        DSOChannelManager channelManager, ClientStateManager clientStateManager,
+  public ServerConfigurationContextImpl(StageManager stageManager, ObjectManager objectManager,
+                                        ObjectRequestManager objectRequestManager, ManagedObjectStore objectStore,
+                                        LockManager lockManager, DSOChannelManager channelManager,
+                                        ClientStateManager clientStateManager,
                                         ServerTransactionManager transactionManager,
                                         TransactionalObjectManager txnObjectManager,
                                         ServerClientHandshakeManager clientHandshakeManager, ChannelStats channelStats,
@@ -70,7 +71,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
   public ObjectManager getObjectManager() {
     return objectManager;
   }
-  
+
   public ObjectRequestManager getObjectRequestManager() {
     return objectRequestManager;
   }

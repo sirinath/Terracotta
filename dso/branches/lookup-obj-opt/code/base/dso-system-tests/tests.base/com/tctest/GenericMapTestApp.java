@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+
 
 public class GenericMapTestApp extends GenericTestApp {
 
@@ -66,7 +68,7 @@ public class GenericMapTestApp extends GenericTestApp {
 
   protected void setupTestObject(String test) {
     List maps = new ArrayList();
-
+    
     maps.add(new HashMap());
     maps.add(new Hashtable());
     maps.add(new TreeMap(new NullTolerantComparator()));
@@ -181,7 +183,7 @@ public class GenericMapTestApp extends GenericTestApp {
 
     // unreachable
   }
-  
+
   void testBasicUnSynchronizedPut(Map map, boolean validate, int v) {
     // if (map instanceof Hashtable) { return; }
     if (map instanceof FastHashMap) { return; }
@@ -1036,6 +1038,40 @@ public class GenericMapTestApp extends GenericTestApp {
     }
   }
 
+  void testEntrySetToArray2(Map map, boolean validate, int v) {
+    // CDV-910
+    if (map.getClass().toString().endsWith("java.util.concurrent.ConcurrentHashMap")) return;
+
+    Object[] array = getArray(map);
+
+    if (validate) {
+      if (canTestSharedArray(map)) {
+        assertMappingsKeysEqualIgnoreSize(array, map.entrySet());
+        Assert.assertEquals(map.getClass(), null, array[2]);
+      }
+    } else {
+      synchronized (map) {
+        map.putAll(getOrderSensitiveMappings(v));
+        map.remove(E("March", v));
+        map.remove(E("April", v));
+      }
+
+      // ensure array size is bigger than map size
+      Assert.assertTrue(array.length > map.size());
+
+      // make sure the array contains no nulls
+      synchronized (array) {
+        Arrays.fill(array, new Object());
+      }
+
+      synchronized (array) {
+        Object[] returnArray = map.entrySet().toArray(array);
+        Assert.assertTrue(returnArray == array);
+      }
+
+    }
+  }
+
   void testKeySetToArray(Map map, boolean validate, int v) {
     Object[] array = getArray(map);
 
@@ -1052,6 +1088,39 @@ public class GenericMapTestApp extends GenericTestApp {
         Assert.assertTrue(returnArray == array);
       }
       assertMappingsKeysEqual(array, map.keySet());
+    }
+  }
+
+  void testKeySetToArray2(Map map, boolean validate, int v) {
+    // CDV-911
+    if (THashMap.class.isAssignableFrom(map.getClass())) return;
+
+    Object[] array = getArray(map);
+
+    if (validate) {
+      if (canTestSharedArray(map)) {
+        assertMappingsKeysEqualIgnoreSize(array, map.keySet());
+        Assert.assertEquals(map.getClass(), null, array[2]);
+      }
+    } else {
+      synchronized (map) {
+        map.putAll(getOrderSensitiveMappings(v));
+        map.remove(E("March", v));
+        map.remove(E("April", v));
+      }
+
+      // ensure array size is bigger than map size
+      Assert.assertTrue(array.length > map.size());
+
+      // make sure the array contains no nulls
+      synchronized (array) {
+        Arrays.fill(array, new Object());
+      }
+
+      synchronized (array) {
+        Object[] returnArray = map.keySet().toArray(array);
+        Assert.assertTrue(returnArray == array);
+      }
     }
   }
 
@@ -1889,6 +1958,12 @@ public class GenericMapTestApp extends GenericTestApp {
   void assertMappingsKeysEqual(Object[] expect, Collection collection) {
     Assert.assertEquals(expect.length, collection.size());
     for (int i = 0; i < expect.length; i++) {
+      Assert.assertTrue(collection.contains(expect[i]));
+    }
+  }
+
+  void assertMappingsKeysEqualIgnoreSize(Object[] expect, Collection collection) {
+    for (int i = 0; i < collection.size(); i++) {
       Assert.assertTrue(collection.contains(expect[i]));
     }
   }

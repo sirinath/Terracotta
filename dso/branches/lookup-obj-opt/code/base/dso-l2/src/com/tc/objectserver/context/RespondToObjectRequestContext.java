@@ -5,7 +5,7 @@
 package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 
 import java.util.Collection;
 import java.util.Set;
