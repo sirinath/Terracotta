@@ -47,11 +47,10 @@ public class TestServerConfigurationContext implements ServerConfigurationContex
   public ObjectManager getObjectManager() {
     return this.objectManager;
   }
-  
+
   public ObjectRequestManager getObjectRequestManager() {
     return this.objectRequestManager;
   }
-  
 
   public LockManager getLockManager() {
     return this.lockManager;

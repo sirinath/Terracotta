@@ -6,7 +6,7 @@ package com.tc.object;
 
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.TCLogger;
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
@@ -214,7 +214,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     // on resend. Since the only way we request for more than one ObjectID in 1 message is when someone initiate
     // non-blocking lookups. So if we loose those requests on restart it is still ok.
     this.outstandingObjectRequests.put(id, ctxt);
-    
     rmom.send();
     requestMonitor.notifyObjectRequest(ctxt);
   }

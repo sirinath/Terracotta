@@ -7,8 +7,9 @@ package com.tc.objectserver.handshakemanager;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.ClientID;
-import com.tc.net.groups.NodeID;
+import com.tc.net.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TestMessageChannel;
@@ -78,7 +79,8 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     TCLogger logger = TCLogging.getLogger(ServerClientHandshakeManager.class);
     this.hm = new ServerClientHandshakeManager(logger, channelManager, new TestServerTransactionManager(),
                                                sequenceValidator, clientStateManager, lockManager, lockResponseSink,
-                                               objectIDRequestSink, timer, reconnectTimeout, false, logger);
+                                               objectIDRequestSink, timer, reconnectTimeout, false, logger,
+                                               ServerID.NULL_ID);
     this.hm.setStarting(convertToConnectionIds(existingUnconnectedClients));
   }
 
@@ -178,13 +180,13 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     handshake.waitContexts.add(waitContext);
     handshake.isChangeListener = true;
 
-    assertFalse(sequenceValidator.isNext(handshake.getClientID(), new SequenceID(minSequenceID.toLong())));
+    assertFalse(sequenceValidator.isNext(handshake.getSourceNodeID(), new SequenceID(minSequenceID.toLong())));
     assertEquals(2, existingUnconnectedClients.size());
     assertFalse(hm.isStarted());
     assertTrue(hm.isStarting());
 
     // reset sequence validator
-    sequenceValidator.remove(handshake.getClientID());
+    sequenceValidator.remove(handshake.getSourceNodeID());
 
     // connect the first client
     channelManager.clientIDs.add(handshake.clientID);
@@ -203,7 +205,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     assertTrue(scc.time == null);
 
     // make sure the transaction sequence was set
-    assertTrue(sequenceValidator.isNext(handshake.getClientID(), new SequenceID(minSequenceID.toLong())));
+    assertTrue(sequenceValidator.isNext(handshake.getSourceNodeID(), new SequenceID(minSequenceID.toLong())));
 
     // make sure all of the object references from that client were added to the
     // client state manager.
@@ -395,9 +397,9 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void makeChannelActive(ClientID clientID, boolean persistent) {
+    public void makeChannelActive(ClientID clientID, boolean persistent, ServerID serverNodeID) {
       ClientHandshakeAckMessage ackMsg = newClientHandshakeAckMessage(clientID);
-      ackMsg.initialize(persistent, getAllClientIDsString(), clientID.toString(), serverVersion);
+      ackMsg.initialize(persistent, getAllClientIDsString(), clientID.toString(), serverVersion, serverNodeID);
       ackMsg.send();
     }
 
@@ -426,6 +428,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     private boolean                     persistent;
     private final TestMessageChannel    channel;
     private String                      serverVersion;
+    private ServerID                    serverNodeID;
 
     private TestClientHandshakeAckMessage(ClientID clientID) {
       this.clientID = clientID;
@@ -441,9 +444,10 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       return persistent;
     }
 
-    public void initialize(boolean isPersistent, Set allNodes, String thisNodeID, String sv) {
+    public void initialize(boolean isPersistent, Set allNodes, String thisNodeID, String sv, ServerID aServerNodeID) {
       this.persistent = isPersistent;
       this.serverVersion = sv;
+      this.serverNodeID = aServerNodeID;
     }
 
     public MessageChannel getChannel() {
@@ -462,8 +466,12 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       return serverVersion;
     }
 
-    public ClientID getClientID() {
+    public NodeID getSourceNodeID() {
       return this.clientID;
+    }
+
+    public ServerID getServerNodeID() {
+      return serverNodeID;
     }
 
   }

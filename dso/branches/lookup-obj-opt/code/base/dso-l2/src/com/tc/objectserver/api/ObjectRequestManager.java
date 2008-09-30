@@ -4,7 +4,7 @@
  */
 package com.tc.objectserver.api;
 
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestID;
 
 import java.util.Collection;
@@ -17,7 +17,7 @@ public interface ObjectRequestManager {
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
                           boolean isServerInitiated, int maxRequestDepth);
-  
+
   public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
                                                          int maxRequestDepth, boolean serverInitiated,
                                                          String requestingThreadName);

@@ -13,7 +13,7 @@ import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.l2.msg.RelayedCommitTransactionMessage;
 import com.tc.logging.TCLogger;
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -208,10 +208,6 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
     public ObjectManager getObjectManager() {
       return objectManager;
     }
-    
-    public ObjectRequestManager getObjectRequestManager() {
-      return null;
-    }
 
     public LockManager getLockManager() {
       return null;
@@ -262,6 +258,10 @@ public class ProcessTransactionHandlerTest extends TCTestCase {
 
     public L2Coordinator getL2Coordinator() {
       return l2Coordinator;
+    }
+
+    public ObjectRequestManager getObjectRequestManager() {
+      return null;
     }
   }
 

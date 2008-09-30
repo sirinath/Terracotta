@@ -8,10 +8,12 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.cluster.Cluster;
 import com.tc.logging.TCLogger;
-import com.tc.net.groups.ClientID;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
+import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.PauseListener;
@@ -155,10 +157,10 @@ public class ClientHandshakeManager implements ChannelEventListener {
       pauseStages();
       pauseManagers();
       changeState(PAUSED);
+      // all the activities paused then can switch to new session
+      sessionManager.newSession();
+      logger.info("ClientHandshakeManager moves to " + sessionManager);
     }
-    // all the activities paused then can switch to new session
-    sessionManager.newSession();
-    logger.info("ClientHandshakeManager moves to " + sessionManager);
   }
 
   public void unpause() {
@@ -172,13 +174,15 @@ public class ClientHandshakeManager implements ChannelEventListener {
   }
 
   public void acknowledgeHandshake(ClientHandshakeAckMessage handshakeAck) {
-    acknowledgeHandshake(handshakeAck.getClientID(), handshakeAck.getPersistentServer(), handshakeAck.getThisNodeId(),
-                         handshakeAck.getAllNodes(), handshakeAck.getServerVersion());
+    acknowledgeHandshake(handshakeAck.getSourceNodeID(), handshakeAck.getPersistentServer(), handshakeAck.getThisNodeId(),
+                         handshakeAck.getAllNodes(), handshakeAck.getServerVersion(), handshakeAck.getServerNodeID(),
+                         handshakeAck.getChannel());
   }
 
-  protected void acknowledgeHandshake(ClientID clientID, boolean persistentServer, String thisNodeId,
-                                      String[] clusterMembers, String serverVersion) {
-    logger.info("Received Handshake ack for this node :" + clientID);
+  protected void acknowledgeHandshake(NodeID sourceID, boolean persistentServer, String thisNodeId,
+                                      String[] clusterMembers, String serverVersion, ServerID serverNodeID,
+                                      MessageChannel channel) {
+    logger.info("Received Handshake ack for this node :" + sourceID);
     if (getState() != STARTING) {
       logger.warn("Handshake acknowledged while not STARTING: " + getState());
       return;
@@ -191,6 +195,11 @@ public class ClientHandshakeManager implements ChannelEventListener {
     }
 
     this.serverIsPersistent = persistentServer;
+    
+    if (serverNodeID == ServerID.NULL_ID) {
+      throw new RuntimeException("ClientHandshakeAck message with NULL serverID");
+    }
+    channel.setRemoteNodeID(serverNodeID);
 
     cluster.thisNodeConnected(thisNodeId, clusterMembers);
 

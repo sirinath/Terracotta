@@ -17,6 +17,8 @@ import com.tc.l2.state.Enrollment;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogging;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
@@ -59,12 +61,14 @@ public class TCGroupManagerImplTest extends TCTestCase {
   final TCMessageFactory           msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
   final TCMessageRouter            msgRouter      = new TCMessageRouterImpl();
 
+  private int                      ports[];
   private int                      groupPorts[];
   private TCGroupManagerImpl       groups[];
   private TestGroupMessageListener listeners[];
   private Node                     nodes[];
 
   private void setupGroups(int n) throws Exception {
+    ports = new int[n];
     groupPorts = new int[n];
     groups = new TCGroupManagerImpl[n];
     listeners = new TestGroupMessageListener[n];
@@ -72,13 +76,14 @@ public class TCGroupManagerImplTest extends TCTestCase {
 
     PortChooser pc = new PortChooser();
     for (int i = 0; i < n; ++i) {
-      groupPorts[i] = pc.chooseRandomPort();
-      nodes[i] = new Node(LOCALHOST, groupPorts[i], TCSocketAddress.WILDCARD_IP);
+      ports[i] = pc.chooseRandom2Port();
+      groupPorts[i] = ports[i] + 1;
+      nodes[i] = new Node(LOCALHOST, ports[i], groupPorts[i], TCSocketAddress.WILDCARD_IP);
     }
     for (int i = 0; i < n; ++i) {
       StageManager stageManager = new StageManagerImpl(new TCThreadGroup(new ThrowableHandler(TCLogging
           .getLogger(TCGroupManagerImplTest.class))), new QueueFactory());
-      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, groupPorts[i], stageManager);
+      groups[i] = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, ports[i], groupPorts[i], stageManager);
       ConfigurationContext context = new ConfigurationContextImpl(stageManager);
       stageManager.startAll(context);
       groups[i].setDiscover(new TCGroupMemberDiscoveryStatic(groups[i]));
@@ -128,12 +133,12 @@ public class TCGroupManagerImplTest extends TCTestCase {
 
     tearGroups();
   }
-  
+
   private int joinedMemberSize(TCGroupManagerImpl group) {
     Object members[] = group.getMembers().toArray();
     int size = members.length;
-    for(int i =0; i < size; ++i) {
-      if (!((TCGroupMember)members[i]).isReady()) -- size;
+    for (int i = 0; i < size; ++i) {
+      if (!((TCGroupMember) members[i]).isReady()) --size;
     }
     return size;
   }
@@ -224,7 +229,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     Map roots = new HashMap();
     long sID = 10;
     ObjectSyncMessage message = new ObjectSyncMessage(ObjectSyncMessage.MANAGED_OBJECT_SYNC_TYPE);
-    message.initialize(new ServerTransactionID(new NodeIDImpl("hello", new byte[] { 34, 33, (byte) 234 }),
+    message.initialize(new ServerTransactionID(new ServerID("hello", new byte[] { 34, 33, (byte) 234 }),
                                                new TransactionID(342)), dnaOids, count, serializedDNAs,
                        objectSerializer, roots, sID);
     return (message);
@@ -332,7 +337,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
 
   private L2StateMessage createL2StateMessage() {
     long weights[] = new long[] { 1, 23, 44, 78 };
-    Enrollment enroll = new Enrollment(new NodeIDImpl("test", UUID.getUUID().toString().getBytes()), true, weights);
+    Enrollment enroll = new Enrollment(new ServerID("test", UUID.getUUID().toString().getBytes()), true, weights);
     L2StateMessage message = new L2StateMessage(L2StateMessage.START_ELECTION, enroll);
     return (message);
   }
@@ -508,7 +513,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     private NodeID             toNode;
 
     public SenderThread(ThreadGroup group, String name, TCGroupManagerImpl mgr, Integer upbound) {
-      this(group, name, mgr, upbound, NodeIDImpl.NULL_ID);
+      this(group, name, mgr, upbound, ServerID.NULL_ID);
     }
 
     public SenderThread(ThreadGroup group, String name, TCGroupManagerImpl mgr, Integer upbound, NodeID toNode) {

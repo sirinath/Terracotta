@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyrightidsids
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.objectserver.handler;
@@ -9,7 +9,7 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.msg.RequestManagedObjectMessage;
@@ -68,7 +68,7 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
   private void handleEventFromClient(RequestManagedObjectMessage rmom) {
     MessageChannel channel = rmom.getChannel();
     Set<ObjectID> requestedIDs = rmom.getObjectIDs();
-    ClientID clientID = rmom.getClientID();
+    ClientID clientID = (ClientID) rmom.getSourceNodeID();
     Set<ObjectID> removedIDs = rmom.getRemoved();
     int maxRequestDepth = rmom.getRequestDepth();
 

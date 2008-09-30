@@ -3,7 +3,7 @@
  */
 package com.tc.objectserver.context;
 
-import com.tc.net.groups.ClientID;
+import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestID;
 
 public interface ObjectManagerRequestContext extends ObjectManagerResultsContext {
