@@ -482,12 +482,14 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
       try {
         x; // What's the right tcoRequestor to pass to this lookup?  We're trying to apply some
-        // changes to this object, so first we've got to look it up.  It itself might not yet
-        // be faulted in, so we might have to create it.  It's not (on average) a root.  We're
-        // on a network thread.  But note that the next thing we're going to do is hydrate it.
-        // So we don't really have to fault in the object; we're just trying to get its TCO.
-        // But we might have to create a brand-new TCO for it, and to do that we'd have to give
-        // it some graph context.  Where can we get that from??
+        // changes to this object, so first we've got to look it up.  This might be the first
+        // time the object has been referenced on this node, so we might have to create a TCObject
+        // for it.  Which seems wrong - I'd think we'd want to pre-filter so that we don't apply
+        // changes to an object that doesn't already exist; we should only apply the changes when
+        // it actually has to be faulted in for a reference.
+        //
+        // However, if we do have to fault it in here, we need to be able to load its class and
+        // we need to give the new TCObject some graph context.
         tcobj = objectManager.lookup(dna.getObjectID());
       } catch (ClassNotFoundException cnfe) {
         logger.warn("Could not apply change because class not local: " + dna.getTypeName());
