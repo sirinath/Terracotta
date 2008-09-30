@@ -1904,16 +1904,18 @@ public class SessionIntegratorFrame extends Frame implements PropertyChangeListe
     cp.setLayout(new BorderLayout());
     cp.add(panel);
     panel.setEvent(event);
-    dialog.pack();
 
     Preferences prefs = getPreferences();
-    XSplitPane splitter = (XSplitPane) findComponent("IssuesSplitter");
+    XSplitPane splitter = (XSplitPane) panel.findComponent("IssuesSplitter");
     splitter.setPreferences(prefs.node(splitter.getName()));
 
     String s;
     if ((s = prefs.get(NON_PORTABLE_DIALOG_SIZE, null)) != null) {
       dialog.setSize(parseSizeString(s));
+    } else {
+      dialog.pack();
     }
+
     dialog.center(this);
     dialog.setVisible(true);
     prefs.put(NON_PORTABLE_DIALOG_SIZE, getSizeString(dialog));

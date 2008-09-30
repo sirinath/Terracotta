@@ -62,9 +62,9 @@ public class XTree extends org.dijon.Tree {
         TreePath path = getPathForLocation(me.getX(), me.getY());
         if (path != null) {
           requestFocus();
-          XTreeNode node = (XTreeNode) path.getLastPathComponent();
-          if (node != null) {
-            node.nodeClicked(me);
+          Object comp = path.getLastPathComponent();
+          if (comp instanceof XTreeNode) {
+            ((XTreeNode) comp).nodeClicked(me);
           }
         }
       }
@@ -76,9 +76,9 @@ public class XTree extends org.dijon.Tree {
         TreePath path = tse.getNewLeadSelectionPath();
         if (path != null) {
           requestFocus();
-          XTreeNode node = (XTreeNode) path.getLastPathComponent();
-          if (node != null) {
-            node.nodeSelected(tse);
+          Object comp = path.getLastPathComponent();
+          if (comp instanceof XTreeNode) {
+            ((XTreeNode) comp).nodeSelected(tse);
           }
         }
       }
