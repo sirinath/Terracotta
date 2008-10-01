@@ -77,7 +77,6 @@ import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
 import com.tc.object.bytecode.JavaNetURLAdapter;
-import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierDebugClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapEntryIteratorAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapHashEntryAdapter;
@@ -275,8 +274,10 @@ public class BootJarTool {
 
       addInstrumentedJavaUtilConcurrentLinkedBlockingQueue();
       addInstrumentedJavaUtilConcurrentHashMap();
-      addInstrumentedJavaUtilConcurrentCyclicBarrier();
       addInstrumentedJavaUtilConcurrentFutureTask();
+
+      // This is used for debugging and prints stuff to stderr
+      //addInstrumentedJavaUtilConcurrentCyclicBarrier();
     }
   }
 
@@ -1801,22 +1802,22 @@ public class BootJarTool {
   /**
    * This instrumentation is temporary to add debug statements to the CyclicBarrier class.
    */
-  private final void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
-    if (!Vm.isJDK15Compliant()) { return; }
-
-    byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
-
-    ClassReader cr = new ClassReader(bytes);
-    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    bytes = cw.toByteArray();
-
-    TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
-    bytes = doDSOTransform(spec.getClassName(), bytes);
-    loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
-  }
+//  private final void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
+//    if (!Vm.isJDK15Compliant()) { return; }
+//
+//    byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
+//
+//    ClassReader cr = new ClassReader(bytes);
+//    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+//    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
+//    cr.accept(cv, ClassReader.SKIP_FRAMES);
+//
+//    bytes = cw.toByteArray();
+//
+//    TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
+//    bytes = doDSOTransform(spec.getClassName(), bytes);
+//    loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
+//  }
 
   private final void addInstrumentedJavaUtilConcurrentHashMap() {
     if (!Vm.isJDK15Compliant()) { return; }
