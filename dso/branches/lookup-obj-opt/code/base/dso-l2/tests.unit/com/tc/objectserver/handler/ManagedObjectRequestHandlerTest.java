@@ -11,9 +11,14 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.TestRequestManagedObjectMessage;
 import com.tc.object.net.ChannelStats;
+import com.tc.object.net.TestDSOChannelManager;
+import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
+import com.tc.objectserver.impl.ObjectRequestManagerImpl;
+import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.l1.api.TestClientStateManager;
+import com.tc.objectserver.tx.TestServerTransactionManager;
 import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.CounterImpl;
 
@@ -32,8 +37,19 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     Counter removeCounter = new CounterImpl(0L);
 
     TestChannelStats channelStats = new TestChannelStats(channelReqCounter, channelRemCounter);
+    
+    TestObjectManager objectManager = new TestObjectManager();
+    TestDSOChannelManager channelManager = new TestDSOChannelManager();
+    TestClientStateManager clientStateManager = new TestClientStateManager();
+    TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
+    TestSink respondSink = new TestSink();
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+                                                                                 channelManager, clientStateManager,
+                                                                                 serverTransactionManager, respondSink);
 
     TestServerConfigurationContext context = new TestServerConfigurationContext();
+    context.setObjectRequestManager(objectRequestManager);
     context.clientStateManager = new TestClientStateManager();
     context.addStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, new MockStage("yo"));
     context.channelStats = channelStats;

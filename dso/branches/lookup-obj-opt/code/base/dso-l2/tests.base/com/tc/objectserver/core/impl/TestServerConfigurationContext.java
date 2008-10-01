@@ -52,6 +52,10 @@ public class TestServerConfigurationContext implements ServerConfigurationContex
     return this.objectRequestManager;
   }
 
+  public void setObjectRequestManager(ObjectRequestManager objectRequestManager) {
+    this.objectRequestManager = objectRequestManager;
+  }
+  
   public LockManager getLockManager() {
     return this.lockManager;
   }
