@@ -18,29 +18,29 @@ import junit.framework.Test;
 
 /**
  * Verify that when the system is configured to fall back to the classloader that
- * created the named root object, classes created by the app server VM
+ * created the root object that transitively "owns" the object being created, 
+ * classes created by the app server VM
  * can be faulted on the vanilla VM and vice versa.
  */
-public class RootBasedLoaderTest extends StandardLoaderTestBase {
+public class RequestorBasedLoaderTest extends StandardLoaderTestBase {
   
-  protected static class RootBasedLoaderTestSetup extends StandardLoaderTestSetup {
+  protected static class RequestorBasedLoaderTestSetup extends StandardLoaderTestSetup {
 
-    public RootBasedLoaderTestSetup(Class testClass) {
+    public RequestorBasedLoaderTestSetup(Class testClass) {
       super(testClass);
     }
     
     /**
-     * Add &lt;classloader-compatibility&gt; with named-root strategy.
-     * That's what makes this a RootBasedLoader test.
+     * Add &lt;classloader-compatibility&gt; with classloader-from-context strategy.
+     * That's what makes this a RequestorBasedLoader test.
      */
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
       super.configureTcConfig(tcConfigBuilder);
-      String rootName = "sharedMap";
-      tcConfigBuilder.setNamedRootLoaderStrategy(rootName);
+      tcConfigBuilder.setContextLoaderStrategy();
     }
   }
 
-  public RootBasedLoaderTest() {
+  public RequestorBasedLoaderTest() {
     // DEV-1817
     if (appServerInfo().getId() == AppServerInfo.WEBSPHERE) {
       disableAllUntil(new Date(Long.MAX_VALUE));
@@ -48,7 +48,7 @@ public class RootBasedLoaderTest extends StandardLoaderTestBase {
   }
 
   public static Test suite() {
-    return new RootBasedLoaderTestSetup(RootBasedLoaderTest.class);
+    return new RequestorBasedLoaderTestSetup(RequestorBasedLoaderTest.class);
   }
 
   public void testRootBasedClassLoader() throws Exception {

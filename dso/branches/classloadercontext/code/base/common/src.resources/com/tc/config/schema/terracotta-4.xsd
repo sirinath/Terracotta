@@ -341,6 +341,14 @@
       </xs:documentation>
     </xs:annotation>
     <xs:choice>
+      <xs:element name="classloader-from-context" type="xs:boolean">
+        <xs:annotation>
+          <xs:documentation>
+            If a named classloader is not available, use the thread context classloader
+            associated with the owner of the object.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="classloader-from-named-root" type="xs:string">
         <xs:annotation>
           <xs:documentation>

@@ -16,6 +16,7 @@ import com.tc.object.config.schema.IncludeOnLoad;
 import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedRootClassProvider;
+import com.tc.object.loaders.RequestorClassProvider;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
@@ -366,9 +367,24 @@ public class ConfigLoader {
       return;
     }
     
+    // Context classloader strategy
+    boolean contextStrategy = classloaderCompatibility.getClassloaderFromContext();
+    if (contextStrategy) {
+      ClassProvider oldProvider = config.getClassProvider();
+      if (oldProvider != null) {
+        throw new ConfigurationSetupException(
+            "attempted to set classloader-compatibility strategy, but it has already been set");
+      }
+      config.setClassProvider(new RequestorClassProvider());
+    }
+    
     // NamedRoot classloader strategy
     String namedRoot = classloaderCompatibility.getClassloaderFromNamedRoot();
     if (namedRoot != null) {
+      if (contextStrategy) {
+        throw new ConfigurationSetupException(
+            "attempted to define multiple classloader-compatibility strategies - please choose just one");
+      }
       if (namedRoot.length() > 0) {
         ClassProvider oldProvider = config.getClassProvider();
         if (oldProvider != null) {
