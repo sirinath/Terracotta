@@ -912,8 +912,8 @@ public class ClientLockManagerTest extends TCTestCase {
     Assert.eval("The text \"WAITING TO LOCK: LockID(Locky0)\" should be present in the thread dump", threadDump
         .indexOf("WAITING TO LOCK: LockID(Locky0)") >= 0);
 
-    Assert.eval("The text \"LOCKED : LockID(Locky0); LockID(Locky1)\" should be present in the thread dump", threadDump
-        .indexOf("LOCKED : LockID(Locky0); LockID(Locky1)") >= 0);
+    Assert.eval((threadDump.indexOf("LOCKED : LockID(Locky0); LockID(Locky1)") >= 0)
+                || (threadDump.indexOf("LOCKED : LockID(Locky1); LockID(Locky0)") >= 0));
 
     threadLockManager.unlock(lid0);
     System.out.println("XXX TERRA Thread : Released WRITE lock0 for tx0");
