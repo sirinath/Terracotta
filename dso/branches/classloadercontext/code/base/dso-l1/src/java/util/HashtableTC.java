@@ -476,7 +476,8 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   private static class ValuesWrapper {
 
     private Object value;
-    x; // TODO: adding this tcoContext makes this object twice as big.
+    BARF BARF; // TODO: adding this tcoContext makes this object twice as big.  In HashMapTC the ValueWrapper
+    // is not actually stored in the map AFAICT; but here it appears to be, so this seems a problem.
     private TCObject tcoContext; // provides DSO graph context in case classloading is necessary
 
     public ValuesWrapper(Object value, TCObject tcoContext) {

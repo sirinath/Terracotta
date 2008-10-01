@@ -433,12 +433,13 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   }
 
   /*
+   * Used to wrap the comparand in methods like containsValue(Object v).  This does NOT wrap the values in the
+   * map itself.
    * This wrapper depends on the fact that key.equals() gets called on the wrapper instead of the other way around
    */
   static class ValueWrapper {
 
     private final Object value;
-    x; // TODO: adding this tcoContext makes this object twice as big.
     private final TCObject tcoContext;
 
     public ValueWrapper(Object value, TCObject tcoContext) {
