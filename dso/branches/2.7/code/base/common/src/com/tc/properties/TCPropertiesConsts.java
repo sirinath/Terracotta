@@ -515,4 +515,13 @@ public interface TCPropertiesConsts {
   public static final String   HTTP_DEFAULT_SERVLET_ATTRIBUTE_ALIASES                 = "http.defaultservlet.attribute.aliases";
   public static final String   HTTP_DEFAULT_SERVLET_ATTRIBUTE_DIR_ALLOWED             = "http.defaultservlet.attribute.dirallowed";
 
+  /*********************************************************************************************************************
+   * <code>
+   * Section : Remote JMX
+   * l2.remotejmx.maxthreads                     - maximum number of concurrent remote jmx operations permitted
+   * l2.remotejmx.idletime                       - idle timeout (in seconds) for remote jmx processing threads
+   * </code>
+   ********************************************************************************************************************/
+  public static final String   L2_REMOTEJMX_MAXTHREADS                                = "l2.remotejmx.maxthreads";
+  public static final String   L2_REMOTEJMX_IDLETIME                                  = "l2.remotejmx.idletime";
 }

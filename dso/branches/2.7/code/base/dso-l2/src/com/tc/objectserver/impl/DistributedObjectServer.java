@@ -35,6 +35,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.L2Management;
+import com.tc.management.RemoteJMXProcessor;
 import com.tc.management.beans.L2State;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
@@ -287,7 +288,7 @@ public class DistributedObjectServer implements TCDumper {
 
   private ReconnectConfig                      l1ReconnectConfig;
 
-  GCStatsEventPublisher                        gcStatsEventPublisher;
+  private GCStatsEventPublisher                gcStatsEventPublisher;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -377,7 +378,7 @@ public class DistributedObjectServer implements TCDumper {
 
     // start the JMX server
     try {
-      startJMXServer(bind, configSetupManager.commonl2Config().jmxPort().getInt());
+      startJMXServer(bind, configSetupManager.commonl2Config().jmxPort().getInt(), new RemoteJMXProcessor());
     } catch (Exception e) {
       String msg = "Unable to start the JMX server. Do you have another Terracotta Server running?";
       consoleLogger.error(msg);
@@ -1148,13 +1149,13 @@ public class DistributedObjectServer implements TCDumper {
     return gcStatsEventPublisher;
   }
 
-  private void startJMXServer(InetAddress bind, int jmxPort) throws Exception {
+  private void startJMXServer(InetAddress bind, int jmxPort, Sink remoteEventsSink) throws Exception {
     if (jmxPort == 0) {
       jmxPort = new PortChooser().chooseRandomPort();
     }
 
     l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsAgentSubSystem,
-                                    statisticsGateway, configSetupManager, this, bind, jmxPort);
+                                    statisticsGateway, configSetupManager, this, bind, jmxPort, remoteEventsSink);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
