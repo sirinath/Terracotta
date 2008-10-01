@@ -36,7 +36,7 @@ public class DBVersionChecker {
     // TODO: db upgrade/revert routines
   }
 
-  private static final DbVersions DB_VERSION_CURRENT = DbVersions.DB_VERSION_2_1;
+  private static final DbVersions DB_VERSION_CURRENT = DbVersions.DB_VERSION_2;
 
   private PersistentMapStore      clusterStore;
   private static final TCLogger   logger             = CustomerLogging.getDSOGenericLogger();
