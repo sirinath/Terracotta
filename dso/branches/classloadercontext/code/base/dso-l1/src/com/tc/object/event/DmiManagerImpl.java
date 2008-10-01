@@ -60,8 +60,11 @@ public class DmiManagerImpl implements DmiManager {
         .getMethodName(), dmc.getParameterDesc());
     objMgr.getTransactionManager().begin(lockName, LockLevel.CONCURRENT, lockName, "Distributed Invoke");
     try {
-      final ObjectID receiverId = objMgr.lookupOrCreate(receiver).getObjectID();
-      final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc).getObjectID();
+      BARF tcoRequestor; // We're trying to look up or create an isolated object, in order to invoke a method
+      // on it, from a network thread. How can we figure out what classloader to use, as well as what classloader
+      // context to pass to this object's children?
+      final ObjectID receiverId = objMgr.lookupOrCreate(receiver, tcoRequestor).getObjectID();
+      final ObjectID dmiCallId = objMgr.lookupOrCreate(dmc, tcoRequestor).getObjectID();
       final DmiClassSpec[] classSpecs = getClassSpecs(classProvider, receiver, params);
       final DmiDescriptor dd = new DmiDescriptor(receiverId, dmiCallId, classSpecs, runOnAllNodes);
       objMgr.getTransactionManager().addDmiDescriptor(dd);
@@ -146,7 +149,7 @@ public class DmiManagerImpl implements DmiManager {
     Assert.pre(classSpecs != null);
     for (int i = 0; i < classSpecs.length; i++) {
       DmiClassSpec s = classSpecs[i];
-      // TODO: ahem.  In this case I don't have a clue about what the "requestor" is.  
+      BARF requestorContext; // TODO: ahem.  In this case I don't have a clue about what the "requestor" is.  
       // We're on a network event thread, and we're just throwing away the class we get back;
       // at this point we're just asking a hypothetical question about whether some class
       // will be loadable later on.  Unfortunately, the answer to that depends on who asks.
@@ -189,7 +192,8 @@ public class DmiManagerImpl implements DmiManager {
     }
 
     try {
-      DistributedMethodCall dmc = (DistributedMethodCall) objMgr.lookupObject(dd.getDmiCallId());
+      BARF tcoRequestor; // same issue as in checkClassAvailability: where do we get context?
+      DistributedMethodCall dmc = (DistributedMethodCall) objMgr.lookupObject(dd.getDmiCallId(), tcoRequestor);
       // FIXME: debug code below ----------
       dmc.getClass();
       dmc.getReceiver().getClass().getName();

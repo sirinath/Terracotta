@@ -481,7 +481,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       Assert.assertTrue(dna.isDelta());
 
       try {
-        x; // What's the right tcoRequestor to pass to this lookup?  We're trying to apply some
+        BARF tcoRequestor; // What's the right tcoRequestor to pass to this lookup?  We're trying to apply some
         // changes to this object, so first we've got to look it up.  This might be the first
         // time the object has been referenced on this node, so we might have to create a TCObject
         // for it.  Which seems wrong - I'd think we'd want to pre-filter so that we don't apply
@@ -490,7 +490,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
         //
         // However, if we do have to fault it in here, we need to be able to load its class and
         // we need to give the new TCObject some graph context.
-        tcobj = objectManager.lookup(dna.getObjectID());
+        tcobj = objectManager.lookup(dna.getObjectID(), tcoRequestor);
       } catch (ClassNotFoundException cnfe) {
         logger.warn("Could not apply change because class not local: " + dna.getTypeName());
         continue;
