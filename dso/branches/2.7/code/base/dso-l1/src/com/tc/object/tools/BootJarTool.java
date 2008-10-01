@@ -277,7 +277,7 @@ public class BootJarTool {
       addInstrumentedJavaUtilConcurrentFutureTask();
 
       // This is used for debugging and prints stuff to stderr
-      //addInstrumentedJavaUtilConcurrentCyclicBarrier();
+      addInstrumentedJavaUtilConcurrentCyclicBarrier();
     }
   }
 
@@ -1802,22 +1802,21 @@ public class BootJarTool {
   /**
    * This instrumentation is temporary to add debug statements to the CyclicBarrier class.
    */
-//  private final void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
-//    if (!Vm.isJDK15Compliant()) { return; }
-//
-//    byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
-//
+  private final void addInstrumentedJavaUtilConcurrentCyclicBarrier() {
+    if (!Vm.isJDK15Compliant()) { return; }
+
+    byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
+
 //    ClassReader cr = new ClassReader(bytes);
 //    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
 //    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
 //    cr.accept(cv, ClassReader.SKIP_FRAMES);
-//
 //    bytes = cw.toByteArray();
-//
-//    TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
-//    bytes = doDSOTransform(spec.getClassName(), bytes);
-//    loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
-//  }
+
+    TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
+    bytes = doDSOTransform(spec.getClassName(), bytes);
+    loadClassIntoJar("java.util.concurrent.CyclicBarrier", bytes, true);
+  }
 
   private final void addInstrumentedJavaUtilConcurrentHashMap() {
     if (!Vm.isJDK15Compliant()) { return; }
