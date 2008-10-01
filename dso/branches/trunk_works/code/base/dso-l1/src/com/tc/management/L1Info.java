@@ -9,12 +9,15 @@ import com.tc.logging.TCLogging;
 import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockRequest;
+import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.runtime.JVMMemoryManager;
 import com.tc.runtime.MemoryUsage;
 import com.tc.runtime.TCRuntime;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.ProductInfo;
+import com.tc.util.runtime.LockInfoByThreadID;
+import com.tc.util.runtime.LockInfoByThreadIDImpl;
 import com.tc.util.runtime.ThreadDumpUtil;
 import com.tc.util.runtime.ThreadIDMap;
 
@@ -92,13 +95,13 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   public boolean isPatched() {
     return productInfo.isPatched();
   }
-  
+
   public String getPatchLevel() {
     return productInfo.patchLevel();
   }
-  
+
   public String getPatchVersion() {
-    if(productInfo.isPatched()) {
+    if (productInfo.isPatched()) {
       return productInfo.toLongPatchString();
     } else {
       return "";
@@ -106,17 +109,17 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   }
 
   public String getPatchBuildID() {
-    if(productInfo.isPatched()) {
+    if (productInfo.isPatched()) {
       return productInfo.patchBuildID();
     } else {
       return "";
     }
   }
-  
+
   public String getCopyright() {
     return productInfo.copyright();
   }
-  
+
   public String getEnvironment() {
     StringBuffer sb = new StringBuffer();
     Properties env = System.getProperties();
@@ -163,41 +166,38 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return rawConfigText;
   }
 
-  public void getHeldLocksAndPendingLocksByThreadID(Map heldLocksByThreadID, Map pendingLocksByThreadID) {
+  public void getHeldPendingAndWaitLocksByThreadID(LockInfoByThreadID lockInfo) {
 
-    Set heldLockSet = new HashSet();
-    Set pendingLockSet = new HashSet();
-    this.lockManager.addAllHeldLocksAndPendingLockRequestsTo(heldLockSet, pendingLockSet);
+    Map lockMap = new HashMap();
+    lockMap.put(LockInfoByThreadID.HELD_LOCK, new HashSet());
+    lockMap.put(LockInfoByThreadID.WAIT_ON_LOCK, new HashSet());
+    lockMap.put(LockInfoByThreadID.WAIT_TO_LOCK, new HashSet());
 
-    for (Iterator i = heldLockSet.iterator(); i.hasNext();) {
+    //this.lockManager.addAllLocksTo(lockMap);
+
+    addMappings((Set) lockMap.get(LockInfoByThreadID.HELD_LOCK), LockInfoByThreadID.HELD_LOCK, lockInfo);
+    addMappings((Set) lockMap.get(LockInfoByThreadID.WAIT_ON_LOCK), LockInfoByThreadID.WAIT_ON_LOCK, lockInfo);
+    addMappings((Set) lockMap.get(LockInfoByThreadID.WAIT_TO_LOCK), LockInfoByThreadID.WAIT_TO_LOCK, lockInfo);
+  }
+
+  private void addMappings(Set lockSet, String lockType, LockInfoByThreadID lockInfo) {
+    for (Iterator i = lockSet.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      Long threadID = new Long(request.threadID().toLong());
-      String lockInfo = (String) heldLocksByThreadID.get(threadID);
-      if (lockInfo == null) {
-        heldLocksByThreadID.put(threadID, request.lockID().toString());
+      ThreadID threadID = request.threadID();
+      String locks = (String) lockInfo.getLock(lockType, threadID);
+      if (locks == null) {
+        lockInfo.addLock(lockType, threadID, request.lockID().toString());
       } else {
-        heldLocksByThreadID.put(threadID, lockInfo + "; " + request.lockID().toString());
+        lockInfo.addLock(lockType, threadID, locks + "; " + request.lockID().toString());
       }
     }
-
-    for (Iterator i = pendingLockSet.iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      Long threadID = new Long(request.threadID().toLong());
-      String lockInfo = (String) pendingLocksByThreadID.get(threadID);
-      if (lockInfo == null) {
-        pendingLocksByThreadID.put(threadID, request.lockID().toString());
-      } else {
-        pendingLocksByThreadID.put(threadID, lockInfo + "; " + request.lockID().toString());
-      }
-    }
-
   }
 
   public String takeThreadDump(long requestMillis) {
-    Map heldLocksByThreadID = new HashMap();
-    Map pendingLocksByThreadID = new HashMap();
-    getHeldLocksAndPendingLocksByThreadID(heldLocksByThreadID, pendingLocksByThreadID);
-    String text = ThreadDumpUtil.getThreadDump(heldLocksByThreadID, pendingLocksByThreadID, threadIDMap);
+    LockInfoByThreadID lockInfo = new LockInfoByThreadIDImpl();
+    //getHeldPendingAndWaitLocksByThreadID(lockInfo);
+    this.lockManager.addAllLocksTo(lockInfo);
+    String text = ThreadDumpUtil.getThreadDump(lockInfo, threadIDMap);
     logger.info(text);
     return text;
   }
