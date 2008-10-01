@@ -871,7 +871,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       }
     }
     
-    // The root TCO either already existed or has just been created
+    BARF tcoRoot; // When a second L1 looks for a root the first time, this fails; tcoRoot has not yet been created.
+    // The problem is that the TCO creation happens under lookup(ObjectID, ObjectID, TCObject, boolean), which 
+    // actually uses the ClassloaderContext itself.  We could write code something like "if on a non-TC thread and
+    // the tcoContext is null, then create one right there just as if we were inside TCObject constructor", but
+    // that seems risky.  But lookup(...) has no other way, other than "tcoRequestor == null", to know whether it
+    // is being asked to look up a root.
     if (tcoRoot == null) {
       tcoRoot = basicLookupByID(rootID);
     }
