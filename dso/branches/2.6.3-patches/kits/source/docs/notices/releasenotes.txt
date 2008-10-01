@@ -18,7 +18,7 @@ PATCH HISTORY
 
 -------------
 Patch Level 1
-
+- - https://jira.terracotta.org/jira/browse/DEV-1875
 - Fix for Cluster Statistics Recorder where it was not respecting the bind configuration
   parameter and could not connect to the server.
 
