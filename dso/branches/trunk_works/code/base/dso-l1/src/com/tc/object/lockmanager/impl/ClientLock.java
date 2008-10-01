@@ -28,6 +28,7 @@ import com.tc.util.Assert;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
 import com.tc.util.Util;
+import com.tc.util.runtime.LockInfoByThreadID;
 
 import gnu.trove.TIntStack;
 
@@ -40,9 +41,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.Map.Entry;
 
 class ClientLock implements TimerCallback, LockFlushCallback {
   private static final TCLogger       logger                   = TCLogging.getLogger(ClientLock.class);
@@ -761,21 +762,24 @@ class ClientLock implements TimerCallback, LockFlushCallback {
     return c;
   }
 
-  public synchronized void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks) {
+  public synchronized void addAllLocksTo(LockInfoByThreadID lockInfo) {
     for (Iterator i = holders.keySet().iterator(); i.hasNext();) {
       ThreadID threadID = (ThreadID) i.next();
       LockHold hold = (LockHold) holders.get(threadID);
       if (hold.isHolding() && hold.getServerLevel() != LockLevel.NIL_LOCK_LEVEL) {
-        heldLocks.add(new LockRequest(this.lockID, threadID, hold.getServerLevel(), lockObjectType));
+        lockInfo.addLock(LockInfoByThreadID.HELD_LOCK, threadID, this.lockID);
       }
     }
     for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      if (isWaitLockRequest(request)) continue;
-      pendingLocks.add(request);
+      if (isWaitLockRequest(request)) {
+        lockInfo.addLock(LockInfoByThreadID.WAIT_ON_LOCK, request.threadID(), this.lockID);
+      } else {
+        lockInfo.addLock(LockInfoByThreadID.WAIT_TO_LOCK, request.threadID(), this.lockID);
+      }
     }
   }
-  
+
   public synchronized Collection addHoldersToAsLockRequests(Collection c) {
     if (greediness.isNotGreedy()) {
       for (Iterator i = holders.keySet().iterator(); i.hasNext();) {
@@ -1360,6 +1364,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
       /*
        * server_level is not changed to NIL_LOCK_LEVEL even though the server will release the lock as we need to know
        * what state we were holding before wait on certain scenarios like server crash etc.
+       * 
        * @see ClientLockManager.notified
        */
       return this.server_level;
