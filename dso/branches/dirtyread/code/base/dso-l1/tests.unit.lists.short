@@ -1,0 +1,10 @@
+ApplicatorDNAEncodingTest
+ClientObjectManagerTest
+ClientLockManagerTest
+ClientTransactionManagerTest
+DNAImplTest
+HashMapTCTest
+ModulesLoaderTest
+ObjectDNAImplTest
+RemoteTransactionManagerTest
+VersionizedDNAWrapperTest
