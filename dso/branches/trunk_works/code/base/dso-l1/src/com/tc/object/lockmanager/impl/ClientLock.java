@@ -762,20 +762,24 @@ class ClientLock implements TimerCallback, LockFlushCallback {
     return c;
   }
 
+  /**
+   * Gather all lock information and add it to lockInfo. Used by threadDump utils to tell about distributed
+   * held/waiting-on/wating-to lock for each thread.
+   */
   public synchronized void addAllLocksTo(LockInfoByThreadID lockInfo) {
     for (Iterator i = holders.keySet().iterator(); i.hasNext();) {
       ThreadID threadID = (ThreadID) i.next();
       LockHold hold = (LockHold) holders.get(threadID);
       if (hold.isHolding() && hold.getServerLevel() != LockLevel.NIL_LOCK_LEVEL) {
-        lockInfo.addLock(LockInfoByThreadID.HELD_LOCK, threadID, this.lockID);
+        lockInfo.addLock(LockInfoByThreadID.HELD_LOCK, threadID, this.lockID.toString());
       }
     }
     for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       if (isWaitLockRequest(request)) {
-        lockInfo.addLock(LockInfoByThreadID.WAIT_ON_LOCK, request.threadID(), this.lockID);
+        lockInfo.addLock(LockInfoByThreadID.WAIT_ON_LOCK, request.threadID(), this.lockID.toString());
       } else {
-        lockInfo.addLock(LockInfoByThreadID.WAIT_TO_LOCK, request.threadID(), this.lockID);
+        lockInfo.addLock(LockInfoByThreadID.WAIT_TO_LOCK, request.threadID(), this.lockID.toString());
       }
     }
   }

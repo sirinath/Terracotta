@@ -5,6 +5,7 @@
 package com.tc.util.runtime;
 
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.util.State;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,43 +16,36 @@ public class LockInfoByThreadIDImpl implements LockInfoByThreadID {
   Map waitOnLocks  = new HashMap();
   Map pendingLocks = new HashMap();
 
-  public LockInfoByThreadIDImpl() {
-    //
+  public String getHeldLocks(ThreadID threadID) {
+    return ((String) heldLocks.get(threadID));
   }
 
-  public Object getHeldLocksList(ThreadID threadID) {
-    return (heldLocks.get(threadID));
+  public String getWaitOnLocks(ThreadID threadID) {
+    return ((String) waitOnLocks.get(threadID));
   }
 
-  public Object getWaitOnLocksList(ThreadID threadID) {
-    return (waitOnLocks.get(threadID));
+  public String getPendingLocks(ThreadID threadID) {
+    return ((String) pendingLocks.get(threadID));
   }
 
-  public Object getPendingLocksList(ThreadID threadID) {
-    return (pendingLocks.get(threadID));
-  }
-
-  public void addLock(String type, ThreadID threadID, Object value) {
-    if (type.equals(LockInfoByThreadID.HELD_LOCK)) {
-      heldLocks.put(threadID, value);
-    } else if (type.equals(LockInfoByThreadID.WAIT_ON_LOCK)) {
-      waitOnLocks.put(threadID, value);
-    } else if (type.equals(LockInfoByThreadID.WAIT_TO_LOCK)) {
-      pendingLocks.put(threadID, value);
+  public void addLock(State lockType, ThreadID threadID, String value) {
+    if (lockType == HELD_LOCK) {
+      addLockTo(heldLocks, threadID, value);
+    } else if (lockType == WAIT_ON_LOCK) {
+      addLockTo(waitOnLocks, threadID, value);
+    } else if (lockType == WAIT_TO_LOCK) {
+      addLockTo(pendingLocks, threadID, value);
     } else {
-      throw new AssertionError("Unexpected Lock type : " + type);
+      throw new AssertionError("Unexpected Lock type : " + lockType);
     }
   }
 
-  public Object getLock(String lockType, ThreadID threadID) {
-    if (lockType.equals(LockInfoByThreadID.HELD_LOCK)) {
-      return getHeldLocksList(threadID);
-    } else if (lockType.equals(LockInfoByThreadID.WAIT_ON_LOCK)) {
-      return getWaitOnLocksList(threadID);
-    } else if (lockType.equals(LockInfoByThreadID.WAIT_TO_LOCK)) {
-      return getPendingLocksList(threadID);
+  private void addLockTo(Map lockMap, ThreadID threadID, String value) {
+    Object oldValue = lockMap.get(threadID);
+    if (oldValue == null) {
+      lockMap.put(threadID, value);
     } else {
-      throw new AssertionError("Unexpected Lock type : " + lockType);
+      lockMap.put(threadID, oldValue + "; " + value);
     }
   }
 }

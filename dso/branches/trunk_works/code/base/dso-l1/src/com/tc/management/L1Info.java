@@ -8,8 +8,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.LockRequest;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.runtime.JVMMemoryManager;
 import com.tc.runtime.MemoryUsage;
 import com.tc.runtime.TCRuntime;
@@ -25,12 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.management.NotCompliantMBeanException;
 
@@ -166,36 +162,8 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     return rawConfigText;
   }
 
-  public void getHeldPendingAndWaitLocksByThreadID(LockInfoByThreadID lockInfo) {
-
-    Map lockMap = new HashMap();
-    lockMap.put(LockInfoByThreadID.HELD_LOCK, new HashSet());
-    lockMap.put(LockInfoByThreadID.WAIT_ON_LOCK, new HashSet());
-    lockMap.put(LockInfoByThreadID.WAIT_TO_LOCK, new HashSet());
-
-    //this.lockManager.addAllLocksTo(lockMap);
-
-    addMappings((Set) lockMap.get(LockInfoByThreadID.HELD_LOCK), LockInfoByThreadID.HELD_LOCK, lockInfo);
-    addMappings((Set) lockMap.get(LockInfoByThreadID.WAIT_ON_LOCK), LockInfoByThreadID.WAIT_ON_LOCK, lockInfo);
-    addMappings((Set) lockMap.get(LockInfoByThreadID.WAIT_TO_LOCK), LockInfoByThreadID.WAIT_TO_LOCK, lockInfo);
-  }
-
-  private void addMappings(Set lockSet, String lockType, LockInfoByThreadID lockInfo) {
-    for (Iterator i = lockSet.iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      ThreadID threadID = request.threadID();
-      String locks = (String) lockInfo.getLock(lockType, threadID);
-      if (locks == null) {
-        lockInfo.addLock(lockType, threadID, request.lockID().toString());
-      } else {
-        lockInfo.addLock(lockType, threadID, locks + "; " + request.lockID().toString());
-      }
-    }
-  }
-
   public String takeThreadDump(long requestMillis) {
     LockInfoByThreadID lockInfo = new LockInfoByThreadIDImpl();
-    //getHeldPendingAndWaitLocksByThreadID(lockInfo);
     this.lockManager.addAllLocksTo(lockInfo);
     String text = ThreadDumpUtil.getThreadDump(lockInfo, threadIDMap);
     logger.info(text);

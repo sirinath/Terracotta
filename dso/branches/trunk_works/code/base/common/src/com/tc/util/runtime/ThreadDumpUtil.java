@@ -84,9 +84,9 @@ public class ThreadDumpUtil {
 
   public static String getLockList(LockInfoByThreadID lockInfo, ThreadID tcThreadID) {
     String lockList = "";
-    Object heldLocks = lockInfo.getHeldLocksList(tcThreadID);
-    Object waitOnLocks = lockInfo.getWaitOnLocksList(tcThreadID);
-    Object pendingLocks = lockInfo.getPendingLocksList(tcThreadID);
+    Object heldLocks = lockInfo.getHeldLocks(tcThreadID);
+    Object waitOnLocks = lockInfo.getWaitOnLocks(tcThreadID);
+    Object pendingLocks = lockInfo.getPendingLocks(tcThreadID);
     if (heldLocks != null) {
       lockList += "LOCKED : " + heldLocks + "\n";
     }
