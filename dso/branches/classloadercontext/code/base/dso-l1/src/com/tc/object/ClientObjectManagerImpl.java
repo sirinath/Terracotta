@@ -7,6 +7,7 @@ package com.tc.object;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.exception.TCRuntimeException;
+import com.tc.lang.TCThreadGroup;
 import com.tc.logging.ChannelIDLogger;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.DumpHandler;
@@ -517,7 +518,17 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
           DNA dna = noDepth ? remoteObjectManager.retrieve(id, NO_DEPTH) : (parentContext == null ? remoteObjectManager
               .retrieve(id) : remoteObjectManager.retrieveWithParentContext(id, parentContext));
           // We need the requesting object, in order to get its classloader context
-          ClassloaderContext requestorContext = tcoRequestor.getClassloaderContext();
+          // TODO: this seems like a real crap shoot - we're pretending we're loading a root but we don't really know that.
+          ClassloaderContext requestorContext = null;
+          if (tcoRequestor == null) {
+            if (TCThreadGroup.currentThreadInTCThreadGroup()) {
+              throw new IllegalStateException("Attempting to load a class in a non-application thread, without any requesting object context");
+            }
+            ClassLoader rootContextClassLoader = Thread.currentThread().getContextClassLoader();
+            requestorContext = ClassloaderContext.getClassloaderContext(rootContextClassLoader);
+          } else {
+            requestorContext = tcoRequestor.getClassloaderContext();
+          }
           Class clazz = classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
               .getTypeName()), dna.getDefiningLoaderDescription(), requestorContext);
           tco = factory.getNewInstance(id, tcoRequestor, clazz, false);
@@ -871,13 +882,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
       }
     }
     
-    BARF tcoRoot; // When a second L1 looks for a root the first time, this fails; tcoRoot has not yet been created.
-    // The problem is that the TCO creation happens under lookup(ObjectID, ObjectID, TCObject, boolean), which 
-    // actually uses the ClassloaderContext itself.  We could write code something like "if on a non-TC thread and
-    // the tcoContext is null, then create one right there just as if we were inside TCObject constructor", but
-    // that seems risky.  But lookup(...) has no other way, other than "tcoRequestor == null", to know whether it
-    // is being asked to look up a root.
     if (tcoRoot == null) {
+      // TODO: This may fail to find anything (as in the common case where an L1 node faults in a root
+      // that already exists in the cluster); we'll pass in null as the tcoRequestor, and then
+      // try to synthesize some context later on.  Not a great approach because it is not very
+      // deterministic.
       tcoRoot = basicLookupByID(rootID);
     }
     Object root = lookupObject(rootID, null, tcoRoot, noDepth);
