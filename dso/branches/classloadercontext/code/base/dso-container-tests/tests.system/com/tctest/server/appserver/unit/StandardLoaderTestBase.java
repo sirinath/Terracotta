@@ -30,7 +30,7 @@ public abstract class StandardLoaderTestBase extends AbstractOneServerDeployment
   // These strings may be shared by vanilla apps (e.g, StandardLoaderApp), servlets
   // (e.g., StandardLoaderServlet), and test code (e.g., RenameStandardLoaderTest).
   public static final String TEST_TYPE = "com.tc.testType";
-  public static final String ROOT_BASED_LOADER_TEST = "fallbackLoaderTest";
+  public static final String FALLBACK_LOADER_TEST = "fallbackLoaderTest";
   public static final String RENAME_LOADER_TEST = "renameLoaderTest";
   private static final String CONTEXT = "simple";
 

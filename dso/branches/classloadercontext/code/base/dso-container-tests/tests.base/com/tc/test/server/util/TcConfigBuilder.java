@@ -132,6 +132,20 @@ public class TcConfigBuilder {
     ensureClients();
     tcConfig.getClients().setStatistics(path);
   }
+  
+  /**
+   * Create a &lt;classloader-compatibility&gt; element that specifies
+   * &lt;classloader-from-context&gt;. This will remove any other
+   * classloader-compatibility strategy that may have been present.
+   */
+  public void setContextLoaderStrategy() {
+    ensureDso();
+    DsoApplication dso = tcConfig.getApplication().getDso();
+    if (dso.isSetClassloaderCompatibility()) {
+      dso.unsetClassloaderCompatibility();
+    }
+    dso.addNewClassloaderCompatibility().setClassloaderFromContext(true);
+  }
 
   /**
    * Create a &lt;classloader-compatibility&gt; element that specifies
