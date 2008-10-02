@@ -50,7 +50,7 @@ Patch Level 4
   capture sessions all the time. 
 
 - http://jira.terracotta.org/jira/browse/CDV-867
--  typo in retrieving properites causing tc-stats.sh throws unknownhostexception
+-  typo in retrieving properties causing tc-stats.sh throws unknownhostexception
 
 - http://jira.terracotta.org/jira/browse/CDV-868
 - typo in retrieving properties from the Commons CLI stuff inside CVT. tc-stats.sh throws numberformatexception
