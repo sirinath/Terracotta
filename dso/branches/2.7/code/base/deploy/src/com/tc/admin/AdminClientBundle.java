@@ -5,10 +5,19 @@
 package com.tc.admin;
 
 import java.util.ListResourceBundle;
+import java.util.ResourceBundle;
 
 public class AdminClientBundle extends ListResourceBundle {
+  public AdminClientBundle() {
+    super();
+    setParent(ResourceBundle.getBundle("com.tc.admin.common.CommonBundle"));
+  }
+  
   public Object[][] getContents() {
     return new Object[][] {
+        { "console.guide.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID=ConsoleGuide" },
+        { "get.svt.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID=GetSVT" },
+        { "show.svt.label", "Show SVT..." },
         { "cluster.node.label", "Terracotta cluster" },
         { "connect.label", "Connect" },
         { "disconnect.label", "Disconnect" },
@@ -128,9 +137,9 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dso.gcstats.deleteStageTime", "<html>Delete<br>stage (ms.)</html>" },
         { "dso.all.statistics", "All statistics" },
         { "file.menu.label", "File" },
-        { "tools.menu.label", "Tools" },        
+        { "tools.menu.label", "Tools" },
         { "help.menu.label", "Help" },
-        { "help.item.label", "Terracotta Console Help..." },
+        { "help.item.label", "AdminConsole Help..." },
         { "about.action.label", "About Terracotta Console" },
         { "update-checker.control.label", "Check for updates" },
         { "update-checker.action.label", "Update Checker..." },
