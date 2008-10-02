@@ -36,4 +36,21 @@ Patch Level 3
 - made lock refresh cancelable, synchronize the selection
   of server locks with client locks and vice versa, added Inspect lock object
   context menu item.
-  
+
+-------------
+Patch Level 4
+
+- https://jira.terracotta.org/jira/browse/CDV-929
+-  Interrupted Exception in JMX in the server could cause the server to stall.
+
+- https://jira.terracotta.org/jira/browse/CDV-930
+- Fixed "java.lang.OutOfMemoryError: unable to create new native thread" in the server
+  caused by The tasks are cancelled, the timer isn't. A new timer is created for each 
+  capture session. This could corresponds to the monitoring tool that might be creating 
+  capture sessions all the time. 
+
+- http://jira.terracotta.org/jira/browse/CDV-867
+-  typo in retrieving properites causing tc-stats.sh throws unknownhostexception
+
+- http://jira.terracotta.org/jira/browse/CDV-868
+- typo in retrieving properties from the Commons CLI stuff inside CVT. tc-stats.sh throws numberformatexception
