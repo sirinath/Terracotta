@@ -7,6 +7,7 @@ package com.tctest.externall1;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.tools.BootJarTool;
 import com.tc.util.Assert;
+import com.tctest.server.appserver.unit.StandardLoaderTestBase;
 import com.tctest.webapp.servlets.StandardLoaderServlet;
 
 import java.util.HashMap;
@@ -17,24 +18,45 @@ public class StandardLoaderApp {
   private final Map sharedMap = new HashMap();
 
   public static void main(String[] args) {
+    int rc = 0;
+    
     try {
-      checkStandardLoaderName();
-
-      checkSetLoaderName();
+      String testType = System.getProperty(StandardLoaderTestBase.TEST_TYPE);
+      
+      // Tests in this block are only valid for RENAME_LOADER_TEST
+      if (testType != null && StandardLoaderTestBase.RENAME_LOADER_TEST.equals(testType)) {
+        checkStandardLoaderName();
+        checkSetLoaderName();
+      }
 
       final StandardLoaderApp app = new StandardLoaderApp();
 
-      app.doTest();
+      rc = app.doTest();
 
-      synchronized (app.sharedMap) {
-        app.sharedMap.put("2", new AppInnerClass());
+      if (rc == 0) {
+        // Put an object into the map that is created with our classloader.
+        // This object will eventually be faulted back into the servlet.
+        synchronized (app.sharedMap) {
+          Object o = new AppInnerClass();
+          NamedClassLoader loader = (NamedClassLoader)o.getClass().getClassLoader();
+          String name = loader.__tc_getClassLoaderName();
+          System.out.println("Adding " + o.getClass().getName() + " from classloader " + name);
+          app.sharedMap.put("2", o);
+        }
+
+        // Report success to the servlet
+        System.out.println("OK");
+      } else {
+        // Report failure
+        System.out.println("FAILED: " + rc);
       }
 
-      System.out.println("OK");
-
     } catch (Exception e) {
-      System.exit(1);
+      rc = 1;
+      e.printStackTrace();
     }
+    
+    System.exit(rc);
   }
 
   private static void checkStandardLoaderName() {
@@ -54,23 +76,24 @@ public class StandardLoaderApp {
     }
   }
 
-  private void doTest() {
+  private int doTest() {
     synchronized (sharedMap) {
       Object obj = sharedMap.get("1");
       if (!(obj instanceof StandardLoaderServlet.Inner)) {
-        System.exit(2);
+        return 2;
       }
       // assert that the object's class loader is the system class loader (with a different name)
       Assert.assertEquals(ClassLoader.getSystemClassLoader(), obj.getClass().getClassLoader());
 
       obj = sharedMap.get("3");
       if (!(obj instanceof StandardClasspathDummyClass)) {
-        System.exit(3);
+        return 3;
       }
 
       // assert that the object's class loader is the system class loader
       Assert.assertEquals(ClassLoader.getSystemClassLoader(), obj.getClass().getClassLoader());
     }
+    return 0;
   }
 
   public static class AppInnerClass {

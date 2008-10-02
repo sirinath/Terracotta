@@ -115,7 +115,6 @@ import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
 import com.tc.object.bytecode.hook.ClassProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
-import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelperJDK15;
 import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
 import com.tc.object.bytecode.hook.impl.SessionsHelper;
@@ -131,12 +130,12 @@ import com.tc.object.dna.impl.ProxyInstance;
 import com.tc.object.field.TCField;
 import com.tc.object.ibm.SystemInitializationAdapter;
 import com.tc.object.loaders.BytecodeProvider;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.NamedLoaderAdapter;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.loaders.StandardClassLoaderAdapter;
-import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.loaders.StandardClassLoaderRegistry;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullInstrumentationLogger;
@@ -445,84 +444,83 @@ public class BootJarTool {
       loadTerracottaClass(TCObjectNotSharableException.class.getName());
       loadTerracottaClass(TCObjectNotFoundException.class.getName());
 
-      loadTerracottaClass(THashMapCollectionWrapper.class.getName());
-      loadTerracottaClass(THashMapCollectionWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(ListIteratorWrapper.class.getName());
-      loadTerracottaClass(MapEntrySetWrapper.class.getName());
-      loadTerracottaClass(MapEntrySetWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(HashtableEntrySetWrapper.class.getName());
-      loadTerracottaClass(HashtableEntrySetWrapper.class.getName() + "$HashtableIteratorWrapper");
-      loadTerracottaClass(HashtableKeySetWrapper.class.getName());
-      loadTerracottaClass(HashtableKeySetWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(HashtableValuesWrapper.class.getName());
-      loadTerracottaClass(HashtableValuesWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(SetIteratorWrapper.class.getName());
-      loadTerracottaClass(EnumerationWrapper.class.getName());
-      loadTerracottaClass(NamedClassLoader.class.getName());
-      loadTerracottaClass(NamedLoaderAdapter.class.getName());
-      loadTerracottaClass(TransparentAccess.class.getName());
-      loadTerracottaClass(BytecodeProvider.class.getName());
-      loadTerracottaClass(ByteCodeUtil.class.getName());
-
-      loadTerracottaClass(Manageable.class.getName());
-      loadTerracottaClass(Clearable.class.getName());
-      loadTerracottaClass(OverridesHashCode.class.getName());
-      loadTerracottaClass(Manager.class.getName());
-      loadTerracottaClass(InstrumentationLogger.class.getName());
-      loadTerracottaClass(NullInstrumentationLogger.class.getName());
-      loadTerracottaClass(NullManager.class.getName());
-      loadTerracottaClass(ManagerUtil.class.getName());
-      loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
-      loadTerracottaClass(TCObject.class.getName());
-      loadTerracottaClass(ToggleableStrongReference.class.getName());
-      loadTerracottaClass(TCClass.class.getName());
-      loadTerracottaClass(TCField.class.getName());
-      loadTerracottaClass(NullTCObject.class.getName());
-      loadTerracottaClass(Cacheable.class.getName());
-      loadTerracottaClass(ObjectID.class.getName());
       loadTerracottaClass(AbstractIdentifier.class.getName());
-      loadTerracottaClass(TLinkable.class.getName());
-      loadTerracottaClass(SessionsHelper.class.getName());
-      loadTerracottaClass(GeronimoLoaderNaming.class.getName());
-      loadTerracottaClass(JBossLoaderNaming.class.getName());
-      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
-      loadTerracottaClass(TomcatLoaderNaming.class.getName());
-      loadTerracottaClass(TCLogger.class.getName());
-      loadTerracottaClass(LogLevel.class.getName());
       loadTerracottaClass(Banner.class.getName());
-      loadTerracottaClass(StandardClassProvider.class.getName());
-      loadTerracottaClass(StandardClassProvider.SystemLoaderHolder.class.getName());
-      loadTerracottaClass(Namespace.class.getName());
-      loadTerracottaClass(ClassProcessorHelper.class.getName());
-      loadTerracottaClass(ClassProcessorHelperJDK15.class.getName());
-      loadTerracottaClass(ClassProcessorHelper.State.class.getName());
-      loadTerracottaClass(ClassProcessorHelper.TcCommonLibQualifier.class.getName());
-      loadTerracottaClass(ClassProcessor.class.getName());
-      loadTerracottaClass(ClassPreProcessor.class.getName());
+      loadTerracottaClass(ByteCodeUtil.class.getName());
+      loadTerracottaClass(BytecodeProvider.class.getName());
+      loadTerracottaClass(Cacheable.class.getName());
+      loadTerracottaClass(ClassLoaderRegistry.class.getName());
       loadTerracottaClass(ClassPostProcessor.class.getName());
-      loadTerracottaClass(DSOSpringConfigHelper.class.getName());
+      loadTerracottaClass(ClassPreProcessor.class.getName());
+      loadTerracottaClass(ClassProcessor.class.getName());
+      loadTerracottaClass(ClassProcessorHelperJDK15.class.getName());
+      loadTerracottaClass(Clearable.class.getName());
+      loadTerracottaClass(ClusterEventListener.class.getName());
+      loadTerracottaClass(CompressedData.class.getName());
       loadTerracottaClass(DSOContext.class.getName());
-      loadTerracottaClass(ClassProvider.class.getName());
-      loadTerracottaClass(TCRuntimeException.class.getName());
-      loadTerracottaClass(FieldUtils.class.getName());
-      loadTerracottaClass(UnsafeUtil.class.getName());
-      loadTerracottaClass(TCNotSupportedMethodException.class.getName());
+      loadTerracottaClass(DSOSpringConfigHelper.class.getName());
+      loadTerracottaClass(EnumerationWrapper.class.getName());
       loadTerracottaClass(ExceptionWrapper.class.getName());
       loadTerracottaClass(ExceptionWrapperImpl.class.getName());
-      loadTerracottaClass(Os.class.getName());
-      loadTerracottaClass(Util.class.getName());
-      loadTerracottaClass(NIOWorkarounds.class.getName());
-      loadTerracottaClass(TCProperties.class.getName());
-      loadTerracottaClass(ClusterEventListener.class.getName());
-      loadTerracottaClass(OverrideCheck.class.getName());
+      loadTerracottaClass(FieldUtils.class.getName());
+      loadTerracottaClass(GeronimoLoaderNaming.class.getName());
+      loadTerracottaClass(HashtableEntrySetWrapper.class.getName() + "$HashtableIteratorWrapper");
+      loadTerracottaClass(HashtableEntrySetWrapper.class.getName());
+      loadTerracottaClass(HashtableKeySetWrapper.class.getName() + "$IteratorWrapper");
+      loadTerracottaClass(HashtableKeySetWrapper.class.getName());
+      loadTerracottaClass(HashtableValuesWrapper.class.getName() + "$IteratorWrapper");
+      loadTerracottaClass(HashtableValuesWrapper.class.getName());
+      loadTerracottaClass(InstrumentationLogger.class.getName());
+      loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(JavaLangStringTC.class.getName());
+      loadTerracottaClass(ListIteratorWrapper.class.getName());
+      loadTerracottaClass(LogLevel.class.getName());
+      loadTerracottaClass(Manageable.class.getName());
+      loadTerracottaClass(Manager.class.getName());
+      loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
+      loadTerracottaClass(ManagerUtil.class.getName());
+      loadTerracottaClass(MapEntrySetWrapper.class.getName() + "$IteratorWrapper");
+      loadTerracottaClass(MapEntrySetWrapper.class.getName());
+      loadTerracottaClass(NIOWorkarounds.class.getName());
+      loadTerracottaClass(NamedClassLoader.class.getName());
+      loadTerracottaClass(NamedLoaderAdapter.class.getName());
+      loadTerracottaClass(Namespace.class.getName());
+      loadTerracottaClass(NullInstrumentationLogger.class.getName());
+      loadTerracottaClass(NullManager.class.getName());
+      loadTerracottaClass(NullTCObject.class.getName());
+      loadTerracottaClass(ObjectID.class.getName());
+      loadTerracottaClass(Os.class.getName());
+      loadTerracottaClass(OverrideCheck.class.getName());
+      loadTerracottaClass(OverridesHashCode.class.getName());
+      loadTerracottaClass(SessionsHelper.class.getName());
+      loadTerracottaClass(SetIteratorWrapper.class.getName());
       loadTerracottaClass(StringCompressionUtil.class.getName());
-      loadTerracottaClass(CompressedData.class.getName());
+      loadTerracottaClass(StandardClassLoaderRegistry.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
+      loadTerracottaClass(TCClass.class.getName());
+      loadTerracottaClass(TCField.class.getName());
+      loadTerracottaClass(TCLogger.class.getName());
+      loadTerracottaClass(TCNotSupportedMethodException.class.getName());
+      loadTerracottaClass(TCObject.class.getName());
+      loadTerracottaClass(TCProperties.class.getName());
+      loadTerracottaClass(TCRuntimeException.class.getName());
+      loadTerracottaClass(THashMapCollectionWrapper.class.getName() + "$IteratorWrapper");
+      loadTerracottaClass(THashMapCollectionWrapper.class.getName());
+      loadTerracottaClass(TLinkable.class.getName());
+      loadTerracottaClass(ToggleableStrongReference.class.getName());
+      loadTerracottaClass(TomcatLoaderNaming.class.getName());
+      loadTerracottaClass(TransparentAccess.class.getName());
+      loadTerracottaClass(UnsafeUtil.class.getName());
+      loadTerracottaClass(Util.class.getName());
+      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
+
 
       // These classes need to be specified as literal in order to prevent
       // the static block of IdentityWeakHashMap from executing during generating
       // the boot jar.
+      loadTerracottaClass("com.tc.object.bytecode.hook.impl.ClassProcessorHelper");
+      loadTerracottaClass("com.tc.object.bytecode.hook.impl.ClassProcessorHelper$State");
+      loadTerracottaClass("com.tc.object.bytecode.hook.impl.ClassProcessorHelper$TcCommonLibQualifier");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
       loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
@@ -544,11 +542,8 @@ public class BootJarTool {
       loadTerracottaClass(PartitionManager.class.getName());
 
       addManagementClasses();
-
       addRuntimeClasses();
-
       addLiterals();
-
       addInstrumentedLogManager();
       addSunStandardLoaders();
       addInstrumentedAccessibleObject();
@@ -560,7 +555,6 @@ public class BootJarTool {
       addInstrumentedProxy();
       addTreeMap();
       addObjectStreamClass();
-
       addIBMSpecific();
 
       Map internalSpecs = getTCSpecs();
@@ -578,6 +572,7 @@ public class BootJarTool {
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
     } catch (Throwable e) {
+      e.printStackTrace(System.err);
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }
 

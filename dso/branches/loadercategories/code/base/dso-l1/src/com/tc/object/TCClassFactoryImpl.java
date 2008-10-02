@@ -56,7 +56,7 @@ public class TCClassFactoryImpl implements TCClassFactory {
     synchronized (classes) {
       TCClass rv = (TCClass) classes.get(clazz);
       if (rv == null) {
-        String loaderDesc = classProvider.getLoaderDescriptionFor(clazz);
+        String loaderDesc = classProvider.getRegistry().getLoaderDescriptionFor(clazz.getClassLoader());
         String className = clazz.getName();
         ClassInfo classInfo = JavaClassInfo.getClassInfo(clazz);
         rv = new TCClassImpl(fieldFactory,

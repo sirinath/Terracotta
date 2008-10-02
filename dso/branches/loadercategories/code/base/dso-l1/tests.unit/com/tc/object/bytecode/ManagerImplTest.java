@@ -16,7 +16,7 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
-import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.loaders.StandardClassLoaderRegistry;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
@@ -41,7 +41,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
     ClientObjectManager objMgr = new ObjMgr();
     ClientTransactionManager txnMgr = new TxnMgr();
 
-    Manager manager = new ManagerImpl(false, objMgr, txnMgr, this.configHelper(), new StandardClassProvider(), null);
+    Manager manager = new ManagerImpl(false, objMgr, txnMgr, this.configHelper(), new StandardClassLoaderRegistry(), null);
 
     manager.monitorEnter(getClass(), Manager.LOCK_TYPE_WRITE);
 

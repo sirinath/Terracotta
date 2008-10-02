@@ -5,6 +5,7 @@ import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.Loader;
 import com.terracottatech.config.Autolock;
+import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Include;
 import com.terracottatech.config.LockLevel;
 import com.terracottatech.config.Module;
@@ -90,6 +91,20 @@ public class TcConfigBuilder {
   public int getJmxPort() {
     ensureServers();
     return tcConfig.getServers().getServerArray(0).getJmxPort();
+  }
+
+  /**
+   * Create a &lt;classloader-compatibility&gt; element that specifies
+   * &lt;classloader-from-named-root&gt;. This will remove any other
+   * classloader-compatibility strategy that may have been present.
+   */
+  public void setNamedRootLoaderStrategy(String rootName) {
+    ensureDso();
+    DsoApplication dso = tcConfig.getApplication().getDso();
+    if (dso.isSetClassloaderCompatibility()) {
+      dso.unsetClassloaderCompatibility();
+    }
+    dso.addNewClassloaderCompatibility().setClassloaderFromNamedRoot(rootName);
   }
 
   public void setServerLogs(String path) {

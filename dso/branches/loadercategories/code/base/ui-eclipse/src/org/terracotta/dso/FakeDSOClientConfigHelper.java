@@ -32,6 +32,7 @@ import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
 import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
+import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.properties.ReconnectConfig;
 import com.terracottatech.config.Modules;
@@ -429,6 +430,14 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
 
   public boolean useResolveLockWhenClearing(Class clazz) {
     return true;
+  }
+
+  public ClassProvider getClassProvider() {
+    return null;
+  }
+
+  public void setClassProvider(ClassProvider provider) {
+    //
   }
 
 }

@@ -420,7 +420,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     encoding.encode(getClass(), output);
     Class c = Object.class;
     UTF8ByteDataHolder name = new UTF8ByteDataHolder(c.getName());
-    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getLoaderDescriptionFor(c));
+    UTF8ByteDataHolder def = new UTF8ByteDataHolder(classProvider.getRegistry().getLoaderDescriptionFor(c.getClassLoader()));
     ClassInstance ci = new ClassInstance(name, def);
     encoding.encode(ci, output);
 
@@ -430,7 +430,7 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
     ClassInstance holder = (ClassInstance) encoding.decode(input);
     assertEquals(getClass().getName(), holder.getName().asString());
-    assertEquals(classProvider.getLoaderDescriptionFor(getClass()), holder.getLoaderDef().asString());
+    assertEquals(classProvider.getRegistry().getLoaderDescriptionFor(getClass().getClassLoader()), holder.getLoaderDef().asString());
 
     holder = (ClassInstance) encoding.decode(input);
     assertEquals(name, holder.getName());

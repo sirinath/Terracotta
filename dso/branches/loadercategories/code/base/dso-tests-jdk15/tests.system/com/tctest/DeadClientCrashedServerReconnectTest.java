@@ -14,7 +14,7 @@ import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.PauseListener;
-import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.bytecode.MockClassLoaderRegistry;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -78,7 +78,7 @@ public class DeadClientCrashedServerReconnectTest extends BaseDSOTestCase {
     DistributedObjectClient client = new DistributedObjectClient(configHelper,
                                                                  new TCThreadGroup(new ThrowableHandler(TCLogging
                                                                      .getLogger(DistributedObjectClient.class))),
-                                                                 new MockClassProvider(), components, NullManager
+                                                                 new MockClassLoaderRegistry(), components, NullManager
                                                                      .getInstance(), new Cluster());
     client.setCreateDedicatedMBeanServer(true);
     client.setPauseListener(pauseListener);

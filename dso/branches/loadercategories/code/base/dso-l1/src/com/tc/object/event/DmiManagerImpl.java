@@ -169,7 +169,7 @@ public class DmiManagerImpl implements DmiManager {
   private static Object getClassSpec(ClassProvider classProvider, Object obj) {
     Assert.pre(classProvider != null);
     Assert.pre(obj != null);
-    final String classLoader = classProvider.getLoaderDescriptionFor(obj.getClass());
+    final String classLoader = classProvider.getRegistry().getLoaderDescriptionFor(obj.getClass().getClassLoader());
     final String className = obj.getClass().getName();
     return new DmiClassSpec(classLoader, className);
   }

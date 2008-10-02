@@ -29,6 +29,7 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.event.DmiManager;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
@@ -60,7 +61,7 @@ public class ManagerImpl implements Manager {
 
   private final SetOnceFlag                        clientStarted                = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
-  private final ClassProvider                      classProvider;
+  private final ClassLoaderRegistry                classLoaderRegistry;
   private final boolean                            startClient;
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Thread                             shutdownAction;
@@ -78,21 +79,21 @@ public class ManagerImpl implements Manager {
   private final SerializationUtil                  serializer                   = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay                = new MethodDisplayNames(serializer);
 
-  public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
+  public ManagerImpl(DSOClientConfigHelper config, ClassLoaderRegistry classLoaderRegistry,
                      PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, config, classProvider, connectionComponents, true);
+    this(true, null, null, config, classLoaderRegistry, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
+                     DSOClientConfigHelper config, ClassLoaderRegistry classLoaderRegistry,
                      PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, config, classProvider, connectionComponents, true);
+    this(startClient, objectManager, txManager, config, classLoaderRegistry, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
+                     DSOClientConfigHelper config, ClassLoaderRegistry classLoaderRegistry,
                      PreparedComponentsFromL2Connection connectionComponents, boolean shutdownActionRequired) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
@@ -100,7 +101,7 @@ public class ManagerImpl implements Manager {
     this.config = config;
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
-    this.classProvider = classProvider;
+    this.classLoaderRegistry = classLoaderRegistry;
     this.connectionComponents = connectionComponents;
     this.cluster = new Cluster();
     if (shutdownActionRequired) {
@@ -173,10 +174,10 @@ public class ManagerImpl implements Manager {
       public void execute() throws Throwable {
         if (connectionComponents.isActiveActive()) {
           // TODO::Find a better a way of doing this
-          dso = createDistributeObjectClientForEE(config, group, classProvider, connectionComponents, ManagerImpl.this,
+          dso = createDistributeObjectClientForEE(config, group, classLoaderRegistry, connectionComponents, ManagerImpl.this,
                                                   cluster);
         } else {
-          dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
+          dso = new DistributedObjectClient(config, group, classLoaderRegistry, connectionComponents, ManagerImpl.this,
                                             cluster);
         }
         if (forTests) {
@@ -203,18 +204,18 @@ public class ManagerImpl implements Manager {
   private DistributedObjectClient createDistributeObjectClientForEE(
                                                                     DSOClientConfigHelper lconfig,
                                                                     TCThreadGroup lgroup,
-                                                                    ClassProvider lclassProvider,
+                                                                    ClassLoaderRegistry lclassLoaderRegistry,
                                                                     PreparedComponentsFromL2Connection lconnectionComponents,
                                                                     Manager lmanager, Cluster lcluster) {
     Class classArgs[] = new Class[] { DSOClientConfigHelper.class, TCThreadGroup.class, ClassProvider.class,
         PreparedComponentsFromL2Connection.class, Manager.class, Cluster.class };
-    Object args[] = new Object[] { lconfig, lgroup, lclassProvider, lconnectionComponents, lmanager, lcluster };
+    Object args[] = new Object[] { lconfig, lgroup, lclassLoaderRegistry, lconnectionComponents, lmanager, lcluster };
     try {
       Class c = Class.forName(DISTRIBUTED_OBJECT_CLIENT_EE);
       Constructor constructor = c.getConstructor(classArgs);
       return (DistributedObjectClient) constructor.newInstance(args);
     } catch (Exception e) {
-      logger.error("Unable to instanciate Client with required capabilities", e);
+      logger.error("Unable to instantiate client with required capabilities", e);
       throw new AssertionError(e);
     }
   }

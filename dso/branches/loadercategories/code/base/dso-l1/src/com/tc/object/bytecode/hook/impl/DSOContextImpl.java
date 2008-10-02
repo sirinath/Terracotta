@@ -26,7 +26,7 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.IncompleteBootJarException;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.object.config.UnverifiedBootJarException;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJarException;
 import com.tc.plugins.ModulesLoader;
@@ -58,16 +58,16 @@ public class DSOContextImpl implements DSOContext {
   private final WeavingStrategy                     weavingStrategy;
 
   /**
-   * Creates a "global" DSO Context. This context is appropriate only when there is only one DSO Context that applies to
+   * Creates a "global" DSO Context. This registry is appropriate only when there is only one DSO Context that applies to
    * the entire VM
    */
-  public static DSOContext createGlobalContext(ClassProvider globalProvider) throws ConfigurationSetupException {
+  public static DSOContext createGlobalContext(ClassLoaderRegistry globalProviderContext) throws ConfigurationSetupException {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
-    Manager manager = new ManagerImpl(configHelper, globalProvider, preparedComponentsFromL2Connection);
-    return new DSOContextImpl(configHelper, globalProvider, manager);
+    Manager manager = new ManagerImpl(configHelper, globalProviderContext, preparedComponentsFromL2Connection);
+    return new DSOContextImpl(configHelper, globalProviderContext, manager);
   }
 
-  public static DSOContext createContext(String configSpec, ClassProvider globalProvider)
+  public static DSOContext createContext(String configSpec, ClassLoaderRegistry globalProviderContext)
       throws ConfigurationSetupException {
     StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
                                                                                                           (String[]) null,
@@ -86,25 +86,26 @@ public class DSOContextImpl implements DSOContext {
 
     DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config);
     // StandardClassProvider classProvider = new StandardClassProvider();
-    Manager manager = new ManagerImpl(configHelper, globalProvider, l2Connection);
+    Manager manager = new ManagerImpl(configHelper, globalProviderContext, l2Connection);
     manager.init();
-    return createContext(configHelper, globalProvider, manager);
+    return createContext(configHelper, globalProviderContext, manager);
 
   }
 
   /**
    * For tests
    */
-  public static DSOContext createContext(DSOClientConfigHelper configHelper, ClassProvider classProvider,
+  public static DSOContext createContext(DSOClientConfigHelper configHelper, 
+                                         ClassLoaderRegistry classProviderContext,
                                          Manager manager) {
-    return new DSOContextImpl(configHelper, classProvider, manager);
+    return new DSOContextImpl(configHelper, classProviderContext, manager);
   }
 
   public static boolean isDSOSessions(String appName) throws ConfigurationSetupException {
     return getGlobalConfigHelper().isDSOSessions(appName);
   }
 
-  private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
+  private DSOContextImpl(DSOClientConfigHelper configHelper, ClassLoaderRegistry classProviderContext, Manager manager) {
     checkForProperlyInstrumentedBaseClasses();
     Assert.assertNotNull(configHelper);
 
@@ -114,7 +115,7 @@ public class DSOContextImpl implements DSOContext {
     weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
 
     try {
-      ModulesLoader.initModules(configHelper, classProvider, false);
+      ModulesLoader.initModules(configHelper, classProviderContext, false);
       validateBootJar();
     } catch (Exception e) {
       consoleLogger.fatal(e.getMessage());

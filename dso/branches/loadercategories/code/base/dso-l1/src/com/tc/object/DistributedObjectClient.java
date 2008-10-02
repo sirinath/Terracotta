@@ -76,6 +76,8 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
+import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
@@ -167,7 +169,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private static final TCLogger                    consoleLogger              = CustomerLogging.getConsoleLogger();
 
   private final DSOClientConfigHelper              config;
-  private final ClassProvider                      classProvider;
+  private final ClassLoaderRegistry                classLoaderRegistry;
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Manager                            manager;
   private final Cluster                            cluster;
@@ -191,13 +193,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private CounterManager                           counterManager;
   private final ThreadIDMap                        threadIDMap;
 
-  public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
+  public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassLoaderRegistry classLoaderRegistry,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
                                  Cluster cluster) {
     super(threadGroup, BoundedLinkedQueue.class.getName());
     Assert.assertNotNull(config);
     this.config = config;
-    this.classProvider = classProvider;
+    this.classLoaderRegistry = classLoaderRegistry;
     this.connectionComponents = connectionComponents;
     this.pauseListener = new NullPauseListener();
     this.manager = manager;
@@ -322,6 +324,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
+    // Initialize class provider depending on configured classloader compatibility strategy
+    ClassProvider classProvider = config.getClassProvider();
+    if (classProvider == null) {
+      classProvider = new StandardClassProvider();
+    }
+    classProvider.setRegistry(classLoaderRegistry);
+    
     DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
     TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
         .getCommitTransactionMessageFactory(), encoding, FoldingConfig.createFromProperties(tcProperties));
@@ -365,7 +374,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         .getInt("objectmanager.objectid.request.size"));
     ObjectIDProvider idProvider = new ObjectIDProviderImpl(sequence);
     remoteIDProvider.setBatchSequenceReceiver(sequence);
-
+    
     TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, encoding);
     TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
