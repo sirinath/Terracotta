@@ -29,6 +29,7 @@ import com.tc.util.State;
 import com.tc.util.TCAssertionError;
 import com.tc.util.Util;
 import com.tc.util.runtime.LockInfoByThreadID;
+import com.tc.util.runtime.LockState;
 
 import gnu.trove.TIntStack;
 
@@ -771,15 +772,15 @@ class ClientLock implements TimerCallback, LockFlushCallback {
       ThreadID threadID = (ThreadID) i.next();
       LockHold hold = (LockHold) holders.get(threadID);
       if (hold.isHolding() && hold.getServerLevel() != LockLevel.NIL_LOCK_LEVEL) {
-        lockInfo.addLock(LockInfoByThreadID.HELD_LOCK, threadID, this.lockID.toString());
+        lockInfo.addLock(LockState.HOLDING, threadID, this.lockID.toString());
       }
     }
     for (Iterator i = pendingLockRequests.values().iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       if (isWaitLockRequest(request)) {
-        lockInfo.addLock(LockInfoByThreadID.WAIT_ON_LOCK, request.threadID(), this.lockID.toString());
+        lockInfo.addLock(LockState.WAITING_ON, request.threadID(), this.lockID.toString());
       } else {
-        lockInfo.addLock(LockInfoByThreadID.WAIT_TO_LOCK, request.threadID(), this.lockID.toString());
+        lockInfo.addLock(LockState.WAITING_TO, request.threadID(), this.lockID.toString());
       }
     }
   }

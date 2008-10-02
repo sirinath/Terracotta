@@ -5,23 +5,24 @@
 package com.tc.util.runtime;
 
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.util.State;
+
+import java.util.ArrayList;
 
 public class NullLockInfoByThreadIDImpl implements LockInfoByThreadID {
 
-  public String getHeldLocks(ThreadID threadID) {
-    return null;
+  public ArrayList getHeldLocks(ThreadID threadID) {
+    return new ArrayList();
   }
 
-  public String getPendingLocks(ThreadID threadID) {
-    return null;
+  public ArrayList getPendingLocks(ThreadID threadID) {
+    return new ArrayList();
   }
 
-  public String getWaitOnLocks(ThreadID threadID) {
-    return null;
+  public ArrayList getWaitOnLocks(ThreadID threadID) {
+    return new ArrayList();
   }
 
-  public void addLock(State lockType, ThreadID threadID, String lockID) {
+  public void addLock(LockState lockState, ThreadID threadID, String lockID) {
     //
   }
 }

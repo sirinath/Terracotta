@@ -5,8 +5,8 @@
 package com.tc.util.runtime;
 
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.util.State;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,36 +16,47 @@ public class LockInfoByThreadIDImpl implements LockInfoByThreadID {
   Map waitOnLocks  = new HashMap();
   Map pendingLocks = new HashMap();
 
-  public String getHeldLocks(ThreadID threadID) {
-    return ((String) heldLocks.get(threadID));
+  public ArrayList getHeldLocks(ThreadID threadID) {
+    return lockList((ArrayList) heldLocks.get(threadID));
   }
 
-  public String getWaitOnLocks(ThreadID threadID) {
-    return ((String) waitOnLocks.get(threadID));
+  public ArrayList getWaitOnLocks(ThreadID threadID) {
+    return lockList((ArrayList) waitOnLocks.get(threadID));
   }
 
-  public String getPendingLocks(ThreadID threadID) {
-    return ((String) pendingLocks.get(threadID));
+  public ArrayList getPendingLocks(ThreadID threadID) {
+    return lockList((ArrayList) pendingLocks.get(threadID));
   }
 
-  public void addLock(State lockType, ThreadID threadID, String value) {
-    if (lockType == HELD_LOCK) {
+  private ArrayList lockList(ArrayList lockList) {
+    if (lockList == null) {
+      return new ArrayList();
+    } else {
+      return lockList;
+    }
+  }
+
+  public void addLock(LockState lockState, ThreadID threadID, String value) {
+    if (lockState == LockState.HOLDING) {
       addLockTo(heldLocks, threadID, value);
-    } else if (lockType == WAIT_ON_LOCK) {
+    } else if (lockState == LockState.WAITING_ON) {
       addLockTo(waitOnLocks, threadID, value);
-    } else if (lockType == WAIT_TO_LOCK) {
+    } else if (lockState == LockState.WAITING_TO) {
       addLockTo(pendingLocks, threadID, value);
     } else {
-      throw new AssertionError("Unexpected Lock type : " + lockType);
+      throw new AssertionError("Unexpected Lock type : " + lockState);
     }
   }
 
   private void addLockTo(Map lockMap, ThreadID threadID, String value) {
-    Object oldValue = lockMap.get(threadID);
-    if (oldValue == null) {
-      lockMap.put(threadID, value);
+    ArrayList lockArray = (ArrayList) lockMap.get(threadID);
+    if (lockArray == null) {
+      ArrayList al = new ArrayList();
+      al.add(value);
+      lockMap.put(threadID, al);
     } else {
-      lockMap.put(threadID, oldValue + "; " + value);
+      lockArray.add(value);
+      lockMap.put(threadID, lockArray);
     }
   }
 }

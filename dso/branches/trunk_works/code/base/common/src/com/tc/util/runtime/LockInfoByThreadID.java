@@ -5,19 +5,15 @@
 package com.tc.util.runtime;
 
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.util.State;
+
+import java.util.ArrayList;
 
 public interface LockInfoByThreadID {
-  public static final State HELD_LOCK    = new State("HELD LOCK");
-  public static final State WAIT_ON_LOCK = new State("WAITING ON LOCK");
-  public static final State WAIT_TO_LOCK = new State("WAITING TO LOCK");
+  public void addLock(LockState lockState, ThreadID threadID, String lockID);
 
-  public void addLock(State lockType, ThreadID threadID, String lockID);
+  public ArrayList getHeldLocks(ThreadID threadID);
 
-  public String getHeldLocks(ThreadID threadID);
+  public ArrayList getWaitOnLocks(ThreadID threadID);
 
-  public String getWaitOnLocks(ThreadID threadID);
-
-  public String getPendingLocks(ThreadID threadID);
-
+  public ArrayList getPendingLocks(ThreadID threadID);
 }
