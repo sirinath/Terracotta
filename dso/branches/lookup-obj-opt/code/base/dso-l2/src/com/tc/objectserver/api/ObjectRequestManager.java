@@ -18,8 +18,4 @@ public interface ObjectRequestManager {
   public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
                           boolean isServerInitiated, int maxRequestDepth);
 
-  public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
-                                                         int maxRequestDepth, boolean serverInitiated,
-                                                         String requestingThreadName);
-
 }

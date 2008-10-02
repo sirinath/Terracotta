@@ -37,12 +37,4 @@ public class TestObjectRequestManager implements ObjectRequestManager {
    //not implemented
   }
 
-
-
-  public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
-                                                         int maxRequestDepth, boolean serverInitiated,
-                                                         String requestingThreadName) {
-    //not implemented
-  }
-
 }
