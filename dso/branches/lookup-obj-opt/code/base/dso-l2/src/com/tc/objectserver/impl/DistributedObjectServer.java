@@ -746,9 +746,8 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
         .createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, new RespondToObjectRequestHandler(),
                      4, maxStageSize);
 
-    objectRequestManager = new ObjectRequestManagerImpl(objectRequestStage.getSink(), objectManager, channelManager,
-                                                        clientStateManager, transactionManager,
-                                                        respondToObjectRequestStage.getSink());
+    objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager, clientStateManager,
+                                                        transactionManager, respondToObjectRequestStage.getSink());
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,
@@ -812,7 +811,8 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
     l1Listener.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.LOCK_REQUEST_MESSAGE, requestLock.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.REQUEST_ROOT_MESSAGE, rootRequest.getSink(), hydrateSink);
-    l1Listener.routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequestStage.getSink(), hydrateSink);
+    l1Listener
+        .routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequestStage.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.OBJECT_ID_BATCH_REQUEST_MESSAGE, oidRequest.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE, transactionAck.getSink(), hydrateSink);
     l1Listener.routeMessageType(TCMessageType.CLIENT_HANDSHAKE_MESSAGE, clientHandshake.getSink(), hydrateSink);
@@ -866,9 +866,9 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
       l2Coordinator = new L2HADisabledCooridinator();
     }
 
-    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore, lockManager, channelManager,
-                                                 clientStateManager, transactionManager, txnObjectManager,
-                                                 clientHandshakeManager, channelStats, l2Coordinator,
+    context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
+                                                 lockManager, channelManager, clientStateManager, transactionManager,
+                                                 txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader(gtxm));
 
     stageManager.startAll(context);

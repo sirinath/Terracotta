@@ -82,7 +82,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -92,10 +91,6 @@ import java.util.TreeSet;
 import junit.framework.TestCase;
 
 public class ObjectRequestManagerTest extends TestCase {
-
-  // private ObjectRequestCache cache = null;
-  //
-  // private Set objectIDSet = null;
 
   @Override
   protected void setUp() throws Exception {
@@ -133,10 +128,9 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, respondSink);
 
     int objectsToBeRequested = 47;
@@ -202,55 +196,14 @@ public class ObjectRequestManagerTest extends TestCase {
 
   }
 
-  public void testCreateAndAddManagedObjectRequestContextsTo() {
-    TestObjectManager objectManager = new TestObjectManager();
-    TestDSOChannelManager channelManager = new TestDSOChannelManager();
-    TestClientStateManager clientStateManager = new TestClientStateManager();
-    TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
-    TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
-    ClientID clientID = new ClientID(new ChannelID(1));
-    ObjectRequestID requestID = new ObjectRequestID(1);
-    int objectsToBeRequested = 100;
-    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
-    if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
-    Set ids = createObjectIDSet(objectsToBeRequested);
-    objectRequestManager.transactionManagerStarted(new HashSet());
-    objectRequestManager.clearAllTransactionsFor(clientID);
-
-    objectRequestManager.createAndAddManagedObjectRequestContextsTo(clientID, requestID, ids, -1, false, Thread
-        .currentThread().getName());
-
-    assertEquals(numberOfRequestsMade, requestSink.size());
-
-    for (int i = 0; i < requestSink.size(); i++) {
-      LookupContext lookupContext;
-      try {
-        lookupContext = (LookupContext) requestSink.take();
-      } catch (InterruptedException e) {
-        throw new AssertionError(e);
-      }
-      assertEquals(lookupContext.getLookupIDs().size(), ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP);
-      assertEquals(-1, lookupContext.getMaxRequestDepth());
-      assertEquals(clientID, lookupContext.getRequestedNodeID());
-      assertEquals(requestID, lookupContext.getRequestID());
-      assertEquals(true, lookupContext.isServerInitiated());
-    }
-
-  }
-
   public void testMultipleRequestResponseObjects() {
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, respondSink);
 
     int objectsToBeRequested = 100;
@@ -359,10 +312,9 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, respondSink);
 
     int objectsToBeRequested = 100;
@@ -474,10 +426,9 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
@@ -522,9 +473,8 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager,
                                                                                  channelManager, clientStateManager,
                                                                                  serverTransactionManager, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
@@ -608,7 +558,7 @@ public class ObjectRequestManagerTest extends TestCase {
     Assert.assertTrue(clients.contains(clientID1));
     Assert.assertTrue(clients.contains(clientID2));
 
-    LinkedHashSet<ClientID> clientIds = c.getClientsForRequest(reqObj1);
+    Set<ClientID> clientIds = c.getClientsForRequest(reqObj1);
     Assert.eval(clientIds.size() == 2);
     Assert.assertTrue(clientIds.contains(clientID1));
     Assert.assertTrue(clientIds.contains(clientID2));
@@ -1386,12 +1336,6 @@ public class ObjectRequestManagerTest extends TestCase {
     public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
                             boolean isServerInitiated, int maxRequestDepth) {
 
-      throw new NotImplementedException(TestObjectRequestManager.class);
-    }
-
-    public void createAndAddManagedObjectRequestContextsTo(ClientID clientID, ObjectRequestID requestID, Set ids,
-                                                           int maxRequestDepth, boolean serverInitiated,
-                                                           String requestingThreadName) {
       throw new NotImplementedException(TestObjectRequestManager.class);
     }
 

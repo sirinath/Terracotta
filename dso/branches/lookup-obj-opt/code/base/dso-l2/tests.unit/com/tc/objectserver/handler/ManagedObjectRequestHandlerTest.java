@@ -37,15 +37,14 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     Counter removeCounter = new CounterImpl(0L);
 
     TestChannelStats channelStats = new TestChannelStats(channelReqCounter, channelRemCounter);
-    
+
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
-    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(requestSink, objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, respondSink);
 
     TestServerConfigurationContext context = new TestServerConfigurationContext();
@@ -111,12 +110,12 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
 
     public void notifyTransactionAckedFrom(NodeID nodeID) {
       throw new ImplementMe();
-      
+
     }
 
     public void notifyTransactionBroadcastedTo(NodeID nodeID) {
       throw new ImplementMe();
-      
+
     }
   }
 
