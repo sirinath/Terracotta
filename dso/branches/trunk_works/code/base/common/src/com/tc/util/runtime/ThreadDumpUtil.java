@@ -10,6 +10,7 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.util.Assert;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 public class ThreadDumpUtil {
 
@@ -84,17 +85,17 @@ public class ThreadDumpUtil {
 
   public static String getLockList(LockInfoByThreadID lockInfo, ThreadID tcThreadID) {
     String lockList = "";
-    Object heldLocks = lockInfo.getHeldLocks(tcThreadID);
-    Object waitOnLocks = lockInfo.getWaitOnLocks(tcThreadID);
-    Object pendingLocks = lockInfo.getPendingLocks(tcThreadID);
-    if (heldLocks != null) {
-      lockList += "LOCKED : " + heldLocks + "\n";
+    ArrayList heldLocks = lockInfo.getHeldLocks(tcThreadID);
+    ArrayList waitOnLocks = lockInfo.getWaitOnLocks(tcThreadID);
+    ArrayList pendingLocks = lockInfo.getPendingLocks(tcThreadID);
+    if (heldLocks.size() != 0) {
+      lockList += "LOCKED : " + heldLocks.toString() + "\n";
     }
-    if (waitOnLocks != null) {
-      lockList += "WAITING ON LOCK: " + waitOnLocks + "\n";
+    if (waitOnLocks.size() != 0) {
+      lockList += "WAITING ON LOCK: " + waitOnLocks.toString() + "\n";
     }
-    if (pendingLocks != null) {
-      lockList += "WAITING TO LOCK: " + pendingLocks + "\n";
+    if (pendingLocks.size() != 0) {
+      lockList += "WAITING TO LOCK: " + pendingLocks.toString() + "\n";
     }
     return lockList;
   }

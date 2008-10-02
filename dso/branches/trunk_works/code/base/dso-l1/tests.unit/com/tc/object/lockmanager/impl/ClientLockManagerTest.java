@@ -625,8 +625,8 @@ public class ClientLockManagerTest extends TCTestCase {
     assertEquals(tx1, waitRequest.threadID());
     assertEquals(waitInvocation, waitRequest.getTimerSpec());
 
-    Assert.eval("The text \"WAITING ON LOCK:\" should be present in the thread dump", threadDump
-        .indexOf("WAITING ON LOCK:") >= 0);
+    Assert.eval("The text \"WAITING ON LOCK: [LockID(my lock)]\" should be present in the thread dump", threadDump
+        .indexOf("WAITING ON LOCK: [LockID(my lock)]") >= 0);
 
     // The lock this waiter was in when wait was called should no longer be
     // outstanding.
@@ -903,17 +903,16 @@ public class ClientLockManagerTest extends TCTestCase {
     // pauseAndStart();
     String threadDump = l1info.takeThreadDump(System.currentTimeMillis());
 
-    Assert.eval("The text \"LOCKED : LockID(Locky2)\" should be present in the thread dump", threadDump
-        .indexOf("LOCKED : LockID(Locky2)") >= 0);
+    Assert.eval("The text \"LOCKED : [LockID(Locky2)]\" should be present in the thread dump", threadDump
+        .indexOf("LOCKED : [LockID(Locky2)]") >= 0);
 
-    Assert.eval("The text \"LOCKED : LockID(Locky3)\" should be present in the thread dump", threadDump
-        .indexOf("LOCKED : LockID(Locky3)") >= 0);
+    Assert.eval("The text \"LOCKED : [LockID(Locky3)]\" should be present in the thread dump", threadDump
+        .indexOf("LOCKED : [LockID(Locky3)]") >= 0);
 
-    Assert.eval("The text \"WAITING TO LOCK: LockID(Locky0)\" should be present in the thread dump", threadDump
-        .indexOf("WAITING TO LOCK: LockID(Locky0)") >= 0);
+    Assert.eval("The text \"WAITING TO LOCK: [LockID(Locky0)]\" should be present in the thread dump", threadDump
+        .indexOf("WAITING TO LOCK: [LockID(Locky0)]") >= 0);
 
-    Assert.eval((threadDump.indexOf("LOCKED : LockID(Locky0); LockID(Locky1)") >= 0)
-                || (threadDump.indexOf("LOCKED : LockID(Locky1); LockID(Locky0)") >= 0));
+    Assert.eval((threadDump.indexOf("LOCKED : [LockID(Locky1), LockID(Locky0)]") >= 0));
 
     threadLockManager.unlock(lid0);
     System.out.println("XXX TERRA Thread : Released WRITE lock0 for tx0");
