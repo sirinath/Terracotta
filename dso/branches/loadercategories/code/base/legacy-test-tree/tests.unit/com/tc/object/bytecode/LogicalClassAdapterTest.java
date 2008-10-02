@@ -11,7 +11,7 @@ import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.DSOContextImpl;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.tx.MockTransactionManager;
 import com.tc.util.runtime.Vm;
 
@@ -46,10 +46,10 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
 
     DSOClientConfigHelper config = configHelper();
 
-    ClassProvider classProvider = new MockClassProvider();
-    DSOContext context = DSOContextImpl.createContext(config, classProvider,
+    ClassLoaderRegistry classLoaderRegistry = new MockClassLoaderRegistry();
+    DSOContext context = DSOContextImpl.createContext(config, classLoaderRegistry,
                                                       new ManagerImpl(false, objManager, new MockTransactionManager(),
-                                                                      config, classProvider, null));
+                                                                      config, classLoaderRegistry, null));
 
     ClassProcessorHelper.setContext(Thread.currentThread().getContextClassLoader(), context);
   }

@@ -14,9 +14,10 @@ import com.tc.object.ObjectID;
 import com.tc.object.compression.CompressedData;
 import com.tc.object.compression.StringCompressionUtil;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.StringTCUtil;
 
@@ -106,15 +107,24 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
                                                                               .getInt(
                                                                                       TCPropertiesConsts.L1_TRANSACTIONMANAGER_STRINGS_COMPRESS_MINSIZE);
 
+  /**
+   * Used when decoding
+   */
   protected final ClassProvider      classProvider;
+  
+  /**
+   * Used when encoding
+   */
+  protected final ClassLoaderRegistry classLoaderRegistry;
 
   public BaseDNAEncodingImpl(ClassProvider classProvider) {
     this.classProvider = classProvider;
+    this.classLoaderRegistry = classProvider.getRegistry();
   }
 
   public void encodeClassLoader(ClassLoader value, TCDataOutput output) {
     output.writeByte(TYPE_ID_JAVA_LANG_CLASSLOADER);
-    writeString(classProvider.getLoaderDescriptionFor(value), output);
+    writeString(classLoaderRegistry.getLoaderDescriptionFor(value), output);
   }
 
   /**
@@ -160,7 +170,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
         output.writeByte(TYPE_ID_ENUM);
         Class enumClass = getEnumDeclaringClass(value);
         writeString(enumClass.getName(), output);
-        writeString(classProvider.getLoaderDescriptionFor(enumClass), output);
+        writeString(classLoaderRegistry.getLoaderDescriptionFor(enumClass.getClassLoader()), output);
 
         Object name = getEnumName(value);
         writeString((String) name, output);
@@ -180,7 +190,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS);
         Class c = (Class) value;
         writeString(c.getName(), output);
-        writeString(classProvider.getLoaderDescriptionFor(c), output);
+        writeString(classLoaderRegistry.getLoaderDescriptionFor(c.getClassLoader()), output);
         break;
       case LiteralValues.JAVA_LANG_CLASS_HOLDER:
         output.writeByte(TYPE_ID_JAVA_LANG_CLASS_HOLDER);
@@ -862,7 +872,7 @@ public abstract class BaseDNAEncodingImpl implements DNAEncoding {
     UTF8ByteDataHolder def = new UTF8ByteDataHolder(readByteArray(input));
 
     if (useClassProvider(type, TYPE_ID_JAVA_LANG_CLASSLOADER)) {
-      return new ClassLoaderInstance(def).asClassLoader(classProvider);
+      return new ClassLoaderInstance(def).asClassLoader(classLoaderRegistry);
     } else {
       return new ClassLoaderInstance(def);
     }

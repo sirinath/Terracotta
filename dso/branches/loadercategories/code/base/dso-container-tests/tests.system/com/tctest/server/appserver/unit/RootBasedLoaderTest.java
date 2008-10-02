@@ -6,7 +6,6 @@ package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
-import com.tc.object.tools.BootJarTool;
 import com.tc.test.AppServerInfo;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.StandardLoaderServlet;
@@ -18,23 +17,30 @@ import java.util.List;
 import junit.framework.Test;
 
 /**
- * Verify that when the system classloader has been renamed via system property,
- * classes created on the app server VM can be faulted on the vanilla VM and vice versa.
+ * Verify that when the system is configured to fall back to the classloader that
+ * created the named root object, classes created by the app server VM
+ * can be faulted on the vanilla VM and vice versa.
  */
-public class RenameStandardLoaderTest extends StandardLoaderTestBase {
+public class RootBasedLoaderTest extends StandardLoaderTestBase {
   
-  protected static class RenameStandardLoaderTestSetup extends StandardLoaderTestSetup {
+  protected static class RootBasedLoaderTestSetup extends StandardLoaderTestSetup {
 
-    public RenameStandardLoaderTestSetup(Class testClass) {
+    public RootBasedLoaderTestSetup(Class testClass) {
       super(testClass);
     }
     
+    /**
+     * Add &lt;classloader-compatibility&gt; with named-root strategy.
+     * That's what makes this a RootBasedLoader test.
+     */
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
       super.configureTcConfig(tcConfigBuilder);
+      //String rootName = "sharedMap";
+      //tcConfigBuilder.setNamedRootLoaderStrategy(rootName);
     }
   }
 
-  public RenameStandardLoaderTest() {
+  public RootBasedLoaderTest() {
     // DEV-1817
     if (appServerInfo().getId() == AppServerInfo.WEBSPHERE) {
       disableAllUntil(new Date(Long.MAX_VALUE));
@@ -42,10 +48,10 @@ public class RenameStandardLoaderTest extends StandardLoaderTestBase {
   }
 
   public static Test suite() {
-    return new RenameStandardLoaderTestSetup(RenameStandardLoaderTest.class);
+    return new RootBasedLoaderTestSetup(RootBasedLoaderTest.class);
   }
 
-  public void testClassLoader() throws Exception {
+  public void testRootBasedClassLoader() throws Exception {
 
     WebConversation conversation = new WebConversation();
     WebResponse response1 = request(server0, "cmd=" + StandardLoaderServlet.GET_CLASS_LOADER_NAME, conversation);
@@ -62,14 +68,14 @@ public class RenameStandardLoaderTest extends StandardLoaderTestBase {
     assertEquals("OK", response4.getText().trim());
 
     List vmArgs = new ArrayList();
-    vmArgs.add("-D" + BootJarTool.SYSTEM_CLASSLOADER_NAME_PROPERTY + "=" + classLoaderName);
-    vmArgs.add("-D" + TEST_TYPE + "=" + RENAME_LOADER_TEST);
+    vmArgs.add("-D" + TEST_TYPE + "=" + ROOT_BASED_LOADER_TEST);
     int exitCode = spawnExtraL1(vmArgs);
     assertEquals(0, exitCode);
 
     WebConversation conversation3 = new WebConversation();
     WebResponse response3 = request(server0, "cmd=" + StandardLoaderServlet.CHECK_APP_INNER_INSTANCE, conversation3);
     assertEquals("OK", response3.getText().trim());
+
   }
 
 }

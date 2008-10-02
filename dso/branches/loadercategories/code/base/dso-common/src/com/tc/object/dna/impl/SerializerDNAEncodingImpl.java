@@ -4,6 +4,7 @@
  */
 package com.tc.object.dna.impl;
 
+import com.tc.object.loaders.ClassLoaderRegistry;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.util.Assert;
@@ -31,6 +32,28 @@ public class SerializerDNAEncodingImpl extends BaseDNAEncodingImpl {
   private static class LocalClassProvider implements ClassProvider {
 
     private static final String LOADER_ID = LocalClassProvider.class.getName() + "::CLASSPROVIDER";
+    private static final ClassLoaderRegistry registry = new LocalRegistry();
+    
+    private static class LocalRegistry implements ClassLoaderRegistry {
+
+      public String getLoaderDescriptionFor(ClassLoader loader) {
+        return LOADER_ID;
+      }
+
+      public boolean isStandardLoader(String desc) {
+        throw new AssertionError();
+      }
+
+      public ClassLoader lookupLoader(String desc) {
+        Assert.assertEquals(LOADER_ID, desc);
+        return ClassLoader.getSystemClassLoader();
+      }
+
+      public void registerNamedLoader(NamedClassLoader loader) {
+        // do nothing
+      }
+      
+    }
 
     // This method assumes the Class is visible in this VM and can be loaded by the same class loader as this
     // object. 
@@ -43,21 +66,13 @@ public class SerializerDNAEncodingImpl extends BaseDNAEncodingImpl {
       }
     }
 
-    public String getLoaderDescriptionFor(Class clazz) {
-      return LOADER_ID;
+    public ClassLoaderRegistry getRegistry() {
+      return registry;
     }
 
-    public ClassLoader getClassLoader(String loaderDesc) {
-      Assert.assertEquals(LOADER_ID, loaderDesc);
-      return ClassLoader.getSystemClassLoader();
+    public void setRegistry(ClassLoaderRegistry context) {
+      throw new AssertionError();
     }
 
-    public String getLoaderDescriptionFor(ClassLoader loader) {
-      return LOADER_ID;
-    }
-
-    public void registerNamedLoader(NamedClassLoader loader) {
-      // do nothing
-    }
   }
 }

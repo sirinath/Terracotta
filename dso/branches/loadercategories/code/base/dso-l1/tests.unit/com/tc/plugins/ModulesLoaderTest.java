@@ -8,9 +8,10 @@ import org.osgi.framework.BundleException;
 
 import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.object.BaseDSOTestCase;
-import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.bytecode.MockClassLoaderRegistry;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.ClassLoaderRegistry;
+import com.tc.object.loaders.StandardClassLoaderRegistry;
 import com.tc.util.Assert;
 import com.terracottatech.config.Modules;
 
@@ -55,12 +56,11 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
 
     DSOClientConfigHelper configHelper = configHelper();
     configHelper.addModule(nonexistentBundle, nonexistentVersion);
-    ClassProvider classProvider = new MockClassProvider();
-
+    
     try {
       Modules modules = configHelper.getModulesForInitialization();
       EmbeddedOSGiRuntime osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-      ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+      ModulesLoader.initModules(osgiRuntime, configHelper, new StandardClassLoaderRegistry(), modules.getModuleArray(), false);
       Assert.fail("Should get exception on missing bundle");
 
     } catch (BundleException e) {
@@ -95,12 +95,11 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
       // Add temp dir to list of repository locations to pick up bundle above
       configHelper.addRepository(tempDir.getAbsolutePath());
       configHelper.addModule(badArtifactId, badVersion);
-      ClassProvider classProvider = new MockClassProvider();
 
       try {
         Modules modules = configHelper.getModulesForInitialization();
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+        ModulesLoader.initModules(osgiRuntime, configHelper, new StandardClassLoaderRegistry(), modules.getModuleArray(), false);
         Assert.fail("Should get exception on invalid bundle");
 
       } catch (BundleException e) {
@@ -166,14 +165,13 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
     String repo = "c:\\evil windows\\path";
 
     DSOClientConfigHelper configHelper = configHelper();
-    ClassProvider classProvider = new MockClassProvider();
 
     EmbeddedOSGiRuntime osgiRuntime = null;
     try {
       configHelper.addRepository(repo);
       Modules modules = configHelper.getModulesForInitialization();
       osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-      ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+      ModulesLoader.initModules(osgiRuntime, configHelper, new StandardClassLoaderRegistry(), modules.getModuleArray(), false);
     } finally {
       shutdownAndCleanUpJars(osgiRuntime, null);
     }
@@ -200,12 +198,11 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
       // Add temp dir to list of repository locations to pick up bundle above
       configHelper.addRepository(tempDir.getAbsolutePath());
       configHelper.addModule(badArtifactId, badVersion);
-      ClassProvider classProvider = new MockClassProvider();
 
       try {
         Modules modules = configHelper.getModulesForInitialization();
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+        ModulesLoader.initModules(osgiRuntime, configHelper, new StandardClassLoaderRegistry(), modules.getModuleArray(), false);
         Assert.fail("Should get exception on invalid bundle");
 
       } catch (BundleException e) {
@@ -239,11 +236,10 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
       // bundle above
       configHelper.addRepository(tempDir.getAbsolutePath());
       configHelper.addModule(badArtifactId, badVersion);
-      ClassProvider classProvider = new MockClassProvider();
       try {
         Modules modules = configHelper.getModulesForInitialization();
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+        ModulesLoader.initModules(osgiRuntime, configHelper, new StandardClassLoaderRegistry(), modules.getModuleArray(), false);
         Assert.fail("Should get exception on invalid config");
       } catch (BundleException e) {
         checkErrorMessageContainsText(e, badGroupId);
@@ -280,11 +276,11 @@ public class ModulesLoaderTest extends BaseDSOTestCase {
       // Add temp dir to list of repository locations to pick up bundle above
       configHelper.addRepository(tempDir.getAbsolutePath());
       configHelper.addModule(groupId, artifactId, version);
-      ClassProvider classProvider = new MockClassProvider();
+      ClassLoaderRegistry classLoaderRegistry = new MockClassLoaderRegistry();
 
       Modules modules = configHelper.getModulesForInitialization();
       osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-      ModulesLoader.initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), false);
+      ModulesLoader.initModules(osgiRuntime, configHelper, classLoaderRegistry, modules.getModuleArray(), false);
 
       // should find and load the module without error
       
