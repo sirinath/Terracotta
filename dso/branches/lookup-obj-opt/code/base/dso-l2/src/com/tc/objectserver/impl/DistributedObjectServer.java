@@ -36,6 +36,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.L2Management;
+import com.tc.management.RemoteJMXProcessor;
 import com.tc.management.beans.L2State;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.LockStatisticsMonitorMBean;
@@ -73,6 +74,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
+import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
@@ -189,6 +191,8 @@ import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.runtime.TCMemoryManagerImpl;
+import com.tc.runtime.logging.LongGCLogger;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
@@ -297,7 +301,7 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
 
   private ReconnectConfig                      l1ReconnectConfig;
 
-  GCStatsEventPublisher                        gcStatsEventPublisher;
+  private GCStatsEventPublisher                gcStatsEventPublisher;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -389,7 +393,7 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
 
     // start the JMX server
     try {
-      startJMXServer(bind, configSetupManager.commonl2Config().jmxPort().getInt());
+      startJMXServer(bind, configSetupManager.commonl2Config().jmxPort().getInt(), new RemoteJMXProcessor());
     } catch (Exception e) {
       String msg = "Unable to start the JMX server. Do you have another Terracotta Server running?";
       consoleLogger.error(msg);
@@ -618,9 +622,15 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
                                                                              .getGarbageCollector()));
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
+    CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
+    TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
+        .getLeastCount(), cacheConfig.isOnlyOldGenMonitored(), threadGroup);
+    long timeOut = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.LOGGING_LONG_GC_THRESHOLD);
+    LongGCLogger gcLogger = new LongGCLogger(logger, timeOut);
+    tcMemManager.registerForMemoryEvents(gcLogger);
+
     if (cacheManagerProperties.getBoolean("enabled")) {
-      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties), threadGroup,
-                                      statisticsAgentSubSystem);
+      cacheManager = new CacheManager(objectManager, cacheConfig, threadGroup, statisticsAgentSubSystem, tcMemManager);
       if (logger.isDebugEnabled()) {
         logger.debug("CacheManager Enabled : " + cacheManager);
       }
@@ -1166,13 +1176,13 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
     return gcStatsEventPublisher;
   }
 
-  private void startJMXServer(InetAddress bind, int jmxPort) throws Exception {
+  private void startJMXServer(InetAddress bind, int jmxPort, Sink remoteEventsSink) throws Exception {
     if (jmxPort == 0) {
       jmxPort = new PortChooser().chooseRandomPort();
     }
 
     l2Management = new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsAgentSubSystem,
-                                    statisticsGateway, configSetupManager, this, bind, jmxPort);
+                                    statisticsGateway, configSetupManager, this, bind, jmxPort, remoteEventsSink);
 
     /*
      * Some tests use this if they run with jdk1.4 and start multiple in-process DistributedObjectServers. When we no
