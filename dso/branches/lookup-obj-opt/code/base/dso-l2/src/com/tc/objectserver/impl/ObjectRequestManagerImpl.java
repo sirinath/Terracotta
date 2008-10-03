@@ -30,6 +30,9 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.tx.ServerTransactionListener;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -44,12 +47,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  // TODO read from l2 property
-  public static final int                MAX_OBJECTS_TO_LOOKUP = 5;
+  public static final int                MAX_OBJECTS_TO_LOOKUP = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getInt(
+                                                                           TCPropertiesConsts.L2_ONJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP);
   private final static TCLogger          logger                = TCLogging.getLogger(ObjectRequestManagerImpl.class);
 
   private final static State             INIT                  = new State("INITIAL");
@@ -165,25 +169,21 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   private void splitAndRequestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
                                       boolean serverInitiated, String requestingThreadName) {
-    TreeSet<ObjectID> sortedIDs = new TreeSet<ObjectID>();
-    TreeSet<ObjectID> split = new TreeSet<ObjectID>();
-
-    for (Iterator iter = ids.iterator(); iter.hasNext();) {
-      sortedIDs.add((ObjectID) iter.next());
-    }
+    ObjectIDSet sortedIDs = new ObjectIDSet(ids);
+    ObjectIDSet split = new ObjectIDSet();
 
     for (Iterator<ObjectID> iter = sortedIDs.iterator(); iter.hasNext();) {
       split.add(iter.next());
       if (split.size() >= MAX_OBJECTS_TO_LOOKUP || !iter.hasNext()) {
         basicRequestObjects(clientID, requestID, maxRequestDepth, serverInitiated, requestingThreadName, split);
-        split = new TreeSet<ObjectID>();
+        split = new ObjectIDSet();
       }
     }
 
   }
 
   private void basicRequestObjects(ClientID clientID, ObjectRequestID requestID, int maxRequestDepth,
-                                   boolean serverInitiated, String requestingThreadName, TreeSet<ObjectID> split) {
+                                   boolean serverInitiated, String requestingThreadName, ObjectIDSet split) {
 
     LookupContext lookupContext = null;
 
@@ -228,8 +228,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       Set<ClientID> clientList = null;
       long batchID = batchIDSequence.next();
 
-      // FIXME: don't cast, change to ObjectRequestCache
-      reqObj = new RequestedObject((TreeSet) requestedObjectIDs, maxRequestDepth);
+      reqObj = new RequestedObject((ObjectIDSet) requestedObjectIDs, maxRequestDepth);
 
       synchronized (this) {
         clientList = this.objectRequestCache.remove(reqObj);
@@ -307,16 +306,16 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   protected static class RequestedObject {
 
-    private final TreeSet<ObjectID> oidSet;
+    private final ObjectIDSet oidSet;
 
-    private final int               depth;
+    private final int         depth;
 
-    public RequestedObject(TreeSet<ObjectID> oidSet, int depth) {
+    public RequestedObject(ObjectIDSet oidSet, int depth) {
       this.oidSet = oidSet;
       this.depth = depth;
     }
 
-    public TreeSet<ObjectID> getOIdSet() {
+    public ObjectIDSet getOIdSet() {
       return oidSet;
     }
 

@@ -123,6 +123,21 @@ public class ObjectRequestManagerTest extends TestCase {
     super.tearDown();
   }
 
+  public void testObjectIDSet() {
+    int numOfObjects = 100;
+    Set ids = createObjectSet(numOfObjects);
+    
+    ObjectIDSet oidSet = new ObjectIDSet(ids);
+    
+    Iterator<ObjectID> iter = oidSet.iterator(); 
+    ObjectID oid1 = iter.next();
+    while(iter.hasNext()){
+      ObjectID oid2 = iter.next();
+      assertTrue(oid1.compareTo(oid2) == -1);
+      oid1 = oid2;
+    }
+  }
+
   public void testMultipleRequestObjects() {
     TestObjectManager objectManager = new TestObjectManager();
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
@@ -137,7 +152,7 @@ public class ObjectRequestManagerTest extends TestCase {
     int objectsToBeRequested = 47;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
     if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
-    Set ids = createObjectIDSet(objectsToBeRequested);
+    Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
     List objectRequestThreadList = new ArrayList();
@@ -211,7 +226,7 @@ public class ObjectRequestManagerTest extends TestCase {
     int objectsToBeRequested = 100;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
     if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
-    Set ids = createObjectIDSet(objectsToBeRequested);
+    Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
     List objectRequestThreadList = new ArrayList();
@@ -323,7 +338,7 @@ public class ObjectRequestManagerTest extends TestCase {
     int objectsToBeRequested = 100;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
     if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
-    Set ids = createObjectIDSet(objectsToBeRequested);
+    Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
     List objectRequestThreadList = new ArrayList();
@@ -437,7 +452,7 @@ public class ObjectRequestManagerTest extends TestCase {
     int objectsToBeRequested = 100;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
     if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
-    Set ids = createObjectIDSet(objectsToBeRequested);
+    Set ids = createObjectSet(objectsToBeRequested);
 
     objectRequestManager.transactionManagerStarted(new HashSet());
     objectRequestManager.clearAllTransactionsFor(clientID);
@@ -476,12 +491,12 @@ public class ObjectRequestManagerTest extends TestCase {
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
     TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
-    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager,
-                                                                                 channelManager, clientStateManager,
+    ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
+                                                                                 clientStateManager,
                                                                                  serverTransactionManager, requestSink, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
-    Set ids = createObjectIDSet(100);
+    Set ids = createObjectSet(100);
     objectRequestManager.transactionManagerStarted(new HashSet());
     objectRequestManager.clearAllTransactionsFor(clientID);
 
@@ -505,7 +520,7 @@ public class ObjectRequestManagerTest extends TestCase {
     ObjectRequestManager orm = new TestObjectRequestManager();
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID objectRequestID = new ObjectRequestID(1);
-    Set ids = createObjectIDSet(100);
+    Set ids = createObjectSet(100);
     Set missingIds = new HashSet();
     TestSink requestSink = new TestSink();
     Sink respondSink = new TestSink();
@@ -526,10 +541,10 @@ public class ObjectRequestManagerTest extends TestCase {
   public void testObjectRequestCache() {
     ObjectRequestCache c = new ObjectRequestCache();
 
-    TreeSet<ObjectID> treeSet1 = createTreeSet(100);
+    ObjectIDSet oidSet1 = createObjectIDSet(100);
 
-    RequestedObject reqObj1 = new RequestedObject(treeSet1, 10);
-    RequestedObject reqObj2 = new RequestedObject(treeSet1, 10);
+    RequestedObject reqObj1 = new RequestedObject(oidSet1, 10);
+    RequestedObject reqObj2 = new RequestedObject(oidSet1, 10);
 
     Assert.eval(reqObj1.equals(reqObj2));
     Assert.eval(reqObj1.hashCode() == reqObj2.hashCode());
@@ -545,8 +560,8 @@ public class ObjectRequestManagerTest extends TestCase {
     Assert.assertFalse(testAdd);
     Assert.eval(c.cacheSize() == 1);
 
-    TreeSet<ObjectID> treeSet2 = createTreeSet(50);
-    RequestedObject reqObj3 = new RequestedObject(treeSet2, 20);
+    ObjectIDSet oidSet2 = createObjectIDSet(50);
+    RequestedObject reqObj3 = new RequestedObject(oidSet2, 20);
 
     testAdd = c.add(reqObj3, clientID2);
     Assert.assertTrue(testAdd);
@@ -580,17 +595,17 @@ public class ObjectRequestManagerTest extends TestCase {
     Assert.assertNull(clientIds);
   }
 
-  private TreeSet<ObjectID> createTreeSet(int len) {
+  private ObjectIDSet createObjectIDSet(int len) {
     Random ran = new Random();
-    TreeSet<ObjectID> treeSet = new TreeSet<ObjectID>();
+    ObjectIDSet oidSet = new ObjectIDSet();
 
     for (int i = 0; i < len; i++) {
-      treeSet.add(new ObjectID(ran.nextLong()));
+      oidSet.add(new ObjectID(ran.nextLong()));
     }
-    return treeSet;
+    return oidSet;
   }
 
-  private Set createObjectIDSet(int numOfObjects) {
+  private Set createObjectSet(int numOfObjects) {
     Set set = new HashSet();
     for (int i = 1; i <= numOfObjects; i++) {
       set.add(new ObjectID(i));
