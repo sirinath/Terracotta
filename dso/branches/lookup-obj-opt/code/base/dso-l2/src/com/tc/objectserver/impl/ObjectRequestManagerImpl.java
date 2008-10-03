@@ -23,7 +23,8 @@ import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.context.ObjectManagerRequestContext;
+import com.tc.objectserver.context.ObjectRequestServerContext;
+import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RespondToObjectRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
@@ -60,22 +61,24 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   private final List                     pendingRequests       = new LinkedList();
   private final Set                      resentTransactionIDs  = new HashSet();
-  private volatile State                 state                 = INIT;
   private final Sink                     respondObjectRequestSink;
+  private final Sink                     objectRequestSink;
+
+  private volatile State                 state                 = INIT;
   private DSOChannelManager              channelManager;
   private ClientStateManager             stateManager;
   private Sequence                       batchIDSequence       = new SimpleSequence();
-
   private ObjectRequestCache             objectRequestCache    = new ObjectRequestCache();
 
   public ObjectRequestManagerImpl(ObjectManager objectManager, DSOChannelManager channelManager,
                                   ClientStateManager stateManager, ServerTransactionManager transactionManager,
-                                  Sink respondObjectRequestSink) {
+                                  Sink objectRequestSink, Sink respondObjectRequestSink) {
     this.objectManager = objectManager;
     this.channelManager = channelManager;
     this.stateManager = stateManager;
     this.transactionManager = transactionManager;
     this.respondObjectRequestSink = respondObjectRequestSink;
+    this.objectRequestSink = objectRequestSink;
     transactionManager.addTransactionListener(this);
 
   }
@@ -99,7 +102,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     synchronized (this) {
       if (state != STARTED) {
         LookupContext lookupContext = new LookupContext(this, clientID, requestID, ids, maxRequestDepth,
-                                                        requestingThreadName, serverInitiated, respondObjectRequestSink);
+                                                        requestingThreadName, serverInitiated, objectRequestSink,
+                                                        respondObjectRequestSink);
         pendingRequests.add(lookupContext);
         if (logger.isDebugEnabled()) {
           logger.debug("RequestObjectManager is not started, lookup has been added to pending request: "
@@ -187,7 +191,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       RequestedObject reqObj = new RequestedObject(split, maxRequestDepth);
       if (objectRequestCache.add(reqObj, clientID)) {
         lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth, requestingThreadName,
-                                          serverInitiated, respondObjectRequestSink);
+                                          serverInitiated, objectRequestSink, respondObjectRequestSink);
       }
     }
 
@@ -204,7 +208,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     /**
      * will contain the object which are not present in the client out of the returned ones
      */
-    Map<ClientID, Set<ObjectID>> clientNewIDsMap = new HashMap<ClientID, Set<ObjectID>>(); 
+    Map<ClientID, Set<ObjectID>> clientNewIDsMap = new HashMap<ClientID, Set<ObjectID>>();
 
     LinkedList objectsInOrder = new LinkedList();
     try {
@@ -466,7 +470,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   }
 
-  protected static class LookupContext implements ObjectManagerRequestContext {
+  protected static class LookupContext implements ObjectRequestServerContext, ObjectManagerResultsContext {
 
     private final ClientID             clientID;
     private final ObjectRequestID      requestID;
@@ -476,12 +480,13 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     private final String               requestingThreadName;
     private final boolean              serverInitiated;
     private final Sink                 respondObjectRequestSink;
+    private final Sink                 objectRequestSink;
     private final ObjectRequestManager objectRequestManager;
     private Map                        objects;
 
     public LookupContext(ObjectRequestManager objectRequestManager, ClientID clientID, ObjectRequestID requestID,
                          Set lookupIDs, int maxRequestDepth, String requestingThreadName, boolean serverInitiated,
-                         Sink respondObjectRequestSink) {
+                         Sink objectRequestSink, Sink respondObjectRequestSink) {
       this.objectRequestManager = objectRequestManager;
       this.clientID = clientID;
       this.requestID = requestID;
@@ -489,6 +494,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       this.maxRequestDepth = maxRequestDepth;
       this.requestingThreadName = requestingThreadName;
       this.serverInitiated = serverInitiated;
+      this.objectRequestSink = objectRequestSink;
       this.respondObjectRequestSink = respondObjectRequestSink;
 
     }
@@ -512,8 +518,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           logger.debug("LookupPendingObjectIDs = " + results.getLookupPendingObjectIDs() + " , clientID = " + clientID
                        + " , requestID = " + requestID);
         }
-        objectRequestManager.requestObjects(this.clientID, this.requestID, results.getLookupPendingObjectIDs(), -1,
-                                            true, this.requestingThreadName);
+        objectRequestSink.add(new LookupContext(objectRequestManager, this.clientID, this.requestID, results
+            .getLookupPendingObjectIDs(), -1, this.requestingThreadName, true, this.objectRequestSink,
+                                                this.respondObjectRequestSink));
       }
       ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.lookupIDs,
                                                             this.missingObjects, this.serverInitiated,

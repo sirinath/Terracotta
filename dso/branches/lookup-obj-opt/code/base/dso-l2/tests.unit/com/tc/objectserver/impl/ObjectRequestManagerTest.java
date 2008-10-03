@@ -128,10 +128,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 47;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
@@ -201,10 +202,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 100;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
@@ -312,10 +314,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 100;
     int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
@@ -423,10 +426,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
 
@@ -470,10 +474,11 @@ public class ObjectRequestManagerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager,
                                                                                  channelManager, clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
     ClientID clientID = new ClientID(new ChannelID(1));
     ObjectRequestID requestID = new ObjectRequestID(1);
     Set ids = createObjectIDSet(100);
@@ -502,10 +507,11 @@ public class ObjectRequestManagerTest extends TestCase {
     ObjectRequestID objectRequestID = new ObjectRequestID(1);
     Set ids = createObjectIDSet(100);
     Set missingIds = new HashSet();
-    Sink sink = new TestSink();
+    TestSink requestSink = new TestSink();
+    Sink respondSink = new TestSink();
     Collection objs = null;
 
-    LookupContext lookupContext = new LookupContext(orm, clientID, objectRequestID, ids, 0, "Thread-1", false, sink);
+    LookupContext lookupContext = new LookupContext(orm, clientID, objectRequestID, ids, 0, "Thread-1", false, requestSink, respondSink);
     assertEquals(lookupContext.getLookupIDs().size(), ids.size());
     assertEquals(0, lookupContext.getMaxRequestDepth());
     assertEquals(clientID, lookupContext.getRequestedNodeID());
