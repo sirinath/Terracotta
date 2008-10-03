@@ -4,18 +4,23 @@
 package com.tc.objectserver.context;
 
 import com.tc.net.ClientID;
+import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
 
-public interface ObjectManagerRequestContext extends ObjectManagerResultsContext {
+import java.util.Set;
+
+public interface ObjectRequestServerContext {
   
   public ObjectRequestID getRequestID();
   
   public int getMaxRequestDepth();
  
   public boolean isServerInitiated();
+  
+  public Set<ObjectID> getLookupIDs();
 
   public ClientID getRequestedNodeID();
 
   public String getRequestingThreadName();
-
+  
 }

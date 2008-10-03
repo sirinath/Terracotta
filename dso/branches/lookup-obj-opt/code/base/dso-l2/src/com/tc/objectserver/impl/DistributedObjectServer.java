@@ -757,7 +757,7 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
                      4, maxStageSize);
 
     objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager, clientStateManager,
-                                                        transactionManager, respondToObjectRequestStage.getSink());
+                                                        transactionManager,objectRequestStage.getSink(), respondToObjectRequestStage.getSink());
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,

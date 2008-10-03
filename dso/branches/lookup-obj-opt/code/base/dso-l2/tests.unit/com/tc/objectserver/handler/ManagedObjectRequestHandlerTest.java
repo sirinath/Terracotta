@@ -42,10 +42,11 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestServerTransactionManager serverTransactionManager = new TestServerTransactionManager();
+    TestSink requestSink = new TestSink();
     TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager,
-                                                                                 serverTransactionManager, respondSink);
+                                                                                 serverTransactionManager, requestSink, respondSink);
 
     TestServerConfigurationContext context = new TestServerConfigurationContext();
     context.setObjectRequestManager(objectRequestManager);
