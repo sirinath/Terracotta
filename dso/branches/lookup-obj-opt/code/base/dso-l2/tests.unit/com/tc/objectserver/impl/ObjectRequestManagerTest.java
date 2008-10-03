@@ -150,8 +150,8 @@ public class ObjectRequestManagerTest extends TestCase {
                                                                                  serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 47;
-    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
-    if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
+    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.SPLIT_SIZE;
+    if (objectsToBeRequested % ObjectRequestManagerImpl.SPLIT_SIZE > 0) numberOfRequestsMade++;
     Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
@@ -224,8 +224,8 @@ public class ObjectRequestManagerTest extends TestCase {
                                                                                  serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 100;
-    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
-    if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
+    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.SPLIT_SIZE;
+    if (objectsToBeRequested % ObjectRequestManagerImpl.SPLIT_SIZE > 0) numberOfRequestsMade++;
     Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
@@ -336,8 +336,8 @@ public class ObjectRequestManagerTest extends TestCase {
                                                                                  serverTransactionManager, requestSink, respondSink);
 
     int objectsToBeRequested = 100;
-    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
-    if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
+    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.SPLIT_SIZE;
+    if (objectsToBeRequested % ObjectRequestManagerImpl.SPLIT_SIZE > 0) numberOfRequestsMade++;
     Set ids = createObjectSet(objectsToBeRequested);
     objectRequestManager.transactionManagerStarted(new HashSet());
 
@@ -450,8 +450,8 @@ public class ObjectRequestManagerTest extends TestCase {
     ObjectRequestID requestID = new ObjectRequestID(1);
 
     int objectsToBeRequested = 100;
-    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP;
-    if (objectsToBeRequested % ObjectRequestManagerImpl.MAX_OBJECTS_TO_LOOKUP > 0) numberOfRequestsMade++;
+    int numberOfRequestsMade = objectsToBeRequested / ObjectRequestManagerImpl.SPLIT_SIZE;
+    if (objectsToBeRequested % ObjectRequestManagerImpl.SPLIT_SIZE > 0) numberOfRequestsMade++;
     Set ids = createObjectSet(objectsToBeRequested);
 
     objectRequestManager.transactionManagerStarted(new HashSet());
