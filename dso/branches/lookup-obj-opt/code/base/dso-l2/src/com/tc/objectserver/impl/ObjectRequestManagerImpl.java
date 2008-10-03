@@ -50,14 +50,14 @@ import java.util.Set;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  public static final int                MAX_OBJECTS_TO_LOOKUP        = TCPropertiesImpl
+  public static final int                SPLIT_SIZE        = TCPropertiesImpl
                                                                           .getProperties()
                                                                           .getInt(
-                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP);
-  public static final boolean            OBJECT_REQUEST_CACHE_VERBOSE = TCPropertiesImpl
+                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE);
+  public static final boolean            LOGGING_ENABLED = TCPropertiesImpl
                                                                           .getProperties()
                                                                           .getBoolean(
-                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_CACHE_VERBOSE);
+                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED);
 
   private final static TCLogger          logger                       = TCLogging
                                                                           .getLogger(ObjectRequestManagerImpl.class);
@@ -89,7 +89,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     this.transactionManager = transactionManager;
     this.respondObjectRequestSink = respondObjectRequestSink;
     this.objectRequestSink = objectRequestSink;
-    this.objectRequestCache = new ObjectRequestCache(OBJECT_REQUEST_CACHE_VERBOSE);
+    this.objectRequestCache = new ObjectRequestCache(LOGGING_ENABLED);
     transactionManager.addTransactionListener(this);
 
   }
@@ -181,7 +181,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     for (Iterator<ObjectID> iter = sortedIDs.iterator(); iter.hasNext();) {
       split.add(iter.next());
-      if (split.size() >= MAX_OBJECTS_TO_LOOKUP || !iter.hasNext()) {
+      if (split.size() >= SPLIT_SIZE || !iter.hasNext()) {
         basicRequestObjects(clientID, requestID, maxRequestDepth, serverInitiated, requestingThreadName, split);
         split = new ObjectIDSet();
       }
