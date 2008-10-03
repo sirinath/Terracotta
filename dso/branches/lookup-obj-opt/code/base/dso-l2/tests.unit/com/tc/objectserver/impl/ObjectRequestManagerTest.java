@@ -412,12 +412,9 @@ public class ObjectRequestManagerTest extends TestCase {
       ManagedObjectImpl mo = new ManagedObjectImpl(id);
       mo.apply(new TestDNA(new TestDNACursor()), new TransactionID(id.toLong()), new BackReferences(),
                new NullObjectInstanceMonitor(), true);
-      batchAndSend.sendObject(mo, i < 5000);
+      batchAndSend.sendObject(mo);
 
     }
-
-    // let's test missing objects
-
   }
 
   public void testRequestObjects() {

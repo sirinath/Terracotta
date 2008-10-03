@@ -7,7 +7,6 @@ package com.tc.objectserver.impl;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestID;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.context.ManagedObjectRequestContext;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.Collection;
@@ -16,10 +15,6 @@ import java.util.Set;
 public class TestObjectRequestManager implements ObjectRequestManager {
 
   public final NoExceptionLinkedQueue startCalls = new NoExceptionLinkedQueue();
-
-  public void requestObjects(ManagedObjectRequestContext responseContext, int maxReachableObjects) {
-    // NOP
-  }
 
   public void start() {
     startCalls.put(new Object());

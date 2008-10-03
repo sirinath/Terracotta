@@ -64,7 +64,12 @@ public class ClientStateManagerImpl implements ClientStateManager {
       if (clientState.containsReference(dna.getObjectID())) {
         if (dna.isDelta()) {
           prunedChanges.add(dna);
+        } else {
+          // This new Object must have already been sent as a part of a different lookup. So ignoring this change.
         }
+        // } else if (clientState.containsParent(dna.getObjectID(), includeIDs)) {
+        // these objects needs to be looked up from the client during apply
+        // objectIDs.add(dna.getObjectID());
       }
     }
     clientState.addReferencedChildrenTo(objectIDs, includeIDs);
@@ -133,17 +138,17 @@ public class ClientStateManagerImpl implements ClientStateManager {
    * returns newly added references
    */
   public synchronized Set<ObjectID> addReferences(NodeID id, Set<ObjectID> oids) {
-	ClientState cs = getClientState(id);
+    ClientState cs = getClientState(id);
     if (cs == null) {
       logger.warn(": addReferences : Client state is NULL (probably due to disconnect) : " + id);
       return Collections.emptySet();
     }
     Set<ObjectID> refs = cs.getReferences();
     if (refs.isEmpty()) {
-	  refs.addAll(oids);
+      refs.addAll(oids);
       return oids;
     }
-    
+
     Set<ObjectID> newReferences = new HashSet<ObjectID>();
     for (ObjectID oid : oids) {
       if (refs.add(oid)) {
