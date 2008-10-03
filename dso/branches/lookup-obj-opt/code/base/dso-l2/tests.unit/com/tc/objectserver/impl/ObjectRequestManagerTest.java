@@ -539,7 +539,7 @@ public class ObjectRequestManagerTest extends TestCase {
   }
 
   public void testObjectRequestCache() {
-    ObjectRequestCache c = new ObjectRequestCache();
+    ObjectRequestCache c = new ObjectRequestCache(true);
 
     ObjectIDSet oidSet1 = createObjectIDSet(100);
 

@@ -50,29 +50,35 @@ import java.util.Set;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  public static final int                MAX_OBJECTS_TO_LOOKUP = TCPropertiesImpl
-                                                                   .getProperties()
-                                                                   .getInt(
-                                                                           TCPropertiesConsts.L2_ONJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP);
-  private final static TCLogger          logger                = TCLogging.getLogger(ObjectRequestManagerImpl.class);
+  public static final int                MAX_OBJECTS_TO_LOOKUP        = TCPropertiesImpl
+                                                                          .getProperties()
+                                                                          .getInt(
+                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP);
+  public static final boolean            OBJECT_REQUEST_CACHE_VERBOSE = TCPropertiesImpl
+                                                                          .getProperties()
+                                                                          .getBoolean(
+                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_CACHE_VERBOSE);
 
-  private final static State             INIT                  = new State("INITIAL");
-  private final static State             STARTING              = new State("STARTING");
-  private final static State             STARTED               = new State("STARTED");
+  private final static TCLogger          logger                       = TCLogging
+                                                                          .getLogger(ObjectRequestManagerImpl.class);
+
+  private final static State             INIT                         = new State("INITIAL");
+  private final static State             STARTING                     = new State("STARTING");
+  private final static State             STARTED                      = new State("STARTED");
 
   private final ObjectManager            objectManager;
   private final ServerTransactionManager transactionManager;
 
-  private final List                     pendingRequests       = new LinkedList();
-  private final Set                      resentTransactionIDs  = new HashSet();
+  private final List                     pendingRequests              = new LinkedList();
+  private final Set                      resentTransactionIDs         = new HashSet();
   private final Sink                     respondObjectRequestSink;
   private final Sink                     objectRequestSink;
 
-  private volatile State                 state                 = INIT;
+  private volatile State                 state                        = INIT;
   private DSOChannelManager              channelManager;
   private ClientStateManager             stateManager;
-  private Sequence                       batchIDSequence       = new SimpleSequence();
-  private ObjectRequestCache             objectRequestCache    = new ObjectRequestCache();
+  private Sequence                       batchIDSequence              = new SimpleSequence();
+  private ObjectRequestCache             objectRequestCache;
 
   public ObjectRequestManagerImpl(ObjectManager objectManager, DSOChannelManager channelManager,
                                   ClientStateManager stateManager, ServerTransactionManager transactionManager,
@@ -83,6 +89,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     this.transactionManager = transactionManager;
     this.respondObjectRequestSink = respondObjectRequestSink;
     this.objectRequestSink = objectRequestSink;
+    this.objectRequestCache = new ObjectRequestCache(OBJECT_REQUEST_CACHE_VERBOSE);
     transactionManager.addTransactionListener(this);
 
   }
@@ -341,7 +348,17 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   protected static class ObjectRequestCache {
 
-    private Map<RequestedObject, LinkedHashSet<ClientID>> objectRequestMap = new HashMap<RequestedObject, LinkedHashSet<ClientID>>();
+    private final Map<RequestedObject, LinkedHashSet<ClientID>> objectRequestMap = new HashMap<RequestedObject, LinkedHashSet<ClientID>>();
+
+    private final boolean                                       verbose;
+
+    private int                                                 multipleClientRequestCount;
+
+    private int                                                 sameClientRequestCount;
+
+    public ObjectRequestCache(boolean verbose) {
+      this.verbose = verbose;
+    }
 
     // for tests
     protected int numberOfRequestedObjects() {
@@ -382,7 +399,15 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
         this.objectRequestMap.put(reqObjects, clientList);
         return true;
       } else {
-        clientList.add(clientID);
+        if (clientList.add(clientID)) {
+          if (verbose && (++sameClientRequestCount % 100) == 0) {
+            logger.info("[ObjectRequestCache] Same client request tally thus far: " + sameClientRequestCount);
+          }
+        } else {
+          if (verbose && (++multipleClientRequestCount % 100) == 0) {
+            logger.info("[ObjectRequestCache] Multiple client request tally thus far: " + multipleClientRequestCount);
+          }
+        }
         return false;
       }
     }

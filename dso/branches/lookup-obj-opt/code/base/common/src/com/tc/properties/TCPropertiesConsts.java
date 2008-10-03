@@ -81,7 +81,8 @@ public interface TCPropertiesConsts {
   public static final String   L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT                  = "l2.objectmanager.maxObjectsToCommit";
   public static final String   L2_OBJECTMANAGER_MAXOBJECTS_INTXNOBJ_GROUPING          = "l2.objectmanager.maxObjectsInTxnObjGrouping";
   public static final String   L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING          = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
-  public static final String   L2_ONJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP             = "l2.objectmanager.maximumObjectsToLookUp";
+  public static final String   L2_OBJECTMANAGER_MAXIMUM_OBJECTS_TO_LOOKUP             = "l2.objectmanager.maximumObjectsToLookUp";
+  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_CACHE_VERBOSE          = "l2.objectmanager.objectRequestCacheVerbose";
   public static final String   L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                 = "l2.objectmanager.fault.logging.enabled";
   public static final String   L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED             = "l2.objectmanager.persistor.logging.enabled";
   public static final String   L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                 = "l2.objectmanager.loadObjectID.fastLoad";
