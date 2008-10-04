@@ -59,9 +59,11 @@ public class AdminClientBundle extends ListResourceBundle {
         { "server.disconnected.label", "Disconnected on {0}" },
         {
             "server.non-restartable.warning",
-            "<html>This server is configured for <code>temporary-swap-only</code> persistence mode and so will not "
-                + "allow clients to reconnect upon restart.  To allow for client reconnect upon restart, change the "
-                + "server's configured persistence mode to <code>permanent-store</code> and restart:</html>" },
+            "<html>This Terracotta server array is configured for <code>temporary-swap-only</code> persistence "
+            + "mode. In the event that all Terracotta servers in the array are taken down, all clustered data "
+            + "will be lost and no existing clients will be allowed to rejoin the cluster. To ensure that in "
+            + "the event of a full cluster restart data is preserved and clients may rejoin the cluster, change "
+            + "the configured persistence mode to <code>permanent-store</code> and restart:</html>" },
         { "dso", "DSO" },
         { "dso.roots", "Cluster object browser" },
         { "dso.client.roots", "Client object browser" },
