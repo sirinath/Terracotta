@@ -6,9 +6,9 @@ package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
 import com.tc.net.ClientID;
+import com.tc.util.ObjectIDSet;
 
 import java.util.Collection;
-import java.util.Set;
 
 public interface RespondToObjectRequestContext extends EventContext {
 
@@ -16,9 +16,9 @@ public interface RespondToObjectRequestContext extends EventContext {
 
   public Collection getObjs();
 
-  public Set getRequestedObjectIDs();
+  public ObjectIDSet getRequestedObjectIDs();
 
-  public Set getMissingObjectIDs();
+  public ObjectIDSet getMissingObjectIDs();
 
   public boolean isServerInitiated();
 

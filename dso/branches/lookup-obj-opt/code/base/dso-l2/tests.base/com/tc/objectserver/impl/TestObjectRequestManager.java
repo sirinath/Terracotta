@@ -7,10 +7,10 @@ package com.tc.objectserver.impl;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestID;
 import com.tc.objectserver.api.ObjectRequestManager;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class TestObjectRequestManager implements ObjectRequestManager {
 
@@ -20,16 +20,14 @@ public class TestObjectRequestManager implements ObjectRequestManager {
     startCalls.put(new Object());
   }
 
-  public void requestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
+  public void requestObjects(ClientID clientID, ObjectRequestID requestID, ObjectIDSet ids, int maxRequestDepth,
                              boolean serverInitiated, String requestingThreadName) {
     // not implemented
   }
 
-
-
-  public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                          boolean isServerInitiated, int maxRequestDepth) {
-   //not implemented
+  public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
+                          ObjectIDSet missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
+    // not implemented
   }
 
 }
