@@ -23,8 +23,8 @@ import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.context.ObjectRequestServerContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
+import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.context.RespondToObjectRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
@@ -38,7 +38,6 @@ import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,34 +49,33 @@ import java.util.Set;
 
 public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTransactionListener {
 
-  public static final int                SPLIT_SIZE        = TCPropertiesImpl
-                                                                          .getProperties()
-                                                                          .getInt(
-                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE);
-  public static final boolean            LOGGING_ENABLED = TCPropertiesImpl
-                                                                          .getProperties()
-                                                                          .getBoolean(
-                                                                                  TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED);
+  public static final int                SPLIT_SIZE           = TCPropertiesImpl
+                                                                  .getProperties()
+                                                                  .getInt(
+                                                                          TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE);
+  public static final boolean            LOGGING_ENABLED      = TCPropertiesImpl
+                                                                  .getProperties()
+                                                                  .getBoolean(
+                                                                              TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED);
 
-  private final static TCLogger          logger                       = TCLogging
-                                                                          .getLogger(ObjectRequestManagerImpl.class);
+  private final static TCLogger          logger               = TCLogging.getLogger(ObjectRequestManagerImpl.class);
 
-  private final static State             INIT                         = new State("INITIAL");
-  private final static State             STARTING                     = new State("STARTING");
-  private final static State             STARTED                      = new State("STARTED");
+  private final static State             INIT                 = new State("INITIAL");
+  private final static State             STARTING             = new State("STARTING");
+  private final static State             STARTED              = new State("STARTED");
 
   private final ObjectManager            objectManager;
   private final ServerTransactionManager transactionManager;
 
-  private final List                     pendingRequests              = new LinkedList();
-  private final Set                      resentTransactionIDs         = new HashSet();
+  private final List                     pendingRequests      = new LinkedList();
+  private final Set                      resentTransactionIDs = new HashSet();
   private final Sink                     respondObjectRequestSink;
   private final Sink                     objectRequestSink;
 
-  private volatile State                 state                        = INIT;
+  private volatile State                 state                = INIT;
   private DSOChannelManager              channelManager;
   private ClientStateManager             stateManager;
-  private Sequence                       batchIDSequence              = new SimpleSequence();
+  private Sequence                       batchIDSequence      = new SimpleSequence();
   private ObjectRequestCache             objectRequestCache;
 
   public ObjectRequestManagerImpl(ObjectManager objectManager, DSOChannelManager channelManager,
@@ -108,11 +106,11 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  public void requestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
+  public void requestObjects(ClientID clientID, ObjectRequestID requestID, ObjectIDSet ids, int maxRequestDepth,
                              boolean serverInitiated, String requestingThreadName) {
     synchronized (this) {
       if (state != STARTED) {
-        LookupContext lookupContext = new LookupContext(this, clientID, requestID, ids, maxRequestDepth,
+        LookupContext lookupContext = new LookupContext(clientID, requestID, ids, maxRequestDepth,
                                                         requestingThreadName, serverInitiated, objectRequestSink,
                                                         respondObjectRequestSink);
         pendingRequests.add(lookupContext);
@@ -126,8 +124,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     splitAndRequestObjects(clientID, requestID, ids, maxRequestDepth, serverInitiated, requestingThreadName);
   }
 
-  public void sendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                          boolean isServerInitiated, int maxRequestDepth) {
+  public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
+                          ObjectIDSet missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
 
     basicSendObjects(requestedNodeID, objs, requestedObjectIDs, missingObjectIDs, isServerInitiated, maxRequestDepth);
   }
@@ -174,12 +172,11 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     moveToStartedIfPossible();
   }
 
-  private void splitAndRequestObjects(ClientID clientID, ObjectRequestID requestID, Set ids, int maxRequestDepth,
-                                      boolean serverInitiated, String requestingThreadName) {
-    ObjectIDSet sortedIDs = new ObjectIDSet(ids);
+  private void splitAndRequestObjects(ClientID clientID, ObjectRequestID requestID, ObjectIDSet ids,
+                                      int maxRequestDepth, boolean serverInitiated, String requestingThreadName) {
     ObjectIDSet split = new ObjectIDSet();
 
-    for (Iterator<ObjectID> iter = sortedIDs.iterator(); iter.hasNext();) {
+    for (Iterator<ObjectID> iter = ids.iterator(); iter.hasNext();) {
       split.add(iter.next());
       if (split.size() >= SPLIT_SIZE || !iter.hasNext()) {
         basicRequestObjects(clientID, requestID, maxRequestDepth, serverInitiated, requestingThreadName, split);
@@ -197,7 +194,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     synchronized (this) {
       RequestedObject reqObj = new RequestedObject(split, maxRequestDepth);
       if (objectRequestCache.add(reqObj, clientID)) {
-        lookupContext = new LookupContext(this, clientID, requestID, split, maxRequestDepth, requestingThreadName,
+        lookupContext = new LookupContext(clientID, requestID, split, maxRequestDepth, requestingThreadName,
                                           serverInitiated, objectRequestSink, respondObjectRequestSink);
       }
     }
@@ -207,8 +204,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
     }
   }
 
-  private void basicSendObjects(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs,
-                                Set missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
+  private void basicSendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
+                                ObjectIDSet missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
 
     Map<ClientID, BatchAndSend> messageMap = new HashMap<ClientID, BatchAndSend>();
 
@@ -235,7 +232,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       Set<ClientID> clientList = null;
       long batchID = batchIDSequence.next();
 
-      reqObj = new RequestedObject((ObjectIDSet) requestedObjectIDs, maxRequestDepth);
+      reqObj = new RequestedObject(requestedObjectIDs, maxRequestDepth);
 
       synchronized (this) {
         clientList = this.objectRequestCache.remove(reqObj);
@@ -494,24 +491,22 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   }
 
-  protected static class LookupContext implements ObjectRequestServerContext, ObjectManagerResultsContext {
+  protected static class LookupContext implements ObjectManagerResultsContext {
 
-    private final ClientID             clientID;
-    private final ObjectRequestID      requestID;
-    private final Set                  lookupIDs;
-    private final Set                  missingObjects = new HashSet();
-    private final int                  maxRequestDepth;
-    private final String               requestingThreadName;
-    private final boolean              serverInitiated;
-    private final Sink                 respondObjectRequestSink;
-    private final Sink                 objectRequestSink;
-    private final ObjectRequestManager objectRequestManager;
-    private Map                        objects;
+    private final ClientID        clientID;
+    private final ObjectRequestID requestID;
+    private final ObjectIDSet     lookupIDs;
+    private final ObjectIDSet     missingObjects = new ObjectIDSet();
+    private final int             maxRequestDepth;
+    private final String          requestingThreadName;
+    private final boolean         serverInitiated;
+    private final Sink            respondObjectRequestSink;
+    private final Sink            objectRequestSink;
+    private Map                   objects;
 
-    public LookupContext(ObjectRequestManager objectRequestManager, ClientID clientID, ObjectRequestID requestID,
-                         Set lookupIDs, int maxRequestDepth, String requestingThreadName, boolean serverInitiated,
-                         Sink objectRequestSink, Sink respondObjectRequestSink) {
-      this.objectRequestManager = objectRequestManager;
+    public LookupContext(ClientID clientID, ObjectRequestID requestID, ObjectIDSet lookupIDs, int maxRequestDepth,
+                         String requestingThreadName, boolean serverInitiated, Sink objectRequestSink,
+                         Sink respondObjectRequestSink) {
       this.clientID = clientID;
       this.requestID = requestID;
       this.lookupIDs = lookupIDs;
@@ -523,12 +518,12 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
     }
 
-    public Set getLookupIDs() {
+    public ObjectIDSet getLookupIDs() {
       return lookupIDs;
     }
 
-    public Set getNewObjectIDs() {
-      return Collections.EMPTY_SET;
+    public ObjectIDSet getNewObjectIDs() {
+      return new ObjectIDSet();
     }
 
     public void missingObject(ObjectID oid) {
@@ -542,9 +537,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
           logger.debug("LookupPendingObjectIDs = " + results.getLookupPendingObjectIDs() + " , clientID = " + clientID
                        + " , requestID = " + requestID);
         }
-        objectRequestSink.add(new LookupContext(objectRequestManager, this.clientID, this.requestID, results
-            .getLookupPendingObjectIDs(), -1, this.requestingThreadName, true, this.objectRequestSink,
-                                                this.respondObjectRequestSink));
+        objectRequestSink.add(new ObjectRequestServerContextImpl(this.clientID, this.requestID, results
+            .getLookupPendingObjectIDs(), this.requestingThreadName));
       }
       ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.lookupIDs,
                                                             this.missingObjects, this.serverInitiated,
@@ -593,15 +587,15 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
 
   protected static class ResponseContext implements RespondToObjectRequestContext {
 
-    private final ClientID   requestedNodeID;
-    private final Collection objs;
-    private final Set        requestedObjectIDs;
-    private final Set        missingObjectIDs;
-    private final boolean    serverInitiated;
-    private final int        maxRequestDepth;
+    private final ClientID    requestedNodeID;
+    private final Collection  objs;
+    private final ObjectIDSet requestedObjectIDs;
+    private final ObjectIDSet missingObjectIDs;
+    private final boolean     serverInitiated;
+    private final int         maxRequestDepth;
 
-    public ResponseContext(ClientID requestedNodeID, Collection objs, Set requestedObjectIDs, Set missingObjectIDs,
-                           boolean serverInitiated, int maxDepth) {
+    public ResponseContext(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
+                           ObjectIDSet missingObjectIDs, boolean serverInitiated, int maxDepth) {
       this.requestedNodeID = requestedNodeID;
       this.objs = objs;
       this.requestedObjectIDs = requestedObjectIDs;
@@ -618,11 +612,11 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager, ServerTra
       return objs;
     }
 
-    public Set getRequestedObjectIDs() {
+    public ObjectIDSet getRequestedObjectIDs() {
       return requestedObjectIDs;
     }
 
-    public Set getMissingObjectIDs() {
+    public ObjectIDSet getMissingObjectIDs() {
       return missingObjectIDs;
     }
 

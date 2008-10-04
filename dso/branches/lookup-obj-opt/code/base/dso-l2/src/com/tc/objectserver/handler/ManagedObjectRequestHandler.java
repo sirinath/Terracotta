@@ -15,13 +15,13 @@ import com.tc.object.ObjectID;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.net.ChannelStats;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.context.ObjectRequestServerContext;
+import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.stats.counter.Counter;
+import com.tc.util.ObjectIDSet;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Converts the request into a call to the objectManager with the proper next steps initialized I'm not convinced that
@@ -48,12 +48,12 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) {
     if (context instanceof RequestManagedObjectMessage) {
       handleEventFromClient((RequestManagedObjectMessage) context);
-    } else if (context instanceof ObjectRequestServerContext) {
-      handleEventFromServer((ObjectRequestServerContext) context);
+    } else if (context instanceof ObjectRequestServerContextImpl) {
+      handleEventFromServer((ObjectRequestServerContextImpl) context);
     }
   }
 
-  private void handleEventFromServer(ObjectRequestServerContext context) {
+  private void handleEventFromServer(ObjectRequestServerContextImpl context) {
     Collection<ObjectID> ids = context.getLookupIDs();
     // XXX::TODO:: Server initiated lookups are not updated to the channel counter for now
     final int numObjectsRequested = ids.size();
@@ -67,9 +67,9 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
 
   private void handleEventFromClient(RequestManagedObjectMessage rmom) {
     MessageChannel channel = rmom.getChannel();
-    Set<ObjectID> requestedIDs = rmom.getObjectIDs();
+    ObjectIDSet requestedIDs = rmom.getObjectIDs();
     ClientID clientID = (ClientID) rmom.getSourceNodeID();
-    Set<ObjectID> removedIDs = rmom.getRemoved();
+    ObjectIDSet removedIDs = rmom.getRemoved();
     int maxRequestDepth = rmom.getRequestDepth();
 
     final int numObjectsRequested = requestedIDs.size();

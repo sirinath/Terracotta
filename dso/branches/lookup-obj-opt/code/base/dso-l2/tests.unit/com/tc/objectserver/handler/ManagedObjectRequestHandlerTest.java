@@ -21,9 +21,7 @@ import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.tx.TestServerTransactionManager;
 import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.CounterImpl;
-
-import java.util.HashSet;
-import java.util.Set;
+import com.tc.util.ObjectIDSet;
 
 import junit.framework.TestCase;
 
@@ -58,10 +56,10 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     handler.initializeContext(context);
 
     TestRequestManagedObjectMessage msg = new TestRequestManagedObjectMessage();
-    HashSet s = new HashSet();
+    ObjectIDSet s = new ObjectIDSet();
     s.add(new ObjectID(1));
     msg.setObjectIDs(s);
-    Set removed = makeRemovedSet(31);
+    ObjectIDSet removed = makeRemovedSet(31);
     msg.setRemoved(removed);
 
     assertEquals(0, requestCounter.getValue());
@@ -75,8 +73,8 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     assertEquals(100, channelRemCounter.getValue());
   }
 
-  private Set makeRemovedSet(int num) {
-    Set rv = new HashSet();
+  private ObjectIDSet makeRemovedSet(int num) {
+    ObjectIDSet rv = new ObjectIDSet();
     for (int i = 0; i < num; i++) {
       rv.add(new ObjectID(i));
     }
