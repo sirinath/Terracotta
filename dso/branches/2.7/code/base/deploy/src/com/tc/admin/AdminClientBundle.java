@@ -12,7 +12,7 @@ public class AdminClientBundle extends ListResourceBundle {
     super();
     setParent(ResourceBundle.getBundle("com.tc.admin.common.CommonBundle"));
   }
-  
+
   public Object[][] getContents() {
     return new Object[][] {
         { "console.guide.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID=ConsoleGuide" },
@@ -60,10 +60,10 @@ public class AdminClientBundle extends ListResourceBundle {
         {
             "server.non-restartable.warning",
             "<html>This Terracotta server array is configured for <code>temporary-swap-only</code> persistence "
-            + "mode. In the event that all Terracotta servers in the array are taken down, all clustered data "
-            + "will be lost and no existing clients will be allowed to rejoin the cluster. To ensure that in "
-            + "the event of a full cluster restart data is preserved and clients may rejoin the cluster, change "
-            + "the configured persistence mode to <code>permanent-store</code> and restart:</html>" },
+                + "mode. In the event that all Terracotta servers in the array are taken down, all clustered data "
+                + "will be lost and no existing clients will be allowed to rejoin the cluster. To ensure that in "
+                + "the event of a full cluster restart data is preserved and clients may rejoin the cluster, change "
+                + "the configured persistence mode to <code>permanent-store</code> and restart:</html>" },
         { "dso", "DSO" },
         { "dso.roots", "Cluster object browser" },
         { "dso.client.roots", "Client object browser" },
@@ -158,10 +158,17 @@ public class AdminClientBundle extends ListResourceBundle {
             "<html><h3>Version mismatch for {0}.</h3><br>"
                 + "<table border=0 cellspacing=1><tr><td align=right><b>Terracotta Server Version:</b></td><td>{1}"
                 + "</tr><tr><td align=right><b>AdminConsole Version:</b</td><td>{2}"
-                + "</td></tr></table><h3>Continue?</h3></html>" }, { "cpu.usage", "Host CPU" },
-        { "object.flush.rate", "Object Flush Rate" }, { "object.fault.rate", "Object Fault Rate" },
-        { "transaction.rate", "Transaction Rate" }, { "cache.miss.rate", "Cache Miss Rate" },
-        { "heap.usage", "Heap Usage" }, { "heap.usage.max", "memory max" }, { "heap.usage.used", "memory used" },
-        { "pending.transactions", "Unacknowledged Transaction Broadcasts" }, };
+                + "</td></tr></table><h3>Continue?</h3></html>" },
+        { "cpu.usage", "Host CPU" },
+        { "object.flush.rate", "Object Flush Rate" },
+        { "object.fault.rate", "Object Fault Rate" },
+        { "transaction.rate", "Transaction Rate" },
+        { "cache.miss.rate", "Cache Miss Rate" },
+        { "heap.usage", "Heap Usage" },
+        { "heap.usage.max", "memory max" },
+        { "heap.usage.used", "memory used" },
+        { "pending.transactions", "Unacknowledged Transaction Broadcasts" },
+        { "resident.object.message",
+            "<html><span style='color:#C0C0C0'>Greyed-out</span> items not resident in this client" } };
   }
 }
