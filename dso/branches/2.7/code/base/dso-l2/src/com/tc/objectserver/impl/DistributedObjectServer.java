@@ -68,6 +68,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
+import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
 import com.tc.object.cache.EvictionPolicy;
@@ -184,6 +185,8 @@ import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.runtime.TCMemoryManagerImpl;
+import com.tc.runtime.logging.LongGCLogger;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
@@ -607,9 +610,15 @@ public class DistributedObjectServer implements TCDumper {
                                                                              .getGarbageCollector()));
 
     TCProperties cacheManagerProperties = l2Properties.getPropertiesFor("cachemanager");
+    CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
+    TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
+        .getLeastCount(), cacheConfig.isOnlyOldGenMonitored(), threadGroup);
+    long timeOut = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.LOGGING_LONG_GC_THRESHOLD);
+    LongGCLogger gcLogger = new LongGCLogger(logger, timeOut);
+    tcMemManager.registerForMemoryEvents(gcLogger);
+
     if (cacheManagerProperties.getBoolean("enabled")) {
-      cacheManager = new CacheManager(objectManager, new CacheConfigImpl(cacheManagerProperties), threadGroup,
-                                      statisticsAgentSubSystem);
+      cacheManager = new CacheManager(objectManager, cacheConfig, threadGroup, statisticsAgentSubSystem, tcMemManager);
       if (logger.isDebugEnabled()) {
         logger.debug("CacheManager Enabled : " + cacheManager);
       }
