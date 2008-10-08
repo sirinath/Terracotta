@@ -729,7 +729,9 @@ public class ActivePassiveServerManager extends MultipleServerManager {
       crashRandomServer();
     }
 
-    cleanupServerDB(lastCrashedIndex);
+    if (serverCount > 1) {
+      cleanupServerDB(lastCrashedIndex);
+    }
   }
 
   public void cleanupServerDB(int index) throws Exception {
