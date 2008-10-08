@@ -121,7 +121,6 @@ public class ClientMessageTransport extends MessageTransportBase {
   // TODO :: come back
   public void closeEvent(TCConnectionEvent event) {
     if (isNotOpen()) return;
-    status.reset();
     super.closeEvent(event);
   }
 
@@ -254,7 +253,10 @@ public class ClientMessageTransport extends MessageTransportBase {
   void reconnect(TCConnection connection) throws Exception {
 
     // don't do reconnect if open is still going on
-    if (!wasOpened) return;
+    if (!wasOpened) {
+      logger.warn("Transport was opened already. Skip reconnect " + connection);
+      return;
+    }
 
     Assert.eval(!isConnected());
     wireNewConnection(connection);
