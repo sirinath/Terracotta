@@ -132,5 +132,10 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
     }
 
   }
+  
+  // for testing purpose
+  protected SessionID getSessionID() {
+    return channelSessionID;
+  }
 
 }
