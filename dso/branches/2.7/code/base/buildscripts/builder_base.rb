@@ -224,6 +224,10 @@ class TerracottaBuilder
     if index_url = @config_source['tim-get.index.url']
       java_opts << "-D#{prefix}.dataFileUrl=#{index_url}"
     end
+    
+    puts "xxx -D#{prefix}.includeSnapshots=#{include_snapshots}"
+    puts "xxx -D#{prefix}.dataFile=#{self.tim_get_index_file}"
+    puts "xxx -D#{prefix}.dataFileUrl=#{index_url}"
 
     ENV['JAVA_OPTS'] = java_opts.join(' ')
 
