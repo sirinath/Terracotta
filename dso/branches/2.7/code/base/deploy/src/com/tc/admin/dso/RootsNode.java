@@ -43,12 +43,17 @@ public class RootsNode extends ComponentNode implements RootCreationListener, Pr
   public RootsNode(ClusterNode clusterNode) {
     super();
     m_acc = AdminClient.getContext();
-    setLabel(m_acc.getMessage("dso.roots"));
     m_clusterNode = clusterNode;
+    setLabel(m_acc.getMessage("dso.roots"));
     clusterNode.getClusterModel().addPropertyChangeListener(this);
     init();
   }
 
+  private void updateLabel() {
+    setLabel(m_acc.getMessage("dso.roots") + " (" + getRootCount() + ")");
+    nodeChanged();
+  }
+  
   IClusterModel getClusterModel() {
     return m_clusterNode.getClusterModel();
   }
@@ -102,6 +107,7 @@ public class RootsNode extends ComponentNode implements RootCreationListener, Pr
         if (m_rootsPanel != null) {
           m_rootsPanel.setObjects(m_roots);
         }
+        updateLabel();
       }
    }
   }
@@ -170,6 +176,7 @@ public class RootsNode extends ComponentNode implements RootCreationListener, Pr
         if (isExpanded) {
           m_acc.expand(RootsNode.this);
         }
+        updateLabel();
       }
       m_acc.unblock();
       m_acc.clearStatus();
@@ -240,6 +247,7 @@ public class RootsNode extends ComponentNode implements RootCreationListener, Pr
       ((RootsPanel) getComponent()).add(m_root);
 
       m_acc.setStatus(m_acc.getMessage("dso.root.new") + m_root);
+      updateLabel();
     }
   }
 }
