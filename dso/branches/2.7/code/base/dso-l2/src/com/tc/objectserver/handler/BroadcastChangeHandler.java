@@ -14,6 +14,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectRequestID;
 import com.tc.object.dmi.DmiDescriptor;
+import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.BroadcastTransactionMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.TransactionID;
@@ -22,11 +23,18 @@ import com.tc.objectserver.context.ManagedObjectRequestContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
+import com.tc.statistics.util.NullStatsRecorder;
+import com.tc.statistics.util.StatsPrinter;
+import com.tc.statistics.util.StatsRecorder;
 import com.tc.stats.counter.sampled.SampledCounter;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,11 +43,18 @@ import java.util.Set;
  * Broadcast the change to all connected clients
  */
 public class BroadcastChangeHandler extends AbstractEventHandler {
+
+  private static final boolean     BROADCAST_STATS_LOGGING_ENABLED = TCPropertiesImpl
+                                                                       .getProperties()
+                                                                       .getBoolean(
+                                                                                   TCPropertiesConsts.L2_TRANSACTIONMANAGER_LOGGING_PRINT_BROADCAST_STATS);
+
   private DSOChannelManager        channelManager;
   private ClientStateManager       clientStateManager;
   private ServerTransactionManager transactionManager;
   private Sink                     managedObjectRequestSink;
   private Sink                     respondObjectRequestSink;
+  private final StatsRecorder      broadcastStats;
 
   private SampledCounter           broadcastCounter;
   private SampledCounter           changeCounter;
@@ -47,6 +62,13 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
   public BroadcastChangeHandler(SampledCounter broadcastCounter, SampledCounter changeCounter) {
     this.broadcastCounter = broadcastCounter;
     this.changeCounter = changeCounter;
+    if (BROADCAST_STATS_LOGGING_ENABLED) {
+      broadcastStats = new StatsPrinter("Broadcast Stats Printer", 5000,
+                                        new MessageFormat("Broadcasted in the Last {0} ms"),
+                                        new MessageFormat(" {0} broadcasts"), true);
+    } else {
+      broadcastStats = new NullStatsRecorder();
+    }
   }
 
   public void handleEvent(EventContext context) {
@@ -71,6 +93,8 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
         prunedChanges = clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(), bcc.getIncludeIDs(),
                                                                                clientID, lookupObjectIDs);
       }
+
+      if(BROADCAST_STATS_LOGGING_ENABLED) updateStats(prunedChanges);
 
       DmiDescriptor[] prunedDmis = pruneDmiDescriptors(bcc.getDmiDescriptors(), clientID, clientStateManager);
       final boolean includeDmi = !clientID.equals(committerID) && prunedDmis.length > 0;
@@ -100,6 +124,15 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
     transactionManager.broadcasted(committerID, txnID);
   }
 
+  private void updateStats(List prunedChanges) {
+    for (Iterator i = prunedChanges.iterator(); i.hasNext();) {
+      DNA dna = (DNA) i.next();
+      String className = dna.getTypeName();
+      if (className == null) className = "UNKNOWN";   // Could happen on restart scenario
+      broadcastStats.updateStats(className, 1);
+    }
+  }
+
   private static DmiDescriptor[] pruneDmiDescriptors(DmiDescriptor[] dmiDescriptors, ClientID clientID,
                                                      ClientStateManager clientStateManager) {
     if (dmiDescriptors.length == 0) { return dmiDescriptors; }
@@ -116,7 +149,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
     return rv;
   }
 
-  private synchronized long getNextChangeIDFor(ClientID clientID) {
+  private long getNextChangeIDFor(ClientID clientID) {
     // FIXME Fix this facility. Should keep a counter for every client and
     // increment on every
     return 0;
