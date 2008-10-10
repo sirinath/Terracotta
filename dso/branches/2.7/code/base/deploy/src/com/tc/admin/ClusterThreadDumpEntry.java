@@ -5,15 +5,16 @@
 package com.tc.admin;
 
 import java.util.Date;
+import java.util.concurrent.Future;
 
 public class ClusterThreadDumpEntry extends ThreadDumpTreeNode {
-  private String m_content;
-
+  private String m_text;
+  
   ClusterThreadDumpEntry() {
     super(new Date());
   }
 
-  void add(String clientAddr, String threadDump) {
+  void add(String clientAddr, Future<String> threadDump) {
     add(new ThreadDumpElement(clientAddr, threadDump));
   }
 
@@ -21,9 +22,26 @@ public class ClusterThreadDumpEntry extends ThreadDumpTreeNode {
     return (Date) getUserObject();
   }
 
-  String getContent() {
-    if (m_content != null) return m_content;
+  boolean isDone() {
+    for (int i = 0; i < getChildCount(); i++) {
+      ThreadDumpElement tde = (ThreadDumpElement) getChildAt(i);
+      if (!tde.isDone()) return false;
+    }
+    return true;
+  }
 
+  void cancel() {
+    for (int i = 0; i < getChildCount(); i++) {
+      ThreadDumpElement tde = (ThreadDumpElement) getChildAt(i);
+      if (!tde.isDone()) {
+        tde.cancel();
+      }
+    }
+  }
+  
+  String getContent() {
+    if(m_text != null) return m_text;
+    boolean isDone = isDone();
     StringBuffer sb = new StringBuffer();
     String nl = System.getProperty("line.separator");
     for (int i = 0; i < getChildCount(); i++) {
@@ -36,6 +54,10 @@ public class ClusterThreadDumpEntry extends ThreadDumpTreeNode {
 
       sb.append(tde.getContent());
     }
-    return m_content = sb.toString();
+    String result = sb.toString();
+    if(isDone) {
+      m_text = result;
+    }
+    return result;
   }
 }

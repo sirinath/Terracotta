@@ -17,8 +17,8 @@ import com.tc.admin.model.ClusterModel;
 import com.tc.admin.model.IClusterModel;
 import com.tc.admin.model.IClusterNode;
 import com.tc.admin.model.IServer;
-import com.tc.admin.model.Server;
 import com.tc.admin.model.ProductVersion;
+import com.tc.admin.model.Server;
 import com.tc.statistics.beans.StatisticsLocalGathererMBean;
 
 import java.awt.Color;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -757,10 +758,10 @@ public class ClusterNode extends ComponentNode implements ConnectionListener {
 
   ClusterThreadDumpEntry takeThreadDump() {
     ClusterThreadDumpEntry tde = new ClusterThreadDumpEntry();
-    Map<IClusterNode, String> map = m_clusterModel.takeThreadDump();
-    Iterator<Map.Entry<IClusterNode, String>> iter = map.entrySet().iterator();
+    Map<IClusterNode, Future<String>> map = m_clusterModel.takeThreadDump();
+    Iterator<Map.Entry<IClusterNode, Future<String>>> iter = map.entrySet().iterator();
     while (iter.hasNext()) {
-      Map.Entry<IClusterNode, String> entry = iter.next();
+      Map.Entry<IClusterNode, Future<String>> entry = iter.next();
       tde.add(entry.getKey().toString(), entry.getValue());
     }
     if (m_statsRecorderNode != null) {

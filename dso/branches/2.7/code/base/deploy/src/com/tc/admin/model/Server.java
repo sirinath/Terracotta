@@ -185,6 +185,7 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   }
 
   private void connectionEstablished() {
+    if(m_readySet == null) return;
     try {
       ObjectName mbsd = getConnectionContext().queryName("JMImplementation:type=MBeanServerDelegate");
       getConnectionContext().addNotificationListener(mbsd, this);
@@ -214,6 +215,9 @@ public class Server implements IServer, NotificationListener, ManagedObjectFacad
   protected void setConnected(boolean connected) {
     boolean oldConnected;
     synchronized (this) {
+      if(m_readySet == null) {
+        return;
+      }
       oldConnected = m_connected;
       m_connected = connected;
     }
