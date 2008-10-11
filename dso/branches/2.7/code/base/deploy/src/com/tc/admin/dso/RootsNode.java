@@ -49,8 +49,16 @@ public class RootsNode extends ComponentNode implements RootCreationListener, Pr
     init();
   }
 
+  String getBaseLabel() {
+    return AdminClient.getContext().getMessage("dso.roots");
+  }
+  
+  
   private void updateLabel() {
-    setLabel(m_acc.getMessage("dso.roots") + " (" + getRootCount() + ")");
+    int rootCount = getRootCount();
+    String suffix = rootCount == 1 ? m_acc.getMessage("dso.roots.suffix.singular") : m_acc
+        .getMessage("dso.roots.suffix.plural");
+    setLabel(getBaseLabel() + " (" + rootCount + " " + suffix + ")");
     nodeChanged();
   }
   
