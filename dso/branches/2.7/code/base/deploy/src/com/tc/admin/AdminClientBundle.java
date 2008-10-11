@@ -33,8 +33,7 @@ public class AdminClientBundle extends ListResourceBundle {
             "<html>There is an active statistic recording session<br>and lock profiling is currently enabled.  {0}</html>" },
         { "sessions", "Sessions" },
         { "title", "Terracotta Administrator Console" },
-        { "new.server.action.label", "New server" },
-        { "new.cluster.action.label", "New cluster" },
+        { "new.cluster.action.label", "New Cluster" },
         { "quit.action.label", "Quit" },
         { "connect.title", "Connect to JMX Server" },
         { "connecting.to", "Connecting to {0} ..." },
@@ -65,8 +64,10 @@ public class AdminClientBundle extends ListResourceBundle {
                 + "the event of a full cluster restart data is preserved and clients may rejoin the cluster, change "
                 + "the configured persistence mode to <code>permanent-store</code> and restart:</html>" },
         { "dso", "DSO" },
-        { "dso.roots", "Cluster object browser" },
-        { "dso.client.roots", "Client object browser" },
+        { "dso.roots", "Cluster objects" },
+        { "dso.roots.suffix.singular", "root" },
+        { "dso.roots.suffix.plural", "roots" },
+        { "dso.client.roots", "Client objects" },
         { "dso.locks", "Lock profiler" },
         { "dso.locks.profiling.suffix", " (on)" },
         {
@@ -143,7 +144,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "help.menu.label", "Help" },
         { "help.item.label", "AdminConsole Help..." },
         { "about.action.label", "About Terracotta Console" },
-        { "update-checker.control.label", "Check for updates" },
+        { "update-checker.control.label", "Check For Updates" },
         { "update-checker.action.label", "Update Checker..." },
         { "update-checker.connect.failed.msg", "Unable to connect to update site." },
         { "update-checker.current.msg", "Your software is up-to-date." },
@@ -169,6 +170,10 @@ public class AdminClientBundle extends ListResourceBundle {
         { "heap.usage.used", "memory used" },
         { "pending.transactions", "Unacknowledged Transaction Broadcasts" },
         { "resident.object.message",
-            "<html><span style='color:#C0C0C0'>Greyed-out</span> items not resident in this client" } };
+            "<html><span style='color:#C0C0C0'>Greyed-out</span> items not resident in this client" },
+        { "thread.dump.timeout.msg", "Timed-out after {0} seconds." }, { "roots.inspect.show", "Show..." },
+        { "thread.dump.export.as.text", "Export As Text..." },
+        { "export.all.thread.dumps.dialog.title", "Export All Thread Dumps"},
+        { "export.thread.dump.as.text.dialog.title", "Export Thread Dump As Text"} };
   }
 }

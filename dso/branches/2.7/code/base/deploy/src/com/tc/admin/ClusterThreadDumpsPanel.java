@@ -156,7 +156,8 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
   private class ThreadDumpButtonHandler implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
       m_threadDumpButton.setEnabled(false);
-
+      m_exportButton.setEnabled(false);
+      
       ClusterThreadDumpEntry tde = m_clusterThreadDumpsNode.takeThreadDump();
       XTreeNode root = (XTreeNode) m_threadDumpTreeModel.getRoot();
 
@@ -164,7 +165,6 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
       TreePath treePath = new TreePath(tde.getPath());
       m_threadDumpTree.expandPath(treePath);
       m_threadDumpTree.setSelectionPath(treePath);
-      m_exportButton.setEnabled(true);
     }
   }
 
@@ -176,6 +176,8 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
     }
   }
 
+  private static final Point ORIGIN = new Point();
+  
   private ThreadDumpTreeNode updateSelectedContent() {
     if (m_lastSelectedThreadDumpTreeNode != null) {
       m_lastSelectedThreadDumpTreeNode.setViewPosition(m_threadDumpTextScroller.getViewport().getViewPosition());
@@ -184,7 +186,7 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
     if (tdtn != null) {
       m_threadDumpTextArea.setText(tdtn.getContent());
       final Point viewPosition = tdtn.getViewPosition();
-      if (viewPosition != null) {
+      if (viewPosition != null && !viewPosition.equals(ORIGIN)) {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
             m_threadDumpTextScroller.getViewport().setViewPosition(viewPosition);
@@ -196,11 +198,11 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
   }
 
   private void setControlsEnabled(boolean haveSelection) {
-    m_exportButton.setEnabled(haveSelection);
     m_deleteAction.setEnabled(haveSelection);
     m_deleteAllAction.setEnabled(haveSelection);
     m_exportAsTextAction.setEnabled(haveSelection);
     if (!haveSelection) {
+      m_exportButton.setEnabled(haveSelection);
       m_threadDumpTextArea.setText("");
     }
   }
@@ -260,9 +262,13 @@ public class ClusterThreadDumpsPanel extends XContainer implements TreeModelList
   }
 
   public void treeNodesChanged(TreeModelEvent e) {
-    updateSelectedContent();
     ClusterThreadDumpEntry tde = (ClusterThreadDumpEntry) e.getTreePath().getPathComponent(1);
-    m_threadDumpButton.setEnabled(tde.isDone());
+    boolean isDone = tde.isDone();
+    m_threadDumpButton.setEnabled(isDone);
+    m_exportButton.setEnabled(isDone);
+    if(isDone) {
+      updateSelectedContent();
+    }
   }
 
   public void treeNodesInserted(TreeModelEvent e) {

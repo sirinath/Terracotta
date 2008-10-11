@@ -13,7 +13,7 @@ public class ThreadDumpElement extends ThreadDumpTreeNode {
   private ThreadDumpEntry m_threadDumpEntry;
 
   ThreadDumpElement(String clientAddr, Future<String> threadDumpFuture) {
-    super(clientAddr + " waiting...");
+    super(clientAddr + " " + AdminClient.getContext().format("waiting"));
     m_clientAddr = clientAddr;
     m_threadDumpEntry = new ThreadDumpEntry(threadDumpFuture) {
       public void run() {
@@ -39,7 +39,7 @@ public class ThreadDumpElement extends ThreadDumpTreeNode {
   public void cancel() {
     if (!isDone()) {
       m_threadDumpEntry.cancel();
-      setUserObject(m_clientAddr + " canceled");
+      setUserObject(m_clientAddr + " "+ AdminClient.getContext().format("canceled"));
       nodeChanged();
     }
   }
