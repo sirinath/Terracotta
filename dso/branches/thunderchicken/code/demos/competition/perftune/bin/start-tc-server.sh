@@ -11,6 +11,8 @@ BASEDIR=`dirname $0`/..
 cd $BASEDIR
 . $BASEDIR/bin/env.sh
 
+test $? -ne 0 && exit 1
+
 cygwin=false
 case "`uname`" in
 CYGWIN*) cygwin=true;;
