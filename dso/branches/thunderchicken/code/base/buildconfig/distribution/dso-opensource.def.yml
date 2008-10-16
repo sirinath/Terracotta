@@ -50,15 +50,15 @@ bundled_components:
           - thirdpartylicenses
           - disclaimer
           - license
-#  - shared-base:
-#      documentations:
-#        install_directory: docs
-#        guides:
-#          - TerracottaDSOGuide
-#          - TerracottaSpringGuide
-#          - TerracottaSessionsQuickStart
-#        references:
-#          - tc-config-reference
+  - shared-base:
+      documentations:
+        install_directory: docs
+        guides:
+          - TerracottaDSOGuide
+          - TerracottaSpringGuide
+          - TerracottaSessionsQuickStart
+        references:
+          - tc-config-reference
   - common:
       bootjar:
         assert: '@build_environment.os_type =~ /^\s*windows\s*$/i'
