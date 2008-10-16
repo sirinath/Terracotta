@@ -9,3 +9,14 @@ Our team members are:
 Our perf machines are: L2 = eng01/eng06  L1s = perf04-perf09
 
 Wiki page is http://intranet.terracotta.lan/xwiki/bin/view/Main/EngWeekPerfChallenge
+
+From Saro's email about rules:
+  The following scenarios are some that will be demonstrated.
+   - Start 1'st writer - show TPS, loop time, stable avg loop time
+   - Start 2'nd writer - reasonable time for faulting data from L2, time for first loop
+   - Second L1 reaches same stable avg loop time as 1'st one
+   - Scale to 4 writers now - show scale
+   - Add 2 readers - constant read/write throughput
+   - Run DGC - still constant throughput
+   - Restart a couple of L1s
+   - Restart L2
