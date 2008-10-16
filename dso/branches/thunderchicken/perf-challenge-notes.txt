@@ -20,3 +20,10 @@ From Saro's email about rules:
    - Run DGC - still constant throughput
    - Restart a couple of L1s
    - Restart L2
+
+From Juris:
+to build the kit: ./tcbuild dist
+without ivy: ./tcbuild dist --no-ivy
+without compile: ./tcbuild dist --no-compile
+to build just the jars: ./tcbuild dist_jars
+(--no-ivy --no-compile applies)
