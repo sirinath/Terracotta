@@ -1,0 +1,42 @@
+Rules for Perf Competition :
+
+*) This is a 24 hr competition. Teams can work over night, together, in shifts, whatever 
+
+*) Every Team is given the same app (dashboard) and a cluster of machines to run the app.
+
+*) Goal is to find and eliminate bottlenecks and improve the performance of the app in various scenarios, increasing the application TPS and scaling well from 2 nodes to 4 nodes to 6 nodes. 
+
+*) Changes that the teams are allowed to do :
+   - Tune the setup/VM ( like heap size, GC etc.)  
+   - Make acceptable/correct changes to the app to work well with TC without losing any functionality
+   - Make improvements to TC to identify bottlenecks, increase visibility
+   - Make improvements to TC to improve app TPS and eliminate bottlenecks (carries more weightage)
+   - Any other sensible changes (When in doubt, talk to me)
+
+*) End of the competition, each team has to do a presentation and a demonstration. 
+
+*) The presentation is very critical and the team should clear list each of the changes that was made, how they identified each problem, how they fixed it and how it improved the performance.
+
+*) The following scenarios are some that will be demonstrated.
+   - Start 1'st writer - show TPS, loop time, stable avg loop time
+   - Start 2'nd writer - reasonable time for faulting data from L2, time for first loop
+   - Second L1 reaches same stable avg loop time as 1'st one
+   - Scale to 4 writers now - show scale
+   - Add 2 readers - constant read/write throughput
+   - Run DGC - still constant throughput
+   - Restart a couple of L1s
+   - Restart L2
+
+*) A panel of judges will judge the work done by the team based on a number of criteria including but not limited to 
+   - Presentation
+   - Identified bottlenecks and performance issues
+   - Visibility changes
+   - Performance improvements in Terracotta
+   - Scaling charateristics of the app 
+   - Smoothness of TC TPS graph, faulting/flushing characteristics etc
+   - sustained throughtput during DGC
+   - sustained throughtput during L1 restart and L2 restart
+
+
+
+- Rock on !
