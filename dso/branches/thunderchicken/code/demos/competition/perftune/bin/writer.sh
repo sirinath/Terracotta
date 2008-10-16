@@ -4,17 +4,7 @@ BASEDIR=`dirname $0`/..
 cd $BASEDIR
 . $BASEDIR/bin/env.sh
 
-if test \! -d "${JAVA_HOME}"; then
-   echo "$0: the JAVA_HOME environment variable is not defined
-   correctly"
-   exit 2
-fi
-
-if test \! -d "${TC_INSTALL_DIR}"; then
-   echo "$0: the TC_INSTALL_DIR environment variable is not defined
-   correctly"
-   exit 2
-fi
+test $? -ne 0 && exit 1
 
 for i in $BASEDIR/lib/*.jar ; do
    if test ! -z $CLASSPATH; then
