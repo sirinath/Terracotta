@@ -19,7 +19,7 @@ import com.tc.util.Assert;
 /*
  * This class will be merged with java.lang.HashMap in the bootjar. This HashMap can store ObjectIDs instead of Objects
  * to save memory and transparently fault Objects as needed. It can also clear references.
- * 
+ *
  * After merging, the {@link HashMapClassAdapter} will be applied, which will instrument either the entrySet0 method
  * (if present) or the entrySet method otherwise.
  */
@@ -93,6 +93,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
    */
   public Object get(Object key) {
     if (__tc_isManaged()) {
+      __tc_managed().markAccessed();
       Map.Entry e = __tc_getEntryUnderResolvedLock(key);
       return lookUpAndStoreIfNecessary(e);
     } else {
@@ -379,7 +380,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   public Set entrySet(){
     return this.nonOverridableEntrySet();
   }
-  
+
   private final Set nonOverridableEntrySet() {
     return super.entrySet();
   }
@@ -485,11 +486,11 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         return entry.getValue();
       }
     }
-    
+
     private Object __tc_getLocalValue(){
       return entry.getValue();
     }
-    
+
     private Object __tc_setLocalValue(Object value){
       return entry.setValue(value);
     }
@@ -593,11 +594,11 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     private int __tc_getLocalEntriesSize(){
       return this.entries.size();
     }
-    
+
     private Set __tc_getLocalEntries(){
       return this.entries;
     }
-    
+
     public int size() {
       return HashMapTC.this.size();
     }
@@ -716,14 +717,14 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   }
 
   private abstract class AbstractManagedEntriesIterator implements Iterator {
-    
+
     private final Iterator iterator;
     private Map.Entry      currentEntry;
-    
+
     public AbstractManagedEntriesIterator(Iterator iterator) {
       this.iterator = iterator;
     }
-    
+
     public boolean hasNext() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
@@ -733,11 +734,11 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         return iterator.hasNext();
       }
     }
-    
+
     public Object next() {
       return currentEntry = nextEntry();
     }
-    
+
     private Map.Entry nextEntry() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
@@ -747,12 +748,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         return (Map.Entry) iterator.next();
       }
     }
-    
+
     /* overridable if necessary */
     protected Map.Entry postNextEntry(Map.Entry entry){
       return entry;
     }
-    
+
     public void remove() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
@@ -766,7 +767,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       }
     }
   }
-  
+
   private class UnwrappedEntriesIterator extends AbstractManagedEntriesIterator {
 
     public UnwrappedEntriesIterator(Iterator iterator) {
@@ -775,9 +776,9 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
 
     protected Map.Entry postNextEntry(Map.Entry entry){
       return new EntryWrapper(entry);
-    }    
+    }
   }
-  
+
   private class KeysIterator extends AbstractManagedEntriesIterator {
 
     public KeysIterator(Iterator iterator) {

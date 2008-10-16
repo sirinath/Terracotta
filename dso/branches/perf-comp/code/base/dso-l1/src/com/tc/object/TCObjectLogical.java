@@ -16,7 +16,7 @@ public class TCObjectLogical extends TCObjectImpl {
   }
 
   public void logicalInvoke(int method, String methodName, Object[] parameters) {
-    this.markAccessed();
+    // this.markAccessed();
     getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
   }
 

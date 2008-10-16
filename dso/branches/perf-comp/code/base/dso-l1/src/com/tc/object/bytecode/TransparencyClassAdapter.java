@@ -178,11 +178,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     if (createRootAccessors) {
       createRootGetter(methodAccess, name, desc);
     } else if (createInstrumentedAccessors) {
-      if (!ByteCodeUtil.isPrimitive(Type.getType(desc))) {
-        createInstrumentedGetter(methodAccess, fieldAccess, name, desc);
-      } else {
-        createPlainGetter(methodAccess, fieldAccess, name, desc);
-      }
+      createInstrumentedGetter(methodAccess, fieldAccess, name, desc);
     } else if (createPlainAccessors) {
       createPlainGetter(methodAccess, fieldAccess, name, desc);
     }
@@ -280,7 +276,8 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
         mv = cv.visitMethod(access, name, desc, signature, exceptions);
       }
 
-//      return mv == null ? null : new TransparencyCodeAdapter(spec, isAutolock, lockLevel, mv, memberInfo, originalName);
+      // return mv == null ? null : new TransparencyCodeAdapter(spec, isAutolock, lockLevel, mv, memberInfo,
+      // originalName);
       return mv == null ? null : new TransparencyCodeAdapter(spec, ld, mv, memberInfo, originalName);
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
@@ -777,6 +774,8 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       Assert.eval(!getTransparencyClassSpec().isLogical());
       boolean isVolatile = isVolatile(fieldAccess, name);
 
+      boolean isPrimitive = ByteCodeUtil.isPrimitive(Type.getType(desc));
+
       String gDesc = "()" + desc;
       MethodVisitor gv = this.visitMethod(methodAccess, ByteCodeUtil.fieldGetterMethod(name), gDesc, null, null);
       Type t = Type.getType(desc);
@@ -793,6 +792,9 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       }
 
       gv.visitVarInsn(ALOAD, 3);
+      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "markAccessed", "()V");
+
+      gv.visitVarInsn(ALOAD, 3);
       gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;");
       gv.visitInsn(DUP);
       gv.visitVarInsn(ASTORE, 2);
@@ -803,24 +805,27 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       gv.visitVarInsn(ALOAD, 0);
       gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
-      Label l5 = new Label();
-      gv.visitJumpInsn(IFNONNULL, l5);
-      gv.visitVarInsn(ALOAD, 3);
-      gv.visitLdcInsn(spec.getClassNameDots() + '.' + name);
-      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "resolveReference", "(Ljava/lang/String;)V");
-      gv.visitLabel(l5);
 
       Label l2 = new Label();
 
-      gv.visitVarInsn(ALOAD, 0);
-      gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
+      if (!isPrimitive) {
+        Label l5 = new Label();
+        gv.visitJumpInsn(IFNONNULL, l5);
+        gv.visitVarInsn(ALOAD, 3);
+        gv.visitLdcInsn(spec.getClassNameDots() + '.' + name);
+        gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "resolveReference", "(Ljava/lang/String;)V");
+        gv.visitLabel(l5);
+        gv.visitVarInsn(ALOAD, 0);
+        gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
+      }
+
       gv.visitVarInsn(ALOAD, 2);
 
       gv.visitInsn(MONITOREXIT);
       if (isVolatile) {
         callVolatileCommit(spec.getClassNameDots() + "." + name, gv);
       }
-      gv.visitInsn(ARETURN);
+      gv.visitInsn(t.getOpcode(IRETURN));
       gv.visitJumpInsn(GOTO, l0);
 
       gv.visitLabel(l2);
