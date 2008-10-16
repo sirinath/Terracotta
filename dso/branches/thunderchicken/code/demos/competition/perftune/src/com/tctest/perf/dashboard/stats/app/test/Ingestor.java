@@ -29,27 +29,30 @@ public class Ingestor {
 
 	AppDataCache appDataCache = TestCacheBuilder.buildCache();
 
-	Map<Long, BlockingQueue<Tuple2<AppEventStatistics, String[]>>> map = null;
+	// Map<Long, BlockingQueue<Tuple2<AppEventStatistics, String[]>>> map =
+	// null;
 
-	int queueSize = 10;
-	int threadCount = 10;
-	int sleepTimeInMillis = 1000;
+	int queueSize = 50;
+	int threadCount = 3;
+	int sleepTimeInMillis = 10;
 
 	int startAppId = 1;
 	int endAppId = 5;
 	boolean printLogs = false;
 
-	Long[] keys = null;
+	// Long[] keys = null;
 	int currentIndex = 0;
+
+	final BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = new LinkedBlockingQueue<Tuple2<AppEventStatistics, String[]>>(
+			queueSize);
 
 	private void startLoading() throws CacheException {
 
-		map = new HashMap<Long, BlockingQueue<Tuple2<AppEventStatistics, String[]>>>();
+		// map = new HashMap<Long, BlockingQueue<Tuple2<AppEventStatistics,
+		// String[]>>>();
 
 		for (int i = 0; i < threadCount; i++) {
 
-			final BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = new LinkedBlockingQueue<Tuple2<AppEventStatistics, String[]>>(
-					queueSize);
 			Thread t = new Thread(new Runnable() {
 				public void run() {
 					while (true) {
@@ -70,14 +73,14 @@ public class Ingestor {
 			});
 			t.setName("ingestor-" + (i + 1));
 
-			map.put(t.getId(), q);
+			// map.put(t.getId(), q);
 
 			t.start();
 			System.out.println("launched thread " + t.getName());
 
 		}
 
-		keys = map.keySet().toArray(new Long[0]);
+		// keys = map.keySet().toArray(new Long[0]);
 
 		System.out.println("startLoading()");
 		System.out.println("startAppId " + startAppId);
@@ -145,7 +148,7 @@ public class Ingestor {
 											"POD-" + podId, "HOST-" + hostId,
 											"INSTANCE-" + instanceId);
 									statCount++;
-									//System.out.println("APP-"+appId+"DC-"+dcId
+									// System.out.println("APP-"+appId+"DC-"+dcId
 									// +"POD-"+podId+"HOST-"+hostId+"INSTANCE-"+
 									// instanceId);
 								}
@@ -155,14 +158,18 @@ public class Ingestor {
 				}
 			}
 
-			BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = null;
-			for (Long tid : map.keySet()) {
-				q = map.get(tid);
-				;
-				while (q.size() > 0) {
-					// wait
-				}
+			// BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = null;
+			// for (Long tid : map.keySet()) {
+			// q = map.get(tid);
+			// ;
+			long time = System.currentTimeMillis();
+
+			while (q.size() > 0) {
 			}
+			System.out.println(Thread.currentThread().getName()
+					+ ": waited for " + (System.currentTimeMillis() - time)
+					+ "ms for the Q to become empty");
+			// }
 
 			long totalTime = System.currentTimeMillis() - startTime;
 			grandTotal += totalTime;
@@ -175,7 +182,7 @@ public class Ingestor {
 							+ " stat objects, time taken : "
 							+ totalTime
 							+ " ms, avg time : "
-							+ (grandTotal/loopCount)
+							+ (grandTotal / loopCount)
 							+ " ms  FreeMemory : "
 							+ (int) (100 * (double) Runtime.getRuntime()
 									.freeMemory() / (double) Runtime
@@ -202,13 +209,12 @@ public class Ingestor {
 				stat, path);
 		try {
 
-			BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = null;
-
-			long key = keys[currentIndex];
-			currentIndex++;
-			currentIndex = currentIndex % keys.length;
-
-			q = map.get(key);
+			/*
+			 * BlockingQueue<Tuple2<AppEventStatistics, String[]>> q = null;
+			 * 
+			 * long key = keys[currentIndex]; currentIndex++; currentIndex =
+			 * currentIndex % keys.length; q = map.get(key);
+			 */
 
 			q.put(statPath);
 		} catch (InterruptedException e) {
