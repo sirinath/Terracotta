@@ -1,3 +1,11 @@
-1. Branch named thunderchicken
+Branch named thunderchicken - based on trunk, plus perf app
+
+Our team members are:
+ Manoj (mgovinda@terracottatech.com, YIM manojpec@yahoo.co.in)
+ Juris (juris@terracottatech.com)
+ Walter (wharley@terracottatech.com, YIM cafewalter)
+ Scott (sbale@terracottatech.com, YIM scottbale)
+ 
+Our perf machines are: L2 = eng01/eng06  L1s = perf04-perf09
 
 Wiki page is http://intranet.terracotta.lan/xwiki/bin/view/Main/EngWeekPerfChallenge
