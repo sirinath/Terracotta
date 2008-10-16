@@ -196,4 +196,3 @@ postscripts:
           file: lib/terracotta-jmx-api.jar
           pom: poms/terracotta-jmx-api-pom.xml
           inject: lib/resources/build-data.txt
-          
