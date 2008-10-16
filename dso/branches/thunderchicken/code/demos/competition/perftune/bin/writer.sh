@@ -11,6 +11,9 @@ cd $BASEDIR
 
 test $? -ne 0 && exit 1
 
+test \! -f $BASEDIR/lib/dashboard.jar && ant clean build 
+test \! -f $BASEDIR/lib/dashboard.jar && echo "unable to build project." && exit 1
+
 for i in $BASEDIR/lib/*.jar ; do
    if test \! -z $CLASSPATH; then
       CLASSPATH=${CLASSPATH}:$i

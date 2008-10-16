@@ -11,6 +11,9 @@ cd $BASEDIR
 
 test $? -ne 0 && exit 1
 
+test \! -f $BASEDIR/lib/dashboard.jar && ant clean build 
+test \! -f $BASEDIR/lib/dashboard.jar && echo "unable to build project." && exit 1
+
 for i in $BASEDIR/lib/*.jar ; do
    if test \! -z $CLASSPATH; then
       CLASSPATH=${CLASSPATH}:$i
@@ -22,4 +25,4 @@ done
 export TC_CONFIG_PATH=$BASEDIR/tc-config.xml
 . $TC_INSTALL_DIR/bin/dso-env.sh -q
 
-$JAVA_HOME/bin/java -Xmx1536m -Xms1536m  $TC_JAVA_OPTS -Dtc.node-name=stress_reader -cp $CLASSPATH  com.tctest.perf.dashboard.stats.app.test.Reader
+$JAVA_HOME/bin/java -Xmx1536m -Xms1536m  $TC_JAVA_OPTS -Dtc.node-name=stress_reader -cp $CLASSPATH com.tctest.perf.dashboard.stats.app.test.Reader
