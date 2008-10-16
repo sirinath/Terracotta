@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+#  All content copyright (c) 2003-2008 Terracotta, Inc.,
+#  except as may otherwise be noted in a separate copyright notice.
+#  All rights reserved.
+#
 
 BASEDIR=`dirname $0`/..
 cd $BASEDIR
@@ -7,7 +12,7 @@ cd $BASEDIR
 test $? -ne 0 && exit 1
 
 for i in $BASEDIR/lib/*.jar ; do
-   if test ! -z $CLASSPATH; then
+   if test \! -z $CLASSPATH; then
       CLASSPATH=${CLASSPATH}:$i
    else
       CLASSPATH=$i
