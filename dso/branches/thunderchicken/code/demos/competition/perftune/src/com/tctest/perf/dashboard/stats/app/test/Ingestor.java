@@ -29,9 +29,6 @@ public class Ingestor {
 
 	AppDataCache appDataCache = TestCacheBuilder.buildCache();
 
-	// Map<Long, BlockingQueue<Tuple2<AppEventStatistics, String[]>>> map =
-	// null;
-
 	int queueSize = 50;
 	int threadCount = 3;
 	int sleepTimeInMillis = 10;
