@@ -54,3 +54,10 @@ Patch Level 4
 
 - http://jira.terracotta.org/jira/browse/CDV-868
 - typo in retrieving properties from the Commons CLI stuff inside CVT. tc-stats.sh throws numberformatexception
+
+--------------
+Patch Level 5
+
+- https://jira.terracotta.org/jira/browse/DEV-1999
+- Fix Lock GC recalls lock, nodes hold locks, nodes request locks, then nodes disconnect and then keeps
+  waiting for the write lock grant
