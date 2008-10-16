@@ -5,7 +5,7 @@
   </system>
   <servers>
     <!--Tell DSO where the Terracotta server can be found.-->
-    <server name="primary" host="eng01">
+    <server name="primary" host="localhost">
       <data>%(user.home)/local/perfcomp/terracotta/primary/server-data</data>
       <logs>%(user.home)/local/perfcomp/terracotta/primary/server-logs</logs>
       <statistics>%(user.home)/local/perfcomp/terracotta/primary/server-stats</statistics>
