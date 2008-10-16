@@ -1,0 +1,32 @@
+<!--
+
+  All content copyright (c) 2003-2008 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved.
+
+-->
+
+<project name="dashboard" default="build" basedir=".">
+  <target name="init">
+    <mkdir dir="target/classes"/>
+    <path id="lib.dir">
+      <fileset dir="lib">
+        <include name="log4j-1.2.15.jar"/>
+        <include name="commons-logging.jar"/>
+        <include name="commons-lang-2.4.jar"/>
+      </fileset>
+    </path>
+  </target>
+
+  <target name="clean">
+    <delete dir="target/classes"/>
+    <delete file="lib/dashboard.jar"/>
+  </target>
+
+  <target name="build" depends="init">
+    <javac srcdir="src" destdir="target/classes" classpathref="lib.dir" target="1.5" source="1.5"/>
+    <zip destfile="lib/dashboard.jar">
+      <zipfileset dir="target/classes" />        
+    </zip>
+  </target>
+</project>
