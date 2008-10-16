@@ -7,7 +7,9 @@
 
 # OS specific support.  $var _must_ be set to either true or false.
 
-. ./env.sh
+BASEDIR=`dirname $0`/..
+cd $BASEDIR
+. $BASEDIR/bin/env.sh
 
 cygwin=false
 case "`uname`" in
@@ -25,7 +27,6 @@ correctly"
    exit 2
 fi
 
-#TC_INSTALL_DIR=`dirname "$0"`/..
 if test \! -d "${TC_INSTALL_DIR}"; then
    echo "$0: the TC_INSTALL_DIR environment variable is not defined
 correctly"
@@ -47,4 +48,4 @@ exec "${JAVA_HOME}/bin/java" \
    -Dtc.install-root="${TC_INSTALL_DIR}" \
    ${JAVA_OPTS} \
    -cp "${TC_INSTALL_DIR}/lib/tc.jar" \
-   com.tc.server.TCServerMain  -f ../tc-config.xml "$@"
+   com.tc.server.TCServerMain -f $BASEDIR/tc-config.xml "$@"
