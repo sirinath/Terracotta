@@ -26,6 +26,7 @@ public class AppDataCache implements AppStatsDataSource{
 
 	/**
 	 * the Cache holding Application Event Statistics
+	 * This is the tc-root
 	 */
 	Cache<AppEventStatistics> cache = null;
 	
