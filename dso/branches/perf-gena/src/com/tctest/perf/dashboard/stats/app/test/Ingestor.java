@@ -179,7 +179,10 @@ public class Ingestor {
 							+ " ms  FreeMemory : "
 							+ (int) (100 * (double) Runtime.getRuntime()
 									.freeMemory() / (double) Runtime
-									.getRuntime().maxMemory()) + " %");
+									.getRuntime().maxMemory()) + " %, " +
+								(statCount / totalTime) + " K TPS"
+									
+					);
 			try {
 				Thread.sleep(sleepTimeInMillis);
 			} catch (InterruptedException e) {
