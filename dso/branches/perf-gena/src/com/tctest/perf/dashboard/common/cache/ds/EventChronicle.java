@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.tctest.perf.dashboard.common.cache.EventStatistics;
 import com.tctest.perf.dashboard.common.util.Tuple2;
@@ -38,14 +39,9 @@ public class EventChronicle<E extends EventStatistics> {
 	private TreeMap<Long, E> chronicle = new TreeMap<Long, E>();
 
 	/**
-	 * This counter maintains the current size of the chronicle
-	 */
-	private int chronicleSize = 0;
-
-	/**
 	 * Lock
 	 */
-	private final ReentrantLock lock = new ReentrantLock();
+	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	/**
 	 * 
@@ -90,33 +86,36 @@ public class EventChronicle<E extends EventStatistics> {
 	 */
 	public void addStatistics(Date date, E statistics) {
 		// acquire the lock
-		lock.lock();
+		lock.writeLock().lock();
 		try {
 			chronicle.put(date.getTime(), statistics);
-			chronicleSize++;
-		} finally {
-			// release the lock
-			lock.unlock();
-		}
-		limitToMax();
-
-	}
-
-	private void limitToMax() {
-		// acquire the lock
-		lock.lock();
-		try {
-			while (chronicleSize >= max) {
+			if (chronicle.size() >= max) {
 				// Remove oldest entry
 				chronicle.remove(chronicle.firstKey());
-				chronicleSize--;
 			}
 		} finally {
 			// release the lock
-			lock.unlock();
+			lock.writeLock().unlock();
 		}
+		//limitToMax();
 
 	}
+
+//	private void limitToMax() {
+//		// acquire the lock
+//		lock.lock();
+//		try {
+//			while (chronicleSize >= max) {
+//				// Remove oldest entry
+//				chronicle.remove(chronicle.firstKey());
+//				chronicleSize--;
+//			}
+//		} finally {
+//			// release the lock
+//			lock.unlock();
+//		}
+//
+//	}
 
 	/**
 	 * 
@@ -125,7 +124,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @return UnModifiable Iterator
 	 */
 	public List<Tuple2<Date, E>> getStatistics() {
-		lock.lock();
+		lock.readLock().lock();
 		try {
 			// create a copy of the elements first ... or else the reader and
 			// writer may act on the treemap the same time
@@ -138,7 +137,7 @@ public class EventChronicle<E extends EventStatistics> {
 			}
 			return statistics;
 		} finally {
-			lock.unlock();
+			lock.readLock().unlock();
 		}
 	}
 
@@ -150,7 +149,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @return statistics - a List of tuples of date and stats objects
 	 */
 	public List<Tuple2<Date, E>> getStatistics(Date fromDate) {
-		lock.lock();
+		lock.readLock().lock();
 		try {
 			// create a copy of the elements first ... or else the reader and
 			// writer may act on the treemap the same time
@@ -166,7 +165,7 @@ public class EventChronicle<E extends EventStatistics> {
 			}
 			return statistics;
 		} finally {
-			lock.unlock();
+			lock.readLock().unlock();
 		}
 	}
 
@@ -180,7 +179,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @return statistics - a List of tuples of date and stats objects
 	 */
 	public List<Tuple2<Date, E>> getStatistics(Date fromDate, Date toDate) {
-		lock.lock();
+		lock.readLock().lock();
 		try {
 			// create a copy of the elements first ... or else the reader and
 			// writer may act on the treemap the same time
@@ -197,7 +196,7 @@ public class EventChronicle<E extends EventStatistics> {
 			}
 			return statistics;
 		} finally {
-			lock.unlock();
+			lock.readLock().unlock();
 		}
 	}
 
@@ -210,11 +209,11 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @return E
 	 */
 	public E getStatisticsForTime(Date date) {
-		lock.lock();
+		lock.readLock().lock();
 		try {
 			return chronicle.get(date);
 		} finally {
-			lock.unlock();
+			lock.readLock().unlock();
 		}
 	}
 
@@ -224,14 +223,14 @@ public class EventChronicle<E extends EventStatistics> {
 	 *         there is no entry in the chronicle yet.
 	 */
 	public Date getEpoch() {
-		lock.lock();
+		lock.readLock().lock();
 		try {
 			long epochLong = chronicle.firstKey();
 			return new Date(epochLong);
 		} catch (NoSuchElementException nsee) {
 			return null;
 		} finally {
-			lock.unlock();
+			lock.readLock().unlock();
 		}
 	}
 }
