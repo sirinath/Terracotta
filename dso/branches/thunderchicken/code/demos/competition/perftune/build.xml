@@ -1,32 +1,30 @@
 <!--
 
-  All content copyright (c) 2003-2008 Terracotta, Inc.,
-  except as may otherwise be noted in a separate copyright notice.
-  All rights reserved.
+   All content copyright (c) 2003-2008 Terracotta, Inc.,
+   except as may otherwise be noted in a separate copyright notice.
+   All rights reserved.
 
 -->
+<project name="perftune" default="build" basedir=".">
+   <property name="src.dir" location="src"/>
+   <property name="build.dir" location="classes"/>
+   <property name="lib.dir" location="lib"/>
+   <property name="dashboard.jar" location="${lib.dir}/dashboard.jar" />
 
-<project name="dashboard" default="build" basedir=".">
-  <target name="init">
-    <mkdir dir="target/classes"/>
-    <path id="lib.dir">
-      <fileset dir="lib">
-        <include name="log4j-1.2.15.jar"/>
-        <include name="commons-logging.jar"/>
-        <include name="commons-lang-2.4.jar"/>
-      </fileset>
-    </path>
-  </target>
+   <target name="init">
+      <mkdir dir="${build.dir}"/>
+   </target>
 
-  <target name="clean">
-    <delete dir="target/classes"/>
-    <delete file="lib/dashboard.jar"/>
-  </target>
+   <target name="build" depends="init" description="compile the source">
+      <javac target="1.5" source="1.5" srcdir="${src.dir}" destdir="${build.dir}"  
+         classpath="lib/log4j-1.2.15.jar:lib/commons-logging.jar:lib/commons-lang-2.4.jar" />
+      <zip destfile="${dashboard.jar}">
+         <zipfileset dir="${build.dir}" />        
+      </zip>
+   </target>
 
-  <target name="build" depends="init">
-    <javac srcdir="src" destdir="target/classes" classpathref="lib.dir" target="1.5" source="1.5"/>
-    <zip destfile="lib/dashboard.jar">
-      <zipfileset dir="target/classes" />        
-    </zip>
-  </target>
+   <target name="clean" description="clean up">
+      <delete dir="${build.dir}" />
+      <delete file="${dashboard.jar}" />
+   </target>
 </project>
