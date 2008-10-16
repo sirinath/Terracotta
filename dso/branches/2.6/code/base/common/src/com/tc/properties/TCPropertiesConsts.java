@@ -347,6 +347,11 @@ public interface TCPropertiesConsts {
   public static final String EHCAHCE_LOCK_WRITELEVEL                                = "ehcache.lock.writeLevel";
 
   /*********************************************************************************************************************
+   * Section : L1 Lock Manager
+   ********************************************************************************************************************/
+  public static final String L1_LOCK_MANAGER_TIMEOUT_INTERVAL = "l1.lockmanager.timeout.interval";
+  
+  /*********************************************************************************************************************
    * Section : Lock statistics
    ********************************************************************************************************************/
   public static final String LOCK_STATISTICS_ENABLED                                = "lock.statistics.enabled";
