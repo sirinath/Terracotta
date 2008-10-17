@@ -88,6 +88,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
+import com.tc.object.bytecode.JavaUtilTreeMapEntryAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapValueIteratorAdapter;
 import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedHashMapClassAdapter;
@@ -1235,6 +1236,7 @@ public class BootJarTool {
   }
 
   private final void addTreeMap() {
+
     loadTerracottaClass("java.util.TreeMapEntryWrapper");
 
     String className = "java.util.TreeMap";
@@ -1251,6 +1253,16 @@ public class BootJarTool {
     cr.accept(cv, ClassReader.SKIP_FRAMES);
 
     loadClassIntoJar(className, cw.toByteArray(), spec.isPreInstrumented());
+
+    // TreeMap$Entry
+    className = "java.util.TreeMap$Entry";
+    orig = getSystemBytes(className);
+    cr = new ClassReader(orig);
+    cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+    cv = new JavaUtilTreeMapEntryAdapter(cw);
+    cr.accept(cv, ClassReader.SKIP_FRAMES);
+    loadClassIntoJar(className, cw.toByteArray(), spec.isPreInstrumented());
+
   }
 
   private final void issueWarningsAndErrors() {
