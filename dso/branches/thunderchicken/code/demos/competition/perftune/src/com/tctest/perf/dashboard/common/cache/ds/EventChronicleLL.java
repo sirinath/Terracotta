@@ -62,13 +62,6 @@ public class EventChronicleLL<E extends EventStatistics> implements EventChronic
 	}
 
 	/* (non-Javadoc)
-	 * @see com.tctest.perf.dashboard.common.cache.ds.IEventChronicle#setMax(int)
-	 */
-	public void setMax(int max) {
-		this.max = max;
-	}
-
-	/* (non-Javadoc)
 	 * @see com.tctest.perf.dashboard.common.cache.ds.IEventChronicle#getName()
 	 */
 	public String getName() {
