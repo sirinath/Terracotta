@@ -1,83 +1,30 @@
-/**
- * 
- */
 package com.tctest.perf.dashboard.common.cache.ds;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import com.tctest.perf.dashboard.common.cache.EventStatistics;
 import com.tctest.perf.dashboard.common.util.Tuple2;
 
-/**
- * 
- * This hosts the recent 'count' statistics in past for the 'event'
- * 
- */
-public class EventChronicle<E extends EventStatistics> {
-
-	/**
-	 * 
-	 */
-	private final String name;
-
-	/**
-	 * The maximum number of (latest) events that can be cached non final ... we
-	 * want this to be changeable
-	 */
-	private int max;
-
-	/**
-	 *    
-	 */
-	private TreeMap<Long, E> chronicle = new TreeMap<Long, E>();
-
-	/**
-	 * This counter maintains the current size of the chronicle
-	 */
-	private int chronicleSize = 0;
-
-	/**
-	 * Lock
-	 */
-	private final ReentrantLock lock = new ReentrantLock();
-
-	/**
-	 * 
-	 */
-	public EventChronicle(String name, int max) {
-		this.name = name;
-		this.max = max;
-	}
+public interface EventChronicle<E extends EventStatistics> {
 
 	/**
 	 * 
 	 * @return max value
 	 */
-	public int getMax() {
-		return max;
-	}
+	int getMax();
 
 	/**
 	 * 
 	 * @param max
 	 */
-	public void setMax(int max) {
-		this.max = max;
-	}
+	void setMax(int max);
 
 	/**
 	 * 
 	 * @return name
 	 */
-	public String getName() {
-		return name;
-	}
+	String getName();
 
 	/**
 	 * Add a new Statistics object to the tree This would typically be called
@@ -88,35 +35,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @param statistics
 	 * 
 	 */
-	public void addStatistics(Date date, E statistics) {
-		// acquire the lock
-		lock.lock();
-		try {
-			chronicle.put(date.getTime(), statistics);
-			chronicleSize++;
-		} finally {
-			// release the lock
-			lock.unlock();
-		}
-		limitToMax();
-
-	}
-
-	private void limitToMax() {
-		// acquire the lock
-		lock.lock();
-		try {
-			while (chronicleSize >= max) {
-				// Remove oldest entry
-				chronicle.remove(chronicle.firstKey());
-				chronicleSize--;
-			}
-		} finally {
-			// release the lock
-			lock.unlock();
-		}
-
-	}
+	void addStatistics(Date date, E statistics);
 
 	/**
 	 * 
@@ -124,23 +43,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * 
 	 * @return UnModifiable Iterator
 	 */
-	public List<Tuple2<Date, E>> getStatistics() {
-		lock.lock();
-		try {
-			// create a copy of the elements first ... or else the reader and
-			// writer may act on the treemap the same time
-			// in which case the reader would see a
-			// ConcurrentModificationException
-			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
-			for (Long key : chronicle.keySet()) {
-				statistics.add(new Tuple2<Date, E>(new Date(key), chronicle
-						.get(key)));
-			}
-			return statistics;
-		} finally {
-			lock.unlock();
-		}
-	}
+	List<Tuple2<Date, E>> getStatistics();
 
 	/**
 	 * Returns a read-only iterator over all statistics after the given date
@@ -149,26 +52,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @param fromDate
 	 * @return statistics - a List of tuples of date and stats objects
 	 */
-	public List<Tuple2<Date, E>> getStatistics(Date fromDate) {
-		lock.lock();
-		try {
-			// create a copy of the elements first ... or else the reader and
-			// writer may act on the treemap the same time
-			// in which case the reader would see a
-			// ConcurrentModificationException
-
-			SortedMap<Long, E> tailMap = chronicle.tailMap(fromDate.getTime());
-
-			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
-			for (Long key : tailMap.keySet()) {
-				statistics.add(new Tuple2<Date, E>(new Date(key), chronicle
-						.get(key)));
-			}
-			return statistics;
-		} finally {
-			lock.unlock();
-		}
-	}
+	List<Tuple2<Date, E>> getStatistics(Date fromDate);
 
 	/**
 	 * Returns a read-only iterator over all statistics in between fromDate and
@@ -179,27 +63,7 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @param fromDate
 	 * @return statistics - a List of tuples of date and stats objects
 	 */
-	public List<Tuple2<Date, E>> getStatistics(Date fromDate, Date toDate) {
-		lock.lock();
-		try {
-			// create a copy of the elements first ... or else the reader and
-			// writer may act on the treemap the same time
-			// in which case the reader would see a
-			// ConcurrentModificationException
-
-			SortedMap<Long, E> subMap = chronicle.subMap(fromDate.getTime(),
-					toDate.getTime());
-
-			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
-			for (Long key : subMap.keySet()) {
-				statistics.add(new Tuple2<Date, E>(new Date(key), chronicle
-						.get(key)));
-			}
-			return statistics;
-		} finally {
-			lock.unlock();
-		}
-	}
+	List<Tuple2<Date, E>> getStatistics(Date fromDate, Date toDate);
 
 	/**
 	 * Returns the statistics object for the given time. This would be used to
@@ -209,29 +73,13 @@ public class EventChronicle<E extends EventStatistics> {
 	 * @param date
 	 * @return E
 	 */
-	public E getStatisticsForTime(Date date) {
-		lock.lock();
-		try {
-			return chronicle.get(date);
-		} finally {
-			lock.unlock();
-		}
-	}
+	E getStatisticsForTime(Date date);
 
 	/**
 	 * 
 	 * @return time for the oldest entry in this chronicle. returns null if
 	 *         there is no entry in the chronicle yet.
 	 */
-	public Date getEpoch() {
-		lock.lock();
-		try {
-			long epochLong = chronicle.firstKey();
-			return new Date(epochLong);
-		} catch (NoSuchElementException nsee) {
-			return null;
-		} finally {
-			lock.unlock();
-		}
-	}
+	Date getEpoch();
+
 }

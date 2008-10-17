@@ -5,7 +5,7 @@
   </system>
   <servers>
     <!--Tell DSO where the Terracotta server can be found.-->
-    <server name="primary" host="localhost">
+    <server name="primary" host="eng01">
       <data>%(user.home)/local/perfcomp/terracotta/primary/server-data</data>
       <logs>%(user.home)/local/perfcomp/terracotta/primary/server-logs</logs>
       <statistics>%(user.home)/local/perfcomp/terracotta/primary/server-stats</statistics>
@@ -88,9 +88,6 @@
     <dso>
       <!--INSTRUMENTED CLASSES-->
       <instrumented-classes>
-        <include>
-          <class-expression>com.tctest.perf.dashboard.common..*</class-expression>
-        </include>
         <include>
           <class-expression>com.tctest.perf.dashboard.stats.app..*</class-expression>
         </include>
