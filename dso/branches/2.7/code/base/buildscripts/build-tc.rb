@@ -170,7 +170,20 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     end
   end
 
-  # clean all under build and depedencies/lib
+  # clean 'build' and  'depedencies/lib'
+  def clean_all
+    begin
+      clean
+      lib = File.join(@basedir.to_s, "dependencies", "lib")
+      Dir.chdir(lib) do 
+        FileUtils.rm Dir.glob("*")
+      end
+    rescue Errno::ENOENT => e       
+      # ignore file not found error
+    end
+  end
+  
+  # clean 'build' folder
   def clean
     begin
       build_folder = File.join(@basedir.to_s, "build")
@@ -180,10 +193,6 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
       delete_deep_folder(build_folder) if File.exists?(build_folder)
       
       fail("Can't clean build folder") if File.exists?(build_folder)
-      lib = File.join(@basedir.to_s, "dependencies", "lib")
-      Dir.chdir(lib) do 
-        FileUtils.rm Dir.glob("*")
-      end
     rescue Errno::ENOENT => e       
       # ignore file not found error
     end
@@ -238,6 +247,26 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
         dependent_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
       end
       build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
+    end
+  end
+
+  # Produces Javadoc documentation in the build/doc/api directory.
+  # The set of modules to include is specified in modules.def.yml
+  def javadoc
+    depends :init
+
+    javadoc_dir = @build_results.javadoc_directory.delete
+    javadoc_dir.delete
+
+    @ant.javadoc(:destdir => javadoc_dir.to_s,
+      :author => true, :version => true, :use => true,
+      :windowtitle => "Terracotta API Documentation") do
+      modules = @module_set.find_all {|mod| mod.javadoc?}
+      modules.each do |mod|
+        @ant.fileset(:dir => mod.name, :defaultexcludes => true) do
+          @ant.include(:name => 'src/**')
+        end
+      end
     end
   end
 
