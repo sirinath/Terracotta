@@ -195,11 +195,11 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       }
     }
     long timetaken = System.currentTimeMillis() - runGCStartTime;
-    if (timetaken > 500) {
+//    if (timetaken > 500) {
       logger.info("Running lock GC took " + timetaken + " ms " + iterationCount + " iterations for GCing "
                   + totalGCCount + " locks. gcCandidates remaining = " + gcCandidates.size()
                   + " total locks remaining = " + locksByID.size());
-    }
+//    }
   }
 
   private GlobalLockInfo getLockInfo(LockID lockID, ThreadID threadID) {
