@@ -227,14 +227,14 @@ public class EventChroniclePartial<E extends EventStatistics> implements
 	 *         there is no entry in the chronicle yet.
 	 */
 	public Date getEpoch() {
-		lock.readLock().lock();
+		lock.writeLock().lock();
 		try {
 			long epochLong = cachedTailSet().first();
 			return new Date(epochLong);
 		} catch (NoSuchElementException nsee) {
 			return null;
 		} finally {
-			lock.readLock().unlock();
+			lock.writeLock().unlock();
 		}
 	}
 
