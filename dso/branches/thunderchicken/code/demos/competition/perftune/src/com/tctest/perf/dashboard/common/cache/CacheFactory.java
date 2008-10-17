@@ -79,6 +79,9 @@ public class CacheFactory {
 		System.arraycopy(pathToNode, 0, pathToChildNode, 0, pathToNode.length);
 		
 		boolean useLL = "EventChronicleLL".equals(System.getProperty("com.tctest.EventChronicleClass"));
+		if (useLL) {
+			System.out.println("Using EventChronicleLL chronicle implementation");
+		}
 		
 		for(String childName : names){
 			Node<E> child = new Node<E>(childName);

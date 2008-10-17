@@ -22,6 +22,8 @@ for i in $BASEDIR/lib/*.jar ; do
    fi
 done
 
+export TC_JAVA_OPTS=$* $TC_JAVA_OPTS
+
 export TC_CONFIG_PATH=$BASEDIR/tc-config.xml
 . $TC_INSTALL_DIR/bin/dso-env.sh -q
 
