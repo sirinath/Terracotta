@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.impl;
 
+import org.mortbay.log.Log;
+
 import com.tc.async.api.Sink;
 import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
@@ -67,8 +69,7 @@ import java.util.Set;
 public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable,
     DumpHandler, PrettyPrintable {
 
-  private static final TCLogger                       logger                   = TCLogging
-                                                                                   .getLogger(ObjectManager.class);
+  private final TCLogger                              logger;
 
   private static final int                            MAX_COMMIT_SIZE          = TCPropertiesImpl
                                                                                    .getProperties()
@@ -103,6 +104,14 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
                            PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink, Sink flushSink) {
+    this(TCLogging.getLogger(ObjectManager.class), config, gcThreadGroup, stateManager, objectStore, cache,
+         persistenceTransactionProvider, faultSink, flushSink);
+  }
+
+  public ObjectManagerImpl(TCLogger logger, ObjectManagerConfig config, ThreadGroup gcThreadGroup,
+                           ClientStateManager stateManager, ManagedObjectStore objectStore, EvictionPolicy cache,
+                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink, Sink flushSink) {
+    this.logger = logger;
     this.faultSink = faultSink;
     this.flushSink = flushSink;
     Assert.assertNotNull(objectStore);
@@ -192,6 +201,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       makePending(nodeID, new ObjectManagerLookupContext(responseContext, false), maxReachableObjects);
       return false;
     }
+    Log.warn("lookupObjectsForOptionallyCreate()");
     return basicLookupObjectsFor(nodeID, new ObjectManagerLookupContext(responseContext, false), maxReachableObjects);
   }
 
@@ -200,9 +210,19 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return objectStore.getRoots().iterator();
   }
 
+  public Set getRootsSet() {
+    syncAssertNotInShutdown();
+    return objectStore.getRoots();
+  }
+
   public Iterator getRootNames() {
     syncAssertNotInShutdown();
     return objectStore.getRootNames().iterator();
+  }
+  
+  public Set getRootNamesSet() {
+    syncAssertNotInShutdown();
+    return objectStore.getRootNames();
   }
 
   /**
@@ -244,7 +264,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public ManagedObject getObjectByIDOrNull(ObjectID id) {
     ManagedObject mo = lookup(id, false, true);
     if (mo.isNew()) {
-      logger.warn("Returning null since looking up " + id + " which is still a new Object : " + mo);
       releaseReadOnly(mo);
       return null;
     }
@@ -296,7 +315,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
    */
   private ManagedObjectReference getOrLookupReference(ObjectManagerLookupContext context, ObjectID id) {
     ManagedObjectReference rv = getReference(id);
-
     if (rv == null) {
       rv = initiateFaultingFor(id, context.removeOnRelease());
     } else if (rv instanceof FaultingManagedObjectReference) {
@@ -305,7 +323,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       if (!fmr.isFaultingInProgress()) {
         references.remove(id);
         logger.warn("Request for non-existent object : " + id + " context = " + context);
-        context.missingObject(id);
+       context.missingObject(id);
         return null;
       }
       if (context.updateStats()) stats.cacheMiss();
@@ -324,6 +342,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     return rv;
   }
+
 
   private ManagedObjectReference initiateFaultingFor(ObjectID id, boolean removeOnRelease) {
     // Request Faulting in a different stage and give back a "Referenced" proxy
@@ -360,6 +379,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   public synchronized void preFetchObjectsAndCreate(Set<ObjectID> oids, Set<ObjectID> newOids) {
+    Assert.assertNotNull(newOids);
+    Assert.assertNotNull(oids);
     createNewObjects(newOids);
     preFetchObjects(oids);
   }
@@ -578,14 +599,14 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
   }
 
-  private void removeAllObjectsByID(Set<ObjectID> toDelete) {
+  void removeAllObjectsByID(Set<ObjectID> toDelete) {
     for (final ObjectID id : toDelete) {
       ManagedObjectReference ref = references.remove(id);
       while (ref != null && ref.isReferenced()) {
         // This is possible if the cache manager is evicting this *unreachable* object or somehow the admin console is
         // looking up this object.
         logger.warn("Reference : " + ref + " was referenced. So waiting to remove !");
-        // reconcile
+        // reconcile     
         references.put(id, ref);
         try {
           wait();
@@ -653,6 +674,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   private void updateNewFlagAndCreateIfNecessary(ManagedObject object) {
     if (object.isNew()) {
+      Log.warn(" addNewObject() = " + object.getID() );
       objectStore.addNewObject(object);
       object.setIsNew(false);
       fireNewObjectinitialized(object.getID());
@@ -679,6 +701,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       logger.info("Notifying GC : pending = " + pending.size() + " checkedOutCount = " + checkedOutCount);
       collector.notifyReadyToGC();
     }
+  }
+
+  int getPendingSize() {
+    return pending.size();
   }
 
   public synchronized void waitUntilReadyToGC() {
@@ -802,6 +828,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         logger.error("Object is NULL for " + mor);
         throw new AssertionError("ManagedObject is null.");
       }
+      
       results.put(mor.getObjectID(), mor.getObject());
     }
     return results;

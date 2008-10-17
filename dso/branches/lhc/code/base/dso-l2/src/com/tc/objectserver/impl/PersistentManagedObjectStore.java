@@ -78,7 +78,7 @@ public class PersistentManagedObjectStore implements ManagedObjectStore {
     if (PersistentCollectionsUtil.isPersistableCollectionType(managed.getManagedObjectState().getType())) {
       result = this.objectPersistor.addMapTypeObject(managed.getID());
       Assert.eval(result);
-    }
+    }   
   }
 
   public void commitObject(PersistenceTransaction tx, ManagedObject managed) {
