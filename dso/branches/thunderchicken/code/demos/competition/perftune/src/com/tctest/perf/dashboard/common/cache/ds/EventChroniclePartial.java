@@ -8,10 +8,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.tctest.perf.dashboard.common.cache.EventStatistics;
@@ -22,7 +21,8 @@ import com.tctest.perf.dashboard.common.util.Tuple2;
  * This hosts the recent 'count' statistics in past for the 'event'
  * 
  */
-public class EventChroniclePartial<E extends EventStatistics> implements EventChronicle<E> {
+public class EventChroniclePartial<E extends EventStatistics> implements
+		EventChronicle<E> {
 
 	/**
 	 * 
@@ -36,10 +36,9 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	private final int max;
 
 	/**
-	 *    
+	 * 
 	 */
 	private final HashMap<Long, E> chronicle = new HashMap<Long, E>();
-	
 
 	/**
 	 * This counter maintains the current size of the chronicle
@@ -50,14 +49,14 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	 * Lock
 	 */
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-	
-	//=====================================================
-	//sorting optimization
-	
-	private SortedMap<Long, E> lastSorted = null;
-	private final int cacheSize = 18; //10% of max, TODO make property
-	
-	//=====================================================
+
+	// =====================================================
+	// sorting optimization
+
+	private SortedSet<Long> lastSorted = null;
+	private final int cacheSize = 18; // 10% of max, TODO make property
+
+	// =====================================================
 
 	/**
 	 * 
@@ -107,19 +106,19 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	}
 
 	private void limitToMax() {
-			while (chronicleSize >= max) {
-				// Remove oldest entry
-				removeFirst();
-				chronicleSize--;
-			}
+		while (chronicleSize >= max) {
+			// Remove oldest entry
+			removeFirst();
+			chronicleSize--;
+		}
 	}
 
-  private void removeFirst() {
-    final SortedMap<Long, E> sortedMap = cachedMapTail();
-    final Long firstKey = sortedMap.firstKey();
-    chronicle.remove(firstKey);
-    sortedMap.remove(firstKey);
-  }
+	private void removeFirst() {
+		final SortedSet<Long> sortedSet = cachedTailSet();
+		final Long firstKey = sortedSet.first();
+		chronicle.remove(firstKey);
+		sortedSet.remove(firstKey);
+	}
 
 	/**
 	 * 
@@ -160,10 +159,11 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 			// in which case the reader would see a
 			// ConcurrentModificationException
 
-			SortedMap<Long, E> tailMap = sortedMap().tailMap(fromDate.getTime());
+			SortedSet<Long> treeSet = sortedKeySet()
+					.tailSet(fromDate.getTime());
 
 			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
-			for (Long key : tailMap.keySet()) {
+			for (Long key : treeSet) {
 				statistics.add(new Tuple2<Date, E>(new Date(key), chronicle
 						.get(key)));
 			}
@@ -190,11 +190,11 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 			// in which case the reader would see a
 			// ConcurrentModificationException
 
-			SortedMap<Long, E> subMap = sortedMap().subMap(fromDate.getTime(),
-					toDate.getTime());
+			SortedSet<Long> sortedKeyset = sortedKeySet().subSet(
+					fromDate.getTime(), toDate.getTime());
 
 			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
-			for (Long key : subMap.keySet()) {
+			for (Long key : sortedKeyset) {
 				statistics.add(new Tuple2<Date, E>(new Date(key), chronicle
 						.get(key)));
 			}
@@ -229,7 +229,7 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	public Date getEpoch() {
 		lock.readLock().lock();
 		try {
-			long epochLong = cachedMapTail().firstKey();
+			long epochLong = cachedTailSet().first();
 			return new Date(epochLong);
 		} catch (NoSuchElementException nsee) {
 			return null;
@@ -237,24 +237,20 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 			lock.readLock().unlock();
 		}
 	}
-	
-	private SortedMap<Long, E> sortedMap(){
-	  return new TreeMap<Long, E>(this.chronicle);
-	}
-	
-	/* return cached tail of sorted map, create new one if necessary */
-	private SortedMap<Long, E> cachedMapTail(){
-      if (lastSorted == null || lastSorted.size() == 0){
 
-        SortedMap<Long, E> newSort = sortedMap();
-        this.lastSorted = new TreeMap<Long, E>();
-        Iterator<Map.Entry<Long, E>> entrySet = newSort.entrySet().iterator();
-        for(int i=0; i<cacheSize && entrySet.hasNext(); i++){
-          Map.Entry<Long, E> entry = entrySet.next();
-          this.lastSorted.put(entry.getKey(), entry.getValue());
-        }
-      } 
-      
-      return this.lastSorted;	  
+	private SortedSet<Long> sortedKeySet() {
+		return new TreeSet<Long>(this.chronicle.keySet());
+	}
+
+	/* return cached tail of sorted map, create new one if necessary */
+	private SortedSet<Long> cachedTailSet() {
+		if (lastSorted == null || lastSorted.size() == 0) {
+			Iterator<Long> newSetIterator = sortedKeySet().iterator();
+			this.lastSorted = new TreeSet<Long>();
+			for (int i = 0; i < cacheSize && newSetIterator.hasNext(); i++) {
+				this.lastSorted.add(newSetIterator.next());
+			}
+		}
+		return this.lastSorted;
 	}
 }
