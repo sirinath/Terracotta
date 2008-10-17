@@ -6,6 +6,8 @@ package com.tctest.perf.dashboard.common.cache;
 import java.util.Set;
 
 import com.tctest.perf.dashboard.common.cache.ds.EventChronicle;
+import com.tctest.perf.dashboard.common.cache.ds.EventChronicleLL;
+import com.tctest.perf.dashboard.common.cache.ds.EventChronicleTM;
 import com.tctest.perf.dashboard.common.cache.ds.Node;
 import com.tctest.perf.dashboard.common.metadata.MetaData;
 import com.tctest.perf.dashboard.common.metadata.MetaDataException;
@@ -76,6 +78,8 @@ public class CacheFactory {
 		String[] pathToChildNode = new String[pathLength];
 		System.arraycopy(pathToNode, 0, pathToChildNode, 0, pathToNode.length);
 		
+		boolean useLL = "EventChronicleLL".equals(System.getProperty("com.tctest.EventChronicleClass"));
+		
 		for(String childName : names){
 			Node<E> child = new Node<E>(childName);
 			pathToChildNode[pathToChildNode.length-1] = childName;
@@ -83,7 +87,10 @@ public class CacheFactory {
 			child.setParent(node);
 			if(events != null)
 				for(String event : events){
-					child.addEventChronicle(event, new EventChronicle<E>(event.toUpperCase(), metaData.getStatCount())); 
+					EventChronicle chronicle = useLL ? 
+							new EventChronicleLL<E>(event.toUpperCase(), metaData.getStatCount()) :
+							new EventChronicleTM<E>(event.toUpperCase(), metaData.getStatCount());
+					child.addEventChronicle(event, chronicle); 
 					//TODO ideally the count should not be set in the event chronicle individually.... 
 					//the chronicle should refer to the global count in cache ... which can be centrally controlled 
 				}
