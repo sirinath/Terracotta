@@ -139,7 +139,7 @@ public class TransactionSequencer {
     int diff = pending_size - slowDownStartsAt;
     if (diff >= 0) {
       long sleepTime = (long) (1 + diff * sleepTimeIncrements);
-      logger.info("THROTTLE: sleeping for " + sleepTime + "ms");
+      logger.info("THROTTLE: sleeping for " + sleepTime + "ms, sleepTimeIncrements: " + sleepTimeIncrements);
       try {
         wait(sleepTime);
       } catch (InterruptedException e) {
