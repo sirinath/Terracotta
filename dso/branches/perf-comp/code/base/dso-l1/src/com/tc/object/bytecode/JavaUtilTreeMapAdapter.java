@@ -19,16 +19,57 @@ public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
     super(cv);
   }
 
+  public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { Clearable.class.getName().replace('.', '/') });
+    super.visit(version, access, name, signature, superName, interfaces);
+  }
+
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-    if ("writeObject".equals(name) && Modifier.isPrivate(access)) { return new WriteObjectAdapter(mv); }
+    if ("writeObject".equals(name) && Modifier.isPrivate(access)) {
+      mv = new WriteObjectAdapter(mv);
+    }
+    if ("get".equals(name)) {
+      mv = new GetAdapter(mv);
+    }
 
-    return mv;
+    return new EntryAdapter(mv);
   }
 
   public void visitEnd() {
     addRemoveEntryForKey();
+    addClearableMethods();
     super.visitEnd();
+  }
+
+  private void addClearableMethods() {
+    MethodVisitor mv;
+
+    mv = super.visitMethod(ACC_PUBLIC, "setEvictionEnabled", "(Z)V", null, null);
+    mv.visitCode();
+    mv.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException");
+    mv.visitInsn(DUP);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V");
+    mv.visitInsn(ATHROW);
+    mv.visitMaxs(2, 2);
+    mv.visitEnd();
+
+    mv = super.visitMethod(ACC_PUBLIC, "isEvictionEnabled", "()Z", null, null);
+    mv.visitCode();
+    mv.visitInsn(ICONST_1);
+    mv.visitInsn(IRETURN);
+    mv.visitMaxs(1, 1);
+    mv.visitEnd();
+
+    mv = super.visitMethod(ACC_PUBLIC, "__tc_clearReferences", "(I)I", null, null);
+    mv.visitCode();
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap", "__tc_entrySet", "()Ljava/util/Set;");
+    mv.visitVarInsn(ILOAD, 1);
+    mv.visitMethodInsn(INVOKESTATIC, "java/util/TreeMapEntryWrapper", "clearReferences", "(Ljava/util/Set;I)I");
+    mv.visitInsn(IRETURN);
+    mv.visitMaxs(2, 2);
+    mv.visitEnd();
   }
 
   private void addRemoveEntryForKey() {
@@ -98,6 +139,55 @@ public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
       super.visitTypeInsn(opcode, desc);
     }
 
+  }
+
+  private static class EntryAdapter extends MethodAdapter implements Opcodes {
+
+    public EntryAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+      if (GETFIELD == opcode && "java/util/TreeMap$Entry".equals(owner) && "value".equals(name)) {
+        super.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap$Entry", "getValue", "()Ljava/lang/Object;");
+      } else {
+        super.visitFieldInsn(opcode, owner, name, desc);
+      }
+    }
+
+    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      if ((opcode == INVOKESPECIAL) && "java/util/TreeMap$Entry".equals(owner) && "<init>".equals(name)) {
+        owner = "java/util/TreeMapEntryWrapper";
+      }
+      super.visitMethodInsn(opcode, owner, name, desc);
+    }
+
+    public void visitTypeInsn(int opcode, String type) {
+      if ((NEW == opcode) && ("java/util/TreeMap$Entry".equals(type))) {
+        type = "java/util/TreeMapEntryWrapper";
+      }
+      super.visitTypeInsn(opcode, type);
+    }
+
+  }
+
+  private static class GetAdapter extends MethodAdapter {
+
+    public GetAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    public void visitCode() {
+      super.visitCode();
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap", "__tc_isManaged", "()Z");
+      Label l1 = new Label();
+      mv.visitJumpInsn(IFEQ, l1);
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap", "__tc_managed", "()Lcom/tc/object/TCObject;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "markAccessed", "()V");
+      mv.visitLabel(l1);
+    }
   }
 
 }

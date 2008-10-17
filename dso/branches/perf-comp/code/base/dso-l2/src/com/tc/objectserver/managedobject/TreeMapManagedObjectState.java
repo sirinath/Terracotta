@@ -22,7 +22,7 @@ import java.util.Set;
 /**
  * state for tree maps
  */
-public class TreeMapManagedObjectState extends MapManagedObjectState implements PrettyPrintable {
+public class TreeMapManagedObjectState extends PartialMapManagedObjectState implements PrettyPrintable {
   static final String COMPARATOR_FIELDNAME = "java.util.TreeMap.comparator";
   private ObjectID    comparator           = null;
 

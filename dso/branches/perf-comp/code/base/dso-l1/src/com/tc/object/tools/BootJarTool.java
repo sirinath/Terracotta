@@ -88,6 +88,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
+import com.tc.object.bytecode.JavaUtilTreeMapValueIteratorAdapter;
 import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedHashMapClassAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
@@ -331,7 +332,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   * 
+   *
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(File bootJarFile) {
@@ -580,6 +581,8 @@ public class BootJarTool {
       // in the <additiona-boot-jar-classes/> section of your tc-config
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
+      adaptClassIfNotAlreadyIncluded("java.util.TreeMap$ValueIterator", JavaUtilTreeMapValueIteratorAdapter.class);
+
     } catch (Throwable e) {
       exit(bootJarHandler.getCreationErrorMessage(), e);
     }
@@ -1232,6 +1235,8 @@ public class BootJarTool {
   }
 
   private final void addTreeMap() {
+    loadTerracottaClass("java.util.TreeMapEntryWrapper");
+
     String className = "java.util.TreeMap";
     byte[] orig = getSystemBytes(className);
 
@@ -1461,7 +1466,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   * 
+   *
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1477,7 +1482,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   * 
+   *
    * @param msg The custom message to print
    */
   private final void exit(String msg) {
@@ -1486,7 +1491,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   * 
+   *
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.
@@ -1807,11 +1812,11 @@ public class BootJarTool {
 
     byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
 
-//    ClassReader cr = new ClassReader(bytes);
-//    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-//    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
-//    cr.accept(cv, ClassReader.SKIP_FRAMES);
-//    bytes = cw.toByteArray();
+    // ClassReader cr = new ClassReader(bytes);
+    // ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+    // ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
+    // cr.accept(cv, ClassReader.SKIP_FRAMES);
+    // bytes = cw.toByteArray();
 
     TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
     bytes = doDSOTransform(spec.getClassName(), bytes);
@@ -2240,13 +2245,12 @@ public class BootJarTool {
 
   private void addInstrumentedHashMap() {
     Map instrumentedContext = new HashMap();
-    mergeClass(HashMapClassAdapter.TC_MAP_CLASSNAME_DOTS, HashMapClassAdapter.J_MAP_CLASSNAME_DOTS, 
-               instrumentedContext, null,
-               new ClassAdapterFactory[] { HashMapClassAdapter.FACTORY });
+    mergeClass(HashMapClassAdapter.TC_MAP_CLASSNAME_DOTS, HashMapClassAdapter.J_MAP_CLASSNAME_DOTS,
+               instrumentedContext, null, new ClassAdapterFactory[] { HashMapClassAdapter.FACTORY });
 
     addInstrumentedLinkedHashMap(instrumentedContext);
   }
-  
+
   private final void mergeClass(String tcClassNameDots, String jClassNameDots, Map instrumentedContext,
                                 final MethodNode[] replacedMethods, ClassAdapterFactory[] addlAdapters) {
     byte[] tcData = getSystemBytes(tcClassNameDots);
