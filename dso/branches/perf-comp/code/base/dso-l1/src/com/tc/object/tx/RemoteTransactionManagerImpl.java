@@ -38,7 +38,7 @@ import java.util.Map.Entry;
 
 /**
  * Sends off committed transactions
- * 
+ *
  * @author steve
  */
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
@@ -252,7 +252,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     ClientTransactionBatch batch;
     while ((ignoreMax || canSendBatch()) && (batch = sequencer.getNextBatch()) != null) {
       if (message != null) {
-        logger.debug(message + " : Sending batch containing " + batch.numberOfTxnsBeforeFolding() + " txns");
+        logger.info(message + " : Sending batch containing " + batch.numberOfTxnsBeforeFolding() + " txns");
       }
       sendBatch(batch, true);
     }
