@@ -265,7 +265,7 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
   private NetworkListener                      l1Listener;
   private CommunicationsManager                communicationsManager;
   private ServerConfigurationContext           context;
-  private ObjectManagerImpl                    objectManager;
+  private StripedObjectManagerImpl             objectManager;
   private ObjectRequestManager                 objectRequestManager;
   private TransactionalObjectManager           txnObjectManager;
   private CounterManager                       sampledCounterManager;
@@ -603,9 +603,9 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
     ObjectManagerConfig objectManagerConfig = new ObjectManagerConfig(gcInterval * 1000, gcEnabled, verboseGC,
                                                                       persistent, enableYoungGenDGC,
                                                                       youngGenDGCFrequency);
-    objectManager = new ObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore, swapCache,
-                                          persistenceTransactionProvider, faultManagedObjectStage.getSink(),
-                                          flushManagedObjectStage.getSink());
+    objectManager = new StripedObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore,
+                                                 swapCache, persistenceTransactionProvider, faultManagedObjectStage
+                                                     .getSink(), flushManagedObjectStage.getSink());
     objectManager.setStatsListener(objMgrStats);
     MarkAndSweepGarbageCollector markAndSweepGarbageCollector = new MarkAndSweepGarbageCollector(objectManager,
                                                                                                  clientStateManager,
@@ -757,7 +757,8 @@ public class DistributedObjectServer implements TCDumper, ChannelManagerEventLis
                      4, maxStageSize);
 
     objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager, clientStateManager,
-                                                        transactionManager,objectRequestStage.getSink(), respondToObjectRequestStage.getSink());
+                                                        transactionManager, objectRequestStage.getSink(),
+                                                        respondToObjectRequestStage.getSink());
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,

@@ -17,8 +17,10 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.util.Assert;
 
 import java.util.concurrent.atomic.AtomicLong;
+
 
 public class ManagedObjectFaultHandler extends AbstractEventHandler {
 
@@ -34,6 +36,7 @@ public class ManagedObjectFaultHandler extends AbstractEventHandler {
     ManagedObjectFaultingContext mfc = (ManagedObjectFaultingContext) context;
     ObjectID oid = mfc.getId();
     ManagedObject mo = objectStore.getObjectByID(oid);
+    Assert.assertNotNull("mo is null for objectID: " + oid , mo);
     objectManager.addFaultedObject(oid, mo, mfc.isRemoveOnRelease());
   }
 

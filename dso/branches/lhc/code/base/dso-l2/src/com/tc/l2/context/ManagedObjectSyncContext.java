@@ -135,5 +135,5 @@ public class ManagedObjectSyncContext implements ObjectManagerResultsContext {
   public boolean updateStats() {
     return true;
   }
-
+  
 }

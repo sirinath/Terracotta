@@ -37,4 +37,8 @@ public class ObjectID extends AbstractIdentifier implements Serializable {
   public String getIdentifierType() {
     return "ObjectID";
   }
+  
+  public String asString() {
+    return String.valueOf(toLong());
+  }
 }
