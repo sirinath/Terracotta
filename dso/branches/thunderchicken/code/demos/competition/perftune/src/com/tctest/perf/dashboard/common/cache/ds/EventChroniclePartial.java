@@ -6,7 +6,9 @@ package com.tctest.perf.dashboard.common.cache.ds;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -48,6 +50,14 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	 * Lock
 	 */
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	
+	//=====================================================
+	//sorting optimization
+	
+	private SortedMap<Long, E> lastSorted = null;
+	private final int cacheSize = 18; //10% of max, TODO make property
+	
+	//=====================================================
 
 	/**
 	 * 
@@ -99,10 +109,17 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	private void limitToMax() {
 			while (chronicleSize >= max) {
 				// Remove oldest entry
-				chronicle.remove(sortedMap(true).firstKey());
+				removeFirst();
 				chronicleSize--;
 			}
 	}
+
+  private void removeFirst() {
+    final SortedMap<Long, E> sortedMap = cachedMapTail();
+    final Long firstKey = sortedMap.firstKey();
+    chronicle.remove(firstKey);
+    sortedMap.remove(firstKey);
+  }
 
 	/**
 	 * 
@@ -143,7 +160,7 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 			// in which case the reader would see a
 			// ConcurrentModificationException
 
-			SortedMap<Long, E> tailMap = sortedMap(false).tailMap(fromDate.getTime());
+			SortedMap<Long, E> tailMap = sortedMap().tailMap(fromDate.getTime());
 
 			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
 			for (Long key : tailMap.keySet()) {
@@ -173,7 +190,7 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 			// in which case the reader would see a
 			// ConcurrentModificationException
 
-			SortedMap<Long, E> subMap = sortedMap(false).subMap(fromDate.getTime(),
+			SortedMap<Long, E> subMap = sortedMap().subMap(fromDate.getTime(),
 					toDate.getTime());
 
 			List<Tuple2<Date, E>> statistics = new ArrayList<Tuple2<Date, E>>();
@@ -212,7 +229,7 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 	public Date getEpoch() {
 		lock.readLock().lock();
 		try {
-			long epochLong = sortedMap(true).firstKey();
+			long epochLong = cachedMapTail().firstKey();
 			return new Date(epochLong);
 		} catch (NoSuchElementException nsee) {
 			return null;
@@ -221,7 +238,23 @@ public class EventChroniclePartial<E extends EventStatistics> implements EventCh
 		}
 	}
 	
-	private SortedMap<Long, E> sortedMap(boolean usedCache){
+	private SortedMap<Long, E> sortedMap(){
 	  return new TreeMap<Long, E>(this.chronicle);
+	}
+	
+	/* return cached tail of sorted map, create new one if necessary */
+	private SortedMap<Long, E> cachedMapTail(){
+      if (lastSorted == null || lastSorted.size() == 0){
+
+        SortedMap<Long, E> newSort = sortedMap();
+        this.lastSorted = new TreeMap<Long, E>();
+        Iterator<Map.Entry<Long, E>> entrySet = newSort.entrySet().iterator();
+        for(int i=0; i<cacheSize && entrySet.hasNext(); i++){
+          Map.Entry<Long, E> entry = entrySet.next();
+          this.lastSorted.put(entry.getKey(), entry.getValue());
+        }
+      } 
+      
+      return this.lastSorted;	  
 	}
 }
