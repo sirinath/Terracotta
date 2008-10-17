@@ -28,6 +28,76 @@ without compile: ./tcbuild dist --no-compile
 to build just the jars: ./tcbuild dist_jars
 (--no-ivy --no-compile applies)
 
-running the server without a null point exception:
-in sample dir, ./bin/tc-start-server.sh -n primary
+to run: go to samples/perftune;
+ set TC_INSTALL_DIR to ../..;
+ ./bin/start-tc-server.sh -n primary
+ 
+ 
+
+
+
+
+1.1 Scott/Juris/Walter/Manoj in-progress notes
+
+Acronyms: 
+FQN = fully qualified name?
+DC = datacenter?
+
+Observation 1: we see a client thread dump where the main stats adder thread is blocked on adding a stat to a LinkedBlockingQueue, most queue reader threads are blocked on a queue take(), and one queue reader thread is blocked on a transaction commit.
+
+Observation 2: in a different thread dump, we see all queue reader threads blocked on transaction commits.
+
+Observation 3: In a thread dump, we see a ReentrantLock being faulted into an L1.  We have only one L1.  Why would a lock object ever be faulted out?  Is there a way to indicate that a certain object or class should never be faulted out?
+
+Since it seems we're running out of memory on the writer L1, we tried moving the L1 onto a machine that had more memory (an "L2 machine", perf06). After doing this, the writer never even made it out of the startup loop.  Admin console shows gradually increasing and GC'ing heap, lots of L1 object flushes, but it doesn't finish the loop.  We're not sure why.
+
+We see high object flush and fault rates, low transaction rates. We think that the L1 is thrashing against L2 due to having insufficient heap size, and due to needing to touch every object in its heap for every iteration. Why can't it flush effectively? Because the EventChronicle grows to have arbitrarily many keys, and we need to fault in the EventChronicle (and thus its entire key set) to add a stat to it.
+
+So, we are going to attempt to change the EventChronicle data structure so that it does not have to all be faulted in. A map of maps (e.g., segmentation) is one possibility but is somewhat hard to code; we will start by trying a linked list, which will be inefficient to read but very efficient to write (and easy to code) and thus a good test for the theory.
+
+~~Idea: Terracotta should take TreeMap and segment it; and/or we should fault and flush more intelligently around objects like maps.~~
+
+To turn on the linked list impl: set system property com.tctest.EventChronicleClass = EventChronicleLL
+
+Certain dashboard classes look like they should be written to be immutable (for thread safety) but are not: <tt>AppEventStatistics</tt> to name one.  Fields should probably be volatile to guarantee visibility, it probably happens to work for now since writing/reading of an instance are done in different nodes.
+
+~~We were uncertain of the precise definitions of the admin console stats. This seems to be a common problem. It would be nice if the admin console had very obvious (tooltip or sidepane) help explaining precisely what the stats mean. For instance, does object creation count refer to all objects (probably not), all instrumented objects, or all clustered objects? Also, it would be nice if the appearance of the admin console stats for the server was different than for the L1 at a glance - e.g., different background color - to minimize confusion.~~
+
+~~Terracotta processes should not run if the tc-config contains a nonexistent root.~~
+
+1.1.1 Taking stock at 6:30PM
+
+We still think that the main problem is that the L1 is thrashing against limited heap size. There are 42,375 stat objects; each has an EventChronicle. Each EventChronicle contains a TreeMap with 180 entries whose key is a Long and whose value is a stat; that's about 7M entries. The stat has a Date, a String, a few floats. Each clustered object also has a TCObject, which contains a Map and 7 objects. So, each entry easily represents more than 100 bytes, which would be more than 700MB of entries. We're actually observing about 4G of heap being used on the L1, which is still reasonable given the math.
+
+Since the writer has to touch every stat node repeatedly, it cycles through the entire clustered heap. For each node, it has to fault in the lock that applies to the stat; take the lock; fault in the map of stats; add an entry to the stat; release the lock; and move on. Each time it does this it has to flush something else out.
+
+So, we are trying to make the EventChronicle data structure more granular, so that individual entries (or at least smaller chunks) can be flushed and faulted.
+
+There is also a GC problem, caused by the simple fact that this app creates and destroys zillions of objects. We're not sure what to do about that. One thing that might help is to replace Date with Long where possible.
+
+An alternate approach is to partition the task better across L1 nodes. This implies redefining the writer's job to only touch part of the stats tree, i.e., load-balancing the writer. We don't know enough about the customer scenario to know whether that's within bounds.
+
+Finally, one consequence of the thrashing is that distributed lock objects are being flushed. This is expensive. We think it would be nice if these could be more intelligently hung onto. One possibility is to treat locks specially in the cache manager. (Another possibility is to totally rewrite the cache manager's algorithm, but that seems like something that should be done by or with the assistance of someone who has a clue of how it works.)
+
+1.1.1 Interesting questions
+
+Why is transaction rate, in the admin console, so choppy? Not just on this app, but other perf apps - it often seems that way. What causes this chaotic behavior? The app is not doing anything chaotic, it's just cycling systematically through a very evenly shaped data structure.
+
+~~We want to see what objects are being GC'ed (system GC, not DGC) on the L2.~~
+
+The GC problem is in large part because we are dealing with so damn many small objects. If we were moving around a smaller number of larger objects, this would be less of a problem. This is the doppelganger of TC's "we don't serialize the whole object, just the part that changed" story. I wonder if a middle ground would be helpful? For instance, if we're seeing high GC on L2, can we start consolidating multiple objects into blobs, managing them as blobs on the server, and only reconstituting them into individual objects on the L1?
+
+Will fixing the ReentrantLock do anything? Making it a read/write lock sure can't hurt. But a write lock requires retrieval of all the outstanding read locks, which means that with multiple writers busy, every read lock will be grabbed back frequently. In this application (unlike in a lazy-init-then-read situation), there may not be much benefit from fixing this lock. We are doing the experiment.
+
+1.1.1 Stuff we haven't done
+
+We would like to try to make lock objects be treated with special respect in the L1 cache manager. Locks seem different than other objects, because when a lock is referenced it is most likely in order to make another server request (ie to take the lock). Does that matter? Maybe one of those things has nothing to do with the other.
+
+Having an ordered partial collection would be really, really good. It should take a lot of pressure off the L1.
+
+How could we make there be fewer objects? Can we consolidate multiple stats into a single object?
+
+
+
+
 
