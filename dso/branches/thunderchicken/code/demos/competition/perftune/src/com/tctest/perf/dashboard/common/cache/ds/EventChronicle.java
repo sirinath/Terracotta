@@ -16,12 +16,6 @@ public interface EventChronicle<E extends EventStatistics> {
 
 	/**
 	 * 
-	 * @param max
-	 */
-	void setMax(int max);
-
-	/**
-	 * 
 	 * @return name
 	 */
 	String getName();
