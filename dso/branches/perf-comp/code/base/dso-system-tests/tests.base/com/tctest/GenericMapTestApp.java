@@ -468,13 +468,13 @@ public class GenericMapTestApp extends GenericTestApp {
       try {
         if (isAccessOrderedLinkedHashMap(map)) {
           synchronized (map) {
-            Assert.assertEquals("value", map.get(E("key", v)));
+            Assert.assertEquals(E("value", v), map.get(E("key", v)));
           }
         } else {
-          Assert.assertEquals("value", map.get(E("key", v)));
+          Assert.assertEquals(E("value", v), map.get(E("key", v)));
         }
         if (map instanceof MyHashMap) {
-          Assert.assertEquals("value", ((MyHashMap) map).getObject(E("key", v)));
+          Assert.assertEquals(E("value", v), ((MyHashMap) map).getObject(E("key", v)));
         }
       } catch (Throwable t) {
         System.err.println("*******" + Thread.currentThread().getName() + ", map: " + map + "********");
@@ -482,7 +482,7 @@ public class GenericMapTestApp extends GenericTestApp {
       }
     } else {
       synchronized (map) {
-        map.put(E("key", v), "value");
+        map.put(E("key", v), E("value", v));
       }
     }
   }

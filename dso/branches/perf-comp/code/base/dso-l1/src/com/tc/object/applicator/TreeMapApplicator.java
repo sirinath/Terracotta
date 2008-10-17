@@ -89,8 +89,8 @@ public class TreeMapApplicator extends BaseApplicator {
             Object k = params[0];
             Object v = params[1];
             Object pkey = k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k;
-            Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
-            m.put(pkey, value);
+            // Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
+            m.put(pkey, v);
             break;
           case SerializationUtil.REMOVE:
             Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
