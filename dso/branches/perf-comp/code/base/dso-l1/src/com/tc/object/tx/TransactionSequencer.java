@@ -36,6 +36,7 @@ public class TransactionSequencer {
         .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_MAXPENDING_BATCHES);
     MAX_SLEEP_TIME_BEFORE_HALT = TCPropertiesImpl.getProperties()
         .getLong(TCPropertiesConsts.L1_TRANSACTIONMANAGER_MAXSLEEPTIME_BEFOREHALT);
+    logger.info(TCPropertiesConsts.L1_TRANSACTIONMANAGER_MAXPENDING_BATCHES + ": " + MAX_PENDING_BATCHES);
   }
 
   private final SequenceGenerator       sequence       = new SequenceGenerator(1);
@@ -164,7 +165,7 @@ public class TransactionSequencer {
     int size = pending_size;
     if (size == MAX_PENDING_BATCHES) {
       logger.info("Max pending size reached !!! : Pending Batches size = " + size + " TxnsInBatch = " + txnsPerBatch);
-    } else if (size % 5 == 0) {
+    } else {
       logger.info("Pending Batch Size : " + size + " TxnsInBatch = " + txnsPerBatch);
     }
   }
