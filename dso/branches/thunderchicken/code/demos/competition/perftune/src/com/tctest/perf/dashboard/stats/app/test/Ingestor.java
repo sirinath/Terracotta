@@ -4,12 +4,11 @@
 package com.tctest.perf.dashboard.stats.app.test;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.tctest.perf.dashboard.common.cache.CacheException;
+import com.tctest.perf.dashboard.common.util.SystemProps;
 import com.tctest.perf.dashboard.common.util.Tuple2;
 import com.tctest.perf.dashboard.stats.app.AppEventStatistics;
 import com.tctest.perf.dashboard.stats.app.data.cache.AppDataCache;
@@ -26,12 +25,12 @@ public class Ingestor {
 		Ingestor ingestor = new Ingestor();
 		ingestor.startLoading();
 	}
-
+	
 	AppDataCache appDataCache = TestCacheBuilder.buildCache();
 
-	int queueSize = 50;
-	int threadCount = 3;
-	int sleepTimeInMillis = 10;
+	int queueSize = SystemProps.getInt(SystemProps.INGESTOR_QUEUE_SIZE, 50);
+	int threadCount = SystemProps.getInt(SystemProps.INGESTOR_THREAD_COUNT, 3);
+	int sleepTimeInMillis = SystemProps.getInt(SystemProps.INGESTOR_SLEEP_TIME_MILLIS, 10);
 
 	int startAppId = 1;
 	int endAppId = 5;

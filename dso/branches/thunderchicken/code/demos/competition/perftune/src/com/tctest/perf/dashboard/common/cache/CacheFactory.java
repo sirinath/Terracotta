@@ -11,6 +11,7 @@ import com.tctest.perf.dashboard.common.cache.ds.EventChronicleTM;
 import com.tctest.perf.dashboard.common.cache.ds.Node;
 import com.tctest.perf.dashboard.common.metadata.MetaData;
 import com.tctest.perf.dashboard.common.metadata.MetaDataException;
+import com.tctest.perf.dashboard.common.util.SystemProps;
 
 /**
  * 
@@ -78,7 +79,7 @@ public class CacheFactory {
 		String[] pathToChildNode = new String[pathLength];
 		System.arraycopy(pathToNode, 0, pathToChildNode, 0, pathToNode.length);
 		
-		boolean useLL = "EventChronicleLL".equals(System.getProperty("com.tctest.EventChronicleClass"));
+		boolean useLL = "EventChronicleLL".equals(System.getProperty(SystemProps.EVENT_CHRONICLE_CLASS));
 		if (useLL) {
 			System.out.println("Using EventChronicleLL chronicle implementation");
 		}
