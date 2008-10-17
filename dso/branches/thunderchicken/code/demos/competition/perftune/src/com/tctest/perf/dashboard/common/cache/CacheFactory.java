@@ -6,7 +6,7 @@ package com.tctest.perf.dashboard.common.cache;
 import java.util.Set;
 
 import com.tctest.perf.dashboard.common.cache.ds.EventChronicle;
-import com.tctest.perf.dashboard.common.cache.ds.EventChronicleLL;
+import com.tctest.perf.dashboard.common.cache.ds.EventChroniclePartial;
 import com.tctest.perf.dashboard.common.cache.ds.EventChronicleTM;
 import com.tctest.perf.dashboard.common.cache.ds.Node;
 import com.tctest.perf.dashboard.common.metadata.MetaData;
@@ -79,9 +79,9 @@ public class CacheFactory {
 		String[] pathToChildNode = new String[pathLength];
 		System.arraycopy(pathToNode, 0, pathToChildNode, 0, pathToNode.length);
 		
-		boolean useLL = "EventChronicleLL".equals(System.getProperty(SystemProps.EVENT_CHRONICLE_CLASS));
-		if (useLL) {
-			System.out.println("Using EventChronicleLL chronicle implementation");
+		boolean usePartial = "EventChroniclePartial".equals(System.getProperty(SystemProps.EVENT_CHRONICLE_CLASS));
+		if (usePartial) {
+			System.out.println("Using EventChroniclePartial chronicle implementation");
 		}
 		
 		for(String childName : names){
@@ -91,8 +91,8 @@ public class CacheFactory {
 			child.setParent(node);
 			if(events != null)
 				for(String event : events){
-					EventChronicle chronicle = useLL ? 
-							new EventChronicleLL<E>(event.toUpperCase(), metaData.getStatCount()) :
+					EventChronicle chronicle = usePartial ? 
+							new EventChroniclePartial<E>(event.toUpperCase(), metaData.getStatCount()) :
 							new EventChronicleTM<E>(event.toUpperCase(), metaData.getStatCount());
 					child.addEventChronicle(event, chronicle); 
 					//TODO ideally the count should not be set in the event chronicle individually.... 
