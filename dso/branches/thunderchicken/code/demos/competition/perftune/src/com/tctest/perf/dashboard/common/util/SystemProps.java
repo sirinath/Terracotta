@@ -10,6 +10,7 @@ public final class SystemProps {
 
   public static int getInt(String sysProp, int defaultValue){
     String valueString = System.getProperty(sysProp);
+    System.out.println("<!><!><!><!> System prop: " + sysProp + ", value " + valueString);
     return (valueString == null? defaultValue: Integer.parseInt(valueString));
   }
 
