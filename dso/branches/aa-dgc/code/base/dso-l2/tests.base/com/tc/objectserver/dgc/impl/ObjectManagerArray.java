@@ -29,6 +29,7 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransactionProvider;
 import com.tc.util.ObjectIDSet;
+import com.tc.util.concurrent.StoppableThread;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,12 +45,17 @@ public class ObjectManagerArray implements ObjectManager {
   private final int                 arrayCount;
   private final ObjectManagerImpl[] objectManagers;
   private final ClientStateManager  clientStateManager;
+  private final ThreadGroup         tg;
+  private final ObjectManagerConfig config;
   private GarbageCollector          collector;
 
   public ObjectManagerArray(int arrayCount) {
     this.arrayCount = arrayCount;
     this.objectManagers = new ObjectManagerImpl[arrayCount];
+    this.tg = new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(ObjectManagerImpl.class)));   
     this.clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    this.config = new TestObjectManagerConfig();
+    
     initObjectManagers();
   }
 
@@ -79,8 +85,6 @@ public class ObjectManagerArray implements ObjectManager {
   }
 
   private ObjectManagerImpl createObjectManager() {
-    ObjectManagerConfig config = new TestObjectManagerConfig();
-    ThreadGroup tg = new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(ObjectManagerImpl.class)));
     ManagedObjectStore store = new InMemoryManagedObjectStore(new HashMap());
     EvictionPolicy cache = new NullCache();
     PersistenceTransactionProvider persistenceTransactionalProvider = new TestPersistenceTransactionProvider();
@@ -206,9 +210,14 @@ public class ObjectManagerArray implements ObjectManager {
    //
   }
 
-  public void setGarbageCollector(GarbageCollector gc) {
+  public void setGarbageCollector(final GarbageCollector gc) {
     this.collector = gc;
+    
+    StoppableThread st = new GarbageCollectorThread(this.tg, "DGC", gc, this.config);
+    st.setDaemon(true);
+    gc.setState(st);
   }
+  
 
   public void setStatsListener(ObjectManagerStatsListener listener) {
     //
