@@ -169,12 +169,12 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  private void startMonitoringReferenceChanges() {
+  void startMonitoringReferenceChanges() {
     this.referenceCollector = new NewReferenceCollector();
     this.youngGenReferenceCollector.startMonitoringChanges();
   }
 
-  private void stopMonitoringReferenceChanges() {
+  void stopMonitoringReferenceChanges() {
     this.referenceCollector = NULL_CHANGE_COLLECTOR;
     this.youngGenReferenceCollector.stopMonitoringChanges();
   }
