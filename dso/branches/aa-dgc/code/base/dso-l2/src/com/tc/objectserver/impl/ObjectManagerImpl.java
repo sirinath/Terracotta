@@ -762,6 +762,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public ManagedObjectStore getObjectStore() {
     return objectStore;
   }
+  
+  public ClientStateManager getClientStateManager() {
+    return stateManager;
+  }
 
   public void createRoot(String rootName, ObjectID id) {
     syncAssertNotInShutdown();
