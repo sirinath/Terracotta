@@ -49,7 +49,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
       ObjectOutputStream stream = new ObjectOutputStream(getOutputStream());
       stream.writeObject(this.message);
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -62,7 +62,7 @@ public class TCGroupMessageWrapper extends DSOMessageBase {
         try {
           this.message = (GroupMessage) stream.readObject();
         } catch (ClassNotFoundException e) {
-          throw new RuntimeException();
+          throw new RuntimeException(e);
         }
         return true;
       default:
