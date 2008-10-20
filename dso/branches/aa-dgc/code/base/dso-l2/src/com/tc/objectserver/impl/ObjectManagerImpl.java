@@ -758,6 +758,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private void fireObjectCreated(ObjectID id) {
     collector.notifyObjectCreated(id);
   }
+  
+  public ManagedObjectStore getObjectStore() {
+    return objectStore;
+  }
 
   public void createRoot(String rootName, ObjectID id) {
     syncAssertNotInShutdown();
