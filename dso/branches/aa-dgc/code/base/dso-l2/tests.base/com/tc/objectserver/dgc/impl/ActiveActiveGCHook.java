@@ -10,7 +10,6 @@ import com.tc.objectserver.core.api.Filter;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.objectserver.impl.ObjectManagerImpl;
-import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.util.ObjectIDSet;
 
 import java.util.Collections;
@@ -22,22 +21,21 @@ import java.util.Map.Entry;
 
 public class ActiveActiveGCHook implements GCHook {
 
-  private final ObjectManagerArray objectManagerArray;
-  private final MarkAndSweepGarbageCollector collector;
-  private final ClientStateManager clientStateManager;
+  private final ObjectManagerArray              objectManagerArray;
+  private final MarkAndSweepGarbageCollector    collector;
 
-  private static final Filter      NULL_FILTER = new Filter() {
-                                                 public boolean shouldVisit(ObjectID referencedObject) {
-                                                   return true;
-                                                 }
-                                               };
-                                               
+  private static final Filter                   NULL_FILTER               = new Filter() {
+                                                                            public boolean shouldVisit(
+                                                                                                       ObjectID referencedObject) {
+                                                                              return true;
+                                                                            }
+                                                                          };
+
   private final Map<ObjectManager, ObjectIDSet> objectManager2ObjectIDSet = new HashMap<ObjectManager, ObjectIDSet>();
 
-  public ActiveActiveGCHook(ObjectManagerArray objectManagerArray, MarkAndSweepGarbageCollector collector, ClientStateManager clientStateManager) {
+  public ActiveActiveGCHook(ObjectManagerArray objectManagerArray, MarkAndSweepGarbageCollector collector) {
     this.objectManagerArray = objectManagerArray;
     this.collector = collector;
-    this.clientStateManager = clientStateManager;
   }
 
   public Filter getCollectCycleFilter(Set candidateIDs) {
@@ -50,8 +48,8 @@ public class ActiveActiveGCHook implements GCHook {
 
   public ObjectIDSet getGCCandidates() {
     ObjectIDSet allObjectIDs = new ObjectIDSet();
-    ObjectManagerImpl [] objectManagers = objectManagerArray.getObjectManagers();
-    for(int i = 0; i < objectManagers.length; i++) {
+    ObjectManagerImpl[] objectManagers = objectManagerArray.getObjectManagers();
+    for (int i = 0; i < objectManagers.length; i++) {
       ObjectIDSet objectIDs = objectManagers[i].getAllObjectIDs();
       objectManager2ObjectIDSet.put(objectManagers[i], objectIDs);
       allObjectIDs.addAll(objectIDs);
@@ -64,14 +62,13 @@ public class ActiveActiveGCHook implements GCHook {
   }
 
   public Set getObjectReferencesFrom(ObjectID id) {
-    for(Iterator<Entry<ObjectManager, ObjectIDSet>> iter = objectManager2ObjectIDSet.entrySet().iterator(); iter.hasNext(); ) {
+    for (Iterator<Entry<ObjectManager, ObjectIDSet>> iter = objectManager2ObjectIDSet.entrySet().iterator(); iter
+        .hasNext();) {
       Entry<ObjectManager, ObjectIDSet> entry = iter.next();
-      if(entry.getValue().contains(id)) {
+      if (entry.getValue().contains(id)) {
         ObjectManager objectManager = entry.getKey();
         ManagedObject obj = objectManager.getObjectByIDOrNull(id);
-        if (obj == null) {
-          return Collections.EMPTY_SET;
-        }
+        if (obj == null) { return Collections.EMPTY_SET; }
         Set references = obj.getObjectReferences();
         objectManager.releaseReadOnly(obj);
         return references;
@@ -82,17 +79,21 @@ public class ActiveActiveGCHook implements GCHook {
 
   public Set getRescueIDs() {
     Set rescueIds = new ObjectIDSet();
-    clientStateManager.addAllReferencedIdsTo(rescueIds);
- 
+
+    ObjectManagerImpl[] objectManagers = objectManagerArray.getObjectManagers();
+    for (int i = 0; i < objectManagers.length; i++) {
+      objectManagers[i].getClientStateManager().addAllReferencedIdsTo(rescueIds);
+    }
+
     collector.addNewReferencesTo(rescueIds);
- 
+
     return rescueIds;
   }
 
   public Set getRootObjectIDs(ObjectIDSet candidateIDs) {
     ObjectIDSet allRoots = new ObjectIDSet();
-    ObjectManagerImpl [] objectManagers = objectManagerArray.getObjectManagers();
-    for(int i = 0; i < objectManagers.length; i++) {
+    ObjectManagerImpl[] objectManagers = objectManagerArray.getObjectManagers();
+    for (int i = 0; i < objectManagers.length; i++) {
       allRoots.addAll(objectManagers[i].getRootIDs());
     }
     return allRoots;
@@ -103,12 +104,12 @@ public class ActiveActiveGCHook implements GCHook {
   }
 
   public void stopMonitoringReferenceChanges() {
-    collector.stopMonitoringReferenceChanges();   
+    collector.stopMonitoringReferenceChanges();
   }
 
   public void waitUntilReadyToGC() {
-    ObjectManagerImpl [] objectManagers = objectManagerArray.getObjectManagers();
-    for(int i = 0; i < objectManagers.length; i++) {
+    ObjectManagerImpl[] objectManagers = objectManagerArray.getObjectManagers();
+    for (int i = 0; i < objectManagers.length; i++) {
       objectManagers[i].waitUntilReadyToGC();
     }
   }
