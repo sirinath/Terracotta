@@ -18,15 +18,15 @@ import com.tc.aspectwerkz.definition.deployer.AspectModuleDeployer;
 public class SpringAspectModule implements AspectModule {
 
   public void deploy(final AspectModuleDeployer deployer) {
-    buildDefinitionForBeanDefinitionProtocol(deployer);
-
-    buildDefinitionForGetBeanProtocol(deployer);
+//    buildDefinitionForBeanDefinitionProtocol(deployer);
+//
+//    buildDefinitionForGetBeanProtocol(deployer);
 
     buildDefinitionForScopeProtocol(deployer);
 
-    buildDefinitionForApplicationContextEventProtocol(deployer);
-
-    buildDefinitionForAopProxyFactoryProtocol(deployer);
+//    buildDefinitionForApplicationContextEventProtocol(deployer);
+//
+//    buildDefinitionForAopProxyFactoryProtocol(deployer);
 
     // buildDefinitionForTransactionManagerProtocol(deployer);
 
@@ -36,7 +36,7 @@ public class SpringAspectModule implements AspectModule {
   /**
    * Handle ignored fields and other class metadata.
    */
-  private void buildDefinitionForBeanDefinitionProtocol(AspectModuleDeployer deployer) {
+  public void buildDefinitionForBeanDefinitionProtocol(AspectModuleDeployer deployer) {
     deployer.addMixin("com.tcspring.DistributableBeanFactoryMixin", DeploymentModel.PER_INSTANCE,
                       "within(org.springframework.beans.factory.support.AbstractBeanFactory)", true);
 
@@ -74,7 +74,7 @@ public class SpringAspectModule implements AspectModule {
                    "disableClassForName(String className, java.lang.ClassLoader loader)");
   }
 
-  private void buildDefinitionForGetBeanProtocol(AspectModuleDeployer deployer) {
+  public void buildDefinitionForGetBeanProtocol(AspectModuleDeployer deployer) {
     AspectDefinitionBuilder builder = deployer.newAspectBuilder("com.tcspring.GetBeanProtocol",
                                                                 DeploymentModel.PER_JVM, null);
 
@@ -192,7 +192,7 @@ public class SpringAspectModule implements AspectModule {
     }
   }
 
-  private void buildDefinitionForApplicationContextEventProtocol(final AspectModuleDeployer deployer) {
+  public void buildDefinitionForApplicationContextEventProtocol(final AspectModuleDeployer deployer) {
     AspectDefinitionBuilder builder = deployer.newAspectBuilder("com.tcspring.ApplicationContextEventProtocol",
                                                                 DeploymentModel.PER_JVM, null);
 
@@ -210,7 +210,7 @@ public class SpringAspectModule implements AspectModule {
                           + "org.springframework.context.support.AbstractApplicationContext ctx)");
   }
 
-  private void buildDefinitionForAopProxyFactoryProtocol(final AspectModuleDeployer deployer) {
+  public void buildDefinitionForAopProxyFactoryProtocol(final AspectModuleDeployer deployer) {
     if (hasClass("org.springframework.aop.framework.AopProxyFactory", deployer)) {
 
       deployer.addMixin("com.tcspring.AopProxyFactoryProtocol$BeanFactoryAwareMixin", DeploymentModel.PER_INSTANCE,
