@@ -1,19 +1,26 @@
 
 class SvnInfo
-  def initialize(dir)    
+  def initialize(dir)
     @svninfo = {}
-    @svninfo["Last Changed Rev"] = "unknown"
+    @svninfo["Last Changed Rev"] = 0
     @svninfo["Last Changed Author"] = "unknown"
     @svninfo["Last Changed Date"] = "unknown"
     @svninfo["URL"] = "unknown"  
-    svn_info = `svn info '#{dir}' 2>&1`
-    if $? == 0 && !svn_info.blank?        
-      begin
-        @svninfo.merge!(YAML::load(svn_info))
-      rescue
-        STDERR.puts("Error retrieving SVN info: #{svn_info}")
-      end
-    end   
+    if dir
+      svn_info = `svn info '#{dir}' 2>&1`
+      if $? == 0 && !svn_info.blank?        
+        begin
+          @svninfo.merge!(YAML::load(svn_info))
+          @valid = true
+        rescue
+          STDERR.puts("Error retrieving SVN info: #{svn_info}")
+        end
+      end   
+    end
+  end
+  
+  def valid?
+    @valid
   end
   
   def last_changed_rev
@@ -32,7 +39,7 @@ class SvnInfo
     @svninfo["URL"]
   end
   
-  def current_revision
+  def revision
     last_changed_rev
   end
 end
