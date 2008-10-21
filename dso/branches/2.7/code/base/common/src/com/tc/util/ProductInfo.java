@@ -65,6 +65,7 @@ public final class ProductInfo {
   private final String                      patchUser;
   private final Date                        patchTimestamp;
   private final String                      patchRevision;
+  private final String                      patchEERevision;
   private final String                      patchBranch;
 
   private String                            version;
@@ -113,6 +114,7 @@ public final class ProductInfo {
     this.patchUser = getPatchProperty(properties, BUILD_DATA_USER_KEY, UNKNOWN_VALUE);
     this.patchTimestamp = parseTimestamp(getPatchProperty(properties, BUILD_DATA_TIMESTAMP_KEY, null));
     this.patchRevision = getPatchProperty(properties, BUILD_DATA_REVISION_KEY, UNKNOWN_VALUE);
+    this.patchEERevision = getPatchProperty(properties, BUILD_DATA_EE_REVISION_KEY, UNKNOWN_VALUE);
     this.patchBranch = getPatchProperty(properties, BUILD_DATA_BRANCH_KEY, UNKNOWN_VALUE);
 
     Matcher matcher = KITIDPATTERN.matcher(maven_version);
@@ -264,6 +266,10 @@ public final class ProductInfo {
   public String patchRevision() {
     return patchRevision;
   }
+  
+  public String patchEERevision() {
+    return patchEERevision;
+  }
 
   public String patchBranch() {
     return patchBranch;
@@ -297,7 +303,12 @@ public final class ProductInfo {
   }
 
   public String patchBuildID() {
-    return patchTimestampAsString() + " (Revision " + patchRevision + " by " + patchUser + "@" + patchHost + " from "
+    String rev = patchRevision;
+    if (edition.indexOf("Enterprise") >= 0) {
+      rev = patchEERevision + "-" + patchRevision;
+    }
+
+    return patchTimestampAsString() + " (Revision " + rev + " by " + patchUser + "@" + patchHost + " from "
            + patchBranch + ")";
   }
 
