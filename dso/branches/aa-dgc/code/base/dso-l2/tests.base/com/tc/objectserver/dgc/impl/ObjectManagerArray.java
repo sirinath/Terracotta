@@ -23,13 +23,12 @@ import com.tc.objectserver.impl.InMemoryManagedObjectStore;
 import com.tc.objectserver.impl.ObjectManagerConfig;
 import com.tc.objectserver.impl.ObjectManagerImpl;
 import com.tc.objectserver.l1.api.ClientStateManager;
-import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransactionProvider;
+import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
-import com.tc.util.concurrent.StoppableThread;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,12 +48,13 @@ public class ObjectManagerArray implements ObjectManager {
   private final ObjectManagerConfig config;
   private GarbageCollector          collector;
 
-  public ObjectManagerArray(int arrayCount) {
+  public ObjectManagerArray(int arrayCount, ClientStateManager clientStateManager) {
+    Assert.eval(arrayCount > 0);
     this.arrayCount = arrayCount;
     this.objectManagers = new ObjectManagerImpl[arrayCount];
     this.tg = new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(ObjectManagerImpl.class)));   
-    this.clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
-    this.config = new TestObjectManagerConfig();
+    this.clientStateManager = clientStateManager; //new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    this.config = new TestObjectManagerConfig(0, false);
     
     initObjectManagers();
   }
@@ -106,7 +106,6 @@ public class ObjectManagerArray implements ObjectManager {
 
     TestObjectManagerConfig(long gcThreadSleepTime, boolean doGC) {
       super(gcThreadSleepTime, doGC, true, true, false, 60000);
-      throw new RuntimeException("Don't use me.");
     }
 
     @Override
@@ -213,9 +212,12 @@ public class ObjectManagerArray implements ObjectManager {
   public void setGarbageCollector(final GarbageCollector gc) {
     this.collector = gc;
     
-    StoppableThread st = new GarbageCollectorThread(this.tg, "DGC", gc, this.config);
-    st.setDaemon(true);
-    gc.setState(st);
+    for(int i = 0; i < objectManagers.length; i++) {
+      objectManagers[i].setGarbageCollector(gc);
+    }
+//    StoppableThread st = new GarbageCollectorThread(this.tg, "DGC", gc, this.config);
+//    st.setDaemon(true);
+//    gc.setState(st);
   }
   
 
@@ -225,10 +227,15 @@ public class ObjectManagerArray implements ObjectManager {
 
   public void start() {
   //
+    for(int i = 0; i < objectManagers.length; i++) {
+      objectManagers[i].start();
+    }
   }
 
   public void stop() {
-   //
+    for(int i = 0; i < objectManagers.length; i++) {
+      objectManagers[i].stop();
+    }
   }
 
   public void waitUntilReadyToGC() {
