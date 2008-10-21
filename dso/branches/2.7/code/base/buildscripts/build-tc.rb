@@ -42,9 +42,9 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     super(:help, arguments)
 
     # Some more objects we need.
-    root_dir = FilePath.new(@basedir.to_s, "..", "..").canonicalize.to_s
-    ee_root_dir =  root_dir =~ /community/ ? FilePath.new(root_dir.to_s, "..").canonicalize.to_s : nil
-    @build_environment = BuildEnvironment.new(platform, config_source, root_dir, ee_root_dir)
+    os_root_dir = FilePath.new(@basedir.to_s, "..", "..").canonicalize.to_s
+    ee_root_dir =  os_root_dir =~ /community/ ? FilePath.new(os_root_dir.to_s, "..").canonicalize.to_s : nil
+    @build_environment = BuildEnvironment.new(platform, config_source, os_root_dir, ee_root_dir)
     @static_resources = StaticResources.new(basedir)
     @archive_tag = ArchiveTag.new(@build_environment)
 
@@ -332,9 +332,9 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
       check_maven_version
       check_short
       raise "check_short failed." if @script_results.failed?
-      mark_this_revision_as_good(@build_environment.current_revision)
+      mark_this_revision_as_good()
     rescue 
-      mark_this_revision_as_bad(@build_environment.current_revision, $!)
+      mark_this_revision_as_bad($!)
       raise
     end
   end
@@ -731,17 +731,17 @@ END
   def eclipse
     depends :init
 
-    eclipseBuilder = EclipseProjectBuilder.new(true, ant)
-    @module_set.each { |the_module| the_module.eclipse(@build_environment, eclipseBuilder) }
-    eclipseBuilder.generate
+    eclipse_builder = EclipseProjectBuilder.new(true, ant)
+    @module_set.each { |the_module| the_module.eclipse(@build_environment, eclipse_builder) }
+    eclipse_builder.generate
   end
 
   # Regenerates Eclipse projects for all the modules. Only overwrites .classpath files; will not
   # change existing project files, if they're present.
   def meclipse
     depends :init
-    eclipseBuilder = EclipseProjectBuilder.new(false, ant)
-    @module_set.each { |the_module| the_module.eclipse(@build_environment, eclipseBuilder) }
+    eclipse_builder = EclipseProjectBuilder.new(false, ant)
+    @module_set.each { |the_module| the_module.eclipse(@build_environment, eclipse_builder) }
   end
 
   # Shows all configuration properties we're using.
@@ -805,7 +805,7 @@ END
 
       depends :init, :compile
       run_tests(FixedGroupTypeTestSet.new([ group ], types, @module_groups))
-    elsif target.to_s =~ /^(create|publish)_(.*)\s*$/ && /_package$\s*$/
+    elsif target.to_s =~ /^(create|publish)_(.*)\s*$/
       out  = true
       verb = $1
       data = $2.sub(/_package$/, '')
@@ -838,40 +838,20 @@ END
 
   private
 
-  def mark_this_revision_as_good(revision)
-    STDERR.puts("Revision #{revision} is good to go.")
+  def mark_this_revision_as_good
+    STDERR.puts("Revision #{@build_environment.combo_revision} is good to go.")
     root = File.join(build_archive_dir.to_s, "monkey-police", @build_environment.current_branch)
     FileUtils.mkdir_p(root) unless File.exist?(root)
-    File.open(File.join(root, "good_rev.txt"), "w") do | f |
-      f << revision.to_s + "\n"
+    good_rev_file = File.join(root, "good_rev.yml")
+    File.open(good_rev_file, "w") do | f |
+      YAML.dump({'ee' => @build_environment.ee_revision, 'os' => @build_environment.os_revision}, f)
     end
-    
-    # clear sinner list
-    sinnerList = File.join(ENV['HOME'], ".tc", "sinner.txt")
-    FileUtils.rm(sinnerList) if File.exist?(sinnerList)
   end
 
-  def mark_this_revision_as_bad(revision, exception)
-    STDERR.puts("Revision #{revision} is bad, mm'kay!")
-    STDERR.puts(exception)
-    
-    # get the original sinner who broke the build
-    sinnerList = File.join(ENV['HOME'], ".tc", "sinner.txt")
-    sinners = Set.new
-    
-    if File.exist?(sinnerList)
-      File.open(sinnerList, "r") do |f|
-        sinners = Marshal.load(f)
-      end      
-    end
-    
-    sinners << @build_environment.last_changed_author
-
-    File.open(sinnerList, "w") do |f|
-      Marshal.dump(sinners, f)
-    end      
-
-    STDERR.puts("Please let #{sinners.to_a.join(', ')} know.")
+  def mark_this_revision_as_bad(exception)
+    STDERR.puts("Revision #{@build_environment.combo_revision} is bad, mm'kay!")
+    STDERR.puts(exception) 
+    STDERR.puts("Please let people on this mail list know.")
   end
 
   # The full path to the build archive, including directory.
@@ -1065,7 +1045,8 @@ END
       'monkey-platform' => @build_environment.platform,
 
       'branch' => @build_environment.current_branch,
-      'revision' => @build_environment.current_revision,
+      'is_ee_branch' => @build_environment.is_ee_branch?,
+      'revision' => @build_environment.combo_revision,
 
       'appserver' => config_source['tc.tests.configuration.appserver.factory.name'] + "-"  +
         config_source['tc.tests.configuration.appserver.major-version'] + "." +
