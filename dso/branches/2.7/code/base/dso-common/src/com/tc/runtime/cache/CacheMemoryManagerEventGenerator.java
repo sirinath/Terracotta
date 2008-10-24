@@ -18,8 +18,8 @@ public class CacheMemoryManagerEventGenerator implements MemoryEventsListener {
   private int                       leastCount;
   private boolean                   isOldGen;
 
-  public CacheMemoryManagerEventGenerator(int threshold, int criticalThreshold, int leastCount, TCMemoryManager manager,
-                                CacheMemoryEventsListener listener) {
+  public CacheMemoryManagerEventGenerator(int threshold, int criticalThreshold, int leastCount,
+                                          TCMemoryManager manager, CacheMemoryEventsListener listener) {
     verifyInput(threshold, criticalThreshold, leastCount);
     this.listener = listener;
     this.threshold = threshold;
@@ -27,6 +27,7 @@ public class CacheMemoryManagerEventGenerator implements MemoryEventsListener {
     this.leastCount = leastCount;
     manager.registerForMemoryEvents(this);
     this.isOldGen = manager.isMonitorOldGenOnly();
+    this.currentState = CacheMemoryEventType.BELOW_THRESHOLD;
   }
 
   private void verifyInput(int thrhdl, int cricThrhld, int lc) {
