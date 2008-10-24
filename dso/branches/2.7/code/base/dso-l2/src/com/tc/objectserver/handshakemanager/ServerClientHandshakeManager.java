@@ -36,6 +36,7 @@ public class ServerClientHandshakeManager {
   private static final State             STARTING                          = new State("STARTING");
   private static final State             STARTED                           = new State("STARTED");
   private static final int               BATCH_SEQUENCE_SIZE               = 10000;
+  static final int                       RECONNECT_WARN_INTERVAL           = 15000;
 
   public static final Sink               NULL_SINK                         = new NullSink();
 
@@ -187,10 +188,10 @@ public class ServerClientHandshakeManager {
         this.clientStateManager.shutdownNode(deadClient);
         i.remove();
       }
-      logger.info("Reconnect window closed. All dead clients removed.");
+      consoleLogger.info("Reconnect window closed. All dead clients removed.");
       start();
     } else {
-      logger.info("Reconnect window closed, but server already started.");
+      consoleLogger.info("Reconnect window closed, but server already started.");
     }
   }
 
@@ -218,8 +219,13 @@ public class ServerClientHandshakeManager {
             .getChannelID())));
       }
 
-      consoleLogger.info("Starting reconnect window: " + this.reconnectTimeout + " ms.");
-      timer.schedule(reconnectTimerTask, this.reconnectTimeout);
+      consoleLogger.info("Starting reconnect window: " + this.reconnectTimeout + " ms. Waiting for "
+                         + existingUnconnectedClients.size() + " clients to connect. ");
+      if (this.reconnectTimeout < RECONNECT_WARN_INTERVAL) {
+        timer.schedule(reconnectTimerTask, this.reconnectTimeout);
+      } else {
+        timer.schedule(reconnectTimerTask, RECONNECT_WARN_INTERVAL, RECONNECT_WARN_INTERVAL);
+      }
     }
   }
 
@@ -227,6 +233,9 @@ public class ServerClientHandshakeManager {
     if (state != INIT) throw new AssertionError("Should be in STARTING state: " + state);
   }
 
+  synchronized int getUnconnectedClientsSize() {
+    return existingUnconnectedClients.size();
+  }
   /**
    * Notifies handshake manager that the reconnect time has passed.
    * 
@@ -236,17 +245,36 @@ public class ServerClientHandshakeManager {
 
     private final TCTimer                      timer;
     private final ServerClientHandshakeManager handshakeManager;
+    private long timeToWait;
 
     private ReconnectTimerTask(ServerClientHandshakeManager handshakeManager, TCTimer timer) {
       this.handshakeManager = handshakeManager;
-      this.timer = timer;
+      this.timer = timer;   
+      timeToWait = handshakeManager.reconnectTimeout;
+    }    
+    
+    public void setTimeToWait(long timeToWait) {
+      this.timeToWait = timeToWait;
     }
 
     public void run() {
-      timer.cancel();
-      handshakeManager.notifyTimeout();
+      timeToWait -= RECONNECT_WARN_INTERVAL;
+      if (timeToWait > 0 && handshakeManager.getUnconnectedClientsSize() > 0) {  
+        handshakeManager.consoleLogger.info("Reconnect window active.  Waiting for " 
+                                            + handshakeManager.getUnconnectedClientsSize() 
+                                            + " clients to connect. "
+                                            + timeToWait + " ms remaining.");
+        if (timeToWait < RECONNECT_WARN_INTERVAL) {
+          cancel();
+          ReconnectTimerTask task = new ReconnectTimerTask(handshakeManager, timer);
+          task.setTimeToWait(timeToWait);
+          timer.schedule(task, timeToWait);
+        }
+      } else {
+        timer.cancel();      
+        handshakeManager.notifyTimeout();
+      }
     }
-
   }
 
   private static class State {
