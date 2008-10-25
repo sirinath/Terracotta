@@ -10,6 +10,8 @@ import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.SessionIDFromURLServlet;
 
+import java.util.Date;
+
 import junit.framework.Test;
 
 public class SessionIDFromURLTest extends AbstractOneServerDeploymentTest {
@@ -21,7 +23,10 @@ public class SessionIDFromURLTest extends AbstractOneServerDeploymentTest {
   }
 
   public SessionIDFromURLTest() {
-    //
+    // MNK-590
+    if (appServerInfo().getId() == AppServerInfo.WEBSPHERE) {
+      disableAllUntil(new Date(Long.MAX_VALUE));
+    }
   }
 
   public void testURLSessionId() throws Exception {
