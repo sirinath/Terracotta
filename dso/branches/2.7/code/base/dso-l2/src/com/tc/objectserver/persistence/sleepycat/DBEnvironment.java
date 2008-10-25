@@ -14,8 +14,10 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.EnvironmentStats;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.StatsConfig;
 import com.sleepycat.je.Transaction;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -261,6 +263,14 @@ public class DBEnvironment {
     return env;
   }
 
+  public EnvironmentStats getStats(StatsConfig config) throws TCDatabaseException {
+    try {
+      return env.getStats(config);
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
+    }
+  }
+
   public synchronized Database getObjectDatabase() throws TCDatabaseException {
     assertOpen();
     return (Database) databasesByName.get(OBJECT_DB_NAME);
@@ -445,6 +455,10 @@ public class DBEnvironment {
         }
       }
     }
+  }
+
+  public static final String getClusterStateStoreName() {
+    return CLUSTER_STATE_STORE;
   }
 
   private static final class DBEnvironmentStatus {
