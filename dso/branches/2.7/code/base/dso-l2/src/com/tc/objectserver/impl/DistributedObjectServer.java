@@ -569,20 +569,20 @@ public class DistributedObjectServer implements TCDumper {
     boolean verboseGC = l2DSOConfig.garbageCollectionVerbose().getBoolean();
     sampledCounterManager = new CounterManagerImpl();
     SampledCounter objectCreationRate = (SampledCounter) sampledCounterManager
-        .createCounter(new SampledCounterConfig(1, 900, true, 0L));
+        .createCounter(new SampledCounterConfig(1, 300, true, 0L));
     SampledCounter objectFaultRate = (SampledCounter) sampledCounterManager
-        .createCounter(new SampledCounterConfig(1, 900, true, 0L));
+        .createCounter(new SampledCounterConfig(1, 300, true, 0L));
     ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate, objectFaultRate);
+    SampledCounter l2FaultFromDisk = (SampledCounter) sampledCounterManager
+        .createCounter(new SampledCounterConfig(1, 300, true, 0L));
 
     SequenceValidator sequenceValidator = new SequenceValidator(0);
-    ManagedObjectFaultHandler managedObjectFaultHandler = new ManagedObjectFaultHandler();
     // Server initiated request processing queues shouldn't have any max queue size.
     Stage faultManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FAULT_STAGE,
-                                                             managedObjectFaultHandler, l2Properties
+                                                             new ManagedObjectFaultHandler(l2FaultFromDisk), l2Properties
                                                                  .getInt("seda.faultstage.threads"), -1);
-    ManagedObjectFlushHandler managedObjectFlushHandler = new ManagedObjectFlushHandler();
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
-                                                             managedObjectFlushHandler, (persistent ? 1 : l2Properties
+                                                             new ManagedObjectFlushHandler(), (persistent ? 1 : l2Properties
                                                                  .getInt("seda.flushstage.threads")), -1);
     TCProperties youngDGCProperties = objManagerProperties.getPropertiesFor("dgc").getPropertiesFor("young");
     boolean enableYoungGenDGC = youngDGCProperties.getBoolean("enabled");
@@ -668,7 +668,7 @@ public class DistributedObjectServer implements TCDumper {
 
     DSOGlobalServerStats serverStats = new DSOGlobalServerStatsImpl(globalObjectFlushCounter, globalObjectFaultCounter,
                                                                     globalTxnCounter, objMgrStats, broadcastCounter,
-                                                                    changeCounter);
+                                                                    changeCounter, l2FaultFromDisk);
 
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
                                                                        globalTransactionIDSequence);
@@ -864,8 +864,8 @@ public class DistributedObjectServer implements TCDumper {
     stageManager.startAll(context);
 
     // populate the statistics retrieval registry
-    populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager(), mm, managedObjectFaultHandler,
-                                        transactionManager, serverTransactionSequencerImpl);
+    populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager(), mm, transactionManager,
+                                        serverTransactionSequencerImpl);
 
     // XXX: yucky casts
     managementContext = new ServerManagementContext(transactionManager, (ObjectManagerMBean) objectManager,
@@ -899,7 +899,6 @@ public class DistributedObjectServer implements TCDumper {
   private void populateStatisticsRetrievalRegistry(final DSOGlobalServerStats serverStats,
                                                    final StageManager stageManager,
                                                    final MessageMonitor messageMonitor,
-                                                   final ManagedObjectFaultHandler managedObjectFaultHandler,
                                                    final ServerTransactionManagerImpl txnManager,
                                                    final ServerTransactionSequencerStats serverTransactionSequencerStats) {
     if (statisticsAgentSubSystem.isActive()) {
@@ -921,7 +920,7 @@ public class DistributedObjectServer implements TCDumper {
       registry.registerActionInstance(new SRADistributedGC());
       registry.registerActionInstance(new SRAVmGarbageCollector());
       registry.registerActionInstance(new SRAMessages(messageMonitor));
-      registry.registerActionInstance(new SRAL2FaultsFromDisk(managedObjectFaultHandler));
+      registry.registerActionInstance(new SRAL2FaultsFromDisk(serverStats));
       registry.registerActionInstance(new SRAL1ToL2FlushRate(serverStats));
       registry.registerActionInstance(new SRAL2PendingTransactions(txnManager));
       registry.registerActionInstance(new SRAServerTransactionSequencer(serverTransactionSequencerStats));
