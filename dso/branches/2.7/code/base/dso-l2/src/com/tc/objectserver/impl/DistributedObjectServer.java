@@ -366,7 +366,9 @@ public class DistributedObjectServer implements TCDumper {
 
     // setup the statistics subsystem
     statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
-    statisticsAgentSubSystem.setup(configSetupManager.commonl2Config());
+    if (!statisticsAgentSubSystem.setup(configSetupManager.commonl2Config())) {
+      System.exit(-1);
+    }
     if (TCSocketAddress.WILDCARD_IP.equals(bindAddress) || TCSocketAddress.LOOPBACK_IP.equals(bindAddress)) {
       statisticsAgentSubSystem.setDefaultAgentIp(InetAddress.getLocalHost().getHostAddress());
     } else {
