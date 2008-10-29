@@ -14,6 +14,7 @@ import com.tc.l2.state.StateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ClassPersistor;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
@@ -55,12 +56,12 @@ public class SleepycatPersistor implements Persistor {
   // only for tests
   public SleepycatPersistor(TCLogger logger, DBEnvironment env, SerializationAdapterFactory serializationAdapterFactory)
       throws TCDatabaseException {
-    this(logger, env, serializationAdapterFactory, null);
+    this(logger, env, serializationAdapterFactory, null, new ObjectStatsRecorder());
   }
 
   public SleepycatPersistor(TCLogger logger, DBEnvironment env,
-                            SerializationAdapterFactory serializationAdapterFactory, File l2DataPath)
-      throws TCDatabaseException {
+                            SerializationAdapterFactory serializationAdapterFactory, File l2DataPath,
+                            ObjectStatsRecorder objectStatsRecorder) throws TCDatabaseException {
 
     open(env, logger);
     this.env = env;
@@ -90,7 +91,7 @@ public class SleepycatPersistor implements Persistor {
                                                                      .getRootDatabase(), rootDBCursorConfig,
                                                                  this.persistenceTransactionProvider,
                                                                  this.sleepycatCollectionsPersistor, env
-                                                                     .isParanoidMode());
+                                                                     .isParanoidMode(), objectStatsRecorder);
     this.clientStatePersistor = new ClientStatePersistorImpl(logger, this.persistenceTransactionProvider,
                                                              new SleepycatSequence(this.persistenceTransactionProvider,
                                                                                    logger, 1, 0, env
