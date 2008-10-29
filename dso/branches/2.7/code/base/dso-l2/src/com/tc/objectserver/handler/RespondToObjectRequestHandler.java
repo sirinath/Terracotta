@@ -23,6 +23,7 @@ import com.tc.objectserver.context.ManagedObjectRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
 
@@ -34,14 +35,27 @@ import java.util.Set;
 
 public class RespondToObjectRequestHandler extends AbstractEventHandler {
 
-  private DSOChannelManager  channelManager;
-  private ObjectManager      objectManager;
-  private ClientStateManager stateManager;
-  private TCLogger           logger;
-  private Sequence           batchIDSequence = new SimpleSequence();
-  private Sink               managedObjectRequestSink;
+  private DSOChannelManager         channelManager;
+  private ObjectManager             objectManager;
+  private ClientStateManager        stateManager;
+  private TCLogger                  logger;
+  private Sequence                  batchIDSequence = new SimpleSequence();
+  private Sink                      managedObjectRequestSink;
+  private final ObjectStatsRecorder objectStatsRecorder;
+
+  public RespondToObjectRequestHandler(ObjectStatsRecorder objectStatsRecorder) {
+    this.objectStatsRecorder = objectStatsRecorder;
+
+  }
+
+  private void updateStats(ManagedObject mo) {
+    String className = mo.getManagedObjectState().getClassName();
+    if (className == null) className = "UNKNOWN";
+    objectStatsRecorder.updateRequestStats(className);
+  }
 
   public void handleEvent(EventContext context) {
+    boolean requestDebug = objectStatsRecorder.getRequestDebug();
     long batchID = batchIDSequence.next();
     ManagedObjectRequestContext morc = (ManagedObjectRequestContext) context;
     Collection<ManagedObject> objs = morc.getObjects();
@@ -81,6 +95,9 @@ public class RespondToObjectRequestHandler extends AbstractEventHandler {
         if (newIds.contains(m.getID())) {
           m.toDNA(out, serializer);
           sendCount++;
+          if (requestDebug) {
+            updateStats(m);
+          }
         } else if (morc.getLookupIDs().contains(m.getID())) {
           // logger.info("Ignoring request for look up from " + morc.getChannelID() + " for " + m.getID());
         }

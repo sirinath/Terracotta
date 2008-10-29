@@ -150,6 +150,7 @@ import com.tc.objectserver.lockmanager.api.LockManagerMBean;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProviderImpl;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -272,6 +273,7 @@ public class DistributedObjectServer implements TCDumper {
   private CacheManager                         cacheManager;
 
   private final TCServerInfoMBean              tcServerInfoMBean;
+  private final ObjectStatsRecorder            objectStatsRecorder;
   private final L2State                        l2State;
   private L2Management                         l2Management;
   private L2Coordinator                        l2Coordinator;
@@ -295,15 +297,16 @@ public class DistributedObjectServer implements TCDumper {
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
-                                 ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean) {
-    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, new L2State(),
-         new SEDA(threadGroup));
+                                 ConnectionPolicy connectionPolicy, TCServerInfoMBean tcServerInfoMBean,
+                                 ObjectStatsRecorder objectStatsRecorder) {
+    this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, objectStatsRecorder,
+         new L2State(), new SEDA(threadGroup));
 
   }
 
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
                                  ConnectionPolicy connectionPolicy, Sink httpSink, TCServerInfoMBean tcServerInfoMBean,
-                                 L2State l2State, SEDA seda) {
+                                 ObjectStatsRecorder objectStatsRecorder, L2State l2State, SEDA seda) {
     // This assertion is here because we want to assume that all threads spawned by the server (including any created in
     // 3rd party libs) inherit their thread group from the current thread . Consider this before removing the assertion.
     // Even in tests, we probably don't want different thread group configurations
@@ -313,6 +316,7 @@ public class DistributedObjectServer implements TCDumper {
     this.connectionPolicy = connectionPolicy;
     this.httpSink = httpSink;
     this.tcServerInfoMBean = tcServerInfoMBean;
+    this.objectStatsRecorder = objectStatsRecorder;
     this.l2State = l2State;
     this.threadGroup = threadGroup;
     this.seda = seda;
@@ -451,7 +455,7 @@ public class DistributedObjectServer implements TCDumper {
       SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       persistor = new SleepycatPersistor(TCLogging.getLogger(SleepycatPersistor.class), dbenv,
                                          serializationAdapterFactory, this.configSetupManager.commonl2Config()
-                                             .dataPath().getFile());
+                                             .dataPath().getFile(), objectStatsRecorder);
       // Setting the DB environment for the bean which takes backup of the active server
       if (persistent) {
         ServerDBBackup mbean = l2Management.findServerDbBackupMBean();
@@ -584,14 +588,17 @@ public class DistributedObjectServer implements TCDumper {
 
     SequenceValidator sequenceValidator = new SequenceValidator(0);
     // Server initiated request processing queues shouldn't have any max queue size.
+    ManagedObjectFaultHandler managedObjectFaultHandler = new ManagedObjectFaultHandler(l2FaultFromDisk,
+                                                                                        time2FaultFromDisk,
+                                                                                        time2Add2ObjMgr,
+                                                                                        objectStatsRecorder);
     Stage faultManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FAULT_STAGE,
-                                                             new ManagedObjectFaultHandler(l2FaultFromDisk,
-                                                                                           time2FaultFromDisk,
-                                                                                           time2Add2ObjMgr),
-                                                             l2Properties.getInt("seda.faultstage.threads"), -1);
+                                                             managedObjectFaultHandler, l2Properties
+                                                                 .getInt("seda.faultstage.threads"), -1);
+    ManagedObjectFlushHandler managedObjectFlushHandler = new ManagedObjectFlushHandler(objectStatsRecorder);
     Stage flushManagedObjectStage = stageManager.createStage(ServerConfigurationContext.MANAGED_OBJECT_FLUSH_STAGE,
-                                                             new ManagedObjectFlushHandler(), (persistent ? 1
-                                                                 : l2Properties.getInt("seda.flushstage.threads")), -1);
+                                                             managedObjectFlushHandler, (persistent ? 1 : l2Properties
+                                                                 .getInt("seda.flushstage.threads")), -1);
     TCProperties youngDGCProperties = objManagerProperties.getPropertiesFor("dgc").getPropertiesFor("young");
     boolean enableYoungGenDGC = youngDGCProperties.getBoolean("enabled");
     long youngGenDGCFrequency = youngDGCProperties.getLong("frequencyInMillis");
@@ -601,7 +608,7 @@ public class DistributedObjectServer implements TCDumper {
                                                                       youngGenDGCFrequency);
     objectManager = new ObjectManagerImpl(objectManagerConfig, threadGroup, clientStateManager, objectStore, swapCache,
                                           persistenceTransactionProvider, faultManagedObjectStage.getSink(),
-                                          flushManagedObjectStage.getSink());
+                                          flushManagedObjectStage.getSink(), objectStatsRecorder);
     objectManager.setStatsListener(objMgrStats);
     MarkAndSweepGarbageCollector markAndSweepGarbageCollector = new MarkAndSweepGarbageCollector(objectManager,
                                                                                                  clientStateManager,
@@ -696,7 +703,8 @@ public class DistributedObjectServer implements TCDumper {
     transactionManager = new ServerTransactionManagerImpl(gtxm, transactionStore, lockManager, clientStateManager,
                                                           objectManager, txnObjectManager, taa, globalTxnCounter,
                                                           channelStats, new ServerTransactionManagerConfig(l2Properties
-                                                              .getPropertiesFor("transactionmanager")));
+                                                              .getPropertiesFor("transactionmanager")),
+                                                          objectStatsRecorder);
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(transactionManager));
 
     MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
@@ -729,7 +737,8 @@ public class DistributedObjectServer implements TCDumper {
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
 
-    BroadcastChangeHandler broadcastChangeHandler = new BroadcastChangeHandler(broadcastCounter, changeCounter);
+    BroadcastChangeHandler broadcastChangeHandler = new BroadcastChangeHandler(broadcastCounter, changeCounter,
+                                                                               objectStatsRecorder);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, broadcastChangeHandler, 1,
                              maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
@@ -750,7 +759,7 @@ public class DistributedObjectServer implements TCDumper {
                                                                                    objectRequestManager), 1,
                                                    maxStageSize);
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
-                             new RespondToObjectRequestHandler(), 4, maxStageSize);
+                             new RespondToObjectRequestHandler(objectStatsRecorder), 4, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                 new RequestObjectIDBatchHandler(objectStore), 1, maxStageSize);
     Stage transactionAck = stageManager.createStage(ServerConfigurationContext.TRANSACTION_ACKNOWLEDGEMENT_STAGE,

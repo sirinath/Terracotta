@@ -33,6 +33,7 @@ import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.objectserver.managedobject.ManagedObjectImpl;
 import com.tc.objectserver.managedobject.ManagedObjectTraverser;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
@@ -67,41 +68,45 @@ import java.util.Set;
 public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable,
     DumpHandler, PrettyPrintable {
 
-  private static final TCLogger                logger                   = TCLogging.getLogger(ObjectManager.class);
+  private static final TCLogger                       logger                   = TCLogging
+                                                                                   .getLogger(ObjectManager.class);
 
-  private static final int                     MAX_COMMIT_SIZE          = TCPropertiesImpl
-                                                                            .getProperties()
-                                                                            .getInt(
-                                                                                    TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
+  private static final int                            MAX_COMMIT_SIZE          = TCPropertiesImpl
+                                                                                   .getProperties()
+                                                                                   .getInt(
+                                                                                           TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
   // XXX:: Should go to property file
-  private static final int                     INITIAL_SET_SIZE         = 16;
-  private static final float                   LOAD_FACTOR              = 0.75f;
-  private static final int                     MAX_LOOKUP_OBJECTS_COUNT = 5000;
+  private static final int                            INITIAL_SET_SIZE         = 16;
+  private static final float                          LOAD_FACTOR              = 0.75f;
+  private static final int                            MAX_LOOKUP_OBJECTS_COUNT = 5000;
 
-  private final ManagedObjectStore                     objectStore;
-  private final Map<ObjectID, ManagedObjectReference>  references;
-  private final EvictionPolicy                         evictionPolicy;
-  private final Counter                                flushCount               = new Counter();
-  private final PendingList                            pending                  = new PendingList();
+  private final ManagedObjectStore                    objectStore;
+  private final Map<ObjectID, ManagedObjectReference> references;
+  private final EvictionPolicy                        evictionPolicy;
+  private final Counter                               flushCount               = new Counter();
+  private final PendingList                           pending                  = new PendingList();
 
-  private GarbageCollector                             collector                = new NullGarbageCollector();
-  private int                                          checkedOutCount          = 0;
+  private GarbageCollector                            collector                = new NullGarbageCollector();
+  private int                                         checkedOutCount          = 0;
 
-  private volatile boolean                             inShutdown               = false;
+  private volatile boolean                            inShutdown               = false;
 
-  private ClientStateManager                           stateManager;
-  private final ObjectManagerConfig                    config;
-  private final ThreadGroup                            gcThreadGroup;
-  private ObjectManagerStatsListener                   stats                    = new NullObjectManagerStatsListener();
-  private final PersistenceTransactionProvider         persistenceTransactionProvider;
-  private final Sink                                   faultSink;
-  private final Sink                                   flushSink;
-  private TransactionalObjectManager                   txnObjectMgr             = new NullTransactionalObjectManager();
-  private int                                          preFetchedCount          = 0;
+  private ClientStateManager                          stateManager;
+  private final ObjectManagerConfig                   config;
+  private final ThreadGroup                           gcThreadGroup;
+  private ObjectManagerStatsListener                  stats                    = new NullObjectManagerStatsListener();
+  private final PersistenceTransactionProvider        persistenceTransactionProvider;
+  private final Sink                                  faultSink;
+  private final Sink                                  flushSink;
+  private TransactionalObjectManager                  txnObjectMgr             = new NullTransactionalObjectManager();
+  private int                                         preFetchedCount          = 0;
+
+  private final ObjectStatsRecorder                   objectStatsRecorder;
 
   public ObjectManagerImpl(ObjectManagerConfig config, ThreadGroup gcThreadGroup, ClientStateManager stateManager,
                            ManagedObjectStore objectStore, EvictionPolicy cache,
-                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink, Sink flushSink) {
+                           PersistenceTransactionProvider persistenceTransactionProvider, Sink faultSink,
+                           Sink flushSink, ObjectStatsRecorder objectStatsRecorder) {
     this.faultSink = faultSink;
     this.flushSink = flushSink;
     Assert.assertNotNull(objectStore);
@@ -112,6 +117,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     this.evictionPolicy = cache;
     this.persistenceTransactionProvider = persistenceTransactionProvider;
     this.references = new HashMap<ObjectID, ManagedObjectReference>(10000);
+    this.objectStatsRecorder = objectStatsRecorder;
   }
 
   public void setTransactionalObjectManager(TransactionalObjectManager txnObjectManager) {
@@ -249,14 +255,15 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     return mo;
   }
-  
+
   /**
    * This method returns null if you are looking up a newly created object that is not yet initialized or an Object that
    * is not in cache. This is mainly used by DGC.
    */
   public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id) {
-    if(isObjectInCache(id)) {
-      // There is still a small race where this call might fault objects that were just flushed to disk, but we can live with that.
+    if (isObjectInCache(id)) {
+      // There is still a small race where this call might fault objects that were just flushed to disk, but we can live
+      // with that.
       return getObjectByIDOrNull(id);
     } else {
       // Not in cache.
@@ -394,7 +401,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return newReference;
   }
 
-  private synchronized void reapCache(Collection removalCandidates, Collection<ManagedObject> toFlush, Collection<ManagedObjectReference> removedObjects) {
+  private synchronized void reapCache(Collection removalCandidates, Collection<ManagedObject> toFlush,
+                                      Collection<ManagedObjectReference> removedObjects) {
     while (collector.isPausingOrPaused()) {
       try {
         this.wait();
@@ -403,7 +411,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       }
     }
     for (final Object cand : removalCandidates) {
-      ManagedObjectReference removalCandidate = (ManagedObjectReference)cand;
+      ManagedObjectReference removalCandidate = (ManagedObjectReference) cand;
       // It is possible that before the cache evictor has a chance to mark the reference, the GC could come and remove
       // the reference, hence we check in references map again
       if (removalCandidate != null && !removalCandidate.isReferenced() && !removalCandidate.isNew()
@@ -499,7 +507,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
   }
 
-  private Set<ObjectID> addReachableObjectsIfNecessary(NodeID nodeID, int maxReachableObjects, Set<ManagedObjectReference> objects) {
+  private Set<ObjectID> addReachableObjectsIfNecessary(NodeID nodeID, int maxReachableObjects,
+                                                       Set<ManagedObjectReference> objects) {
     if (maxReachableObjects <= 0) { return Collections.emptySet(); }
     ManagedObjectTraverser traverser = new ManagedObjectTraverser(maxReachableObjects);
     Set<ManagedObjectReference> lookedUpObjects = objects;
@@ -612,9 +621,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   public ObjectIDSet getAllObjectIDs() {
     return objectStore.getAllObjectIDs();
   }
-  
+
   public synchronized ObjectIDSet getObjectIDsInCache() {
-    ObjectIDSet ids =  new ObjectIDSet();
+    ObjectIDSet ids = new ObjectIDSet();
     ids.addAll(references.keySet());
     return ids;
   }
@@ -704,7 +713,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     objectStore.removeAllObjectsByID(gcResult);
   }
-  
+
   private void flushAndCommit(PersistenceTransaction persistenceTransaction, ManagedObject managedObject) {
     objectStore.commitObject(persistenceTransaction, managedObject);
     persistenceTransaction.commit();
@@ -780,7 +789,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     }
     this.collector = newCollector;
 
-    if (!config.doGC() || config.gcThreadSleepTime() < 0) return;
+    if ((!config.doGC() || config.gcThreadSleepTime() <= 0)
+        && (!config.isYoungGenDGCEnabled() || config.getYoungGenDGCFrequencyInMillis() <= 0)) return;
 
     StoppableThread st = new GarbageCollectorThread(this.gcThreadGroup, "DGC", newCollector, this.config);
     st.setDaemon(true);
@@ -851,6 +861,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     ArrayList<ManagedObjectReference> removed = new ArrayList<ManagedObjectReference>();
     reapCache(removalCandidates, toFlush, removed);
 
+    if (objectStatsRecorder.getFlushDebug()) {
+      updateFlushStats(toFlush, removed);
+    }
+
     int evicted = (toFlush.size() + removed.size());
     // Let GC work for us
     removed = null;
@@ -864,6 +878,21 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
     // TODO:: Send the right objects to the cache manager
     stat.objectEvicted(evicted, references_size(), Collections.EMPTY_LIST);
+  }
+
+  private void updateFlushStats(Collection<ManagedObject> toFlush, Collection<ManagedObjectReference> removedObjects) {
+    Iterator<ManagedObject> flushIter = toFlush.iterator();
+    while (flushIter.hasNext()) {
+      String className = flushIter.next().getManagedObjectState().getClassName();
+      if (className == null) className = "UNKNOWN";
+      objectStatsRecorder.updateFlushStats(className);
+    }
+    Iterator<ManagedObjectReference> removedIter = removedObjects.iterator();
+    while (removedIter.hasNext()) {
+      String className = removedIter.next().getObject().getManagedObjectState().getClassName();
+      if (className == null) className = "UNKNOWN";
+      objectStatsRecorder.updateFlushStats(className);
+    }
   }
 
   private void waitUntilFlushComplete() {
@@ -1047,9 +1076,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private static class PendingList {
-    List<Pending>                 pending      = new ArrayList<Pending>();
-    Map<ObjectID, List<Pending>>  blocked      = new HashMap<ObjectID, List<Pending>>();
-    int                           blockedCount = 0;
+    List<Pending>                pending      = new ArrayList<Pending>();
+    Map<ObjectID, List<Pending>> blocked      = new HashMap<ObjectID, List<Pending>>();
+    int                          blockedCount = 0;
 
     public void makeBlocked(ObjectID blockedOid, Pending pd) {
       List<Pending> blockedRequests = blocked.get(blockedOid);

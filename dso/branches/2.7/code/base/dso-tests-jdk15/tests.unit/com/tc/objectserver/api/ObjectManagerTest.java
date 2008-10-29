@@ -65,6 +65,7 @@ import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.objectserver.managedobject.NullManagedObjectChangeListenerProvider;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.MapEntryFacade;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
@@ -132,6 +133,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   private TransactionalObjectManagerImpl     txObjectManager;
   private TestSinkContext                    testFaultSinkContext;
   private long                               version = 0;
+  private ObjectStatsRecorder                objectStatsRecorder;
 
   /**
    * Constructor for ObjectManagerTest.
@@ -156,6 +158,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     stats = new ObjectManagerStatsImpl(newObjectCounter, objectfaultCounter);
     persistenceTransactionProvider = new TestPersistenceTransactionProvider();
     NULL_TRANSACTION = TestPersistenceTransaction.NULL_TRANSACTION;
+    objectStatsRecorder = new ObjectStatsRecorder();
   }
 
   private void initObjectManager() {
@@ -179,7 +182,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     TestSink faultSink = new TestSink();
     TestSink flushSink = new TestSink();
     this.objectManager = new ObjectManagerImpl(config, threadGroup, clientStateManager, store, cache,
-                                               persistenceTransactionProvider, faultSink, flushSink);
+                                               persistenceTransactionProvider, faultSink, flushSink,
+                                               objectStatsRecorder);
     testFaultSinkContext = new TestSinkContext();
     new TestMOFaulter(this.objectManager, store, faultSink, testFaultSinkContext).start();
     new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
@@ -301,7 +305,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     // CASE 1: no preFetched objects
     Set<ObjectID> ids = makeObjectIDSet(0, 10);
-    TestResultsContext results = new TestResultsContext(ids, Collections.<ObjectID>emptySet(), true);
+    TestResultsContext results = new TestResultsContext(ids, Collections.<ObjectID> emptySet(), true);
     testFaultSinkContext.expectedSinkCountDownFrom(10);
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
@@ -317,7 +321,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     // ThreadUtil.reallySleep(5000);
     testFaultSinkContext.expectedSinkCountUpTo(10);
     testFaultSinkContext.expectedSinkCountDownFrom(10);
-    objectManager.preFetchObjectsAndCreate(ids, Collections.<ObjectID>emptySet());
+    objectManager.preFetchObjectsAndCreate(ids, Collections.<ObjectID> emptySet());
     testFaultSinkContext.waitTillCompleteCountDown();
 
     // because objects where prefetched we should have 10 hits, but also 10 moreT
@@ -326,7 +330,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(20, stats.getTotalCacheMisses());
 
-    results = new TestResultsContext(ids, Collections.<ObjectID>emptySet(), false);
+    results = new TestResultsContext(ids, Collections.<ObjectID> emptySet(), false);
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     testFaultSinkContext.waitTillCompleteCountUp();
@@ -621,7 +625,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       String fName = String.valueOf(i);
       Object value = setFacade.getFieldValue(fName);
       assertTrue(value instanceof String);
-      actual.add((String)value);
+      actual.add((String) value);
     }
 
     assertTrue(expect.containsAll(actual));
@@ -648,7 +652,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
       Object value = mapFacade.getFieldValue(fName);
       assertTrue(value instanceof MapEntryFacade);
       MapEntryFacade entry = (MapEntryFacade) value;
-      actual.put((String)entry.getKey(), (String)entry.getValue());
+      actual.put((String) entry.getKey(), (String) entry.getValue());
     }
 
     for (String key : actual.keySet()) {
@@ -732,7 +736,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     config.paranoid = paranoid;
     objectManager = new ObjectManagerImpl(config, createThreadGroup(), clientStateManager, store,
                                           new LRUEvictionPolicy(100), persistenceTransactionProvider, faultSink,
-                                          flushSink);
+                                          flushSink, objectStatsRecorder);
     new TestMOFaulter(this.objectManager, store, faultSink, new NullSinkContext()).start();
     new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
 
@@ -806,7 +810,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectManager.release(tx, lookedUpViaLookup);
 
     // now do another lookup, change, and commit cycle
-    responseContext = new TestResultsContext(ids, Collections.<ObjectID>emptySet());
+    responseContext = new TestResultsContext(ids, Collections.<ObjectID> emptySet());
     lookedUpObjects = responseContext.objects;
 
     objectManager.lookupObjectsFor(key, responseContext);
@@ -946,7 +950,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertEquals("Byte", facade.getFieldType("zzzField"));
     assertEquals("String", facade.getFieldType("stringField"));
     assertEquals(42, facade.getFieldValue("intField"));
-    assertEquals((byte)1, facade.getFieldValue("zzzField"));
+    assertEquals((byte) 1, facade.getFieldValue("zzzField"));
     assertEquals(new ObjectID(696969), facade.getFieldValue("objField"));
     assertEquals("yo yo yo", facade.getFieldValue("stringField"));
     assertEquals(new ObjectID(1), facade.getObjectId());
@@ -999,8 +1003,11 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     TestObjectManagerResultsContext context;
     assertTrue(objectManager
-        .lookupObjectsAndSubObjectsFor(null, context = new TestObjectManagerResultsContext(new HashMap<ObjectID, ManagedObject>(),
-                                       objectIDs), -1));
+        .lookupObjectsAndSubObjectsFor(
+                                       null,
+                                       context = new TestObjectManagerResultsContext(
+                                                                                     new HashMap<ObjectID, ManagedObject>(),
+                                                                                     objectIDs), -1));
 
     ManagedObject retrievedMo = (ManagedObject) context.getResults().values().iterator().next();
     assertTrue(mo == retrievedMo);
@@ -1013,8 +1020,11 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     objectIDs.add(id1);
 
     boolean notPending = objectManager
-        .lookupObjectsAndSubObjectsFor(null, context = new TestObjectManagerResultsContext(new HashMap<ObjectID, ManagedObject>(),
-                                       objectIDs), -1);
+        .lookupObjectsAndSubObjectsFor(
+                                       null,
+                                       context = new TestObjectManagerResultsContext(
+                                                                                     new HashMap<ObjectID, ManagedObject>(),
+                                                                                     objectIDs), -1);
     assertFalse(notPending);
     assertEquals(0, context.getResults().size());
     objectManager.release(NULL_TRANSACTION, mo);
@@ -1052,7 +1062,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     createObjects(50, 10);
     Set<ObjectID> ids = makeObjectIDSet(0, 10);
     // ThreadUtil.reallySleep(5000);
-    TestResultsContext results = new TestResultsContext(ids, Collections.<ObjectID>emptySet());
+    TestResultsContext results = new TestResultsContext(ids, Collections.<ObjectID> emptySet());
 
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
@@ -1062,7 +1072,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertEquals(0, stats.getTotalCacheHits());
     assertEquals(10, stats.getTotalCacheMisses());
 
-    results = new TestResultsContext(ids, Collections.<ObjectID>emptySet());
+    results = new TestResultsContext(ids, Collections.<ObjectID> emptySet());
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
@@ -1071,7 +1081,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     assertEquals(10, stats.getTotalCacheMisses());
 
     ids = makeObjectIDSet(10, 20);
-    results = new TestResultsContext(ids, Collections.<ObjectID>emptySet());
+    results = new TestResultsContext(ids, Collections.<ObjectID> emptySet());
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
@@ -1082,7 +1092,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     evictCache(10);
 
     ids = makeObjectIDSet(14, 4);
-    results = new TestResultsContext(ids, Collections.<ObjectID>emptySet());
+    results = new TestResultsContext(ids, Collections.<ObjectID> emptySet());
     objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     objectManager.releaseAll(NULL_TRANSACTION, results.objects.values());
@@ -1130,81 +1140,37 @@ public class ObjectManagerTest extends BaseDSOTestCase {
   }
 
   /**
-  public void testGCStats() {
-    initObjectManager();
+   * public void testGCStats() { initObjectManager(); // this should disable the internal gc thread, allowing us to
+   * control when // objMgr.gc() happens this.config.myGCThreadSleepTime = -1; GarbageCollector gc = new
+   * MarkAndSweepGarbageCollector(objectManager, clientStateManager, new ObjectManagerConfig(300000, true, true, false,
+   * false, 60000)); objectManager.setGarbageCollector(gc); objectManager.start(); objectManager.createRoot("root-me",
+   * new ObjectID(0)); ManagedObject root = new TestManagedObject(new ObjectID(0), new ObjectID[] { new ObjectID(1) });
+   * objectManager.createObject(root); this.objectStore.addNewObject(root); TestManagedObject mo1 = new
+   * TestManagedObject(new ObjectID(1), new ObjectID[] { new ObjectID(2) }); TestManagedObject mo2 = new
+   * TestManagedObject(new ObjectID(2), new ObjectID[] { new ObjectID(3) }); TestManagedObject mo3 = new
+   * TestManagedObject(new ObjectID(3), new ObjectID[] {}); objectManager.createObject(mo1);
+   * this.objectStore.addNewObject(mo1); objectManager.createObject(mo2); this.objectStore.addNewObject(mo2);
+   * objectManager.createObject(mo3); this.objectStore.addNewObject(mo3); ClientID cid1 = new ClientID(new
+   * ChannelID(1)); clientStateManager.addReference(cid1, root.getID()); clientStateManager.addReference(cid1,
+   * mo1.getID()); clientStateManager.addReference(cid1, mo2.getID()); clientStateManager.addReference(cid1,
+   * mo3.getID()); // assertEquals(0, objectManager.getGarbageCollectorStats().length); // assertEquals(0,
+   * listener.gcEvents.size()); long start = System.currentTimeMillis(); objectManager.getGarbageCollector().gc(); //
+   * assertEquals(1, objectManager.getGarbageCollectorStats().length); // assertEquals(3, listener.gcEvents.size());
+   * GCStats stats1 = listener.gcEvents.get(0); final int firstIterationNumber = stats1.getIteration();
+   * assertSame(stats1, objectManager.getGarbageCollectorStats()[0]); assertTrue("external: " + start + ", reported: " +
+   * stats1.getStartTime(), stats1.getStartTime() >= start); assertTrue(String.valueOf(stats1.getElapsedTime()),
+   * stats1.getElapsedTime() >= 0); assertEquals(4, stats1.getBeginObjectCount()); assertEquals(0,
+   * stats1.getCandidateGarbageCount()); assertEquals(0, stats1.getActualGarbageCount()); listener.gcEvents.clear();
+   * objectManager.getGarbageCollector().gc(); assertEquals(2, objectManager.getGarbageCollectorStats().length);
+   * assertEquals(3, listener.gcEvents.size()); assertEquals(firstIterationNumber + 1,
+   * objectManager.getGarbageCollectorStats()[0].getIteration()); listener.gcEvents.clear(); Set<ObjectID> removed = new
+   * HashSet<ObjectID>(); removed.add(mo3.getID()); clientStateManager.removeReferences(cid1, removed);
+   * mo2.setReferences(new ObjectID[] {}); objectManager.getGarbageCollector().gc(); assertEquals(3,
+   * objectManager.getGarbageCollectorStats().length); assertEquals(3, listener.gcEvents.size()); GCStats stats3 =
+   * listener.gcEvents.get(0); assertEquals(4, stats3.getBeginObjectCount()); assertEquals(1,
+   * stats3.getActualGarbageCount()); assertEquals(1, stats3.getCandidateGarbageCount()); }
+   */
 
-    // this should disable the internal gc thread, allowing us to control when
-    // objMgr.gc() happens
-    this.config.myGCThreadSleepTime = -1;
-
-
-    GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManager, clientStateManager,
-                                                           new ObjectManagerConfig(300000, true, true, false, false,
-                                                                                   60000));
-    objectManager.setGarbageCollector(gc);
-    objectManager.start();
-
-    objectManager.createRoot("root-me", new ObjectID(0));
-    ManagedObject root = new TestManagedObject(new ObjectID(0), new ObjectID[] { new ObjectID(1) });
-    objectManager.createObject(root);
-    this.objectStore.addNewObject(root);
-
-    TestManagedObject mo1 = new TestManagedObject(new ObjectID(1), new ObjectID[] { new ObjectID(2) });
-    TestManagedObject mo2 = new TestManagedObject(new ObjectID(2), new ObjectID[] { new ObjectID(3) });
-    TestManagedObject mo3 = new TestManagedObject(new ObjectID(3), new ObjectID[] {});
-    objectManager.createObject(mo1);
-    this.objectStore.addNewObject(mo1);
-    objectManager.createObject(mo2);
-    this.objectStore.addNewObject(mo2);
-    objectManager.createObject(mo3);
-    this.objectStore.addNewObject(mo3);
-
-    ClientID cid1 = new ClientID(new ChannelID(1));
-    clientStateManager.addReference(cid1, root.getID());
-    clientStateManager.addReference(cid1, mo1.getID());
-    clientStateManager.addReference(cid1, mo2.getID());
-    clientStateManager.addReference(cid1, mo3.getID());
-
-//    assertEquals(0, objectManager.getGarbageCollectorStats().length);
-//    assertEquals(0, listener.gcEvents.size());
-
-    long start = System.currentTimeMillis();
-
-    objectManager.getGarbageCollector().gc();
-
-   // assertEquals(1, objectManager.getGarbageCollectorStats().length);
-   // assertEquals(3, listener.gcEvents.size());
-
-    GCStats stats1 = listener.gcEvents.get(0);
-    final int firstIterationNumber = stats1.getIteration();
-    assertSame(stats1, objectManager.getGarbageCollectorStats()[0]);
-    assertTrue("external: " + start + ", reported: " + stats1.getStartTime(), stats1.getStartTime() >= start);
-    assertTrue(String.valueOf(stats1.getElapsedTime()), stats1.getElapsedTime() >= 0);
-    assertEquals(4, stats1.getBeginObjectCount());
-    assertEquals(0, stats1.getCandidateGarbageCount());
-    assertEquals(0, stats1.getActualGarbageCount());
-
-    listener.gcEvents.clear();
-    objectManager.getGarbageCollector().gc();
-    assertEquals(2, objectManager.getGarbageCollectorStats().length);
-    assertEquals(3, listener.gcEvents.size());
-    assertEquals(firstIterationNumber + 1, objectManager.getGarbageCollectorStats()[0].getIteration());
-
-    listener.gcEvents.clear();
-    Set<ObjectID> removed = new HashSet<ObjectID>();
-    removed.add(mo3.getID());
-    clientStateManager.removeReferences(cid1, removed);
-    mo2.setReferences(new ObjectID[] {});
-    objectManager.getGarbageCollector().gc();
-    assertEquals(3, objectManager.getGarbageCollectorStats().length);
-    assertEquals(3, listener.gcEvents.size());
-    GCStats stats3 = listener.gcEvents.get(0);
-    assertEquals(4, stats3.getBeginObjectCount());
-    assertEquals(1, stats3.getActualGarbageCount());
-    assertEquals(1, stats3.getCandidateGarbageCount());
-  }
-  */
-  
   public void testLookupFacadeForMissingObject() {
     initObjectManager();
 
@@ -1301,8 +1267,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     ServerTransaction stxn1 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(1), new TransactionID(1),
                                                         new SequenceID(1), new LockID[0],
-                                                        new ClientID(new ChannelID(2)),
-                                                        new ArrayList<DNA>(changes.values()), new ObjectStringSerializer(),
+                                                        new ClientID(new ChannelID(2)), new ArrayList<DNA>(changes
+                                                            .values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
                                                         DmiDescriptor.EMPTY_ARRAY, 1);
     List<ServerTransaction> txns = new ArrayList<ServerTransaction>();
@@ -1350,8 +1316,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     ServerTransaction stxn2 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
-                                                        new ClientID(new ChannelID(2)),
-                                                        new ArrayList<DNA>(changes.values()), new ObjectStringSerializer(),
+                                                        new ClientID(new ChannelID(2)), new ArrayList<DNA>(changes
+                                                            .values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
                                                         DmiDescriptor.EMPTY_ARRAY, 1);
 
@@ -1383,8 +1349,8 @@ public class ObjectManagerTest extends BaseDSOTestCase {
 
     ServerTransaction stxn3 = new ServerTransactionImpl(gtxMgr, new TxnBatchID(2), new TransactionID(2),
                                                         new SequenceID(1), new LockID[0],
-                                                        new ClientID(new ChannelID(2)),
-                                                        new ArrayList<DNA>(changes.values()), new ObjectStringSerializer(),
+                                                        new ClientID(new ChannelID(2)), new ArrayList<DNA>(changes
+                                                            .values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
                                                         DmiDescriptor.EMPTY_ARRAY, 1);
 
@@ -1868,8 +1834,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
         public LogicalAction getLogicalAction() {
           switch (count) {
             case 1:
-              return new LogicalAction(SerializationUtil.SET_TIME,
-                                       new Object[] { System.currentTimeMillis() });
+              return new LogicalAction(SerializationUtil.SET_TIME, new Object[] { System.currentTimeMillis() });
             default:
               throw new RuntimeException("bad count: " + count);
           }
@@ -2031,7 +1996,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
               return new PhysicalAction("intField", 42, false);
             }
             case 2: {
-              return new PhysicalAction("zzzField", (byte)1, false);
+              return new PhysicalAction("zzzField", (byte) 1, false);
             }
             case 3: {
               return new PhysicalAction("objField", new ObjectID(696969), true);
@@ -2167,7 +2132,7 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     }
 
   }
-  
+
   private class ExplodingGarbageCollector implements GarbageCollector {
 
     private final RuntimeException toThrow;
@@ -2270,21 +2235,21 @@ public class ObjectManagerTest extends BaseDSOTestCase {
     public boolean deleteGarbage(GCResultContext resultContext) {
       return true;
     }
-    
+
     public void gcYoung() {
-      //NOP
+      // NOP
     }
 
     public void notifyNewObjectInitalized(ObjectID id) {
-      //NOP
+      // NOP
     }
 
     public void notifyObjectCreated(ObjectID id) {
-      //NOP
+      // NOP
     }
 
     public void notifyObjectsEvicted(Collection evicted) {
-      //NOP
+      // NOP
     }
 
     public boolean requestGCStart() {

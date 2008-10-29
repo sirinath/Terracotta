@@ -138,4 +138,16 @@ public interface IServer extends IClusterNode, ManagedObjectFacadeProvider {
   String getDBHome();
   
   void disconnect();
+  
+  void setFaultDebug(boolean faultDebug);
+  
+  boolean getFaultDebug();
+  
+  void setRequestDebug(boolean requestDebug);
+  
+  boolean getRequestDebug();
+  
+  void setFlushDebug(boolean flushDebug);
+  
+  boolean getFlushDebug();
 }
