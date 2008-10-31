@@ -37,7 +37,7 @@ public class PassiveSmoothStartTest extends TransparentTestBase {
   String[]                 serverDataPath  = new String[SERVERS];
 
   public PassiveSmoothStartTest() {
-    disableAllUntil("2008-11-05");
+    //
   }
 
   protected Class getApplicationClass() {
@@ -90,6 +90,7 @@ public class PassiveSmoothStartTest extends TransparentTestBase {
         L2ConfigBuilder l2 = new L2ConfigBuilder();
         serverDataPath[i] = getTempFile("data-" + i).getAbsolutePath();
         l2.setData(serverDataPath[i]);
+        l2.setStatistics(serverDataPath[i]);
         l2.setLogs(getTempFile("logs-" + i).getAbsolutePath());
         serverNames[i] = "server-" + i;
         l2.setName(serverNames[i]);
