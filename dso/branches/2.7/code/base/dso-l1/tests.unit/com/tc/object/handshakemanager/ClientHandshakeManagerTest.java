@@ -42,6 +42,7 @@ import com.tc.test.TCTestCase;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.SequenceID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
+import com.tc.util.runtime.LockInfoByThreadID;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.BatchSequenceProvider;
 import com.tc.util.sequence.BatchSequenceReceiver;
@@ -417,7 +418,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       return null;
     }
 
-    public void addAllHeldLocksAndPendingLockRequestsTo(Collection heldLocks, Collection pendingLocks) {
+    public void addAllLocksTo(LockInfoByThreadID lockInfo) {
       throw new ImplementMe();
     }
 
