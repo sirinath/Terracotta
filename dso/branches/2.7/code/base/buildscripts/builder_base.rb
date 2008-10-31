@@ -235,7 +235,7 @@ class TerracottaBuilder
 
     unless $?.exitstatus == 0
       $stderr.puts("tim-get command failed with exit status '#{$?.exitstatus}'")
-      $stderr.puts("tim-get command: #{tim_get_command.join(' ')}")
+      $stderr.puts("tim-get command: #{@tim_get.to_s} #{subcommand.to_s} #{flags}")
       $stderr.puts("JAVA_OPTS: #{ENV['JAVA_OPTS']}")
       raise("tim-get command failed.  Exit status: #{$?.exitstatus}")
     end
