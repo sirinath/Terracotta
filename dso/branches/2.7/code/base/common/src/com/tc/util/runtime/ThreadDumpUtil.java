@@ -50,14 +50,12 @@ public class ThreadDumpUtil {
     final Exception exception;
     try {
       if (!Vm.isJDK15Compliant()) { return "Thread dumps require JRE-1.5 or greater"; }
-      Assert.assertTrue((threadDumpUtilJdk15Type != null) || (threadDumpUtilJdk16Type != null));
-
       Method method = null;
       if (Vm.isJDK15()) {
         if (threadDumpUtilJdk15Type != null) {
           method = getThreadDumpMethod(threadDumpUtilJdk15Type, lockInfo);
         } else {
-          return "ThreadDump Classes class not available";
+          return "ThreadDump Classes not available";
         }
 
       } else if (Vm.isJDK16Compliant()) {
@@ -65,6 +63,8 @@ public class ThreadDumpUtil {
           method = getThreadDumpMethod(threadDumpUtilJdk16Type, lockInfo);
         } else if (threadDumpUtilJdk15Type != null) {
           method = getThreadDumpMethod(threadDumpUtilJdk15Type, lockInfo);
+        } else {
+          return "ThreadDump Classes not available";
         }
       } else {
         return "Thread dumps require JRE-1.5 or greater";
