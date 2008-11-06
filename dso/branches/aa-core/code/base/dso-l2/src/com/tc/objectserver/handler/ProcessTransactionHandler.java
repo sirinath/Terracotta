@@ -29,22 +29,21 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ProcessTransactionHandler extends AbstractEventHandler {
-  private static final TCLogger            logger = TCLogging.getLogger(ProcessTransactionHandler.class);
+  private static final TCLogger         logger = TCLogging.getLogger(ProcessTransactionHandler.class);
 
-  private TransactionBatchReaderFactory    batchReaderFactory;
-  private ReplicatedObjectManager          replicatedObjectMgr;
+  private TransactionBatchReaderFactory batchReaderFactory;
+  private ReplicatedObjectManager       replicatedObjectMgr;
 
-  private final TransactionBatchManager    transactionBatchManager;
-  private final MessageRecycler            messageRecycler;
-  private final SequenceValidator          sequenceValidator;
+  private final TransactionBatchManager transactionBatchManager;
+  private final MessageRecycler         messageRecycler;
+  private final SequenceValidator       sequenceValidator;
 
-  private Sink                             txnRelaySink;
+  private Sink                          txnRelaySink;
 
-  private ServerTransactionManager         transactionManager;
+  private ServerTransactionManager      transactionManager;
 
   public ProcessTransactionHandler(TransactionBatchManager transactionBatchManager,
-                                   SequenceValidator sequenceValidator,
-                                   MessageRecycler messageRecycler) {
+                                   SequenceValidator sequenceValidator, MessageRecycler messageRecycler) {
     this.transactionBatchManager = transactionBatchManager;
     this.sequenceValidator = sequenceValidator;
     this.messageRecycler = messageRecycler;
@@ -69,6 +68,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
         txns.put(txn.getServerTransactionID(), txn);
       }
       messageRecycler.addMessage(ctm, txns.keySet());
+      System.err.println("Recd Commit Batch :  Num of txns : " + txns.size());
       if (replicatedObjectMgr.relayTransactions()) {
         transactionManager.incomingTransactions(nodeID, txns.keySet(), txns.values(), true);
         txnRelaySink.add(new IncomingTransactionContext(nodeID, ctm, txns));
