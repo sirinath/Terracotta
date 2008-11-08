@@ -40,6 +40,7 @@ import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOOEventHandler;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
+import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
@@ -360,11 +361,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     Counter outstandingBatchesCounter = counterManager.createCounter(new CounterConfig(0));
     Counter pendingBatchesSize = counterManager.createCounter(new CounterConfig(0));
 
-    rtxManager = new RemoteTransactionManagerImpl(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
-        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
-                                                  new LockAccounting(), sessionManager, channel,
-                                                  outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
-                                                  batchSizeCounter, pendingBatchesSize);
+    rtxManager = createRemoteTransactionManager(channel.getChannelIDProvider(), txBatchFactory, sessionManager,
+                                                channel, outstandingBatchesCounter, numTransactionCounter,
+                                                numBatchesCounter, batchSizeCounter, pendingBatchesSize);
 
     ClientGlobalTransactionManager gtxManager = new ClientGlobalTransactionManagerImpl(rtxManager);
 
@@ -580,6 +579,25 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       setReconnectCloseOnExit(channel);
     }
     setLoggerOnExit();
+  }
+
+  /*
+   * Overwrite this routine to do active-active
+   */
+  protected RemoteTransactionManager createRemoteTransactionManager(ChannelIDProvider channelIDProvider,
+                                                                  TransactionBatchFactory txBatchFactory,
+                                                                  SessionManager sessionManager,
+                                                                  DSOClientMessageChannel dsoChannel,
+                                                                  Counter outstandingBatchesCounter,
+                                                                  SampledCounter numTransactionCounter,
+                                                                  SampledCounter numBatchesCounter,
+                                                                  SampledCounter batchSizeCounter,
+                                                                  Counter pendingBatchesSize) {
+    return new RemoteTransactionManagerImpl(new ChannelIDLogger(channelIDProvider, TCLogging
+        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
+                                            new LockAccounting(), sessionManager, dsoChannel,
+                                            outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
+                                            batchSizeCounter, pendingBatchesSize);
   }
 
   private void setReconnectCloseOnExit(final DSOClientMessageChannel channel) {
