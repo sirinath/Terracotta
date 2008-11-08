@@ -77,6 +77,8 @@ import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
 import com.tc.object.bytecode.JavaNetURLAdapter;
+import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierClassAdapter;
+import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierDebugClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapEntryIteratorAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapHashEntryAdapter;
@@ -1807,11 +1809,11 @@ public class BootJarTool {
 
     byte[] bytes = getSystemBytes("java.util.concurrent.CyclicBarrier");
 
-//    ClassReader cr = new ClassReader(bytes);
-//    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-//    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cw);
-//    cr.accept(cv, ClassReader.SKIP_FRAMES);
-//    bytes = cw.toByteArray();
+    ClassReader cr = new ClassReader(bytes);
+    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+    ClassVisitor cv = new JavaUtilConcurrentCyclicBarrierClassAdapter(cw);
+    //cv = new JavaUtilConcurrentCyclicBarrierDebugClassAdapter(cv);
+    cr.accept(cv, ClassReader.SKIP_FRAMES);
 
     TransparencyClassSpec spec = configHelper.getOrCreateSpec("java.util.concurrent.CyclicBarrier");
     bytes = doDSOTransform(spec.getClassName(), bytes);
