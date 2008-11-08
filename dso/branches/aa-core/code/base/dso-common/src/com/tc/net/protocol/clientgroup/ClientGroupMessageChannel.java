@@ -16,6 +16,8 @@ public interface ClientGroupMessageChannel extends ClientMessageChannel {
 
   public GroupID[] getGroupIDs();
 
+  public GroupID getCoordinatorGroupID();
+
   public TCMessage createMessage(GroupID groupID, TCMessageType type);
 
   public void broadcast(final TCMessageImpl message);

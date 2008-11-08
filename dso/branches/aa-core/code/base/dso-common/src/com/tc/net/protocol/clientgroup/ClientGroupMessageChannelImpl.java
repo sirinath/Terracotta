@@ -139,7 +139,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
       throw new MaxConnectionsExceededException(connectionInfo(ch) + " " + e);
     }
 
-    logger.info("all active sub-channels opened");
+    logger.info("All active sub-channels opened");
     return nid;
   }
 
@@ -277,6 +277,10 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     for (Iterator i = groupChannelMap.keySet().iterator(); i.hasNext();) {
       getChannel((GroupID) i.next()).addListener(middleman);
     }
+  }
+
+  public GroupID getCoordinatorGroupID() {
+    return coordinatorGroupID;
   }
 
 }
