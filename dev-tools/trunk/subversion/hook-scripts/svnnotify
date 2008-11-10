@@ -13,10 +13,16 @@ REPOS="$1"
 REV="$2"
 
 AUTHOR=`svnlook propget $REPOS svn:author -r$REV --revprop`
+LOG_MESSAGE=`svnlook propget $REPOS svn:log -r$REV --revprop`
+PREFIX=${LOG_MESSAGE:0:17}
 
-SMTP=localhost
-SUBJECT_PREFIX="<$AUTHOR> "
+if [ $PREFIX != '<forge-publisher>' ]; then
 
-perl -I$SVN_NOTIFY_HOME/lib $SVN_NOTIFY --repos-path $REPOS --revision $REV \
+  SMTP=localhost
+  SUBJECT_PREFIX="<$AUTHOR> "
+
+  perl -I$SVN_NOTIFY_HOME/lib $SVN_NOTIFY --repos-path $REPOS --revision $REV \
     --to $TO_ADDRESS --from "$FROM_ADDRESS" --subject-prefix "$SUBJECT_PREFIX" \
     --smtp $SMTP --with-diff --handler HTML::ColorDiff
+fi
+
