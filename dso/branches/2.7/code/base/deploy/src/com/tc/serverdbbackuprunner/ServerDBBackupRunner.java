@@ -120,7 +120,13 @@ public class ServerDBBackupRunner {
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {
-      throw new RuntimeException(e.getCause().getMessage());
+      String message = null;
+      if (e.getCause() != null) {
+        message = e.getCause().getMessage();
+      } else {
+        message = e.getMessage();
+      }
+      throw new RuntimeException(message);
     } finally {
       if (closeJMXAndListener) {
         removeListenerAndCloseJMX(listener, jmxConnector, mbs);
