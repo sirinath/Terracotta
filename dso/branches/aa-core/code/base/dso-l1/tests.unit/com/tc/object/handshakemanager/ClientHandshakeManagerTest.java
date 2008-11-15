@@ -61,7 +61,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
   private TestClientObjectManager            objectManager;
   private TestClientLockManager              lockManager;
   private ClientIDProvider                   cip;
-  private ClientHandshakeManager             mgr;
+  private ClientHandshakeManagerImpl             mgr;
   private TestClientHandshakeMessageFactory  chmf;
   private TestRemoteObjectManager            remoteObjectManager;
   private TestRemoteTransactionManager       rtxManager;
@@ -75,7 +75,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     gtxManager = new TestClientGlobalTransactionManager();
     cip = new ClientIDProviderImpl(new TestChannelIDProvider());
     chmf = new TestClientHandshakeMessageFactory();
-    mgr = new ClientHandshakeManager(TCLogging.getLogger(ClientHandshakeManager.class), cip, chmf, objectManager,
+    mgr = new ClientHandshakeManagerImpl(TCLogging.getLogger(ClientHandshakeManagerImpl.class), cip, chmf, objectManager,
                                      remoteObjectManager, lockManager, rtxManager, gtxManager, new ArrayList(),
                                      new NullSink(), new NullSessionManager(), new NullPauseListener(),
                                      new BatchSequence(new TestSequenceProvider(), 100), new Cluster(), clientVersion);

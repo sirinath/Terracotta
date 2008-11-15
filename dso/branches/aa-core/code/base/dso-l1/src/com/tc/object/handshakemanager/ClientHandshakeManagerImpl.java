@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public class ClientHandshakeManager implements ChannelEventListener {
+public class ClientHandshakeManagerImpl implements ClientHandshakeManager, ChannelEventListener {
   private static final State                   PAUSED             = new State("PAUSED");
   private static final State                   STARTING           = new State("STARTING");
   private static final State                   RUNNING            = new State("RUNNING");
@@ -65,7 +65,7 @@ public class ClientHandshakeManager implements ChannelEventListener {
   private boolean                              stagesPaused       = false;
   private boolean                              serverIsPersistent = false;
 
-  public ClientHandshakeManager(TCLogger logger, ClientIDProvider clientIDProvider, ClientHandshakeMessageFactory chmf,
+  public ClientHandshakeManagerImpl(TCLogger logger, ClientIDProvider clientIDProvider, ClientHandshakeMessageFactory chmf,
                                 ClientObjectManager objectManager, RemoteObjectManager remoteObjectManager,
                                 ClientLockManager lockManager, RemoteTransactionManager remoteTransactionManager,
                                 ClientGlobalTransactionManager gtxManager, Collection stagesToPauseOnDisconnect,
