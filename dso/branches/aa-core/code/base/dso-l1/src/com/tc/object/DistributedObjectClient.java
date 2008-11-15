@@ -76,6 +76,7 @@ import com.tc.object.handler.ReceiveRootIDHandler;
 import com.tc.object.handler.ReceiveTransactionCompleteHandler;
 import com.tc.object.handler.ReceiveTransactionHandler;
 import com.tc.object.handshakemanager.ClientHandshakeManager;
+import com.tc.object.handshakemanager.ClientHandshakeManagerImpl;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
@@ -186,7 +187,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private CommunicationsManager                    communicationsManager;
   private RemoteTransactionManager                 rtxManager;
   private PauseListener                            pauseListener;
-  private ClientHandshakeManager                   clientHandshakeManager;
+  private ClientHandshakeManagerImpl               clientHandshakeManager;
   private RuntimeLogger                            runtimeLogger;
   private CacheManager                             cacheManager;
   private L1Management                             l1Management;
@@ -479,12 +480,17 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // being used.
     Collection stagesToPauseOnDisconnect = Collections.EMPTY_LIST;
     ProductInfo pInfo = ProductInfo.getInstance();
-    clientHandshakeManager = new ClientHandshakeManager(new ChannelIDLogger(channel.getChannelIDProvider(), TCLogging
-        .getLogger(ClientHandshakeManager.class)), clientIDProvider, channel.getClientHandshakeMessageFactory(),
-                                                        objectManager, remoteObjectManager, lockManager, rtxManager,
-                                                        gtxManager, stagesToPauseOnDisconnect, pauseStage.getSink(),
-                                                        sessionManager, pauseListener, sequence, cluster, pInfo
-                                                            .version());
+    clientHandshakeManager = new ClientHandshakeManagerImpl(
+                                                            new ChannelIDLogger(
+                                                                                channel.getChannelIDProvider(),
+                                                                                TCLogging
+                                                                                    .getLogger(ClientHandshakeManagerImpl.class)),
+                                                            clientIDProvider, channel
+                                                                .getClientHandshakeMessageFactory(), objectManager,
+                                                            remoteObjectManager, lockManager, rtxManager, gtxManager,
+                                                            stagesToPauseOnDisconnect, pauseStage.getSink(),
+                                                            sessionManager, pauseListener, sequence, cluster, pInfo
+                                                                .version());
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,
@@ -585,14 +591,14 @@ public class DistributedObjectClient extends SEDA implements TCClient {
    * Overwrite this routine to do active-active
    */
   protected RemoteTransactionManager createRemoteTransactionManager(ChannelIDProvider channelIDProvider,
-                                                                  TransactionBatchFactory txBatchFactory,
-                                                                  SessionManager sessionManager,
-                                                                  DSOClientMessageChannel dsoChannel,
-                                                                  Counter outstandingBatchesCounter,
-                                                                  SampledCounter numTransactionCounter,
-                                                                  SampledCounter numBatchesCounter,
-                                                                  SampledCounter batchSizeCounter,
-                                                                  Counter pendingBatchesSize) {
+                                                                    TransactionBatchFactory txBatchFactory,
+                                                                    SessionManager sessionManager,
+                                                                    DSOClientMessageChannel dsoChannel,
+                                                                    Counter outstandingBatchesCounter,
+                                                                    SampledCounter numTransactionCounter,
+                                                                    SampledCounter numBatchesCounter,
+                                                                    SampledCounter batchSizeCounter,
+                                                                    Counter pendingBatchesSize) {
     return new RemoteTransactionManagerImpl(new ChannelIDLogger(channelIDProvider, TCLogging
         .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
                                             new LockAccounting(), sessionManager, dsoChannel,
