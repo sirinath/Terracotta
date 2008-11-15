@@ -326,14 +326,17 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     check_list('pounder')
   end
 
-  # To be used in stage monkey to check if a revision is good
-  # for other monkeys to run test
+  # monkey police calls this action:
+  #  - check for version in poms
+  #  - check for compilation 
+  #  - check_short
   def check_compile
     begin
       @no_compile = false # override this if it's turned on
       check_maven_version
       check_short
       raise "check_short failed." if @script_results.failed?
+         
       mark_this_revision_as_good()
     rescue 
       mark_this_revision_as_bad($!)

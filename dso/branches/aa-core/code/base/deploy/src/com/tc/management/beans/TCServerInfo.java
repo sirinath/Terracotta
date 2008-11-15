@@ -126,6 +126,14 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
     return server.getActivateTime();
   }
 
+  public boolean isGarbageCollectionEnabled() {
+    return server.isGarbageCollectionEnabled();
+  }
+  
+  public int getGarbageCollectionInterval() {
+    return server.getGarbageCollectionInterval();
+  }
+
   public void stop() {
     server.stop();
     _sendNotification("TCServer stopped", "Started", "jmx.terracotta.L2.stopped", Boolean.TRUE, Boolean.FALSE);
