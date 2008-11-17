@@ -46,7 +46,9 @@ import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.HydrateHandler;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.MessageMonitorImpl;
+import com.tc.net.protocol.tcm.NetworkListener;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.transport.ConnectionHealthCheckerUtil;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
@@ -161,6 +163,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * This is the main point of entry into the DSO client.
@@ -177,6 +180,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private final Cluster                            cluster;
   private final TCThreadGroup                      threadGroup;
   private final StatisticsAgentSubSystemImpl       statisticsAgentSubSystem;
+  private final ThreadIDMap                        threadIDMap;
 
   private DSOClientMessageChannel                  channel;
   private ClientLockManager                        lockManager;
@@ -193,7 +197,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private DmiManager                               dmiManager;
   private boolean                                  createDedicatedMBeanServer = false;
   private CounterManager                           counterManager;
-  private final ThreadIDMap                        threadIDMap;
+  private NetworkListener                          healthCheckerListener      = null;
 
   public DistributedObjectClient(DSOClientConfigHelper config, TCThreadGroup threadGroup, ClassProvider classProvider,
                                  PreparedComponentsFromL2Connection connectionComponents, Manager manager,
@@ -332,6 +336,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     int timeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
     if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
 
+    healthCheckerListener = ConnectionHealthCheckerUtil.createHealthCheckListener(communicationsManager, l1Properties);
     channel = new DSOClientMessageChannelImpl(createChannel(communicationsManager, connectionComponents,
                                                             sessionProvider));
     ChannelIDLoggerProvider cidLoggerProvider = new ChannelIDLoggerProvider(channel.getChannelIDProvider());
@@ -570,6 +575,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       System.exit(-1);
     }
     clientHandshakeManager.waitForHandshake();
+    try {
+      healthCheckerListener.start(new HashSet());
+      logger.info("HC Listener started at " + healthCheckerListener.getBindAddress() + ":"
+                  + healthCheckerListener.getBindPort());
+    } catch (IOException ioe) {
+      // XXX is it safe to ignore
+    }
 
     if (statisticsAgentSubSystem.isActive()) {
       statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/" + channel.channel().getChannelID().toLong());
@@ -605,6 +617,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
    */
   public synchronized void stopForTests() {
     manager.stop();
+    if (healthCheckerListener != null) {
+      try {
+        healthCheckerListener.stop(2000);
+      } catch (TCTimeoutException e) {
+        // ignore
+      }
+    }
   }
 
   public ClientTransactionManager getTransactionManager() {
