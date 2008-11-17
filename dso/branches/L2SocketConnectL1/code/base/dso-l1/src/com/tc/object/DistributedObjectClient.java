@@ -53,6 +53,7 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
+import com.tc.net.protocol.transport.TransportHandshakeMessage;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.CacheConfig;
@@ -240,12 +241,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
    */
   protected ClientMessageChannel createChannel(CommunicationsManager commMgr,
                                                PreparedComponentsFromL2Connection connComp,
-                                               SessionProvider sessionProvider) {
+                                               SessionProvider sessionProvider, int callbackPort) {
     ClientMessageChannel cmc;
     ConfigItem connectionInfoItem = connComp.createConnectionInfoConfigItem();
     ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItem.getObject();
     cmc = commMgr.createClientChannel(sessionProvider, -1, null, 0, 10000,
-                                      new ConnectionAddressProvider(connectionInfo));
+                                      new ConnectionAddressProvider(connectionInfo), callbackPort);
     return (cmc);
   }
 
@@ -337,8 +338,19 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
 
     healthCheckerListener = ConnectionHealthCheckerUtil.createHealthCheckListener(communicationsManager, l1Properties);
+    int callbackPort = TransportHandshakeMessage.NO_CALLBACK_PORT;
+    try {
+      healthCheckerListener.start(new HashSet());
+      callbackPort = healthCheckerListener.getBindPort();
+      logger.info("HC Listener started at " + healthCheckerListener.getBindAddress() + ":"
+                  + healthCheckerListener.getBindPort());
+
+    } catch (IOException ioe) {
+      // XXX is it safe to ignore
+    }
+
     channel = new DSOClientMessageChannelImpl(createChannel(communicationsManager, connectionComponents,
-                                                            sessionProvider));
+                                                            sessionProvider, callbackPort));
     ChannelIDLoggerProvider cidLoggerProvider = new ChannelIDLoggerProvider(channel.getChannelIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -575,13 +587,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       System.exit(-1);
     }
     clientHandshakeManager.waitForHandshake();
-    try {
-      healthCheckerListener.start(new HashSet());
-      logger.info("HC Listener started at " + healthCheckerListener.getBindAddress() + ":"
-                  + healthCheckerListener.getBindPort());
-    } catch (IOException ioe) {
-      // XXX is it safe to ignore
-    }
 
     if (statisticsAgentSubSystem.isActive()) {
       statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/" + channel.channel().getChannelID().toLong());
