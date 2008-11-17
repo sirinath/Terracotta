@@ -111,7 +111,8 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     int callbackPort = transport.getRemoteCallbackPort();
     if (TransportHandshakeMessage.NO_CALLBACK_PORT == callbackPort) { return new NullHealthCheckerSocketConnectImpl(); }
 
-    // TODO: do we need to exchange the address as well? (since it might be different than the remote IP on this conn)
+    // TODO: do we need to exchange the address as well ??? (since it might be different than the remote IP on this
+    // conn)
     TCSocketAddress sa = new TCSocketAddress(transport.getRemoteAddress().getAddress(), callbackPort);
     return new HealthCheckerSocketConnectImpl(sa, connection, remoteNodeDesc, logger, config.getSocketConnectTimeout());
   }

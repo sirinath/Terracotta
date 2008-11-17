@@ -21,7 +21,7 @@ public class ConnectionHealthCheckerUtil {
                                                           TCProperties healthCheckListenerProperties) {
     InetAddress bindAddr;
     String bindAddress = healthCheckListenerProperties.getProperty("healthcheck.bindAddress");
-    if (bindAddress == null) {
+    if (bindAddress == null || bindAddress.equals("")) {
       bindAddress = TCSocketAddress.WILDCARD_IP;
     }
 
