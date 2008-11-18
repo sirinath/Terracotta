@@ -189,7 +189,12 @@ public class ClientMessageTransport extends MessageTransportBase {
       }
       this.waitForSynAckResult.set(synAck);
 
-      setRemoteCallbackPort(synAck.getCallbackPort());
+      int remoteCallbackPort = synAck.getCallbackPort();
+      if (isHealthCheckListenerRechable(remoteCallbackPort)) {
+        setRemoteCallbackPort(remoteCallbackPort);
+      } else {
+        setRemoteCallbackPort(TransportHandshakeMessage.NO_CALLBACK_PORT);
+      }
     }
 
     return;
@@ -238,7 +243,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     }
   }
 
-   private void sendAck() throws IOException {
+  private void sendAck() throws IOException {
     synchronized (status) {
       // DEV-1364 : Connection close might have happened
       if (!status.isSynSent()) throw new IOException();

@@ -122,4 +122,8 @@ public class MockTCConnection implements TCConnection {
     throw new ImplementMe();
   }
 
+  public TCConnectionManager getConnectionManger() {
+    throw new ImplementMe();
+  }
+
 }

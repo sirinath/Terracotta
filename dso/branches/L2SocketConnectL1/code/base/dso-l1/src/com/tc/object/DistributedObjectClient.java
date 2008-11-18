@@ -342,11 +342,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     try {
       healthCheckerListener.start(new HashSet());
       callbackPort = healthCheckerListener.getBindPort();
-      logger.info("HC Listener started at " + healthCheckerListener.getBindAddress() + ":"
+      logger.info("HealthChecker Listener started at " + healthCheckerListener.getBindAddress() + ":"
                   + healthCheckerListener.getBindPort());
 
     } catch (IOException ioe) {
-      // XXX is it safe to ignore
+      logger.info("Unable to start HealthChecker Listener: " + ioe);
     }
 
     channel = new DSOClientMessageChannelImpl(createChannel(communicationsManager, connectionComponents,
