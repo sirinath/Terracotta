@@ -45,6 +45,8 @@ public interface MessageTransport extends NetworkLayer {
 
   public int getRemoteCallbackPort();
   
+  public boolean isHealthCheckListenerRechable(int remoteCallbackPort);
+  
   public void initConnectionID(ConnectionID cid);
 
 }

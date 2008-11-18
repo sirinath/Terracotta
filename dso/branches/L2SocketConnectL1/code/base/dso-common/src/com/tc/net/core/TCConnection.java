@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.core;
 
@@ -17,6 +18,11 @@ import java.net.Socket;
  * @author teck
  */
 public interface TCConnection extends NetworkMessageSink {
+  
+  /**
+   * Get the parent.
+   */
+  public TCConnectionManager getConnectionManger();
 
   /**
    * Returns a long timestamp as reported by <code>Sytem.currentTimeMillis()</code> when this connection was
@@ -31,7 +37,7 @@ public interface TCConnection extends NetworkMessageSink {
   public long getIdleTime();
   
   /**
-   * Returns a long representing the number of milliseconds since last data received on this connection. 
+   * Returns a long representing the number of milliseconds since last data received on this connection.
    */
   public long getIdleReceiveTime();
 

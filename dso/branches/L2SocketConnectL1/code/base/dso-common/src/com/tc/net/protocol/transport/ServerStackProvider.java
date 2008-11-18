@@ -271,7 +271,12 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
         return;
       }
 
-      this.transport.setRemoteCallbackPort(syn.getCallbackPort());
+      int remoteCallbackPort = syn.getCallbackPort();
+      if (this.transport.isHealthCheckListenerRechable(remoteCallbackPort)) {
+        this.transport.setRemoteCallbackPort(remoteCallbackPort);
+      } else {
+        this.transport.setRemoteCallbackPort(TransportHandshakeMessage.NO_CALLBACK_PORT);
+      }
 
       // now check that the client side stack and server side stack are both in sync
 

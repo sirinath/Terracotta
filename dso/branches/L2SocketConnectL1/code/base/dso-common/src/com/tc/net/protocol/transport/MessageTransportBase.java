@@ -405,4 +405,14 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     connectionId = cid;
   }
 
+  public synchronized boolean isHealthCheckListenerRechable(int remotCallbackPort) {
+    if (remotCallbackPort == TransportHandshakeMessage.NO_CALLBACK_PORT) {
+      logger.info("No HealthCheckListener port handshaked for " + getConnection());
+      return false;
+    }
+    TCSocketAddress peerHCListener = new TCSocketAddress(getConnection().getRemoteAddress().getAddress(), remotCallbackPort);
+    Assert.eval(getConnection().getConnectionManger() != null);
+    return ConnectionHealthCheckerUtil.isHealthCheckListenerRechable(getConnection().getConnectionManger(),
+                                                                     peerHCListener, logger);
+  }
 }
