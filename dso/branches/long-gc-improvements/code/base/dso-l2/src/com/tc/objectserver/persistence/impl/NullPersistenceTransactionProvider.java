@@ -3,6 +3,7 @@
  */
 package com.tc.objectserver.persistence.impl;
 
+import com.tc.io.serializer.TCCustomByteArrayOutputStream;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 
@@ -29,6 +30,10 @@ public class NullPersistenceTransactionProvider implements PersistenceTransactio
 
     public Object setProperty(Object key, Object value) {
       return null;
+    }
+
+    public void setBuffer(TCCustomByteArrayOutputStream buffer) {
+      //do nothing      
     }
   }
 

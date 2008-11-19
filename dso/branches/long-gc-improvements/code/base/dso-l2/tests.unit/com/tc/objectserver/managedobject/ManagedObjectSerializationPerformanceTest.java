@@ -17,6 +17,8 @@ import com.tc.objectserver.core.api.TestDNACursor;
 import com.tc.objectserver.impl.ObjectInstanceMonitorImpl;
 import com.tc.objectserver.persistence.api.ManagedObjectPersistor;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
+import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
+import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFactory;
 import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.SerializationAdapter;
@@ -198,9 +200,11 @@ public class ManagedObjectSerializationPerformanceTest extends TCTestCase {
       throws IOException, ClassNotFoundException {
     long now = System.currentTimeMillis();
     SerializationAdapter serializer = customSerializerPersistor.getSerializationAdapter();
+    PersistenceTransactionProvider provider = new NullPersistenceTransactionProvider();
+    PersistenceTransaction tx = provider.newTransaction();
     DatabaseEntry entry = new DatabaseEntry();
     for (int i = 0; i < iterations; i++) {
-      serializer.serializeManagedObject(entry, mo);
+      serializer.serializeManagedObject(entry, mo, tx);
     }
     serializeStats.time += System.currentTimeMillis() - now;
     serializeStats.size += entry.getData().length;

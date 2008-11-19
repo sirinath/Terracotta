@@ -4,20 +4,22 @@
 package com.tc.objectserver.persistence.sleepycat;
 
 import com.sleepycat.je.DatabaseEntry;
+import com.tc.io.serializer.TCCustomByteArrayOutputStream;
 import com.tc.io.serializer.TCObjectInputStream;
 import com.tc.io.serializer.TCObjectOutputStream;
+import com.tc.io.serializer.TCCustomByteArrayOutputStream.CustomArray;
 import com.tc.io.serializer.api.Serializer;
 import com.tc.io.serializer.impl.StringUTFSerializer;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ManagedObjectSerializer;
+import com.tc.objectserver.persistence.api.PersistenceTransaction;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class CustomSerializationAdapter implements SerializationAdapter {
 
-  private final ByteArrayOutputStream   baout;
+  private final TCCustomByteArrayOutputStream   baout;
   private final TCObjectOutputStream    out;
   private final ManagedObjectSerializer moSerializer;
   private final StringUTFSerializer     stringSerializer;
@@ -27,27 +29,29 @@ public class CustomSerializationAdapter implements SerializationAdapter {
   public CustomSerializationAdapter(ManagedObjectSerializer moSerializer, StringUTFSerializer stringSerializer) {
     this.moSerializer = moSerializer;
     this.stringSerializer = stringSerializer;
-    baout = new ByteArrayOutputStream(4096);
+    baout = new TCCustomByteArrayOutputStream();
     out = new TCObjectOutputStream(baout);
   }
 
-  public void serializeManagedObject(DatabaseEntry entry, ManagedObject managedObject) throws IOException {
+  public void serializeManagedObject(DatabaseEntry entry, ManagedObject managedObject, PersistenceTransaction tx) throws IOException {
     synchronized (serializerLock) {
-      serialize(entry, managedObject, moSerializer);
+      serialize(entry, managedObject, moSerializer, tx);
     }
   }
 
-  public synchronized void serializeString(DatabaseEntry entry, String string) throws IOException {
+  public synchronized void serializeString(DatabaseEntry entry, String string, PersistenceTransaction tx) throws IOException {
     synchronized (serializerLock) {
-      serialize(entry, string, stringSerializer);
+      serialize(entry, string, stringSerializer, tx);
     }
   }
 
-  private void serialize(DatabaseEntry entry, Object o, Serializer serializer) throws IOException {
+  private void serialize(DatabaseEntry entry, Object o, Serializer serializer, PersistenceTransaction tx) throws IOException {
+    tx.setBuffer(baout);
     serializer.serializeTo(o, out);
     out.flush();
-    entry.setData(baout.toByteArray());
-    baout.reset();
+    CustomArray bytes = baout.getCurrentBytes();
+    entry.setData(bytes.buffer, bytes.offset, bytes.length);
+    baout.endOfChunk();
   }
 
   public synchronized ManagedObject deserializeManagedObject(DatabaseEntry data) throws IOException,

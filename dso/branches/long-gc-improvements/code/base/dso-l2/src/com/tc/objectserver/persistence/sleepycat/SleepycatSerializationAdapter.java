@@ -8,6 +8,7 @@ import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.je.DatabaseEntry;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.persistence.api.PersistenceTransaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,11 +23,11 @@ public class SleepycatSerializationAdapter implements SerializationAdapter {
     this.entryBindings = new HashMap();
   }
   
-  public void serializeManagedObject(DatabaseEntry entry, ManagedObject mo) {
+  public void serializeManagedObject(DatabaseEntry entry, ManagedObject mo, PersistenceTransaction tx) {
     serialize(entry, mo, ManagedObject.class);
   }
   
-  public void serializeString(DatabaseEntry entry, String string) {
+  public void serializeString(DatabaseEntry entry, String string, PersistenceTransaction tx) {
     serialize(entry, string, String.class);
   }
   
