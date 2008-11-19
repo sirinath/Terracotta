@@ -37,12 +37,15 @@ import com.tc.net.protocol.tcm.msgs.PingMessage;
 import com.tc.net.proxy.TCPProxy;
 import com.tc.object.session.NullSessionManager;
 import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.PortChooser;
 import com.tc.util.SequenceGenerator;
 import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
+import java.io.IOException;
 import java.util.HashSet;
 
 public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
@@ -128,16 +131,30 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   ClientMessageChannel createClientMsgCh() {
-    return createClientMsgChProxied(clientComms);
+    return createClientMsgChProxied(clientComms, false);
   }
 
-  ClientMessageChannel createClientMsgChProxied(CommunicationsManager clientCommsMgr) {
+  ClientMessageChannel createClientMsgChProxied(CommunicationsManager clientCommsMgr, boolean createHCListener) {
+    int callbackPort = TransportHandshakeMessage.NO_CALLBACK_PORT;
+    if (createHCListener) {
+      TCProperties l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
+      NetworkListener healthCheckerListener = ConnectionHealthCheckerUtil.createHealthCheckListener(clientCommsMgr,
+                                                                                                    l1Properties);
+      try {
+        healthCheckerListener.start(new HashSet());
+        callbackPort = healthCheckerListener.getBindPort();
+        logger.info("HealthChecker Listener started at " + healthCheckerListener.getBindAddress() + ":"
+                    + healthCheckerListener.getBindPort());
+
+      } catch (IOException ioe) {
+        logger.info("Unable to start HealthChecker Listener: " + ioe);
+      }
+    }
 
     ClientMessageChannel clientMsgCh = clientCommsMgr
         .createClientChannel(new NullSessionManager(), 0, serverLsnr.getBindAddress().getHostAddress(), proxyPort,
                              1000, new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
-                                 .getBindAddress().getHostAddress(), proxyPort) }),
-                             TransportHandshakeMessage.NO_CALLBACK_PORT);
+                                 .getBindAddress().getHostAddress(), proxyPort) }), callbackPort);
 
     clientMsgCh.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     clientMsgCh.routeMessageType(TCMessageType.PING_MESSAGE, new TCMessageSink() {
@@ -192,7 +209,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     return extraTime;
   }
 
-  public void testL2SocketConnectL1() throws Exception {
+  public void testL2SocketConnectL1Fail() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test31", true /*
                                                                                                              * EXTRA
                                                                                                              * CHECK ON
@@ -277,7 +294,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL1SocketConnectTimeoutL2() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test32", true /*
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test33", true /*
                                                                                                              * EXTRA
                                                                                                              * CHECK ON
                                                                                                              */);
@@ -330,7 +347,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL1SocketConnectTimeoutL2AndL1Reconnect() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 1000, 2, "ClientCommsHC-Test32", true /*
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 1000, 2, "ClientCommsHC-Test34", true /*
                                                                                                              * EXTRA
                                                                                                              * CHECK ON
                                                                                                              */);
@@ -404,8 +421,8 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     assertTrue(netstat.getTcpEstablished() == 2);
   }
 
-  public void testL2SocketConnectL1WithProxyDelay() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ServerCommsHC-Test33", true /*
+  public void testL2SocketConnectL1FailWithProxyDelay() throws Exception {
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ServerCommsHC-Test35", true /*
                                                                                                              * EXTRA
                                                                                                              * CHECK ON
                                                                                                              */);
@@ -445,6 +462,50 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     /* By Now, the client should be chuked out */
     assertEquals(0, connHC.getTotalConnsUnderMonitor());
 
+  }
+
+  public void testL2SocketConnectL1Pass() throws Exception {
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test36", true /*
+                                                                                                             * EXTRA
+                                                                                                             * CHECK ON
+                                                                                                             */);
+    this.setUp(hcConfig, null);
+    ((CommunicationsManagerImpl) clientComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
+    ClientMessageChannel clientMsgCh = createClientMsgChProxied(clientComms, true);
+    clientMsgCh.open();
+
+    // Verifications
+    ConnectionHealthCheckerImpl connHC = (ConnectionHealthCheckerImpl) ((CommunicationsManagerImpl) serverComms)
+        .getConnHealthChecker();
+    assertNotNull(connHC);
+
+    while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 1)) {
+      System.out.println("Yet to start the connection health cheker thread...");
+      ThreadUtil.reallySleep(1000);
+    }
+
+    SequenceGenerator sq = new SequenceGenerator();
+    for (int i = 1; i <= 5; i++) {
+      PingMessage ping = (PingMessage) clientMsgCh.createMessage(TCMessageType.PING_MESSAGE);
+      ping.initialize(sq);
+      ping.send();
+    }
+
+    System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
+    ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
+
+    /*
+     * L2 should have started the Extra Check by now; With HCListener turnd on in client, L2 will be able to do socket
+     * connect.
+     */
+    ThreadUtil.reallySleep(getMinScoketConnectResultTime(hcConfig));
+    assertEquals(1, connHC.getTotalConnsUnderMonitor());
+    
+    /*
+     * Though L1 is able to connect, we can't trust the client for too long
+     */
+    ThreadUtil.reallySleep(getFullExtraCheckTime(hcConfig));
+    assertEquals(0, connHC.getTotalConnsUnderMonitor());
   }
 
   protected void closeCommsMgr() throws Exception {
