@@ -194,7 +194,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     try {
       DatabaseEntry key = new DatabaseEntry();
       DatabaseEntry value = new DatabaseEntry();
-      setStringData(key, name);
+      setStringData(key, name, tx);
       setObjectIDData(value, id);
 
       status = this.rootDB.put(pt2nt(tx), key, value);
@@ -209,10 +209,10 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     if (name == null) throw new AssertionError("Attempt to retrieve a null root name");
     OperationStatus status = null;
     try {
+      PersistenceTransaction tx = ptp.newTransaction();
       DatabaseEntry key = new DatabaseEntry();
       DatabaseEntry value = new DatabaseEntry();
-      setStringData(key, name);
-      PersistenceTransaction tx = ptp.newTransaction();
+      setStringData(key, name, tx);      
       status = this.rootDB.get(pt2nt(tx), key, value, LockMode.DEFAULT);
       tx.commit();
       if (OperationStatus.SUCCESS.equals(status)) {
@@ -367,7 +367,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
     setObjectIDData(key, managedObject.getID());
-    setManagedObjectData(value, managedObject);
+    setManagedObjectData(value, managedObject, tx);
     int length = value.getSize();
     length += key.getSize();
     try {
@@ -559,12 +559,12 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     entry.setData(Conversion.long2Bytes(objectID.toLong()));
   }
 
-  private void setStringData(DatabaseEntry entry, String string) throws IOException {
-    getSerializationAdapter().serializeString(entry, string);
+  private void setStringData(DatabaseEntry entry, String string, PersistenceTransaction tx) throws IOException {
+    getSerializationAdapter().serializeString(entry, string, tx);
   }
 
-  private void setManagedObjectData(DatabaseEntry entry, ManagedObject mo) throws IOException {
-    getSerializationAdapter().serializeManagedObject(entry, mo);
+  private void setManagedObjectData(DatabaseEntry entry, ManagedObject mo, PersistenceTransaction tx) throws IOException {
+    getSerializationAdapter().serializeManagedObject(entry, mo, tx);
   }
 
   private ObjectID getObjectIDData(DatabaseEntry entry) {

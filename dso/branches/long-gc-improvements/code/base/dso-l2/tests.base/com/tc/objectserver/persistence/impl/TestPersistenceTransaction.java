@@ -7,6 +7,7 @@ package com.tc.objectserver.persistence.impl;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.io.serializer.TCCustomByteArrayOutputStream;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 
 public final class TestPersistenceTransaction implements PersistenceTransaction {
@@ -30,5 +31,9 @@ public final class TestPersistenceTransaction implements PersistenceTransaction 
 
   public Object setProperty(Object key, Object value) {
     return null;
+  }
+
+  public void setBuffer(TCCustomByteArrayOutputStream buffer) {
+    //do nothing    
   }
 }

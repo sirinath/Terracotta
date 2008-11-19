@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.persistence.api;
 
+import com.tc.io.serializer.TCCustomByteArrayOutputStream;
+
 public interface PersistenceTransaction {
 
   public Object getProperty(Object key);
@@ -11,4 +13,6 @@ public interface PersistenceTransaction {
   public Object setProperty(Object key, Object value);
 
   public void commit();
+  
+  public void setBuffer(TCCustomByteArrayOutputStream buffer);
 }
