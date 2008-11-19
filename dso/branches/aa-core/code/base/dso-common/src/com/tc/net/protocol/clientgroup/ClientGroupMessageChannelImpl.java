@@ -52,7 +52,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
   public ClientGroupMessageChannelImpl(TCMessageFactory msgFactory, SessionProvider sessionProvider,
                                        final int maxReconnectTries, CommunicationsManager communicationsManager,
                                        ConnectionAddressProvider[] addressProviders) {
-    super(msgFactory, null, sessionProvider);
+    super(msgFactory, null, sessionProvider, GroupID.ALL_GROUPS);
     this.msgFactory = msgFactory;
     this.sessionProvider = sessionProvider;
     this.communicationsManager = communicationsManager;
@@ -124,7 +124,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
         GroupID id = (GroupID) i.next();
         if (id == coordinatorGroupID) continue;
         ch = getChannel(id);
-        if(ch.isOpen()) continue;
+        if (ch.isOpen()) continue;
         ch.setLocalNodeID(getLocalNodeID());
         ch.open();
         logger.info("Opened sub-channel: " + connectionInfo(ch));
