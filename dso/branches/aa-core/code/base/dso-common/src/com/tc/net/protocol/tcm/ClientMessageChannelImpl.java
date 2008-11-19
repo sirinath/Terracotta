@@ -8,6 +8,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.NetworkStackID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.transport.ConnectionID;
@@ -35,8 +36,8 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
   private SessionID                   channelSessionID = SessionID.NULL_ID;
 
   protected ClientMessageChannelImpl(TCMessageFactory msgFactory, TCMessageRouter router,
-                                     SessionProvider sessionProvider) {
-    super(router, logger, msgFactory);
+                                     SessionProvider sessionProvider, NodeID remoteNodeID) {
+    super(router, logger, msgFactory, remoteNodeID);
     this.msgFactory = msgFactory;
     this.cidProvider = new ChannelIDProviderImpl();
     this.sessionProvider = sessionProvider;
@@ -48,7 +49,8 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
 
     synchronized (status) {
       if (status.isOpen()) { throw new IllegalStateException("Channel already open"); }
-      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID((((ClientID)getLocalNodeID()).getChannelID().toLong())));
+      ((MessageTransport) this.sendLayer).initConnectionID(new ConnectionID((((ClientID) getLocalNodeID())
+          .getChannelID().toLong())));
       NetworkStackID id = this.sendLayer.open();
       getStatus().open();
       this.channelID = new ChannelID(id.toLong());
@@ -132,7 +134,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
     }
 
   }
-  
+
   // for testing purpose
   protected SessionID getSessionID() {
     return channelSessionID;
