@@ -4,6 +4,8 @@
  */
 package com.tc.net.protocol.transport;
 
+import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
+
 import com.tc.logging.TCLogger;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
@@ -13,6 +15,8 @@ import com.tc.util.Assert;
 import com.tc.util.State;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * When the peer node doesn't reply for the PING probes, an extra check(on demand) is made to make sure if it is really
@@ -28,6 +32,7 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
   private final TCLogger        logger;
   private final int             timeoutInterval;
   private final String          remoteNodeDesc;
+  private final List            listeners                     = new CopyOnWriteArrayList();
   private State                 currentState;
   private short                 socketConnectNoReplyWaitCount = 0;
 
@@ -81,6 +86,23 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
     }
   }
 
+  public void addSocketConnectEventListener(HealthCheckerSocketConnectEventListener socketConnectListener) {
+    synchronized (listeners) {
+      if (listeners.contains(socketConnectListener)) { throw new AssertionError(
+                                                                                "Attempt to add same socket connect event listener moere than once: "
+                                                                                    + socketConnectListener); }
+      listeners.add(socketConnectListener);
+    }
+  }
+
+  public void removeSocketConnectEventListener(HealthCheckerSocketConnectEventListener socketConnectListener) {
+    synchronized (listeners) {
+      if (!listeners.contains(socketConnectListener)) { throw new AssertionError(
+                                                                                 "Attempt to remove non registered socket connect event listener"); }
+      listeners.remove(socketConnectListener);
+    }
+  }
+
   /*
    * Returns true if connection is still in progress.
    */
@@ -109,11 +131,21 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
   }
 
   public synchronized void connectEvent(TCConnectionEvent event) {
+
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectSuccess(event);
+    }
+
     stop();
     changeState(SOCKETCONNECT_IDLE);
   }
 
   public synchronized void endOfFileEvent(TCConnectionEvent event) {
+
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectFail(event);
+    }
+
     if (logger.isDebugEnabled()) {
       logger.debug("Socket Connect EOF event:" + event.toString() + " on " + remoteNodeDesc);
     }
@@ -122,6 +154,11 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
   }
 
   public synchronized void errorEvent(TCConnectionErrorEvent errorEvent) {
+
+    for (Iterator i = listeners.iterator(); i.hasNext();) {
+      ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectFail(errorEvent);
+    }
+
     if (logger.isDebugEnabled()) {
       logger.debug("Socket Connect Error Event:" + errorEvent.toString() + " on " + remoteNodeDesc);
     }

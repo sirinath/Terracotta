@@ -11,9 +11,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.core.event.TCConnectionErrorEvent;
 import com.tc.net.core.event.TCConnectionEvent;
-import com.tc.net.core.event.TCConnectionEventListener;
 import com.tc.net.protocol.NullProtocolAdaptor;
 import com.tc.util.State;
 
@@ -25,7 +23,8 @@ import com.tc.util.State;
  * @author Manoj
  */
 
-class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerContext, TCConnectionEventListener {
+class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerContext,
+    HealthCheckerSocketConnectEventListener {
 
   // Probe State-Flow
   private static final State                     START                      = new State("START");
@@ -93,6 +92,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     // trigger the socket connect
     presentConnection = getNewConnection();
     sockectConnect = getHealthCheckerSocketConnector(presentConnection);
+    sockectConnect.addSocketConnectEventListener(this);
     if (sockectConnect.start()) {
       return true;
     } else {
@@ -103,7 +103,6 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
 
   protected TCConnection getNewConnection() {
     TCConnection connection = connectionManager.createConnection(new NullProtocolAdaptor());
-    connection.addListener(this);
     return connection;
   }
 
@@ -114,11 +113,12 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     // TODO: do we need to exchange the address as well ??? (since it might be different than the remote IP on this
     // conn)
     TCSocketAddress sa = new TCSocketAddress(transport.getRemoteAddress().getAddress(), callbackPort);
-    return new HealthCheckerSocketConnectImpl(sa, connection, remoteNodeDesc, logger, config.getSocketConnectTimeout());
+    return new HealthCheckerSocketConnectImpl(sa, connection, sa.getCanonicalStringForm(), logger, config
+        .getSocketConnectTimeout());
   }
 
   private void clearPresentConnection() {
-    presentConnection.removeListener(this);
+    sockectConnect.removeSocketConnectEventListener(this);
     presentConnection = null;
   }
 
@@ -209,40 +209,6 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     return (socketConnectSuccessCount > 0);
   }
 
-  public synchronized void closeEvent(TCConnectionEvent event) {
-    // hmm
-  }
-
-  public synchronized void connectEvent(TCConnectionEvent event) {
-    if (canAcceptConnectionEvent(event)) {
-      // Async connect goes thru
-      socketConnectSuccessCount++;
-      if (socketConnectSuccessCount < config.getSocketConnectMaxCount()) {
-        logger.warn(remoteNodeDesc + " might be in Long GC. GC count since last ping reply : "
-                    + socketConnectSuccessCount);
-        initProbeCycle();
-      } else {
-        logger.error(remoteNodeDesc + " might be in Long GC. GC count since last ping reply : "
-                     + socketConnectSuccessCount + ". But its too long. No more retries");
-        changeState(DEAD);
-      }
-    }
-  }
-
-  public synchronized void endOfFileEvent(TCConnectionEvent event) {
-    if (canAcceptConnectionEvent(event)) {
-      logger.warn("Socket Connect EOF event:" + event.toString() + " on " + remoteNodeDesc);
-      changeState(DEAD);
-    }
-  }
-
-  public synchronized void errorEvent(TCConnectionErrorEvent errorEvent) {
-    if (canAcceptConnectionEvent(errorEvent)) {
-      logger.error("Socket Connect Error Event:" + errorEvent.toString() + " on " + remoteNodeDesc);
-      changeState(DEAD);
-    }
-  }
-
   private boolean canAcceptConnectionEvent(TCConnectionEvent event) {
     if ((event.getSource() == presentConnection) && (currentState == SOCKET_CONNECT)) {
       return true;
@@ -255,6 +221,29 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
 
   TCLogger getLogger() {
     return this.logger;
+  }
+
+  public void notifySocketConnectFail(TCConnectionEvent failureEvent) {
+    if (canAcceptConnectionEvent(failureEvent)) {
+      logger.warn("Socket Connect error event:" + failureEvent.toString() + " on " + remoteNodeDesc);
+      changeState(DEAD);
+    }
+  }
+
+  public void notifySocketConnectSuccess(TCConnectionEvent successEvent) {
+    if (canAcceptConnectionEvent(successEvent)) {
+      // Async connect goes thru
+      socketConnectSuccessCount++;
+      if (socketConnectSuccessCount < config.getSocketConnectMaxCount()) {
+        logger.warn(remoteNodeDesc + " might be in Long GC. GC count since last ping reply : "
+                    + socketConnectSuccessCount);
+        initProbeCycle();
+      } else {
+        logger.error(remoteNodeDesc + " might be in Long GC. GC count since last ping reply : "
+                     + socketConnectSuccessCount + ". But its too long. No more retries");
+        changeState(DEAD);
+      }
+    }
   }
 
 }
