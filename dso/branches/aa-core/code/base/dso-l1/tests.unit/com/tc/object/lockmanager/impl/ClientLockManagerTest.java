@@ -31,6 +31,7 @@ import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.lockmanager.api.TestRemoteLockManager.LockResponder;
+import com.tc.object.msg.TestClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
@@ -745,11 +746,8 @@ public class ClientLockManagerTest extends TCTestCase {
     requests.clear();
     respond.set(true);
 
-    pause();
-
     lockManager.addAllPendingLockRequestsTo(requests);
 
-    unpause();
     assertEquals(1, requests.size());
     assertEquals(lr1, requests.get(0));
 
@@ -1032,6 +1030,7 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   private void unpause() {
+    lockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, new TestClientHandshakeMessage());
     lockManager.unpause(GroupID.ALL_GROUPS);
   }
 

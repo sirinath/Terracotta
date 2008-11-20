@@ -28,7 +28,6 @@ import com.tc.object.util.ToggleableStrongReference;
 import com.tc.text.PrettyPrinter;
 
 import java.io.Writer;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.List;
@@ -261,10 +260,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
       return null;
     }
 
-    public Collection getAllObjectIDsAndClear(Collection c) {
-      throw new ImplementMe();
-    }
-
     public WeakReference createNewPeer(TCClass clazz, DNA dna) {
       throw new ImplementMe();
     }
@@ -285,25 +280,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public ReferenceQueue getReferenceQueue() {
-      throw new ImplementMe();
-    }
-
     public void shutdown() {
       throw new ImplementMe();
     }
 
-    public void unpause() {
-      throw new ImplementMe();
-    }
-
-    public void pause() {
-      throw new ImplementMe();
-    }
-
-    public void starting() {
-      throw new ImplementMe();
-    }
 
     public void replaceRootIDIfNecessary(String rootName, ObjectID newRootID) {
       throw new ImplementMe();
@@ -324,7 +304,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
     public void addPendingCreateObjectsToTransaction() {
       throw new ImplementMe();
-
     }
 
     public boolean hasPendingCreateObjects() {
@@ -365,12 +344,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
     public void dump(Writer writer) {
       throw new ImplementMe();
-
     }
 
     public void dumpToLogger() {
       throw new ImplementMe();
-
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {
