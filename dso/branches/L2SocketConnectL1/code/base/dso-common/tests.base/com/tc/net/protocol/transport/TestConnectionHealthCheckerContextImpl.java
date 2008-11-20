@@ -8,8 +8,6 @@ import com.tc.logging.TCLogger;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
-import com.tc.net.core.event.TCConnectionErrorEvent;
-import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.NullProtocolAdaptor;
 
 public class TestConnectionHealthCheckerContextImpl extends ConnectionHealthCheckerContextImpl {
@@ -30,7 +28,6 @@ public class TestConnectionHealthCheckerContextImpl extends ConnectionHealthChec
 
   protected TCConnection getNewConnection() {
     TCConnection connection = connectionManager.createConnection(new NullProtocolAdaptor());
-    connection.addListener(this);
     return connection;
   }
 
@@ -40,26 +37,8 @@ public class TestConnectionHealthCheckerContextImpl extends ConnectionHealthChec
     if (TransportHandshakeMessage.NO_CALLBACK_PORT == callbackPort) { return new NullHealthCheckerSocketConnectImpl(); }
 
     TCConnection conn = connectionManager.createConnection(new NullProtocolAdaptor());
-    conn.addListener(this);
-
     TCSocketAddress sa = new TCSocketAddress(transport.getRemoteAddress().getAddress(), callbackPort);
     return new TestHealthCheckerSocketConnectImpl(sa, conn, transport.getRemoteAddress().getCanonicalStringForm(), logger,
                                               config.getSocketConnectTimeout());
-  }
-
-  public synchronized void closeEvent(TCConnectionEvent event) {
-    //
-  }
-
-  public synchronized void connectEvent(TCConnectionEvent event) {
-    // sorry, i am dumb. I cannot update the state mahcine.
-  }
-
-  public synchronized void endOfFileEvent(TCConnectionEvent event) {
-    //
-  }
-
-  public synchronized void errorEvent(TCConnectionErrorEvent errorEvent) {
-    //
   }
 }
