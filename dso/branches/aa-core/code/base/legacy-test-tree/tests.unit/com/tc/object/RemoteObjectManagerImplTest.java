@@ -9,6 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.NullTCLogger;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -61,32 +62,25 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
   }
 
   public void testManagerState() {
-    try {
-      manager.starting();
-      throw new AssertionError("Started even not PAUSED");
-    } catch (AssertionError e) {
-      // expected assertion
-    }
 
-    manager.pause();
+    manager.pause(GroupID.ALL_GROUPS);
 
     try {
-      manager.pause();
+      manager.pause(GroupID.ALL_GROUPS);
       throw new AssertionError("PAUSED even it was in PAUSE state");
     } catch (AssertionError e) {
       // expected assertion
     }
 
+    manager.unpause(GroupID.ALL_GROUPS);
+
     try {
-      manager.unpause();
-      throw new AssertionError("UNPAUSED without state being STARTING");
+      manager.unpause(GroupID.ALL_GROUPS);
+      throw new AssertionError("UNPAUSED without state being PASUSED");
     } catch (AssertionError e) {
       // expected assertion
     }
 
-    // state is paused
-    manager.starting();
-    manager.unpause();
   }
 
   public void testDNACacheClearing() {
@@ -101,8 +95,6 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     DNA dna = manager.retrieve(new ObjectID(0));
     assertNotNull(dna);
     assertEquals(dnaCollectionCount - 1, manager.getDNACacheSize());
-    manager.pause();
-    manager.starting();
     manager.clear();
     assertEquals(0, manager.getDNACacheSize());
   }
@@ -138,9 +130,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     final Map expectedNotResent = new HashMap();
     TestRequestRootMessage rrm = newRrm();
     assertNoMessageSent(rrm);
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
     assertNoMessageSent(rrm);
 
     int count = 100;
@@ -175,9 +165,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     assertEquals(count - expectedResent.size(), rt.getAliveCount());
 
     // TEST REQUEST OUTSTANDING
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
 
     assertFalse(rrmf.newMessageQueue.isEmpty());
 
@@ -203,17 +191,10 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
     // all the threads should now be able to complete.
     rt.waitForLowWatermark(0);
-
   }
 
   private static void log(String s) {
     if (false) System.err.println(Thread.currentThread().getName() + " :: " + s);
-  }
-
-  private void pauseAndStart() {
-    manager.pause();
-    // manager.clearCache();
-    manager.starting();
   }
 
   public void testRequestOutstandingRequestManagedObjectMessages() throws Exception {
@@ -224,9 +205,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
     TestRequestManagedObjectMessage rmom = newRmom();
     assertNoMessageSent(rmom);
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
     assertNoMessageSent(rmom);
 
     int count = 50;
@@ -275,10 +254,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       secondaryResent.put(rmom.objectIDs.iterator().next(), rmom);
     }
 
-    // now tell it to resend outstanding
-    pauseAndStart();
+    // now tell it to Re-send outstanding
     manager.requestOutstanding();
-    manager.unpause();
 
     final Collection c = new LinkedList();
     c.addAll(expectedResent.values());

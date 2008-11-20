@@ -4,15 +4,16 @@
  */
 package com.tc.object.handshakemanager;
 
+import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeAckMessage;
 
 public interface ClientHandshakeManager {
 
-  public void initiateHandshake();
+  public void initiateHandshake(NodeID remoteNode);
 
-  public void pause();
+  public void disconnected(NodeID remoteNode);
 
-  public void unpause();
+  public void connected(NodeID remoteNode);
 
   public void acknowledgeHandshake(ClientHandshakeAckMessage handshakeAck);
 

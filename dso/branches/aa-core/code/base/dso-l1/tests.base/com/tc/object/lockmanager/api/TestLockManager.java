@@ -8,19 +8,14 @@ import com.tc.exception.ImplementMe;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
-import com.tc.object.tx.TransactionID;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.runtime.LockInfoByThreadID;
 
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * @author steve
- */
 public class TestLockManager implements ClientLockManager {
   public final List locks          = new ArrayList();
   public final List lockIDForCalls = new LinkedList();
@@ -54,40 +49,7 @@ public class TestLockManager implements ClientLockManager {
     return Notify.NULL;
   }
 
-  public Collection addAllPendingLockRequestsTo(Collection c) {
-    return c;
-  }
-
-  public void pause() {
-    return;
-  }
-
-  public void starting() {
-    return;
-  }
-
-  public void unpause() {
-    return;
-
-  }
-
-  public boolean isStarting() {
-    return false;
-  }
-
-  public Collection addAllWaitersTo(Collection c) {
-    return c;
-  }
-
-  public Collection addAllHeldLocksTo(Collection c) {
-    return c;
-  }
-
   public void notified(LockID lockID, ThreadID threadID) {
-    return;
-  }
-
-  public void recall(LockID lockID, ThreadID id, int level) {
     return;
   }
 
@@ -107,14 +69,6 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public boolean isLocked(LockID lockID, ThreadID threadID) {
-    throw new ImplementMe();
-  }
-
-  public boolean haveLock(LockID lockID, TransactionID requesterID) {
-    throw new ImplementMe();
-  }
-
   public void queryLockCommit(ThreadID threadID, GlobalLockInfo globalLockInfo) {
     throw new ImplementMe();
   }
@@ -124,10 +78,6 @@ public class TestLockManager implements ClientLockManager {
   }
 
   public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
-    throw new ImplementMe();
-  }
-
-  public Collection addAllPendingTryLockRequestsTo(Collection c) {
     throw new ImplementMe();
   }
 
@@ -157,12 +107,10 @@ public class TestLockManager implements ClientLockManager {
 
   public void dump(Writer writer) {
     throw new ImplementMe();
-
   }
 
   public void dumpToLogger() {
     throw new ImplementMe();
-
   }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
@@ -172,5 +120,4 @@ public class TestLockManager implements ClientLockManager {
   public void addAllLocksTo(LockInfoByThreadID lockIcnfo) {
     throw new ImplementMe();
   }
-
 }

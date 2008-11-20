@@ -68,7 +68,6 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
         txns.put(txn.getServerTransactionID(), txn);
       }
       messageRecycler.addMessage(ctm, txns.keySet());
-      System.err.println("Recd Commit Batch :  Num of txns : " + txns.size());
       if (replicatedObjectMgr.relayTransactions()) {
         transactionManager.incomingTransactions(nodeID, txns.keySet(), txns.values(), true);
         txnRelaySink.add(new IncomingTransactionContext(nodeID, ctm, txns));

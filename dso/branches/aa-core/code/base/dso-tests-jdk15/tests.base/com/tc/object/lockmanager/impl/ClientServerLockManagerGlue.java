@@ -9,8 +9,8 @@ import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
+import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
@@ -37,13 +37,13 @@ import java.util.Set;
 
 public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable {
 
-  private static final Sink     NULL_SINK = new NullSink();
+  private static final Sink       NULL_SINK = new NullSink();
 
-  private LockManagerImpl       serverLockManager;
-  protected ClientLockManager     clientLockManager;
+  private LockManagerImpl         serverLockManager;
+  protected ClientLockManagerImpl clientLockManager;
 
   protected TestSink              sink;
-  private ClientID              clientID  = new ClientID(new ChannelID(1));
+  private ClientID                clientID  = new ClientID(new ChannelID(1));
   protected boolean               stop      = false;
   protected Thread                eventNotifier;
 
@@ -52,7 +52,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   public ClientServerLockManagerGlue(SessionProvider sessionProvider) {
     this(sessionProvider, new TestSink(), "ClientServerLockManagerGlue");
   }
-  
+
   protected ClientServerLockManagerGlue(SessionProvider sessionProvider, TestSink sink, String threadName) {
     super();
     this.sessionProvider = sessionProvider;
@@ -79,30 +79,32 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     Collection serverLC = new ArrayList();
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request.lockType());
+      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
+          .lockType());
       serverLC.add(ctxt);
     }
 
     Collection serverWC = new ArrayList();
     for (Iterator i = waitContext.iterator(); i.hasNext();) {
       WaitLockRequest request = (WaitLockRequest) i.next();
-      WaitContext ctxt = new WaitContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request.lockType(), request
-          .getTimerSpec());
+      WaitContext ctxt = new WaitContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
+          .lockType(), request.getTimerSpec());
       serverWC.add(ctxt);
     }
 
     Collection serverPC = new ArrayList();
     for (Iterator i = pendingRequests.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request.lockType());
+      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
+          .lockType());
       serverPC.add(ctxt);
     }
 
     Collection serverPTC = new ArrayList();
     for (Iterator i = pendingTryLockRequests.iterator(); i.hasNext();) {
       TryLockRequest request = (TryLockRequest) i.next();
-      LockContext ctxt = new TryLockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request.lockType(),
-                                            request.getTimerSpec());
+      LockContext ctxt = new TryLockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(),
+                                            request.lockType(), request.getTimerSpec());
       serverPTC.add(ctxt);
     }
 
@@ -117,7 +119,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     return true;
   }
 
-  public void set(ClientLockManager clmgr, LockManagerImpl slmgr) {
+  public void set(ClientLockManagerImpl clmgr, LockManagerImpl slmgr) {
     this.clientLockManager = clmgr;
     this.serverLockManager = slmgr;
     this.serverLockManager.start();
@@ -145,7 +147,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   public LockManagerImpl restartServer() {
     int policy = this.serverLockManager.getLockPolicy();
     this.serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
-    if (!clientLockManager.isStarting()) clientLockManager.starting();
+    clientLockManager.pause(GroupID.ALL_GROUPS);
     for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet()).iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       serverLockManager.reestablishLock(request.lockID(), clientID, request.threadID(), request.lockLevel(), NULL_SINK);
@@ -159,13 +161,15 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
 
     for (Iterator i = clientLockManager.addAllPendingLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      serverLockManager.requestLock(request.lockID(), clientID, request.threadID(), request.lockLevel(), request.lockType(), sink);
+      serverLockManager.requestLock(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
+          .lockType(), sink);
     }
 
     if (policy == LockManagerImpl.ALTRUISTIC_LOCK_POLICY) {
       this.serverLockManager.setLockPolicy(policy);
     }
     this.serverLockManager.start();
+    clientLockManager.unpause(GroupID.ALL_GROUPS);
     return this.serverLockManager;
   }
 
