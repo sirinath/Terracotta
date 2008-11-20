@@ -43,10 +43,6 @@ public class TestRemoteObjectManager implements RemoteObjectManager {
     throw new ImplementMe();
   }
 
-  public void addObject(SessionID sessionID, DNA dna) {
-    throw new ImplementMe();
-  }
-
   public void removed(ObjectID id) {
     // do nothing
   }

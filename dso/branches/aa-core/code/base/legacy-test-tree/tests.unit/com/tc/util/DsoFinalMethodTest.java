@@ -93,10 +93,6 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
             classFactory, objectFactory, new TestPortability(), null, null);
     }
 
-    public boolean isPortable(Object obj) {
-      return true;
-    }
-
     public Object lookupObject(ObjectID objectID) {
       return null;
     }

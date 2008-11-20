@@ -7,10 +7,12 @@ package com.tc.object.lockmanager.impl;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.ChannelID;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
@@ -21,6 +23,8 @@ import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.msg.ClientHandshakeMessageImpl;
+import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
@@ -31,7 +35,6 @@ import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -148,21 +151,33 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     int policy = this.serverLockManager.getLockPolicy();
     this.serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
     clientLockManager.pause(GroupID.ALL_GROUPS);
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet()).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      serverLockManager.reestablishLock(request.lockID(), clientID, request.threadID(), request.lockLevel(), NULL_SINK);
+    ClientHandshakeMessageImpl handshakeMessage = new ClientHandshakeMessageImpl(SessionID.NULL_ID, null,
+                                                                                 new TCByteBufferOutputStream(), null,
+                                                                                 TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
+    clientLockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, handshakeMessage);
+
+    for (Iterator i = handshakeMessage.getLockContexts().iterator(); i.hasNext();) {
+      LockContext request = (LockContext) i.next();
+      serverLockManager.reestablishLock(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
+                                        NULL_SINK);
     }
 
-    for (Iterator i = clientLockManager.addAllWaitersTo(new HashSet()).iterator(); i.hasNext();) {
-      WaitLockRequest request = (WaitLockRequest) i.next();
-      serverLockManager.reestablishWait(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .getTimerSpec(), sink);
+    for (Iterator i = handshakeMessage.getWaitContexts().iterator(); i.hasNext();) {
+      WaitContext request = (WaitContext) i.next();
+      serverLockManager.reestablishWait(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
+                                        request.getTimerSpec(), sink);
     }
 
-    for (Iterator i = clientLockManager.addAllPendingLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      serverLockManager.requestLock(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType(), sink);
+    for (Iterator i = handshakeMessage.getPendingLockContexts().iterator(); i.hasNext();) {
+      LockContext request = (LockContext) i.next();
+      serverLockManager.requestLock(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
+                                    request.getLockType(), sink);
+    }
+
+    for (Iterator i = handshakeMessage.getPendingTryLockContexts().iterator(); i.hasNext();) {
+      TryLockContext request = (TryLockContext) i.next();
+      serverLockManager.tryRequestLock(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
+                                       request.getLockType(), request.getTimerSpec(), sink);
     }
 
     if (policy == LockManagerImpl.ALTRUISTIC_LOCK_POLICY) {
