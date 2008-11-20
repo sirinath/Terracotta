@@ -161,8 +161,9 @@ import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * This is the main point of entry into the DSO client.
@@ -186,7 +187,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private ClientTransactionManager                 txManager;
   private CommunicationsManager                    communicationsManager;
   private RemoteTransactionManager                 rtxManager;
-  private PauseListener                            pauseListener;
   private ClientHandshakeManagerImpl               clientHandshakeManager;
   private RuntimeLogger                            runtimeLogger;
   private CacheManager                             cacheManager;
@@ -205,7 +205,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.config = config;
     this.classProvider = classProvider;
     this.connectionComponents = connectionComponents;
-    this.pauseListener = new NullPauseListener();
     this.manager = manager;
     this.cluster = cluster;
     this.threadGroup = threadGroup;
@@ -227,10 +226,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
   public void setCreateDedicatedMBeanServer(boolean createDedicatedMBeanServer) {
     this.createDedicatedMBeanServer = createDedicatedMBeanServer;
-  }
-
-  public void setPauseListener(PauseListener pauseListener) {
-    this.pauseListener = pauseListener;
   }
 
   /*
@@ -476,10 +471,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
                                                                 1, maxSize);
 
-    // This set is designed to give the handshake manager an opportunity to pause stages when it is pausing due to
-    // disconnect. Unfortunately, the lock response stage can block, which I didn't realize at the time, so it's not
-    // being used.
-    Collection stagesToPauseOnDisconnect = Collections.EMPTY_LIST;
+    List clientHandshakeCallbacks = new ArrayList();
+    clientHandshakeCallbacks.add(lockManager);
+    clientHandshakeCallbacks.add(objectManager);
+    clientHandshakeCallbacks.add(remoteObjectManager);
+    clientHandshakeCallbacks.add(rtxManager);
     ProductInfo pInfo = ProductInfo.getInstance();
     clientHandshakeManager = new ClientHandshakeManagerImpl(
                                                             new ChannelIDLogger(
@@ -487,11 +483,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                                 TCLogging
                                                                                     .getLogger(ClientHandshakeManagerImpl.class)),
                                                             clientIDProvider, channel
-                                                                .getClientHandshakeMessageFactory(), objectManager,
-                                                            remoteObjectManager, lockManager, rtxManager, gtxManager,
-                                                            stagesToPauseOnDisconnect, pauseStage.getSink(),
-                                                            sessionManager, pauseListener, sequence, cluster, pInfo
-                                                                .version());
+                                                                .getClientHandshakeMessageFactory(), pauseStage
+                                                                .getSink(), sessionManager, sequence, cluster, pInfo
+                                                                .version(), Collections
+                                                                .unmodifiableCollection(clientHandshakeCallbacks));
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,

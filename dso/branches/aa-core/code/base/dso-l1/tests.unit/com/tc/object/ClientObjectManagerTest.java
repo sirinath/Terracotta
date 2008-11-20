@@ -31,24 +31,23 @@ import com.tc.object.tx.MockTransactionManager;
 import com.tc.util.Counter;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.util.HashSet;
 import java.util.Map;
 
 public class ClientObjectManagerTest extends BaseDSOTestCase {
-  private ClientObjectManager            mgr;
-  private TestRemoteObjectManager        remoteObjectManager;
-  private DSOClientConfigHelper          clientConfiguration;
-  private ObjectIDProvider               idProvider;
-  private EvictionPolicy                 cache;
-  private RuntimeLogger                  runtimeLogger;
-  private ClassProvider                  classProvider;
-  private TCClassFactory                 classFactory;
-  private TestObjectFactory              objectFactory;
-  private String                         rootName;
-  private Object                         object;
-  private ObjectID                       objectID;
-  private MockTCObject                   tcObject;
-  private CyclicBarrier                  mutualRefBarrier;
+  private ClientObjectManager     mgr;
+  private TestRemoteObjectManager remoteObjectManager;
+  private DSOClientConfigHelper   clientConfiguration;
+  private ObjectIDProvider        idProvider;
+  private EvictionPolicy          cache;
+  private RuntimeLogger           runtimeLogger;
+  private ClassProvider           classProvider;
+  private TCClassFactory          classFactory;
+  private TestObjectFactory       objectFactory;
+  private String                  rootName;
+  private Object                  object;
+  private ObjectID                objectID;
+  private MockTCObject            tcObject;
+  private CyclicBarrier           mutualRefBarrier;
 
   public void setUp() throws Exception {
     remoteObjectManager = new TestRemoteObjectManager();
@@ -230,11 +229,6 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     // make sure the first caller has called down into the remote object manager
     remoteObjectManager.retrieveRootIDCalls.take();
     assertNull(remoteObjectManager.retrieveRootIDCalls.poll(0));
-
-    // now make sure that concurrent reconnect activity doesn't block
-    mgr.pause();
-    mgr.starting();
-    mgr.getAllObjectIDsAndClear(new HashSet());
   }
 
   /**

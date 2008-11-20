@@ -48,29 +48,7 @@ public class TestRemoteObjectManager implements RemoteObjectManager {
   }
 
   public void removed(ObjectID id) {
-  // do nothing
-  }
-
-  public void requestOutstanding() {
-    throw new ImplementMe();
-  }
-
-  public void pause() {
-    throw new ImplementMe();
-
-  }
-
-  public void clear() {
-    return;
-  }
-
-  public void unpause() {
-    throw new ImplementMe();
-
-  }
-
-  public void starting() {
-    throw new ImplementMe();
+    // do nothing
   }
 
   public DNA retrieve(ObjectID id, int depth) {

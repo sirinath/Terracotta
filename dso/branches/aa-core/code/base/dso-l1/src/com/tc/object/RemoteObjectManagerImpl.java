@@ -7,7 +7,10 @@ package com.tc.object;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.net.ClientID;
+import com.tc.net.NodeID;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.handshakemanager.ClientHandshakeCallback;
+import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
@@ -37,10 +40,9 @@ import java.util.Map.Entry;
  * This class is a kludge but I think it will do the trick for now. It is responsible for any communications to the
  * server for object retrieval and removal
  */
-public class RemoteObjectManagerImpl implements RemoteObjectManager {
+public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHandshakeCallback {
 
   private static final State                       PAUSED                    = new State("PAUSED");
-  private static final State                       STARTING                  = new State("STARTING");
   private static final State                       RUNNING                   = new State("RUNNING");
 
   private final LinkedHashMap                      rootRequests              = new LinkedHashMap();
@@ -83,26 +85,25 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     this.sessionManager = sessionManager;
   }
 
-  public synchronized void pause() {
+  public synchronized void pause(NodeID remote) {
     assertNotPaused("Attempt to pause while PAUSED");
     state = PAUSED;
     notifyAll();
   }
 
-  public synchronized void starting() {
-    assertPaused("Attempt to start while not PAUSED");
-    state = STARTING;
-    notifyAll();
+  public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
+    // Nop
   }
 
-  public synchronized void unpause() {
-    assertStarting("Attempt to unpause while not STARTING");
+  public synchronized void unpause(NodeID remote) {
+    assertPaused("Attempt to unpause while not PAUSED");
     state = RUNNING;
+    clear();
+    requestOutstanding();
     notifyAll();
   }
 
-  public synchronized void clear() {
-    if (state != STARTING) throw new AssertionError("Attempt to clear while not STARTING: " + state);
+  synchronized void clear() {
     lruDNA.clear();
     for (Iterator i = dnaRequests.entrySet().iterator(); i.hasNext();) {
       Entry e = (Entry) i.next();
@@ -129,16 +130,11 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     if (state != PAUSED) throw new AssertionError(message + ": " + state);
   }
 
-  private void assertStarting(Object message) {
-    if (state != STARTING) throw new AssertionError(message + ": " + state);
-  }
-
   private void assertNotPaused(Object message) {
     if (state == PAUSED) throw new AssertionError(message + ": " + state);
   }
 
-  public synchronized void requestOutstanding() {
-    assertStarting("Attempt to request outstanding object requests while not STARTING");
+  synchronized void requestOutstanding() {
     for (Iterator i = outstandingObjectRequests.values().iterator(); i.hasNext();) {
       RequestManagedObjectMessage rmom = createRequestManagedObjectMessage((ObjectRequestContext) i.next(),
                                                                            new ObjectIDSet());

@@ -14,6 +14,7 @@ import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.GroupID;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockID;
@@ -303,10 +304,9 @@ public class RemoteTransactionManagerTest extends TestCase {
     }
   }
 
-  private void restart(RemoteTransactionManager manager2) {
-    manager2.pause();
-    manager2.starting();
-    manager2.resendOutstandingAndUnpause();
+  private void restart(RemoteTransactionManagerImpl manager2) {
+    manager2.pause(GroupID.ALL_GROUPS);
+    manager2.unpause(GroupID.ALL_GROUPS);
 
   }
 

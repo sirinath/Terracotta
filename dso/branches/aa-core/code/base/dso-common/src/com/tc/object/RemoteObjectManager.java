@@ -31,17 +31,4 @@ public interface RemoteObjectManager {
 
   public void removed(ObjectID id);
 
-  /**
-   * Causes outstanding object and root requests to be re-sent.
-   */
-  public void requestOutstanding();
-
-  public void pause();
-
-  public void clear();
-
-  public void starting();
-
-  public void unpause();
-
 }

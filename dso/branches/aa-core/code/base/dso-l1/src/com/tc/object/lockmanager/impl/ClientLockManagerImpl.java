@@ -8,18 +8,27 @@ import org.apache.commons.collections.map.ListOrderedMap;
 
 import com.tc.logging.TCLogger;
 import com.tc.management.ClientLockStatManager;
+import com.tc.net.NodeID;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.ClientLockManagerConfig;
+import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.QueryLockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.TryLockContext;
+import com.tc.object.lockmanager.api.TryLockRequest;
+import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.tx.TimerSpec;
@@ -49,7 +58,7 @@ import java.util.TimerTask;
 /**
  * The Top level lock manager and entry point into the lock manager subsystem in the L1.
  */
-public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallback {
+public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallback, ClientHandshakeCallback {
 
   private static final int              INIT_LOCK_MAP_SIZE           = 10000;
 
@@ -75,7 +84,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
 
   // For tests
   public ClientLockManagerImpl(TCLogger logger, RemoteLockManager remoteLockManager, SessionManager sessionManager,
-                        ClientLockStatManager lockStatManager, ClientLockManagerConfig clientLockManagerConfig) {
+                               ClientLockStatManager lockStatManager, ClientLockManagerConfig clientLockManagerConfig) {
     this(logger, remoteLockManager, sessionManager, lockStatManager, clientLockManagerConfig, new TCLockTimerImpl());
 
   }
@@ -98,7 +107,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return locksByID.size();
   }
 
-  public synchronized void pause() {
+  public synchronized void pause(NodeID remote) {
     if (state == PAUSED) throw new AssertionError("Attempt to pause while already paused : " + state);
     this.state = PAUSED;
     for (Iterator iter = new HashSet(locksByID.values()).iterator(); iter.hasNext();) {
@@ -107,13 +116,8 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
 
-  public synchronized void starting() {
-    if (state != PAUSED) throw new AssertionError("Attempt to start when not paused: " + state);
-    this.state = STARTING;
-  }
-
-  public synchronized void unpause() {
-    if (state != STARTING) throw new AssertionError("Attempt to unpause when not starting: " + state);
+  public synchronized void unpause(NodeID remote) {
+    if (state != STARTING) throw new AssertionError("Attempt to unpause when not in starting : " + state);
     this.state = RUNNING;
     notifyAll();
     for (Iterator iter = locksByID.values().iterator(); iter.hasNext();) {
@@ -123,8 +127,37 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     resubmitQueryLockRequests();
   }
 
-  public synchronized boolean isStarting() {
-    return state == STARTING;
+  public synchronized void initializeHandshake(NodeID thisNode, NodeID remoteNode,
+                                               ClientHandshakeMessage handshakeMessage) {
+    if (state != PAUSED) throw new AssertionError("Attempt to initiateHandshake when not paused: " + state);
+    this.state = STARTING;
+    for (Iterator i = addAllHeldLocksTo(new HashSet()).iterator(); i.hasNext();) {
+      LockRequest request = (LockRequest) i.next();
+      LockContext ctxt = new LockContext(request.lockID(), thisNode, request.threadID(), request.lockLevel(), request
+          .lockType());
+      handshakeMessage.addLockContext(ctxt);
+    }
+
+    for (Iterator i = addAllWaitersTo(new HashSet()).iterator(); i.hasNext();) {
+      WaitLockRequest request = (WaitLockRequest) i.next();
+      WaitContext ctxt = new WaitContext(request.lockID(), thisNode, request.threadID(), request.lockLevel(), request
+          .lockType(), request.getTimerSpec());
+      handshakeMessage.addWaitContext(ctxt);
+    }
+
+    for (Iterator i = addAllPendingLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
+      LockRequest request = (LockRequest) i.next();
+      LockContext ctxt = new LockContext(request.lockID(), thisNode, request.threadID(), request.lockLevel(), request
+          .lockType());
+      handshakeMessage.addPendingLockContext(ctxt);
+    }
+
+    for (Iterator i = addAllPendingTryLockRequestsTo(new HashSet()).iterator(); i.hasNext();) {
+      TryLockRequest request = (TryLockRequest) i.next();
+      TryLockContext ctxt = new TryLockContext(request.lockID(), thisNode, request.threadID(), request.lockLevel(),
+                                               request.lockType(), request.getTimerSpec());
+      handshakeMessage.addPendingTryLockContext(ctxt);
+    }
   }
 
   public synchronized void runGC() {
@@ -517,7 +550,6 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   }
 
   public synchronized Collection addAllWaitersTo(Collection c) {
-    assertStarting();
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
       ClientLock lock = (ClientLock) i.next();
       lock.addAllWaitersTo(c);
@@ -525,8 +557,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return c;
   }
 
-  public synchronized Collection addAllHeldLocksTo(Collection c) {
-    assertStarting();
+  synchronized Collection addAllHeldLocksTo(Collection c) {
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
       ClientLock lock = (ClientLock) i.next();
       lock.addHoldersToAsLockRequests(c);
@@ -534,11 +565,18 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return c;
   }
 
-  public synchronized Collection addAllPendingLockRequestsTo(Collection c) {
-    assertStarting();
+  synchronized Collection addAllPendingLockRequestsTo(Collection c) {
     for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
       ClientLock lock = (ClientLock) i.next();
       lock.addAllPendingLockRequestsTo(c);
+    }
+    return c;
+  }
+
+  synchronized Collection addAllPendingTryLockRequestsTo(Collection c) {
+    for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
+      ClientLock lock = (ClientLock) i.next();
+      lock.addAllPendingTryLockRequestsTo(c);
     }
     return c;
   }
@@ -548,15 +586,6 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       ClientLock lock = (ClientLock) i.next();
       lock.addAllLocksTo(lockInfo);
     }
-  }
-
-  public synchronized Collection addAllPendingTryLockRequestsTo(Collection c) {
-    assertStarting();
-    for (Iterator i = locksByID.values().iterator(); i.hasNext();) {
-      ClientLock lock = (ClientLock) i.next();
-      lock.addAllPendingTryLockRequestsTo(c);
-    }
-    return c;
   }
 
   public synchronized void setLockStatisticsConfig(int traceDepth, int gatherInterval) {
@@ -598,10 +627,6 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
 
   public synchronized boolean isPaused() {
     return (state == PAUSED);
-  }
-
-  private void assertStarting() {
-    if (state != STARTING) throw new AssertionError("ClientLockManager is not STARTING : " + state);
   }
 
   /*
@@ -681,4 +706,5 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
     return out;
   }
+
 }

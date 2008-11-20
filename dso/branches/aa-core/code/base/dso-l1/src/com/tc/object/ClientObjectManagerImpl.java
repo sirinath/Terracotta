@@ -12,6 +12,7 @@ import com.tc.logging.CustomerLogging;
 import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
@@ -27,10 +28,12 @@ import com.tc.object.cache.Evictable;
 import com.tc.object.cache.EvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.Namespace;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.tx.ClientTransactionManager;
@@ -72,11 +75,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ClientObjectManagerImpl implements ClientObjectManager, PortableObjectProvider, Evictable, DumpHandler,
-    PrettyPrintable {
+public class ClientObjectManagerImpl implements ClientObjectManager, ClientHandshakeCallback, PortableObjectProvider,
+    Evictable, DumpHandler, PrettyPrintable {
 
   private static final State                   PAUSED                 = new State("PAUSED");
-  private static final State                   STARTING               = new State("STARTING");
   private static final State                   RUNNING                = new State("RUNNING");
 
   private static final LiteralValues           literals               = new LiteralValues();
@@ -172,22 +174,21 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return classProvider.getClassFor(className, loaderDesc);
   }
 
-  public synchronized void pause() {
+  public synchronized void pause(NodeID remote) {
     assertNotPaused("Attempt to pause while PAUSED");
     state = PAUSED;
     notifyAll();
   }
 
-  public synchronized void starting() {
-    assertPaused("Attempt to start while not PAUSED");
-    state = STARTING;
+  public synchronized void unpause(NodeID remote) {
+    assertPaused("Attempt to unpause while not PAUSED");
+    state = RUNNING;
     notifyAll();
   }
 
-  public synchronized void unpause() {
-    assertStarting("Attempt to unpause while not STARTING");
-    state = RUNNING;
-    notifyAll();
+  public synchronized void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
+    assertPaused("Attempt to initiateHandshake while not PAUSED");
+    addAllObjectIDs(handshakeMessage.getObjectIDs());
   }
 
   private void waitUntilRunning() {
@@ -205,10 +206,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
 
   private void assertPaused(Object message) {
     if (state != PAUSED) throw new AssertionError(message + ": " + state);
-  }
-
-  private void assertStarting(Object message) {
-    if (state != STARTING) throw new AssertionError(message + ": " + state);
   }
 
   private void assertNotPaused(Object message) {
@@ -555,12 +552,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, PortableObj
     return basicLookupByID(id);
   }
 
-  public synchronized Collection getAllObjectIDsAndClear(Collection c) {
-    assertStarting("Called when not in STARTING state !");
+  synchronized Collection addAllObjectIDs(Collection c) {
     for (Iterator i = idToManaged.keySet().iterator(); i.hasNext();) {
       c.add(i.next());
     }
-    remoteObjectManager.clear();
     return c;
   }
 

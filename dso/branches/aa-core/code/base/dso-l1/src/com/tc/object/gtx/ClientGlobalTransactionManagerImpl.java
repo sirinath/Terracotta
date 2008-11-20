@@ -13,7 +13,6 @@ import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -99,33 +98,5 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback) {
     return remoteTransactionManager.isTransactionsForLockFlushed(lockID, callback);
   }
-
-  public void unpause() {
-    remoteTransactionManager.unpause();
-  }
-
-  public void pause() {
-    remoteTransactionManager.pause();
-  }
-
-  public void resendOutstanding() {
-    remoteTransactionManager.resendOutstanding();
-  }
-
-  public Collection getTransactionSequenceIDs() {
-    return remoteTransactionManager.getTransactionSequenceIDs();
-  }
-
-  public Collection getResentTransactionIDs() {
-    return remoteTransactionManager.getResentTransactionIDs();
-  }
-
-  public void starting() {
-    remoteTransactionManager.starting();
-  }
-
-  public void resendOutstandingAndUnpause() {
-    remoteTransactionManager.resendOutstandingAndUnpause();
-  }
-
+  
 }
