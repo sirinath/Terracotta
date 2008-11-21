@@ -63,19 +63,19 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
   public void testManagerState() {
 
-    manager.pause(GroupID.ALL_GROUPS);
+    manager.pause(GroupID.ALL_GROUPS, 1);
 
     try {
-      manager.pause(GroupID.ALL_GROUPS);
+      manager.pause(GroupID.ALL_GROUPS, 1);
       throw new AssertionError("PAUSED even it was in PAUSE state");
     } catch (AssertionError e) {
       // expected assertion
     }
 
-    manager.unpause(GroupID.ALL_GROUPS);
+    manager.unpause(GroupID.ALL_GROUPS, 0);
 
     try {
-      manager.unpause(GroupID.ALL_GROUPS);
+      manager.unpause(GroupID.ALL_GROUPS, 0);
       throw new AssertionError("UNPAUSED without state being PASUSED");
     } catch (AssertionError e) {
       // expected assertion

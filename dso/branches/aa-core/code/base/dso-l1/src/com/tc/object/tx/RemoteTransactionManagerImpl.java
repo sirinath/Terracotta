@@ -99,7 +99,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
     this.outstandingBatchesCounter = outstandingBatchesCounter;
   }
 
-  public void pause(NodeID remote) {
+  public void pause(NodeID remote, int disconnected) {
     synchronized (lock) {
       if (isStoppingOrStopped()) return;
       if (this.status == PAUSED) throw new AssertionError("Attempt to pause while already paused state.");
@@ -107,7 +107,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
     }
   }
 
-  public void unpause(NodeID remote) {
+  public void unpause(NodeID remote, int disconnected) {
     synchronized (lock) {
       if (isStoppingOrStopped()) return;
       if (this.status != PAUSED) throw new AssertionError("Attempt to unpause while not in paused state.");

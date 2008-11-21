@@ -5,7 +5,7 @@
 package com.tc.object.tx;
 
 import com.tc.logging.DumpHandler;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
@@ -167,7 +167,7 @@ public interface ClientTransactionManager extends DumpHandler, PrettyPrintable {
    * 
    * @return Provider
    */
-  public ChannelIDProvider getChannelIDProvider();
+  public ClientIDProvider getClientIDProvider();
 
   /**
    * Check whether the lock with this name in this thread is holding the lock at this level

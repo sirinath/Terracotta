@@ -7,13 +7,12 @@ package com.tc.object;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.exception.TCRuntimeException;
-import com.tc.logging.ChannelIDLogger;
+import com.tc.logging.ClientIDLogger;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.appevent.NonPortableEventContext;
@@ -136,7 +135,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public ClientObjectManagerImpl(RemoteObjectManager remoteObjectManager, DSOClientConfigHelper clientConfiguration,
                                  ObjectIDProvider idProvider, EvictionPolicy cache, RuntimeLogger runtimeLogger,
-                                 ChannelIDProvider provider, ClassProvider classProvider, TCClassFactory classFactory,
+                                 ClientIDProvider provider, ClassProvider classProvider, TCClassFactory classFactory,
                                  TCObjectFactory objectFactory, Portability portability,
                                  DSOClientMessageChannel channel, ToggleableReferenceManager referenceManager) {
     this.remoteObjectManager = remoteObjectManager;
@@ -147,7 +146,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     this.portability = portability;
     this.channel = channel;
     this.referenceManager = referenceManager;
-    this.logger = new ChannelIDLogger(provider, TCLogging.getLogger(ClientObjectManager.class));
+    this.logger = new ClientIDLogger(provider, TCLogging.getLogger(ClientObjectManager.class));
     this.classProvider = classProvider;
     this.traverseTest = new NewObjectTraverseTest();
     this.traverser = new Traverser(new AddManagedObjectAction(), this);
@@ -174,19 +173,20 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return classProvider.getClassFor(className, loaderDesc);
   }
 
-  public synchronized void pause(NodeID remote) {
+  public synchronized void pause(NodeID remote, int disconnected) {
     assertNotPaused("Attempt to pause while PAUSED");
     state = PAUSED;
     notifyAll();
   }
 
-  public synchronized void unpause(NodeID remote) {
+  public synchronized void unpause(NodeID remote, int disconnected) {
     assertPaused("Attempt to unpause while not PAUSED");
     state = RUNNING;
     notifyAll();
   }
 
-  public synchronized void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
+  public synchronized void initializeHandshake(NodeID thisNode, NodeID remoteNode,
+                                               ClientHandshakeMessage handshakeMessage) {
     assertPaused("Attempt to initiateHandshake while not PAUSED");
     addAllObjectIDs(handshakeMessage.getObjectIDs());
   }

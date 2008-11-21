@@ -3,13 +3,17 @@ package com.tc.object.tx;
 import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.MockMessageChannel;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.tcm.TestChannelIDProvider;
+import com.tc.net.protocol.tcm.TestClientMessageChannel;
+import com.tc.object.ClientIDProvider;
+import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
@@ -34,7 +38,7 @@ public class MockChannel implements DSOClientMessageChannel {
   }
 
   public ClientMessageChannel channel() {
-    throw new ImplementMe();
+    return new TestClientMessageChannel();
   }
 
   public void close() {
@@ -45,8 +49,8 @@ public class MockChannel implements DSOClientMessageChannel {
     throw new ImplementMe();
   }
 
-  public ChannelIDProvider getChannelIDProvider() {
-    throw new ImplementMe();
+  public ClientIDProvider getClientIDProvider() {
+    return new ClientIDProviderImpl(new TestChannelIDProvider());
   }
 
   public ClientHandshakeMessageFactory getClientHandshakeMessageFactory() {
@@ -90,6 +94,7 @@ public class MockChannel implements DSOClientMessageChannel {
   }
 
   CompletedTransactionLowWaterMarkMessageFactory nullFactory = new NullCompletedTransactionLowWaterMarkMessageFactory();
+  public GroupID[]                               groups      = new GroupID[] { new GroupID(0) };
 
   public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory() {
     return nullFactory;
@@ -105,5 +110,9 @@ public class MockChannel implements DSOClientMessageChannel {
                                                          TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE);
     }
 
+  }
+
+  public GroupID[] getGroupIDs() {
+    return groups;
   }
 }

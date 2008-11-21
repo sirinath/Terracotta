@@ -1026,12 +1026,12 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   private void pause() {
-    lockManager.pause(GroupID.ALL_GROUPS);
+    lockManager.pause(GroupID.ALL_GROUPS, 1);
   }
 
   private void unpause() {
     lockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, new TestClientHandshakeMessage());
-    lockManager.unpause(GroupID.ALL_GROUPS);
+    lockManager.unpause(GroupID.ALL_GROUPS, 0);
   }
 
   public static void main(String[] args) {

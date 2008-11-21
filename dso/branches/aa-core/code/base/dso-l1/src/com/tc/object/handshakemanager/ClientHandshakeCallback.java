@@ -9,9 +9,9 @@ import com.tc.object.msg.ClientHandshakeMessage;
 
 public interface ClientHandshakeCallback {
 
-  public void pause(NodeID remoteNode);
+  public void pause(NodeID remoteNode, int disconnected);
 
-  public void unpause(NodeID remoteNode);
+  public void unpause(NodeID remoteNode, int disconnected);
 
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage);
 

@@ -18,6 +18,7 @@ import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.ClientID;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
@@ -32,6 +33,7 @@ import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.net.protocol.tcm.TCMessageImpl;
 import com.tc.net.protocol.tcm.TCMessageSink;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
@@ -318,7 +320,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public ChannelIDProvider getChannelIDProvider() {
+    public ClientIDProvider getClientIDProvider() {
       throw new ImplementMe();
     }
 
@@ -365,6 +367,10 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     }
 
     public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory() {
+      throw new ImplementMe();
+    }
+
+    public GroupID[] getGroupIDs() {
       throw new ImplementMe();
     }
   }

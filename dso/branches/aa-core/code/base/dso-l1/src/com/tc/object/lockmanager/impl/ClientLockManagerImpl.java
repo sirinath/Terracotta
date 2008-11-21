@@ -107,7 +107,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     return locksByID.size();
   }
 
-  public synchronized void pause(NodeID remote) {
+  public synchronized void pause(NodeID remote, int disconnected) {
     if (state == PAUSED) throw new AssertionError("Attempt to pause while already paused : " + state);
     this.state = PAUSED;
     for (Iterator iter = new HashSet(locksByID.values()).iterator(); iter.hasNext();) {
@@ -116,7 +116,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
 
-  public synchronized void unpause(NodeID remote) {
+  public synchronized void unpause(NodeID remote, int disconnected) {
     if (state != STARTING) throw new AssertionError("Attempt to unpause when not in starting : " + state);
     this.state = RUNNING;
     notifyAll();
