@@ -12,12 +12,12 @@ import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
-import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.context.PauseContext;
 import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
+import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.session.SessionManager;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -26,7 +26,9 @@ import com.tc.util.Util;
 import com.tc.util.sequence.BatchSequenceReceiver;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class ClientHandshakeManagerImpl implements ClientHandshakeManager, ChannelEventListener {
   private static final State                  PAUSED             = new State("PAUSED");
@@ -42,16 +44,17 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   private final BatchSequenceReceiver         sequenceReceiver;
   private final Cluster                       cluster;
   private final String                        clientVersion;
+  private final Map                           groupStates        = new HashMap();
+  private final GroupID[]                     groupIDs;
+  private volatile int                        disconnected;
   private volatile boolean                    serverIsPersistent = false;
 
-  private State                               state              = PAUSED;
-
-  public ClientHandshakeManagerImpl(TCLogger logger, ClientIDProvider clientIDProvider,
+  public ClientHandshakeManagerImpl(TCLogger logger, DSOClientMessageChannel channel,
                                     ClientHandshakeMessageFactory chmf, Sink pauseSink, SessionManager sessionManager,
                                     BatchSequenceReceiver sequenceReceiver, Cluster cluster, String clientVersion,
                                     Collection callbacks) {
     this.logger = logger;
-    this.cidp = clientIDProvider;
+    this.cidp = channel.getClientIDProvider();
     this.chmf = chmf;
     this.pauseSink = pauseSink;
     this.sessionManager = sessionManager;
@@ -59,12 +62,22 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
     this.cluster = cluster;
     this.clientVersion = clientVersion;
     this.callBacks = callbacks;
-    pauseCallbacks(GroupID.ALL_GROUPS);
+    this.groupIDs = channel.getGroupIDs();
+    this.disconnected = groupIDs.length;
+    initGroupStates(PAUSED);
+    pauseCallbacks(GroupID.ALL_GROUPS, disconnected);
+  }
+
+  private synchronized void initGroupStates(State state) {
+    for (int i = 0; i < groupIDs.length; i++) {
+      groupStates.put(groupIDs[i], state);
+    }
+
   }
 
   public void initiateHandshake(NodeID remoteNode) {
     logger.debug("Initiating handshake...");
-    changeState(STARTING);
+    changeToStarting(remoteNode);
 
     ClientHandshakeMessage handshakeMessage = chmf.newClientHandshakeMessage();
     handshakeMessage.setClientVersion(clientVersion);
@@ -88,13 +101,14 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   }
 
   public void disconnected(NodeID remoteNode) {
-    logger.info("Disconnected: Pausing from " + getState() + " RemoteNode : " + remoteNode);
-    if (getState() == PAUSED) {
-      logger.warn("Pause called while already PAUSED");
+    logger.info("Disconnected: Pausing from " + getState(remoteNode) + " RemoteNode : " + remoteNode
+                + " Disconnected : " + getDisconnectedCount());
+    if (getState(remoteNode) == PAUSED) {
+      logger.warn("Pause called while already PAUSED for " + remoteNode);
       // ClientMessageChannel moves to next SessionID, need to move to newSession here too.
     } else {
-      pauseCallbacks(remoteNode);
-      changeState(PAUSED);
+      changeToPaused(remoteNode);
+      pauseCallbacks(remoteNode, getDisconnectedCount());
       // all the activities paused then can switch to new session
       sessionManager.newSession();
       logger.info("ClientHandshakeManager moves to " + sessionManager);
@@ -102,9 +116,10 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   }
 
   public void connected(NodeID remoteNode) {
-    logger.info("Connected: Unpausing from " + getState() + " RemoteNode : " + remoteNode);
-    if (getState() != PAUSED) {
-      logger.warn("Unpause called while not PAUSED: " + getState());
+    logger.info("Connected: Unpausing from " + getState(remoteNode) + " RemoteNode : " + remoteNode
+                + " Disconnected : " + getDisconnectedCount());
+    if (getState(remoteNode) != PAUSED) {
+      logger.warn("Unpause called while not PAUSED for " + remoteNode);
       return;
     }
     initiateHandshake(remoteNode);
@@ -112,22 +127,22 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
 
   public void acknowledgeHandshake(ClientHandshakeAckMessage handshakeAck) {
     acknowledgeHandshake(handshakeAck.getSourceNodeID(), handshakeAck.getPersistentServer(), handshakeAck
-        .getThisNodeId(), handshakeAck.getAllNodes(), handshakeAck.getServerVersion(), handshakeAck.getChannel());
+        .getThisNodeId(), handshakeAck.getAllNodes(), handshakeAck.getServerVersion());
   }
 
   protected void acknowledgeHandshake(NodeID remoteID, boolean persistentServer, String thisNodeId,
-                                      String[] clusterMembers, String serverVersion, MessageChannel channel) {
+                                      String[] clusterMembers, String serverVersion) {
     logger.info("Received Handshake ack for this node :" + remoteID);
-    if (getState() != STARTING) {
-      logger.warn("Handshake acknowledged while not STARTING: " + getState());
+    if (getState(remoteID) != STARTING) {
+      logger.warn("Handshake acknowledged while not STARTING: " + getState(remoteID));
       return;
     }
 
     checkClientServerVersionMatch(serverVersion);
     this.serverIsPersistent = persistentServer;
     cluster.thisNodeConnected(thisNodeId, clusterMembers);
-    unpauseCallbacks(remoteID);
-    changeState(RUNNING);
+    changeToRunning(remoteID);
+    unpauseCallbacks(remoteID, getDisconnectedCount());
   }
 
   protected void checkClientServerVersionMatch(String serverVersion) {
@@ -140,10 +155,10 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
     }
   }
 
-  private void pauseCallbacks(NodeID remote) {
+  private void pauseCallbacks(NodeID remote, int disconnectedCount) {
     for (Iterator i = callBacks.iterator(); i.hasNext();) {
       ClientHandshakeCallback c = (ClientHandshakeCallback) i.next();
-      c.pause(remote);
+      c.pause(remote, disconnectedCount);
     }
   }
 
@@ -154,10 +169,10 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
     }
   }
 
-  private void unpauseCallbacks(NodeID remote) {
+  private void unpauseCallbacks(NodeID remote, int disconnectedCount) {
     for (Iterator i = callBacks.iterator(); i.hasNext();) {
       ClientHandshakeCallback c = (ClientHandshakeCallback) i.next();
-      c.unpause(remote);
+      c.unpause(remote, disconnectedCount);
     }
   }
 
@@ -167,7 +182,7 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
 
   public synchronized void waitForHandshake() {
     boolean isInterrupted = false;
-    while (state != RUNNING) {
+    while (disconnected != 0) {
       try {
         wait();
       } catch (InterruptedException e) {
@@ -178,13 +193,33 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
     Util.selfInterruptIfNeeded(isInterrupted);
   }
 
-  private synchronized void changeState(State newState) {
-    state = newState;
+  private synchronized void changeToPaused(NodeID node) {
+    Object old = groupStates.put(node, PAUSED);
+    assert old != PAUSED;
+    disconnected++;
+    assert disconnected <= groupIDs.length;
     notifyAll();
   }
 
-  private synchronized State getState() {
-    return state;
+  private synchronized void changeToStarting(NodeID node) {
+    Object old = groupStates.put(node, STARTING);
+    assert old == PAUSED;
+  }
+
+  private synchronized void changeToRunning(NodeID node) {
+    Object old = groupStates.put(node, RUNNING);
+    assert old == STARTING;
+    disconnected--;
+    assert disconnected >= 0;
+    notifyAll();
+  }
+
+  private synchronized State getState(NodeID node) {
+    return (State) groupStates.get(node);
+  }
+
+  private int getDisconnectedCount() {
+    return disconnected;
   }
 
 }

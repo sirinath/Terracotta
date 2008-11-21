@@ -66,8 +66,8 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     objectFactory.tcObject = tcObject;
 
     mgr = new ClientObjectManagerImpl(remoteObjectManager, clientConfiguration, idProvider, cache, runtimeLogger,
-                                      new TestChannelIDProvider(), classProvider, classFactory, objectFactory,
-                                      new PortabilityImpl(clientConfiguration), null, null);
+                                      new ClientIDProviderImpl(new TestChannelIDProvider()), classProvider,
+                                      classFactory, objectFactory, new PortabilityImpl(clientConfiguration), null, null);
     mgr.setTransactionManager(new MockTransactionManager());
   }
 
@@ -91,9 +91,14 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
 
     // re-init manager
     TestMutualReferenceObjectFactory testMutualReferenceObjectFactory = new TestMutualReferenceObjectFactory();
-    ClientObjectManagerImpl clientObjectManager = new ClientObjectManagerImpl(remoteObjectManager, clientConfiguration,
-                                                                              idProvider, cache, runtimeLogger,
-                                                                              new TestChannelIDProvider(),
+    ClientObjectManagerImpl clientObjectManager = new ClientObjectManagerImpl(
+                                                                              remoteObjectManager,
+                                                                              clientConfiguration,
+                                                                              idProvider,
+                                                                              cache,
+                                                                              runtimeLogger,
+                                                                              new ClientIDProviderImpl(
+                                                                                                       new TestChannelIDProvider()),
                                                                               classProvider, classFactory,
                                                                               testMutualReferenceObjectFactory,
                                                                               new PortabilityImpl(clientConfiguration),

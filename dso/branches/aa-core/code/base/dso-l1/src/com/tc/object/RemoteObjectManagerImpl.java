@@ -85,7 +85,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
     this.sessionManager = sessionManager;
   }
 
-  public synchronized void pause(NodeID remote) {
+  public synchronized void pause(NodeID remote, int disconnected) {
     assertNotPaused("Attempt to pause while PAUSED");
     state = PAUSED;
     notifyAll();
@@ -95,7 +95,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
     // Nop
   }
 
-  public synchronized void unpause(NodeID remote) {
+  public synchronized void unpause(NodeID remote, int disconnected) {
     assertPaused("Attempt to unpause while not PAUSED");
     state = RUNNING;
     clear();

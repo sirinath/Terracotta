@@ -9,7 +9,7 @@ import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.tx.ClientTxMonitorMBean;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
@@ -78,13 +78,13 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
                                                                }
                                                              };
 
-  private final ChannelIDProvider              cidProvider;
+  private final ClientIDProvider               cidProvider;
 
   private final ClientTxMonitorMBean           txMonitor;
 
   private final boolean                        sendErrors    = System.getProperty("project.name") != null;
 
-  public ClientTransactionManagerImpl(ChannelIDProvider cidProvider, ClientObjectManager objectManager,
+  public ClientTransactionManagerImpl(ClientIDProvider cidProvider, ClientObjectManager objectManager,
                                       ThreadLockManager lockManager, ClientTransactionFactory txFactory,
                                       RemoteTransactionManager remoteTxManager, RuntimeLogger runtimeLogger,
                                       final ClientTxMonitorMBean txMonitor) {
@@ -204,16 +204,16 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
   }
 
-  public void wait(String lockName, TimerSpec call, Object object) throws UnlockedSharedObjectException, InterruptedException {
+  public void wait(String lockName, TimerSpec call, Object object) throws UnlockedSharedObjectException,
+      InterruptedException {
     final ClientTransaction topTxn = getTransactionOrNull();
 
     if (topTxn == null) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     LockID lockID = lockManager.lockIDFor(lockName);
 
-    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) {
-      throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage());
-    }
+    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(
+                                                                                                 getIllegalMonitorStateExceptionMessage()); }
 
     commit(lockID, topTxn, true);
 
@@ -231,9 +231,8 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
     LockID lockID = lockManager.lockIDFor(lockName);
 
-    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) {
-      throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage());
-    }
+    if (!lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(
+                                                                                                 getIllegalMonitorStateExceptionMessage()); }
 
     currentTxn.addNotify(lockManager.notify(lockID, all));
   }
@@ -294,7 +293,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
         details += "Shared Object Type: " + type;
       }
 
-      throw new UnlockedSharedObjectException(errorMsg, Thread.currentThread().getName(), cidProvider.getChannelID()
+      throw new UnlockedSharedObjectException(errorMsg, Thread.currentThread().getName(), cidProvider.getClientID()
           .toLong(), details);
     }
     return tx;
@@ -402,14 +401,13 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   private void pushTxContext(ClientTransaction currentTransaction, LockID lockID, int lockLevel) {
     final TxnType lockTxnType = getTxnTypeFromLockLevel(lockLevel);
     final TxnType effectiveTxnType;
-    if (currentTransaction != null &&
-        TxnType.READ_ONLY == lockTxnType &&
-        TxnType.NORMAL == currentTransaction.getEffectiveType()) {
+    if (currentTransaction != null && TxnType.READ_ONLY == lockTxnType
+        && TxnType.NORMAL == currentTransaction.getEffectiveType()) {
       effectiveTxnType = currentTransaction.getEffectiveType();
     } else {
       effectiveTxnType = lockTxnType;
     }
-    
+
     ThreadTransactionContext ttc = getThreadTransactionContext();
     ttc.pushContext(lockID, lockTxnType, effectiveTxnType);
   }
@@ -524,7 +522,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       enableTransactionLogging();
     }
   }
-  
+
   public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
     if (isTransactionLoggingDisabled()) { return; }
 
@@ -589,8 +587,10 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       if (tx.isEffectivelyReadOnly()) {
         ReadOnlyException roe = makeReadOnlyException("Failed To Modify Field:  " + fieldname + " in " + classname);
         if (sendErrors) {
-          ReadOnlyObjectEventContext eventContext =
-            appEventContextFactory.createReadOnlyObjectEventContext(pojo, classname, fieldname, roe);
+          ReadOnlyObjectEventContext eventContext = appEventContextFactory.createReadOnlyObjectEventContext(pojo,
+                                                                                                            classname,
+                                                                                                            fieldname,
+                                                                                                            roe);
           objectManager.sendApplicationEvent(pojo, new ReadOnlyObjectEvent(eventContext));
         }
         throw roe;
@@ -738,7 +738,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   }
 
   private ReadOnlyException makeReadOnlyException(String details) {
-    long vmId = cidProvider.getChannelID().toLong();
+    long vmId = cidProvider.getClientID().toLong();
 
     final ReadOnlyException roe;
 
@@ -770,7 +770,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     }
   }
 
-  public ChannelIDProvider getChannelIDProvider() {
+  public ClientIDProvider getClientIDProvider() {
     return cidProvider;
   }
 

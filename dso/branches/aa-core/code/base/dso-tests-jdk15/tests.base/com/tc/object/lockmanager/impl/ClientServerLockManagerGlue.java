@@ -150,7 +150,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   public LockManagerImpl restartServer() {
     int policy = this.serverLockManager.getLockPolicy();
     this.serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
-    clientLockManager.pause(GroupID.ALL_GROUPS);
+    clientLockManager.pause(GroupID.ALL_GROUPS, 1);
     ClientHandshakeMessageImpl handshakeMessage = new ClientHandshakeMessageImpl(SessionID.NULL_ID, null,
                                                                                  new TCByteBufferOutputStream(), null,
                                                                                  TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
@@ -184,7 +184,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
       this.serverLockManager.setLockPolicy(policy);
     }
     this.serverLockManager.start();
-    clientLockManager.unpause(GroupID.ALL_GROUPS);
+    clientLockManager.unpause(GroupID.ALL_GROUPS, 0);
     return this.serverLockManager;
   }
 

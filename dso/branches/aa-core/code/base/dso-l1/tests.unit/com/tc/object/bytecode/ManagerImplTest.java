@@ -6,8 +6,8 @@ package com.tc.object.bytecode;
 
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCNonPortableObjectError;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.object.BaseDSOTestCase;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
@@ -101,7 +101,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public ChannelIDProvider getChannelIDProvider() {
+    public ClientIDProvider getClientIDProvider() {
       throw new ImplementMe();
     }
 

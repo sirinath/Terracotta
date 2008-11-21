@@ -9,13 +9,11 @@ import com.tc.cluster.Cluster;
 import com.tc.logging.TCLogging;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.net.protocol.tcm.TestChannelIDProvider;
-import com.tc.object.ClientIDProvider;
-import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.TestClientHandshakeMessage;
 import com.tc.object.session.NullSessionManager;
+import com.tc.object.tx.MockChannel;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
@@ -31,19 +29,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientHandshakeManagerTest extends TCTestCase {
   private static final String               clientVersion = "x.y.z";
-  private ClientIDProvider                  cip;
   private ClientHandshakeManagerImpl        mgr;
   private TestClientHandshakeMessageFactory chmf;
   private TestClientHandshakeCallback       callback;
+  private MockChannel                       channel;
 
   public void setUp() throws Exception {
-    cip = new ClientIDProviderImpl(new TestChannelIDProvider());
     chmf = new TestClientHandshakeMessageFactory();
     callback = new TestClientHandshakeCallback();
-    mgr = new ClientHandshakeManagerImpl(TCLogging.getLogger(ClientHandshakeManagerImpl.class), cip, chmf,
-                                         new NullSink(), new NullSessionManager(),
-                                         new BatchSequence(new TestSequenceProvider(), 100), new Cluster(),
-                                         clientVersion, Collections.singletonList(callback));
+    channel = new MockChannel();
     newMessage();
   }
 
@@ -51,8 +45,16 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     chmf.message = new TestClientHandshakeMessage();
   }
 
-  public void tests() {
+  private void createHandshakeMgr() {
+    mgr = new ClientHandshakeManagerImpl(TCLogging.getLogger(ClientHandshakeManagerImpl.class), channel, chmf,
+                                         new NullSink(), new NullSessionManager(),
+                                         new BatchSequence(new TestSequenceProvider(), 100), new Cluster(),
+                                         clientVersion, Collections.singletonList(callback));
+  }
 
+  public void tests() {
+    createHandshakeMgr();
+    GroupID group = channel.groups[0];
     assertEquals(1, callback.paused.get());
     assertEquals(0, callback.initiateHandshake.get());
     assertEquals(0, callback.unpaused.get());
@@ -68,7 +70,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     ThreadUtil.reallySleep(2000);
     assertFalse(done.get());
 
-    mgr.connected(GroupID.ALL_GROUPS);
+    mgr.connected(group);
 
     assertEquals(1, callback.paused.get());
     assertEquals(1, callback.initiateHandshake.get());
@@ -85,8 +87,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
     // make sure RuntimeException is thrown if client/server versions don't match and version checking is enabled
     try {
-      mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion + "a.b.c", sentMessage
-          .getChannel());
+      mgr.acknowledgeHandshake(group, false, "1", new String[] {}, clientVersion + "a.b.c");
       if (checkVersionMatchEnabled()) {
         fail();
       }
@@ -97,11 +98,80 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     }
 
     // now ACK for real
-    mgr.acknowledgeHandshake(cip.getClientID(), false, "1", new String[] {}, clientVersion, sentMessage.getChannel());
+    mgr.acknowledgeHandshake(group, false, "1", new String[] {}, clientVersion);
 
     assertEquals(1, callback.paused.get());
     assertEquals(1, callback.initiateHandshake.get());
     assertEquals(1, callback.unpaused.get());
+
+    while (!done.get()) {
+      // Will fail with a timeout
+      ThreadUtil.reallySleep(1000);
+    }
+  }
+
+  public void testMultipleGroups() {
+    GroupID g0 = new GroupID(0);
+    GroupID g1 = new GroupID(1);
+    GroupID g2 = new GroupID(2);
+    channel.groups = new GroupID[] { g0, g1, g2 };
+    createHandshakeMgr();
+
+    assertEquals(1, callback.paused.get());
+    assertEquals(0, callback.initiateHandshake.get());
+    assertEquals(0, callback.unpaused.get());
+    assertEquals(3, callback.disconnected);
+
+    final AtomicBoolean done = new AtomicBoolean(false);
+    new Thread(new Runnable() {
+      public void run() {
+        mgr.waitForHandshake();
+        done.set(true);
+      }
+    }).start();
+
+    ThreadUtil.reallySleep(2000);
+    assertFalse(done.get());
+
+    mgr.connected(g0);
+
+    assertEquals(1, callback.paused.get());
+    assertEquals(1, callback.initiateHandshake.get());
+    assertEquals(0, callback.unpaused.get());
+    assertEquals(3, callback.disconnected);
+
+    ThreadUtil.reallySleep(2000);
+    assertFalse(done.get());
+
+    // now ACK for real
+    mgr.acknowledgeHandshake(g0, false, "1", new String[] {}, clientVersion);
+
+    assertEquals(1, callback.paused.get());
+    assertEquals(1, callback.initiateHandshake.get());
+    assertEquals(1, callback.unpaused.get());
+    assertEquals(2, callback.disconnected);
+
+    ThreadUtil.reallySleep(2000);
+    assertFalse(done.get());
+
+    mgr.connected(g1);
+    mgr.connected(g2);
+    assertEquals(1, callback.paused.get());
+    assertEquals(3, callback.initiateHandshake.get());
+    assertEquals(1, callback.unpaused.get());
+    assertEquals(2, callback.disconnected);
+
+    mgr.acknowledgeHandshake(g1, false, "1", new String[] {}, clientVersion);
+    assertEquals(1, callback.paused.get());
+    assertEquals(3, callback.initiateHandshake.get());
+    assertEquals(2, callback.unpaused.get());
+    assertEquals(1, callback.disconnected);
+
+    mgr.acknowledgeHandshake(g2, false, "1", new String[] {}, clientVersion);
+    assertEquals(1, callback.paused.get());
+    assertEquals(3, callback.initiateHandshake.get());
+    assertEquals(3, callback.unpaused.get());
+    assertEquals(0, callback.disconnected);
 
     while (!done.get()) {
       // Will fail with a timeout
@@ -141,17 +211,20 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     AtomicInteger paused            = new AtomicInteger();
     AtomicInteger unpaused          = new AtomicInteger();
     AtomicInteger initiateHandshake = new AtomicInteger();
+    int           disconnected;
 
     public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
       initiateHandshake.incrementAndGet();
     }
 
-    public void pause(NodeID remoteNode) {
+    public void pause(NodeID remoteNode, int disconnectedCount) {
       paused.incrementAndGet();
+      this.disconnected = disconnectedCount;
     }
 
-    public void unpause(NodeID remoteNode) {
+    public void unpause(NodeID remoteNode, int disconnectedCount) {
       unpaused.incrementAndGet();
+      this.disconnected = disconnectedCount;
     }
 
   }

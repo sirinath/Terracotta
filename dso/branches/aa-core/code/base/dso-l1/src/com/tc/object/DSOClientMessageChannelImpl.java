@@ -5,9 +5,9 @@
 package com.tc.object;
 
 import com.tc.async.api.Sink;
+import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.tcm.ChannelEventListener;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
@@ -39,17 +39,21 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     CompletedTransactionLowWaterMarkMessageFactory {
 
   private final ClientMessageChannel channel;
+  private final GroupID              groups[];
+  private ClientIDProvider           clientIDProvider;
 
-  public DSOClientMessageChannelImpl(ClientMessageChannel theChannel) {
+  public DSOClientMessageChannelImpl(ClientMessageChannel theChannel, GroupID[] gids) {
     this.channel = theChannel;
+    this.groups = gids;
+    this.clientIDProvider = new ClientIDProviderImpl(theChannel.getChannelIDProvider());
   }
 
   public void addClassMapping(TCMessageType messageType, Class messageClass) {
     this.channel.addClassMapping(messageType, messageClass);
   }
 
-  public ChannelIDProvider getChannelIDProvider() {
-    return channel.getChannelIDProvider();
+  public ClientIDProvider getClientIDProvider() {
+    return clientIDProvider;
   }
 
   public void addListener(ChannelEventListener listener) {
@@ -144,6 +148,10 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
 
   public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory() {
     return this;
+  }
+
+  public GroupID[] getGroupIDs() {
+    return groups;
   }
 
 }

@@ -5,9 +5,10 @@
 package com.tc.util;
 
 import com.tc.exception.ImplementMe;
-import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.BaseDSOTestCase;
+import com.tc.object.ClientIDProvider;
+import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.ClientObjectManagerImpl;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
@@ -51,7 +52,8 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
     objectFactory.tcObject = tcObject;
     objectManager = new MockClientObjectManagerImpl(new MockRemoteObjectManagerImpl(), configHelper(),
                                                     new ObjectIDProviderImpl(new SimpleSequence()), new NullCache(),
-                                                    new NullRuntimeLogger(), new TestChannelIDProvider(),
+                                                    new NullRuntimeLogger(),
+                                                    new ClientIDProviderImpl(new TestChannelIDProvider()),
                                                     new MockClassProvider(), new TestClassFactory(), objectFactory);
 
     objectManager.setTransactionManager(new MockTransactionManagerImpl());
@@ -86,7 +88,7 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
   private static class MockClientObjectManagerImpl extends ClientObjectManagerImpl {
     public MockClientObjectManagerImpl(RemoteObjectManager remoteObjectManager,
                                        DSOClientConfigHelper clientConfiguration, ObjectIDProvider idProvider,
-                                       EvictionPolicy cache, RuntimeLogger runtimeLogger, ChannelIDProvider provider,
+                                       EvictionPolicy cache, RuntimeLogger runtimeLogger, ClientIDProvider provider,
                                        ClassProvider classProvider, TCClassFactory classFactory,
                                        TCObjectFactory objectFactory) {
       super(remoteObjectManager, clientConfiguration, idProvider, cache, runtimeLogger, provider, classProvider,

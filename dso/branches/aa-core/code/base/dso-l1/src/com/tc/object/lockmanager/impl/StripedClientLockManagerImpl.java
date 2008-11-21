@@ -86,15 +86,15 @@ public class StripedClientLockManagerImpl implements ClientLockManager, ClientHa
     return lockManagers[(hash >>> segmentShift) & segmentMask];
   }
 
-  public synchronized void pause(NodeID remote) {
+  public synchronized void pause(NodeID remote, int disconnected) {
     for (int i = 0; i < lockManagers.length; i++) {
-      lockManagers[i].pause(remote);
+      lockManagers[i].pause(remote, disconnected);
     }
   }
 
-  public synchronized void unpause(NodeID remote) {
+  public synchronized void unpause(NodeID remote, int disconnected) {
     for (int i = 0; i < lockManagers.length; i++) {
-      lockManagers[i].unpause(remote);
+      lockManagers[i].unpause(remote, disconnected);
     }
   }
 
