@@ -12,33 +12,27 @@ import com.tc.net.protocol.NullProtocolAdaptor;
 
 public class TestConnectionHealthCheckerContextImpl extends ConnectionHealthCheckerContextImpl {
 
-  private final TCConnectionManager  connectionManager;
-  private final MessageTransportBase transport;
-  private final HealthCheckerConfig  config;
-  private final TCLogger             logger;
-
   public TestConnectionHealthCheckerContextImpl(MessageTransportBase mtb, HealthCheckerConfig config,
                                                 TCConnectionManager connMgr) {
     super(mtb, config, connMgr);
-    this.transport = mtb;
-    this.config = config;
-    this.logger = getLogger();
-    this.connectionManager = connMgr;
   }
 
-  protected TCConnection getNewConnection() {
+  protected TCConnection getNewConnection(TCConnectionManager connectionManager) {
     TCConnection connection = connectionManager.createConnection(new NullProtocolAdaptor());
     return connection;
   }
 
-  protected HealthCheckerSocketConnect getHealthCheckerSocketConnector(TCConnection presentConnection) {
+  protected HealthCheckerSocketConnect getHealthCheckerSocketConnector(TCConnection connection,
+                                                                       MessageTransportBase transportBase,
+                                                                       TCLogger loger, HealthCheckerConfig cnfg) {
 
-    int callbackPort = transport.getRemoteCallbackPort();
+    int callbackPort = transportBase.getRemoteCallbackPort();
     if (TransportHandshakeMessage.NO_CALLBACK_PORT == callbackPort) { return new NullHealthCheckerSocketConnectImpl(); }
 
-    TCConnection conn = connectionManager.createConnection(new NullProtocolAdaptor());
-    TCSocketAddress sa = new TCSocketAddress(transport.getRemoteAddress().getAddress(), callbackPort);
-    return new TestHealthCheckerSocketConnectImpl(sa, conn, transport.getRemoteAddress().getCanonicalStringForm(), logger,
-                                              config.getSocketConnectTimeout());
+    TCSocketAddress sa = new TCSocketAddress(transportBase.getRemoteAddress().getAddress(), callbackPort);
+    return new TestHealthCheckerSocketConnectImpl(sa, connection, transportBase.getRemoteAddress()
+        .getCanonicalStringForm()
+                                                                  + "(callbackport:" + callbackPort + ")", loger, cnfg
+        .getSocketConnectTimeout());
   }
 }

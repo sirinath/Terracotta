@@ -4,8 +4,13 @@
  */
 package com.tc.net.protocol.transport;
 
+import org.hyperic.sigar.NetConnection;
+import org.hyperic.sigar.NetFlags;
+import org.hyperic.sigar.NetInfo;
+import org.hyperic.sigar.NetInterfaceConfig;
 import org.hyperic.sigar.NetStat;
 import org.hyperic.sigar.Sigar;
+import org.hyperic.sigar.SigarException;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 
@@ -202,6 +207,14 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     return extraTime + grace_time;
   }
 
+  public long getINITstageScoketConnectResultTime(HealthCheckerConfig config) {
+    assertNotNull(config);
+    long extraTime = config.getPingIdleTimeMillis()
+                     + (config.getSocketConnectTimeout() * config.getPingIntervalMillis());
+    long grace_time = config.getPingIntervalMillis();
+    return extraTime + grace_time;
+  }
+
   public long getFullExtraCheckTime(HealthCheckerConfig config) {
     assertNotNull(config);
     long extraTime = config.getPingIntervalMillis()
@@ -293,6 +306,31 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   }
 
+  private void getNetInfo(int bindPort) {
+    try {
+      Sigar s = new Sigar();
+      NetInfo info = s.getNetInfo();
+      NetInterfaceConfig config = s.getNetInterfaceConfig(null);
+      System.out.println(info.toString());
+      System.out.println(config.toString());
+
+      int flags = NetFlags.CONN_TCP | NetFlags.TCP_ESTABLISHED;
+
+      NetConnection[] connections = s.getNetConnectionList(flags);
+
+      System.out.println("XXX Established connections if any");
+      for (int i = 0; i < connections.length; i++) {
+        long port = connections[i].getLocalPort();
+        long remotePort = connections[i].getRemotePort();
+        if (bindPort == port || bindPort == remotePort) {
+          System.out.println("XXX " + connections[i]);
+        }
+      }
+    } catch (SigarException se) {
+      System.out.println("Unable to get Sigar NetInfo: " + se);
+    }
+  }
+
   public void testL1SocketConnectTimeoutL2() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test33", true /*
                                                                                                              * EXTRA
@@ -321,28 +359,30 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
       ThreadUtil.reallySleep(1000);
     }
 
-    SequenceGenerator sq = new SequenceGenerator();
-    for (int i = 1; i <= 5; i++) {
-      PingMessage ping = (PingMessage) clientMsgCh.createMessage(TCMessageType.PING_MESSAGE);
-      ping.initialize(sq);
-      ping.send();
-    }
+    // HC INIT stage: callback port verification should fail. wait for it. NOTE: we don't want to wait for ping-probe
+    // cycles as the INIT stage directly starts socket connect
+    System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
+    ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
 
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+    getNetInfo(serverLsnr.getBindPort());
+    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 2);
 
+    // HC START stage:
     System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
 
     /*
-     * L1 should have started the Extra Check by now; since we are using Dumb HC socket connector, socket connect should
-     * time out.
+     * L1 should have started the Extra Check by now; Since socket connect already timedout in the INIT stage,
+     * SOCKET_CONNECT stage should come out immediately as DEAD as the callback port has been reset to -1 by INIT.
      */
-    ThreadUtil.reallySleep(getMinScoketConnectResultTime(hcConfig));
+    ThreadUtil.reallySleep(hcConfig.getPingIntervalMillis() * 2);
     assertEquals(0, connHC.getTotalConnsUnderMonitor());
 
     ThreadUtil.reallySleep(5000);
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 0);
   }
 
@@ -381,9 +421,17 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
       ping.send();
     }
 
+    // HC INIT stage: callback port verification should fail. wait for it. NOTE: we don't want to wait for ping-probe
+    // cycles as the INIT stage directly starts socket connect
+    System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
+    ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
+
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+    getNetInfo(serverLsnr.getBindPort());
+    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 2);
 
+    // HC START stage:
     System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
 
@@ -393,10 +441,10 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     System.out.println("woke up");
 
     /*
-     * L1 should have started the Extra Check by now; since we are using Dumb HC socket connector, socket connect should
-     * time out.
+     * L1 should have started the Extra Check by now; .INIT stage already figured out that socket connect times out. so
+     * wait for interval time and verify
      */
-    ThreadUtil.reallySleep(getMinScoketConnectResultTimeAfterSocketConnectStart(hcConfig));
+    ThreadUtil.reallySleep(hcConfig.getPingIntervalMillis() * 2);
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 0)) {
       System.out.println("waiting for client to disconnect");
       ThreadUtil.reallySleep(1000);
@@ -411,12 +459,18 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
       ThreadUtil.reallySleep(1000);
     }
 
+    // HC INIT stage: callback port verification should fail. wait for it. NOTE: we don't want to wait for ping-probe
+    // cycles as the INIT stage directly starts socket connect
+    System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
+    ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
+
     ThreadUtil.reallySleep(5000);
     /*
      * Client disconnected after it found socket connect timeout. After the successful reconnect there should be no
      * connection leak. DEV-1963
      */
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+    getNetInfo(serverLsnr.getBindPort());
     System.out.println("XXX reconnect- tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 2);
   }
@@ -500,7 +554,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
      */
     ThreadUtil.reallySleep(getMinScoketConnectResultTime(hcConfig));
     assertEquals(1, connHC.getTotalConnsUnderMonitor());
-    
+
     /*
      * Though L1 is able to connect, we can't trust the client for too long
      */

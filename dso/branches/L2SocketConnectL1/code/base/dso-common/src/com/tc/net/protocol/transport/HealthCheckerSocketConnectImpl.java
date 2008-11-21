@@ -69,11 +69,12 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
     } catch (IOException e) {
       conn.removeListener(this);
       changeState(SOCKETCONNECT_FAIL);
+      logger.info("Socket Connect to " + remoteNodeDesc + " failed: " + e);
       return false;
     }
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Detecting Long GC for " + remoteNodeDesc + ". Socket Connect triggered");
+      logger.debug("Socket Connect triggered for " + remoteNodeDesc);
     }
     changeState(SOCKETCONNECT_IN_PROGRESS);
     return true;
@@ -109,14 +110,14 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
   public synchronized boolean probeConnectStatus() {
     if (currentState == SOCKETCONNECT_FAIL) {
       // prev async connect failed
-      logger.info("Socket Connect to " + remoteNodeDesc + " listener port failed. Probably DEAD");
+      logger.info("Socket Connect to " + remoteNodeDesc + " listener port failed. Probably not reachable.");
       return false;
     }
 
     socketConnectNoReplyWaitCount++;
 
     if (socketConnectNoReplyWaitCount > this.timeoutInterval) {
-      logger.info("Socket Connect to " + remoteNodeDesc + " taking long time. probably DEAD");
+      logger.info("Socket Connect to " + remoteNodeDesc + " taking long time. probably not reachable.");
       stop();
       changeState(SOCKETCONNECT_FAIL);
       return false;

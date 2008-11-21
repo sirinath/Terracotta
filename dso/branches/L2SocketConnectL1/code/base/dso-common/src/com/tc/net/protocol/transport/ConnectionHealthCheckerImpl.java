@@ -179,13 +179,11 @@ public class ConnectionHealthCheckerImpl implements ConnectionHealthChecker {
 
           ConnectionHealthCheckerContext connContext = mtb.getHealthCheckerContext();
           if ((mtb.getConnection().getIdleReceiveTime() >= this.pingIdleTime)) {
-
             if (!connContext.probeIfAlive()) {
               // Connection is dead. Disconnect the transport.
               mtb.disconnect();
               connectionIterator.remove();
             }
-
           } else {
             connContext.refresh();
           }
