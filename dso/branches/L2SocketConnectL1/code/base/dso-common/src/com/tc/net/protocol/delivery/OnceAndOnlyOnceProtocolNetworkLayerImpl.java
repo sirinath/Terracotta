@@ -439,8 +439,4 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   public int getRemoteCallbackPort() {
     throw new AssertionError();
   }
-
-  public boolean isHealthCheckListenerRechable(int callbackPort) {
-    throw new AssertionError();
-  }
 }

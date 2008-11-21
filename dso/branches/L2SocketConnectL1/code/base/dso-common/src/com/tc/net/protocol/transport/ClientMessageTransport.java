@@ -189,12 +189,7 @@ public class ClientMessageTransport extends MessageTransportBase {
       }
       this.waitForSynAckResult.set(synAck);
 
-      int remoteCallbackPort = synAck.getCallbackPort();
-      if (isHealthCheckListenerRechable(remoteCallbackPort)) {
-        setRemoteCallbackPort(remoteCallbackPort);
-      } else {
-        setRemoteCallbackPort(TransportHandshakeMessage.NO_CALLBACK_PORT);
-      }
+      setRemoteCallbackPort(synAck.getCallbackPort());
     }
 
     return;

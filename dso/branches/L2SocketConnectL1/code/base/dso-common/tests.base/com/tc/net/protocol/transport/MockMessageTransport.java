@@ -123,8 +123,4 @@ public class MockMessageTransport implements MessageTransport {
   public void initConnectionID(ConnectionID cid) {
     connectionId = cid;
   }
-
-  public boolean isHealthCheckListenerRechable(int callbackPort) {
-    throw new ImplementMe();
-  }
 }
