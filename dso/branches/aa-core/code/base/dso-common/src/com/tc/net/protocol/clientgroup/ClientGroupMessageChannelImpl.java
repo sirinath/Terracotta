@@ -36,7 +36,6 @@ import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -235,12 +234,10 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
 
   /*
    * As a middleman between ClientHandshakeManager and multiple ClientMessageChannels. Bookkeeping sub-channels' events
-   * Notify connected only when all channel connected. Notify disconnected when any channel disconnected Notify closed
-   * when any channel closed
+   * Notify connected every channel connected. Notify disconnected on every channel disconnected
    */
   private class ClientGroupMessageChannelEventListener implements ChannelEventListener {
     private final ChannelEventListener      listener;
-    private HashSet                         connectedSet = new HashSet();
     private final ClientGroupMessageChannel groupChannel;
 
     public ClientGroupMessageChannelEventListener(ChannelEventListener listener, ClientGroupMessageChannel channel) {
@@ -250,18 +247,11 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
 
     public void notifyChannelEvent(ChannelEvent event) {
       if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
-        if (connectedSet.remove(event.getChannel())) {
-          fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, groupChannel));
-        }
+        fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, groupChannel));
       } else if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
-        connectedSet.add(event.getChannel());
-        if (connectedSet.size() == groupChannelMap.size()) {
-          fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, groupChannel));
-        }
+        fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, groupChannel));
       } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
-        if (connectedSet.remove(event.getChannel())) {
-          fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, groupChannel));
-        }
+        fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, groupChannel));
       }
     }
 
