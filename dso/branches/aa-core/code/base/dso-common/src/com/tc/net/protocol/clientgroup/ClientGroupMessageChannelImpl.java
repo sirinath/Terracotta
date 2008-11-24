@@ -16,7 +16,6 @@ import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventImpl;
 import com.tc.net.protocol.tcm.ChannelEventListener;
-import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
@@ -246,13 +245,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     }
 
     public void notifyChannelEvent(ChannelEvent event) {
-      if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
-        fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, groupChannel));
-      } else if (event.getType() == ChannelEventType.TRANSPORT_CONNECTED_EVENT) {
-        fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, groupChannel));
-      } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT) {
-        fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, groupChannel));
-      }
+      fireEvent(event);
     }
 
     private void fireEvent(ChannelEvent event) {

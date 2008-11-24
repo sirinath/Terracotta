@@ -90,6 +90,9 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   }
 
   public void notifyChannelEvent(ChannelEvent event) {
+    if (GroupID.ALL_GROUPS.equals(event.getChannel().getRemoteNodeID())) { throw new AssertionError(
+                                                                                                    "Recd event for Group Channel : "
+                                                                                                        + event); }
     if (event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
       cluster.thisNodeDisconnected();
       pauseSink.add(new PauseContext(true, event.getChannel().getRemoteNodeID()));
