@@ -237,11 +237,9 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
    */
   private class ClientGroupMessageChannelEventListener implements ChannelEventListener {
     private final ChannelEventListener      listener;
-    private final ClientGroupMessageChannel groupChannel;
 
-    public ClientGroupMessageChannelEventListener(ChannelEventListener listener, ClientGroupMessageChannel channel) {
+    public ClientGroupMessageChannelEventListener(ChannelEventListener listener) {
       this.listener = listener;
-      this.groupChannel = channel;
     }
 
     public void notifyChannelEvent(ChannelEvent event) {
@@ -249,12 +247,12 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     }
 
     private void fireEvent(ChannelEvent event) {
-      listener.notifyChannelEvent(new ChannelEventImpl(event.getType(), groupChannel));
+      listener.notifyChannelEvent(new ChannelEventImpl(event.getType(), event.getChannel()));
     }
   }
 
   public void addListener(ChannelEventListener listener) {
-    ClientGroupMessageChannelEventListener middleman = new ClientGroupMessageChannelEventListener(listener, this);
+    ClientGroupMessageChannelEventListener middleman = new ClientGroupMessageChannelEventListener(listener);
     for (Iterator i = groupChannelMap.keySet().iterator(); i.hasNext();) {
       getChannel((GroupID) i.next()).addListener(middleman);
     }
