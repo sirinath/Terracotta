@@ -363,11 +363,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
-    lockManager = new StripedClientLockManagerImpl(new ClientIDLogger(channel.getClientIDProvider(), TCLogging
+    lockManager = createLockManager(new ClientIDLogger(channel.getClientIDProvider(), TCLogging
         .getLogger(ClientLockManager.class)), new RemoteLockManagerImpl(channel.getLockRequestMessageFactory(),
                                                                         gtxManager), sessionManager, lockStatManager,
-                                                   new ClientLockManagerConfigImpl(l1Properties
-                                                       .getPropertiesFor("lockmanager")));
+                                    new ClientLockManagerConfigImpl(l1Properties.getPropertiesFor("lockmanager")));
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
     RemoteObjectManager remoteObjectManager = new RemoteObjectManagerImpl(new ClientIDLogger(channel
         .getClientIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), channel.getClientIDProvider(), channel
@@ -395,10 +394,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                           batchSizeCounter, pendingBatchesSize);
     }
 
-    objectManager = new ClientObjectManagerImpl(remoteObjectManager, config, idProvider, new ClockEvictionPolicy(-1),
-                                                runtimeLogger, channel.getClientIDProvider(), classProvider,
-                                                classFactory, objectFactory, config.getPortability(), channel,
-                                                toggleRefMgr);
+    objectManager = createObjectManager(remoteObjectManager, config, idProvider, new ClockEvictionPolicy(-1),
+                                        runtimeLogger, channel.getClientIDProvider(), classProvider, classFactory,
+                                        objectFactory, config.getPortability(), channel, toggleRefMgr);
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(objectManager));
     TCProperties cacheManagerProperties = l1Properties.getPropertiesFor("cachemanager");
     CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
@@ -454,7 +452,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     Stage batchTxnAckStage = stageManager.createStage(ClientConfigurationContext.BATCH_TXN_ACK_STAGE,
                                                       new BatchTransactionAckHandler(), 1, maxSize);
 
-    // By design this stage needs to be single threaded. If it wasn't then cluster memebership messages could get
+    // By design this stage needs to be single threaded. If it wasn't then cluster membership messages could get
     // processed before the client handshake ack, and this client would get a faulty view of the cluster at best, or
     // more likely an AssertionError
     Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
@@ -476,10 +474,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(rtxManager);
     ProductInfo pInfo = ProductInfo.getInstance();
     clientHandshakeManager = new ClientHandshakeManagerImpl(new ClientIDLogger(channel.getClientIDProvider(), TCLogging
-        .getLogger(ClientHandshakeManagerImpl.class)), channel, channel
-        .getClientHandshakeMessageFactory(), pauseStage.getSink(), sessionManager, sequence, cluster, pInfo.version(),
-                                                            Collections
-                                                                .unmodifiableCollection(clientHandshakeCallbacks));
+        .getLogger(ClientHandshakeManagerImpl.class)), channel, channel.getClientHandshakeMessageFactory(), pauseStage
+        .getSink(), sessionManager, sequence, cluster, pInfo.version(), Collections
+        .unmodifiableCollection(clientHandshakeCallbacks));
     channel.addListener(clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,
@@ -554,7 +551,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         ThreadUtil.reallySleep(5000);
       } catch (IOException ioe) {
         CONSOLE_LOGGER.warn("IOException connecting to server: " + serverHost + ":" + serverPort + ". "
-                           + ioe.getMessage());
+                            + ioe.getMessage());
         ThreadUtil.reallySleep(5000);
       }
       i++;
@@ -579,6 +576,34 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       setReconnectCloseOnExit(channel);
     }
     setLoggerOnExit();
+  }
+
+  /*
+   * Overwrite this routine to do active-active, TODO:: These should go into some interface
+   */
+  protected ClientObjectManagerImpl createObjectManager(RemoteObjectManager remoteObjectManager,
+                                                        DSOClientConfigHelper dsoConfig, ObjectIDProvider idProvider,
+                                                        ClockEvictionPolicy clockEvictionPolicy,
+                                                        RuntimeLogger rtLogger,
+                                                        ClientIDProvider clientIDProvider,
+                                                        ClassProvider classProviderLocal, TCClassFactory classFactory,
+                                                        TCObjectFactory objectFactory, Portability portability,
+                                                        DSOClientMessageChannel dsoChannel,
+                                                        ToggleableReferenceManager toggleRefMgr) {
+    return new ClientObjectManagerImpl(remoteObjectManager, dsoConfig, idProvider, clockEvictionPolicy, rtLogger,
+                                       clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
+                                       dsoChannel, toggleRefMgr);
+  }
+
+  /*
+   * Overwrite this routine to do active-active, TODO:: These should go into some interface
+   */
+  protected ClientLockManager createLockManager(ClientIDLogger clientIDLogger,
+                                                RemoteLockManagerImpl remoteLockManagerImpl,
+                                                SessionManager sessionManager, ClientLockStatManager lockStatManager,
+                                                ClientLockManagerConfigImpl clientLockManagerConfigImpl) {
+    return new StripedClientLockManagerImpl(clientIDLogger, remoteLockManagerImpl, sessionManager, lockStatManager,
+                                            clientLockManagerConfigImpl);
   }
 
   /*
