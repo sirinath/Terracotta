@@ -211,6 +211,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private void assertNotPaused(Object message) {
     if (state == PAUSED) throw new AssertionError(message + ": " + state);
   }
+  
+  protected synchronized boolean isPaused() {
+    return state == PAUSED;
+  }
 
   public TraversedReferences getPortableObjects(Class clazz, Object start, TraversedReferences addTo) {
     TCClass tcc = clazzFactory.getOrCreate(clazz, this);
@@ -552,11 +556,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return basicLookupByID(id);
   }
 
-  synchronized Collection addAllObjectIDs(Collection c) {
+  synchronized Set addAllObjectIDs(Set oids) {
     for (Iterator i = idToManaged.keySet().iterator(); i.hasNext();) {
-      c.add(i.next());
+      oids.add(i.next());
     }
-    return c;
+    return oids;
   }
 
   public Object lookupRoot(String rootName) {
