@@ -5,12 +5,12 @@
 package com.tc.l2.msg;
 
 import com.tc.async.api.EventContext;
+import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferOutput;
 import com.tc.net.groups.AbstractGroupMessage;
-import com.tc.util.Assert;
+import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.SortedSet;
 
 public class GCResultMessage extends AbstractGroupMessage implements EventContext {
@@ -29,18 +29,12 @@ public class GCResultMessage extends AbstractGroupMessage implements EventContex
     this.gcedOids = deleted;
   }
 
-  protected void basicReadExternal(int msgType, ObjectInput in) throws IOException, ClassNotFoundException {
-    Assert.assertEquals(GC_RESULT, msgType);
-    gcIterationCount = in.readInt();
-    gcedOids = (SortedSet) in.readObject();
+  protected void basicDeserializeFrom(TCByteBufferInput in) throws IOException {
+    gcedOids = readObjectIDS(in, new ObjectIDSet());
   }
 
-  protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
-    Assert.assertEquals(GC_RESULT, msgType);
-    out.writeInt(gcIterationCount);
-    // XXX::Directly serializing instead of using writeObjectIDs() to avoid HUGE messages. Since the (wrapped) set is
-    // ObjectIDSet2 and since it has optimized externalization methods, this should result in far less data written out.
-    out.writeObject(gcedOids);
+  protected void basicSerializeTo(TCByteBufferOutput out) {
+    writeObjectIDS(out, gcedOids);
   }
 
   public SortedSet getGCedObjectIDs() {
