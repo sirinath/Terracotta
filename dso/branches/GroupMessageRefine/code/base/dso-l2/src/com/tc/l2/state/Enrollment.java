@@ -4,21 +4,18 @@
  */
 package com.tc.l2.state;
 
-import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferOutput;
-import com.tc.io.TCSerializable;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.ClientID;
-import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.net.ServerID;
 import com.tc.util.Assert;
 
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
 
-public class Enrollment implements TCSerializable {
+public class Enrollment implements Externalizable {
 
   private static final TCLogger logger = TCLogging.getLogger(Enrollment.class);
   private NodeID                nodeID;
@@ -34,39 +31,6 @@ public class Enrollment implements TCSerializable {
     this.isNew = isNew;
     Assert.assertNotNull(weights);
     this.weights = weights;
-  }
-
-  public void serializeTo(TCByteBufferOutput out) {
-    out.writeByte(this.nodeID.getNodeType());
-    this.nodeID.serializeTo(out);
-    out.writeBoolean(this.isNew);
-    out.writeInt(weights.length);
-    for (int i = 0; i < weights.length; i++) {
-      out.writeLong(weights[i]);
-    }
-  }
-
-  public Object deserializeFrom(TCByteBufferInput in) throws IOException {
-    switch (in.readByte()) {
-      case NodeID.CLIENT_NODE_TYPE:
-        this.nodeID = new ClientID();
-        break;
-      case NodeID.SERVER_NODE_TYPE:
-        this.nodeID = new ServerID();
-        break;
-      case NodeID.GROUP_NODE_TYPE:
-        this.nodeID = new GroupID();
-        break;
-      default:
-        throw new RuntimeException("Unknown NodeID type");
-    }
-    this.nodeID.deserializeFrom(in);
-    this.isNew = in.readBoolean();
-    this.weights = new long[in.readInt()];
-    for (int i = 0; i < weights.length; i++) {
-      weights[i] = in.readLong();
-    }
-    return this;
   }
 
   public NodeID getNodeID() {
@@ -104,6 +68,24 @@ public class Enrollment implements TCSerializable {
       // handle it. If two nodes dont agree because of this there will be a re-election
       logger.warn("Two Enrollments with same weights : " + this + " == " + other);
       return false;
+    }
+  }
+
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    this.nodeID = (NodeID) in.readObject();
+    this.isNew = in.readBoolean();
+    this.weights = new long[in.readInt()];
+    for (int i = 0; i < weights.length; i++) {
+      weights[i] = in.readLong();
+    }
+  }
+
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(this.nodeID);
+    out.writeBoolean(this.isNew);
+    out.writeInt(weights.length);
+    for (int i = 0; i < weights.length; i++) {
+      out.writeLong(weights[i]);
     }
   }
 

@@ -4,14 +4,13 @@
  */
 package com.tc.l2.msg;
 
-import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferOutput;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.net.groups.MessageID;
 import com.tc.util.Assert;
-import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Set;
 
 public class ObjectListSyncMessage extends AbstractGroupMessage {
@@ -40,22 +39,22 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
     super(type, messageID);
   }
 
-  protected void basicDeserializeFrom(TCByteBufferInput in) throws IOException {
-    switch (getType()) {
+  protected void basicReadExternal(int msgType, ObjectInput in) throws IOException, ClassNotFoundException {
+    switch (msgType) {
       case REQUEST:
       case FAILED_RESPONSE:
         // Nothing to read
         break;
       case RESPONSE:
-        oids = readObjectIDS(in, new ObjectIDSet());
+        oids = (Set) in.readObject();
         break;
       default:
-        throw new AssertionError("Unknown Message Type : " + getType());
+        throw new AssertionError("Unknown Message Type : " + msgType);
     }
   }
 
-  protected void basicSerializeTo(TCByteBufferOutput out) {
-    switch (getType()) {
+  protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
+    switch (msgType) {
       case REQUEST:
       case FAILED_RESPONSE:
         // Nothing to write
@@ -65,10 +64,10 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
         // XXX::Directly serializing instead of using writeObjectIDs() to avoid HUGE messages. Since the (wrapped) set
         // is ObjectIDSet2 and since it has optimized externalization methods, this should result in far less data
         // written out.
-        writeObjectIDS(out, oids);
+        out.writeObject(oids);
         break;
       default:
-        throw new AssertionError("Unknown Message Type : " + getType());
+        throw new AssertionError("Unknown Message Type : " + msgType);
     }
   }
 

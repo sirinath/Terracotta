@@ -13,7 +13,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbench;
@@ -82,7 +81,7 @@ public class NameLockedAction extends BaseAction {
       fHaveDetails = false;
     }
 
-    private int obtainDetails() {
+    private void obtainDetails() {
       Shell shell = ActionUtil.findSelectedEditorPart().getSite().getShell();
       NamedLockDialog dialog = new NamedLockDialog(shell, fPattern);
       dialog.addValueListener(new UpdateEventListener() {
@@ -93,7 +92,7 @@ public class NameLockedAction extends BaseAction {
           fHaveDetails = true;
         }
       });
-      return dialog.open();
+      dialog.open();
     }
 
     public IStatus execute(IProgressMonitor monitor, IAdaptable info) {
@@ -101,9 +100,7 @@ public class NameLockedAction extends BaseAction {
 
       if (fAddNamedLock) {
         if (!fHaveDetails) {
-          if(obtainDetails() != IDialogConstants.OK_ID) {
-            return Status.CANCEL_STATUS;
-          }
+          obtainDetails();
         }
         helper.ensureNameLocked(fJavaElement, fName, fLevel);
       } else {
@@ -121,9 +118,7 @@ public class NameLockedAction extends BaseAction {
         helper.ensureNotNameLocked(fJavaElement);
       } else {
         if (!fHaveDetails) {
-          if(obtainDetails() != IDialogConstants.OK_ID) {
-            return Status.CANCEL_STATUS;
-          }
+          obtainDetails();
         }
         helper.ensureNameLocked(fJavaElement, fName, fLevel);
       }

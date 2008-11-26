@@ -11,8 +11,6 @@ import com.tc.async.api.StageManager;
 import com.tc.async.impl.ConfigurationContextImpl;
 import com.tc.async.impl.MockSink;
 import com.tc.async.impl.StageManagerImpl;
-import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferOutput;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.l2.msg.L2StateMessage;
@@ -34,6 +32,8 @@ import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -444,8 +444,7 @@ public class VirtualTCGroupStateManagerTest extends TCTestCase {
                                              VirtualTCGroupManagerImpl[] virtualMgr, L2StateMessageStage[] messageStage)
       throws Exception {
     VirtualTCGroupManagerImpl gm = virtualMgr[localIndex];
-    ((TCGroupManagerImpl) gm.getBaseTCGroupManager())
-        .setDiscover(new TCGroupMemberDiscoveryStatic((TCGroupManagerImpl) gm.getBaseTCGroupManager()));
+    ((TCGroupManagerImpl)gm.getBaseTCGroupManager()).setDiscover(new TCGroupMemberDiscoveryStatic((TCGroupManagerImpl)gm.getBaseTCGroupManager()));
 
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());
     MyListener l = new MyListener();
@@ -623,15 +622,17 @@ public class VirtualTCGroupStateManagerTest extends TCTestCase {
       this.msg = message;
     }
 
-    protected void basicDeserializeFrom(TCByteBufferInput in) throws IOException {
-      msg = in.readString();
-    }
-
-    protected void basicSerializeTo(TCByteBufferOutput out) {
-      out.writeString(msg);
-    }
-
     String msg;
+
+    protected void basicReadExternal(int msgType, ObjectInput in) throws IOException {
+      msg = in.readUTF();
+
+    }
+
+    protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
+      out.writeUTF(msg);
+
+    }
 
     public int hashCode() {
       return msg.hashCode();

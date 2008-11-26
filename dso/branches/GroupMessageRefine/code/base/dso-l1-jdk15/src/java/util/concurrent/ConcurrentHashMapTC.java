@@ -186,18 +186,9 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
     }
   }
 
-  public void putAll(Map t) {
-    if (__tc_isManaged()) {
-      if (t.isEmpty())
-        return;
-      
-      for (Iterator i = t.entrySet().iterator(); i.hasNext(); ) {
-        Entry e = (Entry)i.next();
-        __tc_put_logical(e.getKey(), e.getValue());
-      }
-    } else {
-      super.putAll(t);
-    }
+  // TODO: ImplementMe XXX
+  public void __tc_put_logical(Object key, Object value) {
+    throw new UnsupportedOperationException();
   }
 
   public boolean isEvictionEnabled() {
