@@ -86,10 +86,6 @@ public abstract class AbstractTwoServerDeploymentTest extends AbstractDeployment
         }
       } catch (Exception e) {
         e.printStackTrace();
-        ServerManager sm = getServerManager();
-        if (sm != null) {
-          sm.stop();
-        }
         throw e;
       }
     }

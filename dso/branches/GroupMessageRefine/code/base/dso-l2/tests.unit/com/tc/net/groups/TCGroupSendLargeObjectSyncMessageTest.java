@@ -119,7 +119,7 @@ public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
   }
 
   private void checkSendingReceivingMessages(TCGroupManagerImpl gm1, MyListener l1, TCGroupManagerImpl gm2,
-                                             MyListener l2, long oidsCount) {
+                                             MyListener l2, long oidsCount) throws GroupException {
     ThreadUtil.reallySleep(5 * 1000);
 
     final ObjectSyncMessage msg1 = createObjectSyncMessage(oidsCount);

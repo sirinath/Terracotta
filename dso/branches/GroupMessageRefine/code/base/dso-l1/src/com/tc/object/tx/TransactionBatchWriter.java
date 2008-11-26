@@ -379,7 +379,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private final Map                      writers              = new LinkedHashMap();
 
     // Maintaining hard references so that it doesn't get GC'ed on us
-    private final IdentityHashMap          references           = new IdentityHashMap();
+    private Collection                     references;
     private boolean                        needsCopy            = false;
     private int                            headerLength         = UNINITIALIZED_LENGTH;
     private int                            txnCount             = 0;
@@ -429,8 +429,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     String dump() {
-      return " { " + sequenceID + " , Txns in Buffer = " + references.size() + " , Objects in (Folded) Txn : "
-             + writers.size() + " }";
+      return " { " + sequenceID + " , Objects in Txn = " + (references == null ? -1 : references.size()) + " }";
     }
 
     SequenceID getSequenceID() {
@@ -438,8 +437,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     int write(ClientTransaction txn) {
-      // Holding on the object references, this method could be called more than once for folded transactions.
-      this.references.put(txn.getReferencesOfObjectsInTxn(), null);
+      this.references = txn.getReferencesOfObjectsInTxn();
 
       int start = output.getBytesWritten();
 

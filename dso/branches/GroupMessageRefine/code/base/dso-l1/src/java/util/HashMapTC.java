@@ -168,33 +168,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   }
 
   public void putAll(Map map) {
-    if (__tc_isManaged()) {
-      int numKeysToBeAdded = map.size();
-      if (numKeysToBeAdded == 0)
-        return;
-
-      /*
-       * This logic duplicated from HashMap super implementation
-       * see explanation there
-       */
-      if (numKeysToBeAdded > threshold) {
-        int targetCapacity = (int)(numKeysToBeAdded / loadFactor + 1);
-        if (targetCapacity > MAXIMUM_CAPACITY)
-          targetCapacity = MAXIMUM_CAPACITY;
-        int newCapacity = table.length;
-        while (newCapacity < targetCapacity)
-          newCapacity <<= 1;
-        if (newCapacity > table.length)
-          resize(newCapacity);
-      }
-
-      for (Iterator i = map.entrySet().iterator(); i.hasNext(); ) {
-        Map.Entry e = (Map.Entry) i.next();
-        __tc_put_logical(e.getKey(), e.getValue());
-      }
-    } else {
-      super.putAll(map);
-    }
+    super.putAll(map);
   }
 
   public Object remove(Object key) {
@@ -292,11 +266,11 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         return __tc_getAllEntriesSnapshotInternal();
       }
     } else {
-      return super.entrySet();
+      return __tc_getAllEntriesSnapshotInternal();
     }
   }
 
-  private Collection __tc_getAllEntriesSnapshotInternal() {
+  public Collection __tc_getAllEntriesSnapshotInternal() {
     EntrySetWrapper entrySet = (EntrySetWrapper)super.entrySet();
     return new ArrayList(entrySet.__tc_getLocalEntries());
   }
@@ -307,7 +281,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         return __tc_getAllLocalEntriesSnapshotInternal();
       }
     } else {
-      return super.entrySet();
+      return __tc_getAllLocalEntriesSnapshotInternal();
     }
   }
 

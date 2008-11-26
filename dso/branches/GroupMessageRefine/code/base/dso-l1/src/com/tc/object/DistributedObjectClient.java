@@ -33,7 +33,6 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.MaxConnectionsExceededException;
-import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
@@ -168,8 +167,8 @@ import java.util.Collections;
  */
 public class DistributedObjectClient extends SEDA implements TCClient {
 
-  private static final TCLogger                    DSO_LOGGER                 = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                    CONSOLE_LOGGER             = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                    logger                     = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger                    consoleLogger              = CustomerLogging.getConsoleLogger();
 
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
@@ -220,7 +219,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     if (this.lockManager != null) {
       this.lockManager.addAllLocksTo(lockInfo);
     } else {
-      DSO_LOGGER.error("LockManager not initialised still. LockInfo for threads cannot be updated");
+      logger.error("LockManager not initialised still. LockInfo for threads cannot be updated");
     }
   }
 
@@ -317,13 +316,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     counterManager = new CounterManagerImpl();
 
-    MessageMonitor mm = MessageMonitorImpl.createMonitor(tcProperties, DSO_LOGGER);
+    MessageMonitor mm = MessageMonitorImpl.createMonitor(tcProperties, logger);
 
     communicationsManager = createCommunicationsManager(mm, networkStackHarnessFactory, new NullConnectionPolicy(),
                                                         new HealthCheckerConfigImpl(l1Properties
                                                             .getPropertiesFor("healthcheck.l2"), "DSO Client"));
 
-    DSO_LOGGER.debug("Created CommunicationsManager.");
+    logger.debug("Created CommunicationsManager.");
 
     ConfigItem[] connectionInfoItems = this.connectionComponents.createConnectionInfoConfigItemByGroup();
     ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItems[0].getObject();
@@ -342,7 +341,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     this.runtimeLogger = new RuntimeLoggerImpl(config);
 
-    DSO_LOGGER.debug("Created channel.");
+    logger.debug("Created channel.");
 
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
@@ -413,18 +412,18 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
         .getLeastCount(), cacheConfig.isOnlyOldGenMonitored(), getThreadGroup());
     long timeOut = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.LOGGING_LONG_GC_THRESHOLD);
-    LongGCLogger gcLogger = new LongGCLogger(DSO_LOGGER, timeOut);
+    LongGCLogger gcLogger = new LongGCLogger(logger, timeOut);
     tcMemManager.registerForMemoryEvents(gcLogger);
 
     if (cacheManagerProperties.getBoolean("enabled")) {
       this.cacheManager = new CacheManager(objectManager, cacheConfig, getThreadGroup(), statisticsAgentSubSystem,
                                            tcMemManager);
       this.cacheManager.start();
-      if (DSO_LOGGER.isDebugEnabled()) {
-        DSO_LOGGER.debug("CacheManager Enabled : " + cacheManager);
+      if (logger.isDebugEnabled()) {
+        logger.debug("CacheManager Enabled : " + cacheManager);
       }
     } else {
-      DSO_LOGGER.warn("CacheManager is Disabled");
+      logger.warn("CacheManager is Disabled");
     }
 
     // Set up the JMX management stuff
@@ -522,7 +521,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     channel.addClassMapping(TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE,
                             CompletedTransactionLowWaterMarkMessage.class);
 
-    DSO_LOGGER.debug("Added class mappings.");
+    logger.debug("Added class mappings.");
 
     Sink hydrateSink = hydrateStage.getSink();
     channel.routeMessageType(TCMessageType.LOCK_RESPONSE_MESSAGE, lockResponse.getSink(), hydrateSink);
@@ -547,36 +546,31 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     int i = 0;
     while (maxConnectRetries <= 0 || i < maxConnectRetries) {
       try {
-        DSO_LOGGER.debug("Trying to open channel....");
+        logger.debug("Trying to open channel....");
         channel.open();
-        DSO_LOGGER.debug("Channel open");
+        logger.debug("Channel open");
         break;
       } catch (TCTimeoutException tcte) {
-        CONSOLE_LOGGER.warn("Timeout connecting to server: " + tcte.getMessage());
+        consoleLogger.warn("Timeout connecting to server: " + tcte.getMessage());
         ThreadUtil.reallySleep(5000);
       } catch (ConnectException e) {
-        CONSOLE_LOGGER.warn("Connection refused from server: " + e);
+        consoleLogger.warn("Connection refused from server: " + e);
         ThreadUtil.reallySleep(5000);
       } catch (MaxConnectionsExceededException e) {
-        CONSOLE_LOGGER.warn("Connection refused MAXIMUM CONNECTIONS TO SERVER EXCEEDED: " + e);
+        consoleLogger.warn("Connection refused MAXIMUM CONNECTIONS TO SERVER EXCEEDED: " + e);
         ThreadUtil.reallySleep(5000);
       } catch (IOException ioe) {
-        CONSOLE_LOGGER.warn("IOException connecting to server: " + serverHost + ":" + serverPort + ". "
+        consoleLogger.warn("IOException connecting to server: " + serverHost + ":" + serverPort + ". "
                            + ioe.getMessage());
         ThreadUtil.reallySleep(5000);
       }
       i++;
     }
     if (i == maxConnectRetries) {
-      CONSOLE_LOGGER.error("MaxConnectRetries '" + maxConnectRetries + "' attempted. Exiting.");
+      consoleLogger.error("MaxConnectRetries '" + maxConnectRetries + "' attempted. Exiting.");
       System.exit(-1);
     }
     clientHandshakeManager.waitForHandshake();
-
-    final TCSocketAddress remoteAddress = channel.channel().getRemoteAddress();
-    final String infoMsg = "Connection successfully established to server at " + remoteAddress;
-    CONSOLE_LOGGER.info(infoMsg);
-    DSO_LOGGER.info(infoMsg);
 
     if (statisticsAgentSubSystem.isActive()) {
       statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/" + channel.channel().getChannelID().toLong());
@@ -600,7 +594,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private void setLoggerOnExit() {
     CommonShutDownHook.addShutdownHook(new Runnable() {
       public void run() {
-        DSO_LOGGER.info("L1 Exiting...");
+        logger.info("L1 Exiting...");
       }
     });
   }
@@ -678,7 +672,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       i.set("portnum", port);
       i.eval("setAccessibility(true)"); // turn off access restrictions
       i.eval("server(portnum)");
-      CONSOLE_LOGGER.info("Bean shell is started on port " + port);
+      consoleLogger.info("Bean shell is started on port " + port);
     } catch (EvalError e) {
       e.printStackTrace();
     }

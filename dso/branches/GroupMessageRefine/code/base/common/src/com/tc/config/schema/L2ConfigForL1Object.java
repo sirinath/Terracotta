@@ -165,7 +165,6 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
     this.l2DataByGroup = new ObjectArrayConfigItem[keys.size()];
 
     int l2DataByGroupPosition = 0;
-    boolean isCoordinatorSet = false;
     for (Iterator iter = keys.iterator(); iter.hasNext();) {
       Integer key = (Integer) iter.next();
       List l2DataList = (List) this.l2DataByGroupId.get(key);
@@ -175,12 +174,11 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
         L2Data data = (L2Data) iterator.next();
         l2DataArray[position++] = data;
       }
-      if ((l2DataByGroupPosition != coordinatorGrpId) || isCoordinatorSet) {
+      if (l2DataByGroupPosition != coordinatorGrpId) {
         setL2DataInGrp(l2DataByGroupPosition + 1, l2DataArray);
         l2DataByGroupPosition++;
       } else {
         setL2DataInGrp(0, l2DataArray);
-        isCoordinatorSet = true;
       }
     }
   }

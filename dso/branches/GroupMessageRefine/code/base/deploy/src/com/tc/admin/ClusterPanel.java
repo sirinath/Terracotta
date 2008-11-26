@@ -7,7 +7,6 @@ package com.tc.admin;
 import org.dijon.ContainerResource;
 
 import com.tc.admin.common.BasicWorker;
-import com.tc.admin.common.ExceptionHelper;
 import com.tc.admin.common.StatusView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.model.ProductVersion;
@@ -15,7 +14,6 @@ import com.tc.admin.model.ProductVersion;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.Callable;
 
@@ -177,10 +175,7 @@ public class ClusterPanel extends XContainer {
     protected void finished() {
       Exception e = getException();
       if (e != null) {
-        Throwable rootCause = ExceptionHelper.getRootCause(e);
-        if (!(rootCause instanceof IOException)) {
-          m_acc.log(e);
-        }
+        m_acc.log(e);
       } else {
         m_hostField.setEditable(false);
         m_portField.setEditable(false);
@@ -211,10 +206,7 @@ public class ClusterPanel extends XContainer {
     protected void finished() {
       Exception e = getException();
       if (e != null) {
-        Throwable rootCause = ExceptionHelper.getRootCause(e);
-        if (!(rootCause instanceof IOException)) {
-          m_acc.log(e);
-        }
+        m_acc.log(e);
       } else {
         m_hostField.setEditable(false);
         m_portField.setEditable(false);
@@ -289,10 +281,7 @@ public class ClusterPanel extends XContainer {
     protected void finished() {
       Exception e = getException();
       if (e != null) {
-        Throwable rootCause = ExceptionHelper.getRootCause(e);
-        if (!(rootCause instanceof IOException)) {
-          m_acc.log(e);
-        }
+        // assume the server went away
       } else {
         showProductInfo(getResult());
       }

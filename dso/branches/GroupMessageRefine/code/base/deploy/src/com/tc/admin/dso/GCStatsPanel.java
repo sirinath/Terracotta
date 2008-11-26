@@ -29,7 +29,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import javax.swing.JOptionPane;
@@ -92,12 +91,7 @@ public class GCStatsPanel extends XContainer implements DGCListener, PropertyCha
 
     protected void finished() {
       Exception e = getException();
-      if (e != null) {
-        Throwable rootCause = ExceptionHelper.getRootCause(e);
-        if (!(rootCause instanceof IOException)) {
-          m_acc.log(e);
-        }
-      } else {
+      if (e == null) {
         m_overviewLabel.setText(getResult());
       }
     }
@@ -147,7 +141,9 @@ public class GCStatsPanel extends XContainer implements DGCListener, PropertyCha
 
     protected void finished() {
       Exception e = getException();
-      if (e == null) {
+      if (e != null) {
+        m_acc.log(e);
+      } else {
         GCStatsTableModel model = (GCStatsTableModel) m_table.getModel();
         model.setGCStats(getResult());
       }
