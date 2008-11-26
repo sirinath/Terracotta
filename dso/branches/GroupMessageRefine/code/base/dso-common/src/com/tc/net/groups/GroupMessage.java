@@ -3,11 +3,10 @@
  */
 package com.tc.net.groups;
 
+import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 
-import java.io.Externalizable;
-
-public interface GroupMessage extends Externalizable {
+public interface GroupMessage extends TCSerializable {
 
   public int getType();
     

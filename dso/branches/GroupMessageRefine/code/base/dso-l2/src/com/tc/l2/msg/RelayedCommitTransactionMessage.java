@@ -6,6 +6,8 @@ package com.tc.l2.msg;
 
 import com.tc.async.api.OrderedEventContext;
 import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferOutput;
 import com.tc.lang.Recyclable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.AbstractGroupMessage;
@@ -18,8 +20,6 @@ import com.tc.object.tx.TransactionID;
 import com.tc.util.Assert;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,17 +73,20 @@ public class RelayedCommitTransactionMessage extends AbstractGroupMessage implem
     return serializer;
   }
 
-  protected void basicReadExternal(int msgType, ObjectInput in) throws IOException, ClassNotFoundException {
-    Assert.assertEquals(RELAYED_COMMIT_TXN_MSG_TYPE, msgType);
-    this.nodeID = NodeIDSerializer.readNodeID(in);
-    this.serializer = readObjectStringSerializer(in);
-    this.batchData = readByteBuffers(in);
+  protected void basicDeserializeFrom(TCByteBufferInput in) throws IOException {
+    Assert.assertEquals(RELAYED_COMMIT_TXN_MSG_TYPE, getType());
+    NodeIDSerializer nodeIDSerializer = new NodeIDSerializer();
+    nodeIDSerializer = (NodeIDSerializer) nodeIDSerializer.deserializeFrom(in);
+    this.nodeID = nodeIDSerializer.getNodeID();
+    this.serializer = new ObjectStringSerializer();
+    this.serializer.deserializeFrom(in);
     this.sid2gid = readServerTxnIDglobalTxnIDMapping(in);
     this.sequenceID = in.readLong();
     this.lowWaterMark = new GlobalTransactionID(in.readLong());
+    this.batchData = in.toArray();
   }
 
-  private Map readServerTxnIDglobalTxnIDMapping(ObjectInput in) throws IOException {
+  private Map readServerTxnIDglobalTxnIDMapping(TCByteBufferInput in) throws IOException {
     int size = in.readInt();
     Map mapping = new HashMap();
     NodeID cid = nodeID;
@@ -95,17 +98,18 @@ public class RelayedCommitTransactionMessage extends AbstractGroupMessage implem
     return mapping;
   }
 
-  protected void basicWriteExternal(int msgType, ObjectOutput out) throws IOException {
-    Assert.assertEquals(RELAYED_COMMIT_TXN_MSG_TYPE, msgType);
-    NodeIDSerializer.writeNodeID(nodeID, out);
-    writeObjectStringSerializer(out, serializer);
-    writeByteBuffers(out, batchData);
+  protected void basicSerializeTo(TCByteBufferOutput out) {
+    Assert.assertEquals(RELAYED_COMMIT_TXN_MSG_TYPE, getType());
+    NodeIDSerializer nodeIDSerializer = new NodeIDSerializer(nodeID);
+    nodeIDSerializer.serializeTo(out);
+    serializer.serializeTo(out);
     writeServerTxnIDGlobalTxnIDMapping(out);
     out.writeLong(this.sequenceID);
     out.writeLong(this.lowWaterMark.toLong());
+    out.write(batchData);
   }
 
-  private void writeServerTxnIDGlobalTxnIDMapping(ObjectOutput out) throws IOException {
+  private void writeServerTxnIDGlobalTxnIDMapping(TCByteBufferOutput out) {
     out.writeInt(sid2gid.size());
     NodeID cid = nodeID;
     for (Iterator i = sid2gid.entrySet().iterator(); i.hasNext();) {
