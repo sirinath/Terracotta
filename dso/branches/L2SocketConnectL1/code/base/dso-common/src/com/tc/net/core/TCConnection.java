@@ -20,11 +20,6 @@ import java.net.Socket;
 public interface TCConnection extends NetworkMessageSink {
   
   /**
-   * Get the parent.
-   */
-  public TCConnectionManager getConnectionManger();
-
-  /**
    * Returns a long timestamp as reported by <code>Sytem.currentTimeMillis()</code> when this connection was
    * connected. If <code>connect()</code> has never been called, the return value is undefined
    */
