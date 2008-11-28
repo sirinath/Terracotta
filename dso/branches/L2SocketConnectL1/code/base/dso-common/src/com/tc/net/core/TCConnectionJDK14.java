@@ -485,10 +485,6 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     eventListeners.remove(listener); // don't need sync
   }
   
-  public TCConnectionManager getConnectionManger() {
-    return parent; 
-  }
-
   public final long getConnectTime() {
     return connectTime.get();
   }
