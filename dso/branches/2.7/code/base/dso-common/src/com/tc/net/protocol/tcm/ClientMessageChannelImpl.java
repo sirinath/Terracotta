@@ -29,7 +29,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
   private ChannelID                   channelID;
   private final ChannelIDProviderImpl cidProvider;
   private final SessionProvider       sessionProvider;
-  private SessionID                   channelSessionID = SessionID.NULL_ID;
+  private volatile SessionID          channelSessionID = SessionID.NULL_ID;
 
   protected ClientMessageChannelImpl(TCMessageFactory msgFactory, TCMessageRouter router, SessionProvider sessionProvider) {
     super(router, logger, msgFactory);
