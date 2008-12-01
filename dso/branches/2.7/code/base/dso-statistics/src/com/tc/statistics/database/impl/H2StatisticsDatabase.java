@@ -57,7 +57,6 @@ public class H2StatisticsDatabase extends AbstractStatisticsDatabase {
     super.open(H2_JDBC_DRIVER);
   }
 
-  @Override
   protected void openConnection() throws StatisticsDatabaseException {
     String url = H2_URL_PREFIX + new File(dbDir, urlSuffix).getAbsolutePath();
     try {
