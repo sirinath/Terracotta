@@ -48,7 +48,8 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
     return ALLOWED_LWM_DELTA;
   }
 
-  public synchronized boolean startApply(NodeID committerID, TransactionID transactionID, GlobalTransactionID gtxID) {
+  public synchronized boolean startApply(NodeID committerID, TransactionID transactionID, GlobalTransactionID gtxID,
+                                         NodeID remoteGroupID) {
     if (gtxID.lessThan(getLowGlobalTransactionIDWatermark())) {
       // formatting
       throw new UnknownTransactionError("Attempt to apply a transaction lower than the low watermark: gtxID = " + gtxID
@@ -63,10 +64,9 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
     return lowWatermark;
   }
 
-  public synchronized void setLowWatermark(GlobalTransactionID lowWatermark) {
+  public synchronized void setLowWatermark(GlobalTransactionID lowWatermark, NodeID nodeID) {
     if (this.lowWatermark.toLong() > lowWatermark.toLong()) {
-      // XXX::This case is possible when the server crashes (both in diskbased and lanbased) Eventually the server will
-      // catch up
+      // XXX::This case is possible when the server crashes, Eventually the server will catch up
       logger.warn("Low water mark lower than exisiting one : mine : " + this.lowWatermark + " server sent : "
                   + lowWatermark);
       return;
@@ -98,5 +98,5 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback) {
     return remoteTransactionManager.isTransactionsForLockFlushed(lockID, callback);
   }
-  
+
 }

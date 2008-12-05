@@ -358,7 +358,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                 outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                                 batchSizeCounter, pendingBatchesSize);
 
-    ClientGlobalTransactionManager gtxManager = new ClientGlobalTransactionManagerImpl(rtxManager);
+    ClientGlobalTransactionManager gtxManager = createClientGlobalTransactionManager(rtxManager);
 
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
@@ -576,6 +576,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       setReconnectCloseOnExit(channel);
     }
     setLoggerOnExit();
+  }
+
+  /*
+   * Overwrite this routine to do active-active, TODO:: These should go into some interface
+   */
+  protected ClientGlobalTransactionManager createClientGlobalTransactionManager(RemoteTransactionManager remoteTxnMgr) {
+    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr);
   }
 
   /*
