@@ -48,8 +48,8 @@ import com.tc.objectserver.handler.TCGroupHandshakeMessageHandler;
 import com.tc.objectserver.handler.TCGroupMemberDiscoveryHandler;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
@@ -329,7 +329,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     }
     return (getNodeID());
   }
-  
+
   public void memberDisappeared(TCGroupMember member, boolean byDisconnectEvent) {
     Assert.assertNotNull(member);
     if (isStopped.get()) return;
@@ -431,7 +431,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     int maxReconnectTries = isUseOOOLayer ? -1 : 0;
     ClientMessageChannel channel = communicationsManager
         .createClientChannel(new SessionManagerImpl(new SimpleSequence()), maxReconnectTries, null, -1, 10000,
-                             addrProvider, groupPort);
+                             addrProvider);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage

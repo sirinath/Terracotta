@@ -81,8 +81,8 @@ public class ConnectionHealthCheckReverseCallbackTest extends TCTestCase {
     proxy.start();
 
     serverHC = new HealthCheckerConfigImpl(SERVER_PING_IDLE, SERVER_PING_INTERVAL, SERVER_PING_PROBES, "server-HC",
-                                           true, Integer.MAX_VALUE, 2);
-    HealthCheckerConfig clientHC = new HealthCheckerConfigImpl(1000, 1000, Integer.MAX_VALUE, "client-HC");
+                                           true, Integer.MAX_VALUE, 2, TCSocketAddress.WILDCARD_IP, 0);
+    HealthCheckerConfig clientHC = new HealthCheckerConfigImpl(1000, 1000, Integer.MAX_VALUE, "client-HC", false);
 
     clientComms = new CommunicationsManagerImpl(new NullMessageMonitor(), new PlainNetworkStackHarnessFactory(),
                                                 new NullConnectionPolicy(), clientHC);
@@ -116,8 +116,7 @@ public class ConnectionHealthCheckReverseCallbackTest extends TCTestCase {
                                                                                                                      host,
                                                                                                                      proxyPort) });
 
-    channel = clientComms.createClientChannel(new NullSessionManager(), -1, host, proxyPort, 30000, addrProvider,
-                                              clientListenPort);
+    channel = clientComms.createClientChannel(new NullSessionManager(), -1, host, proxyPort, 30000, addrProvider);
     channel.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     channel.open();
   }

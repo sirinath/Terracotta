@@ -140,14 +140,12 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   ClientMessageChannel createClientMsgChProxied(CommunicationsManager clientCommsMgr, boolean createHCListener) {
-    int callbackPort = TransportHandshakeMessage.NO_CALLBACK_PORT;
     if (createHCListener) {
       TCProperties l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
       NetworkListener healthCheckerListener = ConnectionHealthCheckerUtil.createHealthCheckListener(clientCommsMgr,
                                                                                                     l1Properties);
       try {
         healthCheckerListener.start(new HashSet());
-        callbackPort = healthCheckerListener.getBindPort();
         logger.info("HealthChecker Listener started at " + healthCheckerListener.getBindAddress() + ":"
                     + healthCheckerListener.getBindPort());
 
@@ -159,7 +157,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     ClientMessageChannel clientMsgCh = clientCommsMgr
         .createClientChannel(new NullSessionManager(), 0, serverLsnr.getBindAddress().getHostAddress(), proxyPort,
                              1000, new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
-                                 .getBindAddress().getHostAddress(), proxyPort) }), callbackPort);
+                                 .getBindAddress().getHostAddress(), proxyPort) }));
 
     clientMsgCh.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     clientMsgCh.routeMessageType(TCMessageType.PING_MESSAGE, new TCMessageSink() {

@@ -4,12 +4,13 @@
  */
 package com.tc.net.protocol.transport;
 
+import com.tc.net.TCSocketAddress;
 import com.tc.properties.TCProperties;
 
 /**
  * Main implementation of the Health Checker Config. Health Checker related tc.properties are read and a config data
  * structure is built which is passed on to various health checker modules.
- *
+ * 
  * @author Manoj
  */
 public class HealthCheckerConfigImpl implements HealthCheckerConfig {
@@ -22,6 +23,10 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
   private final int        socketConnectTimeout;
   private final int        socketConnectMaxCount;
   private final String     name;
+
+  // RMP-343:
+  private final String     callbackportListenerBindAddress;
+  private final int        callbackportListenerBindPort;
 
   // Default ping probe values in milliseconds
   private static final int DEFAULT_PING_IDLETIME          = 45000;
@@ -39,22 +44,24 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
     this.enable = healthCheckerProperties.getBoolean("ping.enabled");
     this.socketConnectMaxCount = healthCheckerProperties.getInt("socketConnectCount");
     this.socketConnectTimeout = healthCheckerProperties.getInt("socketConnectTimeout");
+    this.callbackportListenerBindAddress = healthCheckerProperties.getProperty("bindAddress");
+    this.callbackportListenerBindPort = healthCheckerProperties.getInt("bindPort", 0);
   }
 
+  // Default Ping-Probe cycles. No SocketConnect check
   public HealthCheckerConfigImpl(String name) {
     this(DEFAULT_PING_IDLETIME, DEFAULT_PING_INTERVAL, DEFAULT_PING_PROBECNT, name, false);
   }
 
-  public HealthCheckerConfigImpl(long idle, long interval, int probes, String name) {
-    this(idle, interval, probes, name, false);
-  }
-
+  // Custom SocketConnect check. Default SocketConnect values
   public HealthCheckerConfigImpl(long idle, long interval, int probes, String name, boolean extraCheck) {
-    this(idle, interval, probes, name, extraCheck, DEFAULT_SCOKETCONNECT_MAXCOUNT, DEFAULT_SOCKETCONNECT_TIMEOUT);
+    this(idle, interval, probes, name, extraCheck, DEFAULT_SCOKETCONNECT_MAXCOUNT, DEFAULT_SOCKETCONNECT_TIMEOUT,
+         TCSocketAddress.WILDCARD_IP, 0);
   }
 
+  // All Custom values
   public HealthCheckerConfigImpl(long idle, long interval, int probes, String name, boolean extraCheck,
-                                 int socketConnectMaxCount, int socketConnectTimeout) {
+                                 int socketConnectMaxCount, int socketConnectTimeout, String bindAddress, int bindPort) {
     this.pingIdleTime = idle;
     this.pingInterval = interval;
     this.pingProbes = probes;
@@ -63,6 +70,8 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
     this.enable = true;
     this.socketConnectMaxCount = socketConnectMaxCount;
     this.socketConnectTimeout = socketConnectTimeout;
+    this.callbackportListenerBindAddress = bindAddress;
+    this.callbackportListenerBindPort = bindPort;
   }
 
   public boolean isSocketConnectOnPingFail() {
@@ -95,6 +104,18 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
 
   public int getSocketConnectTimeout() {
     return this.socketConnectTimeout;
+  }
+
+  public String getCallbackPortListenerBindAddress() {
+    return this.callbackportListenerBindAddress;
+  }
+
+  public int getCallbackPortListenerBindPort() {
+    return this.callbackportListenerBindPort;
+  }
+
+  public boolean isCallbackPortListenerNeeded() {
+    return false;
   }
 
 }
