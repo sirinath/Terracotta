@@ -42,6 +42,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
   private final WireProtocolMessageSink          wireProtoMsgsink;
   private final MessageTransportFactory          messageTransportFactory;
   private final List                             transportListeners = new ArrayList(1);
+  private final int                              callbackPort;
   private final TCLogger                         logger;
   private final TCLogger                         consoleLogger      = CustomerLogging.getConsoleLogger();
 
@@ -52,7 +53,8 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
                              ConnectionIDFactory connectionIdFactory, ConnectionPolicy connectionPolicy,
                              WireProtocolAdaptorFactory wireProtocolAdaptorFactory) {
     this(logger, initialConnectionIDs, harnessFactory, channelFactory, messageTransportFactory,
-         handshakeMessageFactory, connectionIdFactory, connectionPolicy, wireProtocolAdaptorFactory, null);
+         handshakeMessageFactory, connectionIdFactory, connectionPolicy, wireProtocolAdaptorFactory, null,
+         TransportHandshakeMessage.NO_CALLBACK_PORT);
   }
 
   public ServerStackProvider(TCLogger logger, Set initialConnectionIDs, NetworkStackHarnessFactory harnessFactory,
@@ -61,7 +63,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
                              TransportHandshakeMessageFactory handshakeMessageFactory,
                              ConnectionIDFactory connectionIdFactory, ConnectionPolicy connectionPolicy,
                              WireProtocolAdaptorFactory wireProtocolAdaptorFactory,
-                             WireProtocolMessageSink wireProtoMsgSink) {
+                             WireProtocolMessageSink wireProtoMsgSink, int callbackPort) {
     this.messageTransportFactory = messageTransportFactory;
     this.connectionPolicy = connectionPolicy;
     this.wireProtocolAdaptorFactory = wireProtocolAdaptorFactory;
@@ -71,6 +73,7 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
     this.channelFactory = channelFactory;
     this.handshakeMessageFactory = handshakeMessageFactory;
     this.connectionIdFactory = connectionIdFactory;
+    this.callbackPort = callbackPort;
     this.transportListeners.add(this);
     this.logger = logger;
     for (Iterator i = initialConnectionIDs.iterator(); i.hasNext();) {
@@ -321,8 +324,9 @@ public class ServerStackProvider implements NetworkStackProvider, MessageTranspo
         synAck = handshakeMessageFactory.createSynAck(connectionId, errorContext, source, isMaxConnectionsExceeded,
                                                       maxConnections);
       } else {
+        Assert.assertEquals(callbackPort, source.getLocalAddress().getPort());
         synAck = handshakeMessageFactory.createSynAck(connectionId, source, isMaxConnectionsExceeded, maxConnections,
-                                                      source.getLocalAddress().getPort());
+                                                      callbackPort);
       }
       sendMessage(synAck);
     }
