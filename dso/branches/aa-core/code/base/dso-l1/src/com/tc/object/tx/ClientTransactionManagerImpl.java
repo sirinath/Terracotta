@@ -762,6 +762,11 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   public void createRoot(String name, ObjectID rootID) {
     getTransaction().createRoot(name, rootID);
   }
+  
+  public ClientTransaction getCurrentTransaction() {
+    return getTransactionOrNull();
+  }
+
 
   public void addReference(TCObject tco) {
     ClientTransaction txn = getTransactionOrNull();

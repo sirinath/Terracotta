@@ -79,7 +79,7 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
     logger.debug("Initiating handshake...");
     changeToStarting(remoteNode);
 
-    ClientHandshakeMessage handshakeMessage = chmf.newClientHandshakeMessage();
+    ClientHandshakeMessage handshakeMessage = chmf.newClientHandshakeMessage(remoteNode);
     handshakeMessage.setClientVersion(clientVersion);
     handshakeMessage.setIsObjectIDsRequested(!sequenceReceiver.hasNext());
 

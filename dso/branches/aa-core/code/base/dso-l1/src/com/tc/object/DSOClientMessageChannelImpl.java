@@ -7,6 +7,7 @@ package com.tc.object;
 import com.tc.async.api.Sink;
 import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -108,7 +109,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return (AcknowledgeTransactionMessage) channel.createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
   }
 
-  public ClientHandshakeMessage newClientHandshakeMessage() {
+  public ClientHandshakeMessage newClientHandshakeMessage(NodeID remoteNode) {
     ClientHandshakeMessage rv = (ClientHandshakeMessage) channel.createMessage(TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
     return rv;
   }

@@ -265,4 +265,10 @@ public interface ClientTransactionManager extends DumpHandler, PrettyPrintable {
    */
   public boolean isLockOnTopStack(String lockName);
 
+  /**
+   * @returns the current open transaction for the calling thread, 
+   * null if no open transaction
+   */
+  public ClientTransaction getCurrentTransaction();
+
 }
