@@ -6,6 +6,7 @@ package com.tc.objectserver.tx;
 
 import com.tc.config.TcProperty;
 import com.tc.net.ClientID;
+import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ApplicatorDNAEncodingImpl;
 import com.tc.object.MockTCObject;
@@ -32,8 +33,8 @@ import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.SequenceGenerator;
 
@@ -63,13 +64,13 @@ public class TransactionBatchTest extends TestCase {
   }
 
   private TransactionBatchWriter newWriter(ObjectStringSerializer serializer) {
-    return new TransactionBatchWriter(new TxnBatchID(1), serializer, encoding, messageFactory, FoldingConfig
-        .createFromProperties(TCPropertiesImpl.getProperties()));
+    return new TransactionBatchWriter(GroupID.NULL_ID, new TxnBatchID(1), serializer, encoding, messageFactory,
+                                      FoldingConfig.createFromProperties(TCPropertiesImpl.getProperties()));
   }
 
   private TransactionBatchWriter newWriter(ObjectStringSerializer serializer, boolean foldEnabled, int lockLimit,
                                            int objectLimit) {
-    return new TransactionBatchWriter(new TxnBatchID(1), serializer, encoding, messageFactory,
+    return new TransactionBatchWriter(GroupID.NULL_ID, new TxnBatchID(1), serializer, encoding, messageFactory,
                                       new FoldingConfig(foldEnabled, objectLimit, lockLimit));
   }
 
@@ -150,7 +151,7 @@ public class TransactionBatchTest extends TestCase {
     ClientTransaction txn2 = new ClientTransactionImpl(new TransactionID(2), new NullRuntimeLogger());
     txn2.setTransactionContext(tc);
 
-    writer = new TransactionBatchWriter(batchID, serializer, encoding, mf, FoldingConfig
+    writer = new TransactionBatchWriter(GroupID.NULL_ID, batchID, serializer, encoding, mf, FoldingConfig
         .createFromProperties(TCPropertiesImpl.getProperties()));
 
     SequenceGenerator sequenceGenerator = new SequenceGenerator();
@@ -614,14 +615,14 @@ public class TransactionBatchTest extends TestCase {
 
     public long getLong(String key, long defaultValue) {
       throw new AssertionError();
-   }
+    }
 
     public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
       throw new AssertionError();
     }
 
     public void setProperty(String key, String value) {
-      throw new AssertionError();      
+      throw new AssertionError();
     }
 
   }

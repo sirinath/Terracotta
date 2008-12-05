@@ -5,6 +5,7 @@
 package com.tc.object.tx;
 
 import com.tc.logging.TCLogger;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.lockmanager.api.LockFlushCallback;
@@ -66,12 +67,12 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   private final Map                        incompleteBatches           = new HashMap();
   private final HashMap                    lockFlushCallbacks          = new HashMap();
 
-  private int                              outStandingBatches          = 0;
   private final Counter                    outstandingBatchesCounter;
+  private final TransactionBatchAccounting batchAccounting             = new TransactionBatchAccounting();
+  private final LockAccounting             lockAccounting              = new LockAccounting();
   private final TCLogger                   logger;
-  private final TransactionBatchAccounting batchAccounting;
-  private final LockAccounting             lockAccounting;
 
+  private int                              outStandingBatches          = 0;
   private State                            status;
   private final SessionManager             sessionManager;
   private final TransactionSequencer       sequencer;
@@ -80,20 +81,20 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
                                                                                          "RemoteTransactionManager Flusher",
                                                                                          true);
 
-  public RemoteTransactionManagerImpl(TCLogger logger, final TransactionBatchFactory batchFactory,
-                                      TransactionBatchAccounting batchAccounting, LockAccounting lockAccounting,
+  private final GroupID                    groupID;
+
+  public RemoteTransactionManagerImpl(GroupID groupID, TCLogger logger, final TransactionBatchFactory batchFactory,
                                       SessionManager sessionManager, DSOClientMessageChannel channel,
                                       Counter outstandingBatchesCounter, SampledCounter numTransactionCounter,
                                       SampledCounter numBatchesCounter, final SampledCounter batchSizeCounter,
                                       final Counter pendingBatchesSize) {
+    this.groupID = groupID;
     this.logger = logger;
-    this.batchAccounting = batchAccounting;
-    this.lockAccounting = lockAccounting;
     this.sessionManager = sessionManager;
     this.channel = channel;
     this.status = RUNNING;
-    this.sequencer = new TransactionSequencer(batchFactory, lockAccounting, numTransactionCounter, numBatchesCounter,
-                                              batchSizeCounter, pendingBatchesSize);
+    this.sequencer = new TransactionSequencer(groupID, batchFactory, lockAccounting, numTransactionCounter,
+                                              numBatchesCounter, batchSizeCounter, pendingBatchesSize);
     this.timer.schedule(new RemoteTransactionManagerTimerTask(), COMPLETED_ACK_FLUSH_TIMEOUT,
                         COMPLETED_ACK_FLUSH_TIMEOUT);
     this.outstandingBatchesCounter = outstandingBatchesCounter;
@@ -213,7 +214,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
         // register for call back
         Object prev = lockFlushCallbacks.put(lockID, callback);
         if (prev != null) {
-          // Will this scenario comeup in server restart scenario ? It should as we check for greediness in the Lock
+          // Will this scenario come up in server restart scenario ? It should as we check for greediness in the Lock
           // Manager before making this call
           throw new TCAssertionError("There is already a registered call back on Lock Flush for this lock ID - "
                                      + lockID);
@@ -339,7 +340,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   }
 
   // XXX:: Currently server always sends NULL BatchID
-  public void receivedBatchAcknowledgement(TxnBatchID txnBatchID) {
+  public void receivedBatchAcknowledgement(TxnBatchID txnBatchID, NodeID remoteNode) {
     synchronized (lock) {
       if (status == STOP_INITIATED) {
         logger.warn(status + " : Received ACK for batch = " + txnBatchID);
@@ -355,7 +356,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
     }
   }
 
-  public void receivedAcknowledgement(SessionID sessionID, TransactionID txID) {
+  public void receivedAcknowledgement(SessionID sessionID, TransactionID txID, NodeID remoteNode) {
     Map callbacks;
     synchronized (lock) {
       // waitUntilRunning();
@@ -437,6 +438,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
     Util.selfInterruptIfNeeded(isInterrupted);
   }
 
+  /*
+   * For Tests
+   */
+  TransactionBatchAccounting getBatchAccounting() {
+    return batchAccounting;
+  }
+  
   private class RemoteTransactionManagerTimerTask extends TimerTask {
 
     public void run() {
@@ -444,7 +452,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
         TransactionID lwm = getCompletedTransactionIDLowWaterMark();
         if (lwm.isNull()) return;
         CompletedTransactionLowWaterMarkMessage ctm = channel.getCompletedTransactionLowWaterMarkMessageFactory()
-            .newCompletedTransactionLowWaterMarkMessage();
+            .newCompletedTransactionLowWaterMarkMessage(groupID);
         ctm.initialize(lwm);
         ctm.send();
       } catch (Exception e) {

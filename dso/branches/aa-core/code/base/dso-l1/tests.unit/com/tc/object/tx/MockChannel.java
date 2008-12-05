@@ -4,6 +4,7 @@ import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.GroupID;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
@@ -103,13 +104,12 @@ public class MockChannel implements DSOClientMessageChannel {
   private class NullCompletedTransactionLowWaterMarkMessageFactory implements
       CompletedTransactionLowWaterMarkMessageFactory {
 
-    public CompletedTransactionLowWaterMarkMessage newCompletedTransactionLowWaterMarkMessage() {
+    public CompletedTransactionLowWaterMarkMessage newCompletedTransactionLowWaterMarkMessage(NodeID remoteID) {
       return new CompletedTransactionLowWaterMarkMessage(new SessionID(0), new NullMessageMonitor(),
                                                          new TCByteBufferOutputStream(4, 4096, false),
                                                          new MockMessageChannel(new ChannelID(0)),
                                                          TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE);
     }
-
   }
 
   public GroupID[] getGroupIDs() {

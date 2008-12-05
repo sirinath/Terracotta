@@ -6,6 +6,7 @@ package com.tc.object.bytecode;
 
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCNonPortableObjectError;
+import com.tc.net.NodeID;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientObjectManager;
@@ -18,6 +19,7 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.session.SessionID;
+import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TransactionID;
@@ -78,14 +80,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
     }
 
     public void notify(String lockName, boolean all, Object object) throws UnlockedSharedObjectException {
-      throw new ImplementMe();
-    }
-
-    public void receivedAcknowledgement(SessionID sessionID, TransactionID requestID) {
-      throw new ImplementMe();
-    }
-
-    public void receivedBatchAcknowledgement(TxnBatchID batchID) {
       throw new ImplementMe();
     }
 
@@ -189,6 +183,18 @@ public class ManagerImplTest extends BaseDSOTestCase {
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {
+      throw new ImplementMe();
+    }
+
+    public ClientTransaction getCurrentTransaction() {
+      throw new ImplementMe();
+    }
+
+    public void receivedAcknowledgement(SessionID sessionID, TransactionID requestID, NodeID nodeID) {
+      throw new ImplementMe();
+    }
+
+    public void receivedBatchAcknowledgement(TxnBatchID batchID, NodeID nodeID) {
       throw new ImplementMe();
     }
   }

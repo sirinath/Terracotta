@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.net;
 
@@ -43,7 +44,7 @@ public interface DSOClientMessageChannel {
   public ClientMessageChannel channel();
 
   public LockRequestMessageFactory getLockRequestMessageFactory();
- 
+
   public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory();
 
   public RequestRootMessageFactory getRequestRootMessageFactory();
@@ -61,5 +62,5 @@ public interface DSOClientMessageChannel {
   public JMXMessage getJMXMessage();
 
   public GroupID[] getGroupIDs();
-  
+
 }

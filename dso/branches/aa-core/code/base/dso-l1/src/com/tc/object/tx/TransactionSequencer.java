@@ -9,6 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.GroupID;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.stats.counter.Counter;
@@ -56,9 +57,12 @@ public class TransactionSequencer {
   private final SampledCounter          numBatchesCounter;
   private final SampledCounter          batchSizeCounter;
 
-  public TransactionSequencer(TransactionBatchFactory batchFactory, LockAccounting lockAccounting,
+  private final GroupID                 groupID;
+
+  public TransactionSequencer(GroupID groupID, TransactionBatchFactory batchFactory, LockAccounting lockAccounting,
                               SampledCounter numTransactionCounter, SampledCounter numBatchesCounter,
                               SampledCounter batchSizeCounter, Counter pendingBatchesSize) {
+    this.groupID = groupID;
     this.batchFactory = batchFactory;
     this.lockAccounting = lockAccounting;
     this.currentBatch = createNewBatch();
@@ -79,7 +83,7 @@ public class TransactionSequencer {
   }
 
   private ClientTransactionBatch createNewBatch() {
-    return batchFactory.nextBatch();
+    return batchFactory.nextBatch(groupID);
   }
 
   private boolean addTransactionToBatch(ClientTransaction txn, ClientTransactionBatch batch) {

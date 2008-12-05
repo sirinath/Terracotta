@@ -5,6 +5,7 @@
 package com.tc.object.tx;
 
 import com.tc.exception.ImplementMe;
+import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.session.SessionID;
@@ -32,11 +33,11 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
     this.transaction = txn;
   }
 
-  public void receivedAcknowledgement(SessionID sessionID, TransactionID ackTxID) {
+  public void receivedAcknowledgement(SessionID sessionID, TransactionID ackTxID, NodeID nodeID) {
     this.acked = ackTxID;
   }
 
-  public void receivedBatchAcknowledgement(TxnBatchID batchID) {
+  public void receivedBatchAcknowledgement(TxnBatchID batchID, NodeID nodeID) {
     this.batchAcked = batchID;
   }
 
@@ -56,4 +57,5 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
   public void stopProcessing() {
     throw new ImplementMe();
   }
+
 }

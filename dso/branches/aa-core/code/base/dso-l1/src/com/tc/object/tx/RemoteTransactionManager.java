@@ -4,6 +4,7 @@
  */
 package com.tc.object.tx;
 
+import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.session.SessionID;
@@ -22,9 +23,9 @@ public interface RemoteTransactionManager {
 
   public void commit(ClientTransaction transaction);
 
-  public void receivedAcknowledgement(SessionID sessionID, TransactionID txID);
+  public void receivedAcknowledgement(SessionID sessionID, TransactionID txID, NodeID nodeID);
 
-  public void receivedBatchAcknowledgement(TxnBatchID batchID);
+  public void receivedBatchAcknowledgement(TxnBatchID batchID, NodeID nodeID);
 
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback);
 
