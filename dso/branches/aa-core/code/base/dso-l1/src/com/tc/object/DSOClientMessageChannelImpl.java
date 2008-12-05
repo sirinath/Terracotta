@@ -126,7 +126,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return (JMXMessage) channel.createMessage(TCMessageType.JMX_MESSAGE);
   }
 
-  public CompletedTransactionLowWaterMarkMessage newCompletedTransactionLowWaterMarkMessage() {
+  public CompletedTransactionLowWaterMarkMessage newCompletedTransactionLowWaterMarkMessage(NodeID remoteID) {
     return (CompletedTransactionLowWaterMarkMessage) channel
         .createMessage(TCMessageType.COMPLETED_TRANSACTION_LOWWATERMARK_MESSAGE);
   }
@@ -135,7 +135,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return this;
   }
 
-  public CommitTransactionMessage newCommitTransactionMessage() {
+  public CommitTransactionMessage newCommitTransactionMessage(NodeID remoteNode) {
     return (CommitTransactionMessage) channel.createMessage(TCMessageType.COMMIT_TRANSACTION_MESSAGE);
   }
 

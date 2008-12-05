@@ -117,10 +117,8 @@ import com.tc.object.tx.ClientTransactionFactory;
 import com.tc.object.tx.ClientTransactionFactoryImpl;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.ClientTransactionManagerImpl;
-import com.tc.object.tx.LockAccounting;
 import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.RemoteTransactionManagerImpl;
-import com.tc.object.tx.TransactionBatchAccounting;
 import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
@@ -635,9 +633,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                     SampledCounter numBatchesCounter,
                                                                     SampledCounter batchSizeCounter,
                                                                     Counter pendingBatchesSize) {
-    return new RemoteTransactionManagerImpl(new ClientIDLogger(cidProvider, TCLogging
-        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, new TransactionBatchAccounting(),
-                                            new LockAccounting(), sessionManager, dsoChannel,
+    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    assert defaultGroups != null && defaultGroups.length == 1;
+    return new RemoteTransactionManagerImpl(defaultGroups[0], new ClientIDLogger(cidProvider, TCLogging
+        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, sessionManager, dsoChannel,
                                             outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                             batchSizeCounter, pendingBatchesSize);
   }
