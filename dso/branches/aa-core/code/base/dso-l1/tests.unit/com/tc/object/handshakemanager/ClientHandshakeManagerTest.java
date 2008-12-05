@@ -19,7 +19,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.ThreadUtil;
-import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.BatchSequenceProvider;
 import com.tc.util.sequence.BatchSequenceReceiver;
 
@@ -47,9 +46,8 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
   private void createHandshakeMgr() {
     mgr = new ClientHandshakeManagerImpl(TCLogging.getLogger(ClientHandshakeManagerImpl.class), channel, chmf,
-                                         new NullSink(), new NullSessionManager(),
-                                         new BatchSequence(new TestSequenceProvider(), 100), new Cluster(),
-                                         clientVersion, Collections.singletonList(callback));
+                                         new NullSink(), new NullSessionManager(), new Cluster(), clientVersion,
+                                         Collections.singletonList(callback));
   }
 
   public void tests() {

@@ -56,8 +56,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     newRrm();
 
     this.threadGroup = new ThreadGroup(getClass().getName());
-    manager = new RemoteObjectManagerImpl(new NullTCLogger(), cidProvider, rrmf, rmomf, new NullObjectRequestMonitor(),
-                                          500, new NullSessionManager());
+    manager = new RemoteObjectManagerImpl(GroupID.NULL_ID, new NullTCLogger(), cidProvider, rrmf, rmomf,
+                                          new NullObjectRequestMonitor(), 500, new NullSessionManager());
     rt = new RetrieverThreads(Thread.currentThread().getThreadGroup(), manager);
   }
 
@@ -89,7 +89,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (int i = 0; i < dnaCollectionCount; i++) {
       dnas = new ArrayList();
       dnas.add(new TestDNA(new ObjectID(i)));
-      manager.addAllObjects(new SessionID(i), i, dnas);
+      manager.addAllObjects(new SessionID(i), i, dnas, GroupID.NULL_ID);
     }
     assertEquals(dnaCollectionCount, manager.getDNACacheSize());
     DNA dna = manager.retrieve(new ObjectID(0));
@@ -121,7 +121,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     ThreadUtil.reallySleep(5000);
     Set missingSet = new HashSet();
     missingSet.add(new ObjectID(Long.MAX_VALUE));
-    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet);
+    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet, GroupID.NULL_ID);
     barrier.barrier();
   }
 
@@ -158,7 +158,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedNotResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++));
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), GroupID.NULL_ID);
     }
     // the threads waiting for the roots we just added should fall through.
     rt.waitForLowWatermark(count - expectedNotResent.size());
@@ -186,7 +186,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++));
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), GroupID.NULL_ID);
     }
 
     // all the threads should now be able to complete.
@@ -481,11 +481,10 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     public final NoExceptionLinkedQueue newMessageQueue = new NoExceptionLinkedQueue();
     public TestRequestRootMessage       message;
 
-    public RequestRootMessage newRequestRootMessage() {
+    public RequestRootMessage newRequestRootMessage(NodeID nodeID) {
       newMessageQueue.put(message);
       return this.message;
     }
-
   }
 
   private static class TestRequestRootMessage implements RequestRootMessage {
@@ -520,11 +519,10 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
     public TestRequestManagedObjectMessage message;
 
-    public RequestManagedObjectMessage newRequestManagedObjectMessage() {
+    public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID) {
       newMessageQueue.put(message);
       return message;
     }
-
   }
 
   private static class TestRequestManagedObjectMessage implements RequestManagedObjectMessage {
