@@ -70,9 +70,10 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     Assert.eval(btm.getLockIDs().size() > 0);
     GlobalTransactionID lowWaterMark = btm.getLowGlobalTransactionIDWatermark();
     if (!lowWaterMark.isNull()) {
-      gtxManager.setLowWatermark(lowWaterMark);
+      gtxManager.setLowWatermark(lowWaterMark, btm.getSourceNodeID());
     }
-    if (gtxManager.startApply(btm.getCommitterID(), btm.getTransactionID(), btm.getGlobalTransactionID())) {
+    if (gtxManager.startApply(btm.getCommitterID(), btm.getTransactionID(), btm.getGlobalTransactionID(), btm
+        .getSourceNodeID())) {
       Collection changes = btm.getObjectChanges();
       if (changes.size() > 0 || btm.getLookupObjectIDs().size() > 0 || btm.getNewRoots().size() > 0) {
 
@@ -110,7 +111,7 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     // XXX:: This is a potential race condition here 'coz after we decide to send an ACK
     // and before we actually send it, the server may go down and come back up !
     if (sessionManager.isCurrentSession(btm.getLocalSessionID())) {
-      AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage();
+      AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage(btm.getSourceNodeID());
       ack.initialize(btm.getCommitterID(), btm.getTransactionID());
       ack.send();
     }

@@ -18,7 +18,7 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
   public final NoExceptionLinkedQueue flushCalls = new NoExceptionLinkedQueue();
   public Collection                   transactionSequenceIDs;
 
-  public void setLowWatermark(GlobalTransactionID lowWatermark) {
+  public void setLowWatermark(GlobalTransactionID lowWatermark, NodeID nodeID) {
     throw new ImplementMe();
   }
 
@@ -30,15 +30,16 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
     throw new ImplementMe();
   }
 
-  public boolean startApply(NodeID nodeID, TransactionID transactionID, GlobalTransactionID globalTransactionID) {
-    throw new ImplementMe();
-  }
-
   public int size() {
     throw new ImplementMe();
   }
 
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback) {
     return true;
+  }
+
+  public boolean startApply(NodeID clientID, TransactionID transactionID, GlobalTransactionID globalTransactionID,
+                            NodeID remoteGroupID) {
+    throw new ImplementMe();
   }
 }

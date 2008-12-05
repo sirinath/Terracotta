@@ -105,7 +105,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return this;
   }
 
-  public AcknowledgeTransactionMessage newAcknowledgeTransactionMessage() {
+  public AcknowledgeTransactionMessage newAcknowledgeTransactionMessage(NodeID remoteNode) {
     return (AcknowledgeTransactionMessage) channel.createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
   }
 
