@@ -67,9 +67,13 @@ class StaticResources
     FilePath.new(@root_directory, '..', '..', '..', 'code', 'base', 'modules.def.yml')
   end
 
+  def kits_directory
+    FilePath.new(@root_directory, '..', '..', 'kits')
+  end
+
   def ia_project_directory(flavor)
     (flavor !~ /opensource/i) ? FilePath.new(@root_directory, '..', '..', '..', 'kits', 'source', 'installer') :
-      FilePath.new(@root_directory, '..', '..',  'kits', 'source', 'installer')
+      FilePath.new(kits_directory, 'source', 'installer')
   end
 
   def jrefactory_config_directory
@@ -170,11 +174,11 @@ class StaticResources
   end
 
   def templates_directory
-    FilePath.new(@root_directory, '..', '..', 'kits', 'source', 'templates')
+    FilePath.new(kits_directory, 'source', 'templates')
   end
 
   def skeletons_directory
-    FilePath.new(@root_directory, '..', '..', 'kits', 'skeletons')
+    FilePath.new(kits_directory, 'skeletons')
   end
 
   def enterprise_skeletons_directory
@@ -182,11 +186,19 @@ class StaticResources
   end
 
   def documentations_directory
-    FilePath.new(@root_directory, '..', '..', 'kits', 'source', 'docs')
+    FilePath.new(kits_directory, 'source', 'docs')
   end
 
   def notices_directory
-    FilePath.new(documentations_directory, 'distribute', 'notices')
+    FilePath.new(documentations_directory, 'notices')
+  end
+
+  def license_file
+    FilePath.new(notices_directory, 'license.txt')
+  end
+
+  def thirdparty_license_file
+    FilePath.new(notices_directory, 'thirdpartylicenses.txt')
   end
 
   # Where does the Ant executable live?
