@@ -389,7 +389,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     depends :init, :compile
     @internal_config_source['tc.tests.configuration.transparent-tests.mode'] = 'active-active'
     @internal_config_source['test_timeout'] = (30 * 60).to_s
-    run_tests(FixedModuleTypeTestSet.new([ 'dso-crash-tests' ], [ 'system' ]))
+    run_tests(FixedModuleTypeTestSet.new([ 'ent-active-active-tests' ], [ 'system' ]))
   end
   
   # Prepares to run tests in the given module of the given type, then writes out all the information
@@ -465,16 +465,8 @@ END
 
     generated_source_dir.delete
 
-    # FIXME 2005-09-27 andrew - We really should be including:
-    #
-    #    :executable => @jvm_set['compile-%s' % @module_set['common'].compiler_version].java.to_s
-    #
-    # as an attribute here. However, doing so seems to cause XMLBeans to not
-    # actually work; you get "Unrecognized option: -d" from the JVM. Once they
-    # fix XMLBeans (I'm assuming it's their error), we should put this back
-    # so we make sure we compile with the right JVM.
     ant.xmlbean(:destfile => dest_jar.to_s,
-      :executable => @jvm_set['J2SE-1.4'].javac.to_s,
+      :executable => @jvm_set['J2SE-1.5'].javac.to_s,
       :debug => true, :classpath => @module_set['common'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
       :srcgendir => generated_source_dir.to_s) {
       ant.fileset(:dir => schema_dir.to_s, :includes => '*.xsd')
@@ -512,7 +504,7 @@ END
     generated_source_dir.delete
 
     ant.xmlbean(:destfile => dest_jar.to_s,
-      :executable => @jvm_set['J2SE-1.4'].javac.to_s,
+      :executable => @jvm_set['J2SE-1.5'].javac.to_s,
       :debug => true, :classpath => @module_set['dso-common'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
       :srcgendir => generated_source_dir.to_s) {
       ant.fileset(:dir => schema_dir.to_s, :includes => 'l1-reconnect-properties.xsd')
@@ -529,7 +521,7 @@ END
     generated_source_dir.delete
 
     ant.xmlbean(:destfile => dest_jar.to_s,
-      :executable => @jvm_set['J2SE-1.4'].javac.to_s,
+      :executable => @jvm_set['J2SE-1.5'].javac.to_s,
       :debug => true, :classpath => @module_set['dso-statistics'].subtree('src').classpath(@build_results, :full, :runtime).to_s,
       :srcgendir => generated_source_dir.to_s) {
       ant.fileset(:dir => schema_dir.to_s, :includes => '*.xsd')
@@ -583,6 +575,25 @@ END
     arguments = all_remaining_arguments
     jvmargs = config_source.as_array('jvmargs') || [ ]
     do_run_class(jvm, "eclipsegen.Main", arguments, jvmargs, subtree, FilePath.new(@basedir, build_module_name))    
+  end
+  
+  def generate_license
+    fail("Only EE branch checkout can be used for license generation") unless @build_environment.is_ee_branch?
+    build_module_name = 'ent-license-generator'
+    subtree_name = 'src'
+    build_module = @module_set[build_module_name]
+    subtree = build_module.subtree(subtree_name)
+
+    build_module.compile(@jvm_set, @build_results, ant, config_source, @build_environment)
+
+    if config_jre = config_source['jdk']
+      jvm = @jvm_set[config_jre]
+    else
+      jvm = build_module.jdk
+    end
+    arguments = all_remaining_arguments
+    jvmargs = config_source.as_array('jvmargs') || [ ]
+    do_run_class(jvm, "com.tc.license.StandardTerracottaLicenseGenerator", arguments, jvmargs, subtree)    
   end
 
   # Runs a class, as specified on the command line. Takes one argument, which is the name of the test;
@@ -727,7 +738,7 @@ END
     puts classpath
   end
 
-  # Creates a boot JAR. jvm_spec (the argument) can be either '1.4', '1.5', or a path to a
+  # Creates a boot JAR. jvm_spec (the argument) can be either '1.5', '1.6', or a path to a
   # JAVA_HOME. Creates the boot JAR for this JVM, and prints out where it put it.
   def create_boot_jar(jvm_spec)
     depends :init, :compile
@@ -991,9 +1002,7 @@ END
     end
   end
 
-  # Finds the JVMs that we need to use -- one each for compiling and testing, for 1.4 and 1.5.
-  # This is where the 'run-1.4-tests-with-1.5' property comes into play; we assign the
-  # 'tests-1.4' JVM to a 1.4 or 1.5 JVM, based on how this property is set.
+  # Finds the JVMs that we need to use -- one each for compiling and testing
   def find_jvms
 
     return @jvm_set if @jvm_set
@@ -1068,7 +1077,6 @@ END
       'jvmargs'  => config_source['jvmargs'],
 
       'tests-jdk' => @jvm_set['tests-jdk'].short_description,
-      'JAVA_HOME_14' => @jvm_set['1.4'].short_description,
       'JAVA_HOME_15' => @jvm_set['1.5'].short_description,
       'JAVA_HOME_16' => @jvm_set['1.6'].short_description
     }

@@ -28,9 +28,9 @@ public interface HaConfig {
   
   ServerGroup[] getAllActiveServerGroups();
 
-  Node[] makeAllNodes();
-
   Node makeThisNode();
+  
+  Node[] getThisGroupNodes();
   
   Node[] getAllNodes();
 }

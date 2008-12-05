@@ -11,6 +11,7 @@ import org.apache.xmlbeans.XmlObject;
 import com.tc.config.schema.context.ConfigContext;
 import com.tc.config.schema.dynamic.ObjectArrayConfigItem;
 import com.tc.config.schema.dynamic.ObjectArrayXPathBasedConfigItem;
+import com.tc.util.ActiveCoordintorHelper;
 import com.tc.util.Assert;
 import com.terracottatech.config.ActiveServerGroup;
 import com.terracottatech.config.ActiveServerGroups;
@@ -32,7 +33,7 @@ import java.util.Set;
  */
 public class L2ConfigForL1Object implements L2ConfigForL1 {
 
-  private static final String         DEFAULT_HOST = "localhost";
+  private static final String         DEFAULT_HOST     = "localhost";
 
   private final ConfigContext         l2sContext;
   private final ConfigContext         systemContext;
@@ -42,6 +43,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
   private final Map                   l2DataByName;
   private final Map                   l2DataByGroupId;
   private ObjectArrayConfigItem[]     l2DataByGroup;
+  private int                         coordinatorGrpId = -1;
 
   public L2ConfigForL1Object(ConfigContext l2sContext, ConfigContext systemContext) {
     this(l2sContext, systemContext, null);
@@ -123,11 +125,19 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
             L2Data data = (L2Data) l2DataByName.get(members[j]);
             Assert.assertNotNull(data);
             data.setGroupId(i);
+            String groupName = asgArray[i].getGroupName();
+            if (groupName == null) {
+              groupName = ActiveCoordintorHelper.getGroupNameFrom(asgArray[i].getMembers().getMemberArray());
+            }
+
+            data.setGroupName(groupName);
             groupList.add(data);
           }
         }
+
+        coordinatorGrpId = ActiveCoordintorHelper.getCoordinatorGroup(asgArray);
       }
-    };    
+    };
   }
 
   private int getL2IntDefault(String xpath) {
@@ -141,10 +151,9 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
   public ObjectArrayConfigItem l2Data() {
     return this.l2Data;
   }
-  
+
   public ObjectArrayConfigItem[] getL2DataByGroup() {
-    if(l2DataByGroup == null)
-      createL2DataByGroup();
+    if (l2DataByGroup == null) createL2DataByGroup();
 
     return l2DataByGroup;
   }
@@ -156,6 +165,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
     this.l2DataByGroup = new ObjectArrayConfigItem[keys.size()];
 
     int l2DataByGroupPosition = 0;
+    boolean isCoordinatorSet = false;
     for (Iterator iter = keys.iterator(); iter.hasNext();) {
       Integer key = (Integer) iter.next();
       List l2DataList = (List) this.l2DataByGroupId.get(key);
@@ -165,14 +175,23 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
         L2Data data = (L2Data) iterator.next();
         l2DataArray[position++] = data;
       }
-      this.l2DataByGroup[l2DataByGroupPosition] = new ObjectArrayXPathBasedConfigItem(this.l2sContext, ".",
-          new L2Data[] { defaultL2Data }) {
-        protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
-          return l2DataArray;
-        }
-      };
-      l2DataByGroupPosition++;
+      if ((l2DataByGroupPosition != coordinatorGrpId) || isCoordinatorSet) {
+        setL2DataInGrp(l2DataByGroupPosition + 1, l2DataArray);
+        l2DataByGroupPosition++;
+      } else {
+        setL2DataInGrp(0, l2DataArray);
+        isCoordinatorSet = true;
+      }
     }
+  }
+
+  private void setL2DataInGrp(int l2DataByGroupPosition, final L2Data[] l2DataArray) {
+    this.l2DataByGroup[l2DataByGroupPosition] = new ObjectArrayXPathBasedConfigItem(this.l2sContext, ".",
+        new L2Data[] { defaultL2Data }) {
+      protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
+        return l2DataArray;
+      }
+    };
   }
 
 }

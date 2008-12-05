@@ -13,6 +13,7 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.repository.MutableBeanRepository;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.StandardL2TVSConfigurationSetupManager;
+import com.tc.util.ActiveCoordintorHelper;
 import com.terracottatech.config.ActiveServerGroup;
 import com.terracottatech.config.Ha;
 import com.terracottatech.config.Members;
@@ -32,6 +33,7 @@ public class ActiveServerGroupConfigObject extends BaseNewConfigObject implement
   private final int           groupId;
   private final NewHaConfig   haConfig;
   private final MembersConfig membersConfig;
+  private final String        grpName;
 
   public ActiveServerGroupConfigObject(ConfigContext context, StandardL2TVSConfigurationSetupManager setupManager,
                                        int groupId) {
@@ -41,12 +43,23 @@ public class ActiveServerGroupConfigObject extends BaseNewConfigObject implement
 
     this.groupId = groupId;
 
+    String groupName = group.getGroupName();
+    if (groupName == null) {
+      groupName = ActiveCoordintorHelper.getGroupNameFrom(group.getMembers().getMemberArray());
+    }
+
+    this.grpName = groupName;
+
     membersConfig = new MembersConfigObject(createContext(setupManager, true, group));
     haConfig = new NewHaConfigObject(createContext(setupManager, false, group));
   }
 
   public NewHaConfig getHa() {
     return this.haConfig;
+  }
+
+  public String getGroupName() {
+    return grpName;
   }
 
   public MembersConfig getMembers() {
@@ -107,5 +120,4 @@ public class ActiveServerGroupConfigObject extends BaseNewConfigObject implement
     }
     return false;
   }
-
 }

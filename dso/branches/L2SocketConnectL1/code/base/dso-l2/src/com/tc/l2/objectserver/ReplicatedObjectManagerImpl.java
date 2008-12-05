@@ -29,6 +29,7 @@ import com.tc.objectserver.dgc.impl.GarbageCollectorEventListenerAdapter;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
 import com.tc.util.Assert;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.SequenceGenerator;
 import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorException;
@@ -281,17 +282,13 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
 
 
-    private void notifyGCResultToPassives(int iteration, final SortedSet deleted) {
+    private void notifyGCResultToPassives(int iteration, final ObjectIDSet deleted) {
       if (deleted.isEmpty()) return;
       final GCResultMessage msg = GCResultMessageFactory.createGCResultMessage(iteration, deleted);
       final long id = gcIdGenerator.incrementAndGet();
       transactionManager.callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionLister() {
         public void onCompletion() {
-          try {
-            groupManager.sendAll(msg);
-          } catch (GroupException e) {
-            logger.error("Error sending gc results : ", e);
-          }
+          groupManager.sendAll(msg);
         }
 
         public String toString() {

@@ -131,6 +131,9 @@ public class ConfigLoader {
     if (webApplication.getSynchronousWrite()) {
       config.addSynchronousWriteApplication(webApplication.getStringValue());
     }
+    if (webApplication.getSessionLocking()) {
+      config.addSessionLockedApplication(webApplication.getStringValue());
+    }
   }
 
   private void addWebApplications(WebApplications webApplicationsList) {
@@ -178,8 +181,11 @@ public class ConfigLoader {
     loadTransientFields(springApp.getTransientFields());
     loadInstrumentedClasses(springApp.getInstrumentedClasses());
 
-    if (springApp.getSessionSupport()) {
+    if (springApp.getSessionSupport() != null && springApp.getSessionSupport().getBooleanValue()) {
       config.addApplicationName(springApp.getName()); // enable session support
+      if (springApp.getSessionSupport().getSessionLocking()) {
+        config.addSessionLockedApplication(springApp.getName());
+      }
     }
 
     if (springApp.getApplicationContexts() != null) {
