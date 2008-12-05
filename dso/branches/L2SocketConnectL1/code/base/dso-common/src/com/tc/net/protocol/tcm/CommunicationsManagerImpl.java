@@ -287,14 +287,13 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
         return rv;
       }
     };
-    callbackPort = addr.getPort();
     ServerStackProvider stackProvider = new ServerStackProvider(TCLogging.getLogger(ServerStackProvider.class),
                                                                 initialConnectionIDs, stackHarnessFactory,
                                                                 channelFactory, transportFactory,
                                                                 this.transportMessageFactory, connectionIdFactory,
                                                                 this.connectionPolicy,
                                                                 new WireProtocolAdaptorFactoryImpl(httpSink),
-                                                                wireProtocolMessageSink, callbackPort);
+                                                                wireProtocolMessageSink);
     return connectionManager.createListener(addr, stackProvider, Constants.DEFAULT_ACCEPT_QUEUE_DEPTH, resueAddr);
   }
 
