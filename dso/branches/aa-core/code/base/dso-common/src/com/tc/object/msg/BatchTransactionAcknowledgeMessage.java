@@ -4,17 +4,15 @@
  */
 package com.tc.object.msg;
 
-import com.tc.net.NodeID;
+import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.tx.TxnBatchID;
 
-public interface BatchTransactionAcknowledgeMessage {
+public interface BatchTransactionAcknowledgeMessage extends TCMessage {
 
   public void initialize(TxnBatchID id);
 
   public TxnBatchID getBatchID();
 
   public void send();
-
-  public NodeID getSourceNodeID();
 
 }

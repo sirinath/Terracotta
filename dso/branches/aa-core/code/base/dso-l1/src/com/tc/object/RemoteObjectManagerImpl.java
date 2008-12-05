@@ -7,6 +7,7 @@ package com.tc.object;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.net.ClientID;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
@@ -63,6 +64,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
                                                                                  .getProperties()
                                                                                  .getBoolean(
                                                                                              TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_LOGGING_ENABLED);
+  private final GroupID                            groupID;
   private final int                                defaultDepth;
   private State                                    state                     = RUNNING;
   private ObjectIDSet                              removeObjects             = new ObjectIDSet();
@@ -72,9 +74,10 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
   private long                                     hit                       = 0;
   private long                                     miss                      = 0;
 
-  public RemoteObjectManagerImpl(TCLogger logger, ClientIDProvider cip, RequestRootMessageFactory rrmFactory,
-                                 RequestManagedObjectMessageFactory rmomFactory, ObjectRequestMonitor requestMonitor,
-                                 int defaultDepth, SessionManager sessionManager) {
+  public RemoteObjectManagerImpl(GroupID groupID, TCLogger logger, ClientIDProvider cip,
+                                 RequestRootMessageFactory rrmFactory, RequestManagedObjectMessageFactory rmomFactory,
+                                 ObjectRequestMonitor requestMonitor, int defaultDepth, SessionManager sessionManager) {
+    this.groupID = groupID;
     this.logger = logger;
     this.cip = cip;
     this.rrmFactory = rrmFactory;
@@ -214,7 +217,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
   }
 
   private RequestManagedObjectMessage createRequestManagedObjectMessage(ObjectRequestContext ctxt, ObjectIDSet removed) {
-    RequestManagedObjectMessage rmom = rmomFactory.newRequestManagedObjectMessage();
+    RequestManagedObjectMessage rmom = rmomFactory.newRequestManagedObjectMessage(groupID);
     ObjectIDSet requestedObjectIDs = ctxt.getObjectIDs();
     rmom.initialize(ctxt, requestedObjectIDs, removed);
     return rmom;
@@ -246,12 +249,12 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
   }
 
   private RequestRootMessage createRootMessage(String name) {
-    RequestRootMessage rrm = rrmFactory.newRequestRootMessage();
+    RequestRootMessage rrm = rrmFactory.newRequestRootMessage(groupID);
     rrm.initialize(name);
     return rrm;
   }
 
-  public synchronized void addRoot(String name, ObjectID id) {
+  public synchronized void addRoot(String name, ObjectID id, NodeID nodeID) {
     waitUntilRunning();
     if (id.isNull()) {
       rootRequests.remove(name);
@@ -266,7 +269,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
     notifyAll();
   }
 
-  public synchronized void addAllObjects(SessionID sessionID, long batchID, Collection dnas) {
+  public synchronized void addAllObjects(SessionID sessionID, long batchID, Collection dnas, NodeID nodeID) {
     waitUntilRunning();
     if (!sessionManager.isCurrentSession(sessionID)) {
       logger.warn("Ignoring DNA added from a different session: " + sessionID + ", " + sessionManager);
@@ -287,7 +290,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
     notifyAll();
   }
 
-  public synchronized void objectsNotFoundFor(SessionID sessionID, long batchID, Set missingOIDs) {
+  public synchronized void objectsNotFoundFor(SessionID sessionID, long batchID, Set missingOIDs, NodeID nodeID) {
     waitUntilRunning();
     if (!sessionManager.isCurrentSession(sessionID)) {
       logger.warn("Ignoring Missing Object IDs " + missingOIDs + " from a different session: " + sessionID + ", "

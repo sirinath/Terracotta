@@ -79,6 +79,7 @@ import com.tc.object.handler.ReceiveTransactionHandler;
 import com.tc.object.handshakemanager.ClientHandshakeManager;
 import com.tc.object.handshakemanager.ClientHandshakeManagerImpl;
 import com.tc.object.idprovider.api.ObjectIDProvider;
+import com.tc.object.idprovider.impl.ObjectIDClientHandshakeRequester;
 import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
@@ -103,10 +104,8 @@ import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
-import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
-import com.tc.object.msg.RequestRootMessageFactory;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
 import com.tc.object.net.DSOClientMessageChannel;
@@ -390,8 +389,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     }
 
     RemoteObjectManager remoteObjectManager = createRemoteObjectManager(new ClientIDLogger(channel
-        .getClientIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), channel.getClientIDProvider(), channel
-        .getRequestRootMessageFactory(), channel.getRequestManagedObjectMessageFactory(),
+        .getClientIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), channel,
                                                                         new NullObjectRequestMonitor(), faultCount,
                                                                         sessionManager);
 
@@ -473,10 +471,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(objectManager);
     clientHandshakeCallbacks.add(remoteObjectManager);
     clientHandshakeCallbacks.add(rtxManager);
+    clientHandshakeCallbacks.add(getObjectIDClientHandshakeRequester(sequence));
     ProductInfo pInfo = ProductInfo.getInstance();
     clientHandshakeManager = new ClientHandshakeManagerImpl(new ClientIDLogger(channel.getClientIDProvider(), TCLogging
         .getLogger(ClientHandshakeManagerImpl.class)), channel, channel.getClientHandshakeMessageFactory(), pauseStage
-        .getSink(), sessionManager, sequence, cluster, pInfo.version(), Collections
+        .getSink(), sessionManager, cluster, pInfo.version(), Collections
         .unmodifiableCollection(clientHandshakeCallbacks));
     channel.addListener(clientHandshakeManager);
 
@@ -582,16 +581,21 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   /*
    * Overwrite this routine to do active-active, TODO:: These should go into some interface
    */
-  protected RemoteObjectManager createRemoteObjectManager(
-                                                          TCLogger logger,
-                                                          ClientIDProvider clientIDProvider,
-                                                          RequestRootMessageFactory requestRootMessageFactory,
-                                                          RequestManagedObjectMessageFactory requestManagedObjectMessageFactory,
+  protected ObjectIDClientHandshakeRequester getObjectIDClientHandshakeRequester(BatchSequence sequence) {
+    return new ObjectIDClientHandshakeRequester(sequence);
+  }
+
+  /*
+   * Overwrite this routine to do active-active, TODO:: These should go into some interface
+   */
+  protected RemoteObjectManager createRemoteObjectManager(TCLogger logger, DSOClientMessageChannel dsoChannel,
                                                           ObjectRequestMonitor objectRequestMonitor, int faultCount,
                                                           SessionManager sessionManager) {
-    return new RemoteObjectManagerImpl(logger, clientIDProvider, requestRootMessageFactory,
-                                       requestManagedObjectMessageFactory, objectRequestMonitor, faultCount,
-                                       sessionManager);
+    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    assert defaultGroups != null && defaultGroups.length == 1;
+    return new RemoteObjectManagerImpl(defaultGroups[0], logger, dsoChannel.getClientIDProvider(), dsoChannel
+        .getRequestRootMessageFactory(), dsoChannel.getRequestManagedObjectMessageFactory(), objectRequestMonitor,
+                                       faultCount, sessionManager);
   }
 
   /*

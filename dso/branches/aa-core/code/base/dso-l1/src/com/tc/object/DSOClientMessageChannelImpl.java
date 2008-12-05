@@ -85,7 +85,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return this;
   }
 
-  public RequestRootMessage newRequestRootMessage() {
+  public RequestRootMessage newRequestRootMessage(NodeID nodeID) {
     return (RequestRootMessage) channel.createMessage(TCMessageType.REQUEST_ROOT_MESSAGE);
   }
 
@@ -93,7 +93,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return this;
   }
 
-  public RequestManagedObjectMessage newRequestManagedObjectMessage() {
+  public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID) {
     return (RequestManagedObjectMessage) channel.createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE);
   }
 
@@ -154,5 +154,4 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
   public GroupID[] getGroupIDs() {
     return groups;
   }
-
 }

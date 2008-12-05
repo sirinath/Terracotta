@@ -23,7 +23,6 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.State;
 import com.tc.util.Util;
-import com.tc.util.sequence.BatchSequenceReceiver;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,7 +40,6 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   private final TCLogger                      logger;
   private final Sink                          pauseSink;
   private final SessionManager                sessionManager;
-  private final BatchSequenceReceiver         sequenceReceiver;
   private final Cluster                       cluster;
   private final String                        clientVersion;
   private final Map                           groupStates        = new HashMap();
@@ -51,14 +49,12 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
 
   public ClientHandshakeManagerImpl(TCLogger logger, DSOClientMessageChannel channel,
                                     ClientHandshakeMessageFactory chmf, Sink pauseSink, SessionManager sessionManager,
-                                    BatchSequenceReceiver sequenceReceiver, Cluster cluster, String clientVersion,
-                                    Collection callbacks) {
+                                    Cluster cluster, String clientVersion, Collection callbacks) {
     this.logger = logger;
     this.cidp = channel.getClientIDProvider();
     this.chmf = chmf;
     this.pauseSink = pauseSink;
     this.sessionManager = sessionManager;
-    this.sequenceReceiver = sequenceReceiver;
     this.cluster = cluster;
     this.clientVersion = clientVersion;
     this.callBacks = callbacks;
@@ -81,7 +77,6 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
 
     ClientHandshakeMessage handshakeMessage = chmf.newClientHandshakeMessage(remoteNode);
     handshakeMessage.setClientVersion(clientVersion);
-    handshakeMessage.setIsObjectIDsRequested(!sequenceReceiver.hasNext());
 
     notifyCallbackOnHandshake(remoteNode, handshakeMessage);
 
