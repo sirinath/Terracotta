@@ -37,8 +37,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 /**
- * This class is a kludge but I think it will do the trick for now. It is responsible for any communications to the
- * server for object retrieval and removal
+ * This class is responsible for any communications to the server for object retrieval and removal
  */
 public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHandshakeCallback {
 

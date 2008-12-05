@@ -9,6 +9,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.NodeID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.protocol.NetworkStackID;
@@ -35,16 +36,18 @@ import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl implements ClientGroupMessageChannel {
-  private static final TCLogger       logger          = TCLogging.getLogger(ClientGroupMessageChannel.class);
+  private static final TCLogger       logger = TCLogging.getLogger(ClientGroupMessageChannel.class);
   private final TCMessageFactory      msgFactory;
   private final SessionProvider       sessionProvider;
 
   private final CommunicationsManager communicationsManager;
-  private final LinkedHashMap         groupChannelMap = new LinkedHashMap();
+  private final Map                   groupChannelMap;
   private final GroupID               coordinatorGroupID;
 
   public ClientGroupMessageChannelImpl(TCMessageFactory msgFactory, SessionProvider sessionProvider,
@@ -57,19 +60,21 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
 
     logger.info("Create active channels");
     Assert.assertTrue(addressProviders.length > 0);
-    coordinatorGroupID = createSubChannel(maxReconnectTries, addressProviders[0]);
+    Map channels = new LinkedHashMap();
+    coordinatorGroupID = createSubChannel(channels, maxReconnectTries, addressProviders[0]);
     for (int i = 1; i < addressProviders.length; ++i) {
-      createSubChannel(maxReconnectTries, addressProviders[i]);
+      createSubChannel(channels, maxReconnectTries, addressProviders[i]);
     }
+    this.groupChannelMap = Collections.unmodifiableMap(channels);
   }
 
-  private GroupID createSubChannel(final int maxReconnectTries, ConnectionAddressProvider addressProvider) {
+  private GroupID createSubChannel(Map channels, final int maxReconnectTries, ConnectionAddressProvider addressProvider) {
     ClientMessageChannel channel = this.communicationsManager
         .createClientChannel(this.sessionProvider, maxReconnectTries, null, 0, 10000, addressProvider,
                              TransportHandshakeMessage.NO_CALLBACK_PORT, null, this.msgFactory,
                              new TCMessageRouterImpl());
     GroupID groupID = (GroupID) channel.getRemoteNodeID();
-    groupChannelMap.put(groupID, channel);
+    channels.put(groupID, channel);
     logger.info("Created sub-channel " + groupID + ": " + addressProvider);
     return groupID;
   }
@@ -90,9 +95,9 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
     return (GroupID[]) groupChannelMap.keySet().toArray(new GroupID[groupChannelMap.size()]);
   }
 
-  public TCMessage createMessage(GroupID groupID, TCMessageType type) {
-    ClientMessageChannel ch = (ClientMessageChannel) groupChannelMap.get(groupID);
-    Assert.assertNotNull(ch);
+  public TCMessage createMessage(NodeID nodeID, TCMessageType type) {
+    ClientMessageChannel ch = (ClientMessageChannel) groupChannelMap.get(nodeID);
+    if (ch == null) { throw new AssertionError("ClientMessageChannel is null for " + nodeID + " : Type : " + type); }
     TCMessage rv = msgFactory.createMessage(ch, type);
     return rv;
   }
@@ -236,7 +241,7 @@ public class ClientGroupMessageChannelImpl extends ClientMessageChannelImpl impl
    * Notify connected every channel connected. Notify disconnected on every channel disconnected
    */
   private class ClientGroupMessageChannelEventListener implements ChannelEventListener {
-    private final ChannelEventListener      listener;
+    private final ChannelEventListener listener;
 
     public ClientGroupMessageChannelEventListener(ChannelEventListener listener) {
       this.listener = listener;

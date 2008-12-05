@@ -103,8 +103,10 @@ import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
+import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
+import com.tc.object.msg.RequestRootMessageFactory;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
 import com.tc.object.net.DSOClientMessageChannel;
@@ -368,11 +370,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                         gtxManager), sessionManager, lockStatManager,
                                     new ClientLockManagerConfigImpl(l1Properties.getPropertiesFor("lockmanager")));
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
-    RemoteObjectManager remoteObjectManager = new RemoteObjectManagerImpl(new ClientIDLogger(channel
-        .getClientIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), channel.getClientIDProvider(), channel
-        .getRequestRootMessageFactory(), channel.getRequestManagedObjectMessageFactory(),
-                                                                          new NullObjectRequestMonitor(), faultCount,
-                                                                          sessionManager);
 
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(channel
         .getObjectIDBatchRequestMessageFactory());
@@ -393,6 +390,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                           outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                           batchSizeCounter, pendingBatchesSize);
     }
+
+    RemoteObjectManager remoteObjectManager = createRemoteObjectManager(new ClientIDLogger(channel
+        .getClientIDProvider(), TCLogging.getLogger(RemoteObjectManager.class)), channel.getClientIDProvider(), channel
+        .getRequestRootMessageFactory(), channel.getRequestManagedObjectMessageFactory(),
+                                                                        new NullObjectRequestMonitor(), faultCount,
+                                                                        sessionManager);
 
     objectManager = createObjectManager(remoteObjectManager, config, idProvider, new ClockEvictionPolicy(-1),
                                         runtimeLogger, channel.getClientIDProvider(), classProvider, classFactory,
@@ -581,11 +584,25 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   /*
    * Overwrite this routine to do active-active, TODO:: These should go into some interface
    */
+  protected RemoteObjectManager createRemoteObjectManager(
+                                                          TCLogger logger,
+                                                          ClientIDProvider clientIDProvider,
+                                                          RequestRootMessageFactory requestRootMessageFactory,
+                                                          RequestManagedObjectMessageFactory requestManagedObjectMessageFactory,
+                                                          ObjectRequestMonitor objectRequestMonitor, int faultCount,
+                                                          SessionManager sessionManager) {
+    return new RemoteObjectManagerImpl(logger, clientIDProvider, requestRootMessageFactory,
+                                       requestManagedObjectMessageFactory, objectRequestMonitor, faultCount,
+                                       sessionManager);
+  }
+
+  /*
+   * Overwrite this routine to do active-active, TODO:: These should go into some interface
+   */
   protected ClientObjectManagerImpl createObjectManager(RemoteObjectManager remoteObjectManager,
                                                         DSOClientConfigHelper dsoConfig, ObjectIDProvider idProvider,
                                                         ClockEvictionPolicy clockEvictionPolicy,
-                                                        RuntimeLogger rtLogger,
-                                                        ClientIDProvider clientIDProvider,
+                                                        RuntimeLogger rtLogger, ClientIDProvider clientIDProvider,
                                                         ClassProvider classProviderLocal, TCClassFactory classFactory,
                                                         TCObjectFactory objectFactory, Portability portability,
                                                         DSOClientMessageChannel dsoChannel,

@@ -35,6 +35,7 @@ import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.net.DSOClientMessageChannel;
+import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.util.IdentityWeakHashMap;
 import com.tc.object.util.ToggleableStrongReference;
@@ -211,7 +212,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private void assertNotPaused(Object message) {
     if (state == PAUSED) throw new AssertionError(message + ": " + state);
   }
-  
+
   protected synchronized boolean isPaused() {
     return state == PAUSED;
   }
@@ -990,7 +991,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
-      obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
+      obj = factory.getNewInstance(nextObjectID(txManager.getCurrentTransaction()), pojo, pojo.getClass(), true);
       txManager.createObject(obj);
       basicAddLocal(obj, false);
       executePostCreateMethod(pojo);
@@ -1014,7 +1015,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
-      obj = factory.getNewInstance(nextObjectID(), pojo, pojo.getClass(), true);
+      obj = factory.getNewInstance(nextObjectID(txManager.getCurrentTransaction()), pojo, pojo.getClass(), true);
       pendingCreateTCObjects.add(obj);
       pendingCreatePojos.add(pojo);
       basicAddLocal(obj, false);
@@ -1044,8 +1045,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return !pendingCreateTCObjects.isEmpty();
   }
 
-  private ObjectID nextObjectID() {
-    return idProvider.next();
+  private ObjectID nextObjectID(ClientTransaction txn) {
+    return idProvider.next(txn);
   }
 
   public WeakReference createNewPeer(TCClass clazz, DNA dna) {

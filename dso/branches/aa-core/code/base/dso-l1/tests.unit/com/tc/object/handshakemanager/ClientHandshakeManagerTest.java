@@ -188,7 +188,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     public TestClientHandshakeMessage   message;
     public final NoExceptionLinkedQueue newMessageQueue = new NoExceptionLinkedQueue();
 
-    public ClientHandshakeMessage newClientHandshakeMessage() {
+    public ClientHandshakeMessage newClientHandshakeMessage(NodeID remoteNode) {
       newMessageQueue.put(message);
       return message;
     }
