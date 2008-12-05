@@ -299,7 +299,7 @@ public class ClassProcessorHelper {
     if (tcHomeDir == null) {
       ClassLoader classPathLoader = sun.misc.Launcher.getLauncher().getClassLoader();
       URL[] systemURLS = ((URLClassLoader) classPathLoader).getURLs();
-      return (URL[]) systemURLS.clone();
+      return systemURLS.clone();
     }
 
     File tcLib = new File(tcHomeDir, "lib");
@@ -756,6 +756,10 @@ public class ClassProcessorHelper {
    */
   public static int getSessionLockType(String appName) {
     return globalContext.getSessionLockType(appName);
+  }
+  
+  public static boolean isApplicationSessionLocked(String appName) {
+    return globalContext.isApplicationSessionLocked(appName);
   }
 
   private static void traceNamedLoader(final NamedClassLoader ncl) {

@@ -366,7 +366,6 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
     getNetInfo(serverLsnr.getBindPort());
-    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 2);
 
     // HC START stage:
@@ -382,7 +381,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
     ThreadUtil.reallySleep(5000);
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
-    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
+    getNetInfo(serverLsnr.getBindPort());
     assertTrue(netstat.getTcpEstablished() == 0);
   }
 
@@ -428,7 +427,6 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
     getNetInfo(serverLsnr.getBindPort());
-    System.out.println("XXX tcp estd : " + netstat.getTcpEstablished());
     assertTrue(netstat.getTcpEstablished() == 2);
 
     // HC START stage:
