@@ -2690,7 +2690,7 @@ public class SessionIntegratorFrame extends Frame implements PropertyChangeListe
   }
 
   public void modelChanged() {
-    setupEditorPanels();
+//    setupEditorPanels();
     updateXmlPane();
 
     if (false && isL2Ready() && !m_handlingAppEvent) {
