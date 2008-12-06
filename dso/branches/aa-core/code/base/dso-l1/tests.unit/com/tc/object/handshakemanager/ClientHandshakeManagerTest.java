@@ -224,7 +224,6 @@ public class ClientHandshakeManagerTest extends TCTestCase {
       unpaused.incrementAndGet();
       this.disconnected = disconnectedCount;
     }
-
   }
 
 }

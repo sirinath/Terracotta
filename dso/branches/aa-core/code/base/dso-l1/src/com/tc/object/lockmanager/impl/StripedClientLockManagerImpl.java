@@ -144,6 +144,10 @@ public class StripedClientLockManagerImpl implements ClientLockManager, ClientHa
     lockManagerFor(lockID).recall(lockID, threadID, level, leaseTimeInMs);
   }
 
+  public void lockInterruptibly(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo) throws InterruptedException {
+    lockManagerFor(id).lockInterruptibly(id, threadID, lockType, lockObjectType, contextInfo);
+  }
+  
   public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     return lockManagerFor(id).tryLock(id, threadID, timeout, lockType, lockObjectType);
   }

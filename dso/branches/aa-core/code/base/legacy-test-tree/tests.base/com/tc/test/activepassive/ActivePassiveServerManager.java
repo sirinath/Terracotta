@@ -189,7 +189,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
                                                                      "MultipleServersConfigCreator should not be created again"); }
     this.serverConfigCreator = creator;
   }
-  
+
   public MultipleServersConfigCreator getConfigCreator() {
     return this.serverConfigCreator;
   }
@@ -552,6 +552,9 @@ public class ActivePassiveServerManager extends MultipleServerManager {
 
         MBeanServerConnection mbs;
         try {
+          if (jmxConnectors[i] == null) {
+            jmxConnectors[i] = getJMXConnector(jmxPorts[i]);
+          }
           mbs = jmxConnectors[i].getMBeanServerConnection();
         } catch (IOException ioe) {
           System.out.println("Need to recreate jmxConnector for server=[" + dsoPorts[i] + "]...");
@@ -618,7 +621,9 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     if (isProxyL2groupPorts) proxyL2Managers[activeIndex].proxyDown();
     if (isProxyDsoPorts) {
       proxyL1Managers[activeIndex].proxyDown();
-      proxyL1Managers[activeIndex].startProxyTest();
+      System.out.println("*** Stopping the DSO proxy with proxy port as " + proxyL1Managers[activeIndex].getProxyPort()
+                         + " and DSO port as " + proxyL1Managers[activeIndex].getDsoPort());
+      proxyL1Managers[activeIndex].stopProxyTest();
     }
     debugPrintln("***** Done sleeping after crashing active server ");
 

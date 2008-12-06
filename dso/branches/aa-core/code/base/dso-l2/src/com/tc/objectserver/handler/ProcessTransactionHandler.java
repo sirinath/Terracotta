@@ -67,6 +67,7 @@ public class ProcessTransactionHandler extends AbstractEventHandler {
         sequenceValidator.setCurrent(nodeID, txn.getClientSequenceID());
         txns.put(txn.getServerTransactionID(), txn);
       }
+      System.err.println("Recd : " + txns.size() + " Txns from " + nodeID);
       messageRecycler.addMessage(ctm, txns.keySet());
       if (replicatedObjectMgr.relayTransactions()) {
         transactionManager.incomingTransactions(nodeID, txns.keySet(), txns.values(), true);

@@ -188,6 +188,10 @@ public class MockTransactionManager implements ClientTransactionManager {
     throw new ImplementMe();
   }
 
+  public boolean beginInterruptibly(String lockID, int type, String lockObjectType, String contextInfo) {
+    throw new ImplementMe();
+  }
+
   public boolean tryBegin(String lock, TimerSpec timeout, int lockLevel, String lockObjectType) {
     throw new ImplementMe();
   }

@@ -9,7 +9,6 @@ import org.apache.commons.collections.map.ListOrderedMap;
 import com.tc.logging.TCLogger;
 import com.tc.management.ClientLockStatManager;
 import com.tc.net.NodeID;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.ClientLockManagerConfig;
@@ -358,6 +357,27 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     }
   }
 
+  public void lockInterruptibly(LockID lockID, ThreadID threadID, int lockType, String lockObjectType, String contextInfo) throws InterruptedException {
+    Assert.assertNotNull("threadID", threadID);
+    final ClientLock lock;
+    
+    synchronized (this) {
+      waitUntilRunning();
+      lock = getOrCreateLock(lockID, lockObjectType);
+      incrementUseCount(lock);
+    }
+
+    try {
+      lock.lockInterruptibly(threadID, lockType, contextInfo);
+    } catch (InterruptedException e) {
+      synchronized (this) {
+        decrementUseCount(lock);
+        cleanUp(lock);
+      }
+      throw e;
+    }
+  }
+
   public boolean tryLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     Assert.assertNotNull("threadID", threadID);
     final ClientLock lock;
@@ -508,9 +528,15 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       return;
     }
     final ClientLock lock = (ClientLock) locksByID.get(lockID);
-    if (lock == null) { throw new AssertionError("awardLock(): Lock not found" + lockID.toString() + " :: " + threadID
-                                                 + " :: " + LockLevel.toString(level)); }
-    lock.awardLock(threadID, level);
+    if (lock != null) {
+      lock.awardLock(threadID, level);
+    } else if (LockLevel.isGreedy(level)) {
+      getOrCreateLock(lockID, MISSING_LOCK_TEXT).awardLock(threadID, level);
+//      throw new AssertionError("awardLock(): Lock not found" + lockID + " :: " + threadID + " :: " + LockLevel.toString(level));
+    } else {
+      remoteLockManager.releaseLock(lockID, threadID);
+//      throw new AssertionError("awardLock(): Lock not found" + lockID + " :: " + threadID + " :: " + LockLevel.toString(level));
+    }
   }
 
   /*
@@ -523,10 +549,9 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
       return;
     }
     final ClientLock lock = (ClientLock) locksByID.get(lockID);
-    if (lock == null) { throw new AssertionError("Client id: " + ManagerUtil.getClientID()
-                                                 + ", cannotAwardLock(): Lock not found" + lockID.toString() + " :: "
-                                                 + threadID + " :: " + LockLevel.toString(level)); }
-    lock.cannotAwardLock(threadID, level);
+    if (lock != null) {
+      lock.cannotAwardLock(threadID, level);
+    }
   }
 
   // This method should be called within a synchronized(this) block.
