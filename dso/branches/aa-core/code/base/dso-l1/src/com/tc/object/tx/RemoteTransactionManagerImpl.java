@@ -225,7 +225,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   }
 
   public void commit(ClientTransaction txn) {
-    if (!txn.hasChangesOrNotifies()) throw new AssertionError("Attempt to commit an empty transaction.");
+    if (!txn.hasChangesOrNotifies() && txn.getDmiDescriptors().isEmpty() && txn.getNewRoots().isEmpty()) throw new AssertionError(
+                                                                                                                                  "Attempt to commit an empty transaction.");
 
     long start = System.currentTimeMillis();
 
@@ -444,7 +445,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   TransactionBatchAccounting getBatchAccounting() {
     return batchAccounting;
   }
-  
+
   private class RemoteTransactionManagerTimerTask extends TimerTask {
 
     public void run() {
