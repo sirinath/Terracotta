@@ -27,8 +27,8 @@ import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 import com.tc.util.SequenceGenerator;
@@ -71,8 +71,6 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
   private short                                 outstandingWriteCount  = 0;
   private int                                   bytesWritten           = 0;
-
-  private int                                   numFolded              = 0;
   private int                                   numTxns                = 0;
 
   public TransactionBatchWriter(GroupID groupID, TxnBatchID batchID, ObjectStringSerializer serializer,
@@ -89,13 +87,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     this.foldingObjectLimit = foldingConfig.getObjectLimit();
   }
 
+  @Override
   public synchronized String toString() {
-    return super.toString() + "[" + this.batchID + ", isEmpty=" + isEmpty() + ", numTxnsBeforeFolding=" + numTxns
-           + ", numFolds=" + numFolded;
-  }
-
-  public synchronized int numberOfFolds() {
-    return numFolded;
+    return super.toString() + "[" + this.batchID + ", isEmpty=" + isEmpty() + ", numTxnsBeforeFolding=" + numTxns;
   }
 
   public TxnBatchID getTransactionBatchID() {
@@ -442,7 +436,15 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
     int write(ClientTransaction txn) {
       // Holding on the object references, this method could be called more than once for folded transactions.
-      this.references.put(txn.getReferencesOfObjectsInTxn(), null);
+
+      // By definition on the second and subsequent calls will have repeated object references in it, so put() to the
+      // map here to not store dupes.
+
+      // XXX: As an optimization the set of "new" objects could probably be computed when finding the fold target
+      // instead of just always put()'ing here
+      for (Iterator i = txn.getReferencesOfObjectsInTxn().iterator(); i.hasNext();) {
+        this.references.put(i.next(), null);
+      }
 
       int start = output.getBytesWritten();
 
