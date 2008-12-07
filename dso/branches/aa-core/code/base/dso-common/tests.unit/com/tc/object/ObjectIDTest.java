@@ -56,13 +56,13 @@ public class ObjectIDTest extends TestCase {
     System.err.println("Seed = " + seed);
     Random r = new Random(seed);
     for (int gid = 0; gid < 128; gid++) {
-      for (long oid = 0; oid < 1000; oid++) {
+      for (long oid = 0; oid < 600; oid++) {
         groupIDObjectIDTest(gid, oid);
       }
-      for (int i = 0; i < 1000; i++) {
+      for (int i = 0; i < 300; i++) {
         groupIDObjectIDTest(gid, nextRandomObjectID(r));
       }
-      for (long oid = ObjectID.MAX_ID - 1000; oid <= ObjectID.MAX_ID; oid++) {
+      for (long oid = ObjectID.MAX_ID - 600; oid <= ObjectID.MAX_ID; oid++) {
         groupIDObjectIDTest(gid, oid);
       }
     }
