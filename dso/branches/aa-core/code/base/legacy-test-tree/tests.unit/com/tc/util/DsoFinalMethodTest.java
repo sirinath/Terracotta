@@ -29,6 +29,7 @@ import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.MockTransactionManager;
 import com.tc.util.sequence.SimpleSequence;
 
@@ -114,6 +115,10 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
 
     public void createObject(TCObject source) {
       return;
+    }
+
+    public ClientTransaction getCurrentTransaction() {
+      return null;
     }
   }
 

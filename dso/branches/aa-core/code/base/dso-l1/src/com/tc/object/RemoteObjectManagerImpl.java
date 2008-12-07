@@ -162,7 +162,11 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
 
   public synchronized DNA basicRetrieve(ObjectID id, int depth, ObjectID parentContext) {
     boolean isInterrupted = false;
-
+    if (id.getGroupID() != groupID.getGroupNumber()) {
+      //
+      throw new AssertionError("Looking up in the wrong Remote Manager : " + groupID + " id : " + id + " depth : "
+                               + depth + " parent : " + parentContext);
+    }
     ObjectRequestContext ctxt = new ObjectRequestContextImpl(this.cip.getClientID(),
                                                              new ObjectRequestID(objectRequestIDCounter++), id, depth,
                                                              parentContext);
