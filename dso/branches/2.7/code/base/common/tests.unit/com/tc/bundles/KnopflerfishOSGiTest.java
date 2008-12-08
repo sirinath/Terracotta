@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 
 public class KnopflerfishOSGiTest extends TestCase {
 
-  private static final String PRODUCT_VERSION_DASH_QUALIFIER = "2.7.2-SNAPSHOT";
+  private static final String PRODUCT_VERSION_DASH_QUALIFIER = "2.7.2";
   private static final String PRODUCT_VERSION_DOT_QUALIFIER  = PRODUCT_VERSION_DASH_QUALIFIER.replace('-', '.');
   private KnopflerfishOSGi    osgiRuntime                    = null;
 
