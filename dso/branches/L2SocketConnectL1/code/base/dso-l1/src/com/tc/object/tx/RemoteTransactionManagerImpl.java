@@ -19,7 +19,6 @@ import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
-import com.tc.util.TCTimerImpl;
 import com.tc.util.Util;
 
 import java.util.ArrayList;
@@ -38,8 +37,6 @@ import java.util.Map.Entry;
 
 /**
  * Sends off committed transactions
- * 
- * @author steve
  */
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
@@ -76,9 +73,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   private final SessionManager             sessionManager;
   private final TransactionSequencer       sequencer;
   private final DSOClientMessageChannel    channel;
-  private final Timer                      timer                       = new TCTimerImpl(
-                                                                                         "RemoteTransactionManager Flusher",
-                                                                                         true);
+  private final Timer                      timer                       = new Timer("RemoteTransactionManager Flusher",
+                                                                                   true);
 
   public RemoteTransactionManagerImpl(TCLogger logger, final TransactionBatchFactory batchFactory,
                                       TransactionBatchAccounting batchAccounting, LockAccounting lockAccounting,
@@ -459,10 +455,15 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   private class RemoteTransactionManagerTimerTask extends TimerTask {
 
+    private TransactionID currentLWM = TransactionID.NULL_ID;
+
     public void run() {
       try {
         TransactionID lwm = getCompletedTransactionIDLowWaterMark();
         if (lwm.isNull()) return;
+        if (currentLWM.toLong() > lwm.toLong()) { throw new AssertionError("Transaction Low watermark moved down from "
+                                                                           + currentLWM + " to " + lwm); }
+        currentLWM = lwm;
         CompletedTransactionLowWaterMarkMessage ctm = channel.getCompletedTransactionLowWaterMarkMessageFactory()
             .newCompletedTransactionLowWaterMarkMessage();
         ctm.initialize(lwm);
