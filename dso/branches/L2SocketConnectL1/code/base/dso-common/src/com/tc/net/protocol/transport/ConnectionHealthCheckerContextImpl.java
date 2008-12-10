@@ -72,7 +72,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     initCallbackPortVerification();
   }
 
-  // RMP-XXX
+  // RMP-343
   private void initCallbackPortVerification() {
     if (config.isSocketConnectOnPingFail()) {
       if (!initSocketConnectProbe()) {

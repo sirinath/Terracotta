@@ -42,8 +42,6 @@ import com.tc.net.protocol.tcm.msgs.PingMessage;
 import com.tc.net.proxy.TCPProxy;
 import com.tc.object.session.NullSessionManager;
 import com.tc.properties.L1ReconnectConfigImpl;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
 import com.tc.util.PortChooser;
@@ -51,7 +49,6 @@ import com.tc.util.SequenceGenerator;
 import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.io.IOException;
 import java.util.HashSet;
 
 public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
@@ -137,25 +134,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   ClientMessageChannel createClientMsgCh() {
-    return createClientMsgChProxied(clientComms, false);
-  }
-
-  ClientMessageChannel createClientMsgChProxied(CommunicationsManager clientCommsMgr, boolean createHCListener) {
-    if (createHCListener) {
-      TCProperties l1Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l1");
-      NetworkListener healthCheckerListener = ConnectionHealthCheckerUtil.createHealthCheckListener(clientCommsMgr,
-                                                                                                    l1Properties);
-      try {
-        healthCheckerListener.start(new HashSet());
-        logger.info("HealthChecker Listener started at " + healthCheckerListener.getBindAddress() + ":"
-                    + healthCheckerListener.getBindPort());
-
-      } catch (IOException ioe) {
-        logger.info("Unable to start HealthChecker Listener: " + ioe);
-      }
-    }
-
-    ClientMessageChannel clientMsgCh = clientCommsMgr
+    ClientMessageChannel clientMsgCh = clientComms
         .createClientChannel(new NullSessionManager(), 0, serverLsnr.getBindAddress().getHostAddress(), proxyPort,
                              1000, new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
                                  .getBindAddress().getHostAddress(), proxyPort) }));
@@ -222,10 +201,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL2SocketConnectL1Fail() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test31", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test31", true);
     this.setUp(hcConfig, null);
     ((CommunicationsManagerImpl) clientComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
     ClientMessageChannel clientMsgCh = createClientMsgCh();
@@ -262,10 +238,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL1SocketConnectL2() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ClientCommsHC-Test32", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ClientCommsHC-Test32", true);
     this.setUp(null, hcConfig);
     ((CommunicationsManagerImpl) serverComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
     ClientMessageChannel clientMsgCh = createClientMsgCh();
@@ -331,10 +304,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL1SocketConnectTimeoutL2() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test33", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test33", true);
     Sigar sigar = new Sigar();
     NetStat netstat = null;
 
@@ -385,10 +355,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL1SocketConnectTimeoutL2AndL1Reconnect() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 1000, 2, "ClientCommsHC-Test34", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 1000, 2, "ClientCommsHC-Test34", true);
     Sigar sigar = new Sigar();
     NetStat netstat = null;
 
@@ -461,7 +428,8 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
     ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
 
-    ThreadUtil.reallySleep(5000);
+    //let the TIME_WAIT happen
+    ThreadUtil.reallySleep(10000);
     /*
      * Client disconnected after it found socket connect timeout. After the successful reconnect there should be no
      * connection leak. DEV-1963
@@ -473,10 +441,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL2SocketConnectL1FailWithProxyDelay() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ServerCommsHC-Test35", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ServerCommsHC-Test35", false);
     this.setUp(hcConfig, null);
 
     ClientMessageChannel clientMsgCh = createClientMsgCh();
@@ -516,13 +481,12 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
   }
 
   public void testL2SocketConnectL1Pass() throws Exception {
-    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test36", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
-    this.setUp(hcConfig, null);
+    HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test36", true);
+    HealthCheckerConfig clientHcConfig = new HealthCheckerConfigClientImpl("ClientCommsHC-Test36");
+
+    this.setUp(hcConfig, clientHcConfig);
     ((CommunicationsManagerImpl) clientComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
-    ClientMessageChannel clientMsgCh = createClientMsgChProxied(clientComms, true);
+    ClientMessageChannel clientMsgCh = createClientMsgCh();
     clientMsgCh.open();
 
     // Verifications
