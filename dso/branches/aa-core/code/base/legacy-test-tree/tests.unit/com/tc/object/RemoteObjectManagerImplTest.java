@@ -44,6 +44,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
   private TestRequestRootMessageFactory          rrmf;
   private TestRequestManagedObjectMessageFactory rmomf;
   private RetrieverThreads                       rt;
+  private GroupID                                groupID;
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -56,7 +57,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     newRrm();
 
     this.threadGroup = new ThreadGroup(getClass().getName());
-    manager = new RemoteObjectManagerImpl(GroupID.NULL_ID, new NullTCLogger(), cidProvider, rrmf, rmomf,
+    this.groupID = new GroupID(0);
+    manager = new RemoteObjectManagerImpl(groupID, new NullTCLogger(), cidProvider, rrmf, rmomf,
                                           new NullObjectRequestMonitor(), 500, new NullSessionManager());
     rt = new RetrieverThreads(Thread.currentThread().getThreadGroup(), manager);
   }
@@ -89,7 +91,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (int i = 0; i < dnaCollectionCount; i++) {
       dnas = new ArrayList();
       dnas.add(new TestDNA(new ObjectID(i)));
-      manager.addAllObjects(new SessionID(i), i, dnas, GroupID.NULL_ID);
+      manager.addAllObjects(new SessionID(i), i, dnas, groupID);
     }
     assertEquals(dnaCollectionCount, manager.getDNACacheSize());
     DNA dna = manager.retrieve(new ObjectID(0));
@@ -105,7 +107,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       public void run() {
         System.err.println("Doing a bogus lookup");
         try {
-          manager.retrieve(new ObjectID(Long.MAX_VALUE));
+          manager.retrieve(new ObjectID(ObjectID.MAX_ID, groupID.getGroupNumber()));
           System.err.println("Didnt throw TCObjectNotFoundException : Not calling barrier()");
         } catch (TCObjectNotFoundException e) {
           System.err.println("Got TCObjectNotFoundException as expected : " + e);
@@ -120,8 +122,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     thread.start();
     ThreadUtil.reallySleep(5000);
     Set missingSet = new HashSet();
-    missingSet.add(new ObjectID(Long.MAX_VALUE));
-    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet, GroupID.NULL_ID);
+    missingSet.add(new ObjectID(ObjectID.MAX_ID, groupID.getGroupNumber()));
+    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet, groupID);
     barrier.barrier();
   }
 
@@ -158,7 +160,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedNotResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++), GroupID.NULL_ID);
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), groupID);
     }
     // the threads waiting for the roots we just added should fall through.
     rt.waitForLowWatermark(count - expectedNotResent.size());
@@ -186,7 +188,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++), GroupID.NULL_ID);
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), groupID);
     }
 
     // all the threads should now be able to complete.
