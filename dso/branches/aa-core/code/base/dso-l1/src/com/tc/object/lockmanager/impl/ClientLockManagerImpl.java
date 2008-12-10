@@ -521,8 +521,8 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
    * XXX::This method is called from a stage thread. It operate on the lock inside the scope of the synchronization
    * unlike other methods because, we want to decide whether to process this award or not and go with it atomically
    */
-  public synchronized void awardLock(SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
-    if (isPaused() || !sessionManager.isCurrentSession(sessionID)) {
+  public synchronized void awardLock(NodeID nid, SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
+    if (isPaused() || !sessionManager.isCurrentSession(nid, sessionID)) {
       logger.warn("Ignoring lock award from a dead server :" + sessionID + ", " + sessionManager + " : " + lockID + " "
                   + threadID + " " + LockLevel.toString(level) + " state = " + state);
       return;
@@ -540,8 +540,8 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   /*
    * XXX:: @read comment for awardLock();
    */
-  public synchronized void cannotAwardLock(SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
-    if (isPaused() || !sessionManager.isCurrentSession(sessionID)) {
+  public synchronized void cannotAwardLock(NodeID nid, SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
+    if (isPaused() || !sessionManager.isCurrentSession(nid, sessionID)) {
       logger.warn("Ignoring lock award from a dead server :" + sessionID + ", " + sessionManager + " : " + lockID + " "
                   + threadID + " level = " + level + " state = " + state);
       return;

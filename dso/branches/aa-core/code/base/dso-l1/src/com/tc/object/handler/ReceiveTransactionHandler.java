@@ -110,7 +110,7 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
 
     // XXX:: This is a potential race condition here 'coz after we decide to send an ACK
     // and before we actually send it, the server may go down and come back up !
-    if (sessionManager.isCurrentSession(btm.getLocalSessionID())) {
+    if (sessionManager.isCurrentSession(btm.getSourceNodeID(), btm.getLocalSessionID())) {
       AcknowledgeTransactionMessage ack = atmFactory.newAcknowledgeTransactionMessage(btm.getSourceNodeID());
       ack.initialize(btm.getCommitterID(), btm.getTransactionID());
       ack.send();

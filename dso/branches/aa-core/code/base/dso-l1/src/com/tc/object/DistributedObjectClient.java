@@ -283,8 +283,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     int maxSize = tcProperties.getInt(TCPropertiesConsts.L1_SEDA_STAGE_SINK_CAPACITY);
     int faultCount = config.getFaultCount();
 
-    final Sequence sessionSequence = new SimpleSequence();
-    final SessionManager sessionManager = new SessionManagerImpl(sessionSequence);
+    final SessionManager sessionManager = new SessionManagerImpl(new SessionManagerImpl.SequenceFactory() {
+      public Sequence newSequence() {
+        return new SimpleSequence();
+      }
+    });
     final SessionProvider sessionProvider = (SessionProvider) sessionManager;
 
     threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));

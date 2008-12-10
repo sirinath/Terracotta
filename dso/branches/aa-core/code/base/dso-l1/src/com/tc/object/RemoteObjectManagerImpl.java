@@ -275,7 +275,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
 
   public synchronized void addAllObjects(SessionID sessionID, long batchID, Collection dnas, NodeID nodeID) {
     waitUntilRunning();
-    if (!sessionManager.isCurrentSession(sessionID)) {
+    if (!sessionManager.isCurrentSession(nodeID, sessionID)) {
       logger.warn("Ignoring DNA added from a different session: " + sessionID + ", " + sessionManager);
       return;
     }
@@ -296,7 +296,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, ClientHands
 
   public synchronized void objectsNotFoundFor(SessionID sessionID, long batchID, Set missingOIDs, NodeID nodeID) {
     waitUntilRunning();
-    if (!sessionManager.isCurrentSession(sessionID)) {
+    if (!sessionManager.isCurrentSession(nodeID, sessionID)) {
       logger.warn("Ignoring Missing Object IDs " + missingOIDs + " from a different session: " + sessionID + ", "
                   + sessionManager);
       return;

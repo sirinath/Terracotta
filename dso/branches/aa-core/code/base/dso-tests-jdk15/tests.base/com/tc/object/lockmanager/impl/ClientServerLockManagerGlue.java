@@ -139,8 +139,8 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
       if (ec instanceof LockResponseContext) {
         LockResponseContext lrc = (LockResponseContext) ec;
         if (lrc.isLockAward()) {
-          clientLockManager.awardLock(sessionProvider.getSessionID(), lrc.getLockID(), lrc.getThreadID(), lrc
-              .getLockLevel());
+          clientLockManager.awardLock(lrc.getNodeID(), sessionProvider.getSessionID(lrc.getNodeID()), lrc.getLockID(),
+                                      lrc.getThreadID(), lrc.getLockLevel());
         }
       }
       // ToDO :: implment WaitContext etc..
