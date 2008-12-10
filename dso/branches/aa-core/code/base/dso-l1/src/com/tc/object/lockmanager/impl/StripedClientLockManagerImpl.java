@@ -108,12 +108,12 @@ public class StripedClientLockManagerImpl implements ClientLockManager, ClientHa
     lockManagerFor(id).lock(id, threadID, lockType, lockObjectType, contextInfo);
   }
 
-  public void awardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
-    lockManagerFor(id).awardLock(sessionID, id, threadID, type);
+  public void awardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type) {
+    lockManagerFor(id).awardLock(nid, sessionID, id, threadID, type);
   }
 
-  public void cannotAwardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
-    lockManagerFor(id).cannotAwardLock(sessionID, id, threadID, type);
+  public void cannotAwardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type) {
+    lockManagerFor(id).cannotAwardLock(nid, sessionID, id, threadID, type);
   }
 
   public boolean isLocked(LockID lockID, ThreadID threadID, int lockLevel) {

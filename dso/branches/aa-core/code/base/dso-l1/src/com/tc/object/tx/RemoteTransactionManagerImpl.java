@@ -361,7 +361,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
     Map callbacks;
     synchronized (lock) {
       // waitUntilRunning();
-      if (!sessionManager.isCurrentSession(sessionID)) {
+      if (!sessionManager.isCurrentSession(remoteNode, sessionID)) {
         logger.warn("Ignoring Transaction ACK for " + txID + " from previous session = " + sessionID);
         return;
       }

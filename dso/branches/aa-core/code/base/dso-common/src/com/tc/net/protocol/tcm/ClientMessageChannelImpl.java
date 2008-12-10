@@ -41,6 +41,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
     this.msgFactory = msgFactory;
     this.cidProvider = new ChannelIDProviderImpl();
     this.sessionProvider = sessionProvider;
+    this.sessionProvider.initProvider(remoteNodeID);
   }
 
   public NetworkStackID open() throws TCTimeoutException, UnknownHostException, IOException,
@@ -56,7 +57,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
       this.channelID = new ChannelID(id.toLong());
       setLocalNodeID(new ClientID(this.channelID));
       this.cidProvider.setChannelID(this.channelID);
-      this.channelSessionID = sessionProvider.getSessionID();
+      this.channelSessionID = sessionProvider.getSessionID(getRemoteNodeID());
       return id;
     }
   }
@@ -103,7 +104,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
 
   public void notifyTransportDisconnected(MessageTransport transport) {
     // Move channel to new session
-    channelSessionID = sessionProvider.nextSessionID();
+    channelSessionID = sessionProvider.nextSessionID(getRemoteNodeID());
     logger.info("ClientMessageChannel moves to " + channelSessionID);
     this.fireTransportDisconnectedEvent();
   }

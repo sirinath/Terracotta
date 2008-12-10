@@ -108,7 +108,7 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
       changeToPaused(remoteNode);
       pauseCallbacks(remoteNode, getDisconnectedCount());
       // all the activities paused then can switch to new session
-      sessionManager.newSession();
+      sessionManager.newSession(remoteNode);
       logger.info("ClientHandshakeManager moves to " + sessionManager);
     }
   }

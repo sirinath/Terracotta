@@ -5,6 +5,7 @@
 package com.tc.object.lockmanager.api;
 
 import com.tc.exception.ImplementMe;
+import com.tc.net.NodeID;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
@@ -32,7 +33,7 @@ public class TestLockManager implements ClientLockManager {
     return new LockID(id);
   }
 
-  public void awardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
+  public void awardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type) {
     return;
   }
 
@@ -89,7 +90,7 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public void cannotAwardLock(SessionID sessionID, LockID id, ThreadID threadID, int type) {
+  public void cannotAwardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type) {
     throw new ImplementMe();
   }
 

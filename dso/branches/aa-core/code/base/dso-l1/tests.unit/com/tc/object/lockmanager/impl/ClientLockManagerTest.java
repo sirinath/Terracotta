@@ -19,6 +19,7 @@ import com.tc.logging.TCLogger;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Info;
 import com.tc.net.GroupID;
+import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ClientLockManagerConfig;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
@@ -59,6 +60,7 @@ public class ClientLockManagerTest extends TCTestCase {
   private ClientLockManagerImpl lockManager;
   private TestRemoteLockManager rmtLockManager;
   private TestSessionManager    sessionManager;
+  private final GroupID         gid = new GroupID(0);
 
   public ClientLockManagerTest() {
     //
@@ -93,7 +95,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
       public void respondToLockRequest(LockRequest request) {
 
-        clientLockManagerImpl.awardLock(sessionManager.getSessionID(), request.lockID(), ThreadID.VM_ID, LockLevel
+        clientLockManagerImpl.awardLock(gid, sessionManager.getSessionID(gid), request.lockID(), ThreadID.VM_ID, LockLevel
             .makeGreedy(request.lockLevel()));
       }
     };
@@ -138,7 +140,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
       public void respondToLockRequest(LockRequest request) {
 
-        clientLockManagerImpl.awardLock(sessionManager.getSessionID(), request.lockID(), ThreadID.VM_ID, LockLevel
+        clientLockManagerImpl.awardLock(gid, sessionManager.getSessionID(gid), request.lockID(), ThreadID.VM_ID, LockLevel
             .makeGreedy(request.lockLevel()));
       }
     };
@@ -357,10 +359,10 @@ public class ClientLockManagerTest extends TCTestCase {
         this.awardBarrier = awardBarrier;
       }
 
-      public void awardLock(SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
+      public void awardLock(NodeID nid, SessionID sessionID, LockID lockID, ThreadID threadID, int level) {
         try {
           awardBarrier.barrier();
-          super.awardLock(sessionID, lockID, threadID, level);
+          super.awardLock(nid, sessionID, lockID, threadID, level);
         } catch (BrokenBarrierException e) {
           throw new TCRuntimeException(e);
         } catch (InterruptedException e) {
@@ -384,7 +386,7 @@ public class ClientLockManagerTest extends TCTestCase {
       public void run() {
         try {
           requestBarrier.barrier();
-          lockManager.awardLock(sessionManager.getSessionID(), lockID1, ThreadID.VM_ID, LockLevel
+          lockManager.awardLock(gid, sessionManager.getSessionID(gid), lockID1, ThreadID.VM_ID, LockLevel
               .makeGreedy(LockLevel.WRITE));
         } catch (BrokenBarrierException e) {
           throw new TCRuntimeException(e);
@@ -409,7 +411,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
       public void respondToLockRequest(LockRequest request) {
         queue.put(request);
-        lockManager.awardLock(sessionManager.getSessionID(), request.lockID(), ThreadID.VM_ID, LockLevel
+        lockManager.awardLock(gid, sessionManager.getSessionID(gid), request.lockID(), ThreadID.VM_ID, LockLevel
             .makeGreedy(request.lockLevel()));
       }
     };
@@ -512,7 +514,7 @@ public class ClientLockManagerTest extends TCTestCase {
     assertTrue(waitLockRequest.lockLevel() == lr.lockLevel());
 
     // now make sure that if you award the lock, the right stuff happens
-    lockManager.awardLock(sessionManager.getSessionID(), waitLockRequest.lockID(), waitLockRequest.threadID(),
+    lockManager.awardLock(gid, sessionManager.getSessionID(gid), waitLockRequest.lockID(), waitLockRequest.threadID(),
                           waitLockRequest.lockLevel());
     heldLocks.add(waitLockRequest);
 
@@ -701,7 +703,7 @@ public class ClientLockManagerTest extends TCTestCase {
           public void run() {
             requests.add(request);
             if (respond.get()) {
-              lockManager.awardLock(sessionManager.getSessionID(), request.lockID(), request.threadID(), request
+              lockManager.awardLock(gid, sessionManager.getSessionID(gid), request.lockID(), request.threadID(), request
                   .lockLevel());
             }
             try {
@@ -764,7 +766,7 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testAwardWhenNotPending() throws Exception {
     LockID lockID = new LockID("1");
     ThreadID txID = new ThreadID(1);
-    lockManager.awardLock(sessionManager.getSessionID(), lockID, txID, LockLevel.WRITE);
+    lockManager.awardLock(gid, sessionManager.getSessionID(gid), lockID, txID, LockLevel.WRITE);
   }
 
   public void testBasics() throws Exception {

@@ -5,6 +5,7 @@
 package com.tc.object.lockmanager.api;
 
 import com.tc.logging.DumpHandler;
+import com.tc.net.NodeID;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
@@ -34,9 +35,9 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable {
   /**
    * awards the lock to the threadID
    */
-  public void awardLock(SessionID sessionID, LockID id, ThreadID threadID, int type);
+  public void awardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type);
 
-  public void cannotAwardLock(SessionID sessionID, LockID id, ThreadID threadID, int type);
+  public void cannotAwardLock(NodeID nid, SessionID sessionID, LockID id, ThreadID threadID, int type);
 
   public LockID lockIDFor(String id);
 

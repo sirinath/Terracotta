@@ -40,7 +40,7 @@ public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue
       if (ec instanceof LockResponseContext) {
         LockResponseContext lrc = (LockResponseContext) ec;
         if (lrc.isLockAward()) {
-          clientLockManager.awardLock(sessionProvider.getSessionID(), lrc.getLockID(), lrc.getThreadID(), lrc
+          clientLockManager.awardLock(lrc.getNodeID(), sessionProvider.getSessionID(lrc.getNodeID()), lrc.getLockID(), lrc.getThreadID(), lrc
               .getLockLevel());
         }
       } else if (ec instanceof LockStatisticsMessage) {
