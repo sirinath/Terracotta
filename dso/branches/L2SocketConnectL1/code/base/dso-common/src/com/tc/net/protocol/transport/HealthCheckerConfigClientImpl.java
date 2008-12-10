@@ -12,6 +12,10 @@ public class HealthCheckerConfigClientImpl extends HealthCheckerConfigImpl {
     super(healthCheckerProperties, hcName);
   }
 
+  public HealthCheckerConfigClientImpl(String name) {
+    super(name);
+  }
+
   public boolean isCallbackPortListenerNeeded() {
     return true;
   }

@@ -54,8 +54,8 @@ public class HealthCheckerConfigImpl implements HealthCheckerConfig {
   }
 
   // Custom SocketConnect check. Default SocketConnect values
-  public HealthCheckerConfigImpl(long idle, long interval, int probes, String name, boolean extraCheck) {
-    this(idle, interval, probes, name, extraCheck, DEFAULT_SCOKETCONNECT_MAXCOUNT, DEFAULT_SOCKETCONNECT_TIMEOUT,
+  public HealthCheckerConfigImpl(long idle, long interval, int probes, String name, boolean socketConnect) {
+    this(idle, interval, probes, name, socketConnect, DEFAULT_SCOKETCONNECT_MAXCOUNT, DEFAULT_SOCKETCONNECT_TIMEOUT,
          TCSocketAddress.WILDCARD_IP, 0);
   }
 

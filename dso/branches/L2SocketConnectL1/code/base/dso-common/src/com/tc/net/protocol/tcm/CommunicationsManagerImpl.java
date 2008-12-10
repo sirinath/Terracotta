@@ -300,6 +300,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   private void startHealthCheckCallbackPortListener(HealthCheckerConfig healthCheckerConfig) {
     if (!healthCheckerConfig.isCallbackPortListenerNeeded()) {
       // Callback Port Listeners are not needed for L2s.
+      logger.info("HealtCheck CallbackPort Listener not requested");
       return;
     }
 
@@ -328,10 +329,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     try {
       callbackPortListener.start(new HashSet());
       callbackPort = callbackPortListener.getBindPort();
-      logger.info("HealthChecker Listener started at " + callbackPortListener.getBindAddress() + ":" + callbackPort);
-
+      logger.info("HealthCheck CallbackPort Listener started at " + callbackPortListener.getBindAddress() + ":"
+                  + callbackPort);
     } catch (IOException ioe) {
-      logger.info("Unable to start HealthChecker Listener at" + address + ": " + ioe);
+      logger.info("Unable to start HealthCheck CallbackPort Listener at" + address + ": " + ioe);
     }
   }
 
