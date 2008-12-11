@@ -33,6 +33,7 @@ public class ParamBasedRequestRunner implements Runnable {
       debug("Got Exception in ParamBasedRequestRunner (for request with param=" + param + "): " + e);
       e.printStackTrace();
     }
+    System.out.println("ParamBasedRequestRunner (for request with param=" + param + ") finished!!");
   }
 
   protected static void debug(String string) {

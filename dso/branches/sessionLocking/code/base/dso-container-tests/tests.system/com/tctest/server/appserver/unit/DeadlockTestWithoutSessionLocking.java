@@ -15,7 +15,7 @@ import junit.framework.Test;
 public class DeadlockTestWithoutSessionLocking extends DeadlockTestBase {
 
   public DeadlockTestWithoutSessionLocking() {
-    //
+    // disableAllUntil("2009-01-01");
   }
 
   public static Test suite() {
@@ -43,8 +43,13 @@ public class DeadlockTestWithoutSessionLocking extends DeadlockTestBase {
     int waitTimeMillis = 30 * 1000;
     ThreadUtil.reallySleep(waitTimeMillis);
 
-    if (!requestSessionThenGlobalThread.isAlive() || !requestGlobalThenSessionThread.isAlive()) {
-      Assert.fail("Requests are NOT deadlocked. Requests are supposed to be deadlocked without session-locking");
+    if (requestSessionThenGlobalThread.isAlive()) {
+      requestSessionThenGlobalThread.interrupt();
+      if (requestGlobalThenSessionThread.isAlive()) {
+        requestGlobalThenSessionThread.interrupt();
+      }
+      Assert
+          .fail("Requests are deadlocked. Waiting Request did not complete, requests should not deadlock when session-locking=false");
     }
     debug("Test passed");
   }

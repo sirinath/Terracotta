@@ -48,7 +48,7 @@ public class TerracottaSessionManager implements SessionManager {
   private final boolean                debugSessions;
   private final String                 sessionCookieName;
   private final String                 sessionUrlPathParamTag;
-  private final boolean                      usesStandardUrlPathParam;
+  private final boolean                usesStandardUrlPathParam;
   private int                          serverHopsDetected = 0;
   private final boolean                sessionLocking;
 
@@ -309,7 +309,7 @@ public class TerracottaSessionManager implements SessionManager {
         store.updateTimestampIfNeeded(sd);
       }
     } finally {
-      id.commitLock();
+      if (isApplicationSessionLocked()) id.commitLock();
     }
   }
 

@@ -47,9 +47,8 @@ public class LongRunningRequestsTestWithoutSessionLocking extends LongRunningReq
     ThreadUtil.reallySleep(waitTimeMillis);
 
     for (int i = 0; i < shortRequestThreads.length; i++) {
-      if (!shortRequestThreads[i].isAlive()) {
-        Assert
-            .fail("Short Requests are NOT blocked. Short Requests are supposed to be blocked without session-locking");
+      if (shortRequestThreads[i].isAlive()) {
+        Assert.fail("Short Requests are BLOCKED. Short Requests are NOT supposed to be blocked with session-locking=false");
       }
     }
     debug("Test passed");

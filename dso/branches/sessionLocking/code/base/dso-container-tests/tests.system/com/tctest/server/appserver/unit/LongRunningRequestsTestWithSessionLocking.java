@@ -15,7 +15,7 @@ import junit.framework.Test;
 public class LongRunningRequestsTestWithSessionLocking extends LongRunningRequestsTestBase {
 
   public LongRunningRequestsTestWithSessionLocking() {
-    disableAllUntil("2009-01-01");
+    //
   }
 
   public static Test suite() {
@@ -47,8 +47,9 @@ public class LongRunningRequestsTestWithSessionLocking extends LongRunningReques
     ThreadUtil.reallySleep(waitTimeMillis);
 
     for (int i = 0; i < shortRequestThreads.length; i++) {
-      if (shortRequestThreads[i].isAlive()) {
-        Assert.fail("Short Requests are BLOCKED. Short Requests are NOT supposed to be blocked with session-locking");
+      if (!shortRequestThreads[i].isAlive()) {
+        Assert
+            .fail("Short Requests are NOT blocked. Short Requests are supposed to be blocked with session-locking=true");
       }
     }
     debug("Test passed");
