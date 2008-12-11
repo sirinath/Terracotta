@@ -120,6 +120,7 @@ import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
+import com.tc.object.tx.TransactionIDGenerator;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
@@ -357,7 +358,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     Counter outstandingBatchesCounter = counterManager.createCounter(new CounterConfig(0));
     Counter pendingBatchesSize = counterManager.createCounter(new CounterConfig(0));
 
-    rtxManager = createRemoteTransactionManager(channel.getClientIDProvider(), txBatchFactory, sessionManager, channel,
+    rtxManager = createRemoteTransactionManager(channel.getClientIDProvider(), txBatchFactory,
+                                                new TransactionIDGenerator(), sessionManager, channel,
                                                 outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                                 batchSizeCounter, pendingBatchesSize);
 
@@ -639,6 +641,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
    */
   protected RemoteTransactionManager createRemoteTransactionManager(ClientIDProvider cidProvider,
                                                                     TransactionBatchFactory txBatchFactory,
+                                                                    TransactionIDGenerator transactionIDGenerator,
                                                                     SessionManager sessionManager,
                                                                     DSOClientMessageChannel dsoChannel,
                                                                     Counter outstandingBatchesCounter,
@@ -649,7 +652,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
     return new RemoteTransactionManagerImpl(defaultGroups[0], new ClientIDLogger(cidProvider, TCLogging
-        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, sessionManager, dsoChannel,
+        .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, transactionIDGenerator, sessionManager, dsoChannel,
                                             outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                             batchSizeCounter, pendingBatchesSize);
   }
