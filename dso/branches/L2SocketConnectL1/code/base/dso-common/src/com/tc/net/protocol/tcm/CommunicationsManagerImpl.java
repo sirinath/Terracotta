@@ -64,10 +64,11 @@ import java.util.Set;
  * @author teck
  */
 public class CommunicationsManagerImpl implements CommunicationsManager {
-  private static final TCLogger                  logger       = TCLogging.getLogger(CommunicationsManager.class);
+  private static final TCLogger                  logger               = TCLogging
+                                                                          .getLogger(CommunicationsManager.class);
 
-  private final SetOnceFlag                      shutdown     = new SetOnceFlag();
-  private final Set                              listeners    = new HashSet();
+  private final SetOnceFlag                      shutdown             = new SetOnceFlag();
+  private final Set                              listeners            = new HashSet();
   private final TCConnectionManager              connectionManager;
   private final boolean                          privateConnMgr;
   private final NetworkStackHarnessFactory       stackHarnessFactory;
@@ -75,8 +76,9 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   private final MessageMonitor                   monitor;
   private final ConnectionPolicy                 connectionPolicy;
   private ConnectionHealthChecker                connectionHealthChecker;
-  private ServerID                               serverID     = ServerID.NULL_ID;
-  private int                                    callbackPort = TransportHandshakeMessage.NO_CALLBACK_PORT;
+  private ServerID                               serverID             = ServerID.NULL_ID;
+  private int                                    callbackPort         = TransportHandshakeMessage.NO_CALLBACK_PORT;
+  private NetworkListener                        callbackportListener = null;
 
   /**
    * Create a communications manager. This implies that one or more network handling threads will be started on your
@@ -328,7 +330,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                           new DefaultConnectionIdFactory());
     try {
       callbackPortListener.start(new HashSet());
-      callbackPort = callbackPortListener.getBindPort();
+      this.callbackPort = callbackPortListener.getBindPort();
+      this.callbackportListener = callbackPortListener;
       logger.info("HealthCheck CallbackPort Listener started at " + callbackPortListener.getBindAddress() + ":"
                   + callbackPort);
     } catch (IOException ioe) {
@@ -361,6 +364,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     this.connectionHealthChecker.stop();
     this.connectionHealthChecker = checker;
     this.connectionHealthChecker.start();
+  }
+
+  public NetworkListener getCallbackPortListener() {
+    return this.callbackportListener;
   }
 
   private class MessageTransportFactoryImpl implements MessageTransportFactory {

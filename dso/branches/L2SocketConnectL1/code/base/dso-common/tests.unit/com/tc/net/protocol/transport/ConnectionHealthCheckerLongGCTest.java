@@ -333,19 +333,24 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
     ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
 
+    // now the config is upgraded by some factor as the callbackport verification failed. That is
+    int factor = ConnectionHealthCheckerContextImpl.CONFIG_UPGRADE_FACTOR;
+    HealthCheckerConfig upgradedHcConfig = new HealthCheckerConfigImpl(factor * 4000, factor * 2000, factor * 2,
+                                                                       "ClientCommsHC-Test33", true);
+
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
     getNetInfo(serverLsnr.getBindPort());
     Assert.assertEquals(2, netstat.getTcpEstablished());
 
     // HC START stage:
-    System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
-    ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
+    System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(upgradedHcConfig));
+    ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(upgradedHcConfig));
 
     /*
      * L1 should have started the Extra Check by now; Since socket connect already timedout in the INIT stage,
      * SOCKET_CONNECT stage should come out immediately as DEAD as the callback port has been reset to -1 by INIT.
      */
-    ThreadUtil.reallySleep(hcConfig.getPingIntervalMillis() * 2);
+    ThreadUtil.reallySleep(upgradedHcConfig.getPingIntervalMillis() * 2);
     assertEquals(0, connHC.getTotalConnsUnderMonitor());
 
     ThreadUtil.reallySleep(5000);
@@ -391,13 +396,18 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
     ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
 
+    // now the config is upgraded by some factor as the callbackport verification failed. That is
+    int factor = ConnectionHealthCheckerContextImpl.CONFIG_UPGRADE_FACTOR;
+    HealthCheckerConfig upgradedHcConfig = new HealthCheckerConfigImpl(factor * 4000, factor * 1000, factor * 2,
+                                                                       "ClientCommsHC-Test33", true);
+
     netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
     getNetInfo(serverLsnr.getBindPort());
     Assert.assertEquals(2, netstat.getTcpEstablished());
 
     // HC START stage:
-    System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
-    ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
+    System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(upgradedHcConfig));
+    ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(upgradedHcConfig));
 
     // set some delay in proxy so that even if reconnect started, we will have sufficient time to check established
     // connections
@@ -408,7 +418,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
      * L1 should have started the Extra Check by now; .INIT stage already figured out that socket connect times out. so
      * wait for interval time and verify
      */
-    ThreadUtil.reallySleep(hcConfig.getPingIntervalMillis() * 2);
+    ThreadUtil.reallySleep(upgradedHcConfig.getPingIntervalMillis() * 2);
     while (!connHC.isRunning() && (connHC.getTotalConnsUnderMonitor() != 0)) {
       System.out.println("waiting for client to disconnect");
       ThreadUtil.reallySleep(1000);
@@ -425,10 +435,10 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
     // HC INIT stage: callback port verification should fail. wait for it. NOTE: we don't want to wait for ping-probe
     // cycles as the INIT stage directly starts socket connect
-    System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(hcConfig));
-    ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(hcConfig));
+    System.out.println("Sleeping for " + getINITstageScoketConnectResultTime(upgradedHcConfig));
+    ThreadUtil.reallySleep(getINITstageScoketConnectResultTime(upgradedHcConfig));
 
-    //let the TIME_WAIT happen
+    // let the TIME_WAIT happen
     ThreadUtil.reallySleep(10000);
     /*
      * Client disconnected after it found socket connect timeout. After the successful reconnect there should be no
