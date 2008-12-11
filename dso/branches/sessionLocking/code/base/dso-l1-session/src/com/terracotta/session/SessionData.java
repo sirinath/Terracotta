@@ -216,7 +216,12 @@ public class SessionData implements Session, SessionSupport {
 
   synchronized void finishRequest() {
     requestStartMillis = 0;
-    lastAccessedTime = System.currentTimeMillis();
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      lastAccessedTime = System.currentTimeMillis();
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   public synchronized long getCreationTime() {
@@ -235,10 +240,15 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object setAttributeReturnOld(String name, Object value) {
     checkIfValid();
-    if (value == null) {
-      return unbindAttribute(name);
-    } else {
-      return bindAttribute(name, value);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      if (value == null) {
+        return unbindAttribute(name);
+      } else {
+        return bindAttribute(name, value);
+      }
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
     }
   }
 
@@ -248,7 +258,12 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object getAttribute(String name) {
     checkIfValid();
-    return attributes.get(name);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      return attributes.get(name);
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   public Object getValue(String name) {
@@ -257,8 +272,13 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized String[] getValueNames() {
     checkIfValid();
-    Set keys = attributes.keySet();
-    return (String[]) keys.toArray(new String[keys.size()]);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      Set keys = attributes.keySet();
+      return (String[]) keys.toArray(new String[keys.size()]);
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   public Enumeration getAttributeNames() {
@@ -271,7 +291,12 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object removeAttributeReturnOld(String name) {
     checkIfValid();
-    return unbindAttribute(name);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      return unbindAttribute(name);
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   public void removeValue(String name) {

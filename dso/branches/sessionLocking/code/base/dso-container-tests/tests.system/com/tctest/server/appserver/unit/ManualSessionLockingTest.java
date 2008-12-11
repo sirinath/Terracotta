@@ -21,7 +21,7 @@ public class ManualSessionLockingTest extends AbstractOneServerDeploymentTest {
   private static final String CONTEXT = "simple";
 
   public ManualSessionLockingTest() {
-    disableAllUntil("2009-01-01");
+//    disableAllUntil("2009-01-01");
   }
 
   public static Test suite() {
@@ -130,7 +130,7 @@ public class ManualSessionLockingTest extends AbstractOneServerDeploymentTest {
     }
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplicationWithSessionLocking(CONTEXT);
+      tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
   }
 
