@@ -194,7 +194,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     TCMessageFactory msgFactory = (messageFactory != null) ? messageFactory : new TCMessageFactoryImpl(sessionProvider,
                                                                                                        monitor);
     TCMessageRouter msgRouter = (router != null) ? router : new TCMessageRouterImpl();
-    ClientMessageChannelImpl rv = new ClientMessageChannelImpl(msgFactory, msgRouter, sessionProvider);
+    ClientMessageChannelImpl rv = new ClientMessageChannelImpl(msgFactory, msgRouter, sessionProvider, 
+                                                               new GroupID(addressProvider.getGroupId()));
     if (transportFactory == null) transportFactory = new MessageTransportFactoryImpl(connectionManager,
                                                                                      addressProvider,
                                                                                      maxReconnectTries, timeout,
@@ -202,8 +203,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     NetworkStackHarness stackHarness = this.stackHarnessFactory.createClientHarness(transportFactory, rv,
                                                                                     new MessageTransportListener[0]);
     stackHarness.finalizeStack();
-    // for active sub-channels or default group id for regular
-    rv.setRemoteNodeID(new GroupID(addressProvider.getGroupId()));
     return rv;
   }
 

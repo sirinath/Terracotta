@@ -9,6 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.GroupID;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.stats.counter.Counter;
@@ -56,9 +57,16 @@ public class TransactionSequencer {
   private final SampledCounter          numBatchesCounter;
   private final SampledCounter          batchSizeCounter;
 
-  public TransactionSequencer(TransactionBatchFactory batchFactory, LockAccounting lockAccounting,
+  private final GroupID                 groupID;
+  private final TransactionIDGenerator  transactionIDGenerator;
+
+  public TransactionSequencer(GroupID groupID, TransactionIDGenerator transactionIDGenerator,
+                              TransactionBatchFactory batchFactory, LockAccounting lockAccounting,
                               SampledCounter numTransactionCounter, SampledCounter numBatchesCounter,
                               SampledCounter batchSizeCounter, Counter pendingBatchesSize) {
+
+    this.groupID = groupID;
+    this.transactionIDGenerator = transactionIDGenerator;
     this.batchFactory = batchFactory;
     this.lockAccounting = lockAccounting;
     this.currentBatch = createNewBatch();
@@ -79,11 +87,11 @@ public class TransactionSequencer {
   }
 
   private ClientTransactionBatch createNewBatch() {
-    return batchFactory.nextBatch();
+    return batchFactory.nextBatch(groupID);
   }
 
   private boolean addTransactionToBatch(ClientTransaction txn, ClientTransactionBatch batch) {
-    return batch.addTransaction(txn, sequence);
+    return batch.addTransaction(txn, sequence, transactionIDGenerator);
   }
 
   public synchronized void addTransaction(ClientTransaction txn) {
@@ -119,7 +127,9 @@ public class TransactionSequencer {
 
     if (!txn.isConcurrent() && !folded) {
       // It is important to add the lock accounting before exposing the current batch to be sent (ie. put() below)
-      lockAccounting.add(txn.getTransactionID(), txn.getAllLockIDs());
+      TransactionID tid = txn.getTransactionID();
+      assert !tid.isNull();
+      lockAccounting.add(tid, txn.getAllLockIDs());
     }
 
     if (currentBatch.byteSize() > MAX_BYTE_SIZE_FOR_BATCH) {
