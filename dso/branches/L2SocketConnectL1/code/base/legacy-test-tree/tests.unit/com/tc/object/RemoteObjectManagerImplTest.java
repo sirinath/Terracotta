@@ -9,10 +9,13 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.NullTCLogger;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
+import com.tc.net.protocol.tcm.TestTCMessage;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
@@ -43,6 +46,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
   private TestRequestRootMessageFactory          rrmf;
   private TestRequestManagedObjectMessageFactory rmomf;
   private RetrieverThreads                       rt;
+  private GroupID                                groupID;
 
   protected void setUp() throws Exception {
     super.setUp();
@@ -55,38 +59,32 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     newRrm();
 
     this.threadGroup = new ThreadGroup(getClass().getName());
-    manager = new RemoteObjectManagerImpl(new NullTCLogger(), cidProvider, rrmf, rmomf, new NullObjectRequestMonitor(),
-                                          500, new NullSessionManager());
+    this.groupID = new GroupID(0);
+    manager = new RemoteObjectManagerImpl(groupID, new NullTCLogger(), cidProvider, rrmf, rmomf,
+                                          new NullObjectRequestMonitor(), 500, new NullSessionManager());
     rt = new RetrieverThreads(Thread.currentThread().getThreadGroup(), manager);
   }
 
   public void testManagerState() {
-    try {
-      manager.starting();
-      throw new AssertionError("Started even not PAUSED");
-    } catch (AssertionError e) {
-      // expected assertion
-    }
 
-    manager.pause();
+    manager.pause(GroupID.ALL_GROUPS, 1);
 
     try {
-      manager.pause();
+      manager.pause(GroupID.ALL_GROUPS, 1);
       throw new AssertionError("PAUSED even it was in PAUSE state");
     } catch (AssertionError e) {
       // expected assertion
     }
 
+    manager.unpause(GroupID.ALL_GROUPS, 0);
+
     try {
-      manager.unpause();
-      throw new AssertionError("UNPAUSED without state being STARTING");
+      manager.unpause(GroupID.ALL_GROUPS, 0);
+      throw new AssertionError("UNPAUSED without state being PASUSED");
     } catch (AssertionError e) {
       // expected assertion
     }
 
-    // state is paused
-    manager.starting();
-    manager.unpause();
   }
 
   public void testDNACacheClearing() {
@@ -95,14 +93,12 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (int i = 0; i < dnaCollectionCount; i++) {
       dnas = new ArrayList();
       dnas.add(new TestDNA(new ObjectID(i)));
-      manager.addAllObjects(new SessionID(i), i, dnas);
+      manager.addAllObjects(new SessionID(i), i, dnas, groupID);
     }
     assertEquals(dnaCollectionCount, manager.getDNACacheSize());
     DNA dna = manager.retrieve(new ObjectID(0));
     assertNotNull(dna);
     assertEquals(dnaCollectionCount - 1, manager.getDNACacheSize());
-    manager.pause();
-    manager.starting();
     manager.clear();
     assertEquals(0, manager.getDNACacheSize());
   }
@@ -113,7 +109,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       public void run() {
         System.err.println("Doing a bogus lookup");
         try {
-          manager.retrieve(new ObjectID(Long.MAX_VALUE));
+          manager.retrieve(new ObjectID(ObjectID.MAX_ID, groupID.toInt()));
           System.err.println("Didnt throw TCObjectNotFoundException : Not calling barrier()");
         } catch (TCObjectNotFoundException e) {
           System.err.println("Got TCObjectNotFoundException as expected : " + e);
@@ -128,8 +124,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     thread.start();
     ThreadUtil.reallySleep(5000);
     Set missingSet = new HashSet();
-    missingSet.add(new ObjectID(Long.MAX_VALUE));
-    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet);
+    missingSet.add(new ObjectID(ObjectID.MAX_ID, groupID.toInt()));
+    manager.objectsNotFoundFor(SessionID.NULL_ID, 1, missingSet, groupID);
     barrier.barrier();
   }
 
@@ -138,9 +134,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     final Map expectedNotResent = new HashMap();
     TestRequestRootMessage rrm = newRrm();
     assertNoMessageSent(rrm);
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
     assertNoMessageSent(rrm);
 
     int count = 100;
@@ -168,16 +162,14 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedNotResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++));
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), groupID);
     }
     // the threads waiting for the roots we just added should fall through.
     rt.waitForLowWatermark(count - expectedNotResent.size());
     assertEquals(count - expectedResent.size(), rt.getAliveCount());
 
     // TEST REQUEST OUTSTANDING
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
 
     assertFalse(rrmf.newMessageQueue.isEmpty());
 
@@ -198,22 +190,15 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     for (Iterator i = expectedResent.keySet().iterator(); i.hasNext();) {
       String rootID = (String) i.next();
       log("Adding Root = " + rootID);
-      manager.addRoot(rootID, new ObjectID(objectIDCount++));
+      manager.addRoot(rootID, new ObjectID(objectIDCount++), groupID);
     }
 
     // all the threads should now be able to complete.
     rt.waitForLowWatermark(0);
-
   }
 
   private static void log(String s) {
     if (false) System.err.println(Thread.currentThread().getName() + " :: " + s);
-  }
-
-  private void pauseAndStart() {
-    manager.pause();
-    // manager.clearCache();
-    manager.starting();
   }
 
   public void testRequestOutstandingRequestManagedObjectMessages() throws Exception {
@@ -224,9 +209,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
     TestRequestManagedObjectMessage rmom = newRmom();
     assertNoMessageSent(rmom);
-    pauseAndStart();
     manager.requestOutstanding();
-    manager.unpause();
     assertNoMessageSent(rmom);
 
     int count = 50;
@@ -275,10 +258,8 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       secondaryResent.put(rmom.objectIDs.iterator().next(), rmom);
     }
 
-    // now tell it to resend outstanding
-    pauseAndStart();
+    // now tell it to Re-send outstanding
     manager.requestOutstanding();
-    manager.unpause();
 
     final Collection c = new LinkedList();
     c.addAll(expectedResent.values());
@@ -504,14 +485,13 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     public final NoExceptionLinkedQueue newMessageQueue = new NoExceptionLinkedQueue();
     public TestRequestRootMessage       message;
 
-    public RequestRootMessage newRequestRootMessage() {
+    public RequestRootMessage newRequestRootMessage(NodeID nodeID) {
       newMessageQueue.put(message);
       return this.message;
     }
-
   }
 
-  private static class TestRequestRootMessage implements RequestRootMessage {
+  private static class TestRequestRootMessage extends TestTCMessage implements RequestRootMessage {
 
     public final NoExceptionLinkedQueue sendQueue = new NoExceptionLinkedQueue();
 
@@ -523,12 +503,12 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       return;
     }
 
-    public void send() {
-      sendQueue.put(new Object());
+    public TCMessageType getMessageType() {
+      return TCMessageType.REQUEST_ROOT_MESSAGE;
     }
 
-    public NodeID getSourceNodeID() {
-      throw new ImplementMe();
+    public void send() {
+      sendQueue.put(new Object());
     }
 
     public void recycle() {
@@ -543,11 +523,10 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
 
     public TestRequestManagedObjectMessage message;
 
-    public RequestManagedObjectMessage newRequestManagedObjectMessage() {
+    public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID) {
       newMessageQueue.put(message);
       return message;
     }
-
   }
 
   private static class TestRequestManagedObjectMessage implements RequestManagedObjectMessage {

@@ -42,6 +42,7 @@ import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionManagerImpl;
+import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.handler.ReceiveGroupMessageHandler;
 import com.tc.objectserver.handler.TCGroupHandshakeMessageHandler;
@@ -53,6 +54,7 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
+import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
 
 import java.io.IOException;
@@ -429,9 +431,13 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     if (isStopped.get()) return;
 
     int maxReconnectTries = isUseOOOLayer ? -1 : 0;
-    ClientMessageChannel channel = communicationsManager
-        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), maxReconnectTries, null, -1, 10000,
-                             addrProvider);
+    SessionProvider sessionProvider = new SessionManagerImpl(new SessionManagerImpl.SequenceFactory() {
+      public Sequence newSequence() {
+        return new SimpleSequence();
+      }
+    });
+    ClientMessageChannel channel = communicationsManager.createClientChannel(sessionProvider, maxReconnectTries, null,
+                                                                             -1, 10000, addrProvider);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
     channel.routeMessageType(TCMessageType.GROUP_WRAPPER_MESSAGE, receiveGroupMessageStage.getSink(), hydrateStage

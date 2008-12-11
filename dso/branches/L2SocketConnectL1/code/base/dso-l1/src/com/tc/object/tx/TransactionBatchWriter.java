@@ -12,6 +12,7 @@ import com.tc.io.TCByteBufferOutputStream.Mark;
 import com.tc.lang.Recyclable;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
@@ -55,6 +56,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private static final TCLogger                 logger                 = TCLogging
                                                                            .getLogger(TransactionBatchWriter.class);
 
+  private final GroupID                         groupID;
   private final CommitTransactionMessageFactory commitTransactionMessageFactory;
   private final TxnBatchID                      batchID;
   private final LinkedHashMap                   transactionData        = new LinkedHashMap();
@@ -71,9 +73,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private int                                   bytesWritten           = 0;
   private int                                   numTxns                = 0;
 
-  public TransactionBatchWriter(TxnBatchID batchID, ObjectStringSerializer serializer, DNAEncoding encoding,
-                                CommitTransactionMessageFactory commitTransactionMessageFactory,
+  public TransactionBatchWriter(GroupID groupID, TxnBatchID batchID, ObjectStringSerializer serializer,
+                                DNAEncoding encoding, CommitTransactionMessageFactory commitTransactionMessageFactory,
                                 FoldingConfig foldingConfig) {
+    this.groupID = groupID;
     this.batchID = batchID;
     this.encoding = encoding;
     this.commitTransactionMessageFactory = commitTransactionMessageFactory;
@@ -119,7 +122,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     if (outstandingWriteCount == 0) removed.recycle();
   }
 
-  private TransactionBuffer getOrCreateBuffer(ClientTransaction txn, SequenceGenerator sequenceGenerator) {
+  private TransactionBuffer getOrCreateBuffer(ClientTransaction txn, SequenceGenerator sequenceGenerator,
+                                              TransactionIDGenerator tidGenerator) {
     if (foldingEnabled) {
       final boolean exceedsLimits = exceedsLimits(txn);
 
@@ -204,6 +208,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     // if we are here, we are not folding
     SequenceID sid = new SequenceID(sequenceGenerator.getNextSequence());
     txn.setSequenceID(sid);
+    txn.setTransactionID(tidGenerator.nextTransactionID());
     if (DEBUG) logger.info("NOT folding, created new sequence " + sid);
 
     TransactionBuffer txnBuffer = new TransactionBuffer(sid, newOutputStream(), serializer, encoding);
@@ -229,10 +234,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   private void log_incomingTxn(ClientTransaction txn, boolean exceedsLimits, boolean scanForClose) {
-    logger.info("incoming txn [" + txn.getTransactionID() + " locks=" + txn.getAllLockIDs() + ", oids="
-                + txn.getChangeBuffers().keySet() + ", dmi=" + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots()
-                + ", notifies=" + txn.getNotifies() + ", type=" + txn.getLockType() + "] exceedsLimit=" + exceedsLimits
-                + ", scanForClose=" + scanForClose);
+    logger.info("incoming txn@" + System.identityHashCode(txn) + "[" + txn.getTransactionID() + " locks="
+                + txn.getAllLockIDs() + ", oids=" + txn.getChangeBuffers().keySet() + ", dmi="
+                + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots() + ", notifies=" + txn.getNotifies()
+                + ", type=" + txn.getLockType() + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
   }
 
   private void closeDependentKeys(Collection dependentKeys) {
@@ -266,12 +271,13 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return false;
   }
 
-  public synchronized boolean addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator) {
+  public synchronized boolean addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
+                                             TransactionIDGenerator tidGenerator) {
     numTxns++;
 
     removeEmptyDeltaDna(txn);
 
-    TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator);
+    TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator, tidGenerator);
 
     bytesWritten += txnBuffer.write(txn);
 
@@ -315,7 +321,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   public synchronized void send() {
-    CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage();
+    CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage(groupID);
     msg.setBatch(this, serializer);
     msg.send();
   }
@@ -507,7 +513,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       // TransactionBatchReader as well
       // /////////////////////////////////////////////////////////////////////////////////////////
 
-      output.writeLong(txn.getTransactionID().toLong());
+      TransactionID tid = txn.getTransactionID();
+      if (tid.isNull()) { throw new AssertionError("Writing Transaction with null Transaction ID : " + txn.toString()); }
+      
+      output.writeLong(tid.toLong());
       output.writeByte(txn.getLockType().getType());
       txnCountMark = output.mark();
       output.writeInt(UNINITIALIZED_LENGTH);
