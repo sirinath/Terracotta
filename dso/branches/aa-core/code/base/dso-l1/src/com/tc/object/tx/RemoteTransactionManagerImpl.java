@@ -23,7 +23,6 @@ import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
-import com.tc.util.TCTimerImpl;
 import com.tc.util.Util;
 
 import java.util.ArrayList;
@@ -77,24 +76,24 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   private final SessionManager             sessionManager;
   private final TransactionSequencer       sequencer;
   private final DSOClientMessageChannel    channel;
-  private final Timer                      timer                       = new TCTimerImpl(
-                                                                                         "RemoteTransactionManager Flusher",
-                                                                                         true);
+  private final Timer                      timer                       = new Timer("RemoteTransactionManager Flusher",
+                                                                                   true);
 
   private final GroupID                    groupID;
 
   public RemoteTransactionManagerImpl(GroupID groupID, TCLogger logger, final TransactionBatchFactory batchFactory,
-                                      SessionManager sessionManager, DSOClientMessageChannel channel,
-                                      Counter outstandingBatchesCounter, SampledCounter numTransactionCounter,
-                                      SampledCounter numBatchesCounter, final SampledCounter batchSizeCounter,
-                                      final Counter pendingBatchesSize) {
+                                      TransactionIDGenerator transactionIDGenerator, SessionManager sessionManager,
+                                      DSOClientMessageChannel channel, Counter outstandingBatchesCounter,
+                                      SampledCounter numTransactionCounter, SampledCounter numBatchesCounter,
+                                      final SampledCounter batchSizeCounter, final Counter pendingBatchesSize) {
     this.groupID = groupID;
     this.logger = logger;
     this.sessionManager = sessionManager;
     this.channel = channel;
     this.status = RUNNING;
-    this.sequencer = new TransactionSequencer(groupID, batchFactory, lockAccounting, numTransactionCounter,
-                                              numBatchesCounter, batchSizeCounter, pendingBatchesSize);
+    this.sequencer = new TransactionSequencer(groupID, transactionIDGenerator, batchFactory, lockAccounting,
+                                              numTransactionCounter, numBatchesCounter, batchSizeCounter,
+                                              pendingBatchesSize);
     this.timer.schedule(new RemoteTransactionManagerTimerTask(), COMPLETED_ACK_FLUSH_TIMEOUT,
                         COMPLETED_ACK_FLUSH_TIMEOUT);
     this.outstandingBatchesCounter = outstandingBatchesCounter;
@@ -227,7 +226,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
   public void commit(ClientTransaction txn) {
     if (!txn.hasChangesOrNotifies() && txn.getDmiDescriptors().isEmpty() && txn.getNewRoots().isEmpty()) throw new AssertionError(
                                                                                                                                   "Attempt to commit an empty transaction.");
-
+    if (!txn.getTransactionID().isNull()) throw new AssertionError(
+                                                                   "Transaction already committed as TransactionID is already assigned");
     long start = System.currentTimeMillis();
 
     sequencer.addTransaction(txn);
@@ -448,10 +448,15 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, C
 
   private class RemoteTransactionManagerTimerTask extends TimerTask {
 
+    private TransactionID currentLWM = TransactionID.NULL_ID;
+
     public void run() {
       try {
         TransactionID lwm = getCompletedTransactionIDLowWaterMark();
         if (lwm.isNull()) return;
+        if (currentLWM.toLong() > lwm.toLong()) { throw new AssertionError("Transaction Low watermark moved down from "
+                                                                           + currentLWM + " to " + lwm); }
+        currentLWM = lwm;
         CompletedTransactionLowWaterMarkMessage ctm = channel.getCompletedTransactionLowWaterMarkMessageFactory()
             .newCompletedTransactionLowWaterMarkMessage(groupID);
         ctm.initialize(lwm);
