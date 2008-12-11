@@ -16,6 +16,12 @@ public class HealthCheckerConfigClientImpl extends HealthCheckerConfigImpl {
     super(name);
   }
 
+  public HealthCheckerConfigClientImpl(long idle, long interval, int probes, String name, boolean extraCheck,
+                                       int socketConnectMaxCount, int socketConnectTimeout, String bindAddress,
+                                       int bindPort) {
+    super(idle, interval, probes, name, extraCheck, socketConnectMaxCount, socketConnectTimeout, bindAddress, bindPort);
+  }
+
   public boolean isCallbackPortListenerNeeded() {
     return true;
   }

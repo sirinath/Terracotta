@@ -13,6 +13,7 @@ import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
 import com.tc.net.core.event.TCConnectionEvent;
 import com.tc.net.protocol.NullProtocolAdaptor;
+import com.tc.util.Assert;
 import com.tc.util.State;
 
 /**
@@ -34,6 +35,9 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
   private static final State                     SOCKET_CONNECT             = new State("SOCKET_CONNECT");
   private static final State                     DEAD                       = new State("DEAD");
 
+  // constant
+  public static final int                        CONFIG_UPGRADE_FACTOR      = 3;
+
   // Basic Ping probes
   private State                                  currentState;
   private final TCLogger                         logger;
@@ -49,7 +53,10 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
   private final String                           remoteNodeDesc;
 
   // Socket Connect probes
+  private int                                    intervalTimeElapsedCount   = 0;
+  private int                                    idleTimeElapsedCount       = 0;
   private int                                    socketConnectSuccessCount  = 0;
+  private int                                    configFactor;
   private TCConnection                           presentConnection          = null;
   private HealthCheckerSocketConnect             sockectConnect             = new NullHealthCheckerSocketConnectImpl();
 
@@ -69,6 +76,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     logger.info("Health monitoring agent started for " + remoteNodeDesc);
     currentState = INIT;
     callbackPort = transport.getRemoteCallbackPort();
+    configFactor = 1;
     initCallbackPortVerification();
   }
 
@@ -105,10 +113,14 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
       if (this.probeReplyNotRecievedCount.get() > 0) logger.debug("PING_REPLY not received from " + remoteNodeDesc
                                                                   + " for " + this.probeReplyNotRecievedCount
                                                                   + " times (max allowed:"
-                                                                  + this.maxProbeCountWithoutReply + ").");
+                                                                  + getMaxProbeCountWithoutReply() + ").");
     }
 
-    return ((this.probeReplyNotRecievedCount.get() < this.maxProbeCountWithoutReply));
+    return ((this.probeReplyNotRecievedCount.get() < getMaxProbeCountWithoutReply()));
+  }
+
+  private int getMaxProbeCountWithoutReply() {
+    return this.maxProbeCountWithoutReply * this.configFactor;
   }
 
   private boolean initSocketConnectProbe() {
@@ -151,10 +163,44 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
 
   public synchronized void refresh() {
     initProbeCycle();
+    initIntervalTimeElapsedCount();
+    initIdleTimeElapsedCount();
     initSocketConnectCycle();
   }
 
+  private void updateConfigFactor(int newFactor) {
+    Assert.eval(newFactor >= 1);
+    int currentConfigFactor = configFactor;
+    configFactor = newFactor;
+    initIntervalTimeElapsedCount();
+    initIdleTimeElapsedCount();
+    logger.debug("ProbeFactor updated from  " + currentConfigFactor + " to " + configFactor);
+  }
+
+  private boolean isIntervalTimeElapsed() {
+    intervalTimeElapsedCount++;
+    if (intervalTimeElapsedCount >= configFactor) {
+      initIntervalTimeElapsedCount();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private boolean isIdleTimeElapsed() {
+    idleTimeElapsedCount++;
+    if (idleTimeElapsedCount >= configFactor) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   public synchronized boolean probeIfAlive() {
+
+    if (!isIntervalTimeElapsed()) { return true; }
+    if (!isIdleTimeElapsed()) { return true; }
+
     if (currentState.equals(DEAD)) {
       // connection events might have moved us to DEAD state.
       // all return are done at the bottom
@@ -204,6 +250,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     logger.info("HealthCheckCallbackPort verification FAILED for " + remoteNodeDesc + "(callbackport: " + callbackPort
                 + ")");
     transport.setRemoteCallbackPort(TransportHandshakeMessage.NO_CALLBACK_PORT);
+    updateConfigFactor(CONFIG_UPGRADE_FACTOR);
     changeState(START);
   }
 
@@ -249,6 +296,14 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
 
   private void initSocketConnectCycle() {
     socketConnectSuccessCount = 0;
+  }
+
+  private void initIntervalTimeElapsedCount() {
+    intervalTimeElapsedCount = 0;
+  }
+
+  private void initIdleTimeElapsedCount() {
+    idleTimeElapsedCount = 0;
   }
 
   private boolean wasInLongGC() {
