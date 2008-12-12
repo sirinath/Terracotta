@@ -154,7 +154,11 @@ public class SessionData implements Session, SessionSupport {
           r.clearSession();
           clearRequest();
         }
-        sessionManager.remove(this, unlock);
+        if (unlock && !sessionManager.isApplicationSessionLocked()) {
+          sessionId.getWriteLock();
+          sessionManager.remove(this, true);
+        }
+        else sessionManager.remove(this, unlock);
       } finally {
         invalidated = true;
         invalidating = false;
@@ -240,15 +244,10 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object setAttributeReturnOld(String name, Object value) {
     checkIfValid();
-    try {
-      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
-      if (value == null) {
-        return unbindAttribute(name);
-      } else {
-        return bindAttribute(name, value);
-      }
-    } finally {
-      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    if (value == null) {
+      return unbindAttribute(name);
+    } else {
+      return bindAttribute(name, value);
     }
   }
 
@@ -291,12 +290,7 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object removeAttributeReturnOld(String name) {
     checkIfValid();
-    try {
-      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
-      return unbindAttribute(name);
-    } finally {
-      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
-    }
+    return unbindAttribute(name);
   }
 
   public void removeValue(String name) {
@@ -318,14 +312,19 @@ public class SessionData implements Session, SessionSupport {
   }
 
   private synchronized void setMaxInactiveSeconds(int secs) {
-    if (secs < 0) {
-      maxIdleMillis = NEVER_EXPIRE;
-      this.timestamp.setMillis(Long.MAX_VALUE);
-      return;
-    }
+    if (sessionManager != null && !sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+    try {
+      if (secs < 0) {
+        maxIdleMillis = NEVER_EXPIRE;
+        this.timestamp.setMillis(Long.MAX_VALUE);
+        return;
+      }
 
-    maxIdleMillis = secs * 1000L;
-    this.timestamp.setMillis(System.currentTimeMillis() + maxIdleMillis);
+      maxIdleMillis = secs * 1000L;
+      this.timestamp.setMillis(System.currentTimeMillis() + maxIdleMillis);
+    } finally {
+      if (sessionManager != null && !sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   public synchronized Object getInternalAttribute(String name) {
@@ -364,27 +363,37 @@ public class SessionData implements Session, SessionSupport {
   }
 
   private Object bindAttribute(String name, Object newVal) {
-    Object oldVal = getAttribute(name);
-    if (newVal != oldVal) eventMgr.bindAttribute(this, name, newVal);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      Object oldVal = getAttribute(name);
+      if (newVal != oldVal) eventMgr.bindAttribute(this, name, newVal);
 
-    oldVal = attributes.put(name, newVal);
+      oldVal = attributes.put(name, newVal);
 
-    if (oldVal != newVal) eventMgr.unbindAttribute(this, name, oldVal);
+      if (oldVal != newVal) eventMgr.unbindAttribute(this, name, oldVal);
 
-    // now deal with attribute listener events
-    if (oldVal != null) eventMgr.replaceAttribute(this, name, oldVal, newVal);
-    else eventMgr.setAttribute(this, name, newVal);
+      // now deal with attribute listener events
+      if (oldVal != null) eventMgr.replaceAttribute(this, name, oldVal, newVal);
+      else eventMgr.setAttribute(this, name, newVal);
 
-    return oldVal;
+      return oldVal;
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
+    }
   }
 
   private Object unbindAttribute(String name) {
-    Object oldVal = attributes.remove(name);
-    if (oldVal != null) {
-      eventMgr.unbindAttribute(this, name, oldVal);
-      eventMgr.removeAttribute(this, name, oldVal);
+    try {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.getWriteLock();
+      Object oldVal = attributes.remove(name);
+      if (oldVal != null) {
+        eventMgr.unbindAttribute(this, name, oldVal);
+        eventMgr.removeAttribute(this, name, oldVal);
+      }
+      return oldVal;
+    } finally {
+      if (!sessionManager.isApplicationSessionLocked()) sessionId.commitLock();
     }
-    return oldVal;
   }
 
   public void resumeRequest() {

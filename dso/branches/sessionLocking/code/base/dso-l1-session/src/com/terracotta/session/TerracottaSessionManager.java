@@ -407,6 +407,7 @@ public class TerracottaSessionManager implements SessionManager {
     try {
       sd = store.find(id);
       if (sd != null) {
+        if (!isApplicationSessionLocked()) id.getWriteLock(); 
         expire(id, sd);
       }
     } finally {
