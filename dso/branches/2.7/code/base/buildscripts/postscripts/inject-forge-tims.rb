@@ -18,7 +18,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     timnames.each do |entry|
       output = tim_get_output(:list, entry).split("\n")
       output.delete_if { |line| 
-        puts "[xxx] #{line}"
+        #puts "[xxx] #{line}"
         !line.index(entry) 
       }
       data = output.last
@@ -31,7 +31,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     end
 
     if !tims.empty? && timnames.size != tims.size
-      msg  = "Unable to locate all of the TIMs listed in the distribution config - only some TIM info will be injected.\n" 
+      msg  = "Unable to locate all of the TIMs listed in the distribution config.\n" 
       msg << "What got installed: #{tims.keys.join(', ')}\n"
       msg << "What was specified: #{timnames.join(', ')}"
       fail msg
