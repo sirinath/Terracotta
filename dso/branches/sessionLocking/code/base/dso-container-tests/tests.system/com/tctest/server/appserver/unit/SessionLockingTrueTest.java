@@ -12,7 +12,7 @@ import com.tctest.webapp.servlets.ManualSessionLockingServlet;
 
 import junit.framework.Test;
 
-public class SessionLockingTrueTest extends ManualSessionLockingTest {
+public class SessionLockingTrueTest extends ManualSessionLockingTestBase {
 
   public static Test suite() {
     return new SessionLockingTrueTestSetup();

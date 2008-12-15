@@ -154,11 +154,7 @@ public class SessionData implements Session, SessionSupport {
           r.clearSession();
           clearRequest();
         }
-        if (unlock && !sessionManager.isApplicationSessionLocked()) {
-          sessionId.getWriteLock();
-          sessionManager.remove(this, true);
-        }
-        else sessionManager.remove(this, unlock);
+        sessionManager.remove(this, unlock);
       } finally {
         invalidated = true;
         invalidating = false;

@@ -419,12 +419,16 @@ public class TerracottaSessionManager implements SessionManager {
     if (debugInvalidate) {
       logger.info("Session id: " + data.getSessionId().getKey() + " being removed, unlock: " + unlock);
     }
-
-    store.remove(data.getSessionId());
-    mBean.sessionDestroyed();
-
-    if (unlock) {
-      data.getSessionId().commitLock();
+    if (unlock && !isApplicationSessionLocked()) {
+      data.getSessionId().getWriteLock();
+    }
+    try {
+      store.remove(data.getSessionId());
+      mBean.sessionDestroyed();
+    } finally {
+      if (unlock) {
+        data.getSessionId().commitLock();
+      }
     }
   }
 
