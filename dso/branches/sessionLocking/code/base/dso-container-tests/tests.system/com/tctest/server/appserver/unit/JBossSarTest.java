@@ -115,8 +115,13 @@ public class JBossSarTest extends AbstractTwoServerDeploymentTest {
       builder.addServlet(SERVLET, "/" + SERVLET + "/*", JBossSarServlet.class, null, true);
     }
 
+    public boolean isSessionLockingTrue() {
+      return true;
+    }
+
     protected void configureTcConfig(TcConfigBuilder clientConfig) {
-      clientConfig.addWebApplication(CONTEXT);
+      if (isSessionLockingTrue()) clientConfig.addWebApplication(CONTEXT);
+      else clientConfig.addWebApplicationWithoutSessionLocking(CONTEXT);
       clientConfig.addInstrumentedClass(DirectoryMonitor.class.getName());
 
       clientConfig.addRoot(DirectoryMonitor.class.getName() + ".list", "list");
@@ -126,6 +131,18 @@ public class JBossSarTest extends AbstractTwoServerDeploymentTest {
       clientConfig.addAutoLock("* " + JBossSarServlet.class.getName() + ".*(..)", "write");
     }
 
+  }
+
+  static class JBossSarWithoutSLTestSetup extends JBossSarTestSetup {
+
+    public JBossSarWithoutSLTestSetup(Class testClass, boolean parentDelegation) {
+      super(testClass, parentDelegation);
+    }
+
+    @Override
+    public boolean isSessionLockingTrue() {
+      return false;
+    }
   }
 
 }

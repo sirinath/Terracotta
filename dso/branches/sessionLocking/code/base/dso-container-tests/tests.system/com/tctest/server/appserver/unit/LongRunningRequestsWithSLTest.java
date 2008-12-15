@@ -12,9 +12,9 @@ import com.tctest.webapp.servlets.LongRunningRequestsServlet;
 
 import junit.framework.Test;
 
-public class LongRunningRequestsTestWithSessionLocking extends LongRunningRequestsTestBase {
+public class LongRunningRequestsWithSLTest extends LongRunningRequestsTestBase {
 
-  public LongRunningRequestsTestWithSessionLocking() {
+  public LongRunningRequestsWithSLTest() {
     //
   }
 
@@ -58,7 +58,7 @@ public class LongRunningRequestsTestWithSessionLocking extends LongRunningReques
   private static class LongRunningRequestsTestWithSessionLockingSetup extends LongRunningRequestsTestSetupBase {
 
     public LongRunningRequestsTestWithSessionLockingSetup() {
-      super(LongRunningRequestsTestWithSessionLocking.class, CONTEXT);
+      super(LongRunningRequestsWithSLTest.class, CONTEXT);
     }
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
