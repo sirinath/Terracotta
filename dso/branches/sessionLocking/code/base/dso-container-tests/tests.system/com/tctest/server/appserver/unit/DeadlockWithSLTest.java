@@ -12,9 +12,9 @@ import com.tctest.webapp.servlets.SessionLockingDeadlockServlet;
 
 import junit.framework.Test;
 
-public class DeadlockTestWithSessionLocking extends DeadlockTestBase {
+public class DeadlockWithSLTest extends DeadlockTestBase {
 
-  public DeadlockTestWithSessionLocking() {
+  public DeadlockWithSLTest() {
     //
   }
 
@@ -52,7 +52,7 @@ public class DeadlockTestWithSessionLocking extends DeadlockTestBase {
   private static class DeadlockTestWithSessionLockingSetup extends DeadlockTestSetupBase {
 
     public DeadlockTestWithSessionLockingSetup() {
-      super(DeadlockTestWithSessionLocking.class, CONTEXT);
+      super(DeadlockWithSLTest.class, CONTEXT);
     }
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {

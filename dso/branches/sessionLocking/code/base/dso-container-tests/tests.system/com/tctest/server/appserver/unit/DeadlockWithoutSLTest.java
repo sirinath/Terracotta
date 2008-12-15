@@ -12,9 +12,9 @@ import com.tctest.webapp.servlets.SessionLockingDeadlockServlet;
 
 import junit.framework.Test;
 
-public class DeadlockTestWithoutSessionLocking extends DeadlockTestBase {
+public class DeadlockWithoutSLTest extends DeadlockTestBase {
 
-  public DeadlockTestWithoutSessionLocking() {
+  public DeadlockWithoutSLTest() {
     // disableAllUntil("2009-01-01");
   }
 
@@ -57,7 +57,7 @@ public class DeadlockTestWithoutSessionLocking extends DeadlockTestBase {
   private static class DeadlockTestWithoutSessionLockingSetup extends DeadlockTestSetupBase {
 
     public DeadlockTestWithoutSessionLockingSetup() {
-      super(DeadlockTestWithoutSessionLocking.class, CONTEXT);
+      super(DeadlockWithoutSLTest.class, CONTEXT);
     }
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
