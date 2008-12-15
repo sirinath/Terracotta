@@ -75,7 +75,7 @@ public class RequestForwardTest extends AbstractOneServerDeploymentTest {
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
       if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);
-      tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
+      else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
 
     public boolean isSessionLockingTrue() {
