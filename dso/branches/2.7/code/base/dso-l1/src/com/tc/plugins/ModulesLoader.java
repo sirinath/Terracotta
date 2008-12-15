@@ -347,7 +347,7 @@ public class ModulesLoader {
     // If the XML isn't valid, loop through the listener's contents,
     // printing contained messages.
     if (!isValid) {
-      StringBuilder sb = new StringBuilder();
+      StringBuffer sb = new StringBuffer();
       for (int i = 0; i < errorList.size(); i++) {
         XmlError error = (XmlError) errorList.get(i);
         sb.append(NEWLINE);
