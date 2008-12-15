@@ -18,12 +18,12 @@ import java.util.Set;
 
 public class SessionDataStore {
 
-  private final Map                      store;                // <SessionData>
-  private final Map                      dtmStore;             // <Timestamp>
-  private final int                      maxIdleTimeoutSeconds;
-  private final ContextMgr               ctxMgr;
-  private final LifecycleEventMgr        lifecycleEventMgr;
-  private final SessionManager sessionManager;
+  private final Map               store;                // <SessionData>
+  private final Map               dtmStore;             // <Timestamp>
+  private final int               maxIdleTimeoutSeconds;
+  private final ContextMgr        ctxMgr;
+  private final LifecycleEventMgr lifecycleEventMgr;
+  private final SessionManager    sessionManager;
 
   public SessionDataStore(String appName, int maxIdleTimeoutSeconds, LifecycleEventMgr lifecycleEventMgr,
                           ContextMgr ctxMgr, SessionManager sessionManager) {
@@ -113,9 +113,7 @@ public class SessionDataStore {
   void updateTimestampIfNeeded(SessionData sd) {
     Assert.pre(sd != null);
 
-    if (sd.neverExpires()) {
-      return;
-    }
+    if (sd.neverExpires()) { return; }
 
     final long now = System.currentTimeMillis();
     final Timestamp t = sd.getTimestamp();

@@ -12,7 +12,7 @@ import com.tc.test.server.appserver.deployment.WebApplicationServer;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.servlets.ManualSessionLockingServlet;
 
-public abstract class ManualSessionLockingTest extends AbstractOneServerDeploymentTest {
+public abstract class ManualSessionLockingTestBase extends AbstractOneServerDeploymentTest {
 
   public static final String CONTEXT = "simple";
 
