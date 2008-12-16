@@ -174,7 +174,7 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
     configFactor = newFactor;
     initIntervalTimeElapsedCount();
     initIdleTimeElapsedCount();
-    logger.debug("ProbeFactor updated from  " + currentConfigFactor + " to " + configFactor);
+    logger.info("Config Factor updated from  " + currentConfigFactor + " to " + configFactor);
   }
 
   private boolean isIntervalTimeElapsed() {
@@ -247,17 +247,17 @@ class ConnectionHealthCheckerContextImpl implements ConnectionHealthCheckerConte
   }
 
   private void callbackPortVerificationFailed() {
-    logger.info("HealthCheckCallbackPort verification FAILED for " + remoteNodeDesc + "(callbackport: " + callbackPort
-                + ")");
     transport.setRemoteCallbackPort(TransportHandshakeMessage.NO_CALLBACK_PORT);
     updateConfigFactor(CONFIG_UPGRADE_FACTOR);
     changeState(START);
+    logger.info("HealthCheckCallbackPort verification FAILED for " + remoteNodeDesc + "(callbackport: " + callbackPort
+                + ")");
   }
 
   private void callbackPortVerificationSuccess() {
+    changeState(START);
     logger.info("HealthCheckCallbackPort verification PASSED for " + remoteNodeDesc + "(callbackport: " + callbackPort
                 + ")");
-    changeState(START);
   }
 
   public synchronized boolean receiveProbe(HealthCheckerProbeMessage message) {
