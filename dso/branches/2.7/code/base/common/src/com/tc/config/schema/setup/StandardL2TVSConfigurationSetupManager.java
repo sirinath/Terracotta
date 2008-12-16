@@ -112,6 +112,10 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     validateRestrictions();
   }
 
+  public String getL2Identifier() {
+    return this.thisL2Identifier;
+  }
+
   private NewHaConfig getHaConfig() {
     ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Ha.class,
                                                                  new ChildBeanFetcher() {
