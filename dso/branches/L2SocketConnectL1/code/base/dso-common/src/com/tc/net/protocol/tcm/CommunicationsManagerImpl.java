@@ -194,7 +194,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     TCMessageFactory msgFactory = (messageFactory != null) ? messageFactory : new TCMessageFactoryImpl(sessionProvider,
                                                                                                        monitor);
     TCMessageRouter msgRouter = (router != null) ? router : new TCMessageRouterImpl();
-    ClientMessageChannelImpl rv = new ClientMessageChannelImpl(msgFactory, msgRouter, sessionProvider, 
+    ClientMessageChannelImpl rv = new ClientMessageChannelImpl(msgFactory, msgRouter, sessionProvider,
                                                                new GroupID(addressProvider.getGroupId()));
     if (transportFactory == null) transportFactory = new MessageTransportFactoryImpl(connectionManager,
                                                                                      addressProvider,
@@ -305,6 +305,12 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
       return;
     }
 
+    int bindPort = healthCheckerConfig.getCallbackPortListenerBindPort();
+    if (bindPort == TransportHandshakeMessage.NO_CALLBACK_PORT) {
+      logger.info("HealtCheck CallbackPort Listener disabled");
+      return;
+    }
+
     InetAddress bindAddr;
     String bindAddress = healthCheckerConfig.getCallbackPortListenerBindAddress();
     if (bindAddress == null || bindAddress.equals("")) {
@@ -323,7 +329,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                                      + addressChecker
                                                                                          .getAllLocalAddresses()); }
 
-    int bindPort = healthCheckerConfig.getCallbackPortListenerBindPort();
     TCSocketAddress address = new TCSocketAddress(bindAddr, bindPort);
     NetworkListener callbackPortListener = createListener(new NullSessionManager(), address, true,
                                                           new DefaultConnectionIdFactory());

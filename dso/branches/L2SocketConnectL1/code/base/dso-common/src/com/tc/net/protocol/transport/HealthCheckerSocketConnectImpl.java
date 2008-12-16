@@ -131,17 +131,24 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
     //
   }
 
-  public synchronized void connectEvent(TCConnectionEvent event) {
+  public void connectEvent(TCConnectionEvent event) {
+
+    synchronized (this) {
+      stop();
+      changeState(SOCKETCONNECT_IDLE);
+    }
 
     for (Iterator i = listeners.iterator(); i.hasNext();) {
       ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectSuccess(event);
     }
-
-    stop();
-    changeState(SOCKETCONNECT_IDLE);
   }
 
-  public synchronized void endOfFileEvent(TCConnectionEvent event) {
+  public void endOfFileEvent(TCConnectionEvent event) {
+
+    synchronized (this) {
+      stop();
+      changeState(SOCKETCONNECT_FAIL);
+    }
 
     for (Iterator i = listeners.iterator(); i.hasNext();) {
       ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectFail(event);
@@ -150,11 +157,14 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
     if (logger.isDebugEnabled()) {
       logger.debug("Socket Connect EOF event:" + event.toString() + " on " + remoteNodeDesc);
     }
-    stop();
-    changeState(SOCKETCONNECT_FAIL);
   }
 
-  public synchronized void errorEvent(TCConnectionErrorEvent errorEvent) {
+  public void errorEvent(TCConnectionErrorEvent errorEvent) {
+
+    synchronized (this) {
+      stop();
+      changeState(SOCKETCONNECT_FAIL);
+    }
 
     for (Iterator i = listeners.iterator(); i.hasNext();) {
       ((HealthCheckerSocketConnectEventListener) i.next()).notifySocketConnectFail(errorEvent);
@@ -163,8 +173,6 @@ public class HealthCheckerSocketConnectImpl implements HealthCheckerSocketConnec
     if (logger.isDebugEnabled()) {
       logger.debug("Socket Connect Error Event:" + errorEvent.toString() + " on " + remoteNodeDesc);
     }
-    stop();
-    changeState(SOCKETCONNECT_FAIL);
   }
 
 }
