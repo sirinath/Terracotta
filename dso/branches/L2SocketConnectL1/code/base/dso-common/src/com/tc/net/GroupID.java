@@ -8,8 +8,14 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 
 import java.io.IOException;
+import java.io.Serializable;
 
-public class GroupID implements NodeID {
+/**
+ * In active-active, a GroupID identifies a group of servers with one
+ * active server and some number of passive servers.  An object resides
+ * on a particular group, hence the method ObjectID#getGroupID().
+ */
+public class GroupID implements NodeID, Serializable {
   private static final int    NULL_NUMBER       = -1;
   private static final int    ALL_GROUPS_NUMBER = Integer.MIN_VALUE;
 
