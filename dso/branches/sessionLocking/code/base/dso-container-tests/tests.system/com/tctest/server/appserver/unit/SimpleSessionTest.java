@@ -14,9 +14,9 @@ import com.tctest.webapp.servlets.ShutdownNormallyServlet;
 import junit.framework.Test;
 
 public class SimpleSessionTest extends AbstractTwoServerDeploymentTest {
-  public static final String  CONFIG_FILE_FOR_TEST = "/tc-config-files/simplesession-tc-config.xml";
-  private static final String CONTEXT              = "simple";
-  private static final String MAPPING              = "doit";
+  public static final String    CONFIG_FILE_FOR_TEST = "/tc-config-files/simplesession-tc-config.xml";
+  protected static final String CONTEXT              = "simple";
+  private static final String   MAPPING              = "doit";
 
   public static Test suite() {
     return new SimpleSessionTestSetup();
@@ -37,10 +37,14 @@ public class SimpleSessionTest extends AbstractTwoServerDeploymentTest {
   }
 
   /** ****** test setup ********* */
-  private static class SimpleSessionTestSetup extends TwoServerTestSetup {
+  protected static class SimpleSessionTestSetup extends TwoServerTestSetup {
 
     public SimpleSessionTestSetup() {
-      super(SimpleSessionTest.class, CONFIG_FILE_FOR_TEST, CONTEXT);
+      this(SimpleSessionTest.class, CONFIG_FILE_FOR_TEST, CONTEXT);
+    }
+
+    public SimpleSessionTestSetup(Class testClass, String configFileForTest, String context) {
+      super(testClass, configFileForTest, context);
     }
 
     protected void configureWar(DeploymentBuilder builder) {
