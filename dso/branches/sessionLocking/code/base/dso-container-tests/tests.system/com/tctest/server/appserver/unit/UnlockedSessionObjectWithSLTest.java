@@ -4,8 +4,6 @@
  */
 package com.tctest.server.appserver.unit;
 
-import com.tc.test.server.util.TcConfigBuilder;
-
 import junit.framework.Test;
 
 public class UnlockedSessionObjectWithSLTest extends UnlockedSessionObjectTestBase {
@@ -18,21 +16,12 @@ public class UnlockedSessionObjectWithSLTest extends UnlockedSessionObjectTestBa
     super.testSessionLocking();
   }
 
-  @Override
-  public boolean isSessionLockingTrue() {
-    return true;
-  }
-
   private static class UnlockedSessionObjectWithSLTestSetup extends UnlockedSessionObjectTestSetup {
 
     public UnlockedSessionObjectWithSLTestSetup() {
       super(UnlockedSessionObjectWithSLTest.class, CONTEXT);
     }
 
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      super.configureTcConfig(tcConfigBuilder);
-      tcConfigBuilder.addWebApplicationWithSessionLocking(CONTEXT);
-    }
   }
 
 }

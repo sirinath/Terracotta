@@ -115,10 +115,6 @@ public class JBossSarTest extends AbstractTwoServerDeploymentTest {
       builder.addServlet(SERVLET, "/" + SERVLET + "/*", JBossSarServlet.class, null, true);
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
     protected void configureTcConfig(TcConfigBuilder clientConfig) {
       if (isSessionLockingTrue()) clientConfig.addWebApplication(CONTEXT);
       else clientConfig.addWebApplicationWithoutSessionLocking(CONTEXT);

@@ -22,7 +22,7 @@ public class SessionInvalidatorWithoutSLTest extends SessionInvalidatorTest {
     }
 
     @Override
-    protected boolean isSessionLockingTrue() {
+    public boolean isSessionLockingTrue() {
       return false;
     }
 

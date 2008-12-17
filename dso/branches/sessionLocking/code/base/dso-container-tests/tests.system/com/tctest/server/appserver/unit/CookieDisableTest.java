@@ -77,10 +77,6 @@ public class CookieDisableTest extends AbstractOneServerDeploymentTest {
       if (isSessionLockingTrue()) clientConfig.addWebApplication(CONTEXT);
       else clientConfig.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
-
-    protected boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 
 }

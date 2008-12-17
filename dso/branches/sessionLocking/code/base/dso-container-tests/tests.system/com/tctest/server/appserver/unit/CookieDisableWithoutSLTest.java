@@ -23,7 +23,7 @@ public class CookieDisableWithoutSLTest extends CookieDisableTest {
     }
 
     @Override
-    protected boolean isSessionLockingTrue() {
+    public boolean isSessionLockingTrue() {
       return false;
     }
 

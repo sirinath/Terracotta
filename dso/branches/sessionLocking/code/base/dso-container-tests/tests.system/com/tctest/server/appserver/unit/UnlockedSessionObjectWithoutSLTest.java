@@ -4,8 +4,6 @@
  */
 package com.tctest.server.appserver.unit;
 
-import com.tc.test.server.util.TcConfigBuilder;
-
 import junit.framework.Test;
 
 public class UnlockedSessionObjectWithoutSLTest extends UnlockedSessionObjectTestBase {
@@ -29,10 +27,11 @@ public class UnlockedSessionObjectWithoutSLTest extends UnlockedSessionObjectTes
       super(UnlockedSessionObjectWithoutSLTest.class, CONTEXT);
     }
 
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      super.configureTcConfig(tcConfigBuilder);
-      tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
+    @Override
+    public boolean isSessionLockingTrue() {
+      return false;
     }
+
   }
 
 }

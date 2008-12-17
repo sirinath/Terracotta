@@ -57,9 +57,5 @@ public class NewSessionAfterInvalidateTest extends AbstractTwoServerDeploymentTe
       else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
   }
 }

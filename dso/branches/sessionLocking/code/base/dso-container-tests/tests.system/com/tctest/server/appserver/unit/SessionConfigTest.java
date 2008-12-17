@@ -122,10 +122,6 @@ public class SessionConfigTest extends AbstractDeploymentTest {
     createAndStartAppServer();
   }
 
-  public boolean isSessionLockingTrue() {
-    return true;
-  }
-
   private DeploymentBuilder createTestDeployment() {
     tcConfigBuilder = new TcConfigBuilder();
     if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);

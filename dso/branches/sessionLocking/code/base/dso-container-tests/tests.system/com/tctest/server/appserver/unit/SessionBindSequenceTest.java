@@ -122,9 +122,5 @@ public class SessionBindSequenceTest extends AbstractOneServerDeploymentTest {
       params.appendSysProp("com.tc.session.maxidle.seconds", defaultMaxIdleSeconds);
       params.appendSysProp("com.tc.session.debug.invalidate", true);
     }
-
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 }

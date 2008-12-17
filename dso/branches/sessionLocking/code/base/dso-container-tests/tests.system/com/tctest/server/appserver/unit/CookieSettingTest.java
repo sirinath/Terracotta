@@ -49,10 +49,6 @@ public class CookieSettingTest extends AbstractDeploymentTest {
     return false;
   }
 
-  protected boolean isSessionLockingTrue() {
-    return true;
-  }
-
   public void setUp() throws Exception {
     super.setUp();
 

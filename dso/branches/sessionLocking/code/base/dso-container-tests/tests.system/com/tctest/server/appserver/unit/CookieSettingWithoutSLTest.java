@@ -11,7 +11,7 @@ import junit.framework.Test;
 public class CookieSettingWithoutSLTest extends CookieSettingTest {
 
   @Override
-  protected boolean isSessionLockingTrue() {
+  public boolean isSessionLockingTrue() {
     return false;
   }
 

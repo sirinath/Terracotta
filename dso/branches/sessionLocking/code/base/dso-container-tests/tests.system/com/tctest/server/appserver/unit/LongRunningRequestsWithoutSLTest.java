@@ -5,7 +5,6 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
-import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.servlets.LongRunningRequestsServlet;
@@ -48,7 +47,8 @@ public class LongRunningRequestsWithoutSLTest extends LongRunningRequestsTestBas
 
     for (int i = 0; i < shortRequestThreads.length; i++) {
       if (shortRequestThreads[i].isAlive()) {
-        Assert.fail("Short Requests are BLOCKED. Short Requests are NOT supposed to be blocked with session-locking=false");
+        Assert
+            .fail("Short Requests are BLOCKED. Short Requests are NOT supposed to be blocked with session-locking=false");
       }
     }
     debug("Test passed");
@@ -60,8 +60,10 @@ public class LongRunningRequestsWithoutSLTest extends LongRunningRequestsTestBas
       super(LongRunningRequestsWithoutSLTest.class, CONTEXT);
     }
 
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
+    @Override
+    public boolean isSessionLockingTrue() {
+      return false;
     }
+
   }
 }

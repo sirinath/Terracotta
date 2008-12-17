@@ -50,9 +50,5 @@ public class SessionObjectIdentityTest extends AbstractTwoServerDeploymentTest {
       if (isSessionLockingTrue()) clientConfig.addWebApplication(CONTEXT);
       else clientConfig.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
-
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 }

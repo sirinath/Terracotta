@@ -9,6 +9,7 @@ import com.meterware.httpunit.WebResponse;
 import com.tc.test.server.appserver.deployment.AbstractOneServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
+import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.servlets.ManualSessionLockingServlet;
 
@@ -53,6 +54,11 @@ public abstract class ManualSessionLockingTestBase extends AbstractOneServerDepl
     protected void configureWar(DeploymentBuilder builder) {
       builder.addServlet("ManualSessionLockingServlet", "/" + CONTEXT + "/*", ManualSessionLockingServlet.class, null,
                          false);
+    }
+
+    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
+      if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);
+      else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
   }
 

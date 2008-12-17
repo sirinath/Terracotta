@@ -76,10 +76,6 @@ public class ResponseIsCommittedTest extends AbstractOneServerDeploymentTest {
       else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
   }
 
 }
