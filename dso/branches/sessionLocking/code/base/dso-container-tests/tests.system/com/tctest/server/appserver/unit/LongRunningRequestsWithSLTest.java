@@ -5,7 +5,6 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
-import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.servlets.LongRunningRequestsServlet;
@@ -59,10 +58,6 @@ public class LongRunningRequestsWithSLTest extends LongRunningRequestsTestBase {
 
     public LongRunningRequestsTestWithSessionLockingSetup() {
       super(LongRunningRequestsWithSLTest.class, CONTEXT);
-    }
-
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplicationWithSessionLocking(CONTEXT);
     }
   }
 }

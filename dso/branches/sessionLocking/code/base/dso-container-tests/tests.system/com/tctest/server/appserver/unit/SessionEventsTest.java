@@ -113,9 +113,5 @@ public class SessionEventsTest extends AbstractOneServerDeploymentTest {
       tcConfigBuilder.addInstrumentedClass(BindingListener.class.getName());
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
   }
 }

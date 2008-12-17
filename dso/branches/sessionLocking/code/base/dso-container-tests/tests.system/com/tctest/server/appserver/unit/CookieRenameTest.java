@@ -185,9 +185,5 @@ public class CookieRenameTest extends AbstractOneServerDeploymentTest {
       params.appendJvmArgs("-Dcom.tc." + ConfigProperties.URL_REWRITE_ENABLED + "=true");
     }
 
-    protected boolean isSessionLockingTrue() {
-      return true;
-    }
-
   }
 }

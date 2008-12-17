@@ -5,7 +5,6 @@
 package com.tctest.server.appserver.unit;
 
 import com.meterware.httpunit.WebConversation;
-import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.webapp.servlets.ManualSessionLockingServlet;
@@ -41,10 +40,6 @@ public class SessionLockingTrueTest extends ManualSessionLockingTestBase {
 
     public SessionLockingTrueTestSetup() {
       super(SessionLockingTrueTest.class, CONTEXT);
-    }
-
-    protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
-      tcConfigBuilder.addWebApplicationWithSessionLocking(CONTEXT);
     }
   }
 }

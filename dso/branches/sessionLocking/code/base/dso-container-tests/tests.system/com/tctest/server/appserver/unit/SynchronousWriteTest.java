@@ -63,9 +63,5 @@ public class SynchronousWriteTest extends AbstractTwoServerDeploymentTest {
       if (isSessionLockingTrue()) clientConfig.addWebApplicationWithSynchronousWrite(CONTEXT);
       else clientConfig.addWebApplication(CONTEXT, true, false);
     }
-
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 }

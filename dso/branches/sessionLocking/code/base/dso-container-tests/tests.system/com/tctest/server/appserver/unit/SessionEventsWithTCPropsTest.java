@@ -129,10 +129,6 @@ public class SessionEventsWithTCPropsTest extends AbstractOneServerDeploymentTes
       tcConfigBuilder.addInstrumentedClass(BindingListener.class.getName());
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
     protected void configureServerParamers(StandardAppServerParameters params) {
       params.appendSysProp("com.tc.session.attribute.listeners", AttributeListener.class.getName());
       params.appendSysProp("com.tc.session.listeners", SessionListener.class.getName());

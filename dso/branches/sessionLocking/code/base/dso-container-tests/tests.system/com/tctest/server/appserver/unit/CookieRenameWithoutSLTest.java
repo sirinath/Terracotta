@@ -22,7 +22,7 @@ public class CookieRenameWithoutSLTest extends CookieRenameTest {
     }
 
     @Override
-    protected boolean isSessionLockingTrue() {
+    public boolean isSessionLockingTrue() {
       return false;
     }
 

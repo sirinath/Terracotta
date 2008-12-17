@@ -61,9 +61,5 @@ public class SimpleSessionFilterTest extends AbstractTwoServerDeploymentTest {
       else clientConfig.addWebApplicationWithoutSessionLocking(CONTEXT);
       clientConfig.addInstrumentedClass(SimpleFilter.class.getName());
     }
-
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 }

@@ -34,10 +34,6 @@ public class ServerHopCookieRewriteTest extends AbstractDeploymentTest {
     if (deployment == null) deployment = makeDeployment();
   }
 
-  public boolean isSessionLockingTrue() {
-    return true;
-  }
-
   public void testCookieRewrite() throws Exception {
     TcConfigBuilder tcConfigBuilder = new TcConfigBuilder();
     if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);

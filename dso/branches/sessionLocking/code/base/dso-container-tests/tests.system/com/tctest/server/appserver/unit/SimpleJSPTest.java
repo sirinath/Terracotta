@@ -63,10 +63,6 @@ public class SimpleJSPTest extends AbstractTwoServerDeploymentTest {
       }
     }
 
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
-
   }
 
 }

@@ -136,10 +136,6 @@ public class SessionInvalidatorTest extends AbstractOneServerDeploymentTest {
       clientConfig.addInstrumentedClass(InvalidatorBindingListener.class.getName());
     }
 
-    protected boolean isSessionLockingTrue() {
-      return true;
-    }
-
     protected void configureServerParamers(StandardAppServerParameters params) {
       params.appendSysProp("com.tc.session.invalidator.sleep", invalidatorSleepSeconds);
       params.appendSysProp("com.tc.session.maxidle.seconds", defaultMaxIdleSeconds);

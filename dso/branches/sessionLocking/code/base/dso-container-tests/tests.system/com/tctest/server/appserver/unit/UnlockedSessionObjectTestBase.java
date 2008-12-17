@@ -60,8 +60,6 @@ public abstract class UnlockedSessionObjectTestBase extends AbstractOneServerDep
     return serverResponse;
   }
 
-  public abstract boolean isSessionLockingTrue();
-
   private static WebResponse request(WebApplicationServer server, WebConversation con, String params) throws Exception {
     debug("Requesting with JSESSIONID: " + con.getCookieValue("JSESSIONID") + " params=" + params);
     return server.ping("/" + CONTEXT + "/" + CONTEXT + "?" + params, con);
@@ -81,6 +79,8 @@ public abstract class UnlockedSessionObjectTestBase extends AbstractOneServerDep
     }
 
     protected void configureTcConfig(TcConfigBuilder tcConfigBuilder) {
+      if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);
+      else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
       tcConfigBuilder.addInstrumentedClass(UnlockedSessionObjectServlet.class.getName());
       tcConfigBuilder.addInstrumentedClass(UnlockedSessionObjectServlet.class.getName() + "$DumbData");
       String methodExpression = "* " + UnlockedSessionObjectServlet.class.getName() + ".mutateWithLock(..)";

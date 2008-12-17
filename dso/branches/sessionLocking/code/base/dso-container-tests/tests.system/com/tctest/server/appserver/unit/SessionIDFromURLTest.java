@@ -60,9 +60,5 @@ public class SessionIDFromURLTest extends AbstractOneServerDeploymentTest {
       if (isSessionLockingTrue()) tcConfigBuilder.addWebApplication(CONTEXT);
       else tcConfigBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
-
-    public boolean isSessionLockingTrue() {
-      return true;
-    }
   }
 }
