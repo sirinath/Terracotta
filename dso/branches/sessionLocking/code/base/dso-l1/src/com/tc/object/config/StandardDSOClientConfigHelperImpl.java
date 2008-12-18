@@ -1346,7 +1346,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public boolean isDSOSessions(String name) {
     for (Iterator it = applicationNames.iterator(); it.hasNext();) {
       String appName = (String) it.next();
-      if (name.matches(appName.replaceAll("\\*", "\\.\\*"))) {
+      if (matchesWildCard(appName, name)) {
         logger.info("Clustered HTTP sessions IS enabled for [" + name + "]. matched [" + appName + "]");
         return true;
       }
@@ -1354,6 +1354,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     logger.info("Clustered HTTP sessions is NOT enabled for [" + name + "]");
     return false;
+  }
+
+  private boolean matchesWildCard(String regex, String input) {
+    return input.matches(regex.replaceAll("\\*", "\\.\\*"));
   }
 
   public TransparencyClassAdapter createDsoClassAdapterFor(ClassVisitor writer, ClassInfo classInfo,
@@ -1751,7 +1755,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public boolean isApplicationSessionLocked(String appName) {
     for (Iterator it = sessionLockedApplications.iterator(); it.hasNext();) {
       String name = (String) it.next();
-      if (name.equals(appName)) return true;
+      if (matchesWildCard(name, appName)) return true;
     }
     return false;
   }
