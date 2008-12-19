@@ -118,6 +118,9 @@ public class TerracottaSessionManager implements SessionManager {
     this.usesStandardUrlPathParam = this.sessionUrlPathParamTag.equalsIgnoreCase(";"
                                                                                  + ConfigProperties.defaultCookieName
                                                                                  + "=");
+    if (debugSessions) {
+      logger.info("session-locking = " + sessionLocking + " for appName: " + contextMgr.getAppName());
+    }
   }
 
   public boolean isApplicationSessionLocked() {
@@ -310,6 +313,7 @@ public class TerracottaSessionManager implements SessionManager {
     } finally {
       if (isApplicationSessionLocked()) id.commitLock();
     }
+    id.commitSessionInvalidatorLock();
   }
 
   /**
@@ -586,41 +590,46 @@ public class TerracottaSessionManager implements SessionManager {
       boolean rv = false;
 
       if (debugInvalidate) {
-        logger.info("starting tryLock() for " + id.getKey());
+        logger.info("starting trySessionInvalidatorWriteLock() for " + id.getKey());
       }
-      if (!id.tryWriteLock()) {
+      if (!id.trySessionInvalidatorWriteLock()) {
         if (debugInvalidate) {
-          logger.info("tryLock() returned false for " + id.getKey());
+          logger.info("trySessionInvalidatorWriteLock() returned false for " + id.getKey());
         }
         return rv;
       }
 
       if (debugInvalidate) {
-        logger.info("tryLock() obtained for " + id.getKey());
+        logger.info("trySessionInvalidatorWriteLock() obtained for " + id.getKey());
       }
 
       try {
-        final SessionData sd = store.findSessionDataUnlocked(id);
-        if (sd == null) {
-          if (debugInvalidate) {
-            logger.info("null session data for " + id.getKey());
+        id.getWriteLock();
+        try {
+          final SessionData sd = store.findSessionDataUnlocked(id);
+          if (sd == null) {
+            if (debugInvalidate) {
+              logger.info("null session data for " + id.getKey());
+            }
+            return rv;
           }
-          return rv;
-        }
-        if (!sd.isValid(debugInvalidate, logger)) {
-          if (debugInvalidate) {
-            logger.info(id.getKey() + " IS invalid");
+          if (!sd.isValid(debugInvalidate, logger)) {
+            if (debugInvalidate) {
+              logger.info(id.getKey() + " IS invalid");
+            }
+            expire(id, sd);
+            rv = true;
+          } else {
+            if (debugInvalidate) {
+              logger.info(id.getKey() + " IS NOT invalid, updating timestamp");
+            }
+            store.updateTimestampIfNeeded(sd);
           }
-          expire(id, sd);
-          rv = true;
-        } else {
-          if (debugInvalidate) {
-            logger.info(id.getKey() + " IS NOT invalid, updating timestamp");
-          }
-          store.updateTimestampIfNeeded(sd);
+        } finally {
+          id.commitLock();
         }
       } finally {
-        id.commitLock();
+        id.commitSessionInvalidatorLock();
       }
       return rv;
     }
