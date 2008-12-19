@@ -31,7 +31,6 @@ public class SessionData implements Session, SessionSupport {
 
   private long                        lastAccessedTime;
   private long                        maxIdleMillis;
-  private transient long              requestStartMillis;
 
   private transient SessionId         sessionId;
   private transient LifecycleEventMgr eventMgr;
@@ -167,7 +166,7 @@ public class SessionData implements Session, SessionSupport {
   }
 
   synchronized void startRequest() {
-    requestStartMillis = System.currentTimeMillis();
+    //
   }
 
   public void setMaxInactiveInterval(int v) {
@@ -193,17 +192,6 @@ public class SessionData implements Session, SessionSupport {
       return 0;
     }
 
-    final long requestStart = requestStartMillis;
-
-    if (requestStart > lastAccess) {
-      final long rv = requestStart - lastAccess;
-      if (debug) {
-        logger.info(sessionId.getKey() + " has idleMillis=" + rv + " (lastAccess=" + lastAccess + ",requestStart="
-                    + requestStart + ")");
-      }
-      return rv;
-    }
-
     final long diff = System.currentTimeMillis() - lastAccess;
     final long rv = Math.max(diff, 0);
 
@@ -215,7 +203,6 @@ public class SessionData implements Session, SessionSupport {
   }
 
   synchronized void finishRequest() {
-    requestStartMillis = 0;
     final boolean applicationSessionLocked = sessionManager.isApplicationSessionLocked();
     if (!applicationSessionLocked) sessionId.getWriteLock();
     try {

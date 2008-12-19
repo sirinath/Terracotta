@@ -32,4 +32,10 @@ public interface SessionId {
   boolean tryWriteLock();
 
   void commitLock();
+
+  void getSessionInvalidatorReadLock();
+
+  boolean trySessionInvalidatorWriteLock();
+
+  void commitSessionInvalidatorLock();
 }

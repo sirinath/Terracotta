@@ -51,7 +51,7 @@ public class SessionDataStore {
 
   /**
    * <ol>
-   * <li>get WRITE_LOCK for sessId
+   * <li>get WRITE_LOCK for sessId (and READ_LOCK for sessionInvalidatorLock)
    * <li>creates session data
    * <li>put newly-created SessionData into the global Map
    * <li>if session-locking is false, unlock sessId
@@ -62,6 +62,7 @@ public class SessionDataStore {
     Assert.pre(sessId != null);
     SessionData rv = null;
     sessId.getWriteLock();
+    sessId.getSessionInvalidatorReadLock();
     try {
       rv = new SessionData(maxIdleTimeoutSeconds);
       rv.associate(sessId, lifecycleEventMgr, ctxMgr, sessionManager);
@@ -78,9 +79,10 @@ public class SessionDataStore {
 
   /**
    * <ol>
-   * <li>get WRITE_LOCK for sessId
+   * <li>get WRITE_LOCK for sessId (and READ_LOCK for sessionInvalidatorLock)
    * <li>look up SessionData for sessId.getKey() in the global Map
    * <li>if SessionData is invalid, unlock sessId and return null (invalidator will take care of killing this session)
+   * <li>if SessionData is invalid, unlock sessionInvalidatorLock
    * <li>if session-locking is false, unlock sessId
    * <li>return valid SessionData
    */
@@ -89,6 +91,7 @@ public class SessionDataStore {
 
     SessionData rv = null;
     sessId.getWriteLock();
+    sessId.getSessionInvalidatorReadLock();
     try {
       rv = (SessionData) store.get(sessId.getKey());
       if (rv != null) {
@@ -100,8 +103,10 @@ public class SessionDataStore {
         }
       }
     } finally {
-      if (rv == null) sessId.commitLock();
-      else {
+      if (rv == null) {
+        sessId.commitLock();
+        sessId.commitSessionInvalidatorLock();
+      } else {
         if (!sessionManager.isApplicationSessionLocked()) {
           sessId.commitLock();
         }
