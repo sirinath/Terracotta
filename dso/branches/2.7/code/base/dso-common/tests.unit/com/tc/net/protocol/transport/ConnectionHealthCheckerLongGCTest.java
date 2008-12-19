@@ -282,29 +282,30 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   }
 
-  private void getNetInfo(int bindPort) {
-    try {
-      Sigar s = new Sigar();
-      NetInfo info = s.getNetInfo();
-      NetInterfaceConfig config = s.getNetInterfaceConfig(null);
-      System.out.println(info.toString());
-      System.out.println(config.toString());
+  // MNK-831
+  private int getNetInfoEstablishedConnectionsCount(int bindPort) throws SigarException {
+    int establishedConnections = 0;
+    Sigar s = new Sigar();
+    NetInfo info = s.getNetInfo();
+    NetInterfaceConfig config = s.getNetInterfaceConfig(null);
+    System.out.println(info.toString());
+    System.out.println(config.toString());
 
-      int flags = NetFlags.CONN_TCP | NetFlags.TCP_ESTABLISHED;
+    int flags = NetFlags.CONN_TCP | NetFlags.TCP_ESTABLISHED;
 
-      NetConnection[] connections = s.getNetConnectionList(flags);
+    NetConnection[] connections = s.getNetConnectionList(flags);
 
-      System.out.println("XXX Established connections if any");
-      for (int i = 0; i < connections.length; i++) {
-        long port = connections[i].getLocalPort();
-        long remotePort = connections[i].getRemotePort();
-        if (bindPort == port || bindPort == remotePort) {
-          System.out.println("XXX " + connections[i]);
-        }
+    System.out.println("XXX Established connections if any");
+    for (int i = 0; i < connections.length; i++) {
+      long port = connections[i].getLocalPort();
+      long remotePort = connections[i].getRemotePort();
+      // not checking bind address
+      if ((bindPort == port || bindPort == remotePort) && connections[i].getState() == NetFlags.TCP_ESTABLISHED) {
+        establishedConnections++;
+        System.out.println("XXX " + connections[i]);
       }
-    } catch (SigarException se) {
-      System.out.println("Unable to get Sigar NetInfo: " + se);
     }
+    return establishedConnections;
   }
 
   public void testL1SocketConnectTimeoutL2() throws Exception {
@@ -342,9 +343,13 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
       ping.send();
     }
 
-    netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
-    getNetInfo(serverLsnr.getBindPort());
-    Assert.assertEquals(2, netstat.getTcpEstablished());
+    try {
+      int estCount = getNetInfoEstablishedConnectionsCount(serverLsnr.getBindPort());
+      Assert.assertEquals(2, estCount);
+    } catch (SigarException se) {
+      netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+      Assert.assertEquals(2, netstat.getTcpEstablished());
+    }
 
     System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
@@ -357,9 +362,14 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     assertEquals(0, connHC.getTotalConnsUnderMonitor());
 
     ThreadUtil.reallySleep(5000);
-    netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
-    getNetInfo(serverLsnr.getBindPort());
-    Assert.assertEquals(0, netstat.getTcpEstablished());
+    
+    try {
+      int estCount = getNetInfoEstablishedConnectionsCount(serverLsnr.getBindPort());
+      Assert.assertEquals(0, estCount);
+    } catch (SigarException se) {
+      netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+      Assert.assertEquals(0, netstat.getTcpEstablished());
+    }
   }
 
   public void testL1SocketConnectTimeoutL2AndL1Reconnect() throws Exception {
@@ -397,9 +407,13 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
       ping.send();
     }
 
-    netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
-    getNetInfo(serverLsnr.getBindPort());
-    Assert.assertEquals(2, netstat.getTcpEstablished());
+    try {
+      int estCount = getNetInfoEstablishedConnectionsCount(serverLsnr.getBindPort());
+      Assert.assertEquals(2, estCount);
+    } catch (SigarException se) {
+      netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+      Assert.assertEquals(2, netstat.getTcpEstablished());
+    }
 
     System.out.println("Sleeping for " + getMinSleepTimeToStartLongGCTest(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToStartLongGCTest(hcConfig));
@@ -433,10 +447,13 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
      * Client disconnected after it found socket connect timeout. After the successful reconnect there should be no
      * connection leak. DEV-1963
      */
-    netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
-    getNetInfo(serverLsnr.getBindPort());
-    System.out.println("XXX reconnect- tcp estd : " + netstat.getTcpEstablished());
-    Assert.assertEquals(2, netstat.getTcpEstablished());
+    try {
+      int estCount = getNetInfoEstablishedConnectionsCount(serverLsnr.getBindPort());
+      Assert.assertEquals(2, estCount);
+    } catch (SigarException se) {
+      netstat = sigar.getNetStat(serverLsnr.getBindAddress().getAddress(), serverLsnr.getBindPort());
+      Assert.assertEquals(2, netstat.getTcpEstablished());
+    }
   }
 
   public void testL2SocketConnectL1WithProxyDelay() throws Exception {
