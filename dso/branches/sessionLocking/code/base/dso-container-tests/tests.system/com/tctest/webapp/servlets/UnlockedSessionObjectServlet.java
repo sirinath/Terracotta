@@ -41,9 +41,12 @@ public class UnlockedSessionObjectServlet extends HttpServlet {
       debug("Serving request for cmd=" + MUTATE_WITHOUT_LOCK);
       DumbData dumbData = (DumbData) session.getAttribute(KEY);
       try {
+        debug("Trying to mutate without lock...");
         dumbData.setDumbProperty("newProperty");
+        debug("Mutated without lock");
       } catch (Throwable e) {
         resp.getWriter().print(e.getClass().getName());
+        debug("Caught throwable : " + e);
         return;
       }
       resp.getWriter().print("OK");
