@@ -42,7 +42,6 @@ import com.tc.net.proxy.TCPProxy;
 import com.tc.object.session.NullSessionManager;
 import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.test.TCTestCase;
-import com.tc.util.Assert;
 import com.tc.util.PortChooser;
 import com.tc.util.SequenceGenerator;
 import com.tc.util.concurrent.QueueFactory;
@@ -199,9 +198,9 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   public void testL2SocketConnectL1() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 1, "ServerCommsHC-Test31", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+                                                                                                            * EXTRA
+                                                                                                            * CHECK ON
+                                                                                                            */);
     this.setUp(hcConfig, null);
     ((CommunicationsManagerImpl) clientComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
     ClientMessageChannel clientMsgCh = createClientMsgCh();
@@ -239,9 +238,9 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   public void testL1SocketConnectL2() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ClientCommsHC-Test32", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+                                                                                                            * EXTRA
+                                                                                                            * CHECK ON
+                                                                                                            */);
     this.setUp(null, hcConfig);
     ((CommunicationsManagerImpl) serverComms).setConnHealthChecker(new ConnectionHealthCheckerDummyImpl());
     ClientMessageChannel clientMsgCh = createClientMsgCh();
@@ -309,9 +308,9 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   public void testL1SocketConnectTimeoutL2() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 2000, 2, "ClientCommsHC-Test32", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+                                                                                                            * EXTRA
+                                                                                                            * CHECK ON
+                                                                                                            */);
     this.setUp(null, null);
 
     // set up custom HealthCheckers
@@ -359,7 +358,7 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
     assertEquals(0, connHC.getTotalConnsUnderMonitor());
 
     ThreadUtil.reallySleep(5000);
-    
+
     try {
       while (getNetInfoEstablishedConnectionsCount(serverLsnr.getBindPort()) != 0) {
         System.out.println("XXX waiting for conn estd count to be 0");
@@ -372,9 +371,9 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   public void testL1SocketConnectTimeoutL2AndL1Reconnect() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(4000, 1000, 2, "ClientCommsHC-Test32", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+                                                                                                            * EXTRA
+                                                                                                            * CHECK ON
+                                                                                                            */);
     this.setUp(null, null, true);
 
     // set up custom HealthCheckers
@@ -455,9 +454,9 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
 
   public void testL2SocketConnectL1WithProxyDelay() throws Exception {
     HealthCheckerConfig hcConfig = new HealthCheckerConfigImpl(5000, 2000, 2, "ServerCommsHC-Test33", true /*
-                                                                                                             * EXTRA
-                                                                                                             * CHECK ON
-                                                                                                             */);
+                                                                                                            * EXTRA
+                                                                                                            * CHECK ON
+                                                                                                            */);
     this.setUp(hcConfig, null);
 
     ClientMessageChannel clientMsgCh = createClientMsgCh();
