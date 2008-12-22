@@ -30,7 +30,7 @@ public class LongRunningRequestsWithoutSLTest extends LongRunningRequestsTestBas
                                                                              CONTEXT,
                                                                              "cmd="
                                                                                  + LongRunningRequestsServlet.LONG_RUNNING));
-    Thread[] shortRequestThreads = new Thread[5];
+    Thread[] shortRequestThreads = new Thread[20];
     for (int i = 0; i < shortRequestThreads.length; i++) {
       shortRequestThreads[i] = new Thread(
                                           new ParamBasedRequestRunner(
