@@ -104,8 +104,8 @@ public class SessionDataStore {
       }
     } finally {
       if (rv == null) {
-        sessId.commitLock();
         sessId.commitSessionInvalidatorLock();
+        sessId.commitLock();
       } else {
         if (!sessionManager.isApplicationSessionLocked()) {
           sessId.commitLock();
