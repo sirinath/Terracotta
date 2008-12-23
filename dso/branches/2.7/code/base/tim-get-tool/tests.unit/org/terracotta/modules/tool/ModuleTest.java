@@ -554,7 +554,7 @@ public final class ModuleTest extends TCTestCase {
     thread.setDaemon(true);
     thread.start();
 
-    Thread.sleep(500);
+    Thread.sleep(5000);
   }
 
   private static class FileServer {
