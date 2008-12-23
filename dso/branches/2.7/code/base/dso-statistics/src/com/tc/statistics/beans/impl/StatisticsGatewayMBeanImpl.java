@@ -69,7 +69,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
       LOGGER.warn("Unable to add statistics agent for channel ID '" + channelId + "' to the gateway.", e);
       return;
     }
-    
+
     agents.put(channelId, agent);
 
     if (topologyChangeHandler != null) {
@@ -79,6 +79,16 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
         LOGGER.warn("Unexpected error while configuring the statistics agent for channel ID '" + channelId + "' after it was added to the gateway.", e);
       }
     }
+  }
+
+  public long[] getConnectedAgentChannelIDs() {
+    final Set channelIDs = agents.keySet();
+    final long[] result = new long[channelIDs.size()];
+    int i = 0;
+    for (final Iterator it = channelIDs.iterator(); it.hasNext(); ) {
+      result[i++] = ((ChannelID)it.next()).toLong();
+    }
+    return result;
   }
 
   public void removeStatisticsAgent(final ChannelID channelId) {
@@ -152,7 +162,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     return result;
   }
 
-  public String getStatisticType(String name) {
+  public String getStatisticType(final String name) {
     for (Iterator it = agents.values().iterator(); it.hasNext(); ) {
       StatisticsAgentConnection agent = (StatisticsAgentConnection)it.next();
       String type = agent.getStatisticType(name);
@@ -242,7 +252,7 @@ public class StatisticsGatewayMBeanImpl extends AbstractTerracottaMBean implemen
     return agent.getSessionParam(sessionId, key);
   }
 
-  public void handleNotification(Notification notification, Object o) {
+  public void handleNotification(final Notification notification, final Object o) {
     notification.setSequenceNumber(sequenceNumber.increment());
     sendNotification(notification);
   }
