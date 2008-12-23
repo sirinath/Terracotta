@@ -76,9 +76,9 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
           .newProxyInstance(mbeanServerConnection, StatisticsMBeanNames.STATISTICS_GATEWAY, StatisticsGatewayMBean.class, false);
 
       // enable the statistics envoy
-      statGateway.enable();
       topologyChangeHandler.setEnabled(true);
       statGateway.setTopologyChangeHandler(topologyChangeHandler);
+      statGateway.enable();
     }
 
     fireConnected(managerHostName, managerPort);
@@ -177,7 +177,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
       statGateway.reinitialize();
       sessionId = null;
     }
-    
+
     fireReinitialized();
   }
 
@@ -214,11 +214,11 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
     return statGateway.getSupportedStatistics();
   }
 
-  public StatisticData[] captureStatistic(String name) throws StatisticsGathererException {
+  public StatisticData[] captureStatistic(final String name) throws StatisticsGathererException {
     if (null == sessionId) throw new StatisticsGathererSessionRequiredException();
     return statGateway.captureStatistic(sessionId, name);
   }
-
+  
   public void enableStatistics(final String[] names) throws StatisticsGathererException {
     Assert.assertNotNull("names", names);
 
@@ -247,7 +247,7 @@ public class StatisticsGathererImpl implements StatisticsGatherer {
   public boolean isCapturing() {
     return topologyChangeHandler.isCapturingStarted();
   }
-  
+
   public void stopCapturing() throws StatisticsGathererException {
     if (null == sessionId) throw new StatisticsGathererSessionRequiredException();
     statGateway.stopCapturing(sessionId);
