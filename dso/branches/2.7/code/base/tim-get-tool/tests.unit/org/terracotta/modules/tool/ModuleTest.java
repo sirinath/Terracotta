@@ -546,13 +546,11 @@ public final class ModuleTest extends TCTestCase {
         }
       }
     });
-
     thread.setPriority(Thread.MAX_PRIORITY);
     thread.setName(getClass().getName());
     thread.setDaemon(true);
     thread.start();
 
-    // XXX use a cyclic-barrier here instead.
     // give the fileserver enough time to spin-up...
     Thread.sleep(5000);
   }
