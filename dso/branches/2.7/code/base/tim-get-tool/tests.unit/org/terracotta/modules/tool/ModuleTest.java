@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
 
 public final class ModuleTest extends TCTestCase {
 
@@ -537,26 +538,28 @@ public final class ModuleTest extends TCTestCase {
   }
 
   private void startRepository(final int port, final File basedir) throws Exception {
+    final CyclicBarrier barrier = new CyclicBarrier(2);
     Thread thread = new Thread(new Runnable() {
       public void run() {
         try {
-          new FileServer(port, basedir);
+          new FileServer(port, basedir, barrier);
         } catch (Exception e) {
           // XXX need a better way to handle this ---
         }
       }
     });
+
     thread.setPriority(Thread.MAX_PRIORITY);
     thread.setName(getClass().getName());
     thread.setDaemon(true);
     thread.start();
 
-    // give the fileserver enough time to spin-up...
-    Thread.sleep(5000);
+    // wait for the fileserver to spin-up...
+    barrier.await();
   }
 
   private static class FileServer {
-    public FileServer(int port, File basedir) throws Exception {
+    public FileServer(int port, File basedir, CyclicBarrier barrier) throws Exception {
       Server server = new Server();
 
       BoundedThreadPool threadPool = new BoundedThreadPool();
@@ -575,6 +578,8 @@ public final class ModuleTest extends TCTestCase {
 
       server.setHandler(handlers);
       server.start();
+      barrier.await();
+
       server.join();
     }
   }
