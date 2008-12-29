@@ -563,6 +563,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // Generic Session classes
     spec = getOrCreateSpec("com.terracotta.session.SessionData");
     spec.setHonorTransient(true);
+    addWriteAutolock("* com.terracotta.session.SessionData.*(..)");
     spec = getOrCreateSpec("com.terracotta.session.util.Timestamp");
     spec.setHonorTransient(true);
 

@@ -14,16 +14,18 @@ public class DefaultSessionId implements SessionId {
   private final Lock          lock;
   private final Lock          sessionInvalidatorLock;
   private final boolean       knownServerHop;
+  private final boolean       sessionLocking;
   private static final String SESSION_INVALIDATOR_LOCK_SUFFIX = ".session.invalidator";
 
   protected DefaultSessionId(final String internalKey, final String requestedId, final String externalId,
-                             final int lockType, boolean knownServerHop) {
+                             final int lockType, boolean knownServerHop, boolean sessionLocking) {
     Assert.pre(internalKey != null);
     Assert.pre(externalId != null);
     this.key = internalKey;
     this.requestedId = requestedId;
     this.externalId = externalId;
     this.knownServerHop = knownServerHop;
+    this.sessionLocking = sessionLocking;
     this.lock = new Lock(this.key, lockType);
     this.sessionInvalidatorLock = new Lock(this.key + SESSION_INVALIDATOR_LOCK_SUFFIX, lockType);
   }
@@ -66,14 +68,17 @@ public class DefaultSessionId implements SessionId {
   }
 
   public void commitSessionInvalidatorLock() {
+    if (sessionLocking) return;
     sessionInvalidatorLock.commitLock();
   }
 
   public void getSessionInvalidatorReadLock() {
+    if (sessionLocking) return;
     sessionInvalidatorLock.getReadLock();
   }
 
   public boolean trySessionInvalidatorWriteLock() {
+    if (sessionLocking) return true;
     return sessionInvalidatorLock.tryWriteLock();
   }
 

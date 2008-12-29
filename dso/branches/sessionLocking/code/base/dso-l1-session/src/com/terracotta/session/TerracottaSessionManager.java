@@ -75,6 +75,7 @@ public class TerracottaSessionManager implements SessionManager {
     this.reqeustLogEnabled = cp.getRequestLogBenchEnabled();
     this.invalidatorLogEnabled = cp.getInvalidatorLogBenchEnabled();
     this.sessionLocking = ManagerUtil.isApplicationSessionLocked(contextMgr.getAppName());
+    idGenerator.initialize(sessionLocking);
 
     // XXX: If reasonable, we should move this out of the constructor -- leaking a reference to "this" to another thread
     // within a constructor is a bad practice (note: although "this" isn't explicitly based as arg, it is available and
@@ -314,30 +315,6 @@ public class TerracottaSessionManager implements SessionManager {
       if (isApplicationSessionLocked()) id.commitLock();
     }
     id.commitSessionInvalidatorLock();
-  }
-
-  /**
-   * The only use for this method [currently] is by Struts' Include Tag, which can generate a nested request. In this
-   * case we have to release session lock, so that nested request (running, potentially, in another JVM) can acquire it.
-   * {@link TerracottaSessionManager#resumeRequest(Session)} method will re-aquire the lock.
-   */
-  public static void pauseRequest(final Session sess) {
-    Assert.pre(sess != null);
-    final SessionId id = sess.getSessionId();
-    final SessionData sd = sess.getSessionData();
-    sd.finishRequest();
-    id.commitLock();
-  }
-
-  /**
-   * See {@link TerracottaSessionManager#resumeRequest(Session)} for details
-   */
-  public static void resumeRequest(final Session sess) {
-    Assert.pre(sess != null);
-    final SessionId id = sess.getSessionId();
-    final SessionData sd = sess.getSessionData();
-    id.getWriteLock();
-    sd.startRequest();
   }
 
   private TerracottaRequest wrapRequest(SessionId sessionId, HttpServletRequest req, HttpServletResponse res,
@@ -604,7 +581,19 @@ public class TerracottaSessionManager implements SessionManager {
       }
 
       try {
-        id.getWriteLock();
+        if (debugInvalidate) {
+          logger.info("starting tryWriteLock() for " + id.getKey());
+        }
+        if (!id.tryWriteLock()) {
+          if (debugInvalidate) {
+            logger.info("tryWriteLock() returned false for " + id.getKey());
+          }
+          return rv;
+        }
+
+        if (debugInvalidate) {
+          logger.info("tryWriteLock() obtained for " + id.getKey());
+        }
         try {
           final SessionData sd = store.findSessionDataUnlocked(id);
           if (sd == null) {
