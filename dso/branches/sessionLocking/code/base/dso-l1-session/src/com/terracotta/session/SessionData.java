@@ -5,7 +5,6 @@
 package com.terracotta.session;
 
 import com.tc.logging.TCLogger;
-import com.tc.session.SessionSupport;
 import com.tc.util.Assert;
 import com.terracotta.session.util.ContextMgr;
 import com.terracotta.session.util.LifecycleEventMgr;
@@ -22,7 +21,7 @@ import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSessionContext;
 
-public class SessionData implements Session, SessionSupport {
+public class SessionData implements Session {
   private final Map                   attributes         = new HashMap();
   private final Map                   internalAttributes = new HashMap();
   private transient Map               transientAttributes;
@@ -203,13 +202,7 @@ public class SessionData implements Session, SessionSupport {
   }
 
   synchronized void finishRequest() {
-    final boolean applicationSessionLocked = sessionManager.isApplicationSessionLocked();
-    if (!applicationSessionLocked) sessionId.getWriteLock();
-    try {
-      lastAccessedTime = System.currentTimeMillis();
-    } finally {
-      if (!applicationSessionLocked) sessionId.commitLock();
-    }
+    lastAccessedTime = System.currentTimeMillis();
   }
 
   public synchronized long getCreationTime() {
@@ -241,13 +234,7 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized Object getAttribute(String name) {
     checkIfValid();
-    final boolean applicationSessionLocked = sessionManager.isApplicationSessionLocked();
-    if (!applicationSessionLocked) sessionId.getWriteLock();
-    try {
-      return attributes.get(name);
-    } finally {
-      if (!applicationSessionLocked) sessionId.commitLock();
-    }
+    return attributes.get(name);
   }
 
   public Object getValue(String name) {
@@ -256,14 +243,8 @@ public class SessionData implements Session, SessionSupport {
 
   public synchronized String[] getValueNames() {
     checkIfValid();
-    final boolean applicationSessionLocked = sessionManager.isApplicationSessionLocked();
-    if (!applicationSessionLocked) sessionId.getWriteLock();
-    try {
-      Set keys = attributes.keySet();
-      return (String[]) keys.toArray(new String[keys.size()]);
-    } finally {
-      if (!applicationSessionLocked) sessionId.commitLock();
-    }
+    Set keys = attributes.keySet();
+    return (String[]) keys.toArray(new String[keys.size()]);
   }
 
   public Enumeration getAttributeNames() {
@@ -298,25 +279,14 @@ public class SessionData implements Session, SessionSupport {
   }
 
   private synchronized void setMaxInactiveSeconds(int secs) {
-    boolean applicationSessionLocked = false;
-    if (sessionManager != null) {
-      applicationSessionLocked = sessionManager.isApplicationSessionLocked();
-      if (!applicationSessionLocked) sessionId.getWriteLock();
+    if (secs < 0) {
+      maxIdleMillis = NEVER_EXPIRE;
+      this.timestamp.setMillis(Long.MAX_VALUE);
+      return;
     }
-    try {
-      if (secs < 0) {
-        maxIdleMillis = NEVER_EXPIRE;
-        this.timestamp.setMillis(Long.MAX_VALUE);
-        return;
-      }
 
-      maxIdleMillis = secs * 1000L;
-      this.timestamp.setMillis(System.currentTimeMillis() + maxIdleMillis);
-    } finally {
-      if (sessionManager != null) {
-        if (!applicationSessionLocked) sessionId.commitLock();
-      }
-    }
+    maxIdleMillis = secs * 1000L;
+    this.timestamp.setMillis(System.currentTimeMillis() + maxIdleMillis);
   }
 
   public synchronized Object getInternalAttribute(String name) {
@@ -355,47 +325,27 @@ public class SessionData implements Session, SessionSupport {
   }
 
   private Object bindAttribute(String name, Object newVal) {
-    final boolean sessionLocked = sessionManager.isApplicationSessionLocked();
-    if (!sessionLocked) sessionId.getWriteLock();
-    try {
-      Object oldVal = getAttribute(name);
-      if (newVal != oldVal) eventMgr.bindAttribute(this, name, newVal);
+    Object oldVal = getAttribute(name);
+    if (newVal != oldVal) eventMgr.bindAttribute(this, name, newVal);
 
-      oldVal = attributes.put(name, newVal);
+    oldVal = attributes.put(name, newVal);
 
-      if (oldVal != newVal) eventMgr.unbindAttribute(this, name, oldVal);
+    if (oldVal != newVal) eventMgr.unbindAttribute(this, name, oldVal);
 
-      // now deal with attribute listener events
-      if (oldVal != null) eventMgr.replaceAttribute(this, name, oldVal, newVal);
-      else eventMgr.setAttribute(this, name, newVal);
+    // now deal with attribute listener events
+    if (oldVal != null) eventMgr.replaceAttribute(this, name, oldVal, newVal);
+    else eventMgr.setAttribute(this, name, newVal);
 
-      return oldVal;
-    } finally {
-      if (!sessionLocked) sessionId.commitLock();
-    }
+    return oldVal;
   }
 
   private Object unbindAttribute(String name) {
-    final boolean applicationSessionLocked = sessionManager.isApplicationSessionLocked();
-    if (!applicationSessionLocked) sessionId.getWriteLock();
-    try {
-      Object oldVal = attributes.remove(name);
-      if (oldVal != null) {
-        eventMgr.unbindAttribute(this, name, oldVal);
-        eventMgr.removeAttribute(this, name, oldVal);
-      }
-      return oldVal;
-    } finally {
-      if (!applicationSessionLocked) sessionId.commitLock();
+    Object oldVal = attributes.remove(name);
+    if (oldVal != null) {
+      eventMgr.unbindAttribute(this, name, oldVal);
+      eventMgr.removeAttribute(this, name, oldVal);
     }
-  }
-
-  public void resumeRequest() {
-    TerracottaSessionManager.resumeRequest(this);
-  }
-
-  public void pauseRequest() {
-    TerracottaSessionManager.pauseRequest(this);
+    return oldVal;
   }
 
   private Map getTransientAttributes() {

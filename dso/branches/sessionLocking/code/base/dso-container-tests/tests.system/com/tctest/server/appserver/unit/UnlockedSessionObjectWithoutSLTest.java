@@ -12,10 +12,6 @@ public class UnlockedSessionObjectWithoutSLTest extends UnlockedSessionObjectTes
     return new UnlockedSessionObjectWithoutSLTestSetup();
   }
 
-  public void testSesionLocking() throws Exception {
-    super.testSessionLocking();
-  }
-
   @Override
   public boolean isSessionLockingTrue() {
     return false;

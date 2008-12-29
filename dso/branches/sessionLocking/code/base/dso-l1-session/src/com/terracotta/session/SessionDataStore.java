@@ -61,12 +61,16 @@ public class SessionDataStore {
   public SessionData createSessionData(final SessionId sessId) {
     Assert.pre(sessId != null);
     SessionData rv = null;
-    sessId.getWriteLock();
     sessId.getSessionInvalidatorReadLock();
+    sessId.getWriteLock();
     try {
       rv = new SessionData(maxIdleTimeoutSeconds);
       rv.associate(sessId, lifecycleEventMgr, ctxMgr, sessionManager);
       store.put(sessId.getKey(), rv);
+      Assert.inv(((Manageable) rv).__tc_isManaged());
+      if (sessionManager.isApplicationSessionLocked()) {
+        ((Manageable) rv).__tc_managed().disableAutoLocking();
+      }
       dtmStore.put(sessId.getKey(), rv.getTimestamp());
       rv.startRequest();
     } finally {
@@ -90,8 +94,8 @@ public class SessionDataStore {
     Assert.pre(sessId != null);
 
     SessionData rv = null;
-    sessId.getWriteLock();
     sessId.getSessionInvalidatorReadLock();
+    sessId.getWriteLock();
     try {
       rv = (SessionData) store.get(sessId.getKey());
       if (rv != null) {
@@ -104,8 +108,8 @@ public class SessionDataStore {
       }
     } finally {
       if (rv == null) {
-        sessId.commitSessionInvalidatorLock();
         sessId.commitLock();
+        sessId.commitSessionInvalidatorLock();
       } else {
         if (!sessionManager.isApplicationSessionLocked()) {
           sessId.commitLock();

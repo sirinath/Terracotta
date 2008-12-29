@@ -145,7 +145,6 @@ import com.tc.object.util.OverrideCheck;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
-import com.tc.session.SessionSupport;
 import com.tc.text.Banner;
 import com.tc.tomcat.TomcatLoaderNaming;
 import com.tc.util.AbstractIdentifier;
@@ -436,7 +435,6 @@ public class BootJarTool {
       addInstrumentedWeakHashMap();
 
       loadTerracottaClass(DebugUtil.class.getName());
-      loadTerracottaClass(SessionSupport.class.getName());
       loadTerracottaClass(TCMap.class.getName());
       if (Vm.isJDK15Compliant()) {
         loadTerracottaClass("com.tc.util.concurrent.locks.TCLock");
@@ -2215,13 +2213,12 @@ public class BootJarTool {
 
   private void addInstrumentedHashMap() {
     Map instrumentedContext = new HashMap();
-    mergeClass(HashMapClassAdapter.TC_MAP_CLASSNAME_DOTS, HashMapClassAdapter.J_MAP_CLASSNAME_DOTS, 
-               instrumentedContext, null,
-               new ClassAdapterFactory[] { HashMapClassAdapter.FACTORY });
+    mergeClass(HashMapClassAdapter.TC_MAP_CLASSNAME_DOTS, HashMapClassAdapter.J_MAP_CLASSNAME_DOTS,
+               instrumentedContext, null, new ClassAdapterFactory[] { HashMapClassAdapter.FACTORY });
 
     addInstrumentedLinkedHashMap(instrumentedContext);
   }
-  
+
   private final void mergeClass(String tcClassNameDots, String jClassNameDots, Map instrumentedContext,
                                 final MethodNode[] replacedMethods, ClassAdapterFactory[] addlAdapters) {
     byte[] tcData = getSystemBytes(tcClassNameDots);
