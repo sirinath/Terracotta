@@ -48,9 +48,8 @@ public class TerracottaSessionManager implements SessionManager {
   private final boolean                debugSessions;
   private final String                 sessionCookieName;
   private final String                 sessionUrlPathParamTag;
-  private final boolean                      usesStandardUrlPathParam;
+  private final boolean                usesStandardUrlPathParam;
   private int                          serverHopsDetected = 0;
-
 
   private static final Set             excludedVHosts     = loadExcludedVHosts();
 
@@ -67,8 +66,9 @@ public class TerracottaSessionManager implements SessionManager {
     this.eventMgr = eventMgr;
     this.contextMgr = contextMgr;
     this.factory = factory;
-    this.store = new SessionDataStore(contextMgr.getAppName(), cp.getSessionTimeoutSeconds(), eventMgr, contextMgr,
-                                      this);
+
+    String appName = contextMgr.getHostName() + "/" + contextMgr.getAppName();
+    this.store = new SessionDataStore(appName, cp.getSessionTimeoutSeconds(), eventMgr, contextMgr, this);
     this.logger = ManagerUtil.getLogger("com.tc.tcsession." + contextMgr.getAppName());
     this.reqeustLogEnabled = cp.getRequestLogBenchEnabled();
     this.invalidatorLogEnabled = cp.getInvalidatorLogBenchEnabled();
