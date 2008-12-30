@@ -30,6 +30,7 @@ public class SessionData implements Session {
 
   private long                        lastAccessedTime;
   private long                        maxIdleMillis;
+  private transient ThreadLocal<Long> requestStartMillis;
 
   private transient SessionId         sessionId;
   private transient LifecycleEventMgr eventMgr;
@@ -45,6 +46,7 @@ public class SessionData implements Session {
     this.createTime = System.currentTimeMillis();
     this.lastAccessedTime = 0;
     this.timestamp = new Timestamp(System.currentTimeMillis());
+    this.requestStartMillis = new ThreadLocal<Long>();
     setMaxInactiveSeconds(maxIdleSeconds);
   }
 
@@ -165,7 +167,12 @@ public class SessionData implements Session {
   }
 
   synchronized void startRequest() {
-    //
+    setRequestStartMillis(System.currentTimeMillis());
+  }
+
+  private void setRequestStartMillis(long millis) {
+    if (requestStartMillis == null) requestStartMillis = new ThreadLocal<Long>();
+    requestStartMillis.set(Long.valueOf(millis));
   }
 
   public void setMaxInactiveInterval(int v) {
@@ -191,6 +198,17 @@ public class SessionData implements Session {
       return 0;
     }
 
+    final long requestStart = getRequestStartMillis();
+
+    if (requestStart > lastAccess) {
+      final long rv = requestStart - lastAccess;
+      if (debug) {
+        logger.info(sessionId.getKey() + " has idleMillis=" + rv + " (lastAccess=" + lastAccess + ",requestStart="
+                    + requestStart + ")");
+      }
+      return rv;
+    }
+
     final long diff = System.currentTimeMillis() - lastAccess;
     final long rv = Math.max(diff, 0);
 
@@ -201,7 +219,12 @@ public class SessionData implements Session {
     return rv;
   }
 
+  private long getRequestStartMillis() {
+    return null == requestStartMillis || null == requestStartMillis.get() ? 0L : requestStartMillis.get().longValue();
+  }
+
   synchronized void finishRequest() {
+    setRequestStartMillis(Long.valueOf(0L));
     lastAccessedTime = System.currentTimeMillis();
   }
 
