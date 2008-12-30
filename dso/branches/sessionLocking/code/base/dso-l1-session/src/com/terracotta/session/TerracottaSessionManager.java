@@ -76,6 +76,8 @@ public class TerracottaSessionManager implements SessionManager {
     this.invalidatorLogEnabled = cp.getInvalidatorLogBenchEnabled();
     this.sessionLocking = ManagerUtil.isApplicationSessionLocked(contextMgr.getAppName());
     idGenerator.initialize(sessionLocking);
+    logger.info("Clustered HTTP sessions with session-locking=" + sessionLocking + " for [" + contextMgr.getAppName()
+                + "]");
 
     // XXX: If reasonable, we should move this out of the constructor -- leaking a reference to "this" to another thread
     // within a constructor is a bad practice (note: although "this" isn't explicitly based as arg, it is available and
@@ -119,9 +121,6 @@ public class TerracottaSessionManager implements SessionManager {
     this.usesStandardUrlPathParam = this.sessionUrlPathParamTag.equalsIgnoreCase(";"
                                                                                  + ConfigProperties.defaultCookieName
                                                                                  + "=");
-    if (debugSessions) {
-      logger.info("session-locking = " + sessionLocking + " for appName: " + contextMgr.getAppName());
-    }
   }
 
   public boolean isApplicationSessionLocked() {
