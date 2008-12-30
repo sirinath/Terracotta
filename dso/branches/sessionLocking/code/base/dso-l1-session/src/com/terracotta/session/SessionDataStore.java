@@ -76,8 +76,8 @@ public class SessionDataStore {
       if (!sessionManager.isApplicationSessionLocked()) {
         sessId.commitLock();
       }
-      Assert.post(sessionManager.isApplicationSessionLocked() == ((Manageable) store).__tc_managed()
-          .autoLockingDisabled());
+      Assert
+          .post(sessionManager.isApplicationSessionLocked() == ((Manageable) rv).__tc_managed().autoLockingDisabled());
     }
     return rv;
   }
@@ -100,6 +100,9 @@ public class SessionDataStore {
     try {
       rv = (SessionData) store.get(sessId.getKey());
       if (rv != null) {
+        if (sessionManager.isApplicationSessionLocked()) {
+          ((Manageable) rv).__tc_managed().disableAutoLocking();
+        }
         rv.associate(sessId, lifecycleEventMgr, ctxMgr, sessionManager);
         rv.startRequest();
         if (!rv.isValid()) rv = null;
@@ -115,7 +118,7 @@ public class SessionDataStore {
         if (!sessionManager.isApplicationSessionLocked()) {
           sessId.commitLock();
         }
-        Assert.post(sessionManager.isApplicationSessionLocked() == ((Manageable) store).__tc_managed()
+        Assert.post(sessionManager.isApplicationSessionLocked() == ((Manageable) rv).__tc_managed()
             .autoLockingDisabled());
       }
     }
@@ -164,8 +167,12 @@ public class SessionDataStore {
   SessionData findSessionDataUnlocked(final SessionId sessId) {
     final SessionData rv = (SessionData) store.get(sessId.getKey());
     if (rv != null) {
+      if (sessionManager.isApplicationSessionLocked()) {
+        ((Manageable) rv).__tc_managed().disableAutoLocking();
+      }
       rv.associate(sessId, lifecycleEventMgr, ctxMgr, sessionManager);
     }
+    Assert.post(sessionManager.isApplicationSessionLocked() == ((Manageable) rv).__tc_managed().autoLockingDisabled());
     return rv;
   }
 
