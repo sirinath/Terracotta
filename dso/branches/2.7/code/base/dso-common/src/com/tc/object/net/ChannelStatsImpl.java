@@ -40,7 +40,7 @@ public class ChannelStatsImpl implements ChannelStats, DSOChannelManagerEventLis
     Counter rv = (Counter) channel.getAttachment(name);
     if (rv == null) {
       for (int i = 0; i < STATS_CONFIG.length; i++) {
-        StatsConfig config = STATS_CONFIG[i];
+        StatsConfig config = STATS_CONFIG[i];        
         Counter counter = counterManager.createCounter(config.getCounterConfig());
         channel.addAttachment(config.getStatsName(), counter, true);
       }
@@ -69,10 +69,10 @@ public class ChannelStatsImpl implements ChannelStats, DSOChannelManagerEventLis
     getCounter(channel, ChannelStats.OBJECT_REQUEST_RATE).increment(numObjectsRequested);
   }
 
-  public void notifyTransaction(NodeID nodeID) {
+  public void notifyTransaction(NodeID nodeID, int numTxns) {
     try {
       MessageChannel channel = channelManager.getActiveChannel(nodeID);
-      getCounter(channel, TXN_RATE).increment();
+      getCounter(channel, TXN_RATE).increment(numTxns);
     } catch (NoSuchChannelException e) {
       //
     }
