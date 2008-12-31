@@ -534,7 +534,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
       throw new ImplementMe();
     }
 
-    public void notifyTransaction(NodeID nodeID) {
+    public void notifyTransaction(NodeID nodeID, int numTxns) {
       try {
         notifyTransactionContexts.put(nodeID);
       } catch (InterruptedException e) {

@@ -348,7 +348,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       }
     }
     if (active) {
-      channelStats.notifyTransaction(sourceID);
+      channelStats.notifyTransaction(sourceID, txn.getNumApplicationTxn());
     }
     transactionRateCounter.increment(txn.getNumApplicationTxn());
 
