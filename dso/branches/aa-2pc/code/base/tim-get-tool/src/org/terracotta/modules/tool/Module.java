@@ -234,7 +234,6 @@ public class Module extends AbstractModule implements Installable {
 
     for (AbstractModule entry : manifest) {
       Installable module = (Installable) entry;
-
       File destdir = new File(modules.repository(), module.installPath().toString());
       File destfile = new File(destdir, module.filename());
       if (module.isInstalled(modules.repository()) && !installOptions.overwrite()) {

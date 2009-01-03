@@ -380,8 +380,8 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
                                                                                       //...entry, newvl
       mv.visitInsn(DUP2);                                                             //...entry, newvl, entry, newvl
       mv.visitInsn(POP);                                                              //...entry, newvl, entry
-      mv.visitFieldInsn(GETFIELD, "java/util/concurrent/ConcurrentHashMap$HashEntry",
-                        "value", "Ljava/lang/Object;");                               //...entry, newvl, oldvl
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
+                        JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE_RAW, "()Ljava/lang/Object;"); //...entry, newvl, oldvl
       mv.visitInsn(DUP2_X1);                                                          //...newvl, oldvl, entry, newvl, oldvl
       mv.visitInsn(POP);                                                              //...newvl, oldvl, entry, newvl
       mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/ConcurrentHashMap$HashEntry",

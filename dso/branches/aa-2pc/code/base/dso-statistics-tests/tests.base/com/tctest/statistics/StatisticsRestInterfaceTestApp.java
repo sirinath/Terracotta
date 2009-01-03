@@ -12,13 +12,13 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tctest.runner.AbstractTransparentApp;
 
-public class StatisticsGatewayAllActionsTestApp extends AbstractTransparentApp {
+public class StatisticsRestInterfaceTestApp extends AbstractTransparentApp {
 
   public static final int NODE_COUNT = 2;
 
   private final CyclicBarrier barrier = new CyclicBarrier(NODE_COUNT);
 
-  public StatisticsGatewayAllActionsTestApp(final String appId, final ApplicationConfig cfg, final ListenerProvider listenerProvider) {
+  public StatisticsRestInterfaceTestApp(final String appId, final ApplicationConfig cfg, final ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
@@ -35,7 +35,7 @@ public class StatisticsGatewayAllActionsTestApp extends AbstractTransparentApp {
   }
 
   public static void visitL1DSOConfig(final ConfigVisitor visitor, final DSOClientConfigHelper config) {
-    String testClass = StatisticsGatewayAllActionsTestApp.class.getName();
+    String testClass = StatisticsRestInterfaceTestApp.class.getName();
 
     config.getOrCreateSpec(testClass)
       .addRoot("barrier", "barrier");
