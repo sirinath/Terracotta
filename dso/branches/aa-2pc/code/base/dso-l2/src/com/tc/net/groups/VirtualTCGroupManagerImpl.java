@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListener, GroupMessageListener {
   private static final TCLogger                           logger           = TCLogging
                                                                                .getLogger(VirtualTCGroupManagerImpl.class);
-  private final GroupManager                        groupManager;
+  private final GroupManager                              groupManager;
   private final CopyOnWriteArrayList<GroupEventsListener> groupListeners   = new CopyOnWriteArrayList<GroupEventsListener>();
   private final Map<String, GroupMessageListener>         messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
   private final Set<NodeID>                               groupNodeIDs     = new CopyOnWriteArraySet<NodeID>();
@@ -71,7 +71,7 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   public void sendAll(GroupMessage msg) {
     groupManager.sendAll(msg, groupNodeIDs);
   }
-  
+
   public void sendAll(GroupMessage msg, Set nodeIDs) {
     groupManager.sendAll(msg, nodeIDs);
   }
@@ -79,7 +79,7 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg) throws GroupException {
     return groupManager.sendAllAndWaitForResponse(msg, groupNodeIDs);
   }
-  
+
   public GroupResponse sendAllAndWaitForResponse(GroupMessage msg, Set nodeIDs) throws GroupException {
     return groupManager.sendAllAndWaitForResponse(msg, nodeIDs);
   }
@@ -114,7 +114,7 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
     groupNodeIDs.remove(nodeID);
     fireNodeEvent(nodeID, false);
   }
-  
+
   /*
    * for testing purpose only
    */
@@ -129,7 +129,8 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   }
 
   private void fireNodeEvent(NodeID nodeID, boolean joined) {
-    if (logger.isDebugEnabled()) logger.debug("VirtualTCGroupManager fireNodeEvent: joined = " + joined + ", node = " + nodeID);
+    if (logger.isDebugEnabled()) logger.debug("VirtualTCGroupManager fireNodeEvent: joined = " + joined + ", node = "
+                                              + nodeID);
     for (GroupEventsListener listener : groupListeners) {
       if (joined) {
         listener.nodeJoined(nodeID);

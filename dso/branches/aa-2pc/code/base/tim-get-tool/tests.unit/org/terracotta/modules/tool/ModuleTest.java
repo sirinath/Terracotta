@@ -22,6 +22,8 @@ import org.mortbay.thread.BoundedThreadPool;
 import org.terracotta.modules.tool.DocumentToAttributes.DependencyType;
 import org.terracotta.modules.tool.util.ChecksumUtil;
 
+import com.tc.test.TCTestCase;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,12 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
-public final class ModuleTest extends TestCase {
+public final class ModuleTest extends TCTestCase {
 
   public void testInstall() throws Exception {
-    File basedir = new File(System.getProperty("java.io.tmpdir"), "repo");
+    File basedir = new File(this.getTempDirectory(), "repo");
     int port = 8888;
 
     String datafile = "/testData03.xml";
@@ -53,6 +53,7 @@ public final class ModuleTest extends TestCase {
     List<String> installedList = new ArrayList<String>();
     module.install(new Listener(installedList), InstallOption.SKIP_INSPECT);
     assertTrue(module.isInstalled());
+
     assertEquals(1, installedList.size());
     assertTrue(installedList.contains(createModule("foo.bar", "baz", "0.0.0").toString()));
 
@@ -551,7 +552,9 @@ public final class ModuleTest extends TestCase {
     thread.setDaemon(true);
     thread.start();
 
-    Thread.sleep(500);
+    // XXX use a cyclic-barrier here instead.
+    // give the fileserver enough time to spin-up...
+    Thread.sleep(5000);
   }
 
   private static class FileServer {
