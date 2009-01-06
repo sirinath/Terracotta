@@ -103,7 +103,6 @@ public abstract class AbstractAppServer implements AppServer {
       this.instance = instance;
     }
 
-    @Override
     protected void doLog(LogLevel level, String message, String category) {
       DateFormat FORMAT = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss.SSS");
       String msg = "[" + FORMAT.format(new Date()) + "]" + "[" + level.getLevel() + "][" + instance + "] " + message;
