@@ -28,17 +28,14 @@ public final class JBoss4xAppServer extends CargoAppServer {
     super(installation);
   }
 
-  @Override
   protected String cargoServerKey() {
     return "jboss4x";
   }
 
-  @Override
   protected InstalledLocalContainer container(LocalConfiguration config, AppServerParameters params) {
     return new TCJBoss4xInstalledLocalContainer(config, params.sars(), appServerInfo());
   }
 
-  @Override
   protected void setConfigProperties(LocalConfiguration config) throws Exception {
     config.setProperty(GeneralPropertySet.RMI_PORT, Integer.toString(AppServerUtil.getPort()));
   }
@@ -54,7 +51,6 @@ public final class JBoss4xAppServer extends CargoAppServer {
       this.appServerInfo = appServerInfo;
     }
 
-    @Override
     protected void doStart(Java java) throws Exception {
       JBossHelper.startupActions(new File(getConfiguration().getHome()), sars, appServerInfo);
       super.doStart(java);

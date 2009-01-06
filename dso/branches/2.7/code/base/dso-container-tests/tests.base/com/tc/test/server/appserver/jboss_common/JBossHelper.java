@@ -29,7 +29,7 @@ public class JBossHelper {
   }
 
   private static void writePortsConfig(PortChooser pc, File dest, AppServerInfo appServerInfo) throws IOException {
-    List<ReplaceLine.Token> tokens = new ArrayList<ReplaceLine.Token>();
+    List tokens = new ArrayList();
 
     int rmiPort = pc.chooseRandomPort();
     int rmiObjPort = new PortChooser().chooseRandomPort();
@@ -63,6 +63,6 @@ public class JBossHelper {
       tokens.add(new ReplaceLine.Token(264, "(port=\"[0-9]+)", "port=\"" + pc.chooseRandomPort()));
     }
 
-    ReplaceLine.parseFile(tokens.toArray(new ReplaceLine.Token[] {}), dest);
+    ReplaceLine.parseFile((ReplaceLine.Token[])tokens.toArray(new ReplaceLine.Token[] {}), dest);
   }
 }
