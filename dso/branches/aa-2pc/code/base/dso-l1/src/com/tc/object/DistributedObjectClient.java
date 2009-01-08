@@ -346,8 +346,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     ClientTransactionFactory txFactory = new ClientTransactionFactoryImpl(runtimeLogger);
 
     DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
-    TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
-        .getCommitTransactionMessageFactory(), encoding, FoldingConfig.createFromProperties(tcProperties));
 
     SampledCounter numTransactionCounter = (SampledCounter) counterManager.createCounter(new SampledCounterConfig(1,
                                                                                                                   900,
@@ -360,8 +358,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     Counter outstandingBatchesCounter = counterManager.createCounter(new CounterConfig(0));
     Counter pendingBatchesSize = counterManager.createCounter(new CounterConfig(0));
 
-    rtxManager = createRemoteTransactionManager(channel.getClientIDProvider(), txBatchFactory,
-                                                new TransactionIDGenerator(), sessionManager, channel,
+    rtxManager = createRemoteTransactionManager(channel.getClientIDProvider(), encoding, FoldingConfig
+        .createFromProperties(tcProperties), new TransactionIDGenerator(), sessionManager, channel,
                                                 outstandingBatchesCounter, numTransactionCounter, numBatchesCounter,
                                                 batchSizeCounter, pendingBatchesSize);
 
@@ -641,8 +639,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   /*
    * Overwrite this routine to do active-active
    */
-  protected RemoteTransactionManager createRemoteTransactionManager(ClientIDProvider cidProvider,
-                                                                    TransactionBatchFactory txBatchFactory,
+  protected RemoteTransactionManager createRemoteTransactionManager(ClientIDProvider cidProvider, DNAEncoding encoding,
+                                                                    FoldingConfig foldingConfig,
                                                                     TransactionIDGenerator transactionIDGenerator,
                                                                     SessionManager sessionManager,
                                                                     DSOClientMessageChannel dsoChannel,
@@ -653,6 +651,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                     Counter pendingBatchesSize) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
+    TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(channel
+        .getCommitTransactionMessageFactory(), encoding, foldingConfig);
     return new RemoteTransactionManagerImpl(defaultGroups[0], new ClientIDLogger(cidProvider, TCLogging
         .getLogger(RemoteTransactionManagerImpl.class)), txBatchFactory, transactionIDGenerator, sessionManager,
                                             dsoChannel, outstandingBatchesCounter, numTransactionCounter,
