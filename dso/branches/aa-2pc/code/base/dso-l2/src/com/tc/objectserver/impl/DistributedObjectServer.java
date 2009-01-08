@@ -423,8 +423,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
     l1ReconnectConfig = new L1ReconnectConfigImpl();
 
-    final boolean swapEnabled = true; // 2006-01-31 andrew -- no longer possible to use in-memory only; DSO folks say
-    // it's broken
+    final boolean swapEnabled = true;
     final boolean persistent = persistenceMode.equals(PersistenceMode.PERMANENT_STORE);
 
     TCFile location = new TCFileImpl(this.configSetupManager.commonl2Config().dataPath().getFile());
