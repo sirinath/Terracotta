@@ -115,7 +115,7 @@ public class LockStatManagerTest extends TestCase {
     }
   }
 
-  private void assertExpectedTime(long expectedMinTime, long actualTime) {
+  private void assertExpectedTime(final long expectedMinTime, final long actualTime) {
     // Supposed to be expectedMinTime but changed to expectedMinTime-10
     // This is due to System.currentTimeMillis() which is not that accurate,
     // according to javadoc, the granularity can be in units of tens of milliseconds
@@ -151,7 +151,7 @@ public class LockStatManagerTest extends TestCase {
   }
 
   public void testLockStatsManager() {
-    veriyLockStatsManagerStatistics();
+    verifyLockStatsManagerStatistics();
 
     lockStatManager.setLockStatisticsEnabled(false);
 
@@ -166,10 +166,10 @@ public class LockStatManagerTest extends TestCase {
 
     lockStatManager.setLockStatisticsEnabled(true);
 
-    veriyLockStatsManagerStatistics();
+    verifyLockStatsManagerStatistics();
   }
 
-  private void veriyLockStatsManagerStatistics() {
+  private void verifyLockStatsManagerStatistics() {
     LockID l1 = new LockID("1");
     ThreadID s1 = new ThreadID(0);
 
@@ -182,8 +182,7 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
 
-    lockManager.requestLock(l1, cid2, s1, LockLevel.WRITE, String.class.getName(), sink); // c2 should pend and issue a
-    // recall
+    lockManager.requestLock(l1, cid2, s1, LockLevel.WRITE, String.class.getName(), sink); // c2 should pend and issue a recall
     assertEquals(2, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(1, lockStatManager.getNumberOfLockHopRequests(l1));
@@ -196,8 +195,7 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(1, lockStatManager.getNumberOfLockReleased(l1));
 
-    lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink); // c1 request again and issue
-    // a recall
+    lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink); // c1 request again and issue a recall
     assertEquals(4, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(2, lockStatManager.getNumberOfLockHopRequests(l1));
