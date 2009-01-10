@@ -7,6 +7,7 @@ package com.tc.objectserver.impl;
 import bsh.EvalError;
 import bsh.Interpreter;
 
+import com.tc.async.api.PostInit;
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
@@ -96,7 +97,6 @@ import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockResponseMessage;
-import com.tc.object.msg.MessageRecycler;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
@@ -183,7 +183,6 @@ import com.tc.objectserver.tx.ServerTransactionManagerConfig;
 import com.tc.objectserver.tx.ServerTransactionManagerImpl;
 import com.tc.objectserver.tx.ServerTransactionSequencerImpl;
 import com.tc.objectserver.tx.ServerTransactionSequencerStats;
-import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
@@ -242,8 +241,10 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
@@ -361,6 +362,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));
     thisServerNodeID = makeServerNodeID(configSetupManager.dsoL2Config());
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
+
+    List<PostInit> toInit = new ArrayList<PostInit>();
 
     try {
       this.lockStatisticsMBean = new LockStatisticsMonitor(lockStatsManager);
@@ -680,10 +683,16 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     ChannelStatsImpl channelStats = new ChannelStatsImpl(sampledCounterManager, channelManager);
     channelManager.addEventListener(channelStats);
 
+    CommitTransactionMessageRecycler recycler = new CommitTransactionMessageRecycler();
+    toInit.add(recycler);
+
     lockManager = new LockManagerImpl(channelManager, lockStatsManager);
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
-    TransactionBatchManager transactionBatchManager = new TransactionBatchManagerImpl();
+
+    TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator, recycler);
+    toInit.add(transactionBatchManager);
+
     TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager);
     SampledCounter globalTxnCounter = (SampledCounter) sampledCounterManager
         .createCounter(new SampledCounterConfig(1, 300, true, 0L));
@@ -726,8 +735,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                           objectStatsRecorder);
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(transactionManager));
 
-    MessageRecycler recycler = new CommitTransactionMessageRecycler(transactionManager);
-
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
                              maxStageSize);
 
@@ -748,9 +755,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     txnStageCoordinator.lookUpSinks();
 
     Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
-                                               new ProcessTransactionHandler(transactionBatchManager,
-                                                                             sequenceValidator, recycler), 1,
-                                               maxStageSize);
+                                               new ProcessTransactionHandler(transactionBatchManager), 1, maxStageSize);
 
     Stage rootRequest = stageManager.createStage(ServerConfigurationContext.MANAGED_ROOT_REQUEST_STAGE,
                                                  new RequestRootHandler(), 1, maxStageSize);
@@ -902,9 +907,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                  txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
                                                  new CommitTransactionMessageToTransactionBatchReader(gtxm));
 
-    stageManager.startAll(context);
+    stageManager.startAll(context, toInit);
 
-    // populate the statistics retrieval registry
+    // populate the statistics retrieval register
     populateStatisticsRetrievalRegistry(serverStats, seda.getStageManager(), mm, transactionManager,
                                         serverTransactionSequencerImpl);
 

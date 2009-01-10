@@ -485,7 +485,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, lockManager, remoteObjectManager,
                                                                    txManager, clientHandshakeManager);
-    stageManager.startAll(cc);
+    stageManager.startAll(cc, Collections.EMPTY_LIST);
 
     channel.addClassMapping(TCMessageType.BATCH_TRANSACTION_ACK_MESSAGE, BatchTransactionAcknowledgeMessageImpl.class);
     channel.addClassMapping(TCMessageType.REQUEST_ROOT_MESSAGE, RequestRootMessageImpl.class);
