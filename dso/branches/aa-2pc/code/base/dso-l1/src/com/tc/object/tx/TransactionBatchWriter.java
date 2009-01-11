@@ -313,6 +313,19 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   protected void writeHeader(TCByteBufferOutputStream out) {
     out.writeLong(this.batchID.toLong());
     out.writeInt(transactionData.size());
+    writeRemainingHeader(out); 
+  }
+
+  protected void writeRemainingHeader(TCByteBufferOutputStream out) {
+    // This is here so that the format is compatible with active-active
+    writeLongArray(out, new long[0]);
+  }
+
+  protected void writeLongArray(TCByteBufferOutputStream out, long[] ls) {
+    out.writeInt(ls.length);
+    for (int i = 0; i < ls.length; i++) {
+      out.writeLong(ls[i]);
+    }
   }
 
   private TCByteBufferOutputStream newOutputStream() {
