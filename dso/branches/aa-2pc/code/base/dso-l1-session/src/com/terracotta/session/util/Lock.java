@@ -40,6 +40,10 @@ public class Lock {
     return ManagerUtil.tryBeginLock(lockId, lockType);
   }
 
+  public void getReadLock() {
+    ManagerUtil.beginLockWithoutTxn(lockId, Manager.LOCK_TYPE_READ);
+  }
+
   public String getLockId() {
     return lockId;
   }
