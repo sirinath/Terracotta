@@ -50,8 +50,10 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
   }
 
   public MultiNodeInvalidatorTest() {
-    //
+    // for MNK-866
+    disableAllUntil("2009-01-30");
   }
+  
 
   private Deployment makeDeployment() throws Exception {
     DeploymentBuilder builder = makeDeploymentBuilder(CONTEXT + ".war");
@@ -67,7 +69,8 @@ public class MultiNodeInvalidatorTest extends AbstractDeploymentTest {
       configBuilder = new TcConfigBuilder();
       configBuilder.addRoot(MultiNodeInvalidatorListener.class.getName() + ".sessionIDs", "sessionIDs");
       configBuilder.addAutoLock("* " + MultiNodeInvalidatorListener.class.getName() + ".*(..)", "write");
-      configBuilder.addWebApplication(CONTEXT);
+      if (isSessionLockingTrue()) configBuilder.addWebApplication(CONTEXT);
+      else configBuilder.addWebApplicationWithoutSessionLocking(CONTEXT);
     }
   }
 

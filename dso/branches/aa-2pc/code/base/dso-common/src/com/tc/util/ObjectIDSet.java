@@ -158,6 +158,18 @@ public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintab
     }
     return sb.append(']').toString();
   }
+  
+  public String toVerboseString() {
+    
+    StringBuffer sb = new StringBuffer("ObjectIDSet [ ");
+    for(Iterator<ObjectID> iter = iterator(); iter.hasNext();) {
+      sb.append(iter.next() + " , ");
+    }
+    
+    sb.append(" ] ");
+    
+    return sb.toString();
+  }
 
   public String toShortString() {
     StringBuffer sb = new StringBuffer("ObjectIDSet " + getCompressionDetails() + "[");
@@ -373,7 +385,7 @@ public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintab
     }
     return modified;
   }
-
+  
   public boolean contains(Object o) {
     if (o instanceof ObjectID) {
       return contains((ObjectID) o);
@@ -441,6 +453,14 @@ public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintab
 
     UnmodifiableObjectIDSet(ObjectIDSet s) {
       this.s = s;
+    }
+    
+    public Object deserializeFrom(TCByteBufferInput in) throws IOException {
+      return s.deserializeFrom(in);
+    }
+    
+    public void serializeTo(TCByteBufferOutput out) {
+      s.serializeTo(out);
     }
 
     public boolean equals(Object o) {
@@ -515,6 +535,18 @@ public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintab
 
     public void clear() {
       throw new UnsupportedOperationException();
+    }
+    
+    public String toVerboseString() {
+      return s.toVerboseString();
+    }
+    
+    public String toShortString() {
+      return s.toShortString();
+    }
+    
+    public PrettyPrinter prettyPrint(PrettyPrinter out) {
+      return s.prettyPrint(out);
     }
   }
 
