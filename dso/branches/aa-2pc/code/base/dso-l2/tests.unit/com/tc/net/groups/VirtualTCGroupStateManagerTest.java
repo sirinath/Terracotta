@@ -45,7 +45,7 @@ public class VirtualTCGroupStateManagerTest extends TCTestCase {
   private TCThreadGroup         threadGroup;
 
   public VirtualTCGroupStateManagerTest() {
-    // disableAllUntil("2008-03-15");
+     disableAllUntil("2009-01-14");
   }
 
   public void setUp() {
