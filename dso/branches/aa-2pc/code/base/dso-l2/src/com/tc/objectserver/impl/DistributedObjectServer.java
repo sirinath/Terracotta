@@ -56,10 +56,14 @@ import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.net.AddressChecker;
 import com.tc.net.NIOWorkarounds;
+import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.groups.GroupException;
+import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.Node;
+import com.tc.net.groups.SingleNodeGroupManager;
+import com.tc.net.groups.TCGroupManagerImpl;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOOEventHandler;
@@ -266,7 +270,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   private static final int                     MAX_DEFAULT_COMM_THREADS = 16;
 
   private final L2TVSConfigurationSetupManager configSetupManager;
-  private final HaConfig                       haConfig;
+  protected final HaConfig                     haConfig;
   private final Sink                           httpSink;
   private NetworkListener                      l1Listener;
   private CommunicationsManager                communicationsManager;
@@ -309,6 +313,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   private ReconnectConfig                      l1ReconnectConfig;
 
   private GCStatsEventPublisher                gcStatsEventPublisher;
+  private GroupManager                         groupCommManager;
 
   // used by a test
   public DistributedObjectServer(L2TVSConfigurationSetupManager configSetupManager, TCThreadGroup threadGroup,
@@ -890,12 +895,13 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                                                            persistent, consoleLogger);
 
     boolean networkedHA = this.haConfig.isNetworkedActivePassive();
+    groupCommManager = createGroupCommManager(networkedHA, configSetupManager, stageManager, thisServerNodeID);
     if (networkedHA) {
 
       logger.info("L2 Networked HA Enabled ");
-      l2Coordinator = new L2HACoordinator(configSetupManager, consoleLogger, this, stageManager, persistor
+      l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, groupCommManager, persistor
           .getClusterStateStore(), objectManager, transactionManager, gtxm, channelManager, configSetupManager
-          .haConfig(), recycler, thisServerNodeID);
+          .haConfig(), recycler);
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
@@ -923,16 +929,37 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
     lockStatsManager.start(channelManager);
 
-    if (networkedHA) {
-      final Node thisNode = this.haConfig.makeThisNode();
-      CallbackOnExitHandler handler = new CallbackGroupExceptionHandler(logger, consoleLogger);
-      threadGroup.addCallbackOnExitExceptionHandler(GroupException.class, handler);
-      l2Coordinator.start(thisNode, this.haConfig.getThisGroupNodes());
-    } else {
+    CallbackOnExitHandler handler = new CallbackGroupExceptionHandler(logger, consoleLogger);
+    threadGroup.addCallbackOnExitExceptionHandler(GroupException.class, handler);
+
+    startGroupManagers();
+    l2Coordinator.start();
+    if (!networkedHA) {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
     }
     setLoggerOnExit();
+  }
+
+  // Overridden by enterprise server
+  protected void startGroupManagers() {
+    try {
+      NodeID myNodeId = groupCommManager.join(this.haConfig.makeThisNode(), this.haConfig.getThisGroupNodes());
+      logger.info("This L2 Node ID = " + myNodeId);
+    } catch (GroupException e) {
+      logger.error("Caught Exception :", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  // Overridden by enterprise server
+  protected GroupManager createGroupCommManager(boolean networkedHA, L2TVSConfigurationSetupManager configManager,
+                                                StageManager stageManager, ServerID serverNodeID) {
+    if (networkedHA) {
+      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID);
+    } else {
+      return new SingleNodeGroupManager();
+    }
   }
 
   private ServerID makeServerNodeID(NewL2DSOConfig l2DSOConfig) {
