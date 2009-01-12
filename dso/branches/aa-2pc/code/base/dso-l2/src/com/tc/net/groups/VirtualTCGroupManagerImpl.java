@@ -27,9 +27,9 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   private final Set<NodeID>                               groupNodeIDs     = new CopyOnWriteArraySet<NodeID>();
   private final Set<String>                               groupNodes       = new HashSet<String>();
 
-  public VirtualTCGroupManagerImpl(GroupManager groupManager, Node[] thisGroupNodes) {
+  public VirtualTCGroupManagerImpl(GroupManager groupManager, Node[] virtualGroupNodes) {
     this.groupManager = groupManager;
-    for (Node n : thisGroupNodes) {
+    for (Node n : virtualGroupNodes) {
       groupNodes.add(n.getServerNodeName());
     }
     groupManager.registerForGroupEvents(this);
@@ -40,7 +40,8 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   }
 
   public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
-    return groupManager.join(thisNode, allNodes);
+    //NOP here, the underlying groupManager should have already joined to the entire clustered.
+    return this.groupManager.getLocalNodeID();
   }
 
   public void registerForGroupEvents(GroupEventsListener listener) {
