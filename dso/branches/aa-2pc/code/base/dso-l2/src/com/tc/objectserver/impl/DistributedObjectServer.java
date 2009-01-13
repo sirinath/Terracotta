@@ -183,11 +183,13 @@ import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor;
 import com.tc.objectserver.persistence.sleepycat.TCDatabaseException;
 import com.tc.objectserver.tx.CommitTransactionMessageRecycler;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
+import com.tc.objectserver.tx.PassThruTransactionFilter;
 import com.tc.objectserver.tx.ServerTransactionManagerConfig;
 import com.tc.objectserver.tx.ServerTransactionManagerImpl;
 import com.tc.objectserver.tx.ServerTransactionSequencerImpl;
 import com.tc.objectserver.tx.ServerTransactionSequencerStats;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
+import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
 import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
@@ -695,7 +697,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
 
-    TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator, recycler);
+    TransactionFilter txnFilter = getTransactionFilter(toInit);
+    TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator, recycler,
+                                                                                          txnFilter);
     toInit.add(transactionBatchManager);
 
     TransactionAcknowledgeAction taa = new TransactionAcknowledgeActionImpl(channelManager, transactionBatchManager);
@@ -911,7 +915,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
                                                  lockManager, channelManager, clientStateManager, transactionManager,
                                                  txnObjectManager, clientHandshakeManager, channelStats, l2Coordinator,
-                                                 new CommitTransactionMessageToTransactionBatchReader(gtxm));
+                                                 new CommitTransactionMessageToTransactionBatchReader(gtxm),
+                                                 transactionBatchManager);
 
     stageManager.startAll(context, toInit);
 
@@ -939,6 +944,13 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
       startActiveMode();
     }
     setLoggerOnExit();
+  }
+
+  // Overridden by enterprise server
+  protected TransactionFilter getTransactionFilter(List<PostInit> toInit) {
+    PassThruTransactionFilter txnFilter = new PassThruTransactionFilter();
+    toInit.add(txnFilter);
+    return txnFilter;
   }
 
   // Overridden by enterprise server
