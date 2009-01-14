@@ -35,11 +35,11 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
     groupManager.registerForGroupEvents(this);
   }
 
-  public NodeID getLocalNodeID() throws GroupException {
+  public NodeID getLocalNodeID() {
     return groupManager.getLocalNodeID();
   }
 
-  public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
+  public NodeID join(Node thisNode, Node[] allNodes) {
     // NOP here, the underlying groupManager should have already joined to the entire clustered.
     return this.groupManager.getLocalNodeID();
   }
