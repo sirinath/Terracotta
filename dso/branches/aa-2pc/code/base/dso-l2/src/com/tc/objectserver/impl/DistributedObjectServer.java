@@ -7,6 +7,7 @@ package com.tc.objectserver.impl;
 import bsh.EvalError;
 import bsh.Interpreter;
 
+import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.PostInit;
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
@@ -262,7 +263,7 @@ import javax.management.remote.JMXConnectorServer;
 /**
  * Startup and shutdown point. Builds and starts the server
  */
-public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
+public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, PostInit {
   private ServerID                             thisServerNodeID         = ServerID.NULL_ID;
   private final ConnectionPolicy               connectionPolicy;
 
@@ -909,7 +910,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
       l2Coordinator.getStateManager().registerForStateChangeEvents(l2State);
     } else {
       l2State.setState(StateManager.ACTIVE_COORDINATOR);
-      l2Coordinator = new L2HADisabledCooridinator();
+      l2Coordinator = new L2HADisabledCooridinator(groupCommManager);
     }
 
     context = new ServerConfigurationContextImpl(stageManager, objectManager, objectRequestManager, objectStore,
@@ -918,6 +919,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                  new CommitTransactionMessageToTransactionBatchReader(gtxm),
                                                  transactionBatchManager);
 
+    toInit.add(this);
     stageManager.startAll(context, toInit);
 
     // populate the statistics retrieval register
@@ -947,6 +949,11 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   }
 
   // Overridden by enterprise server
+  public void initializeContext(ConfigurationContext cc) {
+    // Do any post Init stuff here.
+  }
+
+  // Overridden by enterprise server
   protected TransactionFilter getTransactionFilter(List<PostInit> toInit) {
     PassThruTransactionFilter txnFilter = new PassThruTransactionFilter();
     toInit.add(txnFilter);
@@ -956,7 +963,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   // Overridden by enterprise server
   protected void startGroupManagers() {
     try {
-      NodeID myNodeId = groupCommManager.join(this.haConfig.makeThisNode(), this.haConfig.getThisGroupNodes());
+      NodeID myNodeId = groupCommManager.join(this.haConfig.getThisNode(), this.haConfig.getThisGroupNodes());
       logger.info("This L2 Node ID = " + myNodeId);
     } catch (GroupException e) {
       logger.error("Caught Exception :", e);
