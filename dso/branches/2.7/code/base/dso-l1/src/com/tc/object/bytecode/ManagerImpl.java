@@ -30,11 +30,13 @@ import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
-import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.properties.TCProperties;
@@ -63,8 +65,8 @@ public class ManagerImpl implements Manager {
   private final Thread                             shutdownAction;
   private final Portability                        portability;
   private final Cluster                            cluster;
+  private final RuntimeLogger                      runtimeLogger;
 
-  private RuntimeLogger                            runtimeLogger = new NullRuntimeLogger();
   private final InstrumentationLogger              instrumentationLogger;
 
   private ClientObjectManager                      objectManager;
@@ -75,29 +77,26 @@ public class ManagerImpl implements Manager {
   private final SerializationUtil                  serializer    = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
 
-  public ManagerImpl(DSOClientConfigHelper config, ClassProvider classProvider,
-                     PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, config, classProvider, connectionComponents, true);
+  public ManagerImpl(DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
+    this(true, null, null, config, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
-                     PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, config, classProvider, connectionComponents, true);
+                     DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
+    this(startClient, objectManager, txManager, config, connectionComponents, true);
   }
 
   // For tests
   public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, ClassProvider classProvider,
-                     PreparedComponentsFromL2Connection connectionComponents, boolean shutdownActionRequired) {
+                     DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents,
+                     boolean shutdownActionRequired) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
     this.config = config;
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
-    this.classProvider = classProvider;
     this.connectionComponents = connectionComponents;
     this.cluster = new Cluster();
     if (shutdownActionRequired) {
@@ -107,7 +106,30 @@ public class ManagerImpl implements Manager {
     } else {
       shutdownAction = null;
     }
+    this.runtimeLogger = new RuntimeLoggerImpl(config);
+    this.classProvider = new StandardClassProvider(runtimeLogger);
+    registerStandardLoaders();
+  }
 
+
+  private void registerStandardLoaders() {
+    ClassLoader loader1 = ClassLoader.getSystemClassLoader();
+    ClassLoader loader2 = loader1.getParent();
+    ClassLoader loader3 = loader2.getParent();
+
+    final ClassLoader sunSystemLoader;
+    final ClassLoader extSystemLoader;
+
+    if (loader3 != null) { // user is using alternate system loader
+      sunSystemLoader = loader2;
+      extSystemLoader = loader3;
+    } else {
+      sunSystemLoader = loader1;
+      extSystemLoader = loader2;
+    }
+
+    registerNamedLoader((NamedClassLoader) sunSystemLoader);
+    registerNamedLoader((NamedClassLoader) extSystemLoader);
   }
 
   public SessionMonitorMBean getSessionMonitorMBean() {
@@ -168,14 +190,14 @@ public class ManagerImpl implements Manager {
 
     StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
-        dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster);
+        dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
+                                          cluster, runtimeLogger);
         if (forTests) {
           dso.setCreateDedicatedMBeanServer(true);
         }
         dso.start();
         objectManager = dso.getObjectManager();
         txManager = dso.getTransactionManager();
-        runtimeLogger = dso.getRuntimeLogger();
         methodCallManager = dso.getDmiManager();
 
         shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
@@ -334,15 +356,16 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void beginInterruptibly(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) throws InterruptedException {
+  private void beginInterruptibly(String lockID, int type, Object instance, TCObject tcobj, String contextInfo)
+      throws InterruptedException {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-    
+
     boolean locked = this.txManager.beginInterruptibly(lockID, type, lockObjectType, contextInfo);
     if (locked && runtimeLogger.getLockDebug()) {
       runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
   }
-  
+
   private boolean tryBegin(String lockID, int type, Object instance, TimerSpec timeout, TCObject tcobj) {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
@@ -565,7 +588,7 @@ public class ManagerImpl implements Manager {
     }
     return false;
   }
-  
+
   public void monitorEnterInterruptibly(Object obj, int type) throws InterruptedException {
     if (obj == null) { throw new NullPointerException("monitorEnterInterruptibly called on a null object"); }
 
@@ -583,7 +606,7 @@ public class ManagerImpl implements Manager {
       throw e;
     } catch (Throwable t) {
       Util.printLogAndRethrowError(t, logger);
-    }    
+    }
   }
 
   private TimerSpec createTimerSpecFromNanos(final long timeoutInNanos) {
@@ -908,6 +931,14 @@ public class ManagerImpl implements Manager {
 
   public boolean overridesHashCode(Object obj) {
     return this.portability.overridesHashCode(obj);
+  }
+
+  public void registerNamedLoader(NamedClassLoader loader) {
+    this.classProvider.registerNamedLoader(loader);
+  }
+
+  public ClassProvider getClassProvider() {
+    return this.classProvider;
   }
 
 }
