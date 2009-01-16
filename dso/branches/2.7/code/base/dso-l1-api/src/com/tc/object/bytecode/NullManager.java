@@ -10,6 +10,8 @@ import com.tc.management.beans.sessions.SessionMonitorMBean;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
+import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.NullInstrumentationLogger;
 import com.tc.properties.TCProperties;
@@ -30,7 +32,7 @@ public final class NullManager implements Manager {
 
   /**
    * Get instance of the null manager
-   * 
+   *
    * @return NullManager
    */
   public static Manager getInstance() {
@@ -256,6 +258,14 @@ public final class NullManager implements Manager {
   }
 
   public boolean overridesHashCode(Object obj) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void registerNamedLoader(NamedClassLoader loader) {
+    throw new UnsupportedOperationException();
+  }
+
+  public ClassProvider getClassProvider() {
     throw new UnsupportedOperationException();
   }
 

@@ -14,6 +14,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
+import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.partitions.PartitionManager;
 import com.tc.properties.TCProperties;
 
@@ -57,7 +58,7 @@ public class ManagerUtil {
 
   /**
    * Get the named logger
-   * 
+   *
    * @param loggerName Logger name
    * @return The logger
    */
@@ -67,7 +68,7 @@ public class ManagerUtil {
 
   /**
    * Determine whether this class is physically instrumented
-   * 
+   *
    * @param clazz Class
    * @return True if physically instrumented
    */
@@ -77,7 +78,7 @@ public class ManagerUtil {
 
   /**
    * Get JVM Client identifier
-   * 
+   *
    * @return Client identifier
    */
   public static String getClientID() {
@@ -86,7 +87,7 @@ public class ManagerUtil {
 
   /**
    * Look up or create a new root object
-   * 
+   *
    * @param name Root name
    * @param object Root object to use if none exists yet
    * @return The root object actually used, may or may not == object
@@ -97,7 +98,7 @@ public class ManagerUtil {
 
   /**
    * Look up or create a new root object. Objects faulted in to arbitrary depth.
-   * 
+   *
    * @param name Root name
    * @param obj Root object to use if none exists yet
    * @return The root object actually used, may or may not == object
@@ -108,7 +109,7 @@ public class ManagerUtil {
 
   /**
    * Create or replace root, typically used for replaceable roots.
-   * 
+   *
    * @param rootName Root name
    * @param object Root object
    * @return Root object used
@@ -119,7 +120,7 @@ public class ManagerUtil {
 
   /**
    * Begin volatile lock by field offset in the class
-   * 
+   *
    * @param pojo Instance containing field
    * @param fieldOffset Field offset in pojo
    * @param type Lock level
@@ -133,7 +134,7 @@ public class ManagerUtil {
 
   /**
    * Commit volatile lock by field offset in the class
-   * 
+   *
    * @param pojo Instance containing field
    * @param fieldOffset Field offset in pojo
    */
@@ -146,7 +147,7 @@ public class ManagerUtil {
 
   /**
    * Begin volatile lock
-   * 
+   *
    * @param tcObject TCObject to lock
    * @param fieldName Field name holding volatile object
    * @param type Lock type
@@ -157,7 +158,7 @@ public class ManagerUtil {
 
   /**
    * Begin lock
-   * 
+   *
    * @param lockID Lock identifier
    * @param type Lock type
    */
@@ -167,7 +168,7 @@ public class ManagerUtil {
 
   /**
    * Begin lock
-   * 
+   *
    * @param lockID Lock identifier
    * @param type Lock type
    * @param contextInfo
@@ -178,7 +179,7 @@ public class ManagerUtil {
 
   /**
    * Try to begin lock
-   * 
+   *
    * @param lockID Lock identifier
    * @param type Lock type
    * @return True if lock was successful
@@ -189,7 +190,7 @@ public class ManagerUtil {
 
   /**
    * Try to begin lock within a specific timespan
-   * 
+   *
    * @param lockID Lock identifier
    * @param type Lock type
    * @param timeoutInNanos Timeout in nanoseconds
@@ -201,7 +202,7 @@ public class ManagerUtil {
 
   /**
    * Commit volatile lock
-   * 
+   *
    * @param tcObject Volatile object TCObject
    * @param fieldName Field holding the volatile object
    */
@@ -211,7 +212,7 @@ public class ManagerUtil {
 
   /**
    * Commit lock
-   * 
+   *
    * @param lockID Lock name
    */
   public static void commitLock(String lockID) {
@@ -220,7 +221,7 @@ public class ManagerUtil {
 
   /**
    * Find managed object, which may be null
-   * 
+   *
    * @param pojo The object instance
    * @return The TCObject
    */
@@ -238,7 +239,7 @@ public class ManagerUtil {
 
   /**
    * Perform invoke on logical managed object
-   * 
+   *
    * @param object The object
    * @param methodName The method to call
    * @param params The parameters to the method
@@ -249,7 +250,7 @@ public class ManagerUtil {
 
   /**
    * Perform invoke on logical managed object in lock
-   * 
+   *
    * @param object The object
    * @param lockObject The lock object
    * @param methodName The method to call
@@ -268,7 +269,7 @@ public class ManagerUtil {
 
   /**
    * Perform distributed method call on just this node
-   * 
+   *
    * @param receiver The receiver object
    * @param method The method to call
    * @param params The parameter values
@@ -279,7 +280,7 @@ public class ManagerUtil {
 
   /**
    * Perform distributed method call on all nodes
-   * 
+   *
    * @param receiver The receiver object
    * @param method The method to call
    * @param params The parameter values
@@ -290,7 +291,7 @@ public class ManagerUtil {
 
   /**
    * Lookup root by name
-   * 
+   *
    * @param name Name of root
    * @return Root object
    */
@@ -300,7 +301,7 @@ public class ManagerUtil {
 
   /**
    * Look up object by ID, faulting into the JVM if necessary
-   * 
+   *
    * @param id Object identifier
    * @return The actual object
    * @throws TCClassNotFoundException If a class is not found during faulting
@@ -317,7 +318,7 @@ public class ManagerUtil {
    * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
    * more intelligent prefetching is possible at the L2. XXX::FIXME:: This method is not called lookupObject() coz
    * ManagerHelperFactory doesn't allow method overloading.
-   * 
+   *
    * @param id Object identifier of the object we are looking up
    * @param parentContext Object identifier of the parent object
    * @return The actual object
@@ -333,7 +334,7 @@ public class ManagerUtil {
 
   /**
    * Find or create new TCObject
-   * 
+   *
    * @param obj The object instance
    * @return The TCObject
    */
@@ -343,7 +344,7 @@ public class ManagerUtil {
 
   /**
    * Check whether current context has write access
-   * 
+   *
    * @param context Context object
    * @throws com.tc.object.util.ReadOnlyException If in read-only transaction
    */
@@ -353,7 +354,7 @@ public class ManagerUtil {
 
   /**
    * Check whether an object is managed
-   * 
+   *
    * @param obj Instance
    * @return True if managed
    */
@@ -363,7 +364,7 @@ public class ManagerUtil {
 
   /**
    * Check whether an object is shared
-   * 
+   *
    * @param obj Instance
    * @return True if shared
    */
@@ -373,7 +374,7 @@ public class ManagerUtil {
 
   /**
    * Check whether dso MonitorExist is required
-   * 
+   *
    * @return True if required
    */
   public static boolean isDsoMonitorEntered(Object obj) {
@@ -382,7 +383,7 @@ public class ManagerUtil {
 
   /**
    * Check whether object is logically instrumented
-   * 
+   *
    * @param obj Instance
    * @return True if logically instrumented
    */
@@ -392,7 +393,7 @@ public class ManagerUtil {
 
   /**
    * Check whether field is a root
-   * 
+   *
    * @param field Field
    * @return True if root
    */
@@ -402,7 +403,7 @@ public class ManagerUtil {
 
   /**
    * Perform notify on obj
-   * 
+   *
    * @param obj Instance
    */
   public static void objectNotify(Object obj) {
@@ -411,7 +412,7 @@ public class ManagerUtil {
 
   /**
    * Perform notifyAll on obj
-   * 
+   *
    * @param obj Instance
    */
   public static void objectNotifyAll(Object obj) {
@@ -420,7 +421,7 @@ public class ManagerUtil {
 
   /**
    * Perform untimed wait on obj
-   * 
+   *
    * @param obj Instance
    */
   public static void objectWait0(Object obj) throws InterruptedException {
@@ -429,7 +430,7 @@ public class ManagerUtil {
 
   /**
    * Perform timed wait on obj
-   * 
+   *
    * @param obj Instance
    * @param millis Wait time
    */
@@ -439,7 +440,7 @@ public class ManagerUtil {
 
   /**
    * Perform timed wait on obj
-   * 
+   *
    * @param obj Instance
    * @param millis Wait time
    * @param nanos More wait time
@@ -450,7 +451,7 @@ public class ManagerUtil {
 
   /**
    * Enter synchronized monitor
-   * 
+   *
    * @param obj Object
    * @param type Lock type
    */
@@ -460,7 +461,7 @@ public class ManagerUtil {
 
   /**
    * Enter synchronized monitor
-   * 
+   *
    * @param obj Object
    * @param type Lock type
    * @param contextInfo Configuration text of the lock
@@ -471,7 +472,7 @@ public class ManagerUtil {
 
   /**
    * Exit synchronized monitor
-   * 
+   *
    * @param obj Object
    */
   public static void monitorExit(Object obj) {
@@ -480,7 +481,7 @@ public class ManagerUtil {
 
   /**
    * Check whether an object is locked at this lockLevel
-   * 
+   *
    * @param obj Lock
    * @param lockLevel Lock level
    * @return True if locked at this level
@@ -492,7 +493,7 @@ public class ManagerUtil {
 
   /**
    * Try to enter monitor for specified object
-   * 
+   *
    * @param obj The object monitor
    * @param timeoutInNanos Timeout in nanoseconds
    * @param type The lock level
@@ -505,7 +506,7 @@ public class ManagerUtil {
 
   /**
    * Enter synchronized monitor (interruptibly).
-   * 
+   *
    * @param obj The object monitor
    * @param type The lock level
    * @throws NullPointerException If obj is null
@@ -514,10 +515,10 @@ public class ManagerUtil {
   public static void monitorEnterInterruptibly(Object obj, int type) throws InterruptedException {
     getManager().monitorEnterInterruptibly(obj, type);
   }
-  
+
   /**
    * Get number of locks held locally on this object
-   * 
+   *
    * @param obj The lock object
    * @param lockLevel The lock level
    * @return Lock count
@@ -529,7 +530,7 @@ public class ManagerUtil {
 
   /**
    * Check whether this lock is held by the current thread
-   * 
+   *
    * @param obj The lock
    * @param lockLevel The lock level
    * @return True if held by current thread
@@ -541,7 +542,7 @@ public class ManagerUtil {
 
   /**
    * Number in queue waiting on this lock
-   * 
+   *
    * @param obj The object
    * @return Number of waiters
    * @throws NullPointerException If obj is null
@@ -552,7 +553,7 @@ public class ManagerUtil {
 
   /**
    * Number in queue waiting on this wait()
-   * 
+   *
    * @param obj The object
    * @return Number of waiters
    * @throws NullPointerException If obj is null
@@ -574,7 +575,7 @@ public class ManagerUtil {
 
   /**
    * For java.lang.reflect.Array.get()
-   * 
+   *
    * @param array The array
    * @param index Index into the array
    * @return Item in array at index, boxed to Object if primitive array
@@ -588,7 +589,7 @@ public class ManagerUtil {
   /**
    * This method is part of java.lang.reflect.Array and does the same as the set() method in the Sun JDK, the IBM
    * version of the set method just adds a series of argument checks and then delegates to the native setImpl version.
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param value New value
@@ -604,7 +605,7 @@ public class ManagerUtil {
   /**
    * This method is part of java.lang.reflect.Array and does the same as the set() method in the Sun JDK, the IBM
    * version of the set method just adds a series of argument checks and then delegates to the native setImpl version.
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param value New value
@@ -637,7 +638,7 @@ public class ManagerUtil {
 
   /**
    * Set boolean value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param z New boolean value
@@ -658,7 +659,7 @@ public class ManagerUtil {
 
   /**
    * Set byte value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param b New byte value
@@ -676,7 +677,7 @@ public class ManagerUtil {
 
   /**
    * Set int value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param c New int value
@@ -694,7 +695,7 @@ public class ManagerUtil {
 
   /**
    * Set short value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param s New short value
@@ -712,7 +713,7 @@ public class ManagerUtil {
 
   /**
    * Set int value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param i New int value
@@ -730,7 +731,7 @@ public class ManagerUtil {
 
   /**
    * Set long value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param l New long value
@@ -748,7 +749,7 @@ public class ManagerUtil {
 
   /**
    * Set float value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param f New float value
@@ -766,7 +767,7 @@ public class ManagerUtil {
 
   /**
    * Set double value in array
-   * 
+   *
    * @param array Array
    * @param index Index in array
    * @param d New double value
@@ -784,7 +785,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that object in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -795,7 +796,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that short in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -806,7 +807,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that long in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -817,7 +818,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that int in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -828,7 +829,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that float in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -839,7 +840,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that double in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -850,7 +851,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that char in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -861,7 +862,7 @@ public class ManagerUtil {
 
   /**
    * Indicate that byte or boolean in array changed
-   * 
+   *
    * @param array The array
    * @param index The index into array
    * @param value The new value
@@ -872,7 +873,7 @@ public class ManagerUtil {
 
   /**
    * Handle System.arraycopy() semantics with managed arrays
-   * 
+   *
    * @param src Source array
    * @param srcPos Start index in source
    * @param dest Destination array
@@ -886,7 +887,7 @@ public class ManagerUtil {
 
   /**
    * Get the TCO for an array
-   * 
+   *
    * @param array The array instance
    * @return The TCObject
    */
@@ -896,7 +897,7 @@ public class ManagerUtil {
 
   /**
    * Copy char[]
-   * 
+   *
    * @param src Source array
    * @param srcPos Start in src
    * @param dest Destination array
@@ -910,7 +911,7 @@ public class ManagerUtil {
 
   /**
    * Register an array with its TCO. It is an error to register an array that has already been registered.
-   * 
+   *
    * @param array Array
    * @param obj TCObject
    * @throws NullPointerException if array or tco are null
@@ -935,7 +936,7 @@ public class ManagerUtil {
 
   /**
    * Add listener for cluster events
-   * 
+   *
    * @param cel Listener
    */
   public static void addClusterEventListener(ClusterEventListener cel) {
@@ -944,7 +945,7 @@ public class ManagerUtil {
 
   /**
    * Get session lock type for the specified app (usually WRITE or SYNCHRONOUS_WRITE)
-   * 
+   *
    * @param appName Web app name
    * @return Lock type
    */
@@ -954,7 +955,7 @@ public class ManagerUtil {
 
   /**
    * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
-   * 
+   *
    * @param pojo Object
    * @param fieldOffset The index
    * @return true if the field is portable and false otherwise
@@ -967,5 +968,9 @@ public class ManagerUtil {
     // NOTE: The absence of the OverridesHashCode interface should not be relied upon
     if (obj instanceof OverridesHashCode) { return true; }
     return getManager().overridesHashCode(obj);
+  }
+
+  public static void registerNamedLoader(NamedClassLoader loader) {
+    getManager().registerNamedLoader(loader);
   }
 }
