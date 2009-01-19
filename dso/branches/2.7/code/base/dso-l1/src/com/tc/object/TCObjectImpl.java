@@ -251,10 +251,6 @@ public abstract class TCObjectImpl implements TCObject {
     throw new AssertionError("shouldn't be called");
   }
 
-  public ArrayIndexOutOfBoundsException checkArrayIndex(int index) {
-    throw new AssertionError("shouldn't be called");
-  }
-
   public void clearArrayReference(int index) {
     clearReference(Integer.toString(index));
   }

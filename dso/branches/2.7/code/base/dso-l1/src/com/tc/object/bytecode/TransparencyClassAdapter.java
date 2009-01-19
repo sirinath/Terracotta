@@ -648,6 +648,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     gv.visitInsn(t.getOpcode(IRETURN));
 
     gv.visitMaxs(0, 0);
+    gv.visitEnd();
   }
 
   private void checkReturnObjectType(String fieldName, String rootName, String targetType, int loadVariableNumber,
@@ -760,6 +761,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       mv.visitInsn(t.getOpcode(IRETURN));
       mv.visitTryCatchBlock(l3, l7, l7, null);
       mv.visitMaxs(0, 0);
+      mv.visitEnd();
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
     } catch (Error e) {
@@ -840,6 +842,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       gv.visitTryCatchBlock(l1, l2, l2, null);
 
       gv.visitMaxs(0, 0);
+      gv.visitEnd();
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
     } catch (Error e) {
@@ -903,6 +906,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     scv.visitFieldInsn(PUTFIELD, spec.getClassNameSlashes(), name, desc);
     scv.visitInsn(RETURN);
     scv.visitMaxs(0, 0);
+    scv.visitEnd();
   }
 
   private void createInstrumentedSetter(int methodAccess, int fieldAccess, String name, String desc) {
@@ -1016,6 +1020,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       scv.visitInsn(RETURN);
       scv.visitTryCatchBlock(tryStart, exceptionHandler, exceptionHandler, null);
       scv.visitMaxs(0, 0);
+      scv.visitEnd();
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
     } catch (Error e) {
@@ -1113,6 +1118,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       scv.visitFieldInsn(PUTFIELD, spec.getClassNameSlashes(), name, desc);
       scv.visitInsn(RETURN);
       scv.visitMaxs(0, 0);
+      scv.visitEnd();
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
     } catch (Error e) {
@@ -1165,6 +1171,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       mv.visitFieldInsn(PUTFIELD, spec.getClassNameSlashes(), name, desc);
       mv.visitInsn(RETURN);
       mv.visitMaxs(0, 0);
+      mv.visitEnd();
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
     } catch (Error e) {
