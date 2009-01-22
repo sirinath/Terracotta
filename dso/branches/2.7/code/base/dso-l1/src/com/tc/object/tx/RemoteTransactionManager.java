@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.tx;
 
@@ -7,11 +8,11 @@ import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.session.SessionID;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Client representation of the server transaction manager
- *
+ * 
  * @author steve
  */
 public interface RemoteTransactionManager {
@@ -37,9 +38,9 @@ public interface RemoteTransactionManager {
 
   public void resendOutstanding();
 
-  public Collection getTransactionSequenceIDs();
+  public List getTransactionSequenceIDs();
 
-  public Collection getResentTransactionIDs();
+  public List getResentTransactionIDs();
 
   public void resendOutstandingAndUnpause();
 

@@ -13,9 +13,9 @@ import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -112,11 +112,11 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
     remoteTransactionManager.resendOutstanding();
   }
 
-  public Collection getTransactionSequenceIDs() {
+  public List getTransactionSequenceIDs() {
     return remoteTransactionManager.getTransactionSequenceIDs();
   }
 
-  public Collection getResentTransactionIDs() {
+  public List getResentTransactionIDs() {
     return remoteTransactionManager.getResentTransactionIDs();
   }
 

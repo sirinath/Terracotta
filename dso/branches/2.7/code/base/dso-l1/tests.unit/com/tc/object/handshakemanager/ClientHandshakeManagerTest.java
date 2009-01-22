@@ -90,7 +90,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
 
   public void tests() {
 
-    Collection sequenceIDs = new ArrayList();
+    List sequenceIDs = new ArrayList();
     sequenceIDs.add(new SequenceID(1001));
     gtxManager.transactionSequenceIDs = sequenceIDs;
 
@@ -377,7 +377,7 @@ public class ClientHandshakeManagerTest extends TCTestCase {
     }
 
     public void lockInterruptibly(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo) {
-      throw new ImplementMe();      
+      throw new ImplementMe();
     }
 
     public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int level, String lockObjectType) {

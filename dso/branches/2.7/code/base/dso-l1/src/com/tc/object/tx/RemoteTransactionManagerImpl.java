@@ -286,9 +286,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     }
   }
 
-  public Collection getTransactionSequenceIDs() {
+  public List getTransactionSequenceIDs() {
     synchronized (lock) {
-      HashSet sequenceIDs = new HashSet();
+      ArrayList sequenceIDs = new ArrayList();
       if (!isStoppingOrStopped() && (status != STARTING)) {
         throw new AssertionError("Attempt to get current transaction sequence while not starting: " + status);
       } else {
@@ -309,9 +309,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     }
   }
 
-  public Collection getResentTransactionIDs() {
+  public List getResentTransactionIDs() {
     synchronized (lock) {
-      HashSet txIDs = new HashSet();
+      ArrayList txIDs = new ArrayList();
       if (!isStoppingOrStopped() && (status != STARTING)) {
         throw new AssertionError("Attempt to get resent transaction IDs while not starting: " + status);
       } else {

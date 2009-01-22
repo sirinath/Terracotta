@@ -10,7 +10,6 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.session.SessionID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +71,7 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
     throw new ImplementMe();
   }
 
-  public Collection getTransactionSequenceIDs() {
+  public List getTransactionSequenceIDs() {
     throw new ImplementMe();
   }
 
@@ -86,7 +85,7 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
 
   }
 
-  public Collection getResentTransactionIDs() {
+  public List getResentTransactionIDs() {
     throw new ImplementMe();
   }
 
