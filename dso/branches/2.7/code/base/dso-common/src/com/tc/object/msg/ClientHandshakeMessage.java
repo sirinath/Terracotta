@@ -11,11 +11,12 @@ import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public interface ClientHandshakeMessage {
 
-  public Collection getTransactionSequenceIDs();
+  public List getTransactionSequenceIDs();
 
   public Set getObjectIDs();
 
@@ -43,11 +44,11 @@ public interface ClientHandshakeMessage {
 
   public void send();
 
-  public void addTransactionSequenceIDs(Collection transactionSequenceIDs);
+  public void addTransactionSequenceIDs(List transactionSequenceIDs);
 
-  public void addResentTransactionIDs(Collection resentTransactionIDs);
+  public void addResentTransactionIDs(List resentTransactionIDs);
 
-  public Collection getResentTransactionIDs();
+  public List getResentTransactionIDs();
 
   public void setIsObjectIDsRequested(boolean request);
 

@@ -11,8 +11,8 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.tx.TransactionID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class TestClientGlobalTransactionManager implements ClientGlobalTransactionManager {
 
@@ -23,7 +23,7 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
   public final NoExceptionLinkedQueue flushCalls                     = new NoExceptionLinkedQueue();
   public final NoExceptionLinkedQueue getTransactionSequenceIDsCalls = new NoExceptionLinkedQueue();
   public final NoExceptionLinkedQueue getTransactionIDsCalls         = new NoExceptionLinkedQueue();
-  public Collection                   transactionSequenceIDs;
+  public List                         transactionSequenceIDs;
 
   public void setLowWatermark(GlobalTransactionID lowWatermark) {
     throw new ImplementMe();
@@ -53,7 +53,7 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
     resendOutstandingCalls.put(new Object());
   }
 
-  public Collection getTransactionSequenceIDs() {
+  public List getTransactionSequenceIDs() {
     this.getTransactionSequenceIDsCalls.put(new Object());
     return transactionSequenceIDs;
   }
@@ -66,7 +66,7 @@ public class TestClientGlobalTransactionManager implements ClientGlobalTransacti
     throw new ImplementMe();
   }
 
-  public Collection getResentTransactionIDs() {
+  public List getResentTransactionIDs() {
     this.getTransactionIDsCalls.put(new Object());
     return Collections.EMPTY_LIST;
   }
