@@ -29,7 +29,6 @@ class JavaUtilConcurrentHashMapLazyValuesMethodAdapter extends LocalVariablesSor
         visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
                         JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE, "()Ljava/lang/Object;");
       }
-
     } else if (PUTFIELD == opcode && "java/util/concurrent/ConcurrentHashMap$HashEntry".equals(owner)
                && "value".equals(name) && "Ljava/lang/Object;".equals(desc)) {
       visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
