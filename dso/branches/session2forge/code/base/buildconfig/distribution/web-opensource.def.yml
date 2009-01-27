@@ -22,9 +22,6 @@ bundled_components:
             modules:
               - dso-l1-session
               - dso-l1-weblogic
-              - dso-l1-tomcat
-              - dso-l1-tomcat50
-              - dso-l1-tomcat55
       modules:
         - aspectwerkz:
             exclude-runtime-libraries: true
@@ -69,7 +66,6 @@ bundled_modules:
       install_directory: eclipse/org.terracotta.dso/modules
       manifest:
         - clustered-commons-collections-3.1
-        - clustered-glassfish-2.0
         - clustered-surefire-2.3
         - excludes-config
         - guimodels-config

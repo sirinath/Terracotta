@@ -147,7 +147,6 @@ import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
 import com.tc.session.SessionSupport;
 import com.tc.text.Banner;
-import com.tc.tomcat.TomcatLoaderNaming;
 import com.tc.util.AbstractIdentifier;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
@@ -328,7 +327,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   * 
+   *
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(File bootJarFile) {
@@ -486,7 +485,6 @@ public class BootJarTool {
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(WebsphereLoaderNaming.class.getName());
-      loadTerracottaClass(TomcatLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(LogLevel.class.getName());
       loadTerracottaClass(Banner.class.getName());
@@ -1446,7 +1444,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   * 
+   *
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1462,7 +1460,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   * 
+   *
    * @param msg The custom message to print
    */
   private final void exit(String msg) {
@@ -1471,7 +1469,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   * 
+   *
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.

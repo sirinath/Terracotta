@@ -66,11 +66,6 @@ import com.tc.object.tools.BootJar;
 import com.tc.object.tools.BootJarException;
 import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.properties.ReconnectConfig;
-import com.tc.tomcat.transform.BootstrapAdapter;
-import com.tc.tomcat.transform.CatalinaAdapter;
-import com.tc.tomcat.transform.ContainerBaseAdapter;
-import com.tc.tomcat.transform.JspWriterImplAdapter;
-import com.tc.tomcat.transform.WebAppLoaderAdapter;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
@@ -159,14 +154,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   /**
    * A map of class names to TransparencyClassSpec
-   * 
+   *
    * @GuardedBy {@link #specLock}
    */
   private final Map                              userDefinedBootSpecs               = new HashMap();
 
   /**
    * A map of class names to TransparencyClassSpec for individual classes
-   * 
+   *
    * @GuardedBy {@link #specLock}
    */
   private final Map                              classSpecs                         = new HashMap();
@@ -260,7 +255,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     logger.debug("distributed-methods: " + this.distributedMethods);
 
     rewriteHashtableAutoLockSpecIfNecessary();
-    removeTomcatAdapters();
   }
 
   public String rawConfigText() {
@@ -606,12 +600,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     addWeblogicInstrumentation();
 
-    // BEGIN: tomcat stuff
-    // don't install tomcat-specific adaptors if this sys prop is defined
-    final boolean doTomcat = System.getProperty("com.tc.tomcat.disabled") == null;
-    if (doTomcat) addTomcatCustomAdapters();
-    // END: tomcat stuff
-
     // Geronimo + WebsphereCE stuff
     addCustomAdapter("org.apache.geronimo.kernel.basic.ProxyMethodInterceptor", new ProxyMethodInterceptorAdapter());
     addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", new MultiParentClassLoaderAdapter());
@@ -802,26 +790,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     spec = getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
                            "com.tc.object.applicator.LinkedBlockingQueueApplicator");
-  }
-
-  private void addTomcatCustomAdapters() {
-    addCustomAdapter("org.apache.jasper.runtime.JspWriterImpl", new JspWriterImplAdapter());
-    addCustomAdapter("org.apache.catalina.loader.WebappLoader", new WebAppLoaderAdapter());
-    addCustomAdapter("org.apache.catalina.startup.Catalina", new CatalinaAdapter());
-    addCustomAdapter("org.apache.catalina.startup.Bootstrap", new BootstrapAdapter());
-    addCustomAdapter("org.apache.catalina.core.ContainerBase", new ContainerBaseAdapter());
-    addCustomAdapter("org.apache.catalina.connector.SessionRequest55",
-                     new DelegateMethodAdapter("org.apache.catalina.connector.Request", "valveReq"));
-    addCustomAdapter("org.apache.catalina.connector.SessionResponse55",
-                     new DelegateMethodAdapter("org.apache.catalina.connector.Response", "valveRes"));
-  }
-
-  private void removeTomcatAdapters() {
-    // XXX: hack to avoid problems with coresident L1 (this can be removed when session support becomes a 1st class
-    // module)
-    if (applicationNames.isEmpty()) {
-      removeCustomAdapter("org.apache.catalina.core.ContainerBase");
-    }
   }
 
   public boolean removeCustomAdapter(String name) {
