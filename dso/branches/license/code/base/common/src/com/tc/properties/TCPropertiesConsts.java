@@ -538,4 +538,12 @@ public interface TCPropertiesConsts {
    * </code>
    ********************************************************************************************************************/
   public static final String   STATS_PRINTER_INTERVAL                                 = "stats.printer.intervalInMillis";
+  
+  /*********************************************************************************************************************
+   * <code>
+   * Section :  License Resovler
+   * license.resource.path                       - resource path to license key
+   * </code>
+   ********************************************************************************************************************/
+  public static final String   LICENSE_RESOURCE_PATH                                  = "license.resource.path";
 }
