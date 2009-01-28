@@ -23,6 +23,10 @@ public class TIMUtil {
   public static final String      MODULES_COMMON;
   public static final String      JETTY_6_1;
 
+  public static final String      TOMCAT_5_0;
+  public static final String      TOMCAT_5_5;
+  public static final String      TOMCAT_6_0;
+
   private static final Properties modules = new Properties();
 
   static {
@@ -37,6 +41,9 @@ public class TIMUtil {
     WEBSPHERE_6_1_0_7 = lookup(".*websphere-6.1.0.7");
     MODULES_COMMON = lookup("modules-common");
     JETTY_6_1 = lookup("tim-jetty-6.1");
+    TOMCAT_5_0 = lookup("tim-tomcat-5.0");
+    TOMCAT_5_5 = lookup("tim-tomcat-5.5");
+    TOMCAT_6_0 = lookup("tim-tomcat-6.0");
   }
 
   private TIMUtil() {
