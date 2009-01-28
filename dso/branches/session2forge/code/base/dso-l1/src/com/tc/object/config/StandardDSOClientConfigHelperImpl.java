@@ -42,8 +42,6 @@ import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.DelegateMethodAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
-import com.tc.object.bytecode.ManagerHelper;
-import com.tc.object.bytecode.ManagerHelperFactory;
 import com.tc.object.bytecode.OverridesHashCodeAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
 import com.tc.object.bytecode.THashMapAdapter;
@@ -115,7 +113,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private static final InstrumentationDescriptor DEFAULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
 
-  private final ManagerHelperFactory             mgrHelperFactory                   = new ManagerHelperFactory();
   private final DSOClientConfigHelperLogger      helperLogger;
 
   private final L1TVSConfigurationSetupManager   configSetupManager;
@@ -1333,7 +1330,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
                                                            InstrumentationLogger lgr, ClassLoader caller,
                                                            final boolean forcePortable, boolean honorTransient) {
     String className = classInfo.getName();
-    ManagerHelper mgrHelper = mgrHelperFactory.createHelper();
     TransparencyClassSpec spec = getOrCreateSpec(className);
     spec.setHonorTransient(honorTransient);
 
@@ -1345,7 +1341,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     }
 
-    return new TransparencyClassAdapter(classInfo, basicGetOrCreateSpec(className, null, false), writer, mgrHelper,
+    return new TransparencyClassAdapter(classInfo, basicGetOrCreateSpec(className, null, false), writer,
                                         lgr, caller, portability);
   }
 
@@ -1356,7 +1352,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                             ClassLoader caller, final boolean forcePortable) {
-    ManagerHelper mgrHelper = mgrHelperFactory.createHelper();
     TransparencyClassSpec spec = getOrCreateSpec(classInfo.getName());
 
     if (forcePortable) {
@@ -1367,7 +1362,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     }
 
-    ClassAdapter dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, mgrHelper, lgr, caller, portability);
+    ClassAdapter dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, lgr, caller, portability);
     ClassAdapterFactory factory = spec.getCustomClassAdapter();
     ClassVisitor cv;
     if (factory == null) {
