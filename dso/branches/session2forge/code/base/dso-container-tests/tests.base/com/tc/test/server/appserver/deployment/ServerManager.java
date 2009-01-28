@@ -176,8 +176,31 @@ public class ServerManager {
         aCopy.addModule(TIMUtil.GLASSFISH_2_0, TIMUtil.getVersion(TIMUtil.GLASSFISH_2_0));
         break;
       case AppServerInfo.JETTY:
-        // XXX: Can't do this right now. System tests in tim-jetty use this and add their own jetty module to config (resulting in two jetty TIMs being used!)
+        // XXX: Can't do this right now. System tests in tim-jetty use this and add their own jetty module to config
+        // (resulting in two jetty TIMs being used!)
         // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
+        break;
+      case AppServerInfo.TOMCAT:
+        AppServerInfo info = config.appServerInfo();
+        String major = info.getMajor();
+        String minor = info.getMinor();
+        if (major.equals("5")) {
+          if (minor.startsWith("0.")) {
+            aCopy.addModule(TIMUtil.TOMCAT_5_0, TIMUtil.getVersion(TIMUtil.TOMCAT_5_0));
+          } else if (minor.startsWith("5.")) {
+            aCopy.addModule(TIMUtil.TOMCAT_5_5, TIMUtil.getVersion(TIMUtil.TOMCAT_5_5));
+          } else {
+            throw new RuntimeException("unexpected 5.x version: " + info);
+          }
+        } else if (major.equals("6")) {
+          if (minor.startsWith("0.")) {
+            aCopy.addModule(TIMUtil.TOMCAT_6_0, TIMUtil.getVersion(TIMUtil.TOMCAT_6_0));
+          } else {
+            throw new RuntimeException("unexpected 6.x version: " + info);
+          }
+        } else {
+          throw new RuntimeException("unexpected major version: " + info);
+        }
         break;
       default:
         // nothing for now
@@ -233,6 +256,7 @@ public class ServerManager {
     return tcConfigFile;
   }
 
+  @Override
   public String toString() {
     return "ServerManager{" + "dsoServer=" + dsoServer.toString() + ", sandbox=" + sandbox.getAbsolutePath()
            + ", warDir=" + warDir.getAbsolutePath() + ", jvmArgs=" + jvmArgs + '}';
