@@ -145,7 +145,6 @@ import com.tc.object.util.OverrideCheck;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
-import com.tc.session.SessionSupport;
 import com.tc.text.Banner;
 import com.tc.util.AbstractIdentifier;
 import com.tc.util.Assert;
@@ -435,7 +434,6 @@ public class BootJarTool {
       addInstrumentedWeakHashMap();
 
       loadTerracottaClass(DebugUtil.class.getName());
-      loadTerracottaClass(SessionSupport.class.getName());
       loadTerracottaClass(TCMap.class.getName());
       if (Vm.isJDK15Compliant()) {
         loadTerracottaClass("com.tc.util.concurrent.locks.TCLock");
