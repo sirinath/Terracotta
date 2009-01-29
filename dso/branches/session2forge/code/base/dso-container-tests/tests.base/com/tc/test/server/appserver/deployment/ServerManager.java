@@ -177,7 +177,30 @@ public class ServerManager {
         // (resulting in two jetty TIMs being used!)
         // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
         break;
-      case AppServerInfo.TOMCAT:
+      case AppServerInfo.JBOSS: {
+        AppServerInfo info = config.appServerInfo();
+        String major = info.getMajor();
+        String minor = info.getMinor();
+        if (major.equals("4")) {
+          if (minor.startsWith("0.")) {
+            aCopy.addModule(TIMUtil.JBOSS_4_0, TIMUtil.getVersion(TIMUtil.JBOSS_4_0));
+          } else if (minor.startsWith("2.")) {
+            aCopy.addModule(TIMUtil.JBOSS_4_2, TIMUtil.getVersion(TIMUtil.JBOSS_4_2));
+          } else {
+            throw new RuntimeException("unexpected version: " + info);
+          }
+        } else if (major.equals("3")) {
+          if (minor.startsWith("2.")) {
+            aCopy.addModule(TIMUtil.JBOSS_3_2, TIMUtil.getVersion(TIMUtil.JBOSS_3_2));
+          } else {
+            throw new RuntimeException("unexpected version: " + info);
+          }
+        } else {
+          throw new RuntimeException("unexpected major version: " + info);
+        }
+        break;
+      }
+      case AppServerInfo.TOMCAT: {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();
         String minor = info.getMinor();
@@ -199,6 +222,7 @@ public class ServerManager {
           throw new RuntimeException("unexpected major version: " + info);
         }
         break;
+      }
       default:
         // nothing for now
     }

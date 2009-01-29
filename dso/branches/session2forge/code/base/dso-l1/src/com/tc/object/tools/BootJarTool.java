@@ -41,7 +41,6 @@ import com.tc.geronimo.GeronimoLoaderNaming;
 import com.tc.hibernate.HibernateProxyInstance;
 import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.io.TCByteArrayOutputStream;
-import com.tc.jboss.JBossLoaderNaming;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.LogLevel;
 import com.tc.logging.NullTCLogger;
@@ -479,7 +478,6 @@ public class BootJarTool {
       loadTerracottaClass(TLinkable.class.getName());
       loadTerracottaClass(SessionsHelper.class.getName());
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
-      loadTerracottaClass(JBossLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(LogLevel.class.getName());
       loadTerracottaClass(Banner.class.getName());

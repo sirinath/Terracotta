@@ -26,8 +26,6 @@ import com.tc.geronimo.transform.MultiParentClassLoaderAdapter;
 import com.tc.geronimo.transform.ProxyMethodInterceptorAdapter;
 import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
 import com.tc.jam.transform.ReflectClassBuilderAdapter;
-import com.tc.jboss.transform.MainAdapter;
-import com.tc.jboss.transform.UCLAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.ConnectionInfo;
@@ -213,10 +211,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         .commonL1Config().modules() : Modules.Factory.newInstance());
 
     permanentExcludesMatcher = new CompoundExpressionMatcher();
-
-    // CDV-441 -- This exclude should come before any patterns that do matching that might
-    // mandate more class loading (e.g. a superclass/interface match (Foo+))
-    addPermanentExcludePattern("org.jboss.net.protocol..*");
 
     // TODO:: come back and add all possible non-portable/non-adaptable classes here. This is by no means exhaustive !
 
@@ -602,10 +596,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", new MultiParentClassLoaderAdapter());
     addCustomAdapter("org.apache.geronimo.tomcat.HostGBean", new HostGBeanAdapter());
     addCustomAdapter("org.apache.geronimo.tomcat.TomcatClassLoader", new TomcatClassLoaderAdapter());
-
-    // JBoss adapters
-    addCustomAdapter("org.jboss.mx.loading.UnifiedClassLoader", new UCLAdapter());
-    addCustomAdapter("org.jboss.Main", new MainAdapter());
 
     // TODO for the Event Swing sample only
     LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
