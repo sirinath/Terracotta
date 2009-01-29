@@ -34,7 +34,7 @@ public class TCRuntime {
         memoryManager = getMemoryManagerJdk15PoolMonitor();
       }
     } else {
-      memoryManager = new TCMemoryManagerJdk14();
+      throw new RuntimeException("JVMMemoryManager require JRE 1.5 or greater");
     }
   }
 
