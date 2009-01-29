@@ -23,7 +23,7 @@ import junit.framework.Test;
 /**
  * Test session-descriptor setting http://edocs.bea.com/wls/docs81/webapp/weblogic_xml.html#1038173
  * http://edocs.bea.com/wls/docs90/webapp/weblogic_xml.html#1071982
- * 
+ *
  * @author hhuynh
  */
 public class SessionConfigTest extends AbstractDeploymentTest {
@@ -36,11 +36,11 @@ public class SessionConfigTest extends AbstractDeploymentTest {
   private WebApplicationServer server;
   private final Map            descriptors        = new HashMap();
   private final Map            extraServerJvmArgs = new HashMap();
-  private final boolean        weblogicOrWebsphere;
+  private boolean              runningWithWeblogic;
 
   public SessionConfigTest() {
-    weblogicOrWebsphere = appServerInfo().getId() == AppServerInfo.WEBLOGIC
-                          || appServerInfo().getId() == AppServerInfo.WEBSPHERE;
+    runningWithWeblogic = appServerInfo().getId() == AppServerInfo.WEBLOGIC;
+
   }
 
   public static Test suite() {
@@ -49,10 +49,9 @@ public class SessionConfigTest extends AbstractDeploymentTest {
 
   // CookieEnabled = false
   public void testCookieDisabled() throws Exception {
-    if (!weblogicOrWebsphere) return;
+    if (!runningWithWeblogic) return;
     descriptors.put("wl81", "weblogic81a.xml");
     descriptors.put("wl92-10", "weblogic92a.xml");
-    descriptors.put("was61", "websphere61a.xml");
     init();
 
     WebConversation conversation = new WebConversation();
@@ -66,10 +65,9 @@ public class SessionConfigTest extends AbstractDeploymentTest {
 
   // CookieEnabled = false, URLRewritingEnabled = false
   public void testUrlRewritingDisabled() throws Exception {
-    if (!weblogicOrWebsphere) return;
+    if (!runningWithWeblogic) return;
     descriptors.put("wl81", "weblogic81b.xml");
     descriptors.put("wl92-10", "weblogic92b.xml");
-    descriptors.put("was61", "websphere61b.xml");
     init();
 
     WebResponse response = request(server, "testcase=testUrlRewritingDisabled", new WebConversation());
@@ -79,7 +77,7 @@ public class SessionConfigTest extends AbstractDeploymentTest {
 
   // TrackingEnabled = false -- only applicable to Weblogic
   public void testTrackingDisabled() throws Exception {
-    if (!weblogicOrWebsphere) return;
+    if (!runningWithWeblogic) return;
     if (appServerInfo().getId() != AppServerInfo.WEBLOGIC) { return; }
     descriptors.put("wl81", "weblogic81c.xml");
     descriptors.put("wl92-10", "weblogic92c.xml");
