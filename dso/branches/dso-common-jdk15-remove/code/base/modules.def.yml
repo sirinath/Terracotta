@@ -201,19 +201,6 @@ modules:
         - management-api
         - thirdparty
         - thirdparty-api
-  - dso-l1-jdk15:
-      options: 
-        jdk: J2SE-1.5
-      dependencies:
-        - aspectwerkz
-        - common
-        - common-api
-        - dso-common
-        - dso-common-jdk16
-        - dso-l1
-        - dso-l1-api
-        - thirdparty
-        - thirdparty-api
   - dso-l1-session:
       options:
         jdk: J2SE-1.5
@@ -410,7 +397,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -457,7 +443,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -481,7 +466,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -507,7 +491,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -531,7 +514,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -556,7 +538,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -584,7 +565,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -631,7 +611,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -713,7 +692,6 @@ modules:
         - dso-container-tests
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -742,7 +720,6 @@ modules:
         - dso-container-tests
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -779,7 +756,6 @@ module-groups:
     - dso-common
     - dso-common-jdk16
     - dso-l1
-    - dso-l1-jdk15
     - dso-l1-weblogic
     - dso-l1-session
     - dso-l1-tomcat
