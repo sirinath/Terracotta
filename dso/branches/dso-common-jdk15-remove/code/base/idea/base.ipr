@@ -414,7 +414,6 @@
       <module fileurl="file://$PROJECT_DIR$/deploy-api.iml" filepath="$PROJECT_DIR$/deploy-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/dso-alt-boot-jar-tests.iml" filepath="$PROJECT_DIR$/dso-alt-boot-jar-tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/dso-common.iml" filepath="$PROJECT_DIR$/dso-common.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dso-common-jdk15.iml" filepath="$PROJECT_DIR$/dso-common-jdk15.iml" />
       <module fileurl="file://$PROJECT_DIR$/dso-common-jdk16.iml" filepath="$PROJECT_DIR$/dso-common-jdk16.iml" />
       <module fileurl="file://$PROJECT_DIR$/dso-container-tests.iml" filepath="$PROJECT_DIR$/dso-container-tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/dso-crash-tests.iml" filepath="$PROJECT_DIR$/dso-crash-tests.iml" />

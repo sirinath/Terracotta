@@ -33,7 +33,6 @@ bundled_components:
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
