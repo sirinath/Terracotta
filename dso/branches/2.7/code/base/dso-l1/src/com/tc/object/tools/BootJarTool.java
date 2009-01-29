@@ -154,7 +154,6 @@ import com.tc.util.FieldUtils;
 import com.tc.util.HashtableKeySetWrapper;
 import com.tc.util.HashtableValuesWrapper;
 import com.tc.util.ListIteratorWrapper;
-import com.tc.util.ReflectiveProxy;
 import com.tc.util.SetIteratorWrapper;
 import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
@@ -163,7 +162,6 @@ import com.tc.util.runtime.UnknownJvmVersionException;
 import com.tc.util.runtime.UnknownRuntimeVersionException;
 import com.tc.util.runtime.Vm;
 import com.tc.util.runtime.VmVersion;
-import com.tc.websphere.WebsphereLoaderNaming;
 import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
@@ -487,7 +485,6 @@ public class BootJarTool {
       loadTerracottaClass(SessionsHelper.class.getName());
       loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(JBossLoaderNaming.class.getName());
-      loadTerracottaClass(WebsphereLoaderNaming.class.getName());
       loadTerracottaClass(TomcatLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(LogLevel.class.getName());
@@ -539,8 +536,6 @@ public class BootJarTool {
       loadTerracottaClass(IBatisAccessPlanInstance.class.getName());
       loadTerracottaClass(HibernateProxyInstance.class.getName());
 
-      loadTerracottaClass(ReflectiveProxy.class.getName());
-      loadTerracottaClass(ReflectiveProxy.Handler.class.getName());
       loadTerracottaClass(PartitionManager.class.getName());
 
       addManagementClasses();
