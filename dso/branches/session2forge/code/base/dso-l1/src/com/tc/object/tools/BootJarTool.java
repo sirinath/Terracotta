@@ -37,7 +37,6 @@ import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.exception.TCObjectNotSharableException;
 import com.tc.exception.TCRuntimeException;
-import com.tc.geronimo.GeronimoLoaderNaming;
 import com.tc.hibernate.HibernateProxyInstance;
 import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.io.TCByteArrayOutputStream;
@@ -477,7 +476,6 @@ public class BootJarTool {
       loadTerracottaClass(AbstractIdentifier.class.getName());
       loadTerracottaClass(TLinkable.class.getName());
       loadTerracottaClass(SessionsHelper.class.getName());
-      loadTerracottaClass(GeronimoLoaderNaming.class.getName());
       loadTerracottaClass(TCLogger.class.getName());
       loadTerracottaClass(LogLevel.class.getName());
       loadTerracottaClass(Banner.class.getName());

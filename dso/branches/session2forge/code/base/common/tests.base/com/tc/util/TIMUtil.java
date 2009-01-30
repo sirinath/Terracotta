@@ -33,6 +33,7 @@ public class TIMUtil {
   public static final String      WEBLOGIC_9;
   public static final String      WEBLOGIC_10;
 
+  public static final String WASCE_1_0;
 
   private static final Properties modules = new Properties();
 
@@ -55,6 +56,7 @@ public class TIMUtil {
     JBOSS_4_2 = lookup("tim-jboss-4.2");
     WEBLOGIC_9 = lookup("tim-weblogic-9");
     WEBLOGIC_10 = lookup("tim-weblogic-10");
+    WASCE_1_0 = lookup("tim-wasce-1.0");
   }
 
   private TIMUtil() {
