@@ -21,10 +21,6 @@ import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.TVSConfigurationSetupManagerFactory;
-import com.tc.geronimo.transform.HostGBeanAdapter;
-import com.tc.geronimo.transform.MultiParentClassLoaderAdapter;
-import com.tc.geronimo.transform.ProxyMethodInterceptorAdapter;
-import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
 import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -579,12 +575,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("javax.servlet.GenericServlet");
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-
-    // Geronimo + WebsphereCE stuff
-    addCustomAdapter("org.apache.geronimo.kernel.basic.ProxyMethodInterceptor", new ProxyMethodInterceptorAdapter());
-    addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", new MultiParentClassLoaderAdapter());
-    addCustomAdapter("org.apache.geronimo.tomcat.HostGBean", new HostGBeanAdapter());
-    addCustomAdapter("org.apache.geronimo.tomcat.TomcatClassLoader", new TomcatClassLoaderAdapter());
 
     // TODO for the Event Swing sample only
     LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
