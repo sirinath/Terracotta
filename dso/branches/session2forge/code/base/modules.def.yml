@@ -237,23 +237,6 @@ modules:
         - dso-l1-api
         - management
         - management-api
-  - dso-weblogic-stubs:
-      options:
-        jdk: J2SE-1.5
-  - dso-l1-weblogic:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - aspectwerkz
-        - common
-        - common-api
-        - dso-common
-        - dso-common-jdk15
-        - dso-common-jdk16
-        - dso-l1
-        - dso-l1-api
-        - dso-l1-session
-        - dso-weblogic-stubs
   - dso-memory-datastore:
       options:
         jdk: J2SE-1.5
@@ -404,7 +387,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -478,7 +460,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-memory-datastore
@@ -556,7 +537,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-memory-datastore
@@ -585,7 +565,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-spring
@@ -677,7 +656,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-spring
@@ -707,7 +685,6 @@ modules:
         - dso-l1
         - dso-l1-api
         - dso-l1-jdk15
-        - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
         - dso-spring
@@ -745,7 +722,6 @@ module-groups:
     - dso-common-jdk16
     - dso-l1
     - dso-l1-jdk15
-    - dso-l1-weblogic
     - dso-l1-session
     - dso-l2-common
     - dso-l2
