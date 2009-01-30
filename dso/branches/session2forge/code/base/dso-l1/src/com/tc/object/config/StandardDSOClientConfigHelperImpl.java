@@ -38,7 +38,6 @@ import com.tc.object.bytecode.AbstractListMethodCreator;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
-import com.tc.object.bytecode.DelegateMethodAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
 import com.tc.object.bytecode.OverridesHashCodeAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
@@ -67,14 +66,6 @@ import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Vm;
-import com.tc.weblogic.WeblogicHelper;
-import com.tc.weblogic.transform.EJBCodeGeneratorAdapter;
-import com.tc.weblogic.transform.EventsManagerAdapter;
-import com.tc.weblogic.transform.FilterManagerAdapter;
-import com.tc.weblogic.transform.GenericClassLoaderAdapter;
-import com.tc.weblogic.transform.ServerAdapter;
-import com.tc.weblogic.transform.ServletResponseImplAdapter;
-import com.tc.weblogic.transform.WebAppServletContextAdapter;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.L1ReconnectPropertiesDocument;
 import com.terracottatech.config.Module;
@@ -589,8 +580,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
-    addWeblogicInstrumentation();
-
     // Geronimo + WebsphereCE stuff
     addCustomAdapter("org.apache.geronimo.kernel.basic.ProxyMethodInterceptor", new ProxyMethodInterceptorAdapter());
     addCustomAdapter("org.apache.geronimo.kernel.config.MultiParentClassLoader", new MultiParentClassLoaderAdapter());
@@ -617,35 +606,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         }
       } finally {
         BootJar.closeQuietly(bootJar);
-      }
-    }
-  }
-
-  private void addWeblogicInstrumentation() {
-    if (WeblogicHelper.isWeblogicPresent()) {
-      if (WeblogicHelper.isSupportedVersion()) {
-        addAspectModule("weblogic.servlet.internal", "com.tc.weblogic.SessionAspectModule");
-
-        if (WeblogicHelper.isWL10()) {
-          // These types get verify errors (if instrumented) in weblogic 10-mp1 (run
-          // InstrumentEverythingInContainerTest to see)
-          addPermanentExcludePattern("kodo.kernel..*");
-        }
-
-        addCustomAdapter("weblogic.Server", new ServerAdapter());
-        addCustomAdapter("weblogic.utils.classloaders.GenericClassLoader", new GenericClassLoaderAdapter());
-        addCustomAdapter("weblogic.ejb20.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-        addCustomAdapter("weblogic.ejb.container.ejbc.EjbCodeGenerator", new EJBCodeGeneratorAdapter());
-        addCustomAdapter("weblogic.servlet.internal.WebAppServletContext", new WebAppServletContextAdapter());
-        addCustomAdapter("weblogic.servlet.internal.EventsManager", new EventsManagerAdapter());
-        addCustomAdapter("weblogic.servlet.internal.FilterManager", new FilterManagerAdapter());
-        addCustomAdapter("weblogic.servlet.internal.ServletResponseImpl", new ServletResponseImplAdapter());
-        addCustomAdapter("weblogic.servlet.internal.TerracottaServletResponseImpl",
-                         new DelegateMethodAdapter("weblogic.servlet.internal.ServletResponseImpl", "nativeResponse"));
-      } else {
-        final String msg = "weblogic instrumentation NOT being added since this appears to be an unsupported version";
-        logger.warn(msg);
-        consoleLogger.warn(msg);
       }
     }
   }

@@ -67,7 +67,6 @@ bundled_components:
             install_directory: lib/session
             modules:
               - dso-l1-session
-              - dso-l1-weblogic
         - terracotta-api-version-PREALPHA:
             install_directory: lib
             modules:

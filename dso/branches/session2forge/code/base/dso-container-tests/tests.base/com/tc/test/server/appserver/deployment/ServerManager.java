@@ -177,6 +177,18 @@ public class ServerManager {
         // (resulting in two jetty TIMs being used!)
         // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
         break;
+      case AppServerInfo.WEBLOGIC: {
+        AppServerInfo info = config.appServerInfo();
+        String major = info.getMajor();
+        if (major.equals("9")) {
+          aCopy.addModule(TIMUtil.WEBLOGIC_9, TIMUtil.getVersion(TIMUtil.WEBLOGIC_9));
+        } else if (major.equals("10")) {
+          aCopy.addModule(TIMUtil.WEBLOGIC_10, TIMUtil.getVersion(TIMUtil.WEBLOGIC_10));
+        } else {
+          throw new RuntimeException("unexpected major version: " + info);
+        }
+        break;
+      }
       case AppServerInfo.JBOSS: {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();

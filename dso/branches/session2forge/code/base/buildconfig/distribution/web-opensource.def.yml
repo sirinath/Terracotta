@@ -21,7 +21,6 @@ bundled_components:
             install_directory: lib/session
             modules:
               - dso-l1-session
-              - dso-l1-weblogic
       modules:
         - aspectwerkz:
             exclude-runtime-libraries: true
