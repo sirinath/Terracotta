@@ -145,7 +145,7 @@ public class ResourceDeltaVisitor implements IResourceDeltaVisitor {
             plugin.fileMoved((IFile) res, delta.getMovedFromPath());
           }
         } else if (res instanceof IProject) {
-          plugin.validateConfigurationFile((IProject) res);
+          plugin.validateConfigurationFile(project);
         }
         break;
       }

@@ -55,7 +55,7 @@ public final class PropertyPage extends org.eclipse.ui.dialogs.PropertyPage {
     IProject project = getProject();
     IFile configFile = plugin.getConfigurationFile(project);
     validateConfigFile(configFile);
-    m_configPathField.setText(configFile != null ? configFile.getFullPath().toString() : "");
+    m_configPathField.setText(configFile != null ? configFile.getProjectRelativePath().toString() : "");
     m_serverOptionsField.setText(plugin.getServerOptions(project));
     m_autoStartServerButton.setSelection(plugin.getAutoStartServerOption(project));
     m_warnConfigProblemsButton.setSelection(plugin.getWarnConfigProblemsOption(project));
