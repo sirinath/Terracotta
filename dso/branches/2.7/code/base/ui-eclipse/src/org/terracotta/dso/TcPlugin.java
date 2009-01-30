@@ -1366,12 +1366,37 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
       configFile = getConfigurationFile(project);
     }
     if (!configFile.exists()) {
+      final Display display = Display.getDefault();
+      display.syncExec(new Runnable() {
+        public void run() {
+          try {
+            if (!project.isSynchronized(IResource.DEPTH_INFINITE)) {
+              project.refreshLocal(IResource.DEPTH_INFINITE, null);
+            }
+          } catch (CoreException ce) {
+            /**/
+          }
+          Shell shell = TcPlugin.getActiveWorkbenchShell();
+          String pageId = "org.terracotta.dso.ui.propertyPages.PropertyPage";
+          IJavaProject javaProject = JavaCore.create(project);
+          PreferenceDialog prefDialog = PreferencesUtil.createPropertyDialogOn(shell, javaProject, pageId, null, null);
+          result.set(prefDialog.open() == Window.OK);
+        }
+      });
+    }
+    final String markerType = "org.terracotta.dso.ConfigFileNotFoundMarker";
+    if (result.get()) {
+      try {
+        project.deleteMarkers(markerType, false, IResource.DEPTH_ZERO);
+      } catch (CoreException ce) {
+        /**/
+      }
+    } else {
       final HashMap<String, Object> map = new HashMap<String, Object>();
       MarkerUtilities.setMessage(map, "Config file not found");
       map.put(IMarker.PRIORITY, Integer.valueOf(IMarker.PRIORITY_HIGH));
       map.put(IMarker.SEVERITY, Integer.valueOf(IMarker.SEVERITY_ERROR));
       map.put(IMarker.LOCATION, configFile.getFullPath().toString());
-      final String markerType = "org.terracotta.dso.ConfigProblemMarker";
       final Display display = Display.getDefault();
       display.syncExec(new Runnable() {
         public void run() {
@@ -1380,11 +1405,6 @@ public class TcPlugin extends AbstractUIPlugin implements QualifiedNames, IJavaL
           } catch (CoreException ce) {
             openError("Problem creating marker '" + markerType + "'", ce);
           }
-          Shell shell = TcPlugin.getActiveWorkbenchShell();
-          String pageId = "org.terracotta.dso.ui.propertyPages.PropertyPage";
-          IJavaProject javaProject = JavaCore.create(project);
-          PreferenceDialog prefDialog = PreferencesUtil.createPropertyDialogOn(shell, javaProject, pageId, null, null);
-          result.set(prefDialog.open() == Window.OK);
         }
       });
     }
