@@ -169,9 +169,18 @@ public class ServerManager {
 
     int appId = config.appServerId();
     switch (appId) {
-      case AppServerInfo.GLASSFISH:
-        aCopy.addModule(TIMUtil.GLASSFISH_2_0, TIMUtil.getVersion(TIMUtil.GLASSFISH_2_0));
+      case AppServerInfo.GLASSFISH: {
+        AppServerInfo info = config.appServerInfo();
+        String major = info.getMajor();
+        if (major.equals("v1")) {
+          aCopy.addModule(TIMUtil.GLASSFISH_V1, TIMUtil.getVersion(TIMUtil.GLASSFISH_V1));
+        } else if (major.equals("v2")) {
+          aCopy.addModule(TIMUtil.GLASSFISH_V2, TIMUtil.getVersion(TIMUtil.GLASSFISH_V2));
+        } else {
+          throw new RuntimeException("unexpected version: " + info);
+        }
         break;
+      }
       case AppServerInfo.JETTY:
         // XXX: Can't do this right now. System tests in tim-jetty use this and add their own jetty module to config
         // (resulting in two jetty TIMs being used!)

@@ -17,7 +17,6 @@ import java.util.Set;
  */
 public class TIMUtil {
   public static final String      COMMONS_COLLECTIONS_3_1;
-  public static final String      GLASSFISH_2_0;
   public static final String      SUREFIRE_2_3;
   public static final String      MODULES_COMMON;
   public static final String      JETTY_6_1;
@@ -33,7 +32,10 @@ public class TIMUtil {
   public static final String      WEBLOGIC_9;
   public static final String      WEBLOGIC_10;
 
-  public static final String WASCE_1_0;
+  public static final String      WASCE_1_0;
+
+  public static final String      GLASSFISH_V1;
+  public static final String      GLASSFISH_V2;
 
   private static final Properties modules = new Properties();
 
@@ -44,7 +46,6 @@ public class TIMUtil {
       throw new RuntimeException(e);
     }
     COMMONS_COLLECTIONS_3_1 = lookup(".*commons-collections-3.1");
-    GLASSFISH_2_0 = lookup(".*glassfish-2.0");
     SUREFIRE_2_3 = lookup(".*surefire-2.3");
     MODULES_COMMON = lookup("modules-common");
     JETTY_6_1 = lookup("tim-jetty-6.1");
@@ -57,6 +58,8 @@ public class TIMUtil {
     WEBLOGIC_9 = lookup("tim-weblogic-9");
     WEBLOGIC_10 = lookup("tim-weblogic-10");
     WASCE_1_0 = lookup("tim-wasce-1.0");
+    GLASSFISH_V1 = lookup("tim-glassfish-v1");
+    GLASSFISH_V2 = lookup("tim-glassfish-v2");
   }
 
   private TIMUtil() {
