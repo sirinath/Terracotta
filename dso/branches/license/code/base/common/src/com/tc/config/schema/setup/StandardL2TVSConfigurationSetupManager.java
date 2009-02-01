@@ -10,8 +10,6 @@ import org.apache.xmlbeans.XmlInteger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
-import com.tc.capabilities.AbstractCapabilitiesFactory;
-import com.tc.capabilities.Capabilities;
 import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
@@ -30,6 +28,8 @@ import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
+import com.tc.license.AbstractLicenseResolverFactory;
+import com.tc.license.Capabilities;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -432,12 +432,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
       Set badServers = new HashSet();
 
       if (servers != null && servers.length > 1) {
-        Capabilities capabilities = AbstractCapabilitiesFactory.getCapabilitiesManager();
-
-        if (!capabilities.hasHA() && capabilities.canClusterPOJOs()) { throw new ConfigurationSetupException(
-                                                                                                             "Attempting to run multiple servers without license "
-                                                                                                                 + "authorization of DSO High Availability."); }
-
         // We have clustered DSO; they must all be in permanent-store
         // mode
         for (int i = 0; i < servers.length; ++i) {
@@ -472,23 +466,24 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
   }
 
   private void validateLicenseModuleRestrictions() throws ConfigurationSetupException {
-    Capabilities capabilities = AbstractCapabilitiesFactory.getCapabilitiesManager();
+    Capabilities capabilities = AbstractLicenseResolverFactory.getFactory().resolveCapabilities();
 
-    if (!capabilities.canClusterPOJOs()) {
+    if (!capabilities.allowRoots()) {
       Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
           .roots().getObject();
       if (result != null && Array.getLength(result) > 0) {
         // formatting
-        throw new ConfigurationSetupException(
-                                              "Your Terracotta license, "
-                                                  + capabilities.describe()
-                                                  + ", does not allow you to define DSO roots in your configuration file. Please remove them and try again.");
+        throw new ConfigurationSetupException("Your Terracotta license does not allow sharing DSO roots. "
+                                              + "Please remove them from configuration file and try again.");
       }
     }
 
-    if (!capabilities.canHaveMultipleGroups()) {
-      if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) { throw new ConfigurationSetupException(
-                                                                                                            "Multiple Server groups present in the configuration. But Terracotta Server array is only supported in enterprise version"); }
+    if (!capabilities.allowServerStripping()) {
+      if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
+        //
+        throw new ConfigurationSetupException("Your Terracotta license does not allow server striping. "
+                                              + "Please remove it from configuration file and try again.");
+      }
     }
 
   }
