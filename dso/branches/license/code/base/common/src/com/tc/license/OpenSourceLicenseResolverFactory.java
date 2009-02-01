@@ -14,9 +14,4 @@ public class OpenSourceLicenseResolverFactory extends AbstractLicenseResolverFac
   public License resolveLicense() {
     return license;
   }
-
-  public Capabilities resolveCapabilities() {
-    return license.capabilities();
-  }
-
 }

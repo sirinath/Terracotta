@@ -466,7 +466,7 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
   }
 
   private void validateLicenseModuleRestrictions() throws ConfigurationSetupException {
-    Capabilities capabilities = AbstractLicenseResolverFactory.getFactory().resolveCapabilities();
+    Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
 
     if (!capabilities.allowRoots()) {
       Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)

@@ -105,7 +105,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   private final L2State                        state                                        = new L2State();
 
   private final L2TVSConfigurationSetupManager configurationSetupManager;
-  protected final ConnectionPolicy               connectionPolicy;
+  protected final ConnectionPolicy             connectionPolicy;
 
   /**
    * This should only be used for tests.
@@ -174,7 +174,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   public String getDescriptionOfCapabilities() {
-    return AbstractLicenseResolverFactory.getFactory().resolveCapabilities().toString();
+    return AbstractLicenseResolverFactory.getCapabilities().toString();
   }
 
   /**
