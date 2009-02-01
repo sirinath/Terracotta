@@ -8,6 +8,9 @@
 # to a module-group as below (spring, dso, container, etc...)
 
 modules:
+  - license-common:
+      options:
+        jdk: J2SE-1.5
   - thirdparty-api:
       options:
         jdk: J2SE-1.5
@@ -25,6 +28,7 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - common-api
+        - license-common
   - reflector-test:
       options:
         jdk: J2SE-1.5
@@ -202,6 +206,7 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-common-jdk15
         - dso-common-jdk16
@@ -296,6 +301,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-common-jdk15
         - dso-common-jdk16
@@ -315,6 +321,7 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy-api
         - dso-common
         - dso-common-jdk15
