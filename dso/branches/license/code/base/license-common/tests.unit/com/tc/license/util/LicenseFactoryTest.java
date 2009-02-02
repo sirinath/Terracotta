@@ -9,8 +9,9 @@ import com.tc.license.LicenseFactory;
 
 import junit.framework.TestCase;
 
-public class LicenseBuilderTest extends TestCase {
-  public void testLicenseBuilder() throws Exception {
+public class LicenseFactoryTest extends TestCase {
+  
+  public void testFactory() throws Exception {
     License license = LicenseFactory.createEnterpriseLicense("Commercial", "123", "Big ole company", "EX", "4",
                                                                  null);
     assertEquals("Commercial", license.licenseType());
@@ -23,7 +24,7 @@ public class LicenseBuilderTest extends TestCase {
     assertNull(license.expirationDate());
   }
 
-  public void testBuilderValidator() throws Exception {
+  public void testFactoryValidator() throws Exception {
     try {
       LicenseFactory.createEnterpriseLicense("Unknown", "123", "Big ole company", "EX", "4", null);
       fail("Should have thrown LicenseException");
