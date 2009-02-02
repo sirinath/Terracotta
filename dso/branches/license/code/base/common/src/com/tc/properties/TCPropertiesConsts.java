@@ -541,9 +541,11 @@ public interface TCPropertiesConsts {
   
   /*********************************************************************************************************************
    * <code>
-   * Section :  License Resovler
+   * Section :  EnterpriseLicenseResovler
    * license.resource.path                       - resource path to license key
+   * license.url                                 - url to license key
    * </code>
    ********************************************************************************************************************/
   public static final String   LICENSE_RESOURCE_PATH                                  = "license.resource.path";
+  public static final String   LICENSE_URL                                            = "license.url";
 }
