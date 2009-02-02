@@ -554,7 +554,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         ThreadUtil.reallySleep(5000);
       } catch (MaxConnectionsExceededException e) {
         CONSOLE_LOGGER.fatal(e.getMessage());
-        System.exit(3);
+        CONSOLE_LOGGER.fatal("This client is now shutdown");
+        System.exit(1);
       } catch (IOException ioe) {
         CONSOLE_LOGGER.warn("IOException connecting to server: " + serverHost + ":" + serverPort + ". "
                             + ioe.getMessage());

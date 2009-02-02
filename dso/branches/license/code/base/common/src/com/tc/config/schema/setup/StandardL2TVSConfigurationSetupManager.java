@@ -30,6 +30,7 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
 import com.tc.license.AbstractLicenseResolverFactory;
 import com.tc.license.Capabilities;
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -67,7 +68,11 @@ import java.util.Set;
 public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L2TVSConfigurationSetupManager {
 
-  private static TCLogger                logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          logger        = TCLogging
+                                                           .getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          consoleLogger = CustomerLogging.getConsoleLogger();
+
+  private static final String            NEWLINE       = java.lang.System.getProperty("line.separator");
 
   private final ConfigurationCreator     configurationCreator;
 
@@ -126,7 +131,7 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     // do this after servers and groups have been processed
     validateGroups();
     validateDSOClusterPersistenceMode();
-    validateRestrictions();
+    validateLicenseCapabilities();
   }
 
   public String getL2Identifier() {
@@ -411,10 +416,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     listener.valueChanged(null, this.myConfigData.commonL2Config().logsPath().getObject());
   }
 
-  private void validateRestrictions() throws ConfigurationSetupException {
-    validateLicenseModuleRestrictions();
-  }
-
   private void validateDSOClusterPersistenceMode() throws ConfigurationSetupException {
     ActiveServerGroupConfig[] groupArray = this.activeServerGroupsConfig.getActiveServerGroupArray();
 
@@ -465,27 +466,39 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     }
   }
 
-  private void validateLicenseModuleRestrictions() throws ConfigurationSetupException {
+  private void validateLicenseCapabilities() {
     Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
 
     if (!capabilities.allowRoots()) {
       Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
           .roots().getObject();
       if (result != null && Array.getLength(result) > 0) {
-        // formatting
-        throw new ConfigurationSetupException("Your Terracotta license does not allow sharing DSO roots. "
-                                              + "Please remove them from configuration file and try again.");
+        printViolationWarning("sharing DSO roots.");
       }
     }
 
     if (!capabilities.allowServerStripping()) {
       if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
-        //
-        throw new ConfigurationSetupException("Your Terracotta license does not allow server striping. "
-                                              + "Please remove it from configuration file and try again.");
+        printViolationWarning("server striping.");
       }
     }
 
+    if (!capabilities.allowSessions()) {
+      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
+          .webApplications().getObject();
+      if (result != null && Array.getLength(result) > 0) {
+        printViolationWarning("sharing sessions.");
+      }
+    }
+
+  }
+
+  private void printViolationWarning(String feature) {
+    String message = "---------------- LICENSE VIOLATION WARNING --------------------";
+    message += NEWLINE + "Your Terracotta license key doesn't allow " + feature;
+    message += NEWLINE + "Please remove them from configuration file";
+    consoleLogger.warn(message);
+    logger.warn(message);
   }
 
   public NewCommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException {
