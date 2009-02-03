@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -49,7 +48,7 @@ public class LicenseFileTest extends TestCase {
 
     List expectedLines = IOUtils.readLines(getClass().getResourceAsStream("/com/tc/license/util/LicenseFileTest.txt"));
 
-    assertEquals(new HashSet(expectedLines), new HashSet(actualLines));
+    assertEquals(expectedLines, actualLines);
   }
 
   public void testLoad() throws Exception {
