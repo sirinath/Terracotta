@@ -213,7 +213,11 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     TransactionBuffer txnBuffer = new TransactionBuffer(sid, newOutputStream(), serializer, encoding);
 
     if (foldingEnabled) {
-      FoldingKey key = new FoldingKey(txnBuffer, txn.getTransactionType(), txn.getAllLockIDs(), new HashSet(txn
+      // copy the locks since the internal list might be mutated later if locks are nested and lock commits are out of
+      // order with respect to acquires
+      List locks = new ArrayList(txn.getAllLockIDs());
+
+      FoldingKey key = new FoldingKey(txnBuffer, txn.getTransactionType(), locks, new HashSet(txn
           .getChangeBuffers().keySet()));
       registerKeyForOids(txn.getChangeBuffers().keySet(), key);
     }
