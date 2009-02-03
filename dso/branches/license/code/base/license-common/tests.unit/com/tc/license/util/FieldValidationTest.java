@@ -1,5 +1,7 @@
 package com.tc.license.util;
 
+import java.text.SimpleDateFormat;
+
 import junit.framework.TestCase;
 
 public class FieldValidationTest extends TestCase {
@@ -18,7 +20,10 @@ public class FieldValidationTest extends TestCase {
 
     LicenseField field = descriptor.createField(LicenseConstants.LICENSE_TYPE);
     field.setRawValue(LicenseConstants.COMMERCIAL);
+    assertEquals(LicenseConstants.COMMERCIAL, (String) field.getValue());
+
     field.setRawValue(LicenseConstants.TRIAL);
+    assertEquals(LicenseConstants.TRIAL, (String) field.getValue());
 
     try {
       field.setRawValue("DUDE");
@@ -33,8 +38,10 @@ public class FieldValidationTest extends TestCase {
 
     LicenseField field = descriptor.createField(LicenseConstants.EXPIRATION_DATE);
     field.setRawValue(null);
+    assertNull(field.getValue());
 
     field.setRawValue("2009-01-01");
+    assertEquals(new SimpleDateFormat(LicenseConstants.DATE_FORMAT).parse("2009-01-01"), field.getValue());
 
     try {
       field.setRawValue("01-01-2009");
@@ -56,8 +63,13 @@ public class FieldValidationTest extends TestCase {
 
     LicenseField field = descriptor.createField(LicenseConstants.PRODUCT);
     field.setRawValue(LicenseConstants.FX);
+    assertEquals(LicenseConstants.FX, (String) field.getValue());
+
     field.setRawValue(LicenseConstants.EX);
+    assertEquals(LicenseConstants.EX, (String) field.getValue());
+
     field.setRawValue(LicenseConstants.EX_SESSIONS);
+    assertEquals(LicenseConstants.EX_SESSIONS, (String) field.getValue());
 
     try {
       field.setRawValue("DUDE");
@@ -72,7 +84,10 @@ public class FieldValidationTest extends TestCase {
 
     LicenseField field = descriptor.createField(LicenseConstants.MAX_CLIENTS);
     field.setRawValue("1");
+    assertEquals(Integer.valueOf(1), field.getValue());
+
     field.setRawValue("4");
+    assertEquals(Integer.valueOf(4), field.getValue());
 
     try {
       field.setRawValue("0");

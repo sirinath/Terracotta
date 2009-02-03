@@ -10,10 +10,9 @@ import com.tc.license.LicenseFactory;
 import junit.framework.TestCase;
 
 public class LicenseFactoryTest extends TestCase {
-  
+
   public void testFactory() throws Exception {
-    License license = LicenseFactory.createEnterpriseLicense("Commercial", "123", "Big ole company", "EX", "4",
-                                                                 null);
+    License license = LicenseFactory.createEnterpriseLicense("Commercial", "123", "Big ole company", "EX", "4", null);
     assertEquals("Commercial", license.licenseType());
     assertEquals("123", license.licenseNumber());
     assertEquals("Big ole company", license.licensee());

@@ -25,9 +25,8 @@ public class LicenseFile implements LicenseStore {
 
   public void store(License license, OutputStream out) {
     PrintWriter writer = new PrintWriter(out, true);
-    String licenseString = license.toString();
     writer.println(LICENSE_HEADER);
-    writer.println(licenseString);
+    writer.println(license.toString());
     writer.println(LICENSE_SIGNATURE);
     writer.println(license.getSignature());
     writer.println(LICENSE_FOOTER);

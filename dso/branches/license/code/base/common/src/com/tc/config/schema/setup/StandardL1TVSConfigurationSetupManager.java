@@ -20,6 +20,9 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
 import com.tc.license.AbstractLicenseResolverFactory;
 import com.tc.license.Capabilities;
+import com.tc.license.util.LicenseConstants;
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL1DSOConfig;
 import com.tc.object.config.schema.NewL1DSOConfigObject;
@@ -37,6 +40,9 @@ import java.lang.reflect.Array;
  */
 public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L1TVSConfigurationSetupManager {
+  private static final TCLogger      logger        = TCLogging.getLogger(StandardL1TVSConfigurationSetupManager.class);
+  private static final TCLogger      consoleLogger = CustomerLogging.getConsoleLogger();
+
   private final ConfigurationCreator configurationCreator;
   private final NewCommonL1Config    commonL1Config;
   private final L2ConfigForL1        l2ConfigForL1;
@@ -108,19 +114,16 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
   public void validateLicenseCapabilities() {
     Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
 
-    if (!capabilities.allowRoots()) {
-      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
-          .roots().getObject();
-      if (result != null && Array.getLength(result) > 0) {
-        printViolationWarning("sharing DSO roots.");
-      }
-    }
+    // checking usage of roots here will be missing the case with annotations
+    // the check is being done in NewDSOApplicationConfigObject.translateRoot() instead
 
     if (!capabilities.allowSessions()) {
       Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
           .webApplications().getObject();
       if (result != null && Array.getLength(result) > 0) {
-        printViolationWarning("sharing sessions.");
+        String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SESSIONS);
+        consoleLogger.warn(message);
+        logger.warn(message);
       }
     }
   }

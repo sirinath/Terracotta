@@ -30,6 +30,8 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
 import com.tc.license.AbstractLicenseResolverFactory;
 import com.tc.license.Capabilities;
+import com.tc.license.util.LicenseConstants;
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -66,10 +68,11 @@ import java.util.Set;
 public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L2TVSConfigurationSetupManager {
 
-  private static final TCLogger          logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          logger        = TCLogging
+                                                           .getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          consoleLogger = CustomerLogging.getConsoleLogger();
 
   private final ConfigurationCreator     configurationCreator;
-
   private NewSystemConfig                systemConfig;
   private final Map                      l2ConfigData;
   private final NewHaConfig              haConfig;
@@ -465,7 +468,9 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
 
     if (!capabilities.allowServerStripping()) {
       if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
-        printViolationWarning("server striping.");
+        String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SERVER_STRIPING);
+        consoleLogger.warn(message);
+        logger.warn(message);
       }
     }
   }
