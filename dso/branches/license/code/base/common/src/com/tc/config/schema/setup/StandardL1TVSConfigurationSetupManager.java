@@ -6,11 +6,11 @@ package com.tc.config.schema.setup;
 
 import org.apache.xmlbeans.XmlObject;
 
+import com.tc.config.schema.ConfigTCProperties;
+import com.tc.config.schema.ConfigTCPropertiesFromObject;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.L2ConfigForL1;
 import com.tc.config.schema.L2ConfigForL1Object;
-import com.tc.config.schema.ConfigTCProperties;
-import com.tc.config.schema.ConfigTCPropertiesFromObject;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.NewCommonL1ConfigObject;
 import com.tc.config.schema.defaults.DefaultValueProvider;
@@ -18,6 +18,8 @@ import com.tc.config.schema.dynamic.FileConfigItem;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
+import com.tc.license.AbstractLicenseResolverFactory;
+import com.tc.license.Capabilities;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL1DSOConfig;
 import com.tc.object.config.schema.NewL1DSOConfigObject;
@@ -27,6 +29,8 @@ import com.tc.util.Assert;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.DsoClientData;
 import com.terracottatech.config.TcConfigDocument.TcConfig.TcProperties;
+
+import java.lang.reflect.Array;
 
 /**
  * The standard implementation of {@link com.tc.config.schema.setup.L1TVSConfigurationSetupManager}.
@@ -67,6 +71,7 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                                                  }), null));
 
     overwriteTcPropertiesFromConfig();
+    validateLicenseCapabilities();
   }
 
   public void setupLogging() {
@@ -95,8 +100,28 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
     return this.dsoL1Config;
   }
 
-  private void overwriteTcPropertiesFromConfig(){
+  private void overwriteTcPropertiesFromConfig() {
     TCProperties tcProps = TCPropertiesImpl.getProperties();
     tcProps.overwriteTcPropertiesFromConfig(this.configTCProperties.getTcPropertiesArray());
+  }
+
+  public void validateLicenseCapabilities() {
+    Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
+
+    if (!capabilities.allowRoots()) {
+      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
+          .roots().getObject();
+      if (result != null && Array.getLength(result) > 0) {
+        printViolationWarning("sharing DSO roots.");
+      }
+    }
+
+    if (!capabilities.allowSessions()) {
+      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
+          .webApplications().getObject();
+      if (result != null && Array.getLength(result) > 0) {
+        printViolationWarning("sharing sessions.");
+      }
+    }
   }
 }
