@@ -96,10 +96,6 @@ public class MockTransactionManager implements ClientTransactionManager {
     }
   }
 
-  public void wait(TimerSpec call, Object object) {
-    throw new ImplementMe();
-  }
-
   public void notify(String lockName, boolean all, Object object) throws UnlockedSharedObjectException {
     throw new ImplementMe();
   }
@@ -140,14 +136,6 @@ public class MockTransactionManager implements ClientTransactionManager {
   }
 
   public void wait(String lockName, TimerSpec call, Object object) throws UnlockedSharedObjectException {
-    throw new ImplementMe();
-  }
-
-  // public void lock(String lockName, int lockLevel) {
-  // throw new ImplementMe();
-  // }
-  //
-  public void unlock(String lockName) {
     throw new ImplementMe();
   }
 
