@@ -35,11 +35,11 @@ public class LicenseDescriptorTest extends TestCase {
     LicenseDescriptor d = LicenseDescriptor.getInstance();
     Map description = d.getDescriptionMap();
     assertEquals(6, description.size());
-    assertNotNull(description.get("License type"));
-    assertNotNull(description.get("License number"));
-    assertNotNull(description.get("Licensee"));
-    assertNotNull(description.get("Max clients"));
-    assertNotNull(description.get("Product"));
-    assertNotNull(description.get("Expiration date"));
+    assertNotNull(description.get(LicenseConstants.LICENSE_TYPE));
+    assertNotNull(description.get(LicenseConstants.LICENSE_NUMBER));
+    assertNotNull(description.get(LicenseConstants.LICENSEE));
+    assertNotNull(description.get(LicenseConstants.MAX_CLIENTS));
+    assertNotNull(description.get(LicenseConstants.PRODUCT));
+    assertNotNull(description.get(LicenseConstants.EXPIRATION_DATE));
   }
 }

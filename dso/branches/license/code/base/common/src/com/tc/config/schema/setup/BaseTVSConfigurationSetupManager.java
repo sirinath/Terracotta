@@ -18,9 +18,6 @@ import com.tc.config.schema.repository.MutableBeanRepository;
 import com.tc.config.schema.repository.StandardApplicationsRepository;
 import com.tc.config.schema.repository.StandardBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
-import com.tc.logging.CustomerLogging;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewDSOApplicationConfigObject;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
@@ -43,12 +40,7 @@ import java.util.Set;
 /**
  * A base class for all TVS configuration setup managers.
  */
-public abstract class BaseTVSConfigurationSetupManager {
-  private static final String                     NEWLINE       = java.lang.System.getProperty("line.separator");
-  private static final TCLogger                   logger        = TCLogging
-                                                                    .getLogger(BaseTVSConfigurationSetupManager.class);
-  private static final TCLogger                   consoleLogger = CustomerLogging.getConsoleLogger();
-
+public class BaseTVSConfigurationSetupManager {
   private final MutableBeanRepository             clientBeanRepository;
   private final MutableBeanRepository             serversBeanRepository;
   private final MutableBeanRepository             systemBeanRepository;
@@ -171,15 +163,5 @@ public abstract class BaseTVSConfigurationSetupManager {
         return ((Application) parent).getSpring();
       }
     }), null));
-  }
-
-  public abstract void validateLicenseCapabilities();
-
-  protected void printViolationWarning(String feature) {
-    String message = NEWLINE + "---------------- LICENSE VIOLATION WARNING --------------------";
-    message += NEWLINE + "Your Terracotta license key doesn't allow " + feature;
-    message += NEWLINE + "Please remove them from configuration file";
-    consoleLogger.warn(message);
-    logger.warn(message);
   }
 }

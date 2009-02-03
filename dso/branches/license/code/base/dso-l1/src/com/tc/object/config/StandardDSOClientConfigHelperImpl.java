@@ -28,6 +28,8 @@ import com.tc.geronimo.transform.TomcatClassLoaderAdapter;
 import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.jboss.transform.MainAdapter;
 import com.tc.jboss.transform.UCLAdapter;
+import com.tc.license.AbstractLicenseResolverFactory;
+import com.tc.license.util.LicenseConstants;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.ConnectionInfo;
@@ -975,6 +977,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public void addRoot(Root root, boolean addSpecForClass) {
+    if (!AbstractLicenseResolverFactory.getCapabilities().allowRoots()) {
+      String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.ROOTS + ": " + root);
+      CustomerLogging.getConsoleLogger().warn(message);
+      logger.warn(message);
+    }
+    
     if (addSpecForClass) {
       this.getOrCreateSpec(root.getClassName());
     }
@@ -1373,8 +1381,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     }
 
-    return new TransparencyClassAdapter(classInfo, basicGetOrCreateSpec(className, null, false), writer,
-                                        lgr, caller, portability);
+    return new TransparencyClassAdapter(classInfo, basicGetOrCreateSpec(className, null, false), writer, lgr, caller,
+                                        portability);
   }
 
   public ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
