@@ -115,7 +115,7 @@ public class StandardL1TVSConfigurationSetupManager extends BaseTVSConfiguration
     Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
 
     // checking usage of roots here will be missing the case with annotations
-    // the check is being done in NewDSOApplicationConfigObject.translateRoot() instead
+    // the check is being done in StandardDSOClientConfigHelperImpl.addRoot() instead
 
     if (!capabilities.allowSessions()) {
       Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
