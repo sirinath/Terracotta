@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.config.schema.setup;
 
@@ -17,6 +18,9 @@ import com.tc.config.schema.repository.MutableBeanRepository;
 import com.tc.config.schema.repository.StandardApplicationsRepository;
 import com.tc.config.schema.repository.StandardBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
 import com.tc.object.config.schema.NewDSOApplicationConfigObject;
 import com.tc.object.config.schema.NewSpringApplicationConfig;
@@ -39,7 +43,11 @@ import java.util.Set;
 /**
  * A base class for all TVS configuration setup managers.
  */
-public class BaseTVSConfigurationSetupManager {
+public abstract class BaseTVSConfigurationSetupManager {
+  private static final String                     NEWLINE       = java.lang.System.getProperty("line.separator");
+  private static final TCLogger                   logger        = TCLogging
+                                                                    .getLogger(BaseTVSConfigurationSetupManager.class);
+  private static final TCLogger                   consoleLogger = CustomerLogging.getConsoleLogger();
 
   private final MutableBeanRepository             clientBeanRepository;
   private final MutableBeanRepository             serversBeanRepository;
@@ -47,7 +55,7 @@ public class BaseTVSConfigurationSetupManager {
   private final MutableBeanRepository             tcPropertiesRepository;
   private final ApplicationsRepository            applicationsRepository;
 
-  protected final DefaultValueProvider              defaultValueProvider;
+  protected final DefaultValueProvider            defaultValueProvider;
   private final XmlObjectComparator               xmlObjectComparator;
   private final IllegalConfigurationChangeHandler illegalConfigurationChangeHandler;
 
@@ -90,7 +98,7 @@ public class BaseTVSConfigurationSetupManager {
   protected final MutableBeanRepository tcPropertiesRepository() {
     return this.tcPropertiesRepository;
   }
-  
+
   protected final ApplicationsRepository applicationsRepository() {
     return this.applicationsRepository;
   }
@@ -100,12 +108,9 @@ public class BaseTVSConfigurationSetupManager {
   }
 
   protected final void runConfigurationCreator(ConfigurationCreator configurationCreator)
-    throws ConfigurationSetupException
-  {
-    configurationCreator.createConfigurationIntoRepositories(clientBeanRepository,
-                                                             serversBeanRepository,
-                                                             systemBeanRepository,
-                                                             tcPropertiesRepository,
+      throws ConfigurationSetupException {
+    configurationCreator.createConfigurationIntoRepositories(clientBeanRepository, serversBeanRepository,
+                                                             systemBeanRepository, tcPropertiesRepository,
                                                              applicationsRepository);
   }
 
@@ -168,4 +173,13 @@ public class BaseTVSConfigurationSetupManager {
     }), null));
   }
 
+  public abstract void validateLicenseCapabilities();
+
+  protected void printViolationWarning(String feature) {
+    String message = NEWLINE + "---------------- LICENSE VIOLATION WARNING --------------------";
+    message += NEWLINE + "Your Terracotta license key doesn't allow " + feature;
+    message += NEWLINE + "Please remove them from configuration file";
+    consoleLogger.warn(message);
+    logger.warn(message);
+  }
 }

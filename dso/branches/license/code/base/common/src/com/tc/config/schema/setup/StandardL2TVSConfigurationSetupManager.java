@@ -30,7 +30,6 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
 import com.tc.license.AbstractLicenseResolverFactory;
 import com.tc.license.Capabilities;
-import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -56,7 +55,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -68,11 +66,7 @@ import java.util.Set;
 public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L2TVSConfigurationSetupManager {
 
-  private static final TCLogger          logger        = TCLogging
-                                                           .getLogger(StandardL2TVSConfigurationSetupManager.class);
-  private static final TCLogger          consoleLogger = CustomerLogging.getConsoleLogger();
-
-  private static final String            NEWLINE       = java.lang.System.getProperty("line.separator");
+  private static final TCLogger          logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
 
   private final ConfigurationCreator     configurationCreator;
 
@@ -466,39 +460,14 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     }
   }
 
-  private void validateLicenseCapabilities() {
+  public void validateLicenseCapabilities() {
     Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
-
-    if (!capabilities.allowRoots()) {
-      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
-          .roots().getObject();
-      if (result != null && Array.getLength(result) > 0) {
-        printViolationWarning("sharing DSO roots.");
-      }
-    }
 
     if (!capabilities.allowServerStripping()) {
       if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
         printViolationWarning("server striping.");
       }
     }
-
-    if (!capabilities.allowSessions()) {
-      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
-          .webApplications().getObject();
-      if (result != null && Array.getLength(result) > 0) {
-        printViolationWarning("sharing sessions.");
-      }
-    }
-
-  }
-
-  private void printViolationWarning(String feature) {
-    String message = "---------------- LICENSE VIOLATION WARNING --------------------";
-    message += NEWLINE + "Your Terracotta license key doesn't allow " + feature;
-    message += NEWLINE + "Please remove them from configuration file";
-    consoleLogger.warn(message);
-    logger.warn(message);
   }
 
   public NewCommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException {
