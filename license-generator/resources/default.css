@@ -1,0 +1,174 @@
+body {
+	margin-top  : 15px;
+	margin-left : 10%;
+	margin-right: 10%;
+	font-family : 'Bitstream Vera Sans', sans-serif;
+}
+
+h1, h2, h3, h4, h5 {
+	font-family: 'Bitstream Vera Serif', serif;
+	font-weight: normal;
+}
+
+h1 {
+	font-size: 28pt;
+	margin: 3px;
+}
+
+h2 {
+	font-size    : 18pt;
+	margin-top   : 15px;
+	margin-bottom: 5px;
+}
+
+h3 {
+	font-family: 'Bitstream Vera Serif', sans-serif;
+	font-size   : 14pt;
+}
+
+h4 {
+	font-family  : 'Bitstream Vera Sans', sans-serif;
+	font-weight  : bold;
+	font-size    : 8pt;
+	margin-top   : 15px;
+	margin-bottom: 2px;
+}
+
+li {
+	list-style: square;
+	color: gray;
+}
+
+#tags, .tags {
+	color    : black;
+	font-size: 7pt;
+}
+
+#svninfo, .svninfo {
+	font-size: 7pt;
+	color    : gray;
+}
+
+#links, .links {
+	border-top     : 1px solid gainsboro;
+	border-bottom  : 1px solid gainsboro;
+	padding        : 3px;
+	text-align     : right;
+	text-decoration: none;
+	color          : silver;
+	font-size      : smaller;
+}
+
+#pubstats, .pubstats {
+	margin-top : 15px;
+	border     : 2px solid gainsboro;
+	color      : gray;
+	font-size  : 6pt;
+}
+
+#header, .header {
+	background-color: lightgray;
+	color           : gray;
+}
+
+#PASSED, .PASSED {
+	color: darkgreen;
+}
+
+#FAILED, .FAILED {
+	background-color: darkred;
+	color: yellow;
+}
+
+#notabene, .notabene {
+	font-size : 8pt;
+	font-style: italic;
+	color     : orange;
+	border    : 1px dashed orange;
+	margin    : 15px;
+	padding   : 10px;
+}
+
+#footer, .footer {
+	text-align : right;
+	border-top : 1px solid gainsboro;
+	color      : gray;
+	font-size  : smaller;
+	margin-top : 15px;
+	padding-top: 5px;
+}
+
+a {
+	color          : steelblue;
+	text-decoration: none;
+}
+
+table.editions-table {
+	border     : 1px solid gainsboro; 
+	font-family: monospace; 
+	font-size  : smaller; 
+	width      :100%;
+}
+
+tr.editions-header {
+	background : #ddd;
+	font-size  : smaller; 
+	font-weight: bolder;
+}
+
+tr.editions-row {
+	font-family: monospace; 
+}
+
+tr.editions-row td {
+	font-family: monospace; 
+	font-size  : smaller; 
+}
+
+tr.editions-row td a {
+	font-family: monospace; 
+	font-size  : small; 
+}
+
+tr.latest-release {
+	background: #ccff00;
+}
+
+div.tags {
+	font-family: monospace; 
+	font-size  : smaller; 
+}
+
+sup {
+	font-size: smallest;
+}
+
+pre code {
+	font-size: smaller;
+}
+
+a img {
+	border: none;
+}
+
+#rc-marker {
+	margin     : 0px; 
+	margin-left: 1px;
+	float      : right; 
+	border     : 2px solid black; 
+	padding    : 2px; 
+	background : green; 
+	color      : white; 
+	font-size  : small
+}
+
+#tcversion-marker {
+	margin     : 0px; 
+	margin-left: 1px;
+	float      : right; 
+	border     : 2px solid black; 
+	padding    : 2px; 
+	background : maroon; 
+	color      : white; 
+	font-size  : small
+}
