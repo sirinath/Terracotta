@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<jnlp spec="1.0+" codebase="http://kong.terracotta.lan/resources/license-generator" href="resources/webstart.jnlp">
+
+<information>
+  <title>Terracotta License Generator</title>
+  <vendor>Terracotta</vendor>
+  <description>Terracotta License Generator</description>
+  <description kind="short">Terracotta License Generator</description>
+  <description kind="tooltip">Terracotta License Generator</description> 
+  <icon href="resources/Elephant_32x32.png" width="32" height="32"/>
+  <icon href="resources/Elephant_48x48.png" width="48" height="48"/>
+  <shortcut online="false">
+    <desktop/>
+    <menu submenu="Terracotta License Generator"/>
+  </shortcut>
+  <offline-allowed/>
+</information>
+    
+<resources>
+  <j2se version="1.5+"/>
+  <jar href="lib/license-generator.jar" main="true"/>
+  <jar href="lib/commons-cli-1.1.jar" />
+  <jar href="lib/commons-io-1.2.jar" />
+  <jar href="lib/miglayout-3.6.3-swing.jar" />
+  <jar href="lib/yamlbeans-0.9.2.jar" />      
+</resources>
+
+<application-desc main-class="com.tc.license.generator.gui.MainFrame"/>
+
+<security>
+  <all-permissions/>
+</security>
+
+</jnlp>
