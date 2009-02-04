@@ -12,6 +12,7 @@ import com.tc.license.LicenseFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -64,5 +65,17 @@ public class LicenseFileTest extends TestCase {
     assertEquals(2, license.capabilities().size());
     assertTrue(license.capabilities().allowRoots());
     assertTrue(license.capabilities().allowSessions());
+  }
+
+  public void testMissingMarkings() throws IOException {
+    LicenseStore licenseStore = new LicenseFile();
+    try {
+      licenseStore.load(getClass().getResourceAsStream("/com/tc/license/util/missingMarkings.txt"));
+      fail("Should have thrown LicenseException");
+    } catch (LicenseException e) {
+      System.out.println("expected exception: " + e.getMessage());
+    } catch (IOException e) {
+      throw e;
+    }
   }
 }
