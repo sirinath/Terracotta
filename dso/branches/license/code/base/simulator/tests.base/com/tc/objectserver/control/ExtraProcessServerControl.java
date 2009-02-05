@@ -38,7 +38,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
   protected final String      configFileLoc;
   protected final List        jvmArgs;
   private final File          runningDirectory;
-  private final String        serverName;
+  private String              serverName;
   private OutputStream        outStream;
   private StreamCopier        outCopier;
   private StreamCopier        errCopier;
@@ -183,6 +183,10 @@ public class ExtraProcessServerControl extends ServerControlBase {
 
   protected String getMainClassName() {
     return "com.tc.server.TCServerMain";
+  }
+
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
   }
 
   /**
