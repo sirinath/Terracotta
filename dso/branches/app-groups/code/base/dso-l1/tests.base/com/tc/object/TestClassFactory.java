@@ -9,6 +9,7 @@ import com.tc.object.applicator.ChangeApplicator;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.object.loaders.LoaderDescription;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -128,7 +129,7 @@ public class TestClassFactory implements TCClassFactory {
       //
     }
 
-    public String getDefiningLoaderDescription() {
+    public LoaderDescription getDefiningLoaderDescription() {
       return null;
     }
 

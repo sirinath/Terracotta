@@ -17,6 +17,7 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
@@ -208,7 +209,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
   private static class ObjMgr implements ClientObjectManager {
 
-    public Class getClassFor(String className, String loaderDesc) {
+    public Class getClassFor(String className, LoaderDescription loaderDesc) {
       throw new ImplementMe();
     }
 
