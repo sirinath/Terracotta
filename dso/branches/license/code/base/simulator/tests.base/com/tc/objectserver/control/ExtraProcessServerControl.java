@@ -214,9 +214,14 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
 
   public void start() throws Exception {
-    System.err.println("Starting " + this.name + /* ": jvmArgs=" + jvmArgs + */", main=" + getMainClassName()
-                       + ", main args=" + ArrayUtils.toString(getMainClassArguments()) + ", jvm=[" + getJavaHome()
-                       + "]");
+    startWithoutWait();
+    waitUntilStarted();
+    System.err.println(this.name + " started.");
+  }
+
+  public void startWithoutWait() throws Exception {
+    System.err.println("Starting " + this.name + ", main=" + getMainClassName() + ", main args="
+                       + ArrayUtils.toString(getMainClassArguments()) + ", jvm=[" + getJavaHome() + "]");
     process = createLinkedJavaProcess();
     process.setJavaArguments((String[]) jvmArgs.toArray(new String[jvmArgs.size()]));
     process.start();
@@ -229,8 +234,6 @@ public class ExtraProcessServerControl extends ServerControlBase {
       outCopier.start();
       errCopier.start();
     }
-    waitUntilStarted();
-    System.err.println(this.name + " started.");
   }
 
   protected LinkedJavaProcess createLinkedJavaProcess(String mainClassName, String[] arguments) {

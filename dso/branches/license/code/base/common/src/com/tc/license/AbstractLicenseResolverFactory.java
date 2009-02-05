@@ -36,4 +36,10 @@ public abstract class AbstractLicenseResolverFactory extends AbstractFactory {
     message += NEWLINE + "Please remove it from your configuration." + NEWLINE;
     return message;
   }
+
+  public static String getLicenseWarning(String feature, String offendingItem) {
+    String message = getLicenseWarning(feature);
+    message += "Offending item: " + offendingItem + NEWLINE;
+    return message;
+  }
 }
