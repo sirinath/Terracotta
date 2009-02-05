@@ -421,9 +421,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
     if (isStopped.get()) return;
 
-    int maxReconnectTries = isUseOOOLayer ? -1 : 0;
     ClientMessageChannel channel = communicationsManager
-        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), maxReconnectTries, null, -1, 10000,
+        .createClientChannel(new SessionManagerImpl(new SimpleSequence()), 0, null, -1, 10000,
                              addrProvider, groupPort);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
