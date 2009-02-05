@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2009 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.loaders;
 
@@ -25,11 +25,10 @@ public interface ClassProvider {
 
   /**
    * Get classloader by name. App group substitution will not take place.
-   * @param loaderName Classloader name
    * @return Classloader
-   * @throws AssertionError if the specified classloader has not been registered
+   * @throws IllegalArgumentException if the specified classloader has not been registered
    */
-  ClassLoader getClassLoader(String loaderName);
+  ClassLoader getClassLoader(LoaderDescription desc);
 
   /**
    * Get name for classloader. The loader must already have been registered.

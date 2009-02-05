@@ -49,8 +49,8 @@ public class SerializerDNAEncodingImpl extends BaseDNAEncodingImpl {
       return LOADER_DESC;
     }
 
-    public ClassLoader getClassLoader(String loaderDesc) {
-      Assert.assertEquals(LOADER_ID, loaderDesc);
+    public ClassLoader getClassLoader(LoaderDescription loaderDesc) {
+      Assert.assertEquals(LOADER_DESC, loaderDesc);
       return ClassLoader.getSystemClassLoader();
     }
 

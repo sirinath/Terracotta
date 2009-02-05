@@ -50,25 +50,20 @@ public class StandardClassProvider implements ClassProvider {
   public StandardClassProvider(RuntimeLogger runtimeLogger) {
     this.runtimeLogger = runtimeLogger;
   }
-
-  public ClassLoader getClassLoader(String desc) {
-    // TODO: should this use app group?
-    if (isStandardLoader(desc)) { return SystemLoaderHolder.loader; }
-
-    ClassLoader rv = lookupLoaderByName(desc);
-    if (rv == null) { throw new AssertionError("No registered loader for description: " + desc); }
+  
+  public ClassLoader getClassLoader(LoaderDescription desc) {
+    final ClassLoader rv = lookupLoader(desc);
+    if (rv == null) { 
+      throw new IllegalArgumentException("No registered loader for description: " + desc); 
+    }
     return rv;
   }
 
   public Class getClassFor(final String className, LoaderDescription desc) throws ClassNotFoundException {
-    final ClassLoader loader;
-
-    if (isStandardLoader(desc.name())) {
-      loader = SystemLoaderHolder.loader;
-    } else {
-      loader = lookupLoaderWithAppGroup(desc);
-      if (loader == null) { throw new ClassNotFoundException("No registered loader for description: " + desc
-                                                             + ", trying to load " + className); }
+    final ClassLoader loader = lookupLoader(desc);
+    if (loader == null) { 
+      throw new ClassNotFoundException("No registered loader for description: " + desc
+                                       + ", trying to load " + className); 
     }
 
     try {
@@ -142,6 +137,108 @@ public class StandardClassProvider implements ClassProvider {
     }
   }
   
+  public LoaderDescription getLoaderDescriptionFor(Class clazz) {
+    return getLoaderDescriptionFor(clazz.getClassLoader());
+  }
+
+  public LoaderDescription getLoaderDescriptionFor(ClassLoader loader) {
+    if (loader == null) { return BOOT_DESC; }
+    if (loader instanceof NamedClassLoader) {
+      String name = getName((NamedClassLoader) loader);
+      return loaderDescriptions.get(name);
+    }
+    throw handleMissingLoader(loader);
+  }
+
+  private static String getName(NamedClassLoader loader) {
+    String name = loader.__tc_getClassLoaderName();
+    if (name == null || name.length() == 0) { throw new AssertionError("Invalid name [" + name + "] from loader "
+                                                                       + loader); }
+    return name;
+  }
+  
+  private RuntimeException handleMissingLoader(ClassLoader loader) {
+    if ("org.apache.jasper.servlet.JasperLoader".equals(loader.getClass().getName())) {
+      // try to give a better error message if you're trying to share a JSP
+      return new RuntimeException("JSP instances (and inner classes there of) cannot be distributed, loader = "
+                                  + loader);
+    }
+    return new RuntimeException("No loader description for " + loader);
+  }
+
+  private boolean isStandardLoader(String desc) {
+    return BOOT.equals(desc) || EXT.equals(desc) || SYSTEM.equals(desc);
+  }
+
+  private ClassLoader lookupLoader(LoaderDescription desc) {
+    if (isStandardLoader(desc.name())) {
+      return SystemLoaderHolder.loader;
+    } else {
+      return lookupLoaderWithAppGroup(desc);
+    }
+  }
+
+  /**
+   * Look up a loader by name alone, ignoring app-group.
+   * @return null if the requested loader has not been registered.
+   */
+  private synchronized ClassLoader lookupLoaderByName(String name) {
+    final ClassLoader rv;
+    WeakReference ref = loaders.get(name);
+    if (ref != null) {
+      rv = (ClassLoader) ref.get();
+      if (rv == null) {
+        loaders.remove(name);
+        loaderDescriptions.remove(name);
+        // TODO: remove from appGroups and update uniqueChildInAppGroup 
+      }
+    } else {
+      rv = null;
+    }
+    return rv;
+  }
+  
+  /**
+   * Look up a loader by name, falling back to other loaders in the same
+   * app-group if necessary.
+   */
+  private ClassLoader lookupLoaderWithAppGroup(LoaderDescription desc) {
+    // if (the DNA specifies an app-group, 
+    //     and there is a loader that exactly matches both the app-group and the name, 
+    //     and there is exactly one loader registered in that app-group that is a *child* of the exact match) { 
+    //   use the child; 
+    // } 
+    Set<String> appGroupLoaders = null;
+    if (desc.appGroup() != null) {
+      appGroupLoaders = appGroups.get(desc.appGroup());
+      if (appGroupLoaders != null && appGroupLoaders.contains(desc.name())) {
+        String child = uniqueChildInAppGroup.get(desc.name());
+        if (child != null) {
+          return lookupLoaderByName(child);
+        }
+      }
+    }
+    
+    // else if (there is a loader that matches the registered name) { 
+    //   use it; 
+    // } 
+    ClassLoader namedLoader = lookupLoaderByName(desc.name());
+    if (namedLoader != null) {
+      return namedLoader;
+    }
+    
+    // else if (the DNA specifies an app-group 
+    //     and there is exactly one loader that matches the app-group) { 
+    //   use it; 
+    // } 
+    if (appGroupLoaders != null && appGroupLoaders.size() == 1) {
+      return lookupLoaderByName(appGroupLoaders.iterator().next());
+    }
+    
+    return null;
+
+  }
+
   /**
    * A new loader has been added to the app group, so update the uniqueChildInAppGroup
    * map for every loader in the app group. For each loader, if it has exactly one
@@ -185,97 +282,6 @@ public class StandardClassProvider implements ClassProvider {
         uniqueChildInAppGroup.put(desc, null);
       }
     }
-  }
-
-  private static String getName(NamedClassLoader loader) {
-    String name = loader.__tc_getClassLoaderName();
-    if (name == null || name.length() == 0) { throw new AssertionError("Invalid name [" + name + "] from loader "
-                                                                       + loader); }
-    return name;
-  }
-
-  public LoaderDescription getLoaderDescriptionFor(Class clazz) {
-    return getLoaderDescriptionFor(clazz.getClassLoader());
-  }
-
-  public LoaderDescription getLoaderDescriptionFor(ClassLoader loader) {
-    if (loader == null) { return BOOT_DESC; }
-    if (loader instanceof NamedClassLoader) {
-      String name = getName((NamedClassLoader) loader);
-      return loaderDescriptions.get(name);
-    }
-    throw handleMissingLoader(loader);
-  }
-
-  private RuntimeException handleMissingLoader(ClassLoader loader) {
-    if ("org.apache.jasper.servlet.JasperLoader".equals(loader.getClass().getName())) {
-      // try to give a better error message if you're trying to share a JSP
-      return new RuntimeException("JSP instances (and inner classes there of) cannot be distributed, loader = "
-                                  + loader);
-    }
-    return new RuntimeException("No loader description for " + loader);
-  }
-
-  private boolean isStandardLoader(String desc) {
-    if (BOOT.equals(desc) || EXT.equals(desc) || SYSTEM.equals(desc)) { return true; }
-    return false;
-  }
-
-  private synchronized ClassLoader lookupLoaderByName(String name) {
-    final ClassLoader rv;
-    WeakReference ref = loaders.get(name);
-    if (ref != null) {
-      rv = (ClassLoader) ref.get();
-      if (rv == null) {
-        loaders.remove(name);
-        loaderDescriptions.remove(name);
-        // TODO: remove from appGroups and update uniqueChildInAppGroup 
-      }
-    } else {
-      rv = null;
-    }
-    return rv;
-  }
-  
-  /**
-   * @param appGroup a string corresponding to the app-group for this classloader in
-   * the TC config, or null or the empty string if there is no app-group specified.
-   */
-  private ClassLoader lookupLoaderWithAppGroup(LoaderDescription desc) {
-    // if (the DNA specifies an app-group, 
-    //     and there is a loader that exactly matches both the app-group and the name, 
-    //     and there is exactly one loader registered in that app-group that is a *child* of the exact match) { 
-    //   use the child; 
-    // } 
-    Set<String> appGroupLoaders = null;
-    if (desc.appGroup() != null) {
-      appGroupLoaders = appGroups.get(desc.appGroup());
-      if (appGroupLoaders != null && appGroupLoaders.contains(desc.name())) {
-        String child = uniqueChildInAppGroup.get(desc.name());
-        if (child != null) {
-          return lookupLoaderByName(child);
-        }
-      }
-    }
-    
-    // else if (there is a loader that matches the registered name) { 
-    //   use it; 
-    // } 
-    ClassLoader namedLoader = lookupLoaderByName(desc.name());
-    if (namedLoader != null) {
-      return namedLoader;
-    }
-    
-    // else if (the DNA specifies an app-group 
-    //     and there is exactly one loader that matches the app-group) { 
-    //   use it; 
-    // } 
-    if (appGroupLoaders != null && appGroupLoaders.size() == 1) {
-      return lookupLoaderByName(appGroupLoaders.iterator().next());
-    }
-    
-    return null;
-
   }
 
   public static class SystemLoaderHolder {
