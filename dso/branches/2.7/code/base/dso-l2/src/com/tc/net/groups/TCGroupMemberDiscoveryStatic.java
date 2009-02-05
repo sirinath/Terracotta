@@ -25,21 +25,22 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
-  private static final TCLogger                    logger                          = TCLogging
-                                                                                       .getLogger(TCGroupMemberDiscoveryStatic.class);
+  private static final TCLogger                    logger          = TCLogging
+                                                                       .getLogger(TCGroupMemberDiscoveryStatic.class);
   private final static long                        DISCOVERY_INTERVAL_MS;
   static {
-    DISCOVERY_INTERVAL_MS = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_DISCOVERY_INTERVAL);
+    DISCOVERY_INTERVAL_MS = TCPropertiesImpl.getProperties()
+        .getLong(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_DISCOVERY_INTERVAL);
   }
 
-  private final AtomicBoolean                      running                         = new AtomicBoolean(false);
-  private final AtomicBoolean                      stopAttempt                     = new AtomicBoolean(false);
-  private final Map<String, DiscoveryStateMachine> nodeStateMap                    = Collections
-                                                                                       .synchronizedMap(new HashMap<String, DiscoveryStateMachine>());
+  private final AtomicBoolean                      running         = new AtomicBoolean(false);
+  private final AtomicBoolean                      stopAttempt     = new AtomicBoolean(false);
+  private final Map<String, DiscoveryStateMachine> nodeStateMap    = Collections
+                                                                       .synchronizedMap(new HashMap<String, DiscoveryStateMachine>());
   private final TCGroupManagerImpl                 manager;
   private Node                                     local;
-  private Integer                                  joinedNodes                     = 0;
-  private Integer                                  connectingCount                 = 0;
+  private Integer                                  joinedNodes     = 0;
+  private Integer                                  connectingCount = 0;
 
   public TCGroupMemberDiscoveryStatic(TCGroupManagerImpl manager) {
     this.manager = manager;
@@ -92,6 +93,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     } catch (IOException e) {
       stateMachine.connetIOException();
       stateMachine.loggerWarn("Node:" + node + " " + e);
+    } catch (Throwable t) {
+      // catch all throwables to prevent discover from dying
+      stateMachine.throwableException();
+      stateMachine.loggerWarn("Node:" + node + " " + t);
     } finally {
       decConnectingCount();
     }
@@ -210,6 +215,7 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     private final DiscoveryState STATE_CONNECT_TIMEOUT = new ConnectTimeoutState();
     private final DiscoveryState STATE_MAX_CONNECTION  = new MaxConnExceedState();
     private final DiscoveryState STATE_IO_EXCEPTION    = new IOExceptionState();
+    private final DiscoveryState STATE_THROWABLE_EXCEP = new ThrowableExceptionState();
     private final DiscoveryState STATE_UNKNOWN_HOST    = new UnknownHostState();
     private final DiscoveryState STATE_MEMBER_IN_GROUP = new MemberInGroupState();
 
@@ -302,6 +308,10 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
 
     void connetIOException() {
       badConnect(STATE_IO_EXCEPTION);
+    }
+
+    void throwableException() {
+      badConnect(STATE_THROWABLE_EXCEP);
     }
 
     synchronized void unknownHost() {
@@ -445,6 +455,15 @@ public class TCGroupMemberDiscoveryStatic implements TCGroupMemberDiscovery {
     private class IOExceptionState extends BadState {
       public IOExceptionState() {
         super("IO-Exception");
+      }
+    }
+
+    /*
+     * ThrowableExceptionState --
+     */
+    private class ThrowableExceptionState extends BadState {
+      public ThrowableExceptionState() {
+        super("Connection-Throwable");
       }
     }
 
