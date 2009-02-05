@@ -1,5 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * All content copyright (c) 2003-2009 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.object.loaders;
@@ -21,13 +21,19 @@ public class StandardClassProvider implements ClassProvider {
   private static final String BOOT    = Namespace.getStandardBootstrapLoaderName();
   private static final String EXT     = Namespace.getStandardExtensionsLoaderName();
   private static final String SYSTEM  = Namespace.getStandardSystemLoaderName();
+  
+  private static final LoaderDescription BOOT_DESC = new LoaderDescription(null, BOOT);
 
-  // The following three maps need to be maintained in synchrony.  We achieve this
+  // The following four maps need to be maintained in synchrony.  We achieve this
   // by synchronizing on 'this' all methods that access them.
   
-  /** map loader description to loader */
+  /** map loader name to loader */
   private final Map<String, WeakReference<NamedClassLoader>> loaders = 
     new HashMap<String, WeakReference<NamedClassLoader>>();
+  
+  /** map loader name to LoaderDescription */
+  private final Map<String, LoaderDescription> loaderDescriptions =
+    new HashMap<String, LoaderDescription>();
   
   /** map an appGroup to set of loader descriptions in it */
   private final Map<String, Set<String>> appGroups = new HashMap<String, Set<String>>();
@@ -49,23 +55,18 @@ public class StandardClassProvider implements ClassProvider {
     // TODO: should this use app group?
     if (isStandardLoader(desc)) { return SystemLoaderHolder.loader; }
 
-    ClassLoader rv = lookupLoader(desc);
+    ClassLoader rv = lookupLoaderByName(desc);
     if (rv == null) { throw new AssertionError("No registered loader for description: " + desc); }
     return rv;
   }
 
-  public Class getClassFor(final String className, String desc) throws ClassNotFoundException {
+  public Class getClassFor(final String className, LoaderDescription desc) throws ClassNotFoundException {
     final ClassLoader loader;
 
-    if (isStandardLoader(desc)) {
+    if (isStandardLoader(desc.name())) {
       loader = SystemLoaderHolder.loader;
     } else {
-      // HACK HACK HACK
-      String appGroup = null;
-      if (desc.contains("context")) {
-        appGroup = "contextGroup";
-      }
-      loader = lookupLoaderWithAppGroup(desc, appGroup);
+      loader = lookupLoaderWithAppGroup(desc);
       if (loader == null) { throw new ClassNotFoundException("No registered loader for description: " + desc
                                                              + ", trying to load " + className); }
     }
@@ -96,21 +97,27 @@ public class StandardClassProvider implements ClassProvider {
    * no sharing is desired. The empty string will be replaced with null.
    */
   public void registerNamedLoader(NamedClassLoader loader, String appGroup) {
-    final String desc = getName(loader);
-    
-    // HACK for testing
-    if (desc.contains("context")) {
-      appGroup = "contextGroup";
-    }
+    final String name = getName(loader);
     
     final WeakReference<NamedClassLoader> prevRef;
     
+    // Ensure postcondition that we never have an empty string in appGroup or name
+    if (null == name || "".equals(name)) {
+      throw new IllegalArgumentException("Loader name must be non-empty");
+    }
     if ("".equals(appGroup)) {
       appGroup = null;
     }
 
+    // HACK for testing
+    // TODO: change clients to properly register appGroup
+    if (name.contains("context")) {
+      appGroup = "contextGroup";
+    }
+    
     synchronized (this) {
-      prevRef = loaders.put(desc, new WeakReference<NamedClassLoader>(loader));
+      prevRef = loaders.put(name, new WeakReference<NamedClassLoader>(loader));
+      loaderDescriptions.put(name, new LoaderDescription(appGroup, name));
       
       if (appGroup != null && appGroup.length() > 0) {
         Set<String> descs = appGroups.get(appGroup);
@@ -118,12 +125,12 @@ public class StandardClassProvider implements ClassProvider {
           descs = new HashSet<String>();
           appGroups.put(appGroup, descs);
         }
-        descs.add(desc);
+        descs.add(name);
         
         // Adding a loader to an app group could change any child relationships in the group
         updateAllChildRelationships(appGroup);
       } else {
-        uniqueChildInAppGroup.put(desc, null);
+        uniqueChildInAppGroup.put(name, null);
       }
       
     }
@@ -131,7 +138,7 @@ public class StandardClassProvider implements ClassProvider {
     NamedClassLoader prev = prevRef == null ? null : (NamedClassLoader) prevRef.get();
 
     if (runtimeLogger.getNamedLoaderDebug()) {
-      runtimeLogger.namedLoaderRegistered(loader, desc, prev);
+      runtimeLogger.namedLoaderRegistered(loader, name, prev);
     }
   }
   
@@ -149,7 +156,7 @@ public class StandardClassProvider implements ClassProvider {
     // For each loader in the appgroup, add an empty set to loaderToChildren.
     // This way childToParents.keys() identifies all the loaders in the app group.
     for (String desc : descs) {
-      ClassLoader loader = lookupLoader(desc);
+      ClassLoader loader = lookupLoaderByName(desc);
       if (loader != null) {
         loaderToChildren.put((NamedClassLoader)loader, new HashSet<NamedClassLoader>());
       }
@@ -187,13 +194,16 @@ public class StandardClassProvider implements ClassProvider {
     return name;
   }
 
-  public String getLoaderDescriptionFor(Class clazz) {
+  public LoaderDescription getLoaderDescriptionFor(Class clazz) {
     return getLoaderDescriptionFor(clazz.getClassLoader());
   }
 
-  public String getLoaderDescriptionFor(ClassLoader loader) {
-    if (loader == null) { return BOOT; }
-    if (loader instanceof NamedClassLoader) { return getName((NamedClassLoader) loader); }
+  public LoaderDescription getLoaderDescriptionFor(ClassLoader loader) {
+    if (loader == null) { return BOOT_DESC; }
+    if (loader instanceof NamedClassLoader) {
+      String name = getName((NamedClassLoader) loader);
+      return loaderDescriptions.get(name);
+    }
     throw handleMissingLoader(loader);
   }
 
@@ -211,13 +221,14 @@ public class StandardClassProvider implements ClassProvider {
     return false;
   }
 
-  private synchronized ClassLoader lookupLoader(String desc) {
+  private synchronized ClassLoader lookupLoaderByName(String name) {
     final ClassLoader rv;
-    WeakReference ref = loaders.get(desc);
+    WeakReference ref = loaders.get(name);
     if (ref != null) {
       rv = (ClassLoader) ref.get();
       if (rv == null) {
-        loaders.remove(desc);
+        loaders.remove(name);
+        loaderDescriptions.remove(name);
         // TODO: remove from appGroups and update uniqueChildInAppGroup 
       }
     } else {
@@ -230,19 +241,19 @@ public class StandardClassProvider implements ClassProvider {
    * @param appGroup a string corresponding to the app-group for this classloader in
    * the TC config, or null or the empty string if there is no app-group specified.
    */
-  private ClassLoader lookupLoaderWithAppGroup(String desc, String appGroup) {
+  private ClassLoader lookupLoaderWithAppGroup(LoaderDescription desc) {
     // if (the DNA specifies an app-group, 
     //     and there is a loader that exactly matches both the app-group and the name, 
     //     and there is exactly one loader registered in that app-group that is a *child* of the exact match) { 
     //   use the child; 
     // } 
     Set<String> appGroupLoaders = null;
-    if (appGroup != null && appGroup.length() > 0) {
-      appGroupLoaders = appGroups.get(appGroup);
-      if (appGroupLoaders != null && appGroupLoaders.contains(desc)) {
-        String child = uniqueChildInAppGroup.get(desc);
+    if (desc.appGroup() != null) {
+      appGroupLoaders = appGroups.get(desc.appGroup());
+      if (appGroupLoaders != null && appGroupLoaders.contains(desc.name())) {
+        String child = uniqueChildInAppGroup.get(desc.name());
         if (child != null) {
-          return lookupLoader(child);
+          return lookupLoaderByName(child);
         }
       }
     }
@@ -250,7 +261,7 @@ public class StandardClassProvider implements ClassProvider {
     // else if (there is a loader that matches the registered name) { 
     //   use it; 
     // } 
-    ClassLoader namedLoader = lookupLoader(desc);
+    ClassLoader namedLoader = lookupLoaderByName(desc.name());
     if (namedLoader != null) {
       return namedLoader;
     }
@@ -260,7 +271,7 @@ public class StandardClassProvider implements ClassProvider {
     //   use it; 
     // } 
     if (appGroupLoaders != null && appGroupLoaders.size() == 1) {
-      return lookupLoader(appGroupLoaders.iterator().next());
+      return lookupLoaderByName(appGroupLoaders.iterator().next());
     }
     
     return null;
