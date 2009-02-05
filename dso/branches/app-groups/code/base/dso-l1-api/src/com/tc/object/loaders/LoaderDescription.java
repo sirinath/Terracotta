@@ -10,6 +10,8 @@ package com.tc.object.loaders;
  * This is an immutable class.
  */
 public final class LoaderDescription {
+  
+  private static final String APP_GROUP_DELIMITER = "%%";
   private final String name;
   private final String appGroup;
   
@@ -45,7 +47,7 @@ public final class LoaderDescription {
    * string should not be parsed to recover the individual tokens.
    */
   public String toString() {
-    return (appGroup == null ? "" : appGroup) + "##" + name;
+    return (appGroup == null ? "" : appGroup) + APP_GROUP_DELIMITER + name;
   }
   
   /** will be removed when development is complete */
@@ -79,7 +81,7 @@ public final class LoaderDescription {
    * @deprecated this will be removed as soon as development is complete.
    */
   public static LoaderDescription fromString(String desc) {
-    int delim = desc.indexOf("##");
+    int delim = desc.indexOf(APP_GROUP_DELIMITER);
     if (delim < 0) {
       return new LoaderDescription(null, desc);
     } else {

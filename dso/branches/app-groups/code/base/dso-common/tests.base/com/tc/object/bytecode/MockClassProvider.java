@@ -20,7 +20,7 @@ public class MockClassProvider implements ClassProvider {
     return MOCK_LOADER;
   }
 
-  public ClassLoader getClassLoader(String loaderName) {
+  public ClassLoader getClassLoader(LoaderDescription desc) {
     return getClass().getClassLoader();
   }
 

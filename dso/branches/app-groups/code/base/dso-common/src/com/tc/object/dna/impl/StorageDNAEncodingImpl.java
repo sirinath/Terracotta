@@ -37,7 +37,7 @@ public class StorageDNAEncodingImpl extends BaseDNAEncodingImpl {
       throw new AssertionError();
     }
 
-    public ClassLoader getClassLoader(String loaderDesc) {
+    public ClassLoader getClassLoader(LoaderDescription loaderDesc) {
       throw new AssertionError();
     }
 
