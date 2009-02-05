@@ -41,7 +41,7 @@ public class Directories {
    *         a file.
    */
   public static File getInstallationRoot() throws FileNotFoundException {
-    boolean ignoreCheck = System.getProperty(TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME) != null;
+    boolean ignoreCheck = Boolean.getBoolean(TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME);
     String path = System.getProperty(TC_INSTALL_ROOT_PROPERTY_NAME);
     File theFile = path != null ? new File(path).getAbsoluteFile() : null;
 

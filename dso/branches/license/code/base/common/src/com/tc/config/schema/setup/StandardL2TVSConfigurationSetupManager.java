@@ -468,7 +468,8 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
 
     if (!capabilities.allowServerStripping()) {
       if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
-        String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SERVER_STRIPING);
+        String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SERVER_STRIPING,
+                                                                          "active server group count is more than 1");
         consoleLogger.warn(message);
         logger.warn(message);
       }
