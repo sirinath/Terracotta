@@ -99,7 +99,6 @@ public class ConfigLoader {
       String fieldNameOrExpression = fieldName != null ? fieldName : fieldExpression;
       String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.ROOTS, fieldNameOrExpression);
       CustomerLogging.getConsoleLogger().warn(message);
-      logger.warn(message);
     }
 
     // XXX: Can't enforce this via XML Schema - yet, the version of xml beans that
@@ -144,7 +143,6 @@ public class ConfigLoader {
       String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SESSIONS, webApplication
           .getStringValue());
       CustomerLogging.getConsoleLogger().warn(message);
-      logger.error(message);
     }
 
     config.addApplicationName(webApplication.getStringValue());

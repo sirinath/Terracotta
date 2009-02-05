@@ -37,19 +37,16 @@ public class Directories {
    *         TC_INSTALL_ROOT_PROPERTY_NAME is not.
    * @throws FileNotFoundException If {@link #TC_INSTALL_ROOT_PROPERTY_NAME} has not been set. If
    *         {@link #TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME} has not been set, this exception may be thrown if the
-   *         installation root directory has not been set, is not a directory, or does not contain a lib/tc.jar that is
-   *         a file.
+   *         installation root directory has not been set, is not a directory
    */
   public static File getInstallationRoot() throws FileNotFoundException {
     boolean ignoreCheck = Boolean.getBoolean(TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME);
-    String path = System.getProperty(TC_INSTALL_ROOT_PROPERTY_NAME);
-    File theFile = path != null ? new File(path).getAbsoluteFile() : null;
-
     if (ignoreCheck) {
       // XXX hack to have enterprise system tests to find license key under <ee-branch>/code/base
       String baseDir = System.getProperty("tc.base-dir");
-      theFile = new File(baseDir != null ? baseDir : ".", "../../../code/base");
+      return new File(baseDir != null ? baseDir : ".", "../../../code/base");
     } else {
+      String path = System.getProperty(TC_INSTALL_ROOT_PROPERTY_NAME);
       if (StringUtils.isBlank(path)) {
         // formatting
         throw new FileNotFoundException(
@@ -58,32 +55,14 @@ public class Directories {
                                             + "' has not been set. As such, the Terracotta installation directory cannot be located.");
       }
 
-      String absolutePath = theFile.getAbsolutePath();
-      if (!theFile.isDirectory()) {
+      File rootPath = new File(path).getAbsoluteFile();
+      if (!rootPath.isDirectory()) {
         // formatting
-        throw new FileNotFoundException("The specified Terracotta installation directory, '" + absolutePath
+        throw new FileNotFoundException("The specified Terracotta installation directory, '" + rootPath
                                         + "', located via the value of the system property '"
                                         + TC_INSTALL_ROOT_PROPERTY_NAME + "', does not actually exist.");
       }
-
-      File searchFile = new File(new File(theFile, "lib"), "tc.jar");
-
-      if (!searchFile.exists() || !searchFile.isFile()) {
-        // This is just so we don't have to have tc.jar around in development configurations.
-        if (new File(theFile, ".force-is-terracotta-install-dir").exists()) return theFile;
-        else {
-          // formatting
-          throw new FileNotFoundException("The specified Terracotta installation directory, '" + absolutePath
-                                          + "', located via the value of the system property '"
-                                          + TC_INSTALL_ROOT_PROPERTY_NAME + "', does not seem to actually "
-                                          + "be the root of the Terracotta installation. (The required "
-                                          + "Terracotta JAR file, '" + searchFile.getAbsolutePath()
-                                          + "', does not exist or is not a file.)");
-        }
-      }
+      return rootPath;
     }
-
-    return theFile;
   }
-
 }
