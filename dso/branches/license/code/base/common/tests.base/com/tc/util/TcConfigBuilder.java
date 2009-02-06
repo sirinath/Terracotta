@@ -37,7 +37,7 @@ public class TcConfigBuilder {
   }
 
   public TcConfigBuilder() {
-    this("default-tc-config.xml");
+    this("tcconfigbuilder-default.xml");
   }
 
   public TcConfigBuilder(String resourcePath) {
