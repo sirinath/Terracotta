@@ -42,7 +42,7 @@ import java.util.List;
 
 /**
  * JDK14 (nio) implementation of TCConnection
- *
+ * 
  * @author teck
  */
 final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJDK14ChannelWriter {
@@ -135,7 +135,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         commNIOServiceThread.cleanupChannel(newSocket, null);
         throw new TCTimeoutException("Timeout of " + timeout + "ms occured connecting to " + addr, ste);
       } catch (ClosedSelectorException cse) {
-        if (NIOWorkarounds.windowsConnectWorkaround(cse)) {
+        if (NIOWorkarounds.connectWorkaround(cse)) {
           logger.warn("Retrying connect to " + addr + ", attempt " + i);
           ThreadUtil.reallySleep(500);
           continue;
