@@ -95,16 +95,14 @@ public class ClasspathProvider extends StandardClasspathProvider {
       "thirdparty",
       "thirdparty-api",
       "dso-common",
-      "dso-common-jdk15",
       "dso-common-jdk16",
       "dso-l1",
       "dso-l1-api",
-      "dso-l1-jdk15",
       "dso-l2",
       "dso-l2-common",
       "dso-statistics",
       "dso-statistics-api",
-      "tim-update-center",
+      "tim-get-tool",
       "dso-spring"};
 
     for (int i = 0; i < dirs.length; i++) {

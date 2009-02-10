@@ -8,6 +8,12 @@
 # to a module-group as below (spring, dso, container, etc...)
 
 modules:
+  - junit-formatter:
+      options:
+        jdk: J2SE-1.5
+  - license-common:
+      options:
+        jdk: J2SE-1.5
   - thirdparty-api:
       options:
         jdk: J2SE-1.5
@@ -25,18 +31,21 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - common-api
+        - license-common
   - reflector-test:
       options:
         jdk: J2SE-1.5
       dependencies:
         - common
         - common-api
+        - license-common
   - aspectwerkz:
       options:
         jdk: J2SE-1.5
       dependencies:
         - common
         - common-api
+        - license-common
         - thirdparty
         - thirdparty-api
   - dso-statistics-api:
@@ -46,6 +55,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
   - dso-l1-api:
       options:
         jdk: J2SE-1.5
@@ -54,6 +64,7 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - dso-statistics-api
         - thirdparty-api
   - dso-common:
@@ -62,24 +73,18 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-l1-api
         - thirdparty-api
         - dso-statistics-api
         - sigarstats
-  - dso-common-jdk15:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - common
-        - common-api
-        - dso-common
-        - dso-statistics-api
   - dso-common-jdk16:
       options:
         jdk: JavaSE-1.6
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-statistics-api
   - management-api:
@@ -89,6 +94,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-l1-api
         - dso-statistics-api
@@ -98,6 +104,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-l1-api
         - dso-statistics-api
@@ -107,8 +114,8 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1-api
         - dso-statistics-api
@@ -120,6 +127,7 @@ modules:
         javadoc: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - dso-l2-common
         - dso-statistics-api
@@ -131,6 +139,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
   - excludes-config:
       options:
@@ -138,6 +147,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
   - guimodels-config:
@@ -146,6 +156,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
   - jdk15-preinst-config:
@@ -154,6 +165,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
   - spring-config:
@@ -162,6 +174,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
         - thirdparty-api
@@ -171,6 +184,7 @@ modules:
         module: true
       dependencies:
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
         - thirdparty-api
@@ -180,6 +194,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-statistics-api
   - dso-statistics:
       options:
@@ -187,8 +202,8 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1-api
         - dso-l2-common
@@ -202,8 +217,8 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1-api
         - dso-statistics
@@ -212,26 +227,13 @@ modules:
         - management-api
         - thirdparty
         - thirdparty-api
-  - dso-l1-jdk15:
-      options: 
-        jdk: J2SE-1.5
-      dependencies:
-        - aspectwerkz
-        - common
-        - common-api
-        - dso-common
-        - dso-common-jdk15
-        - dso-common-jdk16
-        - dso-l1
-        - dso-l1-api
-        - thirdparty
-        - thirdparty-api
   - dso-l1-session:
       options:
         jdk: J2SE-1.5
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-l1
         - dso-l1-api
@@ -247,8 +249,8 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -260,6 +262,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-l1
         - dso-l1-api
@@ -269,6 +272,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-l1
         - dso-l1-api
         - dso-l1-session
@@ -278,6 +282,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-l1
         - dso-l1-api
         - dso-l1-session
@@ -287,6 +292,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
         - dso-l1-api
         - thirdparty-api
@@ -296,8 +302,8 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1-api
         - dso-l2-common
@@ -315,9 +321,9 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -335,8 +341,8 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -351,10 +357,10 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -368,8 +374,8 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -380,10 +386,10 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -412,6 +418,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
   - legacy-test-tree:
       options:
         jdk: J2SE-1.5
@@ -419,6 +426,7 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         # NOTE: The dependency on deploy is to allow DistributedTestRunner to instantiate
         # TCServerImpl via reflection.  However, classes in this module cannot refer directly
         # to classes in the deploy module because deploy is compiled with JDK 1.5, while this
@@ -426,11 +434,9 @@ modules:
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -448,10 +454,10 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -472,14 +478,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -497,14 +502,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -524,14 +528,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -549,14 +552,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -575,14 +577,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -604,14 +605,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -632,6 +632,7 @@ modules:
       dependencies:
         - aspectwerkz
         - common-api
+        - license-common
         - deploy-api
         - dso-common
         - dso-l1
@@ -652,14 +653,13 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -670,28 +670,6 @@ modules:
         - simulator
         - thirdparty
         - thirdparty-api
-  - clustered-websphere-6.1.0.7:
-      options:
-        jdk: J2SE-1.5
-        module: true
-      dependencies:
-        - aspectwerkz
-        - common-api
-        - deploy
-        - deploy-api
-        - dso-common
-        - dso-common-jdk15
-        - dso-common-jdk16
-        - dso-l1-api
-        - dso-l2
-        - dso-memory-datastore
-        - legacy-test-tree
-        - management
-        - management-api
-        - modules-common
-        - simulator
-        - thirdparty
-        - thirdparty-api
   - clustered-surefire-2.3:
       options:
         jdk: J2SE-1.5
@@ -699,6 +677,7 @@ modules:
       dependencies:
         - common
         - common-api
+        - license-common
         - dso-l1-api
         - modules-common
         - thirdparty-api
@@ -709,10 +688,10 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
@@ -736,15 +715,14 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-container-tests
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -766,15 +744,14 @@ modules:
         - aspectwerkz
         - common
         - common-api
+        - license-common
         - deploy
         - deploy-api
         - dso-common
-        - dso-common-jdk15
         - dso-common-jdk16
         - dso-container-tests
         - dso-l1
         - dso-l1-api
-        - dso-l1-jdk15
         - dso-l1-weblogic
         - dso-l2
         - dso-l2-common
@@ -809,10 +786,8 @@ module-groups:
     - thirdparty
     - aspectwerkz
     - dso-common
-    - dso-common-jdk15
     - dso-common-jdk16
     - dso-l1
-    - dso-l1-jdk15
     - dso-l1-weblogic
     - dso-l1-session
     - dso-l1-tomcat
@@ -834,7 +809,6 @@ module-groups:
     - dso-memory-datastore
   framework:
     - clustered-commons-collections-3.1
-    - clustered-websphere-6.1.0.7
     - excludes-config
     - guimodels-config
     - jdk15-preinst-config

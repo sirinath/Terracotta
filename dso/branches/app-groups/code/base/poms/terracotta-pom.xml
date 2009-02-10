@@ -46,6 +46,10 @@
       <artifactId>linked-child-process</artifactId>
     </dependency>
     <dependency>
+      <groupId>net.sourceforge</groupId>
+      <artifactId>yamlbeans</artifactId>
+    </dependency>    
+    <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
     </dependency>
@@ -173,6 +177,46 @@
     <dependency>
       <groupId>dom4j</groupId>
       <artifactId>dom4j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-amd64-linux</artifactId>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-sparc-solaris</artifactId>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-x86-linux</artifactId>
+      <type>so</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar-x86-winnt</artifactId>
+      <type>dll</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar-x86-winnt</artifactId>
+      <type>lib</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>sigar-amd64-winnt</artifactId>
+      <type>dll</type>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-universal-macosx</artifactId>
+      <type>dylib</type>
     </dependency>
   </dependencies>
 

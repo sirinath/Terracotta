@@ -53,7 +53,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   private ClusterPanel          clusterPanel;
   private ConnectDialog         connectDialog;
   private JDialog               versionMismatchDialog;
-  private AtomicBoolean         versionCheckOccurred;
+  private final AtomicBoolean   versionCheckOccurred;
   private JPopupMenu            popupMenu;
   private ConnectAction         connectAction;
   private DisconnectAction      disconnectAction;
@@ -83,7 +83,6 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
     this.adminClientContext = adminClientContext;
     clusterModel = (ClusterModel) getClusterElement();
-    clusterModel.setName("My cluster");
 
     setLabel(adminClientContext.getString("cluster.node.label"));
     initMenu(autoConnect);
@@ -115,6 +114,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
       super(clusterModel);
     }
 
+    @Override
     public void handleActiveCoordinator(IServer oldActive, IServer newActive) {
       if (oldActive != null) {
         oldActive.removeClusterStatsListener(ClusterNode.this);
@@ -128,6 +128,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
       }
     }
 
+    @Override
     protected void handleConnected() {
       if (clusterModel.isConnected()) {
         connectAction.setEnabled(false);
@@ -142,6 +143,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
       }
     }
 
+    @Override
     protected void handleReady() {
       if (clusterModel.isReady()) {
         if (adminClientContext == null) return;
@@ -160,11 +162,9 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
         nodeChanged();
         connectAction.setEnabled(false);
         disconnectAction.setEnabled(true);
-        adminClientContext.getAdminClientController().unblock();
         adminClientContext.getAdminClientController().setStatus("Ready");
       } else {
         adminClientContext.getAdminClientController().setStatus("Not ready");
-        adminClientContext.getAdminClientController().block();
       }
     }
 
@@ -348,6 +348,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     clusterModel.disconnect();
   }
 
+  @Override
   public JPopupMenu getPopupMenu() {
     return popupMenu;
   }
@@ -441,7 +442,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     }
   }
 
-  private AtomicBoolean addingChildren = new AtomicBoolean(false);
+  private final AtomicBoolean addingChildren = new AtomicBoolean(false);
 
   void tryAddChildren() {
     if (!clusterModel.isReady()) { return; }
@@ -572,8 +573,8 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   private class MonitoringActivityTask implements Runnable {
-    private Icon defaultIcon  = ServersHelper.getHelper().getServerIcon();
-    private Icon activityIcon = ServersHelper.getHelper().getActivityIcon();
+    private final Icon defaultIcon  = ServersHelper.getHelper().getServerIcon();
+    private final Icon activityIcon = ServersHelper.getHelper().getActivityIcon();
 
     public void run() {
       boolean haveActivity = haveMonitoringActivity();
@@ -626,8 +627,6 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   void handleDisconnect() {
-    adminClientContext.getAdminClientController().unblock();
-
     if (getChildCount() > 0) {
       testStopMonitoringTask();
       adminClientContext.getAdminClientController().select(this);
@@ -667,6 +666,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     }
   }
 
+  @Override
   public void tearDown() {
     testStopMonitoringTask();
     if (connectDialog != null) {

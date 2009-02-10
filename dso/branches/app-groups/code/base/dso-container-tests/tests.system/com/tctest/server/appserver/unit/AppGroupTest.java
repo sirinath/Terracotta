@@ -9,7 +9,7 @@ import com.meterware.httpunit.WebResponse;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.util.TcConfigBuilder;
+import com.tc.util.TcConfigBuilder;
 import com.tctest.externall1.StandardClasspathDummyClass;
 import com.tctest.webapp.servlets.RootSharingServletA;
 import com.tctest.webapp.servlets.RootSharingServletB;

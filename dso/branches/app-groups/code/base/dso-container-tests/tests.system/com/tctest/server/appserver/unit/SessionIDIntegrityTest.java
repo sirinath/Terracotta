@@ -9,7 +9,7 @@ import com.tc.test.AppServerInfo;
 import com.tc.test.server.appserver.deployment.AbstractTwoServerDeploymentTest;
 import com.tc.test.server.appserver.deployment.DeploymentBuilder;
 import com.tc.test.server.appserver.deployment.WebApplicationServer;
-import com.tc.test.server.util.TcConfigBuilder;
+import com.tc.util.TcConfigBuilder;
 import com.tctest.webapp.servlets.SessionIDIntegrityTestServlet;
 
 import java.util.regex.Pattern;
@@ -57,9 +57,6 @@ public class SessionIDIntegrityTest extends AbstractTwoServerDeploymentTest {
         break;
       case AppServerInfo.WEBLOGIC:
         assertTrue(Pattern.matches("\\S+!-?\\d+", sessionId));
-        break;
-      case AppServerInfo.WEBSPHERE:
-        assertTrue(Pattern.matches("0000\\S+:\\S+", sessionId));
         break;
       case AppServerInfo.GLASSFISH:
         assertTrue(Pattern.matches("[A-F0-9]+.\\d", sessionId));

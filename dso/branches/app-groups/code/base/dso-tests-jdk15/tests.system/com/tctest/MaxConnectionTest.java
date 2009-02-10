@@ -7,6 +7,7 @@ package com.tctest;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.cluster.Cluster;
+import com.tc.cluster.DsoClusterImpl;
 import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
@@ -43,7 +44,7 @@ public class MaxConnectionTest extends BaseDSOTestCase {
     PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(manager);
     DistributedObjectClient client = new DistributedObjectClient(configHelper, new TCThreadGroup(new ThrowableHandler(TCLogging
         .getLogger(DistributedObjectClient.class))), new MockClassProvider(), components, NullManager.getInstance(),
-                                       new Cluster(), new NullRuntimeLogger());
+                                       new Cluster(), new DsoClusterImpl(), new NullRuntimeLogger());
     client.setCreateDedicatedMBeanServer(true);
     return client;
   }
@@ -95,7 +96,7 @@ public class MaxConnectionTest extends BaseDSOTestCase {
     private final LinkedQueue             queue;
     private final DistributedObjectClient myClient;
 
-    private ClientStopper(LinkedQueue queue, DistributedObjectClient client) {
+    private ClientStopper(final LinkedQueue queue, final DistributedObjectClient client) {
       this.queue = queue;
       this.myClient = client;
     }

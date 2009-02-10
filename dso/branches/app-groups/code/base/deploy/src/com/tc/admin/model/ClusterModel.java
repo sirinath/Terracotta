@@ -35,29 +35,29 @@ import javax.management.remote.JMXConnector;
 import javax.swing.event.EventListenerList;
 
 public class ClusterModel implements IClusterModel {
-  private String                                         name;
-  private IServer                                        connectServer;
-  private boolean                                        autoConnect;
-  private boolean                                        connected;
-  private boolean                                        ready;
-  private IServerGroup[]                                 serverGroups;
-  protected EventListenerList                            listenerList;
+  private String                                               name;
+  private IServer                                              connectServer;
+  private boolean                                              autoConnect;
+  private boolean                                              connected;
+  private boolean                                              ready;
+  private IServerGroup[]                                       serverGroups;
+  protected EventListenerList                                  listenerList;
 
-  private IServer                                        activeCoordinator;
-  private boolean                                        userDisconnecting;
-  protected PropertyChangeSupport                        propertyChangeSupport;
+  private IServer                                              activeCoordinator;
+  private boolean                                              userDisconnecting;
+  protected PropertyChangeSupport                              propertyChangeSupport;
 
-  protected ConnectServerListener                        connectServerListener;
-  protected ActiveCoordinatorListener                    activeCoordinatorListener;
-  protected ServerGroupListener                          serverGroupListener;
-  protected ServerStateListenerDelegate                  serverStateListenerDelegate;
-  protected IServerGroup                                 activeCoordinatorGroup;
+  protected ConnectServerListener                              connectServerListener;
+  protected ActiveCoordinatorListener                          activeCoordinatorListener;
+  protected ServerGroupListener                                serverGroupListener;
+  protected ServerStateListenerDelegate                        serverStateListenerDelegate;
+  protected IServerGroup                                       activeCoordinatorGroup;
 
-  private String                                         displayLabel;
-  public boolean                                         isConnectListening;
+  private String                                               displayLabel;
+  public boolean                                               isConnectListening;
 
-  private Map<PollScope, Map<String, EventListenerList>> pollScopes;
-  private Set<PolledAttributeListener>                   allScopedPollListeners;
+  private final Map<PollScope, Map<String, EventListenerList>> pollScopes;
+  private Set<PolledAttributeListener>                         allScopedPollListeners;
 
   public ClusterModel() {
     this(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT, ConnectionContext.DEFAULT_AUTO_CONNECT);
@@ -384,7 +384,7 @@ public class ClusterModel implements IClusterModel {
   }
 
   private static class PolledAttributesResultImpl implements PolledAttributesResult {
-    private Map<IClusterNode, Map<ObjectName, Map<String, Object>>> result;
+    private final Map<IClusterNode, Map<ObjectName, Map<String, Object>>> result;
 
     PolledAttributesResultImpl(Map<IClusterNode, Map<ObjectName, Map<String, Object>>> result) {
       this.result = result;
@@ -439,7 +439,9 @@ public class ClusterModel implements IClusterModel {
         Iterator<Future<Collection<NodePollResult>>> resultIter = results.iterator();
         while (resultIter.hasNext()) {
           Future<Collection<NodePollResult>> future = resultIter.next();
-          if (future.isDone()) {
+          if (future.isCancelled()) {
+            System.err.println("Poll task has timed-out; consider increasing the runtime stats poll period.");
+          } else if (future.isDone()) {
             try {
               Iterator<NodePollResult> nodeResult = future.get().iterator();
               while (nodeResult.hasNext()) {
@@ -451,7 +453,7 @@ public class ClusterModel implements IClusterModel {
                 }
               }
             } catch (Exception e) {
-              e.printStackTrace();
+              /**/
             }
           }
         }
@@ -538,6 +540,10 @@ public class ClusterModel implements IClusterModel {
         return node.isReady() ? node.takeThreadDump(time) : "";
       }
     });
+  }
+
+  public synchronized Future<String> takeThreadDump(IClusterNode node) {
+    return threadDumpFuture(executor, node, System.currentTimeMillis());
   }
 
   public synchronized Map<IClusterNode, Future<String>> takeThreadDump() {
@@ -645,6 +651,8 @@ public class ClusterModel implements IClusterModel {
             setConnected(false);
           }
         }
+      } else if (IServer.PROP_CONNECTED.equals(prop)) {
+        setConnected((Boolean) evt.getNewValue());
       }
     }
   }
@@ -656,7 +664,7 @@ public class ClusterModel implements IClusterModel {
       String prop = evt.getPropertyName();
       if (IServer.PROP_CONNECT_ERROR.equals(prop)) {
         if (connectServer.hasConnectError()) {
-          System.err.println(connectServer.getConnectErrorMessage());
+          // System.err.println(connectServer.getConnectErrorMessage());
         }
       }
       if (IServer.PROP_CONNECTED.equals(prop)) {
@@ -697,6 +705,7 @@ public class ClusterModel implements IClusterModel {
     }
   }
 
+  @Override
   public String toString() {
     return name != null ? name : displayLabel;
   }
