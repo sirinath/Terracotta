@@ -85,9 +85,7 @@ class BuildSubtree
       write_dynamic_property(file, "bootjars.normal", boot_jar.path) unless boot_jar.nil?
       # Writes out the location of the session CLASSPATH that DSO needs
       write_dynamic_property(file, "session.classpath", sessionSet)
-      # Writes out the location of the path that tests should use to search for executables; currently,
-      # this is just precisely the native library path.
-      write_dynamic_property(file, "executable-search-path", native_library_path(build_results, build_environment, :full))
+
       # The timeout the tests are going to use. This does *not* actually set the timeout;
       # that's set in the Ant <junit> task. Rather, this is so that the test can fire off
       # a thread dump before it's timed out.
@@ -671,6 +669,8 @@ class SubtreeTestRun
     failed = false
     failure_properties = [ ]
 
+    junit_formatter_classpath = @build_module.module_set['junit-formatter'].subtree('tests.base').classpath(@build_results, :module_only, :runtime)
+
     # Run the tests. Most of the real magic here comes in the 'splice_into_ant_junit'
     # method, which puts the necessary <jvmarg>, <sysproperty>, and so forth elements
     # into the junit task.
@@ -685,6 +685,8 @@ class SubtreeTestRun
       :jvm => tests_jvm.java.to_s) {
       @ant.classpath {
         @ant.pathelement( :path => JavaSystem.getProperty("java.class.path"))
+        # add path to TCJUnitFormatter class
+        @ant.pathelement( :path => junit_formatter_classpath)
       }
       splice_into_ant_junit
       

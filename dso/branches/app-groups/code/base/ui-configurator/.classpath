@@ -9,7 +9,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/deploy"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deploy-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-common"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/dso-common-jdk15"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-common-jdk16"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
@@ -17,4 +16,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l2-common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-statistics"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-statistics-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/license-common"/>
 </classpath>

@@ -432,13 +432,12 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
     if (isStopped.get()) return;
 
-    int maxReconnectTries = isUseOOOLayer ? -1 : 0;
     SessionProvider sessionProvider = new SessionManagerImpl(new SessionManagerImpl.SequenceFactory() {
       public Sequence newSequence() {
         return new SimpleSequence();
       }
     });
-    ClientMessageChannel channel = communicationsManager.createClientChannel(sessionProvider, maxReconnectTries, null,
+    ClientMessageChannel channel = communicationsManager.createClientChannel(sessionProvider, 0, null,
                                                                              -1, 10000, addrProvider);
 
     channel.addClassMapping(TCMessageType.GROUP_WRAPPER_MESSAGE, TCGroupMessageWrapper.class);
@@ -979,7 +978,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
         createMember();
         if (member.isHighPriorityNode()) {
           boolean isAdded = manager.tryAddMember(member);
-          if (isAdded) member.eventFiringInProcess();
+          if (isAdded) member.memberAddingInProcess();
           signalToJoin(isAdded);
         }
       }
@@ -990,7 +989,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
           if (isOkToJoin) {
             isOkToJoin = manager.tryAddMember(member);
             if (isOkToJoin) {
-              member.eventFiringInProcess();
+              member.memberAddingInProcess();
             } else {
               logger.warn("Unexpected bad handshake, abort connection.");
             }
@@ -1033,9 +1032,10 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
       public void enter() {
         cancelTimerTask();
+        member.setReady(true);
+        member.notifyMemberAdded();
         manager.fireNodeEvent(member, true);
         member.setJoinedEventFired(true);
-        member.notifyEventFired();
       }
     }
 
@@ -1050,7 +1050,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
       public void enter() {
         cancelTimerTask();
         if (member != null) {
-          member.abortEventFiring();
+          member.abortMemberAdding();
           manager.memberDisappeared(member, disconnectEventNotified);
         } else {
           channel.close();

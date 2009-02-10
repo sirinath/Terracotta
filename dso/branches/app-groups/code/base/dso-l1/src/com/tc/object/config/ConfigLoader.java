@@ -10,6 +10,11 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.license.AbstractLicenseResolverFactory;
+import com.tc.license.Capabilities;
+import com.tc.license.Capability;
+import com.tc.license.util.LicenseConstants;
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.schema.ExcludedInstrumentedClass;
 import com.tc.object.config.schema.IncludeOnLoad;
@@ -90,6 +95,13 @@ public class ConfigLoader {
     String fieldName = root.getFieldName();
     String fieldExpression = root.getFieldExpression();
 
+    Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
+    if (!capabilities.isLicensed(Capability.ROOTS)) {
+      String fieldNameOrExpression = fieldName != null ? fieldName : fieldExpression;
+      String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.ROOTS, fieldNameOrExpression);
+      CustomerLogging.getConsoleLogger().warn(message);
+    }
+
     // XXX: Can't enforce this via XML Schema - yet, the version of xml beans that
     // we are using does not correctly support substitutionGroups yet
     if (fieldName != null && fieldExpression != null) {
@@ -127,6 +139,13 @@ public class ConfigLoader {
   }
 
   private void addWebApplication(WebApplication webApplication) {
+    Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
+    if (!capabilities.isLicensed(Capability.SESSIONS)) {
+      String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SESSIONS, webApplication
+          .getStringValue());
+      CustomerLogging.getConsoleLogger().warn(message);
+    }
+
     config.addApplicationName(webApplication.getStringValue());
     if (webApplication.getSynchronousWrite()) {
       config.addSynchronousWriteApplication(webApplication.getStringValue());

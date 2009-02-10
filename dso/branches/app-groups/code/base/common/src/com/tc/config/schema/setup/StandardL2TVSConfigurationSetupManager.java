@@ -10,8 +10,6 @@ import org.apache.xmlbeans.XmlInteger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
-import com.tc.capabilities.AbstractCapabilitiesFactory;
-import com.tc.capabilities.Capabilities;
 import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
@@ -30,6 +28,11 @@ import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
+import com.tc.license.AbstractLicenseResolverFactory;
+import com.tc.license.Capabilities;
+import com.tc.license.Capability;
+import com.tc.license.util.LicenseConstants;
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -55,7 +58,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -67,10 +69,11 @@ import java.util.Set;
 public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfigurationSetupManager implements
     L2TVSConfigurationSetupManager {
 
-  private static TCLogger                logger = TCLogging.getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          logger        = TCLogging
+                                                           .getLogger(StandardL2TVSConfigurationSetupManager.class);
+  private static final TCLogger          consoleLogger = CustomerLogging.getConsoleLogger();
 
   private final ConfigurationCreator     configurationCreator;
-
   private NewSystemConfig                systemConfig;
   private final Map                      l2ConfigData;
   private final NewHaConfig              haConfig;
@@ -120,13 +123,13 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     }
 
     selectL2((Servers) serversBeanRepository().bean(), "the set of L2s known to us");
-    validateRestrictions();
 
     this.haConfig = getHaConfig();
 
     // do this after servers and groups have been processed
     validateGroups();
     validateDSOClusterPersistenceMode();
+    validateLicenseCapabilities();
   }
 
   public String getL2Identifier() {
@@ -411,10 +414,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     listener.valueChanged(null, this.myConfigData.commonL2Config().logsPath().getObject());
   }
 
-  private void validateRestrictions() throws ConfigurationSetupException {
-    validateLicenseModuleRestrictions();
-  }
-
   private void validateDSOClusterPersistenceMode() throws ConfigurationSetupException {
     ActiveServerGroupConfig[] groupArray = this.activeServerGroupsConfig.getActiveServerGroupArray();
 
@@ -432,12 +431,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
       Set badServers = new HashSet();
 
       if (servers != null && servers.length > 1) {
-        Capabilities capabilities = AbstractCapabilitiesFactory.getCapabilitiesManager();
-
-        if (!capabilities.hasHA() && capabilities.canClusterPOJOs()) { throw new ConfigurationSetupException(
-                                                                                                             "Attempting to run multiple servers without license "
-                                                                                                                 + "authorization of DSO High Availability."); }
-
         // We have clustered DSO; they must all be in permanent-store
         // mode
         for (int i = 0; i < servers.length; ++i) {
@@ -471,21 +464,20 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     }
   }
 
-  private void validateLicenseModuleRestrictions() throws ConfigurationSetupException {
-    Capabilities capabilities = AbstractCapabilitiesFactory.getCapabilitiesManager();
+  public void validateLicenseCapabilities() throws ConfigurationSetupException {
+    if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
+      Capabilities capabilities = AbstractLicenseResolverFactory.getCapabilities();
+      if (!capabilities.isSupported(Capability.SERVER_STRIPING)) {
+        //
+        throw new ConfigurationSetupException("Server striping is an Enterprise only feature.");
+      }
 
-    if (!capabilities.canClusterPOJOs()) {
-      Object result = this.dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME)
-          .roots().getObject();
-      if (result != null && Array.getLength(result) > 0) {
-        // formatting
-        throw new ConfigurationSetupException(
-                                              "Your Terracotta license, "
-                                                  + capabilities.describe()
-                                                  + ", does not allow you to define DSO roots in your configuration file. Please remove them and try again.");
+      if (!capabilities.isLicensed(Capability.SERVER_STRIPING)) {
+        String message = AbstractLicenseResolverFactory.getLicenseWarning(LicenseConstants.SERVER_STRIPING,
+                                                                          "active server group count is more than 1");
+        consoleLogger.warn(message);
       }
     }
-
   }
 
   public NewCommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException {

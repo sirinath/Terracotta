@@ -8,8 +8,11 @@ import com.tc.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
+import com.tc.client.AbstractClientFactory;
 import com.tc.cluster.Cluster;
 import com.tc.cluster.ClusterEventListener;
+import com.tc.cluster.DsoCluster;
+import com.tc.cluster.DsoClusterImpl;
 import com.tc.config.lock.LockContextInfo;
 import com.tc.lang.StartupHelper;
 import com.tc.lang.TCThreadGroup;
@@ -46,7 +49,6 @@ import com.tc.util.Util;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.runtime.Vm;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,11 +57,7 @@ import java.util.Map;
 
 public class ManagerImpl implements Manager {
   private static final TCLogger                    logger                       = TCLogging.getLogger(Manager.class);
-
   private static final LiteralValues               literals                     = new LiteralValues();
-
-  private static final String                      DISTRIBUTED_OBJECT_CLIENT_EE = "com.tc.object.EnterpriseDistributedObjectClient";
-
   private final SetOnceFlag                        clientStarted                = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
@@ -67,7 +65,9 @@ public class ManagerImpl implements Manager {
   private final PreparedComponentsFromL2Connection connectionComponents;
   private final Thread                             shutdownAction;
   private final Portability                        portability;
+  // TODO: evaluate what to do with this now that there's ClusterEventsNG
   private final Cluster                            cluster;
+  private final DsoClusterImpl                     dsoCluster;
   private final RuntimeLogger                      runtimeLogger;
 
   private final InstrumentationLogger              instrumentationLogger;
@@ -80,20 +80,20 @@ public class ManagerImpl implements Manager {
   private final SerializationUtil                  serializer                   = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay                = new MethodDisplayNames(serializer);
 
-  public ManagerImpl(DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
+  public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(true, null, null, config, connectionComponents, true);
   }
 
   // For tests
-  public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
+  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager, final ClientTransactionManager txManager,
+                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(startClient, objectManager, txManager, config, connectionComponents, true);
   }
 
   // For tests
-  public ManagerImpl(boolean startClient, ClientObjectManager objectManager, ClientTransactionManager txManager,
-                     DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents,
-                     boolean shutdownActionRequired) {
+  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager, final ClientTransactionManager txManager,
+                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
+                     final boolean shutdownActionRequired) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
@@ -101,7 +101,9 @@ public class ManagerImpl implements Manager {
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
     this.connectionComponents = connectionComponents;
+    // TODO: evaluate what to do with this now that there's ClusterEventsNG
     this.cluster = new Cluster();
+    this.dsoCluster = new DsoClusterImpl();
     if (shutdownActionRequired) {
       shutdownAction = new Thread(new ShutdownAction());
       // Register a shutdown hook for the DSO client
@@ -168,7 +170,7 @@ public class ManagerImpl implements Manager {
     // NOTE: it is entirely possible more signatures might need to added here
 
     Object o = new Manageable() {
-      public void __tc_managed(TCObject t) {
+      public void __tc_managed(final TCObject t) {
         throw new AssertionError();
       }
 
@@ -181,7 +183,7 @@ public class ManagerImpl implements Manager {
       }
     };
     lookupExistingOrNull(o);
-    monitorEnter(o, LOCK_TYPE_WRITE);
+    monitorEnter(o, LOCK_TYPE_WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     monitorExit(o);
     logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
   }
@@ -192,14 +194,10 @@ public class ManagerImpl implements Manager {
 
     StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
-        if (connectionComponents.isActiveActive()) {
-          // TODO::Find a better a way of doing this
-          dso = createDistributeObjectClientForEE(config, group, classProvider, connectionComponents, ManagerImpl.this,
-                                                  cluster, runtimeLogger);
-        } else {
-          dso = new DistributedObjectClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
-                                            cluster, runtimeLogger);
-        }
+        AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
+        dso = clientFactory.createClient(config, group, classProvider, connectionComponents, ManagerImpl.this, cluster,
+                                         dsoCluster, runtimeLogger);
+
         if (forTests) {
           dso.setCreateDedicatedMBeanServer(true);
         }
@@ -207,6 +205,7 @@ public class ManagerImpl implements Manager {
         objectManager = dso.getObjectManager();
         txManager = dso.getTransactionManager();
         methodCallManager = dso.getDmiManager();
+        dsoCluster.init(dso.getClusterMetaDataManager());
 
         shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
             .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(), dso
@@ -219,33 +218,11 @@ public class ManagerImpl implements Manager {
     startupHelper.startUp();
   }
 
-  // NOTE::Using reflection to create EE version, TODO:: find better ways of doing this
-  private DistributedObjectClient createDistributeObjectClientForEE(
-                                                                    DSOClientConfigHelper lconfig,
-                                                                    TCThreadGroup lgroup,
-                                                                    ClassProvider lclassProvider,
-                                                                    PreparedComponentsFromL2Connection lconnectionComponents,
-                                                                    Manager lmanager, Cluster lcluster,
-                                                                    RuntimeLogger lruntimeLogger) {
-    Class classArgs[] = new Class[] { DSOClientConfigHelper.class, TCThreadGroup.class, ClassProvider.class,
-        PreparedComponentsFromL2Connection.class, Manager.class, Cluster.class, RuntimeLogger.class };
-    Object args[] = new Object[] { lconfig, lgroup, lclassProvider, lconnectionComponents, lmanager, lcluster,
-        lruntimeLogger };
-    try {
-      Class c = Class.forName(DISTRIBUTED_OBJECT_CLIENT_EE);
-      Constructor constructor = c.getConstructor(classArgs);
-      return (DistributedObjectClient) constructor.newInstance(args);
-    } catch (Exception e) {
-      logger.error("Unable to instanciate Client with required capabilities", e);
-      throw new AssertionError(e);
-    }
-  }
-
   public void stop() {
     shutdown(false);
   }
 
-  private void shutdown(boolean fromShutdownHook) {
+  private void shutdown(final boolean fromShutdownHook) {
     if (shutdownManager != null) {
       try {
         // XXX: This "fromShutdownHook" flag should be removed. It's only here temporarily to make shutdown behave
@@ -264,7 +241,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void logicalInvoke(Object object, String methodSignature, Object[] params) {
+  public void logicalInvoke(final Object object, final String methodSignature, final Object[] params) {
     Manageable m = (Manageable) object;
     if (m.__tc_managed() != null) {
       TCObject tco = lookupExistingOrNull(object);
@@ -289,8 +266,8 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void logicalInvokeWithTransaction(Object object, Object lockObject, String methodName, Object[] params) {
-    monitorEnter(lockObject, LockLevel.WRITE);
+  public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName, final Object[] params) {
+    monitorEnter(lockObject, LockLevel.WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     try {
       logicalInvoke(object, methodName, params);
     } finally {
@@ -298,7 +275,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void adjustForJava1ParametersIfNecessary(String methodName, Object[] params) {
+  private void adjustForJava1ParametersIfNecessary(final String methodName, final Object[] params) {
     if ((params.length == 2) && (params[1] != null) && (params[1].getClass().equals(Integer.class))) {
       if (SerializationUtil.SET_ELEMENT_SIGNATURE.equals(methodName)
           || SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE.equals(methodName)) {
@@ -310,14 +287,14 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void logicalAddAllInvoke(int method, String methodSignature, Collection collection, TCObject tcobj) {
+  private void logicalAddAllInvoke(final int method, final String methodSignature, final Collection collection, final TCObject tcobj) {
     for (Iterator i = collection.iterator(); i.hasNext();) {
       tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] { i.next() });
     }
   }
 
-  private void logicalAddAllAtInvoke(int method, String methodSignature, int index, Collection collection,
-                                     TCObject tcobj) {
+  private void logicalAddAllAtInvoke(final int method, final String methodSignature, int index, final Collection collection,
+                                     final TCObject tcobj) {
 
     for (Iterator i = collection.iterator(); i.hasNext();) {
       tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] {
@@ -325,15 +302,15 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Object lookupOrCreateRoot(String name, Object object) {
+  public Object lookupOrCreateRoot(final String name, final Object object) {
     return lookupOrCreateRoot(name, object, false);
   }
 
-  public Object lookupOrCreateRootNoDepth(String name, Object obj) {
+  public Object lookupOrCreateRootNoDepth(final String name, final Object obj) {
     return lookupOrCreateRoot(name, obj, true);
   }
 
-  public Object createOrReplaceRoot(String name, Object object) {
+  public Object createOrReplaceRoot(final String name, final Object object) {
     try {
       return this.objectManager.createOrReplaceRoot(name, object);
     } catch (Throwable t) {
@@ -344,7 +321,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private Object lookupOrCreateRoot(String rootName, Object object, boolean noDepth) {
+  private Object lookupOrCreateRoot(final String rootName, final Object object, final boolean noDepth) {
     try {
       if (noDepth) { return this.objectManager.lookupOrCreateRootNoDepth(rootName, object); }
       return this.objectManager.lookupOrCreateRoot(rootName, object, true);
@@ -356,15 +333,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void beginLock(String lockID, int type) {
-    try {
-      begin(lockID, type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public void beginLockWithoutTxn(String lockID, int type) {
+  public void beginLockWithoutTxn(final String lockID, final int type) {
     boolean locked = this.txManager.beginLockWithoutTxn(lockID, type, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
                                                         LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     if (locked && runtimeLogger.getLockDebug()) {
@@ -372,7 +341,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void beginLock(String lockID, int type, String contextInfo) {
+  public void beginLock(final String lockID, final int type, final String contextInfo) {
     try {
       begin(lockID, type, null, null, contextInfo);
     } catch (Throwable t) {
@@ -380,13 +349,13 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void beginVolatile(TCObject tcObject, String fieldName, int type) {
+  public void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
     if (tcObject == null) { throw new NullPointerException("beginVolatile called on a null TCObject"); }
 
     begin(generateVolatileLockName(tcObject, fieldName), type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 
-  private void begin(String lockID, int type, Object instance, TCObject tcobj, String contextInfo) {
+  private void begin(final String lockID, final int type, final Object instance, final TCObject tcobj, final String contextInfo) {
     String lockObjectClass = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
     boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
@@ -395,7 +364,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void beginInterruptibly(String lockID, int type, Object instance, TCObject tcobj, String contextInfo)
+  private void beginInterruptibly(final String lockID, final int type, final Object instance, final TCObject tcobj, final String contextInfo)
       throws InterruptedException {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
@@ -405,7 +374,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private boolean tryBegin(String lockID, int type, Object instance, TimerSpec timeout, TCObject tcobj) {
+  private boolean tryBegin(final String lockID, final int type, final Object instance, final TimerSpec timeout, final TCObject tcobj) {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
     boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
@@ -415,17 +384,17 @@ public class ManagerImpl implements Manager {
     return locked;
   }
 
-  private boolean tryBegin(String lockID, int type, Object instance, TCObject tcobj) {
+  private boolean tryBegin(final String lockID, final int type, final Object instance, final TCObject tcobj) {
     return tryBegin(lockID, type, instance, new TimerSpec(0), tcobj);
   }
 
-  public void commitVolatile(TCObject tcObject, String fieldName) {
+  public void commitVolatile(final TCObject tcObject, final String fieldName) {
     if (tcObject == null) { throw new NullPointerException("commitVolatile called on a null TCObject"); }
 
     commitLock(generateVolatileLockName(tcObject, fieldName));
   }
 
-  public void commitLock(String lockName) {
+  public void commitLock(final String lockName) {
 
     try {
       this.txManager.commit(lockName);
@@ -434,7 +403,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void objectNotify(Object obj) {
+  public void objectNotify(final Object obj) {
     if (obj == null) { throw new NullPointerException("notify() called on a null reference"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -446,7 +415,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void objectNotifyAll(Object obj) {
+  public void objectNotifyAll(final Object obj) {
     if (obj == null) { throw new NullPointerException("notifyAll() called on a null reference"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -458,7 +427,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void managedObjectNotify(Object obj, TCObject tco, boolean all) {
+  private void managedObjectNotify(final Object obj, final TCObject tco, final boolean all) {
     try {
       if (runtimeLogger.getWaitNotifyDebug()) {
         runtimeLogger.objectNotify(all, obj, tco);
@@ -469,7 +438,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void objectWait0(Object obj) throws InterruptedException {
+  public void objectWait(final Object obj) throws InterruptedException {
     TCObject tco = lookupExistingOrNull(obj);
 
     if (tco != null) {
@@ -489,7 +458,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void objectWait1(Object obj, long millis) throws InterruptedException {
+  public void objectWait(final Object obj, final long millis) throws InterruptedException {
     TCObject tco = lookupExistingOrNull(obj);
     if (tco != null) {
       try {
@@ -508,7 +477,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void objectWait2(Object obj, long millis, int nanos) throws InterruptedException {
+  public void objectWait(final Object obj, final long millis, final int nanos) throws InterruptedException {
     TCObject tco = lookupExistingOrNull(obj);
 
     if (tco != null) {
@@ -528,12 +497,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private boolean isLiteralAutolock(Object o) {
+  private boolean isLiteralAutolock(final Object o) {
     if (o instanceof Manageable) { return false; }
     return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && literals.isLiteralInstance(o);
   }
 
-  public boolean isDsoMonitorEntered(Object o) {
+  public boolean isDsoMonitorEntered(final Object o) {
     String lockName = getLockName(o);
     if (lockName == null) { return false; }
     boolean dsoMonitorEntered = txManager.isLockOnTopStack(lockName);
@@ -548,7 +517,7 @@ public class ManagerImpl implements Manager {
     return dsoMonitorEntered;
   }
 
-  private String getLockName(Object obj) {
+  private String getLockName(final Object obj) {
     TCObject tco = lookupExistingOrNull(obj);
     if (tco != null) {
       return generateAutolockName(tco);
@@ -556,11 +525,7 @@ public class ManagerImpl implements Manager {
     return null;
   }
 
-  public void monitorEnter(Object obj, int type) {
-    monitorEnter(obj, type, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-  }
-
-  public void monitorEnter(Object obj, int type, String contextInfo) {
+  public void monitorEnter(final Object obj, final int type, final String contextInfo) {
     if (obj == null) { throw new NullPointerException("monitorEnter called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -578,7 +543,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void monitorExit(Object obj) {
+  public void monitorExit(final Object obj) {
     if (obj == null) { throw new NullPointerException("monitorExit called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -597,7 +562,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isLocked(Object obj, int lockLevel) {
+  public boolean isLocked(final Object obj, final int lockLevel) {
     if (obj == null) { throw new NullPointerException("isLocked called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -609,7 +574,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean tryMonitorEnter(Object obj, long timeoutInNanos, int type) {
+  public boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) {
     if (obj == null) { throw new NullPointerException("monitorEnter called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -628,7 +593,7 @@ public class ManagerImpl implements Manager {
     return false;
   }
 
-  public void monitorEnterInterruptibly(Object obj, int type) throws InterruptedException {
+  public void monitorEnterInterruptibly(final Object obj, final int type) throws InterruptedException {
     if (obj == null) { throw new NullPointerException("monitorEnterInterruptibly called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -660,15 +625,15 @@ public class ManagerImpl implements Manager {
     return timeout;
   }
 
-  public boolean tryBeginLock(String lockID, int type) {
+  public boolean tryBeginLock(final String lockID, final int type) {
     return tryBegin(lockID, type, null, null);
   }
 
-  public boolean tryBeginLock(String lockID, long timeoutInNanos, int type) {
+  public boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) {
     return tryBegin(lockID, type, null, createTimerSpecFromNanos(timeoutInNanos), null);
   }
 
-  public int localHeldCount(Object obj, int lockLevel) {
+  public int localHeldCount(final Object obj, final int lockLevel) {
     if (obj == null) { throw new NullPointerException("isHeldByCurrentThread called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -681,7 +646,7 @@ public class ManagerImpl implements Manager {
 
   }
 
-  public boolean isHeldByCurrentThread(Object obj, int lockLevel) {
+  public boolean isHeldByCurrentThread(final Object obj, final int lockLevel) {
     if (obj == null) { throw new NullPointerException("isHeldByCurrentThread called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -694,7 +659,7 @@ public class ManagerImpl implements Manager {
 
   }
 
-  public int queueLength(Object obj) {
+  public int queueLength(final Object obj) {
     if (obj == null) { throw new NullPointerException("queueLength called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -706,7 +671,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public int waitLength(Object obj) {
+  public int waitLength(final Object obj) {
     if (obj == null) { throw new NullPointerException("waitLength called on a null object"); }
 
     TCObject tco = lookupExistingOrNull(obj);
@@ -718,7 +683,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public TCObject shareObjectIfNecessary(Object pojo) {
+  public TCObject shareObjectIfNecessary(final Object pojo) {
     TCObject tobj = lookupExistingOrNull(pojo);
     if (tobj != null) { return tobj; }
 
@@ -732,12 +697,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public TCObject lookupOrCreate(Object obj) {
+  public TCObject lookupOrCreate(final Object obj) {
     if (obj instanceof Manageable) { return ((Manageable) obj).__tc_managed(); }
     return this.objectManager.lookupOrCreate(obj);
   }
 
-  public TCObject lookupExistingOrNull(Object pojo) {
+  public TCObject lookupExistingOrNull(final Object pojo) {
     if (pojo instanceof Manageable) { return ((Manageable) pojo).__tc_managed(); }
 
     try {
@@ -750,15 +715,15 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Object lookupObject(ObjectID id) throws ClassNotFoundException {
+  public Object lookupObject(final ObjectID id) throws ClassNotFoundException {
     return this.objectManager.lookupObject(id);
   }
 
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException {
+  public Object lookupObject(final ObjectID id, final ObjectID parentContext) throws ClassNotFoundException {
     return this.objectManager.lookupObject(id, parentContext);
   }
 
-  public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
+  public boolean distributedMethodCall(final Object receiver, final String method, final Object[] params, final boolean runOnAllNodes) {
     TCObject tco = lookupExistingOrNull(receiver);
 
     try {
@@ -777,7 +742,7 @@ public class ManagerImpl implements Manager {
     methodCallManager.distributedInvokeCommit();
   }
 
-  public void checkWriteAccess(Object context) {
+  public void checkWriteAccess(final Object context) {
     // XXX: make sure that "context" is the ALWAYS the right object to check here, and then rename it
     if (isManaged(context)) {
       try {
@@ -788,7 +753,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isManaged(Object obj) {
+  public boolean isManaged(final Object obj) {
     if (obj instanceof Manageable) {
       TCObject tcobj = ((Manageable) obj).__tc_managed();
 
@@ -797,7 +762,7 @@ public class ManagerImpl implements Manager {
     return this.objectManager.isManaged(obj);
   }
 
-  public boolean isDsoMonitored(Object obj) {
+  public boolean isDsoMonitored(final Object obj) {
     if (this.objectManager.isCreationInProgress() || this.txManager.isTransactionLoggingDisabled()) { return false; }
 
     TCObject tcobj = lookupExistingOrNull(obj);
@@ -808,7 +773,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Object lookupRoot(String name) {
+  public Object lookupRoot(final String name) {
     try {
       return this.objectManager.lookupRoot(name);
     } catch (Throwable t) {
@@ -819,26 +784,26 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private static String generateVolatileLockName(TCObject tcobj, String fieldName) {
+  private static String generateVolatileLockName(final TCObject tcobj, final String fieldName) {
     Assert.assertNotNull(tcobj);
     return ByteCodeUtil.generateVolatileLockName(tcobj.getObjectID(), fieldName);
   }
 
-  private static String generateAutolockName(TCObject tcobj) {
+  private static String generateAutolockName(final TCObject tcobj) {
     Assert.assertNotNull(tcobj);
     return ByteCodeUtil.generateAutolockName(tcobj.getObjectID());
   }
 
-  private static String generateLiteralLockName(Object obj) {
+  private static String generateLiteralLockName(final Object obj) {
     Assert.assertNotNull(obj);
     return ByteCodeUtil.generateLiteralLockName(literals.valueFor(obj), obj);
   }
 
-  public boolean isLogical(Object object) {
+  public boolean isLogical(final Object object) {
     return this.config.isLogical(object.getClass().getName());
   }
 
-  public boolean isRoot(Field field) {
+  public boolean isRoot(final Field field) {
     String fName = field.getName();
     Class c = field.getDeclaringClass();
 
@@ -851,8 +816,7 @@ public class ManagerImpl implements Manager {
     ClassInfo classInfo = JavaClassInfo.getClassInfo(c);
 
     FieldInfo[] fields = classInfo.getFields();
-    for (int i = 0; i < fields.length; i++) {
-      FieldInfo fieldInfo = fields[i];
+    for (FieldInfo fieldInfo : fields) {
       if (fieldInfo.getName().equals(fName)) { return this.config.isRoot(fieldInfo); }
     }
 
@@ -872,11 +836,11 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isPhysicallyInstrumented(Class clazz) {
+  public boolean isPhysicallyInstrumented(final Class clazz) {
     return this.portability.isClassPhysicallyInstrumented(clazz);
   }
 
-  public TCLogger getLogger(String loggerName) {
+  public TCLogger getLogger(final String loggerName) {
     return TCLogging.getLogger(loggerName);
   }
 
@@ -888,14 +852,14 @@ public class ManagerImpl implements Manager {
 
     private final Map display = new HashMap();
 
-    public MethodDisplayNames(SerializationUtil serializer) {
+    public MethodDisplayNames(final SerializationUtil serializer) {
       String[] sigs = serializer.getSignatures();
-      for (int i = 0; i < sigs.length; i++) {
-        display.put(sigs[i], getDisplayStringFor(sigs[i]));
+      for (String sig : sigs) {
+        display.put(sig, getDisplayStringFor(sig));
       }
     }
 
-    private String getDisplayStringFor(String signature) {
+    private String getDisplayStringFor(final String signature) {
       String methodName = signature.substring(0, signature.indexOf('('));
       StringBuffer rv = new StringBuffer(methodName);
       rv.append('(');
@@ -941,21 +905,22 @@ public class ManagerImpl implements Manager {
       return rv.toString();
     }
 
-    private String getShortName(Type t) {
+    private String getShortName(final Type t) {
       String fqName = t.getClassName();
       int lastDot = fqName.lastIndexOf('.');
       if (lastDot > -1) { return fqName.substring(lastDot + 1); }
       return fqName;
     }
 
-    String getDisplayForSignature(String methodSignature) {
+    String getDisplayForSignature(final String methodSignature) {
       String rv = (String) display.get(methodSignature);
       if (rv == null) { throw new AssertionError("missing display string for signature: " + methodSignature); }
       return rv;
     }
   }
 
-  public void addClusterEventListener(ClusterEventListener cel) {
+  // TODO: evaluate what to do with this now that there's ClusterEventsNG
+  public void addClusterEventListener(final ClusterEventListener cel) {
     cluster.addClusterEventListener(cel);
   }
 
@@ -963,16 +928,16 @@ public class ManagerImpl implements Manager {
     return this.methodCallManager;
   }
 
-  public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
+  public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
     TCObject tcObj = lookupExistingOrNull(pojo);
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
   }
 
-  public boolean overridesHashCode(Object obj) {
+  public boolean overridesHashCode(final Object obj) {
     return this.portability.overridesHashCode(obj);
   }
 
-  public void registerNamedLoader(NamedClassLoader loader) {
+  public void registerNamedLoader(final NamedClassLoader loader) {
     this.classProvider.registerNamedLoader(loader);
   }
 
@@ -980,4 +945,7 @@ public class ManagerImpl implements Manager {
     return this.classProvider;
   }
 
+  public DsoCluster getDsoCluster() {
+    return this.dsoCluster;
+  }
 }
