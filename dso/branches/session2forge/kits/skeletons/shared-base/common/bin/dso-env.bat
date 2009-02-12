@@ -1,10 +1,6 @@
 @echo off
 
-rem
-rem  All content copyright (c) 2003-2008 Terracotta, Inc.,
-rem  except as may otherwise be noted in a separate copyright notice.
-rem  All rights reserved.
-rem
+rem All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
 
 set TC_INSTALL_DIR=%~d0%~p0..
 set TC_INSTALL_DIR="%TC_INSTALL_DIR:"=%"
@@ -24,7 +20,10 @@ goto tc_dso_env_1
   if not "%~1" == "" set TC_CONFIG_PATH=%~1
 
   call %TC_INSTALL_DIR%\bin\boot-jar-path.bat
-  if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+  if %ERRORLEVEL% neq 0 (
+    pause
+    exit /b %ERRORLEVEL%
+  )
 
   set TC_JAVA_OPTS=-Xbootclasspath/p:%DSO_BOOT_JAR% -Dtc.install-root=%TC_INSTALL_DIR%
   if defined TC_CONFIG_PATH set TC_JAVA_OPTS=%TC_JAVA_OPTS% -Dtc.config=%TC_CONFIG_PATH%

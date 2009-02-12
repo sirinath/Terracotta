@@ -10,6 +10,8 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.license.Capability;
+import com.tc.license.LicenseCheck;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.schema.ExcludedInstrumentedClass;
 import com.tc.object.config.schema.IncludeOnLoad;
@@ -86,6 +88,9 @@ public class ConfigLoader {
   }
 
   private void addRoot(Root root) throws ConfigurationSetupException {
+
+    LicenseCheck.checkCapability(Capability.ROOTS);
+
     String rootName = root.getRootName();
     String fieldName = root.getFieldName();
     String fieldExpression = root.getFieldExpression();
@@ -127,6 +132,8 @@ public class ConfigLoader {
   }
 
   private void addWebApplication(WebApplication webApplication) {
+    LicenseCheck.checkCapability(Capability.SESSIONS);
+
     config.addApplicationName(webApplication.getStringValue());
     if (webApplication.getSynchronousWrite()) {
       config.addSynchronousWriteApplication(webApplication.getStringValue());

@@ -47,6 +47,9 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
     os_root_dir = FilePath.new(@basedir.to_s, "..", "..").canonicalize.to_s
     ee_root_dir =  os_root_dir =~ /community/ ? FilePath.new(os_root_dir.to_s, "..").canonicalize.to_s : nil
     @build_environment = BuildEnvironment.new(platform, config_source, os_root_dir, ee_root_dir)
+    if @build_environment.is_ee_branch?
+      @ee_basedir = File.join(ee_root_dir, "code", "base")
+    end
     @static_resources = StaticResources.new(basedir)
     @archive_tag = ArchiveTag.new(@build_environment)
 
@@ -79,6 +82,18 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
 
     # Load the XMLBeans task, so we can use it to process config files when needed by that target.
     ant.taskdef(:name => 'xmlbean', :classname => 'org.apache.xmlbeans.impl.tool.XMLBean')
+
+    # print warning if branh name doesn't match between OSS and EE branch
+    if @build_environment.is_ee_branch?
+      branch = @build_environment.current_branch
+      unless @build_environment.ee_svninfo.url =~ /#{branch}$/
+        STDERR.puts("*" * 80)
+        STDERR.puts("  Branch name '#{branch}' doesn't match between EE and OS branches.")
+        STDERR.puts("  EE URL: #{@build_environment.ee_svninfo.url}")
+        STDERR.puts("  OS URL: #{@build_environment.os_svninfo.url} ")
+        STDERR.puts("*" * 80)
+      end
+    end
   end
 
 
@@ -131,26 +146,46 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   # Download and install dependencies as specified by the various ivy*.xml
   # files in the individual modules.
   def resolve_dependencies
+    if @no_ivy
+      loud_message("--no-ivy option found. Skipping Ivy.")
+      return
+    end
+    
     depends :init
+    ivy_settings_path = File.join(@basedir.to_s, "buildconfig/ivysettings.xml")
+    
+    @ant.property(:name => "ivy.resolver.default.check.modified", :value => "false")
+    @ant.taskdef(:name => 'ivy_configure',
+      :classname => "org.apache.ivy.ant.IvyConfigure")
+    @ant.taskdef(:name => 'ivy_resolve',
+      :classname => "org.apache.ivy.ant.IvyResolve")
+    @ant.taskdef(:name => 'ivy_retrieve',
+      :classname => "org.apache.ivy.ant.IvyRetrieve")
+    @ant.ivy_configure( :file => ivy_settings_path )
 
-    if (ant_home = ENV['ANT_HOME'])
-      if @no_ivy
-        loud_message("Ivy support disabled.  Skipping dependency resolution.")
-      else
-        puts "--------------------------------------------------------------------------------"
-        puts "Resolving dependencies."
-        build_file = FilePath.new(@static_resources.build_config_directory,
-          'resolve-dependencies', 'build.xml')
-        ant_command = FilePath.new(ant_home, 'bin', 'ant').batch_extension.to_s
-        args = ['-buildfile', "#{build_file.to_s}"]
-        @ant.exec(:executable => ant_command) do
-          @ant.arg(:value => '-buildfile')
-          @ant.arg(:file => build_file.to_s)
+    bases = [@basedir.to_s]
+    if @build_environment.is_ee_branch?
+      bases << @ee_basedir
+    end
+
+    dependencies_pattern = "#{@static_resources.lib_dependencies_directory.to_s}/[artifact]-[revision].[ext]"
+    
+    bases.each do |base|
+      loud_message("resolving base #{base}")
+      Dir.entries(base).each do |project|
+        project_path = File.join(base, project)
+
+        next unless File.directory?(project_path)
+        next if project =~ /buildconfig/
+        
+        Dir.glob("#{project_path}/ivy*.xml").each do |ivyfile|
+          puts "Resolving Ivy file: #{ivyfile}"
+          @ant.ivy_resolve(:file => ivyfile)
+          @ant.ivy_retrieve(:pattern => dependencies_pattern)
         end
       end
-    else
-      loud_message("ANT_HOME not set. Skipping dependency resolution.")
     end
+    
   end
 
   # Show which modules have been defined. Useful for debugging the buildsystem.
@@ -596,6 +631,7 @@ END
   
   def generate_license
     fail("Only EE branch checkout can be used for license generation") unless @build_environment.is_ee_branch?
+    depends :init, :compile
     build_module_name = 'ent-license-generator'
     subtree_name = 'src'
     build_module = @module_set[build_module_name]
@@ -610,7 +646,7 @@ END
     end
     arguments = all_remaining_arguments
     jvmargs = config_source.as_array('jvmargs') || [ ]
-    do_run_class(jvm, "com.tc.license.StandardTerracottaLicenseGenerator", arguments, jvmargs, subtree)    
+    do_run_class(jvm, "com.tc.license.generator.EnterpriseLicenseGenerator", arguments, jvmargs, subtree)    
   end
 
   # Runs a class, as specified on the command line. Takes one argument, which is the name of the test;
