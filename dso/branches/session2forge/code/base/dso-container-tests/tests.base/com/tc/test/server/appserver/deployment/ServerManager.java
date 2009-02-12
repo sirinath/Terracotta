@@ -11,9 +11,9 @@ import com.tc.test.TestConfigObject;
 import com.tc.test.server.appserver.AppServerFactory;
 import com.tc.test.server.appserver.AppServerInstallation;
 import com.tc.test.server.util.AppServerUtil;
-import com.tc.test.server.util.TcConfigBuilder;
 import com.tc.util.PortChooser;
 import com.tc.util.TIMUtil;
+import com.tc.util.TcConfigBuilder;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.Vm;
 

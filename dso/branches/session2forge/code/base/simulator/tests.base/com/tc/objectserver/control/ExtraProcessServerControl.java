@@ -38,7 +38,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
   protected final String      configFileLoc;
   protected final List        jvmArgs;
   private final File          runningDirectory;
-  private final String        serverName;
+  private String              serverName;
   private OutputStream        outStream;
   private StreamCopier        outCopier;
   private StreamCopier        errCopier;
@@ -185,6 +185,10 @@ public class ExtraProcessServerControl extends ServerControlBase {
     return "com.tc.server.TCServerMain";
   }
 
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+
   /**
    * The JAVA_HOME for the JVM to use when creating a {@link LinkedChildProcess}.
    */
@@ -214,9 +218,19 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
 
   public void start() throws Exception {
-    System.err.println("Starting " + this.name + /* ": jvmArgs=" + jvmArgs + */", main=" + getMainClassName()
-                       + ", main args=" + ArrayUtils.toString(getMainClassArguments()) + ", jvm=[" + getJavaHome()
-                       + "]");
+    startWithoutWait();
+    waitUntilStarted();
+    System.err.println(this.name + " started.");
+  }
+  
+  public void startAndWait(long seconds) throws Exception {
+    startWithoutWait();
+    waitUntilStarted(seconds);
+  }
+
+  public void startWithoutWait() throws Exception {
+    System.err.println("Starting " + this.name + ", main=" + getMainClassName() + ", main args="
+                       + ArrayUtils.toString(getMainClassArguments()) + ", jvm=[" + getJavaHome() + "]");
     process = createLinkedJavaProcess();
     process.setJavaArguments((String[]) jvmArgs.toArray(new String[jvmArgs.size()]));
     process.start();
@@ -229,8 +243,6 @@ public class ExtraProcessServerControl extends ServerControlBase {
       outCopier.start();
       errCopier.start();
     }
-    waitUntilStarted();
-    System.err.println(this.name + " started.");
   }
 
   protected LinkedJavaProcess createLinkedJavaProcess(String mainClassName, String[] arguments) {
@@ -297,6 +309,15 @@ public class ExtraProcessServerControl extends ServerControlBase {
 
   private void waitUntilStarted() throws Exception {
     while (true) {
+      if (isRunning()) return;
+      Thread.sleep(1000);
+    }
+  }
+
+  private void waitUntilStarted(long timeoutInSeconds) throws InterruptedException {
+    if (timeoutInSeconds < 0) throw new IllegalArgumentException("timeout can't be negative");
+    long timeout = (timeoutInSeconds * 1000) + System.currentTimeMillis();
+    while (System.currentTimeMillis() < timeout) {
       if (isRunning()) return;
       Thread.sleep(1000);
     }

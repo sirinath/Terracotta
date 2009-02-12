@@ -62,10 +62,21 @@ class StaticResources
   def distribution_config_directory(flavor)
     FilePath.new(source_root(flavor), 'buildconfig', 'distribution')
   end
-  
-  # @@@HACK
+
+  def izpack_directory
+    FilePath.new(@root_directory, 'buildconfig', 'izpack')
+  end
+
+  def izpack_resources_directory
+    FilePath.new(izpack_directory, 'resources')
+  end
+
   def izpack_installer_template
-    FilePath.new(@root_directory, 'buildconfig', 'izpack-installer.template')
+    FilePath.new(izpack_directory, 'izpack-installer-template.xml')
+  end
+
+  def izpack_shortcuts_template
+    FilePath.new(izpack_directory, 'izpack-shortcuts.def.yml')
   end
 
   def enterprise_modules_file
@@ -94,7 +105,7 @@ class StaticResources
   def compiled_config_schema_jar(module_set)
     out = nil
 
-    module_set['common'].subtree('src').subtree_only_library_roots(:runtime).each do |root|
+    module_set['common-api'].subtree('src').subtree_only_library_roots(:runtime).each do |root|
       test = FilePath.new(root, "tcconfig-xmlbeans-generated.jar")
       out = test if FileTest.file?(test.to_s)
     end
