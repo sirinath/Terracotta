@@ -173,9 +173,9 @@ public class ServerManager {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();
         if (major.equals("v1")) {
-          aCopy.addModule(TIMUtil.GLASSFISH_V1, TIMUtil.getVersion(TIMUtil.GLASSFISH_V1));
+          aCopy.addModule(TIMUtil.GLASSFISH_V1, TIMUtil.resolveContainerTIM(TIMUtil.GLASSFISH_V1));
         } else if (major.equals("v2")) {
-          aCopy.addModule(TIMUtil.GLASSFISH_V2, TIMUtil.getVersion(TIMUtil.GLASSFISH_V2));
+          aCopy.addModule(TIMUtil.GLASSFISH_V2, TIMUtil.resolveContainerTIM(TIMUtil.GLASSFISH_V2));
         } else {
           throw new RuntimeException("unexpected version: " + info);
         }
@@ -184,14 +184,14 @@ public class ServerManager {
       case AppServerInfo.JETTY:
         // XXX: Can't do this right now. System tests in tim-jetty use this and add their own jetty module to config
         // (resulting in two jetty TIMs being used!)
-        // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.getVersion(TIMUtil.JETTY_6_1));
+        // aCopy.addModule(TIMUtil.JETTY_6_1, TIMUtil.resolveSessionTIMVersion(TIMUtil.JETTY_6_1));
         break;
       case AppServerInfo.WASCE: {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();
         String minor = info.getMinor();
         if (major.equals("1") && minor.startsWith("0.")) {
-          aCopy.addModule(TIMUtil.WASCE_1_0, TIMUtil.getVersion(TIMUtil.WASCE_1_0));
+          aCopy.addModule(TIMUtil.WASCE_1_0, TIMUtil.resolveContainerTIM(TIMUtil.WASCE_1_0));
         } else {
           throw new RuntimeException("unexpected version: " + info);
         }
@@ -201,9 +201,9 @@ public class ServerManager {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();
         if (major.equals("9")) {
-          aCopy.addModule(TIMUtil.WEBLOGIC_9, TIMUtil.getVersion(TIMUtil.WEBLOGIC_9));
+          aCopy.addModule(TIMUtil.WEBLOGIC_9, TIMUtil.resolveContainerTIM(TIMUtil.WEBLOGIC_9));
         } else if (major.equals("10")) {
-          aCopy.addModule(TIMUtil.WEBLOGIC_10, TIMUtil.getVersion(TIMUtil.WEBLOGIC_10));
+          aCopy.addModule(TIMUtil.WEBLOGIC_10, TIMUtil.resolveContainerTIM(TIMUtil.WEBLOGIC_10));
         } else {
           throw new RuntimeException("unexpected major version: " + info);
         }
@@ -215,15 +215,15 @@ public class ServerManager {
         String minor = info.getMinor();
         if (major.equals("4")) {
           if (minor.startsWith("0.")) {
-            aCopy.addModule(TIMUtil.JBOSS_4_0, TIMUtil.getVersion(TIMUtil.JBOSS_4_0));
+            aCopy.addModule(TIMUtil.JBOSS_4_0, TIMUtil.resolveContainerTIM(TIMUtil.JBOSS_4_0));
           } else if (minor.startsWith("2.")) {
-            aCopy.addModule(TIMUtil.JBOSS_4_2, TIMUtil.getVersion(TIMUtil.JBOSS_4_2));
+            aCopy.addModule(TIMUtil.JBOSS_4_2, TIMUtil.resolveContainerTIM(TIMUtil.JBOSS_4_2));
           } else {
             throw new RuntimeException("unexpected version: " + info);
           }
         } else if (major.equals("3")) {
           if (minor.startsWith("2.")) {
-            aCopy.addModule(TIMUtil.JBOSS_3_2, TIMUtil.getVersion(TIMUtil.JBOSS_3_2));
+            aCopy.addModule(TIMUtil.JBOSS_3_2, TIMUtil.resolveContainerTIM(TIMUtil.JBOSS_3_2));
           } else {
             throw new RuntimeException("unexpected version: " + info);
           }
@@ -238,15 +238,15 @@ public class ServerManager {
         String minor = info.getMinor();
         if (major.equals("5")) {
           if (minor.startsWith("0.")) {
-            aCopy.addModule(TIMUtil.TOMCAT_5_0, TIMUtil.getVersion(TIMUtil.TOMCAT_5_0));
+            aCopy.addModule(TIMUtil.TOMCAT_5_0, TIMUtil.resolveContainerTIM(TIMUtil.TOMCAT_5_0));
           } else if (minor.startsWith("5.")) {
-            aCopy.addModule(TIMUtil.TOMCAT_5_5, TIMUtil.getVersion(TIMUtil.TOMCAT_5_5));
+            aCopy.addModule(TIMUtil.TOMCAT_5_5, TIMUtil.resolveContainerTIM(TIMUtil.TOMCAT_5_5));
           } else {
             throw new RuntimeException("unexpected 5.x version: " + info);
           }
         } else if (major.equals("6")) {
           if (minor.startsWith("0.")) {
-            aCopy.addModule(TIMUtil.TOMCAT_6_0, TIMUtil.getVersion(TIMUtil.TOMCAT_6_0));
+            aCopy.addModule(TIMUtil.TOMCAT_6_0, TIMUtil.resolveContainerTIM(TIMUtil.TOMCAT_6_0));
           } else {
             throw new RuntimeException("unexpected 6.x version: " + info);
           }
