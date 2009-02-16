@@ -30,10 +30,9 @@ public class WebAppLoaderAdapter extends ClassAdapter implements ClassAdapterFac
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("createClassLoader".equals(name) //
-        && "()Lorg/apache/catalina/loader/WebappClassLoader;".equals(desc)) { return new CreateClassLoaderAdapter(
-                                                                                                                  access,
-                                                                                                                  desc,
-                                                                                                                  mv); }
+        && "()Lorg/apache/catalina/loader/WebappClassLoader;".equals(desc)) { 
+      return new CreateClassLoaderAdapter(access, desc, mv); 
+    }
     return mv;
   }
 
@@ -46,11 +45,15 @@ public class WebAppLoaderAdapter extends ClassAdapter implements ClassAdapterFac
     public void visitInsn(int opcode) {
       if (ARETURN == opcode) {
 
-        int slot = newLocal(Type.getObjectType("java/lang/Object"));
-        mv.visitVarInsn(ASTORE, slot);
+        // loaderSlot is the index of a local variable containing the WebappClassLoader about to be returned
+        int loaderSlot = newLocal(Type.getObjectType("java/lang/Object"));
+        mv.visitVarInsn(ASTORE, loaderSlot);
+        mv.visitVarInsn(ALOAD, loaderSlot);
 
-        // name the web app loader
-        mv.visitVarInsn(ALOAD, slot);
+        // Name and register the web app loader:
+        
+        //   String name = Namespace.createLoaderName(
+        //       TomcatLoaderNaming.getFullyQualifiedName(this.getContainer(), Namespace.TOMCAT_NAMESPACE);
         mv.visitFieldInsn(GETSTATIC, "com/tc/object/loaders/Namespace", "TOMCAT_NAMESPACE", "Ljava/lang/String;");
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/catalina/Loader", "getContainer",
@@ -59,16 +62,23 @@ public class WebAppLoaderAdapter extends ClassAdapter implements ClassAdapterFac
                            "(Ljava/lang/Object;)Ljava/lang/String;");
         mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/loaders/Namespace", "createLoaderName",
                            "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+        
+        //   this.__tc_setClassLoaderName(name);
         mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/loaders/NamedClassLoader", "__tc_setClassLoaderName",
                            "(Ljava/lang/String;)V");
 
-        // register the web app loader
-        mv.visitVarInsn(ALOAD, slot);
-        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                           "registerGlobalLoader", "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + ")V");
+        //   ClassProcessorHelper.registerGlobalLoader(this, TomcatLoaderNaming.getAppName(this.getContainer()));
+        mv.visitVarInsn(ALOAD, loaderSlot);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/catalina/Loader", "getContainer",
+                           "()Lorg/apache/catalina/Container;");
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/tomcat/TomcatLoaderNaming", "getAppName",
+                           "(Ljava/lang/Object;)Ljava/lang/String;");
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "registerGlobalLoader",
+                           "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + "Ljava/lang/String;" + ")V");
 
         // prepare for ARETURN
-        mv.visitVarInsn(ALOAD, slot);
+        mv.visitVarInsn(ALOAD, loaderSlot);
       }
       super.visitInsn(opcode);
     }

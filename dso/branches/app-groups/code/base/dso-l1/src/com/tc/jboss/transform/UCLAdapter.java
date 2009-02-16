@@ -109,6 +109,7 @@ public class UCLAdapter extends ClassAdapter implements Opcodes, ClassAdapterFac
         Label isNull = new Label();
         super.visitJumpInsn(IFNULL, isNull);
         super.visitVarInsn(ALOAD, 0);
+        // TODO APPGROUP: get app name from JBossLoaderNaming.  See example in com.tc.tomcat.transform.WebAppLoaderAdapter.
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
                               "registerGlobalLoader", "(Lcom/tc/object/loaders/NamedClassLoader;)V");
         super.visitLabel(isNull);

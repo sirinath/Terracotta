@@ -88,6 +88,7 @@ public class AppGroupTest extends AbstractTwoServerDeploymentTest {
     
     @Override
     protected void configureTcConfig(TcConfigBuilder clientConfig) {
+      clientConfig.addAppGroup("ab", null, new String[] { CONTEXT0, CONTEXT1 });
       clientConfig.addInstrumentedClass(StandardClasspathDummyClass.class.getName());
       clientConfig.addInstrumentedClass(SharedCache.class.getName());
       clientConfig.addRoot(SharedCache.class.getName() + ".objects", "objects");

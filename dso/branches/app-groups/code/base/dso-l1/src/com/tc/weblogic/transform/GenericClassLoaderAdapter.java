@@ -46,7 +46,7 @@ public class GenericClassLoaderAdapter extends ClassAdapter implements Opcodes, 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("setAnnotation".equals(name)) {
-      mv = new SetAnnotationAdatper(mv);
+      mv = new SetAnnotationAdapter(mv);
     }
 
     return mv;
@@ -92,9 +92,9 @@ public class GenericClassLoaderAdapter extends ClassAdapter implements Opcodes, 
     mv.visitEnd();
   }
 
-  private static class SetAnnotationAdatper extends MethodAdapter implements Opcodes {
+  private static class SetAnnotationAdapter extends MethodAdapter implements Opcodes {
 
-    public SetAnnotationAdatper(MethodVisitor mv) {
+    public SetAnnotationAdapter(MethodVisitor mv) {
       super(mv);
     }
 
@@ -113,6 +113,7 @@ public class GenericClassLoaderAdapter extends ClassAdapter implements Opcodes, 
         mv.visitFieldInsn(PUTFIELD, "weblogic/utils/classloaders/GenericClassLoader", LOADER_DESC_FIELD,
                           "Ljava/lang/String;");
         mv.visitVarInsn(ALOAD, 0);
+        // TODO APPGROUP does this loader have web contexts?
         mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
                            "registerGlobalLoader", "(Lcom/tc/object/loaders/NamedClassLoader;)V");
       }

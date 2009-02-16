@@ -93,6 +93,7 @@ public class MultiParentClassLoaderAdapter extends ClassAdapter implements Opcod
 
     public void visitInsn(int opcode) {
       if (opcode == RETURN) {
+        // TODO APPGROUP: does this loader have web contexts?
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
                            "registerGlobalLoader", "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + ")V");

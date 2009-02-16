@@ -79,14 +79,6 @@ public class StandardClassProvider implements ClassProvider {
   }
   
   /**
-   * @deprecated use {@link #registerNamedLoader(NamedClassLoader, String)} to support appGroup.
-   */
-  @Deprecated
-  public void registerNamedLoader(NamedClassLoader loader) {
-    registerNamedLoader(loader, null);
-  }
-  
-  /**
    * @param loader must implement both ClassLoader and NamedClassLoader
    * @param appGroup an appGroup to support sharing roots between apps, or null if
    * no sharing is desired. The empty string will be replaced with null.
@@ -104,12 +96,6 @@ public class StandardClassProvider implements ClassProvider {
       appGroup = null;
     }
 
-    // HACK for testing
-    // TODO: change clients to properly register appGroup
-    if (name.contains("context")) {
-      appGroup = "contextGroup";
-    }
-    
     synchronized (this) {
       prevRef = loaders.put(name, new WeakReference<NamedClassLoader>(loader));
       loaderDescriptions.put(name, new LoaderDescription(appGroup, name));
@@ -132,8 +118,10 @@ public class StandardClassProvider implements ClassProvider {
 
     NamedClassLoader prev = prevRef == null ? null : (NamedClassLoader) prevRef.get();
 
-    if (runtimeLogger.getNamedLoaderDebug()) {
-      runtimeLogger.namedLoaderRegistered(loader, name, prev);
+    // TODO APPGROUPS
+    //if (runtimeLogger.getNamedLoaderDebug()) {
+    if (true) {
+      runtimeLogger.namedLoaderRegistered(loader, name, appGroup, prev);
     }
   }
   

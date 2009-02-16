@@ -35,7 +35,7 @@ public class JBossLoaderNaming {
     if (bootLoader != ClassLoader.getSystemClassLoader()) {
       NamedClassLoader ncl = (NamedClassLoader) bootLoader;
       ncl.__tc_setClassLoaderName(Namespace.createLoaderName(Namespace.JBOSS_NAMESPACE, "boot"));
-      ClassProcessorHelper.registerGlobalLoader(ncl);
+      ClassProcessorHelper.registerGlobalLoader(ncl, null);
     }
 
     serverHomeDir = fixUpUrl(homeDir.getAbsoluteFile().toURL()).toExternalForm();

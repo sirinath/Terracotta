@@ -38,13 +38,6 @@ public interface ClassProvider {
   LoaderDescription getLoaderDescriptionFor(ClassLoader loader);
   
   /**
-   * Register named loader
-   * @deprecated use {@link #registerNamedLoader(NamedClassLoader, String)} to support appGroup.
-   * @param loader Loader
-   */
-  void registerNamedLoader(NamedClassLoader loader);
-
-  /**
    * @param loader must implement both ClassLoader and NamedClassLoader
    * @param appGroup an appGroup to support sharing roots between apps, or null if
    * no sharing is desired. The empty string will be replaced with null.
