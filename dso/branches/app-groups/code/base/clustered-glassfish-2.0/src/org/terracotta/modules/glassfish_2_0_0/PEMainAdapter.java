@@ -88,6 +88,7 @@ public class PEMainAdapter extends ClassAdapter implements ClassAdapterFactory, 
     }
 
     private void nameAndRegisterLoader(String fieldName, String loaderName) {
+      mv.visitInsn(ACONST_NULL); // this is not a webapp context loader
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "com/sun/enterprise/server/PEMain", fieldName, "Ljava/lang/ClassLoader;");
       mv.visitTypeInsn(CHECKCAST, ByteCodeUtil.NAMEDCLASSLOADER_CLASS);
@@ -99,7 +100,7 @@ public class PEMainAdapter extends ClassAdapter implements ClassAdapterFactory, 
       mv.visitMethodInsn(INVOKEINTERFACE, ByteCodeUtil.NAMEDCLASSLOADER_CLASS, "__tc_setClassLoaderName",
                          "(Ljava/lang/String;)V");
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "registerGlobalLoader",
-                         "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + ")V");
+                         "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + "Ljava/lang/String;" + ")V");
     }
 
   }

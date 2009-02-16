@@ -4,6 +4,8 @@
  */
 package com.tc.tomcat;
 
+import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
+
 import java.lang.reflect.Method;
 
 public class TomcatLoaderNaming {
@@ -32,6 +34,28 @@ public class TomcatLoaderNaming {
     }
   }
 
+  /**
+   * Given an org.apache.catalina.Context, return its name, stripped and
+   * trimmed according to the rules of {@link ClassProcessorHelper#computeAppName()}.
+   * The resulting string is suitable for wildcard matching against web-application
+   * names in the Terracotta config.
+   * @return null if the object passed in is not a Context.
+   */
+  public static String getAppName(Object container) {
+    try {
+      Class c = container.getClass().getClassLoader().loadClass("org.apache.catalina.Context");
+      
+      if (!c.isInstance(container)) {
+        return null;
+      }
+      Method getPath = c.getMethod("getPath", new Class[] {});
+      String path = (String) getPath.invoke(container, new Object[] {});
+      return ClassProcessorHelper.computeAppName(path);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+  
   private static String getName(Method m, Object o) throws Exception {
     return (String) m.invoke(o, new Object[] {});
   }

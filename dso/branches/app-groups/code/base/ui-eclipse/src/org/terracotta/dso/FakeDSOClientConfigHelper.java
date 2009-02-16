@@ -194,6 +194,10 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   public Iterator getAllUserDefinedBootSpecs() {
     return null;
   }
+  
+  public String getAppGroup(String loaderName, String appName) {
+    return null;
+  }
 
   public Map getAspectModules() {
     return null;
@@ -442,5 +446,9 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
 
   public boolean addAnnotationBasedAdapters(final ClassInfo classInfo) {
     return false;
+  }
+
+  public void addToAppGroup(String appGroup, String[] namedClassloaders, String[] webAppNames) {
+    //
   }
 }

@@ -33,15 +33,15 @@ public class BootstrapAdapter extends ClassAdapter implements ClassAdapterFactor
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
     if ("initClassLoaders".equals(name)) {
-      mv = new InitClassLoadersAdatper(mv);
+      mv = new InitClassLoadersAdapter(mv);
     }
 
     return mv;
   }
 
-  private static class InitClassLoadersAdatper extends MethodAdapter implements Opcodes {
+  private static class InitClassLoadersAdapter extends MethodAdapter implements Opcodes {
 
-    public InitClassLoadersAdatper(MethodVisitor mv) {
+    public InitClassLoadersAdapter(MethodVisitor mv) {
       super(mv);
     }
 
@@ -55,8 +55,9 @@ public class BootstrapAdapter extends ClassAdapter implements ClassAdapterFactor
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/loaders/Namespace", "createLoaderName",
                          "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
       mv.visitMethodInsn(INVOKEINTERFACE, ByteCodeUtil.NAMEDCLASSLOADER_CLASS, "__tc_setClassLoaderName", "(Ljava/lang/String;)V");
+      mv.visitInsn(ACONST_NULL); // null webapp name; we're registering a shared loader, not a webapp
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "registerGlobalLoader",
-                         "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + ")V");
+                         "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + "Ljava/lang/String;" + ")V");
     }
 
     public void visitInsn(int opcode) {

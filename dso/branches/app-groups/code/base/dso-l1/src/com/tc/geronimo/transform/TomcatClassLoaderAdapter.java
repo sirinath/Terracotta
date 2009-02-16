@@ -41,6 +41,7 @@ public class TomcatClassLoaderAdapter extends ClassAdapter implements Opcodes, C
     return mv;
   }
 
+  // Implement NamedClassLoader methods
   public void visitEnd() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "__tc_getClassLoaderName",
                                          "()Ljava/lang/String;", null, null);
@@ -79,8 +80,9 @@ public class TomcatClassLoaderAdapter extends ClassAdapter implements Opcodes, C
     public void visitInsn(int opcode) {
       if (opcode == RETURN) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                           "registerGlobalLoader", "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + ")V");
+        mv.visitInsn(ACONST_NULL); // TODO APPGROUP - is null web-app name correct here, or do we need to recover actual name?
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "registerGlobalLoader",
+                           "(" + ByteCodeUtil.NAMEDCLASSLOADER_TYPE + "Ljava/lang/String;" + ")V");
       }
       super.visitInsn(opcode);
     }
