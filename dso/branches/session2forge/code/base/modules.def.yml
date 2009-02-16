@@ -640,6 +640,7 @@ modules:
         - simulator
         - thirdparty
         - thirdparty-api
+        - tim-get-tool
   - dso-spring-tests:
       options:
         jdk: J2SE-1.5
@@ -667,6 +668,7 @@ modules:
         - simulator
         - thirdparty
         - thirdparty-api
+        - tim-get-tool
   - dso-spring-aj:
       options:
         jdk: J2SE-1.5

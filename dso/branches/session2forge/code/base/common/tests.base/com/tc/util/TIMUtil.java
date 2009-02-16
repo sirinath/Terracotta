@@ -4,12 +4,9 @@
  */
 package com.tc.util;
 
-import org.apache.commons.io.IOUtils;
-
 import com.tc.bundles.BundleSpec;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -94,22 +91,5 @@ public class TIMUtil {
     String spec = modules.getProperty(moduleName);
     BundleSpec bundleSpec = BundleSpec.newInstance(spec);
     return bundleSpec.getVersion();
-  }
-
-  public static String resolveContainerTIM(String name) {
-    InputStream in = TIMUtil.class.getResourceAsStream("/com/tctest/session-tim/tests.properties");
-    if (in == null) { throw new AssertionError("no props -- spring test?"); }
-
-    Properties props = new Properties();
-    try {
-      props.load(in);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } finally {
-      IOUtils.closeQuietly(in);
-    }
-
-    return props.getProperty("version");
-
   }
 }
