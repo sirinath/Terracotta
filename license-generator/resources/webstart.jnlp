@@ -10,7 +10,7 @@
   <description kind="tooltip">Terracotta License Generator</description> 
   <icon href="resources/Elephant_32x32.png" width="32" height="32"/>
   <icon href="resources/Elephant_48x48.png" width="48" height="48"/>
-  <shortcut online="false">
+  <shortcut online="true">
     <desktop/>
     <menu submenu="Terracotta License Generator"/>
   </shortcut>
