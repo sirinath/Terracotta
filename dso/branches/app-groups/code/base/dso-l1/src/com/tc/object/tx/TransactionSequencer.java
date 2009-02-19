@@ -10,10 +10,10 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.GroupID;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.stats.counter.Counter;
-import com.tc.stats.counter.sampled.SampledCounter;
+import com.tc.stats.counter.sampled.derived.SampledRateCounter;
 import com.tc.util.SequenceGenerator;
 import com.tc.util.SequenceID;
 import com.tc.util.Util;
@@ -46,24 +46,23 @@ public class TransactionSequencer {
   private ClientTransactionBatch        currentBatch;
   private int                           pending_size   = 0;
 
-  private int                           slowDownStartsAt;
-  private double                        sleepTimeIncrements;
+  private final int                     slowDownStartsAt;
+  private final double                  sleepTimeIncrements;
   private int                           txnsPerBatch   = 0;
   private boolean                       shutdown       = false;
 
   private final LockAccounting          lockAccounting;
   private final Counter                 pendingBatchesSize;
-  private final SampledCounter          numTransactionsCounter;
-  private final SampledCounter          numBatchesCounter;
-  private final SampledCounter          batchSizeCounter;
+  private final SampledRateCounter      transactionSizeCounter;
+  private final SampledRateCounter      transactionsPerBatchCounter;
 
   private final GroupID                 groupID;
   private final TransactionIDGenerator  transactionIDGenerator;
 
   public TransactionSequencer(GroupID groupID, TransactionIDGenerator transactionIDGenerator,
                               TransactionBatchFactory batchFactory, LockAccounting lockAccounting,
-                              SampledCounter numTransactionCounter, SampledCounter numBatchesCounter,
-                              SampledCounter batchSizeCounter, Counter pendingBatchesSize) {
+                              Counter pendingBatchesSize, SampledRateCounter transactionSizeCounter,
+                              SampledRateCounter transactionsPerBatchCounter) {
 
     this.groupID = groupID;
     this.transactionIDGenerator = transactionIDGenerator;
@@ -71,31 +70,32 @@ public class TransactionSequencer {
     this.lockAccounting = lockAccounting;
     this.currentBatch = createNewBatch();
     this.slowDownStartsAt = (int) (MAX_PENDING_BATCHES * 0.66);
-    this.sleepTimeIncrements = MAX_SLEEP_TIME_BEFORE_HALT / (MAX_PENDING_BATCHES - slowDownStartsAt);
-    if (LOGGING_ENABLED) log_settings();
-    this.numBatchesCounter = numBatchesCounter;
-    this.numTransactionsCounter = numTransactionCounter;
-    this.batchSizeCounter = batchSizeCounter;
+    this.sleepTimeIncrements = MAX_SLEEP_TIME_BEFORE_HALT / (MAX_PENDING_BATCHES - this.slowDownStartsAt);
+    if (LOGGING_ENABLED) {
+      log_settings();
+    }
+    this.transactionSizeCounter = transactionSizeCounter;
+    this.transactionsPerBatchCounter = transactionsPerBatchCounter;
     this.pendingBatchesSize = pendingBatchesSize;
   }
 
   private void log_settings() {
     logger.info("Max Byte Size for Batches = " + MAX_BYTE_SIZE_FOR_BATCH + " Max Pending Batches = "
                 + MAX_PENDING_BATCHES);
-    logger.info("Max Sleep time = " + MAX_SLEEP_TIME_BEFORE_HALT + " Slow down starts at = " + slowDownStartsAt
-                + " sleep time increments = " + sleepTimeIncrements);
+    logger.info("Max Sleep time = " + MAX_SLEEP_TIME_BEFORE_HALT + " Slow down starts at = " + this.slowDownStartsAt
+                + " sleep time increments = " + this.sleepTimeIncrements);
   }
 
   private ClientTransactionBatch createNewBatch() {
-    return batchFactory.nextBatch(groupID);
+    return this.batchFactory.nextBatch(this.groupID);
   }
 
   private boolean addTransactionToBatch(ClientTransaction txn, ClientTransactionBatch batch) {
-    return batch.addTransaction(txn, sequence, transactionIDGenerator);
+    return batch.addTransaction(txn, this.sequence, this.transactionIDGenerator);
   }
 
   public synchronized void addTransaction(ClientTransaction txn) {
-    if (shutdown) {
+    if (this.shutdown) {
       logger.error("Sequencer shutdown. Not committing " + txn);
     }
 
@@ -103,7 +103,7 @@ public class TransactionSequencer {
       addTxnInternal(txn);
     } catch (Throwable t) {
       // logging of exceptions is done at a higher level
-      shutdown = true;
+      this.shutdown = true;
       if (t instanceof Error) { throw (Error) t; }
       if (t instanceof RuntimeException) { throw (RuntimeException) t; }
       throw new RuntimeException(t);
@@ -111,44 +111,50 @@ public class TransactionSequencer {
   }
 
   public synchronized void shutdown() {
-    shutdown = true;
+    this.shutdown = true;
   }
 
   /**
    * XXX::Note : There is automatic throttling built in by adding to a BoundedLinkedQueue from within a synch block
    */
   private void addTxnInternal(ClientTransaction txn) {
-    txnsPerBatch++;
-    numTransactionsCounter.increment();
+    this.txnsPerBatch++;
+    final int numTransactionsDelta = 1;
+    int numBatchesDelta = 0;
 
-    boolean folded = addTransactionToBatch(txn, currentBatch);
+    boolean folded = addTransactionToBatch(txn, this.currentBatch);
 
-    batchSizeCounter.setValue(currentBatch.byteSize());
+    synchronized (transactionSizeCounter) {
+      // transactionSize = batchSize / number of transactions
+      this.transactionSizeCounter.setNumeratorValue(this.currentBatch.byteSize());
+      this.transactionSizeCounter.increment(0, numTransactionsDelta);
+    }
 
     if (!txn.isConcurrent() && !folded) {
       // It is important to add the lock accounting before exposing the current batch to be sent (ie. put() below)
       TransactionID tid = txn.getTransactionID();
       assert !tid.isNull();
-      lockAccounting.add(tid, txn.getAllLockIDs());
+      this.lockAccounting.add(tid, txn.getAllLockIDs());
     }
 
-    if (currentBatch.byteSize() > MAX_BYTE_SIZE_FOR_BATCH) {
-      put(currentBatch);
+    if (this.currentBatch.byteSize() > MAX_BYTE_SIZE_FOR_BATCH) {
+      put(this.currentBatch);
       reconcilePendingSize();
-      if (LOGGING_ENABLED) log_stats();
-      currentBatch = createNewBatch();
-      txnsPerBatch = 0;
-      // do not set the value of numTransactionsCounter to zero here, as it will be sampled every second (the frequency
-      // of the SampledCounter)
-      numBatchesCounter.increment();
+      if (LOGGING_ENABLED) {
+        log_stats();
+      }
+      this.currentBatch = createNewBatch();
+      this.txnsPerBatch = 0;
+      numBatchesDelta = 1;
     }
+    this.transactionsPerBatchCounter.increment(numTransactionsDelta, numBatchesDelta);
     throttle();
   }
 
   private void throttle() {
-    int diff = pending_size - slowDownStartsAt;
+    int diff = this.pending_size - this.slowDownStartsAt;
     if (diff >= 0) {
-      long sleepTime = (long) (1 + diff * sleepTimeIncrements);
+      long sleepTime = (long) (1 + diff * this.sleepTimeIncrements);
       try {
         wait(sleepTime);
       } catch (InterruptedException e) {
@@ -158,24 +164,25 @@ public class TransactionSequencer {
   }
 
   private void reconcilePendingSize() {
-    pending_size = pendingBatches.size();
-    pendingBatchesSize.setValue(pending_size);
+    this.pending_size = this.pendingBatches.size();
+    this.pendingBatchesSize.setValue(this.pending_size);
   }
 
   private void put(ClientTransactionBatch batch) {
     try {
-      pendingBatches.put(batch);
+      this.pendingBatches.put(batch);
     } catch (InterruptedException e) {
       throw new TCRuntimeException(e);
     }
   }
 
   private void log_stats() {
-    int size = pending_size;
+    int size = this.pending_size;
     if (size == MAX_PENDING_BATCHES) {
-      logger.info("Max pending size reached !!! : Pending Batches size = " + size + " TxnsInBatch = " + txnsPerBatch);
+      logger.info("Max pending size reached !!! : Pending Batches size = " + size + " TxnsInBatch = "
+                  + this.txnsPerBatch);
     } else if (size % 5 == 0) {
-      logger.info("Pending Batch Size : " + size + " TxnsInBatch = " + txnsPerBatch);
+      logger.info("Pending Batch Size : " + size + " TxnsInBatch = " + this.txnsPerBatch);
     }
   }
 
@@ -184,7 +191,7 @@ public class TransactionSequencer {
     ClientTransactionBatch returnValue = null;
     while (true) {
       try {
-        returnValue = (ClientTransactionBatch) pendingBatches.poll(0);
+        returnValue = (ClientTransactionBatch) this.pendingBatches.poll(0);
         break;
       } catch (InterruptedException e) {
         isInterrupted = true;
@@ -195,21 +202,21 @@ public class TransactionSequencer {
   }
 
   private ClientTransactionBatch peek() {
-    return (ClientTransactionBatch) pendingBatches.peek();
+    return (ClientTransactionBatch) this.pendingBatches.peek();
   }
 
   public ClientTransactionBatch getNextBatch() {
     ClientTransactionBatch batch = get();
-    if (batch != null) return batch;
+    if (batch != null) { return batch; }
     synchronized (this) {
       // Check again to avoid sending the txn in the wrong order
       batch = get();
       reconcilePendingSize();
       notifyAll();
-      if (batch != null) return batch;
-      if (!currentBatch.isEmpty()) {
-        batch = currentBatch;
-        currentBatch = createNewBatch();
+      if (batch != null) { return batch; }
+      if (!this.currentBatch.isEmpty()) {
+        batch = this.currentBatch;
+        this.currentBatch = createNewBatch();
         return batch;
       }
       return null;
@@ -223,17 +230,17 @@ public class TransactionSequencer {
     while (get() != null) {
       // remove all pending
     }
-    currentBatch = createNewBatch();
+    this.currentBatch = createNewBatch();
   }
 
   public SequenceID getNextSequenceID() {
     ClientTransactionBatch batch = peek();
-    if (batch != null) return batch.getMinTransactionSequence();
+    if (batch != null) { return batch.getMinTransactionSequence(); }
     synchronized (this) {
       batch = peek();
-      if (batch != null) return batch.getMinTransactionSequence();
-      if (!currentBatch.isEmpty()) return currentBatch.getMinTransactionSequence();
-      SequenceID currentSequenceID = new SequenceID(sequence.getCurrentSequence());
+      if (batch != null) { return batch.getMinTransactionSequence(); }
+      if (!this.currentBatch.isEmpty()) { return this.currentBatch.getMinTransactionSequence(); }
+      SequenceID currentSequenceID = new SequenceID(this.sequence.getCurrentSequence());
       return currentSequenceID.next();
     }
   }

@@ -6,11 +6,15 @@ package com.tc.object;
 
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.msg.ClusterMetaDataMessage;
+import com.tc.object.msg.KeysForOrphanedValuesMessage;
+import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.NodesWithObjectsMessage;
 import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.util.Assert;
 import com.tc.util.runtime.ThreadIDManager;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,27 +22,67 @@ import java.util.Set;
 
 public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
 
-  private final ThreadIDManager                           threadIDManager;
-  private final NodesWithObjectsMessageFactory            cmdmFactory;
+  private final ThreadIDManager                     threadIDManager;
+  private final NodesWithObjectsMessageFactory      nwoFactory;
+  private final KeysForOrphanedValuesMessageFactory kfovFactory;
 
-  private final Map<ThreadID, Object>                     waitObjects = new HashMap<ThreadID, Object>();
-  private final Map<ThreadID, Map<ObjectID, Set<NodeID>>> responses   = new HashMap<ThreadID, Map<ObjectID, Set<NodeID>>>();
+  private final Map<ThreadID, WaitForResponse>      waitObjects = new HashMap<ThreadID, WaitForResponse>();
+  private final Map<ThreadID, Object>               responses   = new HashMap<ThreadID, Object>();
 
   public ClusterMetaDataManagerImpl(final ThreadIDManager threadIDManager,
-                                    final NodesWithObjectsMessageFactory cmdmFactory) {
+                                    final NodesWithObjectsMessageFactory nwoFactory,
+                                    final KeysForOrphanedValuesMessageFactory kfovFactory) {
     this.threadIDManager = threadIDManager;
-    this.cmdmFactory = cmdmFactory;
+    this.nwoFactory = nwoFactory;
+    this.kfovFactory = kfovFactory;
   }
 
   public Set<NodeID> getNodesWithObject(final ObjectID objectID) {
+    final NodesWithObjectsMessage message = nwoFactory.newNodesWithObjectsMessage();
+    message.addObjectID(objectID);
+
+    final Map<ObjectID, Set<NodeID>> response = sendMessageAndWait(message);
+
+    // no response arrived in time, returning an empty set
+    if (null == response) { return Collections.emptySet(); }
+
+    return response.get(objectID);
+  }
+
+  public Map<ObjectID, Set<NodeID>> getNodesWithObjects(final Collection<ObjectID> objectIDs) {
+    final NodesWithObjectsMessage message = nwoFactory.newNodesWithObjectsMessage();
+    for (ObjectID objectID : objectIDs) {
+      message.addObjectID(objectID);
+    }
+
+    final Map<ObjectID, Set<NodeID>> response = sendMessageAndWait(message);
+
+    // no response arrived in time, returning an empty map
+    if (null == response) { return Collections.emptyMap(); }
+
+    return response;
+  }
+
+  public Set<ObjectID> getKeysForOrphanedValues(final ObjectID mapObjectID) {
+    final KeysForOrphanedValuesMessage message = kfovFactory.newKeysForOrphanedValuesMessage();
+    message.setMapObjectID(mapObjectID);
+
+    final Set<ObjectID> response = sendMessageAndWait(message);
+
+    // no response arrived in time, returning an empty set
+    if (null == response) { return Collections.emptySet(); }
+
+    return response;
+  }
+
+  private <R> R sendMessageAndWait(final ClusterMetaDataMessage message) {
+    Assert.assertNotNull(message);
+
     final ThreadID thisThread = threadIDManager.getThreadID();
 
-    final NodesWithObjectsMessage m = cmdmFactory.newNodesWithObjectsMessage();
-    m.setThreadID(thisThread);
-    m.addObjectID(objectID);
-    m.send();
+    Assert.assertFalse(waitObjects.containsKey(thisThread));
 
-    final Object waitObject = new Object();
+    final WaitForResponse waitObject = new WaitForResponse();
 
     synchronized (this) {
       Assert.assertFalse(waitObjects.containsKey(thisThread));
@@ -46,10 +90,15 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
       waitObjects.put(thisThread, waitObject);
     }
 
-    final Map<ObjectID, Set<NodeID>> response;
+    message.setThreadID(thisThread);
+    message.send();
+
+    final R response;
     try {
       synchronized (waitObject) {
-        waitObject.wait();
+        if (!waitObject.wasResponseReceived()) {
+          waitObject.wait();
+        }
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -57,19 +106,14 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
     } finally {
       synchronized (this) {
         waitObjects.remove(thisThread);
-        response = responses.remove(thisThread);
+        response = (R) responses.remove(thisThread);
       }
     }
-
-    // no response arrived in time, returning an empty set
-    if (null == response) {
-      return Collections.emptySet();
-    }
-    return response.get(objectID);
+    return response;
   }
 
-  public void setNodesWithObjectsResponse(final ThreadID threadID, final Map<ObjectID, Set<NodeID>> response) {
-    final Object waitObject;
+  public void setResponse(final ThreadID threadID, final Object response) {
+    final WaitForResponse waitObject;
     synchronized (this) {
       waitObject = waitObjects.get(threadID);
       if (null == waitObject) {
@@ -77,11 +121,25 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
         // thread might have been interrupted in the meantime
         return;
       }
+
       responses.put(threadID, response);
     }
 
     synchronized (waitObject) {
+      waitObject.markResponseReceived();
       waitObject.notifyAll();
+    }
+  }
+
+  private class WaitForResponse {
+    private boolean responseReceived = false;
+
+    public boolean wasResponseReceived() {
+      return responseReceived;
+    }
+
+    public void markResponseReceived() {
+      this.responseReceived = true;
     }
   }
 }
