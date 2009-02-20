@@ -118,9 +118,7 @@ public class StandardClassProvider implements ClassProvider {
 
     NamedClassLoader prev = prevRef == null ? null : (NamedClassLoader) prevRef.get();
 
-    // TODO APPGROUPS
-    //if (runtimeLogger.getNamedLoaderDebug()) {
-    if (true) {
+    if (runtimeLogger.getNamedLoaderDebug()) {
       runtimeLogger.namedLoaderRegistered(loader, name, appGroup, prev);
     }
   }
