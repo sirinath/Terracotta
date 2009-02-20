@@ -28,6 +28,7 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
   private final SampledCounter       txnRate;
   private final SampledCounter       globalLockRecallRate;
   private final SampledRateCounter   transactionSizeRate;
+  private final SampledCounter       broadcastRate;
 
   public DSOStatsImpl(ServerManagementContext context) {
     this.serverStats = context.getServerStats();
@@ -37,18 +38,19 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
     this.txnRate = serverStats.getTransactionCounter();
     this.globalLockRecallRate = serverStats.getGlobalLockRecallCounter();
     this.transactionSizeRate = serverStats.getTransactionSizeCounter();
+    this.broadcastRate = serverStats.getBroadcastCounter();
   }
 
   public long getObjectFaultRate() {
-    return faultRate.getValue();
+    return faultRate.getMostRecentSample().getCounterValue();
   }
 
   public long getObjectFlushRate() {
-    return flushRate.getValue();
+    return flushRate.getMostRecentSample().getCounterValue();
   }
 
   public long getTransactionRate() {
-    return txnRate.getValue();
+    return txnRate.getMostRecentSample().getCounterValue();
   }
 
   public double getCacheHitRatio() {
@@ -60,11 +62,15 @@ public class DSOStatsImpl extends StatsSupport implements DSOStats {
   }
 
   public long getGlobalLockRecallRate() {
-    return globalLockRecallRate.getValue();
+    return globalLockRecallRate.getMostRecentSample().getCounterValue();
   }
 
   public long getTransactionSizeRate() {
     return transactionSizeRate.getMostRecentSample().getCounterValue();
+  }
+  
+  public long getBroadcastRate() {
+    return broadcastRate.getMostRecentSample().getCounterValue();
   }
 
   public Number[] getStatistics(String[] names) {

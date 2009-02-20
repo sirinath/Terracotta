@@ -27,6 +27,7 @@ import com.tc.object.config.LockDefinitionImpl;
 import com.tc.object.config.ModuleSpec;
 import com.tc.object.config.Root;
 import com.tc.object.config.StandardDSOClientConfigHelper;
+import com.tc.object.config.TimCapability;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.TransparencyClassSpecImpl;
 import com.tc.object.config.schema.DSOInstrumentationLoggingOptions;
@@ -104,10 +105,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public void addWriteAutolock(final String methodPattern) {
-    /**/
-  }
-
-  public void allowCGLIBInstrumentation() {
     /**/
   }
 
@@ -198,10 +195,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public Iterator getAllUserDefinedBootSpecs() {
-    return null;
-  }
-  
-  public String getAppGroup(String loaderName, String appName) {
     return null;
   }
 
@@ -349,10 +342,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return false;
   }
 
-  public boolean removeCustomAdapter(final String name) {
-    return false;
-  }
-
   public void removeSpec(final String className) {
     /**/
   }
@@ -406,19 +395,15 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return null;
   }
 
-  public void addCustomAdapter(final String name, final String factoryName) {
-    /**/
-  }
-
   public void addNonportablePattern(final String pattern) {
     /**/
   }
 
-  public ClassAdapterFactory getCustomAdapter(final ClassInfo classInfo) {
+  public Collection<ClassAdapterFactory> getCustomAdapters(final ClassInfo classInfo) {
     return null;
   }
 
-  public boolean hasCustomAdapter(final ClassInfo classInfo) {
+  public boolean hasCustomAdapters(final ClassInfo classInfo) {
     return false;
   }
 
@@ -454,11 +439,32 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     //
   }
 
-  public boolean addAnnotationBasedAdapters(final ClassInfo classInfo) {
+  public boolean addClassConfigBasedAdapters(final ClassInfo classInfo) {
     return false;
+  }
+
+  public void enableCapability(final TimCapability cap) {
+    //
+  }
+
+  public void validateSessionConfig() {
+    //
+  }
+
+  public void addInjectedField(final String className, final String fieldName, final String Type) {
+    //
+
+  }
+
+  public String getInjectedFieldType(final ClassInfo classInfo, final String field) {
+    return null;
   }
 
   public void addToAppGroup(String appGroup, String[] namedClassloaders, String[] webAppNames) {
     //
+  }
+
+  public String getAppGroup(String classLoaderName, String appName) {
+    return null;
   }
 }
