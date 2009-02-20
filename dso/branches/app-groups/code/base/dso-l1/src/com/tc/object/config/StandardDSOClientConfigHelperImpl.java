@@ -88,6 +88,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -99,96 +100,100 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfigHelper, DSOClientConfigHelper {
 
-  private static final String                    CGLIB_PATTERN                      = "$$EnhancerByCGLIB$$";
+  private static final String                                CGLIB_PATTERN                      = "$$EnhancerByCGLIB$$";
 
-  private static final LiteralValues             literalValues                      = new LiteralValues();
+  private static final LiteralValues                         literalValues                      = new LiteralValues();
 
-  private static final TCLogger                  logger                             = CustomerLogging
-                                                                                        .getDSOGenericLogger();
-  private static final TCLogger                  consoleLogger                      = CustomerLogging
-                                                                                        .getConsoleLogger();
+  private static final TCLogger                              logger                             = CustomerLogging
+                                                                                                    .getDSOGenericLogger();
+  private static final TCLogger                              consoleLogger                      = CustomerLogging
+                                                                                                    .getConsoleLogger();
 
-  private static final InstrumentationDescriptor DEFAULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
+  private static final InstrumentationDescriptor             DEFAULT_INSTRUMENTATION_DESCRIPTOR = new NullInstrumentationDescriptor();
 
-  private final DSOClientConfigHelperLogger      helperLogger;
+  private final DSOClientConfigHelperLogger                  helperLogger;
 
-  private final L1TVSConfigurationSetupManager   configSetupManager;
+  private final L1TVSConfigurationSetupManager               configSetupManager;
   
   private final Map                              classLoaderNameToAppGroup          = new ConcurrentHashMap();
   private final Map                              webAppNameToAppGroup               = new ConcurrentHashMap();
 
-  private final List                             locks                              = new CopyOnWriteArrayList();
-  private final List                             roots                              = new CopyOnWriteArrayList();
-  private final Set                              transients                         = Collections
-                                                                                        .synchronizedSet(new HashSet());
+  private final List                                         locks                              = new CopyOnWriteArrayList();
+  private final List                                         roots                              = new CopyOnWriteArrayList();
+  private final Set                                          transients                         = Collections
+                                                                                                    .synchronizedSet(new HashSet());
+  private final Map<String, String>                          injectedFields                     = Collections
+                                                                                                    .synchronizedMap(new HashMap<String, String>());
 
-  private final Set                              applicationNames                   = Collections
-                                                                                        .synchronizedSet(new HashSet());
-  private final List                             synchronousWriteApplications       = new ArrayList();
-  private final Set                              sessionLockedApplications          = Collections
-                                                                                        .synchronizedSet(new HashSet());
-  private final CompoundExpressionMatcher        permanentExcludesMatcher;
-  private final CompoundExpressionMatcher        nonportablesMatcher;
-  private final List                             autoLockExcludes                   = new CopyOnWriteArrayList();
-  private final List                             distributedMethods                 = new CopyOnWriteArrayList();
+  private final Set                                          applicationNames                   = Collections
+                                                                                                    .synchronizedSet(new HashSet());
+  private final List                                         synchronousWriteApplications       = new ArrayList();
+  private final Set                                          sessionLockedApplications          = Collections
+                                                                                                    .synchronizedSet(new HashSet());
+  private final CompoundExpressionMatcher                    permanentExcludesMatcher;
+  private final CompoundExpressionMatcher                    nonportablesMatcher;
+  private final List                                         autoLockExcludes                   = new CopyOnWriteArrayList();
+  private final List                                         distributedMethods                 = new CopyOnWriteArrayList();
 
   // private final ClassInfoFactory classInfoFactory;
-  private final ExpressionHelper                 expressionHelper;
+  private final ExpressionHelper                             expressionHelper;
 
-  private final Map                              adaptableCache                     = Collections
-                                                                                        .synchronizedMap(new HashMap());
+  private final Map                                          adaptableCache                     = Collections
+                                                                                                    .synchronizedMap(new HashMap());
+
+  private final Set<TimCapability>                           timCapabilities                    = Collections
+                                                                                                    .synchronizedSet(EnumSet
+                                                                                                        .noneOf(TimCapability.class));
 
   /**
    * A list of InstrumentationDescriptor representing include/exclude patterns
    */
-  private final List                             instrumentationDescriptors         = new CopyOnWriteArrayList();
+  private final List                                         instrumentationDescriptors         = new CopyOnWriteArrayList();
 
   // ====================================================================================================================
   /**
    * The lock for both {@link #userDefinedBootSpecs} and {@link #classSpecs} Maps
    */
-  private final Object                           specLock                           = new Object();
+  private final Object                                       specLock                           = new Object();
 
   /**
    * A map of class names to TransparencyClassSpec
-   * 
+   *
    * @GuardedBy {@link #specLock}
    */
-  private final Map                              userDefinedBootSpecs               = new HashMap();
+  private final Map                                          userDefinedBootSpecs               = new HashMap();
 
   /**
    * A map of class names to TransparencyClassSpec for individual classes
-   * 
+   *
    * @GuardedBy {@link #specLock}
    */
-  private final Map                              classSpecs                         = new HashMap();
+  private final Map                                          classSpecs                         = new HashMap();
   // ====================================================================================================================
 
-  private final Map                              customAdapters                     = new ConcurrentHashMap();
+  private final Map<String, Collection<ClassAdapterFactory>> customAdapters                     = new HashMap<String, Collection<ClassAdapterFactory>>();
 
-  private final ClassReplacementMapping          classReplacements                  = new ClassReplacementMappingImpl();
+  private final ClassReplacementMapping                      classReplacements                  = new ClassReplacementMappingImpl();
 
-  private final Map<String, Resource>            classResources                     = new ConcurrentHashMap<String, Resource>();
+  private final Map<String, Resource>                        classResources                     = new ConcurrentHashMap<String, Resource>();
 
-  private final Map                              aspectModules                      = new ConcurrentHashMap();
+  private final Map                                          aspectModules                      = new ConcurrentHashMap();
 
-  private final List                             springConfigs                      = new CopyOnWriteArrayList();
+  private final List                                         springConfigs                      = new CopyOnWriteArrayList();
 
-  private final boolean                          supportSharingThroughReflection;
+  private final boolean                                      supportSharingThroughReflection;
 
-  private final Portability                      portability;
+  private final Portability                                  portability;
 
-  private int                                    faultCount                         = -1;
+  private int                                                faultCount                         = -1;
 
-  private ModuleSpec[]                           moduleSpecs                        = null;
+  private ModuleSpec[]                                       moduleSpecs                        = null;
 
-  private final ModulesContext                   modulesContext                     = new ModulesContext();
+  private final ModulesContext                               modulesContext                     = new ModulesContext();
 
-  private volatile boolean                       allowCGLIBInstrumentation          = false;
+  private ReconnectConfig                                    l1ReconnectConfig                  = null;
 
-  private ReconnectConfig                        l1ReconnectConfig                  = null;
-
-  private final InjectionInstrumentationRegistry injectionRegistry                  = new InjectionInstrumentationRegistry();
+  private final InjectionInstrumentationRegistry             injectionRegistry                  = new InjectionInstrumentationRegistry();
 
   public StandardDSOClientConfigHelperImpl(final L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -260,10 +265,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public String rawConfigText() {
     return configSetupManager.rawConfigText();
-  }
-
-  public void allowCGLIBInstrumentation() {
-    this.allowCGLIBInstrumentation = true;
   }
 
   public boolean reflectionEnabled() {
@@ -623,11 +624,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
-  public boolean addAnnotationBasedAdapters(final ClassInfo classInfo) {
+  public boolean addClassConfigBasedAdapters(final ClassInfo classInfo) {
     boolean addedAdapters = false;
-    if (Vm.isJDK15Compliant()) {
-      for (FieldInfo fi : classInfo.getFields()) {
 
+    for (FieldInfo fi : classInfo.getFields()) {
+
+      if (Vm.isJDK15Compliant()) {
         Annotation[] annotations;
         try {
           annotations = fi.getAnnotations();
@@ -639,20 +641,31 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
         for (Annotation ann : annotations) {
           if ("com.tc.injection.annotations.InjectedDsoInstance".equals(ann.getInterfaceName())) {
-            InjectionInstrumentation instrumentation = injectionRegistry.lookupInstrumentation(fi.getType().getName());
-            if (null == instrumentation) { throw new UnsupportedInjectedDsoInstanceTypeException(classInfo.getName(),
-                                                                                                 fi.getName(), fi
-                                                                                                     .getType()
-                                                                                                     .getName()); }
-
-            addCustomAdapter(classInfo.getName(), instrumentation.getClassAdapterFactoryForFieldInjection(fi));
+            addFieldInjectionAdapter(classInfo, fi, "");
             addedAdapters = true;
           }
         }
       }
+
+      final String type = getInjectedFieldType(classInfo, fi.getName());
+      if (type != null) {
+        addFieldInjectionAdapter(classInfo, fi, type);
+        addedAdapters = true;
+      }
     }
 
     return addedAdapters;
+  }
+
+  private void addFieldInjectionAdapter(final ClassInfo classInfo, final FieldInfo fi, String type) {
+    if (null == type || 0 == type.length()) {
+      type = fi.getType().getName();
+    }
+    InjectionInstrumentation instrumentation = injectionRegistry.lookupInstrumentation(type);
+    if (null == instrumentation) { throw new UnsupportedInjectedDsoInstanceTypeException(classInfo.getName(), fi
+        .getName(), fi.getType().getName()); }
+
+    addCustomAdapter(classInfo.getName(), instrumentation.getClassAdapterFactoryForFieldInjection(fi));
   }
 
   private void addJDK15InstrumentedSpec() {
@@ -784,30 +797,26 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
                            "com.tc.object.applicator.LinkedBlockingQueueApplicator");
   }
 
-  public boolean removeCustomAdapter(final String name) {
-    synchronized (customAdapters) {
-      Object prev = this.customAdapters.remove(name);
-      return prev != null;
-    }
-  }
-
   public void addCustomAdapter(final String name, final ClassAdapterFactory factory) {
     synchronized (customAdapters) {
-      if (customAdapters.containsKey(name)) { return; }
-      Object prev = this.customAdapters.put(name, factory);
-      Assert.assertNull(prev);
+      Collection<ClassAdapterFactory> adapters = customAdapters.get(name);
+      if (null == adapters) {
+        adapters = new ArrayList<ClassAdapterFactory>();
+        customAdapters.put(name, adapters);
+      }
+      adapters.add(factory);
     }
   }
 
-  public boolean hasCustomAdapter(final ClassInfo classInfo) {
+  public boolean hasCustomAdapters(final ClassInfo classInfo) {
     synchronized (customAdapters) {
       return customAdapters.containsKey(classInfo.getName());
     }
   }
 
-  public ClassAdapterFactory getCustomAdapter(final ClassInfo classInfo) {
+  public Collection<ClassAdapterFactory> getCustomAdapters(final ClassInfo classInfo) {
     synchronized (customAdapters) {
-      return (ClassAdapterFactory) customAdapters.get(classInfo.getName());
+      return customAdapters.get(classInfo.getName());
     }
   }
 
@@ -1195,9 +1204,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
 
     if (fullClassName.indexOf(CGLIB_PATTERN) >= 0) {
-      if (!allowCGLIBInstrumentation) {
+      if (!isCapabilityEnabled(TimCapability.CGLIB)) {
         logger.error("Refusing to instrument CGLIB generated proxy type " + fullClassName
-                     + " (CGLIB terracotta plugin not installed)");
+                     + " (CGLIB integration module not enabled)");
         return cacheIsAdaptable(fullClassName, false);
       }
     }
@@ -1218,6 +1227,20 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     InstrumentationDescriptor desc = getInstrumentationDescriptorFor(classInfo);
     return cacheIsAdaptable(fullClassName, desc.isInclude());
+  }
+
+  public void validateSessionConfig() {
+    if (this.applicationNames.size() > 0 && !isCapabilityEnabled(TimCapability.SESSIONS)) {
+      logger.warn("One or more web applications are listed in configuration, but no container TIMs have been loaded");
+    }
+  }
+
+  private boolean isCapabilityEnabled(final TimCapability cap) {
+    return timCapabilities.contains(cap);
+  }
+
+  public void enableCapability(final TimCapability cap) {
+    timCapabilities.add(cap);
   }
 
   private boolean isTCPatternMatchingHack(final ClassInfo classInfo) {
@@ -1251,6 +1274,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (Modifier.isTransient(modifiers) && isHonorJavaTransient(classInfo)) return true;
 
     return transients.contains(className + "." + field);
+  }
+
+  public String getInjectedFieldType(final ClassInfo classInfo, final String field) {
+    if (ByteCodeUtil.isParent(field)) return null;
+    if (ClassAdapterBase.isDelegateFieldName(field)) { return null; }
+
+    final String fullyQualifiedFieldName = classInfo.getName() + "." + field;
+    return injectedFields.get(fullyQualifiedFieldName);
   }
 
   public boolean isVolatile(final int modifiers, final ClassInfo classInfo, final String field) {
@@ -1625,6 +1656,19 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     transients.add(className + "." + fieldName);
   }
 
+  public void addInjectedField(final String className, final String fieldName, final String instanceType) {
+    if ((className == null) || (fieldName == null)) {
+      throw new IllegalArgumentException("class " + className + ", field = " + fieldName);
+    }
+
+    final String fullyQualifiedFieldName = className + "." + fieldName;
+    if (null == instanceType) {
+      injectedFields.put(fullyQualifiedFieldName, "");
+    } else {
+      injectedFields.put(fullyQualifiedFieldName, instanceType);
+    }
+  }
+
   @Override
   public String toString() {
     return "<StandardDSOClientConfigHelperImpl: " + configSetupManager + ">";
@@ -1777,8 +1821,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return false;
   }
 
-  public static InputStream getPropertiesFromL2Stream(ConnectionInfo[] connectInfo, String message,
-                                                      String httpPathExtension) throws Exception {
+  public static InputStream getPropertiesFromL2Stream(final ConnectionInfo[] connectInfo, final String message,
+                                                      final String httpPathExtension) throws Exception {
     URLConnection connection = null;
     InputStream l1PropFromL2Stream = null;
     URL theURL = null;
@@ -1801,7 +1845,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return null;
   }
 
-  private static ServerGroups getServerGroupsFromL2(PreparedComponentsFromL2Connection serverInfos) {
+  private static ServerGroups getServerGroupsFromL2(final PreparedComponentsFromL2Connection serverInfos) {
     InputStream in = null;
     String serverList = "";
     boolean loggedInConsole = false;
@@ -1908,7 +1952,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (!connInfoFromL1.containsAll(connInfoFromL2)) { throw new ConfigurationSetupException(errMsg); }
   }
 
-  private String getIpAddressOfServer(String name) throws ConfigurationSetupException {
+  private String getIpAddressOfServer(final String name) throws ConfigurationSetupException {
     InetAddress address;
     try {
       address = InetAddress.getByName(name);
@@ -2003,7 +2047,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     private final URL     resource;
     private final boolean targetSystemLoaderOnly;
 
-    Resource(URL resource, boolean targetSystemLoaderOnly) {
+    Resource(final URL resource, final boolean targetSystemLoaderOnly) {
       this.resource = resource;
       this.targetSystemLoaderOnly = targetSystemLoaderOnly;
     }
@@ -2016,4 +2060,5 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       return targetSystemLoaderOnly;
     }
   }
+
 }

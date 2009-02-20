@@ -17,31 +17,31 @@ import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 
-public class SRAL2BroadcastCountTest extends TestCase {
+public class SRAL2GlobalLockCountTest extends TestCase {
   private DSOGlobalServerStats dsoGlobalServerStats;
   private CounterIncrementer   counterIncrementer;
 
   protected void setUp() throws Exception {
     final CounterManager counterManager = new CounterManagerImpl();
     final SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 10, true, 0L);
-    final SampledCounter broadcastCounter = (SampledCounter) counterManager.createCounter(sampledCounterConfig);
+    final SampledCounter lockCounter = (SampledCounter) counterManager.createCounter(sampledCounterConfig);
 
-    dsoGlobalServerStats = new DSOGlobalServerStatsImpl(null, null, null, null, broadcastCounter, null, null, null,
-                                                        null, null, null, null);
+    dsoGlobalServerStats = new DSOGlobalServerStatsImpl(null, null, null, null, null, null, null, null,
+                                                        null, null, null, lockCounter);
 
-    counterIncrementer = new CounterIncrementer(broadcastCounter, 200);
+    counterIncrementer = new CounterIncrementer(lockCounter, 200);
     new Thread(counterIncrementer, "Counter Incrementer").start();
   }
 
   public void testRetrieval() {
-    SRAL2BroadcastCount sral2BroadcastCount = new SRAL2BroadcastCount(dsoGlobalServerStats);
-    Assert.assertEquals(StatisticType.SNAPSHOT, sral2BroadcastCount.getType());
+    SRAL2GlobalLockCount sral2GlobalLockCount = new SRAL2GlobalLockCount(dsoGlobalServerStats);
+    Assert.assertEquals(StatisticType.SNAPSHOT, sral2GlobalLockCount.getType());
 
     StatisticData[] statisticDatas;
 
-    statisticDatas = sral2BroadcastCount.retrieveStatisticData();
+    statisticDatas = sral2GlobalLockCount.retrieveStatisticData();
     Assert.assertEquals(1, statisticDatas.length);
-    Assert.assertEquals(SRAL2BroadcastCount.ACTION_NAME, statisticDatas[0].getName());
+    Assert.assertEquals(SRAL2GlobalLockCount.ACTION_NAME, statisticDatas[0].getName());
     Assert.assertNull(statisticDatas[0].getAgentIp());
     Assert.assertNull(statisticDatas[0].getAgentDifferentiator());
     long count1 = (Long) statisticDatas[0].getData();
@@ -49,9 +49,9 @@ public class SRAL2BroadcastCountTest extends TestCase {
 
     ThreadUtil.reallySleep(1000);
 
-    statisticDatas = sral2BroadcastCount.retrieveStatisticData();
+    statisticDatas = sral2GlobalLockCount.retrieveStatisticData();
     Assert.assertEquals(1, statisticDatas.length);
-    Assert.assertEquals(SRAL2BroadcastCount.ACTION_NAME, statisticDatas[0].getName());
+    Assert.assertEquals(SRAL2GlobalLockCount.ACTION_NAME, statisticDatas[0].getName());
     Assert.assertNull(statisticDatas[0].getAgentIp());
     Assert.assertNull(statisticDatas[0].getAgentDifferentiator());
     long count2 = (Long) statisticDatas[0].getData();
@@ -59,9 +59,9 @@ public class SRAL2BroadcastCountTest extends TestCase {
 
     ThreadUtil.reallySleep(1000);
 
-    statisticDatas = sral2BroadcastCount.retrieveStatisticData();
+    statisticDatas = sral2GlobalLockCount.retrieveStatisticData();
     Assert.assertEquals(1, statisticDatas.length);
-    Assert.assertEquals(SRAL2BroadcastCount.ACTION_NAME, statisticDatas[0].getName());
+    Assert.assertEquals(SRAL2GlobalLockCount.ACTION_NAME, statisticDatas[0].getName());
     Assert.assertNull(statisticDatas[0].getAgentIp());
     Assert.assertNull(statisticDatas[0].getAgentDifferentiator());
     long count3 = (Long) statisticDatas[0].getData();
