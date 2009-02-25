@@ -23,7 +23,8 @@ module Config
     html css js cgi fcgi xml dtd sql txt yaml yml y l xsd xsdconfig groovy)
 
   # Other file names that should  have the svn:eol-style property set to 'native'
-  OTHER_EOL_NATIVE = %w(.project .classpath makefile rakefile readme)
+  OTHER_EOL_NATIVE = %w(.project .classpath org.eclipse.jdt.core.prefs
+                        org.eclipse.jdt.ui.prefs makefile rakefile readme)
 
   # An array of regular expressions constructed from EOL_NATIVE_EXTENSIONS and
   # OTHER_EOL_NATIVE.
