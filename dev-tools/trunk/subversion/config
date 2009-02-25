@@ -109,6 +109,8 @@ enable-auto-props = yes
 # Eclipse files
 .classpath = svn:eol-style=native
 .project = svn:eol-style=native
+org.eclipse.jdt.core.prefs = svn:eol-style=native
+org.eclipse.jdt.ui.prefs = svn:eol-style=native
 
 # Ruby/Rails
 *.rb = svn:eol-style=native;svn:keywords=Date Revision Author HeadURL Id
