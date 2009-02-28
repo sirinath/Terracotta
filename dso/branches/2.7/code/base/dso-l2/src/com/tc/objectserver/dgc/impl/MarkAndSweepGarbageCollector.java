@@ -504,6 +504,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
 
     private final Map          youngGenObjectIDs    = new HashMap();
     private final Set          rememberedSet        = new ObjectIDSet();
+    private final Set          evictedIDAtGcSet     = new ObjectIDSet();
 
     private State              state                = DONT_MONITOR_CHANGES;
 
@@ -544,8 +545,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
 
     private void removeReferencesTo(ObjectID id) {
-      youngGenObjectIDs.remove(id);
       if (state == DONT_MONITOR_CHANGES) {
+        youngGenObjectIDs.remove(id);
         /**
          * XXX:: We don't want to remove inward reference to Young Gen Objects that are just faulted out of cache
          * (becoming OldGen object) while the DGC is running. If we did it will lead to GCing valid reachable objects
@@ -556,6 +557,8 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
          * is Monitoring the changes.
          */
         rememberedSet.remove(id);
+      } else {
+        evictedIDAtGcSet.add(id);
       }
     }
 
@@ -574,10 +577,17 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     public synchronized void stopMonitoringChanges() {
       Assert.assertTrue(state == MONITOR_CHANGES);
       state = DONT_MONITOR_CHANGES;
-      // reset remembered set to the latest set of Young Gen IDs.
-      rememberedSet.retainAll(youngGenObjectIDs.keySet());
+      
+      // remove reaped objectIDs at last GC
+      // and reset remembered set to the latest set of Young Gen IDs
+      for (Iterator i = evictedIDAtGcSet.iterator(); i.hasNext();) {
+        ObjectID oid = (ObjectID) i.next();
+        youngGenObjectIDs.remove(oid);
+        rememberedSet.remove(oid);
+      }
+      evictedIDAtGcSet.clear();
     }
-
+    
   }
 
   private interface ChangeCollector extends ManagedObjectChangeListener {
