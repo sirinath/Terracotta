@@ -695,26 +695,14 @@ module-groups:
     - dso-l2
     - deploy
     - simulator   
-    - legacy-test-tree    
+    - dso-tests-jdk15
+    - dso-crash-tests
   dso2:
+    - legacy-test-tree  
     - examples
     - dso-system-tests
     - dso-alt-boot-jar-tests
-    - dso-tests-jdk15
-    - dso-crash-tests
     - dso-statistics
     - dso-statistics-tests
     - management
     - dso-memory-datastore
-  framework:
-    - excludes-config
-    - guimodels-config
-    - jdk15-preinst-config
-    - spring-config
-    - standard-config
-    - modules-base
-  gui:
-    - ui-configurator
-    - ui-eclipse
-    - ui-eclipse-33
-    - ui-eclipse-34
