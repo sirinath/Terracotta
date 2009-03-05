@@ -44,7 +44,8 @@ public class ServerManager {
 
   // The internal repository is listed first since it is the preferred repo
   private static final String[]       TIM_GET_URLS                 = {
-      "http://forge-stage.terracotta.lan/api/index-internal.xml.gz", "http://forge.terracotta.org/api/index.xml.gz" };
+      "http://forge-stage.terracotta.lan/api/2/index.xml.gz", "http://forge.terracotta.org/api/2/index.xml.gz" };
+  private static final String         TIM_GET_RELATIVE_URL_BASE    = "http://forge-stage.terracotta.lan/repo";
 
   protected final static TCLogger     logger                       = TCLogging.getLogger(ServerManager.class);
   private static int                  appServerIndex               = 0;
@@ -412,6 +413,7 @@ public class ServerManager {
         System.setProperty(Config.KEYSPACE + Config.DATA_FILE, new File(this.sandbox, "tim-get.index")
             .getAbsolutePath());
         System.setProperty(Config.KEYSPACE + Config.DATA_FILE_URL, url);
+        System.setProperty(Config.KEYSPACE + Config.RELATIVE_URL_BASE, TIM_GET_RELATIVE_URL_BASE);
 
         TIMGetTool.mainWithExceptions(new String[] { "install", name });
 
