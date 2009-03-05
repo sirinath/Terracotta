@@ -9,6 +9,7 @@ rem
 setlocal
 cd %~d0%~p0
 set TC_HOME=..\..\..
+set TC_HOME="%TC_HOME:"=%"
 set JETTY_HOME=%TC_HOME%\vendors\jetty-6.1.15
 set JAVA_OPTS=%JAVA_OPTS% -Djetty.home=%JETTY_HOME%
 set JAVA_OPTS=%JAVA_OPTS% -DSTOP.PORT=8183
