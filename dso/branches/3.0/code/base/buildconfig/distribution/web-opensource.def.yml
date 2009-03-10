@@ -25,8 +25,10 @@ bundled_components:
         - deploy
         - deploy-api
         - dso-common
+        - dso-common-jdk16
         - dso-l1
         - dso-l1-api
+        - dso-cluster-api
         - dso-l2
         - dso-l2-common
         - dso-spring:
@@ -72,6 +74,7 @@ postscripts:
   - make-build-data:
       args:
         - eclipse/org.terracotta.dso/lib/resources
+  - delete-tim-get-index
   - include-schemas:
       args:
         - eclipse/org.terracotta.dso/html/ref/schema
