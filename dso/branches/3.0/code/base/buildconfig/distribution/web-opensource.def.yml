@@ -79,4 +79,3 @@ postscripts:
         - lib
   - make-update-site:
       args:
-  - delete-api-jars
