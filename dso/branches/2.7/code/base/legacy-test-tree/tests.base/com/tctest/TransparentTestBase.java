@@ -464,6 +464,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH) && canRunCrash())
            || (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE) && canRunActivePassive());
   }
+  
+  protected boolean isRunNormalMode() {
+    return (mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL));
+  }
 
   protected boolean canRunNormal() {
     return true;

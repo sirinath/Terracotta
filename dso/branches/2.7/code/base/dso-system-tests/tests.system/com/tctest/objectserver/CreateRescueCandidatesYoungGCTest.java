@@ -42,6 +42,15 @@ public class CreateRescueCandidatesYoungGCTest extends YoungGCTestBase {
     return true;
   }
 
+  // force to use external process to run normal mode
+  protected boolean useExternalProcess() {
+    if (isRunNormalMode()) {
+      return true;
+    } else {
+      return super.useExternalProcess();
+    }
+  }
+
   protected void setExtraJvmArgs(final ArrayList jvmArgs) {
     super.setExtraJvmArgs(jvmArgs);
     jvmArgs.add("-verbose:gc");
