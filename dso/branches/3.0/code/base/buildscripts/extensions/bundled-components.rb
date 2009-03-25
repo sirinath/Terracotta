@@ -107,10 +107,12 @@ module BundledComponents
           if javadoc
             puts "Generating javadoc for #{a_module.name}"
             javadoc_destdir = FilePath.new(File.dirname(destdir.to_s), "docs", "javadoc").ensure_directory
+            title = "Terracotta API version #{@config_source['api.version']}"
             ant.javadoc(:destdir => javadoc_destdir.to_s,
               :author => true, :version => true, :use => true, :defaultexcludes => "true",
+              :header => title,
               :bottom => "<i>All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.</i>",
-              :doctitle => "Terracotta API", :windowtitle => "Terracotta API Documentation") do
+              :doctitle => title, :windowtitle => title) do
               ant.packageset(:dir => a_module.name + '/src', :defaultexcludes => true) do
                 ant.include(:name => 'com/tc/**')
               end
