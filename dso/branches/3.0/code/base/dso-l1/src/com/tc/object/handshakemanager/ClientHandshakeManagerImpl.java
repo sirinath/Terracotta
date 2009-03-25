@@ -104,12 +104,17 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   }
 
   public void disconnected(final NodeID remoteNode) {
-    logger.info("Disconnected: Pausing from " + getState(remoteNode) + " RemoteNode : " + remoteNode
-                + " Disconnected : " + getDisconnectedCount());
-    if (getState(remoteNode) == PAUSED) {
+    State currentState = getState(remoteNode);
+    if (currentState == PAUSED) {
       logger.warn("Pause called while already PAUSED for " + remoteNode);
-      // ClientMessageChannel moves to next SessionID, need to move to newSession here too.
+    } else if (currentState == STARTING) {
+      // can happen when we get server disconnects before ack for client handshake
+      this.logger.info("Disconnected: Ignoring disconnect event from  RemoteNode : " + remoteNode
+                       + " as the current state is " + currentState + ". Disconnect count: " + getDisconnectedCount());
+      changeToPaused(remoteNode);
     } else {
+      this.logger.info("Disconnected: Pausing from " + currentState + " RemoteNode : " + remoteNode
+                       + ". Disconnect count: " + getDisconnectedCount());
       changeToPaused(remoteNode);
       pauseCallbacks(remoteNode, getDisconnectedCount());
       // all the activities paused then can switch to new session
@@ -124,8 +129,9 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   }
 
   public void connected(final NodeID remoteNode) {
-    logger.info("Connected: Unpausing from " + getState(remoteNode) + " RemoteNode : " + remoteNode
-                + " Disconnected : " + getDisconnectedCount());
+    this.logger.info("Connected: Unpausing from " + getState(remoteNode) + " RemoteNode : " + remoteNode
+                     + ". Disconnect count : " + getDisconnectedCount());
+
     if (getState(remoteNode) != PAUSED) {
       logger.warn("Unpause called while not PAUSED for " + remoteNode);
       return;
