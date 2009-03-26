@@ -166,6 +166,7 @@ public abstract class AbstractGlassfishAppServer extends AbstractAppServer {
       try {
         return start0(new ParamsWithRetry(params, i));
       } catch (RetryException re) {
+        Email.mail(re.getMessage(), appServerInfo());
         Banner.warnBanner("Re-trying server startup (" + i + ") " + re.getMessage());
         continue;
       }
