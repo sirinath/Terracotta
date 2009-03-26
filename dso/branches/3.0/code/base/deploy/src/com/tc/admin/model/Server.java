@@ -175,7 +175,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   public void propertyChange(PropertyChangeEvent evt) {
     String prop = evt.getPropertyName();
     if (IServerGroup.PROP_ACTIVE_SERVER.equals(prop)) {
-      if (isActiveCoordinator()) {
+      if (isActiveCoordinator() && isConnected()) {
         try {
           setupFromDSOBean();
         } catch (Exception e) {
