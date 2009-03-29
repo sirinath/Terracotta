@@ -323,7 +323,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
       testAddLogListener();
       filterReadySet();
     } catch (Exception e) {
-      e.printStackTrace();
+      /* Connection probably dropped */
     }
   }
 
@@ -334,11 +334,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
       oldConnected = isConnected();
       this.connected = connected;
     }
-    try {
-      firePropertyChange(PROP_CONNECTED, !connected, connected);
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
+    firePropertyChange(PROP_CONNECTED, !connected, connected);
     if (connected == true && oldConnected == false) {
       connectionEstablished();
     }
