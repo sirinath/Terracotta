@@ -517,16 +517,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.dsoClientBuilder.getObjectIDClientHandshakeRequester(batchSequenceReceiver));
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);
     ProductInfo pInfo = ProductInfo.getInstance();
-    this.clientHandshakeManager = new ClientHandshakeManagerImpl(
-                                                                 new ClientIDLogger(
-                                                                                    this.channel.getClientIDProvider(),
-                                                                                    TCLogging
-                                                                                        .getLogger(ClientHandshakeManagerImpl.class)),
-                                                                 this.channel, this.channel
-                                                                     .getClientHandshakeMessageFactory(), pauseStage
-                                                                     .getSink(), sessionManager, this.dsoCluster, pInfo
-                                                                     .version(), Collections
-                                                                     .unmodifiableCollection(clientHandshakeCallbacks));
+    this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager, this.dsoCluster,
+                                                            pInfo, clientHandshakeCallbacks);
     this.channel.addListener(this.clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, this.lockManager, remoteObjectManager,
@@ -649,6 +641,17 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       setReconnectCloseOnExit(this.channel);
     }
     setLoggerOnExit();
+  }
+
+  // this method is only intended for tests for plugging-in custom ClientHandshakeManagerImpl
+  protected ClientHandshakeManagerImpl createClientHandshakeManager(DSOClientMessageChannel chanel, Stage pauseStage,
+                                                                 SessionManager sessionManager,
+                                                                 DsoClusterInternal dsoClustr, ProductInfo pInfo,
+                                                                 List<ClientHandshakeCallback> clientHandshakeCallbacks) {
+    return new ClientHandshakeManagerImpl(new ClientIDLogger(chanel.getClientIDProvider(), TCLogging
+        .getLogger(ClientHandshakeManagerImpl.class)), chanel, chanel.getClientHandshakeMessageFactory(), pauseStage
+        .getSink(), sessionManager, dsoClustr, pInfo.version(), Collections
+        .unmodifiableCollection(clientHandshakeCallbacks));
   }
 
   private void setReconnectCloseOnExit(final DSOClientMessageChannel channel) {

@@ -112,6 +112,8 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
       this.logger.info("Disconnected: Ignoring disconnect event from  RemoteNode : " + remoteNode
                        + " as the current state is " + currentState + ". Disconnect count: " + getDisconnectedCount());
       changeToPaused(remoteNode);
+      this.sessionManager.newSession(remoteNode);
+      this.logger.info("ClientHandshakeManager moves to " + this.sessionManager);
     } else {
       this.logger.info("Disconnected: Pausing from " + currentState + " RemoteNode : " + remoteNode
                        + ". Disconnect count: " + getDisconnectedCount());
@@ -225,7 +227,7 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
   private synchronized void changeToPaused(final NodeID node) {
     Object old = groupStates.put(node, PAUSED);
     assert old != PAUSED;
-    disconnected++;
+    if (old != STARTING) this.disconnected++;
     assert disconnected <= groupIDs.length;
     notifyAll();
   }
