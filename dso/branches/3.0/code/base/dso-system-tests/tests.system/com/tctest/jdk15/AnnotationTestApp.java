@@ -92,7 +92,7 @@ public class AnnotationTestApp extends AbstractTransparentApp {
     config.addWriteAutolock("@com.tctest.jdk15.AnnotationTestApp$WriteAutolock * " + testClass + ".*(..)");
     config.addReadAutolock("@com.tctest.jdk15.AnnotationTestApp$ReadAutolock * " + testClass + ".*(..)");
 
-    config.addDistributedMethodCall(new DistributedMethodSpec("@com.tctest.com.tctest.AnnotationTestApp$DistributedCall * "
+    config.addDistributedMethodCall(new DistributedMethodSpec("@com.tctest.jdk15.AnnotationTestApp$DistributedCall * "
                                                               + testClass + ".*(..)", true));
 
     String rootExpr = "@" + Root.class.getName() + " * *";
