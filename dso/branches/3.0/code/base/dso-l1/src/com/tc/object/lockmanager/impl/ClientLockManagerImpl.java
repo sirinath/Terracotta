@@ -59,6 +59,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   private static final int              INIT_LOCK_MAP_SIZE           = 10000;
 
   private static final State            RUNNING                      = new State("RUNNING");
+  private static final State            STARTING                     = new State("STARTING");
   private static final State            PAUSED                       = new State("PAUSED");
 
   private static final String           MISSING_LOCK_TEXT            = makeMissingLockText();
@@ -112,7 +113,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   }
 
   public synchronized void unpause(final NodeID remote, final int disconnected) {
-    if (this.state != PAUSED) { throw new AssertionError("Attempt to unpause when not in starting : " + this.state); }
+    if (this.state != STARTING) { throw new AssertionError("Attempt to unpause when not in starting : " + this.state); }
     this.state = RUNNING;
     notifyAll();
     for (Iterator iter = this.locksByID.values().iterator(); iter.hasNext();) {
@@ -125,6 +126,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   public synchronized void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
                                                final ClientHandshakeMessage handshakeMessage) {
     if (this.state != PAUSED) { throw new AssertionError("Attempt to initiateHandshake when not paused: " + this.state); }
+    this.state = STARTING;
     for (Iterator i = addAllHeldLocksTo(new HashSet()).iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       LockContext ctxt = new LockContext(request.lockID(), thisNode, request.threadID(), request.lockLevel(), request
