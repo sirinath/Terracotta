@@ -65,6 +65,7 @@ public class ClientHandshakeNoAckAndDisconnect extends BaseDSOTestCase {
   private final AtomicInteger            clientIndex  = new AtomicInteger(-1);
 
   public ClientHandshakeNoAckAndDisconnect() {
+    disableAllUntil("2009-05-01");
     tcProps = TCPropertiesImpl.getProperties();
     tcProps.setProperty(TCPropertiesConsts.L1_L2_CONFIG_VALIDATION_ENABLED, "false");
     System.out.println("L1 and L2 config match check disabled temporarily as we use proxy");
