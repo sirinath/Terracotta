@@ -8,6 +8,8 @@ import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
+import com.tc.test.restart.RestartTestHelper;
+import com.tc.util.runtime.Os;
 
 public class TreeMapGCActivePassiveTest extends GCAndActivePassiveTest {
 
@@ -20,6 +22,15 @@ public class TreeMapGCActivePassiveTest extends GCAndActivePassiveTest {
 
   protected Class getApplicationClass() {
     return TreeMapTestApp.class;
+  }
+
+  @Override
+  protected long getRestartInterval(RestartTestHelper helper) {
+    if(Os.isSolaris() || Memory.isMemoryLow()) {
+      return super.getRestartInterval(helper) * 3;
+    } else {
+      return super.getRestartInterval(helper);
+    }
   }
 
   protected boolean canRunCrash() {
