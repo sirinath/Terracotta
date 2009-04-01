@@ -11,6 +11,7 @@ import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
+import com.tc.util.ProductInfo;
 import com.terracottatech.config.Module;
 
 import java.io.File;
@@ -23,14 +24,9 @@ import java.util.jar.Manifest;
 
 public class KnopflerfishOSGiTest extends TCTestCase {
 
-  private static final String PRODUCT_VERSION_DASH_QUALIFIER = "3.0.0";
+  private static final String PRODUCT_VERSION_DASH_QUALIFIER = ProductInfo.getInstance().version();
   private static final String PRODUCT_VERSION_DOT_QUALIFIER  = PRODUCT_VERSION_DASH_QUALIFIER.replace('-', '.');
   private KnopflerfishOSGi    osgiRuntime                    = null;
-
-  public KnopflerfishOSGiTest() {
-    // temporarily disabled during release cycle
-    disableAllUntil("2009-04-15");
-  }
 
   public void setUp() throws Exception {
     osgiRuntime = new KnopflerfishOSGi(new URL[0]);
