@@ -10,6 +10,7 @@ import org.osgi.framework.BundleException;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.test.TCTestCase;
 import com.terracottatech.config.Module;
 
 import java.io.File;
@@ -20,13 +21,16 @@ import java.util.Iterator;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import junit.framework.TestCase;
-
-public class KnopflerfishOSGiTest extends TestCase {
+public class KnopflerfishOSGiTest extends TCTestCase {
 
   private static final String PRODUCT_VERSION_DASH_QUALIFIER = "3.0.0";
   private static final String PRODUCT_VERSION_DOT_QUALIFIER  = PRODUCT_VERSION_DASH_QUALIFIER.replace('-', '.');
   private KnopflerfishOSGi    osgiRuntime                    = null;
+
+  public KnopflerfishOSGiTest() {
+    // temporarily disabled during release cycle
+    disableAllUntil("2009-04-15");
+  }
 
   public void setUp() throws Exception {
     osgiRuntime = new KnopflerfishOSGi(new URL[0]);
@@ -106,23 +110,23 @@ public class KnopflerfishOSGiTest extends TestCase {
   private Collection jarFiles() throws IOException {
     String repo = System.getProperty("com.tc.l1.modules.repositories");
     File file = null;
-    if(repo.startsWith("file:")) {
+    if (repo.startsWith("file:")) {
       file = FileUtils.toFile(new URL(repo));
     } else {
       file = new File(repo);
     }
-    
+
     Collection files = FileUtils.listFiles(file, new String[] { "jar" }, true);
-    
+
     // Filter modules-base as it will have a different version number that matches the api
     Iterator iter = files.iterator();
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       File module = (File) iter.next();
-      if(module.getName().contains("modules-base")) {
+      if (module.getName().contains("modules-base")) {
         iter.remove();
       }
     }
-    
+
     return files;
   }
 
