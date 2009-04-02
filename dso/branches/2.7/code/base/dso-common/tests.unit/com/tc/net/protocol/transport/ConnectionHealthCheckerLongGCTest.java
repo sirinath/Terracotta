@@ -355,7 +355,10 @@ public class ConnectionHealthCheckerLongGCTest extends TCTestCase {
      * time out.
      */
     ThreadUtil.reallySleep(getMinScoketConnectResultTime(hcConfig));
-    assertEquals(0, connHC.getTotalConnsUnderMonitor());
+    while (connHC.getTotalConnsUnderMonitor() != 0) {
+      System.out.println("XXX waiting for conn count to be 0");
+      ThreadUtil.reallySleep(1000);
+    }
 
     ThreadUtil.reallySleep(5000);
 
