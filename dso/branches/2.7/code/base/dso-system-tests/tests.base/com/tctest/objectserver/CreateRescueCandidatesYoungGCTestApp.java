@@ -150,7 +150,7 @@ public class CreateRescueCandidatesYoungGCTestApp extends AbstractErrorCatchingT
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (startTime + duration)) {
           Node rootNode = new Node(objectCount * 100);
-          createCicleOfNodes(rootNode, 20);
+          createCicleOfNodes(rootNode, 10);
           synchronized (root) {
             root.add(rootNode);
           }
