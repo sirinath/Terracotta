@@ -117,15 +117,13 @@ class TestSuiteRunRecord
     # Make sure this filename looks like the name of a standard JUnir result XML file.
     if file.filename =~ /^TEST-(\S+)\.xml$/i
       file_classname = $1
-            
+
       # We're using Java here, instead of REXML, because Java is *vastly* faster.
       # REXML is beautiful but very slow when running in Ruby-interpeted-on-top-of-Java-
       # interpreted-on-top-of-CPU. 
       builder_factory = JavaDocumentBuilderFactory.newInstance
       builder = builder_factory.newDocumentBuilder
-            
-      java_file = JavaFile.new(file.to_s)
-      document = builder.parse(java_file)
+      document = builder.parse(JavaFile.new(file.to_s))
             
       xml_classname = document.getDocumentElement.getAttribute("name")
 
@@ -345,21 +343,6 @@ class SubtreeTestRunRecord
   end
     
   private
-  
-  def create_abnormal_junit_report(filename, classname)
-    File.open(filename, "w") do |file|
-      file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-      file << "<testsuite errors=\"0\" failures=\"1\" name=\"#{classname.escape(:xml_attribute)}\" tests=\"1\" time=\"0.000\">\n"
-      file << "<testcase classname=\"#{classname.xml_escape}\" name='test' time='0.0'>\n"
-      file << "  <failure type='junit.framework.AssertionFailedError' message=\"Failed abnormally\">\n"
-      file << "      Failed abnormally\n"
-      file << "   </failure>\n"
-      file << "</testcase>\n"
-      file << "<system-out/><system-err/>\n"
-      file << "</testsuite>\n"
-    end
-  end
-  
   # Reads in all the XML files for tests in this subtree, analyzes them, and stores the
   # data in this object. This only will happen once (lazy-init), so it's always safe to
   # call this function. 

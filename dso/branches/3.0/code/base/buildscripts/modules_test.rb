@@ -658,7 +658,6 @@ class SubtreeTestRun
     puts "RUNNING tests (#{@test_patterns.join(', ')}) on #{@subtree.module_subtree_name}..."
     puts ""
 
-    failed = false
     failure_properties = [ ]
 
     junit_formatter_classpath = @build_module.module_set['junit-formatter'].subtree('tests.base').classpath(@build_results, :module_only, :runtime)
@@ -667,74 +666,56 @@ class SubtreeTestRun
     # method, which puts the necessary <jvmarg>, <sysproperty>, and so forth elements
     # into the junit task.
 
-    @ant.junit(
-      :printsummary => "yes",
-      :timeout => @timeout,
-      :dir => @cwd.to_s,
-      :tempdir => @testrun_results.ant_temp_dir(@subtree).to_s,
-      :fork => true,
-      :showoutput => true,
-      :jvm => tests_jvm.java.to_s) {
-      @ant.classpath {
-        @ant.pathelement( :path => JavaSystem.getProperty("java.class.path"))
-        # add path to TCJUnitFormatter class
-        @ant.pathelement( :path => junit_formatter_classpath)
-      }
-      splice_into_ant_junit
-
-      # formatter that outputs result to console
-      @ant.formatter(:type => "xml")
-      @ant.formatter(:classname => 'com.tc.test.TCJUnitFormatter', :usefile => false)
-
-      # Create a <batchtest> element for each pattern we have.
-      @test_patterns.each do |pattern|
-        failure_property_name = "tests_failed_%d" % @@next_failure_property_sequence
-        @@next_failure_property_sequence += 1
-        failure_properties << failure_property_name
-
-        @ant.batchtest(:todir => @testrun_results.results_dir(@subtree).to_s, :fork => true, :failureproperty => failure_property_name) {
-          # formatter that out put JUnit XML result file
-          #@ant.formatter(:classname => 'com.tc.test.TCXMLJUnitFormatter', :usefile => false)
-          @ant.fileset(:dir => @build_results.classes_directory(@subtree).to_s, :includes => "**/#{pattern}.class")
+    begin
+      @ant.junit(
+        :printsummary => "yes",
+        :timeout => @timeout,
+        :dir => @cwd.to_s,
+        :tempdir => @testrun_results.ant_temp_dir(@subtree).to_s,
+        :fork => true,
+        :showoutput => true,
+        :jvm => tests_jvm.java.to_s) {
+        @ant.classpath {
+          # add path to TCJUnitFormatter class
+          @ant.pathelement( :path => junit_formatter_classpath)
         }
-      end
-    }
-    # Check the failures by looking for the properies we set under failure_property_name, above.
-    failure_properties.each { |property_name| failed = failed || (@ant.get_ant_property(property_name) != nil) }
-    script_results.failed("Execution of tests in subtree '#{@subtree.module_subtree_name}' failed.") if failed
+        splice_into_ant_junit
 
-    # Aggregate the results into the aggregation directory, if it's set.
-    unless @aggregation_directory.nil?
-      puts "Copying test result files to '#{@aggregation_directory}'..."
-      @ant.copy(:todir => @aggregation_directory.to_s) {
-        @ant.fileset(:dir => @testrun_results.results_dir(@subtree).to_s, :includes => '*.xml')
-      }
+        # formatter that outputs result to console
+        @ant.formatter(:type => "xml")
+        @ant.formatter(:classname => 'com.tc.test.TCJUnitFormatter', :usefile => false)
 
-      Dir.open(@aggregation_directory.to_s).each do | file |
+        # Create a <batchtest> element for each pattern we have.
+        @test_patterns.each do |pattern|
+          failure_property_name = "tests_failed_%d" % @@next_failure_property_sequence
+          @@next_failure_property_sequence += 1
+          failure_properties << failure_property_name
 
-        next if File.size(FilePath.new(@aggregation_directory.to_s, file).to_s) > 0
-        next unless file =~ /\.xml$/
-        classname = file.scan(/TEST-(.+)\.xml/).join("")
-
-        content = <<END
-<?xml version="1.0" encoding="UTF-8" ?>
-<testsuite errors="0" failures="1" name="#{classname}" tests="1" time="0">
-  <testcase classname="#{classname}" name="test" time="0">
-      <failure type="junit.framework.AssertionFailedError" message="Failed abnormally">
-         Failed abnormally.
-      </failure>
-  </testcase>
-  <system-out/>
-  <system-err/>
-</testsuite>
-END
-
-        File.open(FilePath.new(@aggregation_directory.to_s, file).to_s, "w")  do | f |
-          f << content
+          @ant.batchtest(:todir => @testrun_results.results_dir(@subtree).to_s, :fork => true, :failureproperty => failure_property_name) {
+            @ant.fileset(:dir => @build_results.classes_directory(@subtree).to_s, :includes => "**/#{pattern}.class")
+          }
         end
+      }
+    ensure
+      # clean junit reports of redundant info to help speed up parsing
+      # and avoid OOME while parsing big result files
+      cleaner = org.terracotta.JUnitReportCleaner.new
+      Dir.chdir(@testrun_results.results_dir(@subtree).to_s) do
+        Dir.glob("TEST*.xml").each do |filename|
+          cleaner.clean(File.expand_path(filename))
+        end
+      end
+
+      # Aggregate the results into the aggregation directory, if it's set.
+      unless @aggregation_directory.nil?
+        puts "Copying test result files to '#{@aggregation_directory}'..."
+        @ant.copy(:todir => @aggregation_directory.to_s) {
+          @ant.fileset(:dir => @testrun_results.results_dir(@subtree).to_s, :includes => '*.xml')
+        }
       end
     end
   end
+
 
   # Call this when you're all done with tests. It doesn't do anything yet, but it well may in the future.
   def tearDown
