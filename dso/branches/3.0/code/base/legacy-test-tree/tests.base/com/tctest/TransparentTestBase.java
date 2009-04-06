@@ -34,6 +34,7 @@ import com.tc.util.PortChooser;
 import com.tc.util.runtime.ThreadDump;
 import com.tctest.runner.DistributedTestRunner;
 import com.tctest.runner.DistributedTestRunnerConfig;
+import com.tctest.runner.PostAction;
 import com.tctest.runner.TestGlobalIdGenerator;
 import com.tctest.runner.TransparentAppConfig;
 
@@ -85,6 +86,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private int                         dsoPort                         = -1;
   private int                         adminPort                       = -1;
+  private final List                  postActions                     = new ArrayList();
 
   protected TestConfigObject getTestConfigObject() {
     return TestConfigObject.getInstance();
@@ -212,11 +214,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     throw new AssertionError("This method should be overridden in the sub-class for the Multiple Servers Test");
   }
 
-  protected int getDsoPort() {
+  public int getDsoPort() {
     return dsoPort;
   }
 
-  protected int getAdminPort() {
+  public int getAdminPort() {
     return adminPort;
   }
 
@@ -243,7 +245,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // do nothing
   }
 
-  protected File makeTmpDir(Class klass) {
+  public File makeTmpDir(Class klass) {
     File tmp_dir_root = new File(getTestConfigObject().tempDirectoryRoot());
     File tmp_dir = new File(tmp_dir_root, ClassUtils.getShortClassName(klass));
     tmp_dir.mkdirs();
@@ -458,7 +460,24 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
     initializeTestRunner(isMutateValidateTest, transparentAppConfig, runnerConfig);
+    initPostActions();
   }
+  
+  public void addPostAction(PostAction postAction) {
+    this.postActions.add(postAction);
+  }
+  
+  protected void loadPostActions() {
+    //do not removed.
+  }
+  
+  private void initPostActions() {
+    for(Iterator iter = postActions.iterator(); iter.hasNext();) {
+      runner.addPostAction((PostAction)iter.next());
+    }
+  }
+  
+  
 
   public void initializeTestRunner(boolean isMutateValidateTest, TransparentAppConfig transparentAppCfg,
                                    DistributedTestRunnerConfig runnerCfg) throws Exception {
@@ -526,10 +545,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
-  protected void duringRunningCluster() throws Exception {
-    // do not delete this method, it is used by tests that override it
-  }
-
   public void test() throws Exception {
     if (canRun()) {
       if (controlledCrashMode && serverControls != null) {
@@ -549,8 +564,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
         }
       }
       this.runner.run();
-      duringRunningCluster();
-
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
         try {
           if (isCrashy() && canRunCrash()) {
