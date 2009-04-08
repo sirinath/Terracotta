@@ -7,7 +7,7 @@
 
   <groupId>org.terracotta</groupId>
   <artifactId>parent</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1-SNAPSHOT</version>
   <name>terracotta base</name>
   <packaging>pom</packaging>
 
@@ -35,7 +35,7 @@
   </licenses>
 
   <properties>
-    <tcVersion>3.0.0</tcVersion>
+    <tcVersion>3.0.1-SNAPSHOT</tcVersion>
     <sigar.version>1.6.0</sigar.version>
   </properties>
 
