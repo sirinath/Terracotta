@@ -33,8 +33,8 @@ public class ObjectDataTestApp extends AbstractTransparentApp {
   public static final String SYNCHRONOUS_WRITE = "synch-write";
 
   private final int                threadCount       = 10;
-  private final int                workSize          = 1 * 100;
-  private final int                testObjectDepth   = 1 * 50;
+  private final int                workSize          = 1 * 50;
+  private final int                testObjectDepth   = 1 * 25;
   // Beware when tuning down the iteration count, it might not run long enough to actually do a useful crash test
   private final int                iterationCount    = 10;
   private final List               workQueue         = new ArrayList();
