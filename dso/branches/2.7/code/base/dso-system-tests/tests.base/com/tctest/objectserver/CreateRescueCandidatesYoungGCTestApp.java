@@ -150,7 +150,7 @@ public class CreateRescueCandidatesYoungGCTestApp extends AbstractErrorCatchingT
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (startTime + duration)) {
           Node rootNode = new Node(objectCount * 100);
-          createCicleOfNodes(rootNode, 10);
+          createCicleOfNodes(rootNode, 5);
           synchronized (root) {
             root.add(rootNode);
           }
@@ -320,7 +320,7 @@ public class CreateRescueCandidatesYoungGCTestApp extends AbstractErrorCatchingT
     long       lastAccess;
     long       level;
 
-    byte[]     transientBytes = new byte[1000];
+    byte[]     transientBytes = new byte[100];
 
     Node       next;
 
