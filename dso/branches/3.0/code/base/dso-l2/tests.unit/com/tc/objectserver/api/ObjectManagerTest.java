@@ -84,6 +84,7 @@ import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterImpl;
 import com.tc.test.TCTestCase;
+import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.SequenceID;
@@ -282,6 +283,68 @@ public class ObjectManagerTest extends TCTestCase {
     } catch (ShutdownError e) {
       // ok.
     }
+  }
+
+  // DEV-2324
+  public void testReachableObjects() {
+    this.config.paranoid = true;
+    initObjectManager(new TCThreadGroup(new ThrowableHandler(TCLogging.getTestingLogger(getClass()))),
+                      new LRUEvictionPolicy(-1));
+    this.objectManager.setStatsListener(this.stats);
+
+    assertEquals(0, this.stats.getTotalCacheHits());
+    assertEquals(0, this.stats.getTotalCacheMisses());
+
+    // each object has 1000 distinct reachable objects
+    createObjects(0, 1, createObjects(1000, 2000, new HashSet<ObjectID>()));
+    createObjects(1, 2, createObjects(2000, 3000, new HashSet<ObjectID>()));
+    createObjects(2, 3, createObjects(3000, 4000, new HashSet<ObjectID>()));
+    createObjects(3, 4, createObjects(4000, 5000, new HashSet<ObjectID>()));
+    createObjects(4, 5, createObjects(5000, 6000, new HashSet<ObjectID>()));
+    createObjects(5, 6, createObjects(6000, 7000, new HashSet<ObjectID>()));
+    createObjects(6, 7, createObjects(7000, 8000, new HashSet<ObjectID>()));
+    createObjects(7, 8, createObjects(8000, 9000, new HashSet<ObjectID>()));
+    createObjects(8, 9, createObjects(9000, 10000, new HashSet<ObjectID>()));
+    createObjects(9, 10, createObjects(10000, 11000, new HashSet<ObjectID>()));
+
+    // evict cache is not done. So, all objects reside in cache
+
+    ObjectIDSet ids = makeObjectIDSet(0, 10);
+    TestResultsContext results = new TestResultsContext(ids, new ObjectIDSet(), true);
+    this.testFaultSinkContext.resetCounter();
+
+    // fetch 10 objects and with fault-count -1
+    this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
+    Assert.assertEquals(10, results.objects.size());
+    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+
+    // fetch 10 objects and with fault-count 1K
+    this.objectManager.lookupObjectsAndSubObjectsFor(null, results, 1000);
+    Assert.assertEquals(1000, results.objects.size());
+    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+
+    // fetch 10 objects and with fault-count 10K
+    this.objectManager.lookupObjectsAndSubObjectsFor(null, results, 10000);
+    Assert.assertEquals(10000, results.objects.size());
+    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+
+    // fetch 10 objects and with fault-count 20K. but, max objects available are 10010
+    this.objectManager.lookupObjectsAndSubObjectsFor(null, results, 20000);
+    Assert.assertEquals(10010, results.objects.size());
+    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+
+    // single object reaching more objects than fault count
+    createObjects(10, 11, createObjects(11000, 18000, new HashSet<ObjectID>()));
+
+    ids = makeObjectIDSet(10, 11);
+    results = new TestResultsContext(ids, new ObjectIDSet(), true);
+    this.testFaultSinkContext.resetCounter();
+
+    // fetch 1 object and with fault-count 5K. but, object can reach 7K
+    this.objectManager.lookupObjectsAndSubObjectsFor(null, results, 5000);
+    Assert.assertEquals(5000, results.objects.size());
+    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+
   }
 
   public void testPreFetchObjects() {
@@ -1124,11 +1187,6 @@ public class ObjectManagerTest extends TCTestCase {
     tc.validate();
   }
 
-  private void createObjects(int num, int inCache) {
-    createObjects(num);
-    evictCache(inCache);
-  }
-
   private ObjectIDSet makeObjectIDSet(int begin, int end) {
     ObjectIDSet rv = new ObjectIDSet();
 
@@ -1144,12 +1202,26 @@ public class ObjectManagerTest extends TCTestCase {
     return rv;
   }
 
-  private void createObjects(int num) {
-    for (int i = 0; i < num; i++) {
-      TestManagedObject mo = new TestManagedObject(new ObjectID(i), new ArrayList<ObjectID>());
+  private void createObjects(int num, int inCache) {
+    createObjects(num);
+    evictCache(inCache);
+  }
+
+  private Set<ObjectID> createObjects(int num) {
+    return createObjects(0, num, new HashSet());
+  }
+
+  public Set<ObjectID> createObjects(int startID, int endID, Set<ObjectID> children) {
+    Set<ObjectID> oidSet = new HashSet<ObjectID>(endID - startID);
+    for (int i = startID; i < endID; i++) {
+      ObjectID oid = new ObjectID(i);
+      oidSet.add(oid);
+      TestManagedObject mo = new TestManagedObject(oid, new ArrayList<ObjectID>(children));
+
       this.objectManager.createObject(mo);
       this.objectStore.addNewObject(mo);
     }
+    return oidSet;
   }
 
   /**
@@ -1176,8 +1248,8 @@ public class ObjectManagerTest extends TCTestCase {
    * stats1.getCandidateGarbageCount()); assertEquals(0, stats1.getActualGarbageCount()); listener.gcEvents.clear();
    * objectManager.getGarbageCollector().gc(); assertEquals(2, objectManager.getGarbageCollectorStats().length);
    * assertEquals(3, listener.gcEvents.size()); assertEquals(firstIterationNumber + 1,
-   * objectManager.getGarbageCollectorStats()[0].getIteration()); listener.gcEvents.clear(); Set<ObjectID> removed = new
-   * HashSet<ObjectID>(); removed.add(mo3.getID()); clientStateManager.removeReferences(cid1, removed);
+   * objectManager.getGarbageCollectorStats()[0].getIteration()); listener.gcEvents.clear(); Set<ObjectID> removed =
+   * new HashSet<ObjectID>(); removed.add(mo3.getID()); clientStateManager.removeReferences(cid1, removed);
    * mo2.setReferences(new ObjectID[] {}); objectManager.getGarbageCollector().gc(); assertEquals(3,
    * objectManager.getGarbageCollectorStats().length); assertEquals(3, listener.gcEvents.size()); GCStats stats3 =
    * listener.gcEvents.get(0); assertEquals(4, stats3.getBeginObjectCount()); assertEquals(1,
@@ -2275,5 +2347,4 @@ public class ObjectManagerTest extends TCTestCase {
     void postProcess();
 
   }
-
 }
