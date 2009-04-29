@@ -279,8 +279,12 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
     System.out.println("Sleeping for " + getMinSleepTimeToConirmDeath(hcConfig));
     ThreadUtil.reallySleep(getMinSleepTimeToConirmDeath(hcConfig));
 
-    assertEquals(0, connHC.getTotalConnsUnderMonitor());
+    while (connHC.getTotalConnsUnderMonitor() != 0) {
+      ThreadUtil.reallySleep(1000);
+      System.out.println("Waiting for Client removal from Health Checker");
+    }
 
+    System.out.println("Success");
   }
 
   public void testL1ProbingL2AndServerUnResponsive() throws Exception {
