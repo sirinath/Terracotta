@@ -10,8 +10,8 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.transport.ConnectionID;
-import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.impl.ClientNotFoundException;
@@ -50,17 +50,13 @@ public class ConnectionIDFactoryImpl implements ConnectionIDFactory, DSOChannelM
   }
 
   public ConnectionID makeConnectionId(long channelID) {
+    Assert.assertTrue(channelID != ChannelID.NULL_ID.toLong());
     // provided channelID shall not be using
     if (clientStateStore.containsClient(new ChannelID(channelID))) { throw new TCRuntimeException(
                                                                                                   "The connectionId "
                                                                                                       + channelID
                                                                                                       + " has been used. "
                                                                                                       + " One possible cause: restarted some mirror groups but not all."); }
-
-    // adjust next id as needed
-    if (channelID >= connectionIDSequence.current()) {
-      connectionIDSequence.setNext(channelID + 1);
-    }
 
     return buildConnectionId(channelID);
   }
