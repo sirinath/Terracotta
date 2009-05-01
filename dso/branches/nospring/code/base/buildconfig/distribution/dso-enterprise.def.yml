@@ -12,13 +12,6 @@ bundled_demos:
         - jtable
         - sharededitor
         - sharedqueue
-  - spring:
-      install_directory: samples/spring
-      manifest:
-        - coordination
-        - events
-        - jmx
-        - webflow
   - sessions:
       install_directory: samples/sessions
       manifest:
@@ -42,7 +35,6 @@ bundled_components:
         install_directory: docs
         guides:
           - TerracottaDSOGuide
-          - TerracottaSpringGuide
           - TerracottaSessionsQuickStart
         references:
           - tc-config-reference
@@ -131,10 +123,6 @@ postscripts:
             - tim-apache-struts-1.1
             - tim-jetty-6.1
         - dest: 
-            - samples/spring/events
-            - samples/spring/jmx
-            - samples/spring/coordination
-            - samples/spring/webflow
             - tools/sessions/configurator-sandbox
   - delete-tim-get-index
   - include-schemas:
@@ -143,7 +131,6 @@ postscripts:
   - make-srcdocs:
       args:
         - samples/pojo
-        - samples/spring
         - samples/sessions         
   - make-enterprise
   - delete-api-jars
