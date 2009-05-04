@@ -752,6 +752,10 @@
         <build-panel name="SimpleFinishPanel">
             <include name="com/izforge/izpack/panels/SimpleFinishPanel.java"/>
         </build-panel>
+        <build-panel name="SimpleMessageFinishPanel">
+            <!-- Custom SimpleMessageFinishPanel added by jvoegele. -->
+            <include name="com/izforge/izpack/panels/SimpleMessageFinishPanel.java"/>
+        </build-panel>
         <build-panel name="SummaryPanel">
             <include name="com/izforge/izpack/panels/SummaryPanel.java"/>
         </build-panel>
