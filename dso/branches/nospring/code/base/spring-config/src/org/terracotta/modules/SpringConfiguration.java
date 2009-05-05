@@ -17,7 +17,6 @@ public class SpringConfiguration
    protected void addInstrumentation(final BundleContext context) {
       super.addInstrumentation(context);
       configSpringTypes();
-      configSpringWebFlowTypes();
    }
    
    private void configSpringTypes() {
@@ -61,34 +60,9 @@ public class SpringConfiguration
       final LockDefinition ld = configHelper.createLockDefinition("addApplicationListener", ConfigLockLevel.WRITE); 
       ld.commit();
       configHelper.addLock("* org.springframework.context.event.AbstractApplicationEventMulticaster.addApplicationListener(..)", ld);
-
-      // used by WebFlow
-      configHelper.addIncludePattern("org.springframework.core.enums.*", false, false, false);
-      configHelper.addIncludePattern("org.springframework.binding..*", true, false, false);
-      configHelper.addIncludePattern("org.springframework.validation..*", true, false, false);
       
       // used by Spring AOP/AspectJ
       TransparencyClassSpec spec = configHelper.getOrCreateSpec("org.springframework.aop.support.AopUtils");
       spec.setCustomClassAdapter(new AopUtilsClassAdapter());
    }
-   
-   private void configSpringWebFlowTypes() {
-      configHelper.addAspectModule("org.springframework.webflow", "com.tc.object.config.SpringWebFlowAspectModule");
-      configHelper.addIncludePattern("com.tcspring.DSOConversationLock", false, false, false);
-
-      configHelper.addIncludePattern("org.springframework.webflow..*", true, false, false);
-
-      configHelper.addIncludePattern("org.springframework.webflow.conversation.impl.ConversationEntry", false, false, false);
-      configHelper.addIncludePattern("org.springframework.webflow.core.collection.LocalAttributeMap", false, false, false);
-      configHelper.addIncludePattern("org.springframework.webflow.conversation.impl.*", false, false, false);
-
-      configHelper.addIncludePattern("javax.el.ELException", false, false, false);
-      configHelper.addIncludePattern("org.springframework.web.servlet.view.JstlView", false, false, false);
-      configHelper.addIncludePattern("org.springframework.web.servlet.view.InternalResourceView", false, false, false);
-      configHelper.addIncludePattern("org.springframework.web.servlet.view.AbstractUrlBasedView", false, false, false);
-      configHelper.addIncludePattern("org.springframework.web.servlet.view.AbstractView", false, false, false);
-      configHelper.addIncludePattern("org.springframework.web.context.support.WebApplicationObjectSupport", false, false, false);
-      configHelper.addIncludePattern("org.springframework.context.support.ApplicationObjectSupport", false, false, false);
-    }
-
 }
