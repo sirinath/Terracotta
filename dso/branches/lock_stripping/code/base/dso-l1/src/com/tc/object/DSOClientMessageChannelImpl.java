@@ -84,7 +84,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     this.channel.close();
   }
 
-  public LockRequestMessage newLockRequestMessage() {
+  public LockRequestMessage newLockRequestMessage(final NodeID nodeID) {
     return (LockRequestMessage) this.channel.createMessage(TCMessageType.LOCK_REQUEST_MESSAGE);
   }
 

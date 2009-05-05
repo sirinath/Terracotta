@@ -78,8 +78,8 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
-import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
@@ -377,12 +377,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
+    RemoteLockManager remoteLockManager = this.dsoClientBuilder.createRemoteLockManager(this.channel, this.channel
+        .getLockRequestMessageFactory(), gtxManager);
     this.lockManager = this.dsoClientBuilder
-        .createLockManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
-            .getLogger(ClientLockManager.class)),
-                           new RemoteLockManagerImpl(this.channel.getLockRequestMessageFactory(), gtxManager),
-                           sessionManager, lockStatManager, new ClientLockManagerConfigImpl(this.l1Properties
-                               .getPropertiesFor("lockmanager")));
+        .createLockManager(this.channel, new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
+            .getLogger(ClientLockManager.class)), remoteLockManager, sessionManager, lockStatManager,
+                           new ClientLockManagerConfigImpl(this.l1Properties.getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
 
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(this.channel
@@ -407,7 +407,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // for SRA L1 Tx count
     SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
     SampledCounter txnCounter = (SampledCounter) this.counterManager.createCounter(sampledCounterConfig);
-    
+
     // setup statistics subsystem
     if (this.statisticsAgentSubSystem.setup(this.config.getNewCommonL1Config())) {
       populateStatisticsRetrievalRegistry(this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry(), stageManager,
