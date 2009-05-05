@@ -20,6 +20,7 @@ import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
+import com.tc.net.OrderedGroupIDs;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -94,7 +95,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     sessionManager = new TestSessionManager();
     clientServerGlue = new ClientServerLockStatManagerGlue(sessionManager, sink);
     clientLockStatManager = new ClientLockStatisticsManagerImpl();
-    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), clientServerGlue, sessionManager,
+    clientLockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), new NullTCLogger(), clientServerGlue, sessionManager,
                                                   clientLockStatManager, new NullClientLockManagerConfig(),
                                                   new TCLockTimerImpl());
 
