@@ -37,12 +37,6 @@ public class SpringConfiguration
       configHelper.addIncludePattern("org.springframework.aop.support.IntroductionInfoSupport", true, true, true);
       configHelper.addIncludePattern("org.springframework.aop.support.DelegatingIntroductionInterceptor", true, true, true);
       configHelper.addIncludePattern("org.springframework.aop.support.DefaultIntroductionAdvisor", true, true, true);
-      configHelper.addIncludePattern("gnu.trove..*", false, false, true);
-      configHelper.addIncludePattern("java.lang.reflect.Proxy", false, false, false);
-      configHelper.addIncludePattern("com.tc.aspectwerkz.proxy..*", false, false, true);
-
-      // TODO remove if we find a better way using ProxyApplicator etc.
-      configHelper.addIncludePattern("$Proxy..*", false, false, true);
 
       // backport concurrent classes
       configHelper.addIncludePattern("edu.emory.mathcs.backport.java.util.AbstractCollection", false, false, false);
