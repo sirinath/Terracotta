@@ -218,9 +218,9 @@ public class StripedClientLockManagerImpl implements ClientLockManager {
     lockManagerFor(globalLockInfo.getLockID()).queryLockCommit(threadID, globalLockInfo);
   }
 
-  public void requestLockSpecs() {
+  public void requestLockSpecs(NodeID nodeID) {
     for (ClientLockManagerImpl lockManager : this.lockManagers) {
-      lockManager.requestLockSpecs();
+      lockManager.requestLockSpecs(nodeID);
     }
   }
 
