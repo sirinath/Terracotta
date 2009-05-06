@@ -15,7 +15,8 @@ import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.LockStatElement;
 import com.tc.management.lock.stats.LockStatisticsMessage;
-import com.tc.management.lock.stats.LockStatisticsResponseMessage;
+import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
+import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
@@ -95,7 +96,8 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     sessionManager = new TestSessionManager();
     clientServerGlue = new ClientServerLockStatManagerGlue(sessionManager, sink);
     clientLockStatManager = new ClientLockStatisticsManagerImpl();
-    clientLockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), new NullTCLogger(), clientServerGlue, sessionManager,
+    clientLockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
+                                                  new NullTCLogger(), clientServerGlue, sessionManager,
                                                   clientLockStatManager, new NullClientLockManagerConfig(),
                                                   new TCLockTimerImpl());
 
@@ -236,7 +238,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
     public TestClientMessageChannel(final ChannelID channelId, final Sink sink) {
       super(channelId);
-      super.registerType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessage.class);
+      super.registerType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessageImpl.class);
       super.registerType(TCMessageType.LOCK_STAT_MESSAGE, LockStatisticsMessage.class);
       this.sink = sink;
     }
@@ -392,6 +394,10 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     }
 
     public GroupID[] getGroupIDs() {
+      throw new ImplementMe();
+    }
+
+    public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory() {
       throw new ImplementMe();
     }
   }
