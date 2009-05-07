@@ -7,6 +7,7 @@ package com.tc.management.lock.stats;
 import com.tc.async.api.Sink;
 import com.tc.exception.TCRuntimeException;
 import com.tc.management.ClientLockStatManager;
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.object.bytecode.ByteCodeUtil;
@@ -204,7 +205,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
       Set allLockIDs = lockStats.keySet();
       for (Iterator i = allLockIDs.iterator(); i.hasNext();) {
         LockID lockID = (LockID) i.next();
-        if (strategy.getGroupIdForLock(lockID.asString()).equals(nodeID)) {
+        if (strategy.getGroupIdForLock(lockID.asString()).equals(nodeID) || GroupID.ALL_GROUPS.equals(nodeID)) {
           LockStatElement lockStatElement = getLockStatElement(lockID);
           allTCLockStatElements.add(new TCStackTraceElement(lockID, lockStatElement));
         }
