@@ -95,8 +95,6 @@ bundled_components:
         - dso-cluster-api
         - dso-l2
         - dso-l2-common
-        - dso-spring:
-            exclude-runtime-libraries: true
         - dso-statistics
         - dso-statistics-api
         - sigarstats
