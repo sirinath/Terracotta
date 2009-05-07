@@ -16,6 +16,7 @@ import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.LockStatElement;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
+import com.tc.management.lock.stats.LockStatisticsResponseMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.ClientID;
@@ -301,7 +302,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
   }
 
-  private static class TestClientChannel implements DSOClientMessageChannel {
+  private static class TestClientChannel implements DSOClientMessageChannel, LockStatisticsReponseMessageFactory {
     private final ClientMessageChannel clientMessageChannel;
 
     public TestClientChannel(final ClientMessageChannel clientMessageChannel) {
@@ -398,7 +399,11 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     }
 
     public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory() {
-      throw new ImplementMe();
+      return this;
+    }
+
+    public LockStatisticsResponseMessage newLockStatisticsResponseMessage(NodeID remoteID) {
+      return (LockStatisticsResponseMessage) channel().createMessage(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE);
     }
   }
 
