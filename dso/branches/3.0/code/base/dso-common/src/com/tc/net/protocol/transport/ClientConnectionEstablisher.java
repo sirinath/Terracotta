@@ -6,6 +6,7 @@ package com.tc.net.protocol.transport;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 
+import com.tc.logging.CustomerLogging;
 import com.tc.logging.LossyTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -197,7 +198,7 @@ public class ClientConnectionEstablisher {
   }
 
   private void restoreConnection(ClientMessageTransport cmt, TCSocketAddress sa, long timeoutMillis,
-                                 RestoreConnectionCallback callback) {
+                                 RestoreConnectionCallback callback) throws MaxConnectionsExceededException {
     final long deadline = System.currentTimeMillis() + timeoutMillis;
     boolean connected = cmt.isConnected();
     if (connected) {
@@ -212,7 +213,8 @@ public class ClientConnectionEstablisher {
         cmt.reconnect(connection);
         connected = true;
       } catch (MaxConnectionsExceededException e) {
-        // nothing
+        // DEV-2781
+        throw e;
       } catch (TCTimeoutException e) {
         handleConnectException(e, false, cmt.logger, connection);
       } catch (IOException e) {
@@ -294,23 +296,24 @@ public class ClientConnectionEstablisher {
     public void run() {
       ConnectionRequest request = null;
       while ((request = (ConnectionRequest) cce.reconnectRequest.take()) != null) {
-        if (request.isReconnect()) {
-          ClientMessageTransport cmt = request.getClientMessageTransport();
-          try {
+        ClientMessageTransport cmt = request.getClientMessageTransport();
+        try {
+          if (request.isReconnect()) {
             cce.reconnect(cmt);
-          } catch (MaxConnectionsExceededException e) {
-            cmt.logger.warn(e);
-            cmt.logger.warn("No longer trying to reconnect.");
-            return;
-          } catch (Throwable t) {
-            cmt.logger.warn("Reconnect failed !", t);
+          } else if (request.isRestoreConnection()) {
+            RestoreConnectionRequest req = (RestoreConnectionRequest) request;
+            cce.restoreConnection(req.getClientMessageTransport(), req.getSocketAddress(), req.getTimeoutMillis(), req
+                .getCallback());
+          } else if (request.isQuit()) {
+            break;
           }
-        } else if (request.isRestoreConnection()) {
-          RestoreConnectionRequest req = (RestoreConnectionRequest) request;
-          cce.restoreConnection(req.getClientMessageTransport(), req.getSocketAddress(), req.getTimeoutMillis(), req
-              .getCallback());
-        } else if (request.isQuit()) {
-          break;
+        } catch (MaxConnectionsExceededException e) {
+          String connInfo = ((cmt == null) ? "" : (cmt.getLocalAddress() + "->" + cmt.getRemoteAddress() + " "));
+          CustomerLogging.getConsoleLogger().fatal(connInfo + e.getMessage());
+          cmt.logger.warn("No longer trying to reconnect.");
+          return;
+        } catch (Throwable t) {
+          cmt.logger.warn("Reconnect failed !", t);
         }
       }
     }
