@@ -62,6 +62,7 @@ bundled_components:
             install_directory: api-jars
             modules:
               - common-api
+              - deploy-api
               - dso-l1-api
               - license-common
               - management-api

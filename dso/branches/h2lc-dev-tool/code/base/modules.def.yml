@@ -149,6 +149,7 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
+        - deploy-api
   - excludes-config:
       options:
         jdk: J2SE-1.5
@@ -282,6 +283,7 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - management-api
+        - modules-base
         - sigarstats
         - thirdparty
         - thirdparty-api
@@ -330,37 +332,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-  - ui-eclipse:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - aspectwerkz
-        - common
-        - common-api
-        - license-common
-        - deploy
-        - deploy-api
-        - dso-common
-        - dso-common-jdk16
-        - dso-l1
-        - dso-l1-api
-        - dso-l2
-        - dso-l2-common
-        - dso-statistics
-        - dso-statistics-api
-        - management-api
-        - thirdparty
-        - thirdparty-api
-  - ui-eclipse-33:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - ui-eclipse
-  - ui-eclipse-34:
-      options:
-        jdk: J2SE-1.5
-      dependencies:
-        - ui-eclipse
   - tim-get-tool:
       options:
         jdk: J2SE-1.5

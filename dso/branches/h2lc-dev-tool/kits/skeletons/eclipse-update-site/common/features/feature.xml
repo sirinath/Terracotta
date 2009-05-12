@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.terracotta.dso"
-      label="Terracotta"
+      id="org.terracotta.core"
+      label="Terracotta Core"
       version="VERSION"
       provider-name="Terracotta Inc.">
 
@@ -554,13 +554,8 @@ ORIGINAL CODE SOURCE CODE FOR YOUR MODIFICATIONS.
 ]]>
    </license>
 
-   <requires>
-      <import plugin="org.eclipse.pde.core" version="3.3.0"/>
-      <import plugin="org.eclipse.pde.ui" version="3.3.0"/>
-   </requires>
-
    <plugin
-         id="org.terracotta.dso"
+         id="org.terracotta.core"
          download-size="0"
          install-size="0"
          version="VERSION"

@@ -10,7 +10,7 @@ kit_name_pattern: terracotta-eclipse-plugin-version
 root_directory: web
 bundled_components:
   - common:
-      install_directory: eclipse/org.terracotta.dso
+      install_directory: eclipse/org.terracotta.core
       modules:
         - aspectwerkz:
             exclude-runtime-libraries: true
@@ -39,21 +39,13 @@ bundled_components:
         - tim-get-tool:
             kit-resources:
               - tim-get.properties
-        - ui-eclipse:
-            exclude-runtime-libraries: true
-        - ui-eclipse-33:
-            exclude-runtime-libraries: true
-        - ui-eclipse-34:
-            exclude-runtime-libraries: true
-  - eclipse-plugin: 
-      install_directory: eclipse
   - eclipse-update-site: 
       install_directory: eclipse/update
   - eclipse-web-site: 
       install_directory: eclipse
 bundled_modules:
   - core:
-      install_directory: eclipse/org.terracotta.dso/modules
+      install_directory: eclipse/org.terracotta.core/modules
       manifest:
         - clustered-surefire-2.3
         - excludes-config
@@ -68,10 +60,10 @@ postscripts:
   - inject-copyright
   - make-build-data:
       args:
-        - eclipse/org.terracotta.dso/lib/resources
+        - eclipse/org.terracotta.core/lib/resources
   - include-schemas:
       args:
-        - eclipse/org.terracotta.dso/html/ref/schema
+        - eclipse/org.terracotta.core/html/ref/schema
         - schema
   - make-eclipse-manifest:
       args:

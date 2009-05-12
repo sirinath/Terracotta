@@ -49,6 +49,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
     this.rawConfigText = rawConfigText;
     this.client = client;
     this.lockInfoDumpHandler = client;
+
     try {
       Class sraCpuType = Class.forName("com.tc.statistics.retrieval.actions.SRACpuCombined");
       if (sraCpuType != null) {
@@ -198,7 +199,7 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   public long getUsedMemory() {
     return manager.getMemoryUsage().getUsedMemory();
   }
-  
+
   public long getMaxMemory() {
     return manager.getMemoryUsage().getMaxMemory();
   }
@@ -221,5 +222,4 @@ public class L1Info extends AbstractTerracottaMBean implements L1InfoMBean {
   public void startBeanShell(int port) {
     this.client.startBeanShell(port);
   }
-
 }

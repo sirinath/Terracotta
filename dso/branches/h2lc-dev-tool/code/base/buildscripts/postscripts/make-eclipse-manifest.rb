@@ -12,7 +12,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   def postscript(ant, build_environment, product_directory, *args)
     relative_libpath     = args[0]
     eclipse_directory    = FilePath.new(product_directory.to_s, 'eclipse')
-    dso_directory        = FilePath.new(eclipse_directory.to_s, 'org.terracotta.dso')
+    dso_directory        = FilePath.new(eclipse_directory.to_s, 'org.terracotta.core')
     common_lib_directory = FilePath.new(dso_directory.to_s, *relative_libpath.split('/'))
 
     plugin_version = createVersionString(build_environment)
@@ -23,42 +23,53 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
       out.puts "Manifest-Version: 1.0"
       out.puts "Eclipse-LazyStart: true"
       out.puts "Bundle-ManifestVersion: 2"
-      out.puts "Bundle-Name: Terracotta Plugin"
-      out.puts "Bundle-SymbolicName: org.terracotta.dso; singleton:=true"
+      out.puts "Bundle-Name: Terracotta Core Plugin"
+      out.puts "Bundle-SymbolicName: org.terracotta.core; singleton:=true"
       out.puts "Bundle-Version: " + plugin_version
       out.puts "Bundle-Vendor: Terracotta, Inc."
-      out.puts "Bundle-Localization: plugin"
       out.puts "Bundle-RequiredExecutionEnvironment: J2SE-1.5"
-      out.puts "Require-Bundle: org.eclipse.ui.editors,"
-      out.puts " org.eclipse.debug.core;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.debug.ui;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.jdt.core;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.jdt.debug;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.jdt.debug.ui;bundle-version=\"[3.2.100,4.0.0)\","
-      out.puts " org.eclipse.jdt.launching;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.ui.workbench.texteditor;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.core.resources;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.jface.text;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.core.runtime;bundle-version=\"[3.3.100,4.0.0)\","
-      out.puts " org.eclipse.ui;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.ui.ide;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.jdt.ui;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.ltk.core.refactoring;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.ui.console;bundle-version=\"[3.2.0,4.0.0)\","
-      out.puts " org.eclipse.search;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.pde.core;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.pde.ui;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.junit;bundle-version=\"[3.8.2,4.0.0)\","
-      out.puts " org.eclipse.jdt.junit;bundle-version=\"[3.3.0,4.0.0)\","
-      out.puts " org.eclipse.core.variables;bundle-version=\"[3.2.0,4.0.0)\","
-      out.puts " org.eclipse.ui.forms;bundle-version=\"[3.2.0,4.0.0)\""
 
       libfiles = Dir.entries(common_lib_directory.to_s).delete_if { |item| /\.jar$/ !~ item } << "resources/"
       libfiles.sort!
       out.puts "Bundle-ClassPath: #{relative_libpath}/#{libfiles.first},"
       libfiles[1..-1].each { |item| out.puts " #{relative_libpath}/#{item}," }
       out.puts " #{relative_libpath}/resources"
-      out.puts "Bundle-Activator: org.terracotta.dso.TcPlugin"
+
+      out.puts "Export-Package: com.tc.admin,"
+      out.puts " com.tc.admin.common,"
+      out.puts " com.tc.asm,"
+      out.puts " com.tc.aspectwerkz.expression,"
+      out.puts " com.tc.aspectwerkz.reflect,"
+      out.puts " com.tc.aspectwerkz.reflect.impl.java,"
+      out.puts " com.tc.backport175.bytecode,"
+      out.puts " com.tc.bundles,"
+      out.puts " com.tc.config,"
+      out.puts " com.tc.config.schema,"
+      out.puts " com.tc.config.schema.builder,"
+      out.puts " com.tc.config.schema.dynamic,"
+      out.puts " com.tc.exception,"
+      out.puts " com.tc.management.beans,"
+      out.puts " com.tc.modules,"
+      out.puts " com.tc.object,"
+      out.puts " com.tc.object.appevent,"
+      out.puts " com.tc.object.bytecode,"
+      out.puts " com.tc.object.bytecode.aspectwerkz,"
+      out.puts " com.tc.object.config,"
+      out.puts " com.tc.object.config.schema,"
+      out.puts " com.tc.object.logging,"
+      out.puts " com.tc.object.tools,"
+      out.puts " com.tc.object.util,"
+      out.puts " com.tc.plugins,"
+      out.puts " com.tc.properties,"
+      out.puts " com.tc.server,"
+      out.puts " com.tc.util,"
+      out.puts " com.tc.util.concurrent,"
+      out.puts " com.tc.util.event,"
+      out.puts " com.tc.util.runtime,"
+      out.puts " com.terracottatech.config,"
+      out.puts " org.apache.commons.io,"
+      out.puts " org.apache.commons.lang,"
+      out.puts " org.apache.xmlbeans"
     end  
 
     destdir = dso_directory.to_s + "_" + plugin_version
@@ -85,7 +96,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     
     # add revision number and timestamp
     tokens << "r#{build_environment.os_revision}"
-    tokens << "v#{Time.now.strftime('%Y%m%d')}"
+    tokens << "v#{Time.now.strftime('%Y%m%d%H%M%S')}"
     
     version = version_number
     version = "#{version_number}.#{tokens.join('_')}"
