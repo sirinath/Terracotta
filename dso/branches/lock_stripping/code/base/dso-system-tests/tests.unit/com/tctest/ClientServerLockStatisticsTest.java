@@ -43,6 +43,7 @@ import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
+import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
@@ -97,7 +98,8 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     sessionManager = new TestSessionManager();
     clientServerGlue = new ClientServerLockStatManagerGlue(sessionManager, sink);
     clientLockStatManager = new ClientLockStatisticsManagerImpl();
-    clientLockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
+    clientLockManager = new ClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
+                                                  new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
                                                   new NullTCLogger(), clientServerGlue, sessionManager,
                                                   clientLockStatManager, new NullClientLockManagerConfig(),
                                                   new TCLockTimerImpl());

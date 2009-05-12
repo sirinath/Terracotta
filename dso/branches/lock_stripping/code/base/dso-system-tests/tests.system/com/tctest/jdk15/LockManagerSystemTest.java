@@ -36,6 +36,7 @@ import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
+import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.StripedClientLockManagerImpl;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
@@ -79,7 +80,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                                              new TestClientGlobalTransactionManager(),
                                                                              clientLockRequestQueue);
 
-    clientLockManager = new StripedClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
+    clientLockManager = new StripedClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
+                                                         new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
                                                          logger, rmtLockManager, new NullSessionManager(),
                                                          ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                          new NullClientLockManagerConfig());

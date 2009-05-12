@@ -82,17 +82,17 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   private final LockDistributionStrategy lockDistributionStrategy;
 
   // For tests
-  public ClientLockManagerImpl(OrderedGroupIDs groupIds, final TCLogger logger,
-                               final RemoteLockManager remoteLockManager, final SessionManager sessionManager,
-                               final ClientLockStatManager lockStatManager,
+  public ClientLockManagerImpl(final LockDistributionStrategy strategy, OrderedGroupIDs groupIds,
+                               final TCLogger logger, final RemoteLockManager remoteLockManager,
+                               final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
                                final ClientLockManagerConfig clientLockManagerConfig) {
-    this(groupIds, logger, remoteLockManager, sessionManager, lockStatManager, clientLockManagerConfig,
+    this(strategy, groupIds, logger, remoteLockManager, sessionManager, lockStatManager, clientLockManagerConfig,
          new TCLockTimerImpl());
   }
 
-  public ClientLockManagerImpl(OrderedGroupIDs groupIds, final TCLogger logger,
-                               final RemoteLockManager remoteLockManager, final SessionManager sessionManager,
-                               final ClientLockStatManager lockStatManager,
+  public ClientLockManagerImpl(final LockDistributionStrategy strategy, OrderedGroupIDs groupIds,
+                               final TCLogger logger, final RemoteLockManager remoteLockManager,
+                               final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
                                final ClientLockManagerConfig clientLockManagerConfig, final TCLockTimer waitTimer) {
     this.logger = logger;
     this.remoteLockManager = remoteLockManager;
@@ -102,7 +102,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     this.waitTimer = waitTimer;
     this.waitTimer.getTimer().schedule(new LockGCTask(this), clientLockManagerConfig.getTimeoutInterval(),
                                        clientLockManagerConfig.getTimeoutInterval());
-    lockDistributionStrategy = new LockDistributionStrategy(groupIds);
+    this.lockDistributionStrategy = strategy;
     for (int i = 0, len = groupIds.length(); i < len; i++) {
       grpToState.put(groupIds.getGroup(i), RUNNING);
     }
