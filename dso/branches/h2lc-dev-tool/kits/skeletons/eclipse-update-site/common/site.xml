@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
 All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
-
-
-
 -->
 <site>
-   <feature url="features/org.terracotta.dso_VERSION.jar" id="org.terracotta.dso" version="VERSION">
-      <category name="dso"/>
+   <description url="http://eclipse.terracotta.org/update/">
+      Terracotta Integration
+   </description>
+
+   <feature url="features/org.terracotta.core_VERSION.jar" id="org.terracotta.core" version="VERSION">
+      <category name="Terracotta Integration"/>
    </feature>
    
-   <category-def name="dso" label="Terracotta DSO">
-      <description>
-         Features related to Terracotta DSO.
-      </description>
-   </category-def>
+   <category-def name="Terracotta Integration" label="Terracotta Integration"/>
 </site>

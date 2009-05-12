@@ -492,6 +492,7 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
       try {
         attributeList = mbeanServer.getAttributes(objectName, attributeSet.toArray(new String[0]));
       } catch (Exception e) {
+        e.printStackTrace();
         attributeList = EMPTY_ATTR_LIST;
       }
       return new SourcedAttributeList(objectName, attributeList);

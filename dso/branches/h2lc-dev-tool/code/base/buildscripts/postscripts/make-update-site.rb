@@ -11,10 +11,10 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   protected
   def postscript(ant, build_environment, product_dir, *args)
     
-    plugin_version = createVersionString(build_environment)    
+    plugin_version = createVersionString(build_environment) 
 
     eclipse_dir = FilePath.new(product_dir, 'eclipse')
-    plugin_name = "org.terracotta.dso_" + plugin_version    
+    plugin_name = "org.terracotta.core_" + plugin_version
     plugin_dir  = FilePath.new(eclipse_dir, plugin_name)
     jar_name    = plugin_name + ".jar"
 
@@ -36,7 +36,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     ant.delete(:dir => plugin_dir.to_s)
 
     site_file = FilePath.new(update_dir, 'site.xml')
-    retrieveSiteXml(site_file)
+#    retrieveSiteXml(site_file)
     ant.replace(:file => site_file, :token => "VERSION", :value => plugin_version)
   end
   
