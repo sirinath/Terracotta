@@ -43,7 +43,8 @@ public class ClientServerLockManagerTest extends TestCase {
     super.setUp();
     sessionManager = new TestSessionManager();
     glue = new ClientServerLockManagerGlue(sessionManager);
-    clientLockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
+    clientLockManager = new ClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
+                                                  new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
                                                   new NullTCLogger(), glue, sessionManager,
                                                   ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                   new NullClientLockManagerConfig());

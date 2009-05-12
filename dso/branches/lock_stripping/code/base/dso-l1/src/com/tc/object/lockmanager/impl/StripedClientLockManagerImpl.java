@@ -34,9 +34,9 @@ public class StripedClientLockManagerImpl implements ClientLockManager {
   private final int                   segmentMask;
   private final TCLogger              logger;
 
-  public StripedClientLockManagerImpl(final OrderedGroupIDs groupIds, final TCLogger logger,
-                                      final RemoteLockManager remoteLockManager, final SessionManager sessionManager,
-                                      final ClientLockStatManager lockStatManager,
+  public StripedClientLockManagerImpl(final LockDistributionStrategy strategy, final OrderedGroupIDs groupIds,
+                                      final TCLogger logger, final RemoteLockManager remoteLockManager,
+                                      final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
                                       final ClientLockManagerConfig clientLockManagerConfig) {
     this.logger = logger;
     int stripedCount = clientLockManagerConfig.getStripedCount();
@@ -53,7 +53,8 @@ public class StripedClientLockManagerImpl implements ClientLockManager {
     this.lockManagers = new ClientLockManagerImpl[ssize];
     TCLockTimer waitTimer = new TCLockTimerImpl();
     for (int i = 0; i < this.lockManagers.length; i++) {
-      this.lockManagers[i] = new ClientLockManagerImpl(groupIds, new TextDecoratorTCLogger(logger, "LM[" + i + "]"),
+      this.lockManagers[i] = new ClientLockManagerImpl(strategy, groupIds, new TextDecoratorTCLogger(logger, "LM[" + i
+                                                                                                             + "]"),
                                                        remoteLockManager, sessionManager, lockStatManager,
                                                        clientLockManagerConfig, waitTimer);
     }

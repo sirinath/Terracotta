@@ -34,7 +34,9 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
+import com.tc.object.lockmanager.impl.LockDistributionStrategy;
 import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
+import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.StripedClientLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
@@ -127,14 +129,17 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                        dsoChannel, toggleRefMgr);
   }
 
-  public ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel,final ClientIDLogger clientIDLogger,
+  public ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel,
+                                             final ClientIDLogger clientIDLogger,
                                              final RemoteLockManager remoteLockManager,
                                              final SessionManager sessionManager,
                                              final ClientLockStatManager lockStatManager,
                                              final ClientLockManagerConfigImpl clientLockManagerConfigImpl) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
-    return new StripedClientLockManagerImpl(new OrderedGroupIDs(defaultGroups), clientIDLogger, remoteLockManager, sessionManager, lockStatManager,
+    LockDistributionStrategy strategy = new StandardLockDistributionStrategy(defaultGroups[0]);
+    return new StripedClientLockManagerImpl(strategy, new OrderedGroupIDs(defaultGroups), clientIDLogger,
+                                            remoteLockManager, sessionManager, lockStatManager,
                                             clientLockManagerConfigImpl);
   }
 

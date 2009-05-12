@@ -74,7 +74,8 @@ public class ClientLockManagerTest extends TCTestCase {
     sessionManager = new TestSessionManager();
     rmtLockManager = new TestRemoteLockManager(sessionManager);
 
-    lockManager = new ClientLockManagerImpl(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), new NullTCLogger(),
+    lockManager = new ClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
+                                            new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), new NullTCLogger(),
                                             rmtLockManager, sessionManager,
                                             ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                             new NullClientLockManagerConfig(100));
@@ -85,6 +86,8 @@ public class ClientLockManagerTest extends TCTestCase {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(
+                                                                                  new StandardLockDistributionStrategy(
+                                                                                                                       GroupID.NULL_ID),
                                                                                   new OrderedGroupIDs(
                                                                                                       new GroupID[] { GroupID.NULL_ID }),
                                                                                   new NullTCLogger(),
@@ -131,6 +134,8 @@ public class ClientLockManagerTest extends TCTestCase {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(
+                                                                                  new StandardLockDistributionStrategy(
+                                                                                                                       GroupID.NULL_ID),
                                                                                   new OrderedGroupIDs(
                                                                                                       new GroupID[] { GroupID.NULL_ID }),
                                                                                   new NullTCLogger(),
@@ -365,7 +370,8 @@ public class ClientLockManagerTest extends TCTestCase {
       public TryLockClientLockManager(final TCLogger logger, final RemoteLockManager remoteLockManager,
                                       final SessionManager sessionManager, final CyclicBarrier awardBarrier,
                                       final ClientLockManagerConfig config) {
-        super(new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), logger, remoteLockManager, sessionManager,
+        super(new StandardLockDistributionStrategy(GroupID.NULL_ID),
+              new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }), logger, remoteLockManager, sessionManager,
               ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER, config);
         this.awardBarrier = awardBarrier;
       }

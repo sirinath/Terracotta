@@ -10,7 +10,6 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.net.GroupID;
-import com.tc.net.OrderedGroupIDs;
 import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.context.LockResponseContext;
@@ -50,9 +49,7 @@ public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue
         if (lsm.isLockStatsEnableDisable()) {
           clientLockStatManager.setLockStatisticsConfig(lsm.getTraceDepth(), lsm.getGatherInterval());
         } else if (lsm.isGatherLockStatistics()) {
-          LockDistributionStrategy strategy = new LockDistributionStrategy(
-                                                                           new OrderedGroupIDs(
-                                                                                               new GroupID[] { GroupID.NULL_ID }));
+          LockDistributionStrategy strategy = new StandardLockDistributionStrategy(GroupID.NULL_ID);
           clientLockStatManager.requestLockSpecs(GroupID.NULL_ID, strategy);
         }
       } else if (ec instanceof LockStatisticsResponseMessageImpl) {
