@@ -155,7 +155,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener 
       MBeanServerNotification mbsn = (MBeanServerNotification) notification;
       if (type.equals(MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
         ObjectName on = mbsn.getMBeanName();
-        System.err.println("Registered bean: " + on);
         try {
           testRegisterFeature(on);
         } catch (Exception e) {
@@ -163,7 +162,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener 
         }
       } else if (type.equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
         ObjectName on = mbsn.getMBeanName();
-        System.err.println("Unregistered bean: " + on);
         try {
           testUnregisterFeature(on);
         } catch (Exception e) {
