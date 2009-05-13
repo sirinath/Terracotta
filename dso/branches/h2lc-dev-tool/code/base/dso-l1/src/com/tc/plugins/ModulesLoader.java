@@ -157,10 +157,8 @@ public class ModulesLoader {
 
             Dictionary headers = bundle.getHeaders();
             if (headers.get("Presentation-Factory") != null) {
-              logger.info("Installing MLet for bundle '" + bundle.getSymbolicName() + "'");
-              installMGet(bundle);
-            } else {
-              logger.info("DID NOT install MLet for bundle '" + bundle.getSymbolicName() + "'");
+              logger.info("Installing TIMByteProvider for bundle '" + bundle.getSymbolicName() + "'");
+              installTIMByteProvider(bundle);
             }
           }
           loadConfiguration(configHelper, bundle);
@@ -191,7 +189,7 @@ public class ModulesLoader {
     osgiRuntime.startBundles(bundleURLs, handler);
   }
 
-  private static void installMGet(final Bundle bundle) {
+  private static void installTIMByteProvider(final Bundle bundle) {
     try {
       MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       Dictionary headers = bundle.getHeaders();
@@ -200,17 +198,17 @@ public class ModulesLoader {
       String feature = bundle.getSymbolicName() + "-" + version;
       String prefix;
       if (description != null) {
-        description += " (" + version + ")";
         prefix = "org.terracotta:type=Loader,name=" + description + ",feature=";
       } else {
         prefix = "org.terracotta:type=Loader,feature=";
       }
       ObjectName loader = new ObjectName(prefix + feature);
       if (!mbs.isRegistered(loader)) {
-        mbs.registerMBean(new StandardMBean(new TIMByteProvider(bundle.getLocation()), TIMByteProviderMBean.class), loader);
+        mbs.registerMBean(new StandardMBean(new TIMByteProvider(bundle.getLocation()), TIMByteProviderMBean.class),
+                          loader);
       }
     } catch (Exception e) {
-      logger.warn("Unable to install MLet for bundle '" + bundle.getSymbolicName() + "'", e);
+      logger.warn("Unable to install TIMByteProvider for bundle '" + bundle.getSymbolicName() + "'", e);
     }
   }
 
@@ -227,8 +225,8 @@ public class ModulesLoader {
 
         final Matcher matcher = pattern.matcher(additionalModule);
         if (!matcher.find() || matcher.groupCount() < 3) {
-          logger.error("Invalid bundle-jar filename " + additionalModule
-                       + "; filenames need to match the pattern: " + pattern.toString());
+          logger.error("Invalid bundle-jar filename " + additionalModule + "; filenames need to match the pattern: "
+                       + pattern.toString());
           continue;
         }
 
@@ -299,9 +297,7 @@ public class ModulesLoader {
       Arrays.sort(serviceReferences, SERVICE_COMPARATOR);
     }
 
-    if (serviceReferences == null) {
-      return;
-    }
+    if (serviceReferences == null) { return; }
     MBeanSpec[] mbeanSpecs = new MBeanSpec[serviceReferences.length];
     for (int i = 0; i < serviceReferences.length; i++) {
       mbeanSpecs[i] = (MBeanSpec) osgiRuntime.getService(serviceReferences[i]);
@@ -310,16 +306,14 @@ public class ModulesLoader {
     configHelper.setMBeanSpecs(mbeanSpecs);
   }
 
-  private static void getModulesSRASpecs(final EmbeddedOSGiRuntime osgiRuntime,
-                                           final DSOClientConfigHelper configHelper) throws InvalidSyntaxException {
+  private static void getModulesSRASpecs(final EmbeddedOSGiRuntime osgiRuntime, final DSOClientConfigHelper configHelper)
+      throws InvalidSyntaxException {
     ServiceReference[] serviceReferences = osgiRuntime.getAllServiceReferences(SRASpec.class.getName(), null);
     if (serviceReferences != null && serviceReferences.length > 0) {
       Arrays.sort(serviceReferences, SERVICE_COMPARATOR);
     }
 
-    if (serviceReferences == null) {
-      return;
-    }
+    if (serviceReferences == null) { return; }
     SRASpec[] sraSpecs = new SRASpec[serviceReferences.length];
     for (int i = 0; i < serviceReferences.length; i++) {
       sraSpecs[i] = (SRASpec) osgiRuntime.getService(serviceReferences[i]);
@@ -412,7 +406,7 @@ public class ModulesLoader {
 
   /**
    * DEV-1238 and DEV-2205
-   *
+   * 
    * @author hhuynh
    */
   private static void validateBundleFragment(final DsoApplication application) throws XmlException {

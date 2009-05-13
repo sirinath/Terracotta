@@ -515,10 +515,14 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   TopologyNode topologyNode;
 
   protected void addChildren() {
+    add(createFeaturesNode());
     add(createClusteredHeapNode());
     add(createDiagnosticsNode());
     add(topologyNode = createTopologyNode());
-    add(createFeaturesNode());
+  }
+
+  protected FeaturesNode createFeaturesNode() {
+    return new FeaturesNode(adminClientContext, getClusterModel());
   }
 
   protected ClusteredHeapNode createClusteredHeapNode() {
@@ -531,10 +535,6 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
   protected TopologyNode createTopologyNode() {
     return new TopologyNode(adminClientContext, getClusterModel());
-  }
-
-  protected FeaturesNode createFeaturesNode() {
-    return new FeaturesNode(adminClientContext, getClusterModel());
   }
 
   void handleStarting() {

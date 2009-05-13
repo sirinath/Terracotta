@@ -461,7 +461,6 @@ public class ServerConnectionManager implements NotificationListener {
         try {
           connectCntx.testConnection();
         } catch (Exception e) {
-          e.printStackTrace();
           cancelConnectionMonitor();
           setConnected(false);
         }
