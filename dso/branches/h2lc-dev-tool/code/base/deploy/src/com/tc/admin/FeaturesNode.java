@@ -12,6 +12,7 @@ import com.tc.admin.model.IServer;
 import com.tc.management.beans.TIMByteProviderMBean;
 
 import java.awt.Component;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -65,35 +66,56 @@ public class FeaturesNode extends ComponentNode implements NotificationListener 
     }
   }
 
-  public void init() {
+  private void addMBeanServerDelegateListener() {
     IServer activeCoord = clusterModel.getActiveCoordinator();
     try {
       ObjectName on = new ObjectName("JMImplementation:type=MBeanServerDelegate");
       activeCoord.addNotificationListener(on, this);
     } catch (Exception e) {
-      e.printStackTrace();
+      /**/
+    }
+  }
+
+  private void removeMBeanServerDelegateListener() {
+    IServer activeCoord = clusterModel.getActiveCoordinator();
+    if (activeCoord != null) {
+      try {
+        ObjectName on = new ObjectName("JMImplementation:type=MBeanServerDelegate");
+        activeCoord.addNotificationListener(on, this);
+      } catch (Exception e) {
+        /**/
+      }
+    }
+  }
+
+  public void init() {
+    addMBeanServerDelegateListener();
+
+    Set<ObjectName> s;
+    try {
+      s = clusterModel.getActiveCoordinator().queryNames(null, null);
+    } catch (Exception e) {
+      s = Collections.emptySet();
     }
 
-    try {
-      Set<ObjectName> s = activeCoord.queryNames(null, null);
-      Iterator<ObjectName> iter = s.iterator();
-      while (iter.hasNext()) {
-        testRegisterFeature(iter.next());
-      }
+    Iterator<ObjectName> iter = s.iterator();
+    while (iter.hasNext()) {
+      testRegisterFeature(iter.next());
+    }
+    ensureFeatureNodes();
+  }
 
-      Iterator<Map.Entry<String, Feature>> featureIter = featureMap.entrySet().iterator();
-      while (featureIter.hasNext()) {
-        Map.Entry<String, Feature> entry = featureIter.next();
-        Feature feature = entry.getValue();
-        if (!nodeMap.containsKey(feature)) {
-          add(newFeatureNode(feature));
-          if (featuresPanel != null) {
-            featuresPanel.add(feature);
-          }
+  private void ensureFeatureNodes() {
+    Iterator<Map.Entry<String, Feature>> featureIter = featureMap.entrySet().iterator();
+    while (featureIter.hasNext()) {
+      Map.Entry<String, Feature> entry = featureIter.next();
+      Feature feature = entry.getValue();
+      if (!nodeMap.containsKey(feature)) {
+        add(newFeatureNode(feature));
+        if (featuresPanel != null) {
+          featuresPanel.add(feature);
         }
       }
-    } catch (Exception e) {
-      e.printStackTrace();
     }
   }
 
@@ -154,19 +176,11 @@ public class FeaturesNode extends ComponentNode implements NotificationListener 
     if (notification instanceof MBeanServerNotification) {
       MBeanServerNotification mbsn = (MBeanServerNotification) notification;
       if (type.equals(MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
-        ObjectName on = mbsn.getMBeanName();
-        try {
-          testRegisterFeature(on);
-        } catch (Exception e) {
-          e.printStackTrace();
+        if (testRegisterFeature(mbsn.getMBeanName())) {
+          ensureFeatureNodes();
         }
       } else if (type.equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
-        ObjectName on = mbsn.getMBeanName();
-        try {
-          testUnregisterFeature(on);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+        testUnregisterFeature(mbsn.getMBeanName());
       }
     }
   }
@@ -182,6 +196,8 @@ public class FeaturesNode extends ComponentNode implements NotificationListener 
 
   @Override
   public void tearDown() {
+    removeMBeanServerDelegateListener();
+
     clusterModel.removePropertyChangeListener(clusterListener);
     clusterListener.tearDown();
 
