@@ -226,6 +226,10 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
       IServerGroup[] grps = clusterModel.getServerGroups();
       for (int i = 0; i < grps.length; i++) {
         grps[i].addPropertyChangeListener(this);
+        IServer server = grps[i].getActiveServer();
+        if (server != null) {
+          server.addPropertyChangeListener(this);
+        }
       }
       adminClientContext.execute(new LocksPanelEnabledWorker());
     }
@@ -245,16 +249,29 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
         IServerGroup[] grps = theClusterModel.getServerGroups();
         for (int i = 0; i < grps.length; i++) {
           grps[i].addPropertyChangeListener(this);
+          IServer server = grps[i].getActiveServer();
+          if (server != null) {
+            server.addPropertyChangeListener(this);
+          }
         }
 
         adminClientContext.execute(new LocksPanelEnabledWorker());
       }
     } else if (IServerGroup.PROP_ACTIVE_SERVER.equals(prop)) {
       IServer newActive = (IServer) evt.getNewValue();
+      IServer oldActive = (IServer) evt.getOldValue();
       if (newActive != null) {
         if (adminClientContext != null) {
           adminClientContext.execute(new NewConnectionContextWorker());
         }
+      }
+      
+      if (oldActive != null) {
+        oldActive.removePropertyChangeListener(this);
+      }
+
+      if (newActive != null) {
+        newActive.addPropertyChangeListener(this);
       }
     } else if (IServer.PROP_LOCK_STATS_TRACE_DEPTH.equals(prop)) {
       IServerGroup[] grps = theClusterModel.getServerGroups();
