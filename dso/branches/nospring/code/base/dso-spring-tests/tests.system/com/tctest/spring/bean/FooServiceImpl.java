@@ -21,7 +21,7 @@ public class FooServiceImpl implements FooService {
     return counter++;
   }
   
-  public int getCounter() {
+  public synchronized int getCounter() {
     return counter;
   }
 
