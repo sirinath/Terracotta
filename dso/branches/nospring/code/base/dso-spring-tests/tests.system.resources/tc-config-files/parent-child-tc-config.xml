@@ -44,6 +44,9 @@
 	      <root>
 	        <field-name>com.tctest.spring.bean.FooServiceImpl.counter</field-name>
 	      </root>
+	      <root>
+	        <field-name>com.tctest.spring.bean.FooServiceImpl.prefix</field-name>
+	      </root>	      
 	  	</roots>
 	  	<locks>
 	      <autolock auto-synchronized="true">
@@ -61,7 +64,8 @@
 	      <autolock auto-synchronized="true">
 	        <method-expression>* com.tctest.spring.bean.Singleton.*Counter(..)</method-expression>
 	        <lock-level>write</lock-level>
-	      </autolock>      
+	      </autolock>
+	      
 	  	</locks>
 	  </dso>	
 	</application>
