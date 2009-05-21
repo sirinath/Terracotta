@@ -71,8 +71,6 @@ bundled_components:
         - dso-cluster-api
         - dso-l2
         - dso-l2-common
-        - dso-spring:
-            exclude-runtime-libraries: true
         - dso-statistics
         - dso-statistics-api
         - sigarstats
@@ -98,7 +96,6 @@ bundled_modules:
         - excludes-config
         - guimodels-config
         - jdk15-preinst-config
-        - spring-config
         - standard-config
         - modules-base
 packaging:

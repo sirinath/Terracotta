@@ -176,16 +176,6 @@ modules:
         - license-common
         - dso-l1-api
         - modules-base
-  - spring-config:
-      options:
-        jdk: J2SE-1.5
-        module: true
-      dependencies:
-        - common-api
-        - license-common
-        - dso-l1-api
-        - modules-base
-        - thirdparty-api
   - standard-config:
       options:
         jdk: J2SE-1.5
