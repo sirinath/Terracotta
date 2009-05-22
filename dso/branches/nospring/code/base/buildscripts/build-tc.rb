@@ -520,8 +520,7 @@ END
     puts text % [ schema_dir.to_s, dest_jar.to_s ]
 
     generated_source_dir.delete
-    
-    puts "CLASSPATH: #{@module_set['common'].subtree('src').classpath(@build_results, :full, :runtime).to_s}"
+
 
     ant.xmlbean(:destfile => dest_jar.to_s,
       :executable => @jvm_set['J2SE-1.5'].javac.to_s,
