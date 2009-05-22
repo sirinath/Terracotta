@@ -58,7 +58,6 @@ import com.tc.object.config.schema.IncludeOnLoad;
 import com.tc.object.config.schema.IncludedInstrumentedClass;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.config.schema.NewDSOApplicationConfig;
-import com.tc.object.config.schema.NewSpringApplicationConfig;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.tools.BootJar;
@@ -74,7 +73,6 @@ import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.L1ReconnectPropertiesDocument;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
-import com.terracottatech.config.SpringApplication;
 
 import java.io.File;
 import java.io.IOException;
@@ -236,8 +234,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     NewDSOApplicationConfig appConfig = configSetupManager
         .dsoApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME);
-    NewSpringApplicationConfig springConfig = configSetupManager
-        .springApplicationConfigFor(TVSConfigurationSetupManagerFactory.DEFAULT_APPLICATION_NAME);
 
     supportSharingThroughReflection = appConfig.supportSharingThroughReflection().getBoolean();
     try {
@@ -249,7 +245,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     ConfigLoader loader = new ConfigLoader(this, logger);
     loader.loadDsoConfig((DsoApplication) appConfig.getBean());
-    loader.loadSpringConfig((SpringApplication) springConfig.getBean());
 
     logger.debug("web-applications: " + this.applicationNames);
     logger.debug("synchronous-write web-applications: " + this.synchronousWriteApplications);
