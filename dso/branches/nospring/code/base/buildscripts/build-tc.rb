@@ -427,7 +427,7 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   def check_crashtests
     depends :init, :compile
     @internal_config_source['tc.tests.configuration.transparent-tests.mode'] = 'crash'
-    run_tests(FixedModuleTypeTestSet.new([ 'dso-crash-tests', 'dso-spring-crash-tests' ], [ 'system' ]))
+    run_tests(FixedModuleTypeTestSet.new([ 'dso-crash-tests'], [ 'system' ]))
   end
 
   # Runs the active/passive tests. Uses the internal configuration source to set
