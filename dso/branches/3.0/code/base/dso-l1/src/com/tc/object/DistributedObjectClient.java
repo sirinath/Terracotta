@@ -29,7 +29,7 @@ import com.tc.management.TCClient;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
-import com.tc.management.lock.stats.LockStatisticsResponseMessage;
+import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
@@ -78,8 +78,8 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
-import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
@@ -378,12 +378,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
-    this.lockManager = this.dsoClientBuilder
-        .createLockManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
-            .getLogger(ClientLockManager.class)),
-                           new RemoteLockManagerImpl(this.channel.getLockRequestMessageFactory(), gtxManager),
-                           sessionManager, lockStatManager, new ClientLockManagerConfigImpl(this.l1Properties
-                               .getPropertiesFor("lockmanager")));
+    RemoteLockManager remoteLockManager = this.dsoClientBuilder.createRemoteLockManager(this.channel, this.channel
+        .getLockRequestMessageFactory(), gtxManager);
+    this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
+        .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), remoteLockManager, sessionManager,
+                                                               lockStatManager,
+                                                               new ClientLockManagerConfigImpl(this.l1Properties
+                                                                   .getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
 
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(this.channel
@@ -408,7 +409,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // for SRA L1 Tx count
     SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
     SampledCounter txnCounter = (SampledCounter) this.counterManager.createCounter(sampledCounterConfig);
-    
+
     // setup statistics subsystem
     if (this.statisticsAgentSubSystem.setup(this.config.getNewCommonL1Config())) {
       populateStatisticsRetrievalRegistry(this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry(), stageManager,
@@ -528,8 +529,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.dsoClientBuilder.getObjectIDClientHandshakeRequester(batchSequenceReceiver));
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);
     ProductInfo pInfo = ProductInfo.getInstance();
-    this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager, this.dsoCluster,
-                                                            pInfo, clientHandshakeCallbacks);
+    this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager,
+                                                               this.dsoCluster, pInfo, clientHandshakeCallbacks);
     this.channel.addListener(this.clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, this.lockManager, remoteObjectManager,
@@ -545,7 +546,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.channel.addClassMapping(TCMessageType.LOCK_RECALL_MESSAGE, LockResponseMessage.class);
     this.channel.addClassMapping(TCMessageType.LOCK_QUERY_RESPONSE_MESSAGE, LockResponseMessage.class);
     this.channel.addClassMapping(TCMessageType.LOCK_STAT_MESSAGE, LockStatisticsMessage.class);
-    this.channel.addClassMapping(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessage.class);
+    this.channel.addClassMapping(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE,
+                                 LockStatisticsResponseMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.COMMIT_TRANSACTION_MESSAGE, CommitTransactionMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.REQUEST_ROOT_RESPONSE_MESSAGE, RequestRootResponseMessage.class);
     this.channel.addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, RequestManagedObjectMessageImpl.class);
@@ -655,10 +657,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   // this method is only intended for tests for plugging-in custom ClientHandshakeManagerImpl
-  protected ClientHandshakeManagerImpl createClientHandshakeManager(DSOClientMessageChannel chanel, Stage pauseStage,
-                                                                 SessionManager sessionManager,
-                                                                 DsoClusterInternal dsoClustr, ProductInfo pInfo,
-                                                                 List<ClientHandshakeCallback> clientHandshakeCallbacks) {
+  protected ClientHandshakeManagerImpl createClientHandshakeManager(
+                                                                    DSOClientMessageChannel chanel,
+                                                                    Stage pauseStage,
+                                                                    SessionManager sessionManager,
+                                                                    DsoClusterInternal dsoClustr,
+                                                                    ProductInfo pInfo,
+                                                                    List<ClientHandshakeCallback> clientHandshakeCallbacks) {
     return new ClientHandshakeManagerImpl(new ClientIDLogger(chanel.getClientIDProvider(), TCLogging
         .getLogger(ClientHandshakeManagerImpl.class)), chanel, chanel.getClientHandshakeMessageFactory(), pauseStage
         .getSink(), sessionManager, dsoClustr, pInfo.version(), Collections
