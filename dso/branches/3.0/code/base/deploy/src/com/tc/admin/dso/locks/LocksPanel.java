@@ -29,7 +29,6 @@ import com.tc.admin.model.IBasicObject;
 import com.tc.admin.model.IClusterModel;
 import com.tc.admin.model.IClusterModelElement;
 import com.tc.admin.model.IServer;
-import com.tc.admin.model.IServerGroup;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockID;
@@ -161,7 +160,7 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     TableMouseListener tableMouseListener = new TableMouseListener();
     fInspectLockObjectAction = new InspectLockObjectAction();
 
-    /** Clients * */
+    /** Clients **/
     ActionListener findNextAction = new FindNextHandler();
     ActionListener findPreviousAction = new FindPreviousHandler();
 
@@ -199,7 +198,7 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
 
     fLocksTabbedPane.addTab("Clients", mainSplitter);
 
-    /** Server * */
+    /** Server **/
     XContainer serverPanel = new XContainer(new BorderLayout());
     fServerLocksTable = new ServerLocksTable();
     fServerLockTableModel = new ServerLockTableModel(adminClientContext, EMPTY_LOCK_SPEC_COLLECTION);
@@ -223,13 +222,9 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     IClusterModel clusterModel = getClusterModel();
     clusterModel.addPropertyChangeListener(this);
     if (clusterModel.isReady()) {
-      IServerGroup[] grps = clusterModel.getServerGroups();
-      for (int i = 0; i < grps.length; i++) {
-        grps[i].addPropertyChangeListener(this);
-        IServer server = grps[i].getActiveServer();
-        if (server != null) {
-          server.addPropertyChangeListener(this);
-        }
+      IServer activeCoord = clusterModel.getActiveCoordinator();
+      if (activeCoord != null) {
+        activeCoord.addPropertyChangeListener(this);
       }
       adminClientContext.execute(new LocksPanelEnabledWorker());
     }
@@ -239,6 +234,11 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     return fLocksNode != null ? fLocksNode.getClusterModel() : null;
   }
 
+  private synchronized IServer getActiveCoordinator() {
+    IClusterModel clusterModel = getClusterModel();
+    return clusterModel != null ? clusterModel.getActiveCoordinator() : null;
+  }
+
   public void propertyChange(PropertyChangeEvent evt) {
     IClusterModel theClusterModel = getClusterModel();
     if (theClusterModel == null) { return; }
@@ -246,39 +246,27 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     String prop = evt.getPropertyName();
     if (IClusterModelElement.PROP_READY.equals(prop)) {
       if (theClusterModel.isReady()) {
-        IServerGroup[] grps = theClusterModel.getServerGroups();
-        for (int i = 0; i < grps.length; i++) {
-          grps[i].addPropertyChangeListener(this);
-          IServer server = grps[i].getActiveServer();
-          if (server != null) {
-            server.addPropertyChangeListener(this);
-          }
+        IServer activeCoord = theClusterModel.getActiveCoordinator();
+        if (activeCoord != null) {
+          activeCoord.addPropertyChangeListener(this);
         }
-
         adminClientContext.execute(new LocksPanelEnabledWorker());
       }
-    } else if (IServerGroup.PROP_ACTIVE_SERVER.equals(prop)) {
-      IServer newActive = (IServer) evt.getNewValue();
+    } else if (IClusterModel.PROP_ACTIVE_COORDINATOR.equals(prop)) {
       IServer oldActive = (IServer) evt.getOldValue();
+      if (oldActive != null) {
+        oldActive.removePropertyChangeListener(this);
+      }
+      IServer newActive = (IServer) evt.getNewValue();
       if (newActive != null) {
+        newActive.addPropertyChangeListener(this);
         if (adminClientContext != null) {
           adminClientContext.execute(new NewConnectionContextWorker());
         }
       }
-
-      if (oldActive != null) {
-        oldActive.removePropertyChangeListener(this);
-      }
-
-      if (newActive != null) {
-        newActive.addPropertyChangeListener(this);
-      }
     } else if (IServer.PROP_LOCK_STATS_TRACE_DEPTH.equals(prop)) {
-      IServerGroup[] grps = theClusterModel.getServerGroups();
-      int newTraceDepth = 0;
-      for (int i = 0; i < grps.length; i++) {
-        newTraceDepth = Math.max(newTraceDepth, grps[i].getActiveServer().getLockProfilerTraceDepth());
-      }
+      IServer activeCoord = getActiveCoordinator();
+      int newTraceDepth = activeCoord.getLockProfilerTraceDepth();
       if (fLastTraceDepth != newTraceDepth) {
         fLastTraceDepth = newTraceDepth;
         SwingUtilities.invokeLater(new Runnable() {
@@ -288,12 +276,8 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
         });
       }
     } else if (IServer.PROP_LOCK_STATS_ENABLED.equals(prop)) {
-      boolean enabledTemp = true;
-      IServerGroup[] grps = theClusterModel.getServerGroups();
-      for (int i = 0; i < grps.length; i++) {
-        enabledTemp = grps[i].getActiveServer().isLockProfilingEnabled() && enabledTemp;
-      }
-      final boolean enabled = enabledTemp;
+      IServer activeCoord = getActiveCoordinator();
+      final boolean enabled = activeCoord.isLockProfilingEnabled();
       if (enabled != fRefreshButton.isEnabled()) {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
@@ -463,14 +447,8 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     private LocksPanelEnabledWorker() {
       super(new Callable<Boolean>() {
         public Boolean call() throws Exception {
-          IClusterModel theClusterModel = getClusterModel();
-          boolean enabledTemp = true;
-          IServerGroup[] grps = theClusterModel.getServerGroups();
-          for (int i = 0; i < grps.length; i++) {
-            IServer server = grps[i].getActiveServer();
-            enabledTemp = server != null ? server.isLockProfilingEnabled() && enabledTemp : false;
-          }
-          return enabledTemp;
+          IServer activeCoord = getActiveCoordinator();
+          return activeCoord != null ? activeCoord.isLockProfilingEnabled() : false;
         }
       }, STATUS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
@@ -500,17 +478,9 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     private NewConnectionContextWorker() {
       super(new Callable<Boolean>() {
         public Boolean call() throws Exception {
-          IClusterModel theClusterModel = getClusterModel();
-          IServerGroup[] grps = theClusterModel.getServerGroups();
-          int newTraceDepth = 0;
-          boolean enabledTemp = true;
-          for (int i = 0; i < grps.length; i++) {
-            newTraceDepth = Math.max(newTraceDepth, grps[i].getActiveServer().getLockProfilerTraceDepth());
-            enabledTemp = grps[i].getActiveServer().isLockProfilingEnabled() && enabledTemp;
-          }
-          fLastTraceDepth = newTraceDepth;
-
-          return enabledTemp;
+          IServer activeCoord = getActiveCoordinator();
+          fLastTraceDepth = activeCoord.getLockProfilerTraceDepth();
+          return activeCoord.isLockProfilingEnabled();
         }
       }, STATUS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
@@ -620,10 +590,9 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     private LockStatsStateWorker(final boolean lockStatsEnabled) {
       super(new Callable<Void>() {
         public Void call() {
-          IClusterModel theClusterModel = getClusterModel();
-          IServerGroup[] grps = theClusterModel.getServerGroups();
-          for (int i = 0; i < grps.length; i++) {
-            grps[i].getActiveServer().setLockProfilingEnabled(lockStatsEnabled);
+          IServer activeCoord = getActiveCoordinator();
+          if (activeCoord != null) {
+            activeCoord.setLockProfilingEnabled(lockStatsEnabled);
           }
           return null;
         }
@@ -642,17 +611,10 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
   }
 
   private void toggleLocksPanelEnabled() {
-    IServerGroup[] grps = getClusterModel().getServerGroups();
-    for (int i = 0; i < grps.length; i++) {
-      if (grps[i].getActiveServer() == null) return;
-    }
+    IServer activeCoord = getActiveCoordinator();
+    if (activeCoord == null) { return; }
 
-    boolean lockStatsEnabled = true;
-    for (int i = 0; i < grps.length; i++) {
-      lockStatsEnabled = lockStatsEnabled && grps[i].getActiveServer().isLockProfilingEnabled();
-    }
-
-    lockStatsEnabled = lockStatsEnabled ? false : true;
+    boolean lockStatsEnabled = activeCoord.isLockProfilingEnabled() ? false : true;
     adminClientContext.execute(new LockStatsStateWorker(lockStatsEnabled));
   }
 
@@ -681,20 +643,8 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     LockSpecsGetter(String refreshButtonLabel) {
       super(new Callable<Collection<LockSpec>>() {
         public Collection<LockSpec> call() throws Exception {
-          IServerGroup[] grps = getClusterModel().getServerGroups();
-          Collection<LockSpec> c = null;
-          for (int i = 0; i < grps.length; i++) {
-            IServer server = grps[i].getActiveServer();
-            if (server != null) {
-              if (c == null) {
-                c = server.getLockSpecs();
-              } else {
-                c.addAll(server.getLockSpecs());
-              }
-            }
-          }
-
-          if (c != null) { return c; }
+          IServer activeCoord = getActiveCoordinator();
+          if (activeCoord != null) { return activeCoord.getLockSpecs(); }
           return Collections.emptySet();
         }
       }, REFRESH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -756,11 +706,10 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
     private TraceDepthWorker(final int traceDepth) {
       super(new Callable<Void>() {
         public Void call() {
-          IServerGroup[] grps = getClusterModel().getServerGroups();
-          for (int i = 0; i < grps.length; i++) {
-            grps[i].getActiveServer().setLockProfilerTraceDepth(fLastTraceDepth = traceDepth);
+          IServer activeCoord = getActiveCoordinator();
+          if (activeCoord != null) {
+            activeCoord.setLockProfilerTraceDepth(fLastTraceDepth = traceDepth);
           }
-
           return null;
         }
       });
