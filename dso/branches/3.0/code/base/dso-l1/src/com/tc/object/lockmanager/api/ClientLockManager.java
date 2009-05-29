@@ -15,6 +15,7 @@ import com.tc.util.runtime.LockInfoByThreadID;
 
 /**
  * Simple lock manager for the client
+ *
  */
 public interface ClientLockManager extends DumpHandler, PrettyPrintable, ClientHandshakeCallback {
 
@@ -23,8 +24,7 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable, ClientH
    */
   public void lock(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo);
 
-  public void lockInterruptibly(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo)
-      throws InterruptedException;
+  public void lockInterruptibly(LockID id, ThreadID threadID, int lockType, String lockObjectType, String contextInfo) throws InterruptedException;
 
   public boolean tryLock(LockID id, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType);
 
@@ -64,11 +64,11 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable, ClientH
   public void recall(LockID lockID, ThreadID threadID, int level, int leaseTimeInMs);
 
   public void pinLock(LockID lockId);
-
+  
   public void unpinLock(LockID lockId);
-
+  
   public void evictLock(LockID lockId);
-
+  
   public void addAllLocksTo(LockInfoByThreadID lockInfo);
 
   public int queueLength(LockID lockID, ThreadID threadID);
@@ -85,5 +85,5 @@ public interface ClientLockManager extends DumpHandler, PrettyPrintable, ClientH
 
   public void setLockStatisticsEnabled(boolean statEnable);
 
-  public void requestLockSpecs(NodeID nodeID);
+  public void requestLockSpecs();
 }

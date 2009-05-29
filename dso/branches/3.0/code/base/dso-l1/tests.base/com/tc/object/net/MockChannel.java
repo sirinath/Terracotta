@@ -3,7 +3,6 @@ package com.tc.object.net;
 import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.TestClientMessageChannel;
@@ -129,9 +128,5 @@ public class MockChannel implements DSOClientMessageChannel {
 
   public GroupID[] getGroupIDs() {
     return groups;
-  }
-
-  public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory() {
-    throw new ImplementMe();
   }
 }

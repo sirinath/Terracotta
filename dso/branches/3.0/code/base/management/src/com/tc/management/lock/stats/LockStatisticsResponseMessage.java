@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class LockStatisticsResponseMessageImpl extends DSOMessageBase implements LockStatisticsResponseMessage {
+public class LockStatisticsResponseMessage extends DSOMessageBase {
 
   private final static byte TYPE                                  = 1;
   private final static byte NUMBER_OF_LOCK_STAT_ELEMENTS          = 2;
@@ -30,13 +30,13 @@ public class LockStatisticsResponseMessageImpl extends DSOMessageBase implements
   private int               type;
   private Collection        allTCStackTraceElements;
 
-  public LockStatisticsResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
-                                           MessageChannel channel, TCMessageType type) {
+  public LockStatisticsResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+                                       MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
-  public LockStatisticsResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                           TCMessageHeader header, TCByteBuffer[] data) {
+  public LockStatisticsResponseMessage(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
+                                       TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

@@ -4,7 +4,6 @@
  */
 package com.tc.object.lockmanager.impl;
 
-import com.tc.net.GroupID;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
@@ -32,11 +31,8 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
 
   private LockRequestMessageFactory            lockRequestMessageFactory;
   private final ClientGlobalTransactionManager gtxManager;
-  private final GroupID                        groupID;
 
-  public RemoteLockManagerImpl(GroupID groupID, LockRequestMessageFactory lrmf,
-                               ClientGlobalTransactionManager gtxManager) {
-    this.groupID = groupID;
+  public RemoteLockManagerImpl(LockRequestMessageFactory lrmf, ClientGlobalTransactionManager gtxManager) {
     this.lockRequestMessageFactory = lrmf;
     this.gtxManager = gtxManager;
   }
@@ -86,7 +82,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
 
   private LockRequestMessage createRequest() {
     // return (LockRequestMessage) channel.createMessage(TCMessageType.LOCK_REQUEST_MESSAGE);
-    return lockRequestMessageFactory.newLockRequestMessage(groupID);
+    return lockRequestMessageFactory.newLockRequestMessage();
   }
 
   public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests,
@@ -95,22 +91,20 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
     req.initializeLockRecallCommit(lockID);
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType());
+      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request.lockLevel(), request.lockType());
       req.addLockContext(ctxt);
     }
 
     for (Iterator i = waitContext.iterator(); i.hasNext();) {
       WaitLockRequest request = (WaitLockRequest) i.next();
-      WaitContext ctxt = new WaitContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType(), request.getTimerSpec());
+      WaitContext ctxt = new WaitContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request.lockLevel(), request.lockType(),
+                                         request.getTimerSpec());
       req.addWaitContext(ctxt);
     }
 
     for (Iterator i = pendingRequests.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType());
+      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request.lockLevel(), request.lockType());
       req.addPendingLockContext(ctxt);
     }
 

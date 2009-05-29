@@ -15,14 +15,11 @@ import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.LockStatElement;
 import com.tc.management.lock.stats.LockStatisticsMessage;
-import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
 import com.tc.management.lock.stats.LockStatisticsResponseMessage;
-import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.net.OrderedGroupIDs;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
@@ -43,7 +40,6 @@ import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
-import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
@@ -98,9 +94,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     sessionManager = new TestSessionManager();
     clientServerGlue = new ClientServerLockStatManagerGlue(sessionManager, sink);
     clientLockStatManager = new ClientLockStatisticsManagerImpl();
-    clientLockManager = new ClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
-                                                  new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
-                                                  new NullTCLogger(), clientServerGlue, sessionManager,
+    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), clientServerGlue, sessionManager,
                                                   clientLockStatManager, new NullClientLockManagerConfig(),
                                                   new TCLockTimerImpl());
 
@@ -241,7 +235,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
     public TestClientMessageChannel(final ChannelID channelId, final Sink sink) {
       super(channelId);
-      super.registerType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessageImpl.class);
+      super.registerType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessage.class);
       super.registerType(TCMessageType.LOCK_STAT_MESSAGE, LockStatisticsMessage.class);
       this.sink = sink;
     }
@@ -304,7 +298,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
   }
 
-  private static class TestClientChannel implements DSOClientMessageChannel, LockStatisticsReponseMessageFactory {
+  private static class TestClientChannel implements DSOClientMessageChannel {
     private final ClientMessageChannel clientMessageChannel;
 
     public TestClientChannel(final ClientMessageChannel clientMessageChannel) {
@@ -398,14 +392,6 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
     public GroupID[] getGroupIDs() {
       throw new ImplementMe();
-    }
-
-    public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory() {
-      return this;
-    }
-
-    public LockStatisticsResponseMessage newLockStatisticsResponseMessage(NodeID remoteID) {
-      return (LockStatisticsResponseMessage) channel().createMessage(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE);
     }
   }
 
