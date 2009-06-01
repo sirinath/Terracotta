@@ -34,6 +34,7 @@ import com.tc.object.util.JarResourceLoader;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.StringUtil;
 import com.tc.util.VendorVmSignature;
 import com.tc.util.VendorVmSignatureException;
 import com.terracottatech.config.DsoApplication;
@@ -52,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -142,6 +144,7 @@ public class ModulesLoader {
         Bundle bundle = (Bundle) payload;
         if (bundle != null) {
           if (!forBootJar) registerClassLoader(configHelper, classProvider, bundle);
+          printModuleBuildInfo(bundle);
           loadConfiguration(configHelper, bundle);
         }
       }
@@ -168,6 +171,22 @@ public class ModulesLoader {
 
     osgiRuntime.installBundles(bundleURLs);
     osgiRuntime.startBundles(bundleURLs, handler);
+  }
+
+  protected static void printModuleBuildInfo(Bundle bundle) {
+    Dictionary headers = bundle.getHeaders();
+    StringBuilder sb = new StringBuilder("BuildInfo for module: " + bundle.getSymbolicName() + StringUtil.LINE_SEPARATOR);
+    boolean found = false;
+    for (Enumeration keys = headers.keys(); keys.hasMoreElements();) {
+      String key = (String) keys.nextElement();
+      if (key.indexOf("BuildInfo") > -1) {
+        sb.append("  " + key + ": " + headers.get(key)).append(StringUtil.LINE_SEPARATOR);
+        found = true;
+      }
+    }
+    if (found) {
+      logger.info(sb.toString());
+    }
   }
 
   private static List getAdditionalModules() {
