@@ -548,7 +548,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
 
     mv.visitTypeInsn(NEW, "java/util/HashSet");
     mv.visitInsn(DUP);
-    mv.visitIntInsn(BIPUSH, size);
+    mv.visitLdcInsn(Integer.valueOf(size));
     mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V");
     mv.visitVarInsn(ASTORE, 1);
 
