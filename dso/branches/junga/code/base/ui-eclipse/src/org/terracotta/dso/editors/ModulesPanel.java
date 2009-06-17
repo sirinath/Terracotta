@@ -23,8 +23,6 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
-import org.terracotta.dso.ModuleInfo;
-import org.terracotta.dso.ModulesConfiguration;
 import org.terracotta.dso.TcPlugin;
 import org.terracotta.dso.dialogs.NewAddModuleDialog;
 import org.terracotta.dso.dialogs.RepoLocationDialog;
@@ -32,6 +30,8 @@ import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureChangeEvent;
 import org.terracotta.dso.editors.xmlbeans.XmlObjectStructureListener;
 import org.terracotta.ui.util.SWTUtil;
 
+import com.tc.modules.ModuleInfo;
+import com.tc.modules.ModulesConfiguration;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
