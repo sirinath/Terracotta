@@ -135,4 +135,8 @@ public class TestRemoteObjectManager implements RemoteObjectManager {
   public void preFetchObject(ObjectID id) {
     throw new ImplementMe();
   }
+
+  public ObjectID getMappingForKey(ObjectID oid, Object portableKey) {
+    throw new ImplementMe();
+  }
 }

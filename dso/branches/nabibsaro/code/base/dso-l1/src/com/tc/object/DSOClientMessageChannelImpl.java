@@ -36,6 +36,7 @@ import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.RequestValueMappingForKeyMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.util.TCTimeoutException;
 
@@ -100,6 +101,11 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
 
   public RequestRootMessageFactory getRequestRootMessageFactory() {
     return this;
+  }
+
+  public RequestValueMappingForKeyMessage newRequestValueMappingForKeyMessage(NodeID nodeID) {
+    return (RequestValueMappingForKeyMessage) this.channel
+        .createMessage(TCMessageType.REQUEST_VALUE_MAPPING_FOR_KEY_MESSAGE);
   }
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(final NodeID nodeID) {

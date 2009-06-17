@@ -9,7 +9,6 @@ import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Clearable;
-import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.hook.impl.Util;
@@ -40,7 +39,7 @@ import java.util.Map.Entry;
  * need to be synchronized on the Hashtable either as the common memory barrier between tbe applicator and the
  * application is on the __tc_managed().getResolveLock().
  */
-public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearable {
+public class HashtableTC extends Hashtable implements TCMap, Clearable {
 
   private volatile transient TCObject $__tc_MANAGED;
   private boolean                     evictionEnabled = true;
@@ -127,7 +126,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       synchronized (__tc_managed().getResolveLock()) {
         e = __tc_getEntry(key);
       }
-      if (e == null) return null;
+      if (e == null) { return null; }
       Object actualValue = lookUpAndStoreIfNecessary(e);
       return actualValue;
     } else {
@@ -246,7 +245,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   @Override
   public synchronized void putAll(Map t) {
     if (__tc_isManaged()) {
-      if (t.isEmpty()) return;
+      if (t.isEmpty()) { return; }
 
       Iterator i = t.entrySet().iterator();
       while (i.hasNext()) {
@@ -462,25 +461,25 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
   }
 
   public boolean isEvictionEnabled() {
-    return evictionEnabled;
+    return this.evictionEnabled;
   }
 
   public void setEvictionEnabled(boolean enabled) {
-    evictionEnabled = enabled;
+    this.evictionEnabled = enabled;
   }
 
   public void __tc_managed(TCObject tcObject) {
-    $__tc_MANAGED = tcObject;
+    this.$__tc_MANAGED = tcObject;
   }
 
   public TCObject __tc_managed() {
-    return $__tc_MANAGED;
+    return this.$__tc_MANAGED;
   }
 
   public boolean __tc_isManaged() {
     // TCObject tcManaged = $__tc_MANAGED;
     // return (tcManaged != null && (tcManaged instanceof TCObjectPhysical || tcManaged instanceof TCObjectLogical));
-    return $__tc_MANAGED != null;
+    return this.$__tc_MANAGED != null;
   }
 
   protected Map.Entry __tc_getEntry(Object key) {
@@ -508,25 +507,25 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
 
     Object getValue() {
-      if (value instanceof ObjectID) {
+      if (this.value instanceof ObjectID) {
         try {
-          value = ManagerUtil.lookupObject((ObjectID) value);
+          this.value = ManagerUtil.lookupObject((ObjectID) this.value);
         } catch (TCObjectNotFoundException onfe) {
           throw new ConcurrentModificationException(onfe.getMessage());
         }
       }
-      return value;
+      return this.value;
     }
 
     public Object getValueFaultBreadth(ObjectID parentContext) {
-      if (value instanceof ObjectID) {
+      if (this.value instanceof ObjectID) {
         try {
-          value = ManagerUtil.lookupObjectWithParentContext((ObjectID) value, parentContext);
+          this.value = ManagerUtil.lookupObjectWithParentContext((ObjectID) this.value, parentContext);
         } catch (TCObjectNotFoundException onfe) {
           throw new ConcurrentModificationException(onfe.getMessage());
         }
       }
-      return value;
+      return this.value;
     }
 
     @Override
@@ -558,36 +557,36 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     public boolean equals(Object o) {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return entry.equals(o);
+          return this.entry.equals(o);
         }
       } else {
-        return entry.equals(o);
+        return this.entry.equals(o);
       }
     }
 
     public Object getKey() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return entry.getKey();
+          return this.entry.getKey();
         }
       } else {
-        return entry.getKey();
+        return this.entry.getKey();
       }
     }
 
     public Object getValue() {
       if (__tc_isManaged()) {
         synchronized (HashtableTC.this) {
-          return lookUpAndStoreIfNecessary(entry);
+          return lookUpAndStoreIfNecessary(this.entry);
         }
       } else {
-        return entry.getValue();
+        return this.entry.getValue();
       }
     }
 
     private Object getEntryValue() {
       synchronized (__tc_managed().getResolveLock()) {
-        return entry.getValue();
+        return this.entry.getValue();
       }
     }
 
@@ -597,15 +596,15 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
           Object preLookupValue = getEntryValue();
           Object value = unwrapValueIfNecessaryFaultBreadth(preLookupValue, __tc_managed().getObjectID());
           synchronized (__tc_managed().getResolveLock()) {
-            Object postLookupValue = entry.getValue();
+            Object postLookupValue = this.entry.getValue();
             if (postLookupValue != value && postLookupValue == preLookupValue) {
-              entry.setValue(value);
+              this.entry.setValue(value);
             }
             return value;
           }
         }
       } else {
-        return entry.getValue();
+        return this.entry.getValue();
       }
     }
 
@@ -613,10 +612,10 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     public int hashCode() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return entry.hashCode();
+          return this.entry.hashCode();
         }
       } else {
-        return entry.hashCode();
+        return this.entry.hashCode();
       }
     }
 
@@ -627,15 +626,15 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
             // This check is done to solve the chicken and egg problem. Should I modify the local copy or the remote
             // copy
             // ? (both has error checks that we want to take place before any modification is propagated
-            if (value == null) throw new NullPointerException();
+            if (value == null) { throw new NullPointerException(); }
             ManagerUtil.checkWriteAccess(HashtableTC.this);
             ManagerUtil.logicalInvoke(HashtableTC.this, SerializationUtil.PUT_SIGNATURE,
                                       new Object[] { getKey(), value });
-            return unwrapValueIfNecessary(entry.setValue(value));
+            return unwrapValueIfNecessary(this.entry.setValue(value));
           }
         }
       } else {
-        return entry.setValue(value);
+        return this.entry.setValue(value);
       }
     }
   }
@@ -743,10 +742,10 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       synchronized (HashtableTC.this) {
         if (__tc_isManaged()) {
           synchronized (__tc_managed().getResolveLock()) {
-            return entrySet.add(arg0);
+            return this.entrySet.add(arg0);
           }
         } else {
-          return entrySet.add(arg0);
+          return this.entrySet.add(arg0);
         }
       }
     }
@@ -754,7 +753,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     @Override
     public void clear() {
       // XXX:: Calls Hashtable.clear()
-      entrySet.clear();
+      this.entrySet.clear();
     }
 
     @Override
@@ -762,17 +761,17 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       synchronized (HashtableTC.this) {
         if (__tc_isManaged()) {
           synchronized (__tc_managed().getResolveLock()) {
-            return entrySet.contains(o);
+            return this.entrySet.contains(o);
           }
         } else {
-          return entrySet.contains(o);
+          return this.entrySet.contains(o);
         }
       }
     }
 
     @Override
     public Iterator iterator() {
-      return new EntriesIterator(entrySet.iterator());
+      return new EntriesIterator(this.entrySet.iterator());
     }
 
     @Override
@@ -786,7 +785,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
 
             Entry entryToRemove = (Entry) o;
 
-            if (entrySet.contains(entryToRemove)) {
+            if (this.entrySet.contains(entryToRemove)) {
               Entry entry = __tc_removeEntryForKey(entryToRemove.getKey());
               ManagerUtil.logicalInvoke(HashtableTC.this, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { entry
                   .getKey() });
@@ -796,7 +795,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
             }
           }
         } else {
-          return entrySet.remove(o);
+          return this.entrySet.remove(o);
         }
       }
     }
@@ -817,13 +816,13 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     @Override
     public void clear() {
       // Calls Hashtable.this.clear().
-      keys.clear();
+      this.keys.clear();
     }
 
     @Override
     public boolean contains(Object o) {
       // Calls Hashtable.this.containsKey().
-      return keys.contains(o);
+      return this.keys.contains(o);
     }
 
     @Override
@@ -841,7 +840,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
           HashtableTC.this.__tc_remove_logical(o);
           return (size() != sizeB4);
         } else {
-          return keys.remove(o);
+          return this.keys.remove(o);
         }
       }
     }
@@ -898,13 +897,13 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     // XXX:: Calls Hashtable.this.clear();
     @Override
     public void clear() {
-      values.clear();
+      this.values.clear();
     }
 
     // XXX:: Calls Hashtable.this.containsValue();
     @Override
     public boolean contains(Object o) {
-      return values.contains(o);
+      return this.values.contains(o);
     }
 
     @Override
@@ -932,30 +931,30 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     public boolean hasNext() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return entries.hasNext();
+          return this.entries.hasNext();
         }
       } else {
-        return entries.hasNext();
+        return this.entries.hasNext();
       }
     }
 
     public Object next() {
-      currentEntry = nextEntry();
-      if (currentEntry instanceof EntryWrapper) {
+      this.currentEntry = nextEntry();
+      if (this.currentEntry instanceof EntryWrapper) {
         // This check is here since this class is extended by ValuesIterator too.
-        return currentEntry;
+        return this.currentEntry;
       } else {
-        return new EntryWrapper(currentEntry);
+        return new EntryWrapper(this.currentEntry);
       }
     }
 
     protected Map.Entry nextEntry() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return (Map.Entry) entries.next();
+          return (Map.Entry) this.entries.next();
         }
       } else {
-        return (Map.Entry) entries.next();
+        return (Map.Entry) this.entries.next();
       }
     }
 
@@ -965,13 +964,13 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
         synchronized (HashtableTC.this) {
           synchronized (__tc_managed().getResolveLock()) {
             ManagerUtil.checkWriteAccess(HashtableTC.this);
-            entries.remove();
+            this.entries.remove();
             ManagerUtil.logicalInvoke(HashtableTC.this, SerializationUtil.REMOVE_KEY_SIGNATURE,
-                                      new Object[] { currentEntry.getKey() });
+                                      new Object[] { this.currentEntry.getKey() });
           }
         }
       } else {
-        entries.remove();
+        this.entries.remove();
       }
     }
   }
@@ -1015,11 +1014,11 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
     }
 
     public boolean hasMoreElements() {
-      return e.hasMoreElements();
+      return this.e.hasMoreElements();
     }
 
     public Object nextElement() {
-      Object rv = e.nextElement();
+      Object rv = this.e.nextElement();
       if (rv instanceof ValuesWrapper) {
         rv = ((ValuesWrapper) rv).getValue();
       }

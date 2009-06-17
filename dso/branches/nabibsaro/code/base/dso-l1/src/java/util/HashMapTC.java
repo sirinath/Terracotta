@@ -22,7 +22,7 @@ import com.tc.util.Assert;
  * HashMapClassAdapter} will be applied, which will instrument either the entrySet0 method (if present) or the entrySet
  * method otherwise.
  */
-public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
+public class HashMapTC extends HashMap implements TCMap, Clearable {
 
   // General Rules to follow in this class
   // 1) Values could be ObjectIDs. In shared mode, always do a lookup before returning to outside world.
@@ -105,7 +105,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   }
 
   private Object lookUpAndStoreIfNecessary(Map.Entry e) {
-    if (e == null) return null;
+    if (e == null) { return null; }
     Object value = null;
     synchronized (__tc_managed().getResolveLock()) {
       value = e.getValue();
@@ -177,18 +177,23 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   public void putAll(Map map) {
     if (__tc_isManaged()) {
       int numKeysToBeAdded = map.size();
-      if (numKeysToBeAdded == 0) return;
+      if (numKeysToBeAdded == 0) { return; }
 
       /*
        * This logic duplicated from HashMap super implementation see explanation there
        */
-      if (numKeysToBeAdded > threshold) {
-        int targetCapacity = (int) (numKeysToBeAdded / loadFactor + 1);
-        if (targetCapacity > MAXIMUM_CAPACITY) targetCapacity = MAXIMUM_CAPACITY;
-        int newCapacity = table.length;
-        while (newCapacity < targetCapacity)
+      if (numKeysToBeAdded > this.threshold) {
+        int targetCapacity = (int) (numKeysToBeAdded / this.loadFactor + 1);
+        if (targetCapacity > MAXIMUM_CAPACITY) {
+          targetCapacity = MAXIMUM_CAPACITY;
+        }
+        int newCapacity = this.table.length;
+        while (newCapacity < targetCapacity) {
           newCapacity <<= 1;
-        if (newCapacity > table.length) resize(newCapacity);
+        }
+        if (newCapacity > this.table.length) {
+          resize(newCapacity);
+        }
       }
 
       for (Iterator i = map.entrySet().iterator(); i.hasNext();) {
@@ -443,25 +448,25 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
   }
 
   public boolean isEvictionEnabled() {
-    return evictionEnabled;
+    return this.evictionEnabled;
   }
 
   public void setEvictionEnabled(boolean enabled) {
-    evictionEnabled = enabled;
+    this.evictionEnabled = enabled;
   }
 
   public void __tc_managed(TCObject tcObject) {
-    $__tc_MANAGED = tcObject;
+    this.$__tc_MANAGED = tcObject;
   }
 
   public TCObject __tc_managed() {
-    return $__tc_MANAGED;
+    return this.$__tc_MANAGED;
   }
 
   public boolean __tc_isManaged() {
     // TCObject tcManaged = $__tc_MANAGED;
     // return (tcManaged != null && (tcManaged instanceof TCObjectPhysical || tcManaged instanceof TCObjectLogical));
-    return $__tc_MANAGED != null;
+    return this.$__tc_MANAGED != null;
   }
 
   /*
@@ -477,13 +482,13 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
 
     @Override
     public int hashCode() {
-      return value.hashCode();
+      return this.value.hashCode();
     }
 
     @Override
     public boolean equals(Object o) {
       Object pojo = lookUpIfNecessary(o); // XXX:: This is not stored in the Map since we dont know the key
-      return pojo == value || value.equals(pojo);
+      return pojo == this.value || this.value.equals(pojo);
     }
   }
 
@@ -499,10 +504,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     public Object getKey() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return entry.getKey();
+          return this.entry.getKey();
         }
       } else {
-        return entry.getKey();
+        return this.entry.getKey();
       }
     }
 
@@ -510,26 +515,26 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     // This method not only does a faulting on this value, but depending on the fault depth, it faults peer objects too.
     public Object getValue() {
       if (__tc_isManaged()) {
-        Object preLookupValue = lookUpAndStoreIfNecessary(entry);
+        Object preLookupValue = lookUpAndStoreIfNecessary(this.entry);
         Object value = lookUpFaultBreadthIfNecessary(preLookupValue);
         synchronized (__tc_managed().getResolveLock()) {
-          Object postLookupValue = entry.getValue();
+          Object postLookupValue = this.entry.getValue();
           if (postLookupValue != value && postLookupValue == preLookupValue) {
-            entry.setValue(value);
+            this.entry.setValue(value);
           }
           return value;
         }
       } else {
-        return entry.getValue();
+        return this.entry.getValue();
       }
     }
 
     private Object __tc_getLocalValue() {
-      return entry.getValue();
+      return this.entry.getValue();
     }
 
     private Object __tc_setLocalValue(Object value) {
-      return entry.setValue(value);
+      return this.entry.setValue(value);
     }
 
     /*
@@ -540,13 +545,13 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
           ManagerUtil.checkWriteAccess(HashMapTC.this);
-          ManagerUtil.logicalInvoke(HashMapTC.this, SerializationUtil.PUT_SIGNATURE, new Object[] { entry.getKey(),
-              value });
-          Object oldVal = entry.setValue(value);
+          ManagerUtil.logicalInvoke(HashMapTC.this, SerializationUtil.PUT_SIGNATURE, new Object[] {
+              this.entry.getKey(), value });
+          Object oldVal = this.entry.setValue(value);
           return lookUpIfNecessary(oldVal);
         }
       } else {
-        return entry.setValue(value);
+        return this.entry.setValue(value);
       }
     }
 
@@ -556,10 +561,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         synchronized (__tc_managed().getResolveLock()) {
           // XXX:: make sure value is lookedup
           getValue();
-          return entry.equals(o);
+          return this.entry.equals(o);
         }
       } else {
-        return entry.equals(o);
+        return this.entry.equals(o);
       }
     }
 
@@ -569,10 +574,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         synchronized (__tc_managed().getResolveLock()) {
           // XXX:: make sure value is lookedup
           getValue();
-          return entry.hashCode();
+          return this.entry.hashCode();
         }
       } else {
-        return entry.hashCode();
+        return this.entry.hashCode();
       }
     }
 
@@ -599,7 +604,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     public boolean contains(Object o) {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          if (!(o instanceof Map.Entry)) return false;
+          if (!(o instanceof Map.Entry)) { return false; }
           Map.Entry e = (Map.Entry) o;
           Object key = e.getKey();
           if (!HashMapTC.this.containsKey(key)) { return false; }
@@ -609,20 +614,20 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
           return candidate.equals(e);
         }
       } else {
-        return entries.contains(o);
+        return this.entries.contains(o);
       }
     }
 
     @Override
     public Iterator iterator() {
-      return new UnwrappedEntriesIterator(entries.iterator());
+      return new UnwrappedEntriesIterator(this.entries.iterator());
     }
 
     @Override
     public boolean remove(Object o) {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          if (!(o instanceof Map.Entry)) return false;
+          if (!(o instanceof Map.Entry)) { return false; }
           Map.Entry e = (Map.Entry) o;
           if (contains(e)) {
             int sizeB4 = size();
@@ -633,7 +638,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
           }
         }
       } else {
-        return entries.remove(o);
+        return this.entries.remove(o);
       }
     }
 
@@ -670,10 +675,10 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     public boolean contains(Object o) {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return _keySet.contains(o);
+          return this._keySet.contains(o);
         }
       } else {
-        return _keySet.contains(o);
+        return this._keySet.contains(o);
       }
     }
 
@@ -692,7 +697,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
           return (size() != sizeB4);
         }
       } else {
-        return _keySet.remove(o);
+        return this._keySet.remove(o);
       }
     }
 
@@ -721,7 +726,7 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         }
         return modified;
       } else {
-        return _keySet.removeAll(c);
+        return this._keySet.removeAll(c);
       }
     }
 
@@ -751,13 +756,13 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
         synchronized (__tc_managed().getResolveLock()) {
           // Managed version
           if (o != null) {
-            return _values.contains(new ValueWrapper(o));
+            return this._values.contains(new ValueWrapper(o));
           } else {
-            return _values.contains(o);
+            return this._values.contains(o);
           }
         }
       } else {
-        return _values.contains(o);
+        return this._values.contains(o);
       }
     }
 
@@ -785,24 +790,24 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
     public boolean hasNext() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return iterator.hasNext();
+          return this.iterator.hasNext();
         }
       } else {
-        return iterator.hasNext();
+        return this.iterator.hasNext();
       }
     }
 
     public Object next() {
-      return currentEntry = nextEntry();
+      return this.currentEntry = nextEntry();
     }
 
     private Map.Entry nextEntry() {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
-          return postNextEntry((Map.Entry) iterator.next());
+          return postNextEntry((Map.Entry) this.iterator.next());
         }
       } else {
-        return (Map.Entry) iterator.next();
+        return (Map.Entry) this.iterator.next();
       }
     }
 
@@ -815,12 +820,12 @@ public class HashMapTC extends HashMap implements TCMap, Manageable, Clearable {
       if (__tc_isManaged()) {
         synchronized (__tc_managed().getResolveLock()) {
           ManagerUtil.checkWriteAccess(HashMapTC.this);
-          iterator.remove();
+          this.iterator.remove();
           ManagerUtil.logicalInvoke(HashMapTC.this, SerializationUtil.REMOVE_ENTRY_FOR_KEY_SIGNATURE,
-                                    new Object[] { currentEntry.getKey() });
+                                    new Object[] { this.currentEntry.getKey() });
         }
       } else {
-        iterator.remove();
+        this.iterator.remove();
       }
     }
   }

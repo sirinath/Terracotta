@@ -59,8 +59,8 @@ import java.util.Map;
 import javax.management.MBeanServer;
 
 public class ManagerImpl implements Manager {
-  private static final TCLogger                    logger                       = TCLogging.getLogger(Manager.class);
-  private final SetOnceFlag                        clientStarted                = new SetOnceFlag();
+  private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
+  private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
   private final ClassProvider                      classProvider;
   private final boolean                            startClient;
@@ -78,23 +78,24 @@ public class ManagerImpl implements Manager {
   private ClientTransactionManager                 txManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
-  private final SerializationUtil                  serializer                   = new SerializationUtil();
-  private final MethodDisplayNames                 methodDisplay                = new MethodDisplayNames(serializer);
+  private final SerializationUtil                  serializer    = new SerializationUtil();
+  private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(this.serializer);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(true, null, null, config, connectionComponents, true);
   }
 
   // For tests
-  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager, final ClientTransactionManager txManager,
-                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
+  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
+                     final ClientTransactionManager txManager, final DSOClientConfigHelper config,
+                     final PreparedComponentsFromL2Connection connectionComponents) {
     this(startClient, objectManager, txManager, config, connectionComponents, true);
   }
 
   // For tests
-  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager, final ClientTransactionManager txManager,
-                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
-                     final boolean shutdownActionRequired) {
+  public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
+                     final ClientTransactionManager txManager, final DSOClientConfigHelper config,
+                     final PreparedComponentsFromL2Connection connectionComponents, final boolean shutdownActionRequired) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
@@ -105,14 +106,14 @@ public class ManagerImpl implements Manager {
     this.dsoCluster = new DsoClusterImpl();
     this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
     if (shutdownActionRequired) {
-      shutdownAction = new Thread(new ShutdownAction());
+      this.shutdownAction = new Thread(new ShutdownAction());
       // Register a shutdown hook for the DSO client
-      Runtime.getRuntime().addShutdownHook(shutdownAction);
+      Runtime.getRuntime().addShutdownHook(this.shutdownAction);
     } else {
-      shutdownAction = null;
+      this.shutdownAction = null;
     }
     this.runtimeLogger = new RuntimeLoggerImpl(config);
-    this.classProvider = new StandardClassProvider(runtimeLogger);
+    this.classProvider = new StandardClassProvider(this.runtimeLogger);
     registerStandardLoaders();
   }
 
@@ -137,7 +138,7 @@ public class ManagerImpl implements Manager {
   }
 
   public SessionMonitor getHttpSessionMonitor() {
-    return dso.getHttpSessionMonitor();
+    return this.dso.getHttpSessionMonitor();
   }
 
   public void init() {
@@ -151,8 +152,8 @@ public class ManagerImpl implements Manager {
   private void init(final boolean forTests) {
     resolveClasses(); // call this before starting any threads (SEDA, DistributedMethod call stuff, etc)
 
-    if (startClient) {
-      if (clientStarted.attemptSet()) {
+    if (this.startClient) {
+      if (this.clientStarted.attemptSet()) {
         startClient(forTests);
       }
     }
@@ -195,21 +196,31 @@ public class ManagerImpl implements Manager {
     StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
         AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
-        dso = clientFactory.createClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
-                                         statisticsAgentSubSystem, dsoCluster, runtimeLogger);
+        ManagerImpl.this.dso = clientFactory.createClient(ManagerImpl.this.config, group,
+                                                          ManagerImpl.this.classProvider,
+                                                          ManagerImpl.this.connectionComponents, ManagerImpl.this,
+                                                          ManagerImpl.this.statisticsAgentSubSystem,
+                                                          ManagerImpl.this.dsoCluster, ManagerImpl.this.runtimeLogger);
 
         if (forTests) {
-          dso.setCreateDedicatedMBeanServer(true);
+          ManagerImpl.this.dso.setCreateDedicatedMBeanServer(true);
         }
-        dso.start();
-        objectManager = dso.getObjectManager();
-        txManager = dso.getTransactionManager();
-        methodCallManager = dso.getDmiManager();
-        dsoCluster.init(dso.getClusterMetaDataManager(), objectManager);
+        ManagerImpl.this.dso.start();
+        ManagerImpl.this.objectManager = ManagerImpl.this.dso.getObjectManager();
+        ManagerImpl.this.txManager = ManagerImpl.this.dso.getTransactionManager();
+        ManagerImpl.this.methodCallManager = ManagerImpl.this.dso.getDmiManager();
+        ManagerImpl.this.dsoCluster.init(ManagerImpl.this.dso.getClusterMetaDataManager(),
+                                         ManagerImpl.this.objectManager);
 
-        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
-            .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(), dso
-            .getStatisticsAgentSubSystem(), connectionComponents);
+        ManagerImpl.this.shutdownManager = new ClientShutdownManager(
+                                                                     ManagerImpl.this.objectManager,
+                                                                     ManagerImpl.this.dso.getRemoteTransactionManager(),
+                                                                     ManagerImpl.this.dso.getStageManager(),
+                                                                     ManagerImpl.this.dso.getCommunicationsManager(),
+                                                                     ManagerImpl.this.dso.getChannel(),
+                                                                     ManagerImpl.this.dso.getClientHandshakeManager(),
+                                                                     ManagerImpl.this.dso.getStatisticsAgentSubSystem(),
+                                                                     ManagerImpl.this.connectionComponents);
       }
 
     };
@@ -223,16 +234,16 @@ public class ManagerImpl implements Manager {
   }
 
   private void shutdown(final boolean fromShutdownHook) {
-    if (shutdownManager != null) {
+    if (this.shutdownManager != null) {
       try {
         // XXX: This "fromShutdownHook" flag should be removed. It's only here temporarily to make shutdown behave
         // before I started futzing with it
-        shutdownManager.execute(fromShutdownHook);
+        this.shutdownManager.execute(fromShutdownHook);
       } finally {
         // If we're not being called as a result of the shutdown hook, de-register the hook
-        if (Thread.currentThread() != shutdownAction) {
+        if (Thread.currentThread() != this.shutdownAction) {
           try {
-            Runtime.getRuntime().removeShutdownHook(shutdownAction);
+            Runtime.getRuntime().removeShutdownHook(this.shutdownAction);
           } catch (Exception e) {
             // ignore
           }
@@ -250,13 +261,14 @@ public class ManagerImpl implements Manager {
         if (tco != null) {
 
           if (SerializationUtil.ADD_ALL_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllInvoke(serializer.methodToID(methodSignature), methodSignature, (Collection) params[0], tco);
+            logicalAddAllInvoke(this.serializer.methodToID(methodSignature), methodSignature, (Collection) params[0],
+                                tco);
           } else if (SerializationUtil.ADD_ALL_AT_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllAtInvoke(serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
+            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
                 .intValue(), (Collection) params[1], tco);
           } else {
             adjustForJava1ParametersIfNecessary(methodSignature, params);
-            tco.logicalInvoke(serializer.methodToID(methodSignature), methodDisplay
+            tco.logicalInvoke(this.serializer.methodToID(methodSignature), this.methodDisplay
                 .getDisplayForSignature(methodSignature), params);
           }
         }
@@ -266,7 +278,8 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName, final Object[] params) {
+  public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
+                                           final Object[] params) {
     monitorEnter(lockObject, LockLevel.WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     try {
       logicalInvoke(object, methodName, params);
@@ -287,17 +300,19 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private void logicalAddAllInvoke(final int method, final String methodSignature, final Collection collection, final TCObject tcobj) {
+  private void logicalAddAllInvoke(final int method, final String methodSignature, final Collection collection,
+                                   final TCObject tcobj) {
     for (Iterator i = collection.iterator(); i.hasNext();) {
-      tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] { i.next() });
+      tcobj
+          .logicalInvoke(method, this.methodDisplay.getDisplayForSignature(methodSignature), new Object[] { i.next() });
     }
   }
 
-  private void logicalAddAllAtInvoke(final int method, final String methodSignature, int index, final Collection collection,
-                                     final TCObject tcobj) {
+  private void logicalAddAllAtInvoke(final int method, final String methodSignature, int index,
+                                     final Collection collection, final TCObject tcobj) {
 
     for (Iterator i = collection.iterator(); i.hasNext();) {
-      tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] {
+      tcobj.logicalInvoke(method, this.methodDisplay.getDisplayForSignature(methodSignature), new Object[] {
           new Integer(index++), i.next() });
     }
   }
@@ -336,8 +351,8 @@ public class ManagerImpl implements Manager {
   public void beginLockWithoutTxn(final String lockID, final int type) {
     boolean locked = this.txManager.beginLockWithoutTxn(lockID, type, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
                                                         LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, null, null);
+    if (locked && this.runtimeLogger.getLockDebug()) {
+      this.runtimeLogger.lockAcquired(lockID, type, null, null);
     }
   }
 
@@ -355,31 +370,33 @@ public class ManagerImpl implements Manager {
     begin(generateVolatileLockName(tcObject, fieldName), type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 
-  private void begin(final String lockID, final int type, final Object instance, final TCObject tcobj, final String contextInfo) {
+  private void begin(final String lockID, final int type, final Object instance, final TCObject tcobj,
+                     final String contextInfo) {
     String lockObjectClass = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
     boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
+    if (locked && this.runtimeLogger.getLockDebug()) {
+      this.runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
   }
 
-  private void beginInterruptibly(final String lockID, final int type, final Object instance, final TCObject tcobj, final String contextInfo)
-      throws InterruptedException {
+  private void beginInterruptibly(final String lockID, final int type, final Object instance, final TCObject tcobj,
+                                  final String contextInfo) throws InterruptedException {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
     boolean locked = this.txManager.beginInterruptibly(lockID, type, lockObjectType, contextInfo);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
+    if (locked && this.runtimeLogger.getLockDebug()) {
+      this.runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
   }
 
-  private boolean tryBegin(final String lockID, final int type, final Object instance, final TimerSpec timeout, final TCObject tcobj) {
+  private boolean tryBegin(final String lockID, final int type, final Object instance, final TimerSpec timeout,
+                           final TCObject tcobj) {
     String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
 
     boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
+    if (locked && this.runtimeLogger.getLockDebug()) {
+      this.runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
     }
     return locked;
   }
@@ -429,8 +446,8 @@ public class ManagerImpl implements Manager {
 
   private void managedObjectNotify(final Object obj, final TCObject tco, final boolean all) {
     try {
-      if (runtimeLogger.getWaitNotifyDebug()) {
-        runtimeLogger.objectNotify(all, obj, tco);
+      if (this.runtimeLogger.getWaitNotifyDebug()) {
+        this.runtimeLogger.objectNotify(all, obj, tco);
       }
       this.txManager.notify(generateAutolockName(tco), all, obj);
     } catch (Throwable t) {
@@ -444,8 +461,8 @@ public class ManagerImpl implements Manager {
     if (tco != null) {
       try {
         TimerSpec call = new TimerSpec();
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
+        if (this.runtimeLogger.getWaitNotifyDebug()) {
+          this.runtimeLogger.objectWait(call, obj, tco);
         }
         this.txManager.wait(generateAutolockName(tco), call, obj);
       } catch (InterruptedException ie) {
@@ -463,8 +480,8 @@ public class ManagerImpl implements Manager {
     if (tco != null) {
       try {
         TimerSpec call = new TimerSpec(millis);
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
+        if (this.runtimeLogger.getWaitNotifyDebug()) {
+          this.runtimeLogger.objectWait(call, obj, tco);
         }
         this.txManager.wait(generateAutolockName(tco), call, obj);
       } catch (InterruptedException ie) {
@@ -483,8 +500,8 @@ public class ManagerImpl implements Manager {
     if (tco != null) {
       try {
         TimerSpec call = new TimerSpec(millis, nanos);
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
+        if (this.runtimeLogger.getWaitNotifyDebug()) {
+          this.runtimeLogger.objectWait(call, obj, tco);
         }
         this.txManager.wait(generateAutolockName(tco), call, obj);
       } catch (InterruptedException ie) {
@@ -505,12 +522,15 @@ public class ManagerImpl implements Manager {
   public boolean isDsoMonitorEntered(final Object o) {
     String lockName = getLockName(o);
     if (lockName == null) { return false; }
-    boolean dsoMonitorEntered = txManager.isLockOnTopStack(lockName);
+    boolean dsoMonitorEntered = this.txManager.isLockOnTopStack(lockName);
 
     if (!dsoMonitorEntered && isManaged(o)) {
       logger
-          .info("An unlock is being attempted on an Object of class " + o.getClass().getName()
-                + " [Identity Hashcode : 0x" + Integer.toHexString(System.identityHashCode(o)) + "] "
+          .info("An unlock is being attempted on an Object of class "
+                + o.getClass().getName()
+                + " [Identity Hashcode : 0x"
+                + Integer.toHexString(System.identityHashCode(o))
+                + "] "
                 + " which is a shared object, however there is no associated clustered lock held by the current thread. This usually means that the object became shared within a synchronized block/method.");
     }
 
@@ -716,15 +736,15 @@ public class ManagerImpl implements Manager {
   }
 
   public void pinLock(final String lockName) {
-    txManager.pinLock(lockName);
+    this.txManager.pinLock(lockName);
   }
 
   public void unpinLock(final String lockName) {
-    txManager.unpinLock(lockName);
+    this.txManager.unpinLock(lockName);
   }
 
   public void evictLock(final String lockName) {
-    txManager.evictLock(lockName);
+    this.txManager.evictLock(lockName);
   }
 
   public Object lookupObject(final ObjectID id) throws ClassNotFoundException {
@@ -739,12 +759,13 @@ public class ManagerImpl implements Manager {
     return this.objectManager.lookupObject(id, parentContext);
   }
 
-  public boolean distributedMethodCall(final Object receiver, final String method, final Object[] params, final boolean runOnAllNodes) {
+  public boolean distributedMethodCall(final Object receiver, final String method, final Object[] params,
+                                       final boolean runOnAllNodes) {
     TCObject tco = lookupExistingOrNull(receiver);
 
     try {
       if (tco != null) {
-        return methodCallManager.distributedInvoke(receiver, method, params, runOnAllNodes);
+        return this.methodCallManager.distributedInvoke(receiver, method, params, runOnAllNodes);
       } else {
         return false;
       }
@@ -755,14 +776,14 @@ public class ManagerImpl implements Manager {
   }
 
   public void distributedMethodCallCommit() {
-    methodCallManager.distributedInvokeCommit();
+    this.methodCallManager.distributedInvokeCommit();
   }
 
   public void checkWriteAccess(final Object context) {
     // XXX: make sure that "context" is the ALWAYS the right object to check here, and then rename it
     if (isManaged(context)) {
       try {
-        txManager.checkWriteAccess(context);
+        this.txManager.checkWriteAccess(context);
       } catch (Throwable t) {
         Util.printLogAndRethrowError(t, logger);
       }
@@ -774,15 +795,11 @@ public class ManagerImpl implements Manager {
       // isLiteralInstance() returns false for array types, so we don't need recursion here.
       return LiteralValues.calculateDsoHashCode(obj);
     }
-    if (overridesHashCode(obj)) {
-      return obj.hashCode();
-    }
+    if (overridesHashCode(obj)) { return obj.hashCode(); }
     // obj does not have a stable hashCode(); share it and use hash code of its ObjectID
     TCObject tcobject = shareObjectIfNecessary(obj);
-    if (tcobject != null) {
-      return tcobject.getObjectID().hashCode();
-    }
-    // A not-shareable, not-literal object?  Hmm, seems we shouldn't get here.
+    if (tcobject != null) { return tcobject.getObjectID().hashCode(); }
+    // A not-shareable, not-literal object? Hmm, seems we shouldn't get here.
     throw Assert.failure("Cannot calculate stable DSO hash code for an object that is not literal and not shareable");
   }
 
@@ -882,7 +899,7 @@ public class ManagerImpl implements Manager {
   }
 
   public InstrumentationLogger getInstrumentationLogger() {
-    return instrumentationLogger;
+    return this.instrumentationLogger;
   }
 
   private static class MethodDisplayNames {
@@ -892,7 +909,7 @@ public class ManagerImpl implements Manager {
     public MethodDisplayNames(final SerializationUtil serializer) {
       String[] sigs = serializer.getSignatures();
       for (String sig : sigs) {
-        display.put(sig, getDisplayStringFor(sig));
+        this.display.put(sig, getDisplayStringFor(sig));
       }
     }
 
@@ -950,7 +967,7 @@ public class ManagerImpl implements Manager {
     }
 
     String getDisplayForSignature(final String methodSignature) {
-      String rv = (String) display.get(methodSignature);
+      String rv = (String) this.display.get(methodSignature);
       if (rv == null) { throw new AssertionError("missing display string for signature: " + methodSignature); }
       return rv;
     }
@@ -971,7 +988,7 @@ public class ManagerImpl implements Manager {
 
   public void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     String loaderName = loader.__tc_getClassLoaderName();
-    String appGroup = config.getAppGroup(loaderName, webAppName);
+    String appGroup = this.config.getAppGroup(loaderName, webAppName);
     this.classProvider.registerNamedLoader(loader, appGroup);
   }
 
@@ -991,5 +1008,9 @@ public class ManagerImpl implements Manager {
     this.statisticsAgentSubSystem.waitUntilActive();
 
     return this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().getActionInstance(name);
+  }
+
+  public Object getValueForKeyInMap(PartialKeysMap map, Object key) throws ClassNotFoundException {
+    return this.objectManager.getValueForKeyInMap(map, key);
   }
 }

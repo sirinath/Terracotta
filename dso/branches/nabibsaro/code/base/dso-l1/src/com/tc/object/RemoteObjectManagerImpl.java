@@ -15,6 +15,7 @@ import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.RequestValueMappingForKeyMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.properties.TCPropertiesConsts;
@@ -53,6 +54,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   private final Map                                outstandingRootRequests   = new HashMap();
   private final Set                                preFetchInProgress        = new HashSet();
   private final Set                                missingObjectIDs          = new HashSet();
+  private final Map                                valueMappingRequests      = new HashMap();
   private long                                     objectRequestIDCounter    = 0;
   private final ObjectRequestMonitor               requestMonitor;
   private final ClientIDProvider                   cip;
@@ -525,6 +527,101 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
         if (ENABLE_LOGGING) {
           RemoteObjectManagerImpl.this.logger.info("DNA LRU remove 1 map containing " + removedDNACount + " DNAs");
         }
+      }
+    }
+  }
+
+  public synchronized ObjectID getMappingForKey(ObjectID oid, Object portableKey) {
+    boolean isInterrupted = false;
+    if (oid.getGroupID() != this.groupID.toInt()) {
+      //
+      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " id : " + oid
+                               + " portableKey : " + portableKey);
+    }
+
+    RequestValueMappingContext context = getOrCreateRequestValueMappingContext(oid, portableKey);
+    context.incrementLookupCount();
+    ObjectID valueID;
+    while (true) {
+      waitUntilRunning();
+      context.sendRequestIfNecessary(this.rmomFactory);
+      valueID = context.getValueMappingObjectID();
+      if (valueID != null) {
+        context.decrementLookupCount();
+        cleanupRequestValueMappingContextIfNecessary(context);
+        break;
+      }
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        isInterrupted = true;
+      }
+    }
+    Util.selfInterruptIfNeeded(isInterrupted);
+    return valueID;
+  }
+
+  private void cleanupRequestValueMappingContextIfNecessary(RequestValueMappingContext context) {
+    if (context.lookupComplete()) {
+      this.valueMappingRequests.remove(context.getCompositeKey());
+    }
+
+  }
+
+  private RequestValueMappingContext getOrCreateRequestValueMappingContext(ObjectID oid, Object portableKey) {
+    String comboKey = oid.toString() + "::" + portableKey.toString();
+    RequestValueMappingContext context = (RequestValueMappingContext) this.valueMappingRequests.get(comboKey);
+    if (context == null) {
+      context = new RequestValueMappingContext(oid, portableKey, this.groupID, comboKey);
+      this.valueMappingRequests.put(comboKey, context);
+    }
+    return context;
+  }
+
+  private static class RequestValueMappingContext {
+
+    private final ObjectID oid;
+    private final Object   portableKey;
+    private final GroupID  groupID;
+    private final String   comboKey;
+
+    private boolean        requestSent = false;
+    private int            count;
+    private ObjectID       valueID;
+
+    public RequestValueMappingContext(ObjectID oid, Object portableKey, GroupID groupID, String comboKey) {
+      this.oid = oid;
+      this.portableKey = portableKey;
+      this.groupID = groupID;
+      this.comboKey = comboKey;
+    }
+
+    public Object getCompositeKey() {
+      return this.comboKey;
+    }
+
+    public boolean lookupComplete() {
+      return (this.count == 0);
+    }
+
+    public void decrementLookupCount() {
+      this.count--;
+    }
+
+    public ObjectID getValueMappingObjectID() {
+      return this.valueID;
+    }
+
+    public void incrementLookupCount() {
+      this.count++;
+    }
+
+    public void sendRequestIfNecessary(RequestManagedObjectMessageFactory factory) {
+      if (!this.requestSent) {
+        this.requestSent = true;
+        RequestValueMappingForKeyMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
+        mappingMessage.initialize(this.oid, this.portableKey);
+        mappingMessage.send();
       }
     }
   }

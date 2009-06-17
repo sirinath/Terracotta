@@ -38,4 +38,6 @@ public interface RemoteObjectManager extends ClientHandshakeCallback {
   public boolean isPrefetched(ObjectID id);
 
   public void preFetchObject(ObjectID id);
+
+  public ObjectID getMappingForKey(ObjectID oid, Object portableKey);
 }

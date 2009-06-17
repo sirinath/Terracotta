@@ -6,7 +6,7 @@ package com.tc.object.bytecode;
 
 import java.util.Collection;
 
-public interface TCMap {
+public interface TCMap extends Manageable {
 
   public void __tc_applicator_put(Object key, Object value);
 
