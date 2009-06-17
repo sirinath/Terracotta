@@ -126,6 +126,7 @@ import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelperJDK15;
 import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
 import com.tc.object.bytecode.hook.impl.Util;
+import com.tc.object.bytecode.trace.TraceListener;
 import com.tc.object.cache.Cacheable;
 import com.tc.object.compression.CompressedData;
 import com.tc.object.compression.StringCompressionUtil;
@@ -552,6 +553,9 @@ public class BootJarTool {
       loadTerracottaClass(IBatisAccessPlanInstance.class.getName());
       loadTerracottaClass(HibernateProxyInstance.class.getName());
 
+      //Method Tracing Support
+      loadTerracottaClass(TraceListener.class.getName());
+      
       addManagementClasses();
 
       addRuntimeClasses();
