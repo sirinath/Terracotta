@@ -5,6 +5,6 @@ package com.tc.admin.model;
 
 import java.util.EventListener;
 
-public interface ServerLogListener extends EventListener {
+public interface LogListener extends EventListener {
   void messageLogged(String msg);
 }

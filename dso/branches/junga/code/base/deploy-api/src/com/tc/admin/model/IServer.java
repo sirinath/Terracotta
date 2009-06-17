@@ -150,9 +150,9 @@ public interface IServer extends IClusterNode, ManagedObjectFacadeProvider {
 
   String getStatsExportServletURI(String sessionId);
 
-  void addServerLogListener(ServerLogListener logListener);
+  void addLogListener(LogListener logListener);
 
-  void removeServerLogListener(ServerLogListener logListener);
+  void removeLogListener(LogListener logListener);
 
   ManagedObjectFacade lookupFacade(ObjectID objectID, int limit) throws NoSuchObjectException;
 

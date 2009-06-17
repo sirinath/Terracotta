@@ -59,4 +59,6 @@ public interface DSOClientMBean extends TerracottaMBean {
   boolean isResident(ObjectID oid);
 
   void killClient();
+
+  ObjectName getLoggerBeanName();
 }

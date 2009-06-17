@@ -6,7 +6,7 @@ package com.tc.admin;
 
 import com.tc.admin.common.ApplicationContext;
 import com.tc.admin.model.IServer;
-import com.tc.admin.model.ServerLogListener;
+import com.tc.admin.model.LogListener;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -50,7 +50,7 @@ public class ServerLog extends LogPane {
     info = appContext.getString("log.info");
     this.server = server;
     if (server.isReady()) {
-      server.addServerLogListener(logListener = new LogListener());
+      server.addLogListener(logListener = new ServerLogListener());
     }
     server.addPropertyChangeListener(serverListener = new ServerListener(server));
     setEditable(false);
@@ -66,11 +66,11 @@ public class ServerLog extends LogPane {
     protected void handleReady() {
       if (server.isReady()) {
         if (logListener == null) {
-          logListener = new LogListener();
+          logListener = new ServerLogListener();
         }
-        server.addServerLogListener(logListener);
+        server.addLogListener(logListener);
       } else {
-        server.removeServerLogListener(logListener);
+        server.removeLogListener(logListener);
       }
     }
   }
@@ -79,7 +79,7 @@ public class ServerLog extends LogPane {
     return server;
   }
 
-  class LogListener implements ServerLogListener {
+  class ServerLogListener implements LogListener {
     public void messageLogged(String logMsg) {
       log(logMsg);
     }
@@ -157,7 +157,7 @@ public class ServerLog extends LogPane {
 
   public void tearDown() {
     server.removePropertyChangeListener(serverListener);
-    server.removeServerLogListener(logListener);
+    server.removeLogListener(logListener);
 
     synchronized (this) {
       serverListener = null;

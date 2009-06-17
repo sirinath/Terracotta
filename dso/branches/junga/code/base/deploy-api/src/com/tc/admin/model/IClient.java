@@ -46,4 +46,6 @@ public interface IClient extends IClusterNode {
   void killClient();
 
   String dump();
+  
+  void addLogListener(LogListener l);
 }

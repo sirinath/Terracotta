@@ -9,6 +9,10 @@ import com.tc.admin.common.PagedView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XLabel;
 import com.tc.admin.common.XTreeNode;
+import com.tc.admin.dso.ClientNode;
+import com.tc.admin.dso.ClientsNode;
+import com.tc.admin.model.ClientConnectionListener;
+import com.tc.admin.model.IClient;
 import com.tc.admin.model.IClusterModel;
 import com.tc.admin.model.IServer;
 import com.tc.admin.model.IServerGroup;
@@ -36,7 +40,7 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
 
-public class ClusterLog extends XContainer implements ActionListener {
+public class ClusterLog extends XContainer implements ActionListener, ClientConnectionListener {
   private ApplicationContext  appContext;
   private IClusterModel       clusterModel;
   private ClusterListener     clusterListener;
@@ -84,6 +88,13 @@ public class ClusterLog extends XContainer implements ActionListener {
     if (clusterModel.isConnected()) {
       addNodePanels();
     }
+
+    if (clusterModel.isReady()) {
+      IServer activeCoord = clusterModel.getActiveCoordinator();
+      if (activeCoord != null) {
+        activeCoord.addClientConnectionListener(this);
+      }
+    }
   }
 
   private class ElementChooser extends ClusterElementChooser {
@@ -93,13 +104,19 @@ public class ClusterLog extends XContainer implements ActionListener {
 
     @Override
     protected XTreeNode[] createTopLevelNodes() {
-      return new XTreeNode[] { new ServerGroupsNode(appContext, clusterModel) };
+      ClientsNode clientsNode = new ClientsNode(appContext, clusterModel) {
+        @Override
+        protected void updateLabel() {/**/
+        }
+      };
+      clientsNode.setLabel(appContext.getString("runtime.stats.per.client.view"));
+      return new XTreeNode[] { new ServerGroupsNode(appContext, clusterModel), clientsNode };
     }
 
     @Override
     protected boolean acceptPath(TreePath path) {
       Object o = path.getLastPathComponent();
-      return o instanceof ServerNode;
+      return o instanceof ServerNode || o instanceof ClientNode;
     }
   }
 
@@ -132,12 +149,21 @@ public class ClusterLog extends XContainer implements ActionListener {
     }
 
     @Override
+    protected void handleReady() {
+      IClusterModel theClusterModel = getClusterModel();
+      if (theClusterModel == null) { return; }
+
+      theClusterModel.getActiveCoordinator().addClientConnectionListener(ClusterLog.this);
+    }
+
+    @Override
     protected void handleActiveCoordinator(IServer oldActive, IServer newActive) {
       IClusterModel theClusterModel = getClusterModel();
       if (theClusterModel == null) { return; }
 
       if (newActive != null) {
         elementChooser.setSelectedPath(newActive.toString());
+        newActive.addClientConnectionListener(ClusterLog.this);
       }
     }
   }
@@ -158,6 +184,11 @@ public class ClusterLog extends XContainer implements ActionListener {
         pagedView.addPage(createServerLog(server));
       }
     }
+
+    for (IClient client : clusterModel.getClients()) {
+      pagedView.addPage(createClientLog(client));
+    }
+
     IServer activeCoord = clusterModel.getActiveCoordinator();
     if (activeCoord != null) {
       elementChooser.setSelectedPath(activeCoord.toString());
@@ -215,6 +246,56 @@ public class ClusterLog extends XContainer implements ActionListener {
     return scroller;
   }
 
+  private JScrollPane createClientLog(IClient client) {
+    final ClientLog clientLog = new ClientLog(appContext, client);
+    final JScrollPane scroller = new JScrollPane(clientLog);
+    JScrollBar scrollBar = scroller.getVerticalScrollBar();
+    scrollBar.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mousePressed(MouseEvent e) {
+        clientLog.setAutoScroll(false);
+      }
+
+      @Override
+      public void mouseReleased(MouseEvent e) {
+        boolean autoScroll = shouldAutoScroll(scroller, clientLog);
+        clientLog.setAutoScroll(autoScroll);
+        if (!autoScroll) {
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              clientLog.requestFocusInWindow();
+            }
+          });
+        }
+      }
+    });
+    scroller.addMouseWheelListener(new MouseWheelListener() {
+      public void mouseWheelMoved(MouseWheelEvent e) {
+        boolean autoScroll = shouldAutoScroll(scroller, clientLog);
+        clientLog.setAutoScroll(autoScroll);
+        if (!autoScroll) {
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              clientLog.requestFocusInWindow();
+            }
+          });
+        }
+      }
+    });
+    clientLog.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyPressed(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        if (keyCode == KeyEvent.VK_ENTER) {
+          clientLog.setAutoScroll(true);
+        }
+      }
+    });
+    scroller.setName(client.toString());
+
+    return scroller;
+  }
+
   private boolean shouldAutoScroll(JScrollPane scroller, Component log) {
     JViewport viewport = scroller.getViewport();
     Rectangle visibleRect = viewport.getViewRect();
@@ -242,5 +323,14 @@ public class ClusterLog extends XContainer implements ActionListener {
     }
 
     super.tearDown();
+  }
+
+  public void clientConnected(IClient client) {
+    System.out.println("Client connected: " + client);
+    pagedView.addPage(createClientLog(client));
+  }
+
+  public void clientDisconnected(IClient client) {
+    pagedView.removePage(client.toString());
   }
 }

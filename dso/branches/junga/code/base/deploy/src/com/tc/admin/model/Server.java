@@ -87,7 +87,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   protected ProductVersion                productInfo;
   protected List<IBasicObject>            roots;
   protected Map<ObjectName, IBasicObject> rootMap;
-  protected LogListener                   logListener;
+  protected InternalLogListener           logListener;
   protected String                        name;
   protected long                          startTime;
   protected long                          activateTime;
@@ -196,7 +196,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     startTime = activateTime = -1;
     displayLabel = connectManager.toString();
     listenerList = new EventListenerList();
-    logListener = new LogListener();
+    logListener = new InternalLogListener();
     pendingClients = new ArrayList<DSOClient>();
     clients = new ArrayList<DSOClient>();
     clientMap = new ConcurrentHashMap<ObjectName, DSOClient>();
@@ -1150,9 +1150,9 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     return theServerInfoBean != null ? theServerInfoBean.takeThreadDump(moment) : "not connected";
   }
 
-  public synchronized void addServerLogListener(ServerLogListener listener) {
-    listenerList.remove(ServerLogListener.class, listener);
-    listenerList.add(ServerLogListener.class, listener);
+  public synchronized void addLogListener(LogListener listener) {
+    listenerList.remove(LogListener.class, listener);
+    listenerList.add(LogListener.class, listener);
     testAddLogListener();
   }
 
@@ -1168,7 +1168,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   }
 
   private synchronized void testAddLogListener() {
-    if (listenerList.getListenerCount(ServerLogListener.class) > 0) {
+    if (listenerList.getListenerCount(LogListener.class) > 0) {
       try {
         ConnectionContext cc = getConnectionContext();
         if (cc != null) {
@@ -1181,13 +1181,13 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     }
   }
 
-  public synchronized void removeServerLogListener(ServerLogListener listener) {
-    listenerList.remove(ServerLogListener.class, listener);
+  public synchronized void removeLogListener(LogListener listener) {
+    listenerList.remove(LogListener.class, listener);
     testRemoveLogListener();
   }
 
   private synchronized void testRemoveLogListener() {
-    if (listenerList.getListenerCount(ServerLogListener.class) == 0) {
+    if (listenerList.getListenerCount(LogListener.class) == 0) {
       try {
         ConnectionContext cc = getConnectionContext();
         if (cc != null) {
@@ -1202,13 +1202,13 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   private void fireMessageLogged(String logMsg) {
     Object[] listeners = listenerList.getListenerList();
     for (int i = listeners.length - 2; i >= 0; i -= 2) {
-      if (listeners[i] == ServerLogListener.class) {
-        ((ServerLogListener) listeners[i + 1]).messageLogged(logMsg);
+      if (listeners[i] == LogListener.class) {
+        ((LogListener) listeners[i + 1]).messageLogged(logMsg);
       }
     }
   }
 
-  class LogListener implements NotificationListener {
+  private class InternalLogListener implements NotificationListener {
     public void handleNotification(Notification notice, Object handback) {
       fireMessageLogged(notice.getMessage());
     }
