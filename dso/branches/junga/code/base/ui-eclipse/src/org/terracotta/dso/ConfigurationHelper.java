@@ -43,6 +43,8 @@ import org.terracotta.dso.editors.ConfigurationEditor;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.config.schema.dynamic.ParameterSubstituter;
+import com.tc.modules.ModuleInfo;
+import com.tc.modules.ModulesConfiguration;
 import com.tc.object.NonInstrumentedClasses;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Application;

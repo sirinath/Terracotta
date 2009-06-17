@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package org.terracotta.dso;
+package com.tc.modules;
 
 import org.osgi.framework.Bundle;
 
@@ -14,6 +14,7 @@ import com.terracottatech.config.Include;
 import com.terracottatech.config.InstrumentedClasses;
 import com.terracottatech.config.Locks;
 import com.terracottatech.config.Module;
+import com.terracottatech.config.Modules;
 import com.terracottatech.config.NamedLock;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
@@ -26,15 +27,18 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class ModulesConfiguration {
-  private List<ModuleInfo> fModuleInfoList;
-  private DsoApplication   fApplication;
+  private List<ModuleInfo>     fModuleInfoList;
+  private DsoApplication       fApplication;
+  private List<RepositoryInfo> fRepositoryInfoList;
 
   public ModulesConfiguration() {
     fModuleInfoList = new ArrayList();
     fApplication = DsoApplication.Factory.newInstance();
+    fRepositoryInfoList = new ArrayList();
   }
 
   public ModuleInfo add(Module module) {
@@ -222,6 +226,53 @@ public class ModulesConfiguration {
       webAppList.add((WebApplication) webApp.copy());
     }
     dest.setWebApplicationArray(webAppList.toArray(new WebApplication[0]));
+  }
+
+  public Iterator<RepositoryInfo> repositoryInfoIterator() {
+    return fRepositoryInfoList.iterator();
+  }
+
+  public void addRepository(File repositoryDir) {
+    fRepositoryInfoList.add(new RepositoryInfo(repositoryDir));
+  }
+
+  public void addRepository(String location) {
+    this.addRepository(new File(location));
+  }
+
+  public void removeRepository(File repoDir) {
+	  for (Iterator<RepositoryInfo> i = fRepositoryInfoList.iterator(); i.hasNext();) {
+      if (i.next().getRepositoryDir().equals(repoDir)) {
+    	  i.remove();
+      }
+    }
+  }
+
+  public void setModules(Modules modules) {
+    for (Module module : modules.getModuleArray()) {
+      this.add(module);
+    }
+  }
+
+  public ModuleInfo[] getAllModuleInfos() {
+    return fModuleInfoList.toArray(new ModuleInfo[0]);
+  }
+
+  public RepositoryInfo getRepository(String repo) {
+    for (RepositoryInfo r : fRepositoryInfoList) {
+    	if (r.getRepositoryDir().equals(repo))
+    		return r;
+    }
+    return null;
+  }
+
+  public Module addNewModule(String artifactId, String groupId, String version) {
+	  Module module = Module.Factory.newInstance();
+	  module.setGroupId(groupId);
+	  module.setName(artifactId);
+	  module.setVersion(version);
+    this.add(module);
+    return module;
   }
 
 }

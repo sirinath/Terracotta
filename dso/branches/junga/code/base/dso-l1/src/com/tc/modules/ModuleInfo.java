@@ -1,7 +1,7 @@
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
-package org.terracotta.dso;
+package com.tc.modules;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -10,6 +10,7 @@ import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
 
 import java.io.File;
+import java.util.Dictionary;
 
 public class ModuleInfo {
   private Module fModule;
@@ -56,5 +57,11 @@ public class ModuleInfo {
   
   public DsoApplication getApplication() {
     return fApplication;
+  }
+
+  public String getDescription() {
+    Dictionary headers = fBundle.getHeaders();
+    return (String) headers.get("Bundle-Description");
+
   }
 }
