@@ -6,6 +6,7 @@ package com.tc.management;
 
 import com.sun.jmx.remote.opt.util.EnvHelp;
 import com.tc.exception.TCRuntimeException;
+import com.tc.logging.JMXLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.L1Dumper;
@@ -215,6 +216,7 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(instrumentationLoggingBean, L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     mBeanServer.registerMBean(runtimeOutputOptionsBean, L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);
     mBeanServer.registerMBean(runtimeLoggingBean, L1MBeanNames.RUNTIME_LOGGING_PUBLIC);
+    mBeanServer.registerMBean(JMXLogging.getJMXAppender().getMBean(), L1MBeanNames.LOGGER);
     if (mbeanSpecs != null) {
       for (MBeanSpec spec : mbeanSpecs) {
         for (Map.Entry<ObjectName, Object> bean : spec.getMBeans().entrySet()) {
@@ -223,7 +225,7 @@ public final class L1Management extends TerracottaManagement {
       }
     }
   }
-  
+
   public MBeanServer getMBeanServer() {
     return mBeanServer;
   }
