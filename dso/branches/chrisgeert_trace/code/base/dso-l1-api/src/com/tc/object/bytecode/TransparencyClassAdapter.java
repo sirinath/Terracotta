@@ -32,6 +32,8 @@ import java.util.Set;
  * @author steve
  */
 public class TransparencyClassAdapter extends ClassAdapterBase {
+  private static final boolean             METHOD_TRACING_ENABLED = true;
+  
   private static final TCLogger            logger          = TCLogging.getLogger(TransparencyClassAdapter.class);
 
   private final Set                        doNotInstrument = new HashSet();
@@ -187,6 +189,14 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       mv = ignoreMethodIfNeeded(access, name, desc, signature, exceptions, memberInfo);
       if (mv != null) { return mv; }
 
+      String listenerField = null;
+      if (shouldTraceMethod(memberInfo)) {
+        listenerField = "__tc_trace_" + name + desc;
+        FieldVisitor fv = super.visitField(ACC_STATIC | ACC_SYNTHETIC | ACC_VOLATILE | ACC_TRANSIENT,
+                                           listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;", null, null);
+        fv.visitEnd();
+      }
+      
       LockDefinition[] locks = getTransparencyClassSpec().lockDefinitionsFor(memberInfo);
       LockDefinition ld = getTransparencyClassSpec().getAutoLockDefinition(locks);
       boolean isAutolock = (ld != null);
@@ -246,7 +256,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       // return mv == null ? null : new TransparencyCodeAdapter(spec, isAutolock, lockLevel, mv, memberInfo,
       // originalName);
-      return mv == null ? null : new TransparencyCodeAdapter(spec, ld, mv, memberInfo, originalName);
+      return mv == null ? null : new TransparencyCodeAdapter(spec, ld, mv, memberInfo, originalName, listenerField);
     } catch (RuntimeException e) {
       handleInstrumentationException(e);
       throw e;
@@ -1208,4 +1218,9 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
         mv.visitJumpInsn(IFNE, notZeroLabel);
     }
   }
+  
+  private static boolean shouldTraceMethod(MemberInfo info) {
+    return METHOD_TRACING_ENABLED && "java.util.ArrayList".equals(info.getDeclaringType().getName());
+  }
+  
 }

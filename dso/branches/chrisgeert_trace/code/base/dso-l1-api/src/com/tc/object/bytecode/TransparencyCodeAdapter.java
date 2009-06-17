@@ -14,6 +14,7 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.exception.TCInternalError;
+import com.tc.object.bytecode.trace.TracingMethodAdapter;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.TransparencyCodeSpec;
@@ -41,8 +42,8 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   // public TransparencyCodeAdapter(InstrumentationSpec spec, boolean isAutolock, int autoLockType, MethodVisitor mv,
   // MemberInfo memberInfo, String originalName) {
   public TransparencyCodeAdapter(InstrumentationSpec spec, LockDefinition autoLockDefinition, MethodVisitor mv,
-                                 MemberInfo memberInfo, String originalName) {
-    super(new ExceptionTableOrderingMethodAdapter(mv), memberInfo.getModifiers(), originalName, memberInfo
+                                 MemberInfo memberInfo, String originalName, String listenerField) {
+    super(new ExceptionTableOrderingMethodAdapter(listenerField == null ? mv : new TracingMethodAdapter(mv, originalName, memberInfo, listenerField)), memberInfo.getModifiers(), originalName, memberInfo
         .getSignature());
     this.spec = spec;
     this.isAutolock = autoLockDefinition != null;
