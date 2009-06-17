@@ -22,6 +22,7 @@ import com.tc.object.appevent.NonPortableObjectEvent;
 import com.tc.object.appevent.NonPortableRootContext;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.PartialKeysMap;
 import com.tc.object.cache.CacheStats;
 import com.tc.object.cache.Evictable;
 import com.tc.object.cache.EvictionPolicy;
@@ -395,6 +396,33 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                 + " [Identity Hashcode : 0x"
                                                 + Integer.toHexString(System.identityHashCode(pojo)) + "] "); }
     return obj.getObjectID();
+  }
+
+  /**
+   * Returns the value for a particular Key in a Partial Key Map.
+   * 
+   * @param pojo Object
+   * @param key Key Object
+   * @return value Object in the mapping, null if no mapping present.
+   */
+  public Object getValueForKeyInMap(PartialKeysMap map, Object key) throws ClassNotFoundException {
+
+    TCObject tcObject = map.__tc_managed();
+    if (tcObject == null) { throw new TCRuntimeException(
+                                                         "getValueForKeyInMap is not supported in a non-shared PartialKeysMap"); }
+    ObjectID mapID = tcObject.getObjectID();
+    Object portableKey = (key instanceof Manageable ? ((Manageable) key).__tc_managed().getObjectID() : key);
+
+    if (portableKey == null || LiteralValues.isLiteralInstance(portableKey)) {
+      // stupid eclipse formatting
+      throw new TCRuntimeException("Key is not portable. It needs to be portable for PartialKeysMap. Key = "
+                                   + portableKey + " map id = " + mapID);
+    }
+
+    ObjectID valueID = this.remoteObjectManager.getMappingForKey(mapID, portableKey);
+
+    return lookupObject(valueID);
+
   }
 
   /**

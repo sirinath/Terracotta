@@ -366,6 +366,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
+    public Object getValueForKeyInMap(PartialKeysMap map, Object key) {
+      throw new ImplementMe();
+    }
+
   }
 
 }

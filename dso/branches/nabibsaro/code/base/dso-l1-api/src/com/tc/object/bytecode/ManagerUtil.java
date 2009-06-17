@@ -1074,4 +1074,19 @@ public class ManagerUtil {
   public static void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     getManager().registerNamedLoader(loader, webAppName);
   }
+
+  /**
+   * Returns the value for a particular Key in a Partial Key Map.
+   * 
+   * @param pojo Object
+   * @param key Key Object
+   * @return value Object in the mapping, null if no mapping present.
+   */
+  public static Object getValueForKeyInMap(final PartialKeysMap map, final Object key) {
+    try {
+      return getManager().getValueForKeyInMap(map, key);
+    } catch (ClassNotFoundException e) {
+      throw new TCClassNotFoundException(e);
+    }
+  }
 }

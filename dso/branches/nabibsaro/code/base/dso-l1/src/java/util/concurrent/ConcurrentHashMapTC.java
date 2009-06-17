@@ -6,7 +6,6 @@ package java.util.concurrent;
 
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Clearable;
-import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.TCMapEntry;
@@ -28,7 +27,7 @@ import java.util.Set;
  */
 
 @SuppressWarnings("unchecked")
-public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements TCMap, Clearable, Manageable {
+public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements TCMap, Clearable {
 
   private boolean evictionEnabled = true;
 
@@ -103,13 +102,13 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
    * CHM-wide locking methods
    */
   private void __tc_fullyWriteLock() {
-    for (Segment segment : segments) {
+    for (Segment segment : this.segments) {
       segment.lock();
     }
   }
 
   private void __tc_fullyWriteUnlock() {
-    for (Segment segment : segments) {
+    for (Segment segment : this.segments) {
       segment.unlock();
     }
   }
@@ -196,7 +195,7 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
   @Override
   public void putAll(Map t) {
     if (__tc_isManaged()) {
-      if (t.isEmpty()) return;
+      if (t.isEmpty()) { return; }
 
       for (Iterator i = t.entrySet().iterator(); i.hasNext();) {
         Entry e = (Entry) i.next();
@@ -208,10 +207,10 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
   }
 
   public boolean isEvictionEnabled() {
-    return evictionEnabled;
+    return this.evictionEnabled;
   }
 
   public void setEvictionEnabled(boolean enabled) {
-    evictionEnabled = enabled;
+    this.evictionEnabled = enabled;
   }
 }

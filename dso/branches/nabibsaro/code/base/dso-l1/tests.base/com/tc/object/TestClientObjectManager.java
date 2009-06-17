@@ -9,6 +9,7 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.PartialKeysMap;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.tx.ClientTransactionManager;
@@ -235,6 +236,10 @@ public class TestClientObjectManager implements ClientObjectManager {
   }
 
   public void preFetchObject(ObjectID id) {
+    throw new ImplementMe();
+  }
+
+  public Object getValueForKeyInMap(PartialKeysMap map, Object key) {
     throw new ImplementMe();
   }
 }

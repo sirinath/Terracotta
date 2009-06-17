@@ -35,7 +35,7 @@ public final class NullManager implements Manager {
 
   /**
    * Get instance of the null manager
-   *
+   * 
    * @return NullManager
    */
   public static Manager getInstance() {
@@ -299,6 +299,10 @@ public final class NullManager implements Manager {
   }
 
   public StatisticRetrievalAction getStatisticRetrievalActionInstance(final String name) {
+    return null;
+  }
+
+  public Object getValueForKeyInMap(PartialKeysMap pojo, Object key) {
     return null;
   }
 }
