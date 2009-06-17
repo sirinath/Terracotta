@@ -26,6 +26,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.swing.event.EventListenerList;
 
 public class DSOClient extends BaseClusterNode implements IClient, NotificationListener {
   private final ConnectionContext     cc;
@@ -38,6 +39,7 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
   private String                      host;
   private Integer                     port;
   protected ProductVersion            productInfo;
+  protected EventListenerList         listenerList;
 
   private boolean                     ready;
   private boolean                     isListeningForTunneledBeans;
@@ -45,6 +47,7 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
   private InstrumentationLoggingMBean instrumentationLoggingBean;
   private RuntimeLoggingMBean         runtimeLoggingBean;
   private RuntimeOutputOptionsMBean   runtimeOutputOptionsBean;
+  protected InternalLogListener       logListener;
 
   public DSOClient(ConnectionContext cc, ObjectName beanName, IClusterModel clusterModel) {
     this.cc = cc;
@@ -54,7 +57,8 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
     channelId = delegate.getChannelID().toLong();
     clientId = delegate.getClientID();
     remoteAddress = delegate.getRemoteAddress();
-
+    listenerList = new EventListenerList();
+    logListener = new InternalLogListener();
     testSetupTunneledBeans();
   }
 
@@ -400,5 +404,49 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
       stopListeningForTunneledBeans();
     }
     super.tearDown();
+  }
+
+  public synchronized void addLogListener(LogListener listener) {
+    listenerList.remove(LogListener.class, listener);
+    listenerList.add(LogListener.class, listener);
+    testAddLogListener();
+  }
+
+  private void safeRemoveLogListener() {
+    try {
+      if (cc != null) {
+        cc.removeNotificationListener(delegate.getLoggerBeanName(), logListener);
+      }
+    } catch (Exception e) {
+      /**/
+    }
+  }
+
+  private synchronized void testAddLogListener() {
+    if (listenerList.getListenerCount(LogListener.class) > 0) {
+      try {
+        if (cc != null) {
+          safeRemoveLogListener();
+          cc.addNotificationListener(delegate.getLoggerBeanName(), logListener);
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private class InternalLogListener implements NotificationListener {
+    public void handleNotification(Notification notice, Object handback) {
+      fireMessageLogged(notice.getMessage());
+    }
+  }
+
+  private void fireMessageLogged(String logMsg) {
+    Object[] listeners = listenerList.getListenerList();
+    for (int i = listeners.length - 2; i >= 0; i -= 2) {
+      if (listeners[i] == LogListener.class) {
+        ((LogListener) listeners[i + 1]).messageLogged(logMsg);
+      }
+    }
   }
 }
