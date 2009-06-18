@@ -19,6 +19,7 @@ import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.trace.TracingManagerMBean;
 import com.tc.object.net.ChannelStats;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.statistics.StatisticData;
@@ -55,6 +56,8 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private RuntimeLoggingMBean                  runtimeLoggingBean;
   private ObjectName                           runtimeOutputOptionsBeanName;
   private RuntimeOutputOptionsMBean            runtimeOutputOptionsBean;
+  private ObjectName                           tracingManagerBeanName;
+  private TracingManagerMBean                  tracingManagerBean;
   private final MessageChannel                 channel;
   private final SampledCounter                 txnRate;
   private final SampledCounter                 flushRate;
@@ -90,7 +93,8 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     this.instrumentationLoggingBeanName = getTunneledBeanName(L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     this.runtimeLoggingBeanName = getTunneledBeanName(L1MBeanNames.RUNTIME_LOGGING_PUBLIC);
     this.runtimeOutputOptionsBeanName = getTunneledBeanName(L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);
-
+    this.tracingManagerBeanName = getTunneledBeanName(L1MBeanNames.TRACING_MANAGER_PUBLIC);
+    
     testSetupTunneledBeans();
   }
 
@@ -133,6 +137,10 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     if ((beanName = queryClientBean(runtimeOutputOptionsBeanName)) != null) {
       runtimeOutputOptionsBeanName = beanName;
       setupRuntimeOutputOptionsBean();
+    }
+    
+    if ((beanName = queryClientBean(tracingManagerBeanName)) != null) {
+      tracingManagerBeanName = beanName;
     }
 
     if (haveAllTunneledBeans()) {
@@ -222,6 +230,14 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     return runtimeOutputOptionsBean;
   }
 
+  public ObjectName getTracingManagerBeanName() {
+    return tracingManagerBeanName;
+  }
+  
+  public TracingManagerMBean getTracingManagerBean() {
+    return tracingManagerBean;
+  }
+  
   public ChannelID getChannelID() {
     return channel.getChannelID();
   }
@@ -292,9 +308,14 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
         .newProxyInstance(mbeanServer, runtimeOutputOptionsBeanName, RuntimeOutputOptionsMBean.class, false);
   }
 
+  private void setupTracingManagerBean() {
+    tracingManagerBean = (TracingManagerMBean) MBeanServerInvocationHandler
+        .newProxyInstance(mbeanServer, tracingManagerBeanName, TracingManagerMBean.class, false);
+  }
+  
   private boolean haveAllTunneledBeans() {
     return l1InfoBean != null && instrumentationLoggingBean != null && runtimeLoggingBean != null
-           && runtimeOutputOptionsBean != null;
+           && runtimeOutputOptionsBean != null && tracingManagerBean != null;
   }
 
   /**
@@ -332,6 +353,11 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
       setupRuntimeOutputOptionsBean();
     }
 
+    if (tracingManagerBean == null && matchesClientBeanName(tracingManagerBeanName, beanName)) {
+      tracingManagerBeanName = beanName;
+      setupTracingManagerBean();
+    }
+    
     if (haveAllTunneledBeans()) {
       stopListeningForTunneledBeans();
       sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));

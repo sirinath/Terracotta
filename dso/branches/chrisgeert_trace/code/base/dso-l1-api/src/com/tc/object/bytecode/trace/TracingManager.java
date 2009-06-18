@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode.trace;
 
+import com.tc.management.AbstractTerracottaMBean;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.statistics.StatisticsAgentSubSystem;
@@ -13,11 +14,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TracingManager implements TracingManagerMBean {
+import javax.management.NotCompliantMBeanException;
+
+public class TracingManager extends AbstractTerracottaMBean implements TracingManagerMBean {
 
   private final TracingSRA tracingSra;
   
-  public TracingManager(StatisticsAgentSubSystem statisticsAgentSubSystem) {
+  public TracingManager(StatisticsAgentSubSystem statisticsAgentSubSystem) throws NotCompliantMBeanException {
+    super(TracingManagerMBean.class, true);
     StatisticsRetrievalRegistry srr = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
     tracingSra = (TracingSRA) srr.getActionInstance(TracingSRA.ACTION_NAME);
   }
@@ -64,5 +68,9 @@ public class TracingManager implements TracingManagerMBean {
 
   private static Set<Class> getClasses(String clazz) {
     return ManagerUtil.getManager().getClassProvider().getLoadedClasses(clazz);
+  }
+
+  public void reset() {
+    // What should this do?
   }
 }

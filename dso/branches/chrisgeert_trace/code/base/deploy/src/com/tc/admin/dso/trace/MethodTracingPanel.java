@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.admin.dso;
+package com.tc.admin.dso.trace;
 
 import com.tc.admin.AbstractClusterListener;
 import com.tc.admin.ClusterElementChooser;
@@ -10,6 +10,8 @@ import com.tc.admin.common.PagedView;
 import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XLabel;
 import com.tc.admin.common.XTreeNode;
+import com.tc.admin.dso.ClientNode;
+import com.tc.admin.dso.ClientsNode;
 import com.tc.admin.model.ClientConnectionListener;
 import com.tc.admin.model.IClient;
 import com.tc.admin.model.IClusterModel;
@@ -168,7 +170,7 @@ public class MethodTracingPanel extends XContainer implements ActionListener, Cl
   }
 
   protected Component createClientViewPanel(IClient client) {
-    ClientMethodTracingPanel panel = new ClientMethodTracingPanel(client);
+    ClientMethodTracingPanel panel = new ClientMethodTracingPanel(client, adminClientContext);
     panel.setName(client.toString());
     return panel;
   }

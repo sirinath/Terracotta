@@ -12,6 +12,7 @@ import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
 import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.trace.TracingManagerMBean;
 
 import javax.management.ObjectName;
 
@@ -40,6 +41,10 @@ public interface DSOClientMBean extends TerracottaMBean {
 
   RuntimeOutputOptionsMBean getRuntimeOutputOptionsBean();
 
+  ObjectName getTracingManagerBeanName();
+  
+  TracingManagerMBean getTracingManagerBean();
+  
   ChannelID getChannelID();
 
   String getRemoteAddress();

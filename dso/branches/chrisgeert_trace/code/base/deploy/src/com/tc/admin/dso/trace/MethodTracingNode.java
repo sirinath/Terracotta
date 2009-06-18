@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.admin.dso;
+package com.tc.admin.dso.trace;
 
 import com.tc.admin.IAdminClientContext;
 import com.tc.admin.ServerHelper;
@@ -49,6 +49,16 @@ public class MethodTracingNode extends ComponentNode {
         methodTracingPanel = null;
       }
     }
+  }
+
+  public void showProfiling(boolean enabled) {
+    setLabel(adminClientContext.getString("dso.method.tracing") + " - Running");
+    notifyChanged();
+//    clusterNode.showProfilingLocks(profiling);    
+  }
+  
+  void notifyChanged() {
+    nodeChanged();
   }
 
 }

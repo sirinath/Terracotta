@@ -12,6 +12,7 @@ import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.trace.TracingManagerMBean;
 import com.tc.statistics.StatisticData;
 import com.tc.stats.DSOClientMBean;
 import com.tc.util.ProductInfo;
@@ -45,6 +46,7 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
   private InstrumentationLoggingMBean instrumentationLoggingBean;
   private RuntimeLoggingMBean         runtimeLoggingBean;
   private RuntimeOutputOptionsMBean   runtimeOutputOptionsBean;
+  private TracingManagerMBean         tracingManagerBean;
 
   public DSOClient(ConnectionContext cc, ObjectName beanName, IClusterModel clusterModel) {
     this.cc = cc;
@@ -90,6 +92,10 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
     runtimeOutputOptionsBean = (RuntimeOutputOptionsMBean) MBeanServerInvocationHandler
         .newProxyInstance(cc.mbsc, delegate.getRuntimeOutputOptionsBeanName(), RuntimeOutputOptionsMBean.class, true);
     addMBeanNotificationListener(delegate.getRuntimeOutputOptionsBeanName(), this, "RuntimeOutputOptionsMBean");
+
+    tracingManagerBean = (TracingManagerMBean) MBeanServerInvocationHandler
+        .newProxyInstance(cc.mbsc, delegate.getTracingManagerBeanName(), TracingManagerMBean.class, true);
+    addMBeanNotificationListener(delegate.getTracingManagerBeanName(), this, "TracingManagerMBean");
 
     fireTunneledBeansRegistered();
   }
@@ -283,6 +289,10 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
     return runtimeOutputOptionsBean;
   }
 
+  public TracingManagerMBean getTracingManagerBean() {
+    return tracingManagerBean;
+  }
+  
   public String takeThreadDump(long requestMillis) {
     return l1InfoBean != null ? l1InfoBean.takeThreadDump(requestMillis) : "";
   }
