@@ -70,7 +70,11 @@ public class MethodTracingTableModel extends XObjectTableModel {
     }
 
     public float getMeanExecutionTime() {
-      return (1f * traceResult.getTotalExecutionTime()) / traceResult.getExecutionCount();
+      if (traceResult.getTotalExecutionTime() <= 0) {
+        return Float.NaN;
+      } else {
+        return (1f * traceResult.getTotalExecutionTime()) / (traceResult.getNormalReturnCount() + traceResult.getExceptionalReturnCount());
+      }
     }
   }
 }
