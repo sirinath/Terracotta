@@ -12,4 +12,6 @@ public interface TracingManagerMBean extends TerracottaMBean, NotificationEmitte
   void startTracingMethod(String clazz, String method) throws Exception;
   
   void stopTracingMethod(String clazz, String method) throws Exception;
+  
+  boolean isMethodTracingEnabled();
 }

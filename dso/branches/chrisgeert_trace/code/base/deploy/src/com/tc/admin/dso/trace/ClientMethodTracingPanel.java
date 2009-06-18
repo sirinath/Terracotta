@@ -101,6 +101,12 @@ public class ClientMethodTracingPanel extends XContainer {
     
     ObjectName on = client.getTunneledBeanName(StatisticsMBeanNames.STATISTICS_MANAGER);
     statsBean = clusterModel.getActiveCoordinator().getMBeanProxy(on, StatisticsManagerMBean.class);
+    
+    if (!client.getTracingManagerBean().isMethodTracingEnabled()) {
+      traceMethodInput.setEnabled(false);
+      addButton.setEnabled(false);
+      refreshButton.setEnabled(false);
+    }
   }
 
   private class TableMouseListener extends MouseAdapter {
@@ -117,7 +123,7 @@ public class ClientMethodTracingPanel extends XContainer {
   private class TableKeyListener extends KeyAdapter {
     @Override
     public void keyReleased(KeyEvent e) {
-//      if ((e.getKeyCode() == KeyEvent.VK_BACK_SPACE) || (e.getKeyCode() == KeyEvent.VK_DELETE)) {
+      if ((e.getKeyCode() == KeyEvent.VK_BACK_SPACE) || (e.getKeyCode() == KeyEvent.VK_DELETE)) {
         JTable table = (JTable) e.getSource();
         for (int i : table.getSelectedRows()) {
           String methodName = (String) table.getModel().getValueAt(i, 0);
@@ -131,7 +137,7 @@ public class ClientMethodTracingPanel extends XContainer {
           }
         }
         refresh();
-//      }
+      }
     }
   }
 
