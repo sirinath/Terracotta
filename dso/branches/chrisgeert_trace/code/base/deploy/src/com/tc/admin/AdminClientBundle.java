@@ -240,6 +240,17 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dashboard.transactions", "Transactions" }, { "dashboard.impeding-factors", "Impeding Factors" },
         { "dashboard.dial.tip.format", "<html>{0}:<br>Max={1}, Average={2}</html>" },
         { "dashboard.header.label.font", new Font("SansSerif", Font.PLAIN, 12) },
-        { "method.tracing.per.client.view", "Per Client View"}};
+        { "method.tracing.per.client.view", "Per Client View"},
+    
+        { "dso.trace.column.headings",
+        new String[] { "Method Signature", "Execution Count", "Normal Executions",
+            "Exceptional Executions", "Average Execution Time" } },
+        { "dso.trace.column.tips",
+        new String[] {
+            "Method Signature",
+            "Number of times this method has been executed.",
+            "Number of times the method returned conventionally.",
+            "Number of times the method returned by throwing an exception.",
+            "Average time to execute the method"}}};
   }
 }

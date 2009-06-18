@@ -14,13 +14,13 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class MethodTracingTableModel extends XObjectTableModel {
-  private static final String[]            cFields     = { "Name", "Requested", "Hops", "Waiters", "AcquireTime",
-      "HeldTime"                                      };
-  private final String[]                   cTips;
+  private static final String[] cFields = { "MethodSignature", "ExecutionCount", "NormalReturnCount",
+      "ExceptionalReturnCount", "MeanExecutionTime" };
+  private final String[]        cTips;
 
   public MethodTracingTableModel(ApplicationContext appContext) {
-    super(MethodTraceResultWrapper.class, cFields, (String[]) appContext.getObject("dso.locks.column.headings"));
-    cTips = (String[]) appContext.getObject("dso.locks.column.tips");
+    super(MethodTraceResultWrapper.class, cFields, (String[]) appContext.getObject("dso.trace.column.headings"));
+    cTips = (String[]) appContext.getObject("dso.trace.column.tips");
   }
 
   public MethodTracingTableModel(ApplicationContext appContext, Collection<MethodTraceResult> traceResults) {
@@ -62,7 +62,7 @@ public class MethodTracingTableModel extends XObjectTableModel {
     }
 
     public long getNormalReturnCount() {
-      return traceResult.getExceptionalReturnCount();
+      return traceResult.getNormalReturnCount();
     }
 
     public long getExceptionalReturnCount() {

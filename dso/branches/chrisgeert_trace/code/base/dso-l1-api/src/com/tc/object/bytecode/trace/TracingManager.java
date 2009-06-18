@@ -43,8 +43,8 @@ public class TracingManager extends AbstractTerracottaMBean implements TracingMa
   public void stopTracingMethod(String clazz, String method) throws Exception {
     for (Field f : getTracerFields(clazz, method)) {
       LoaderDescription ld = ManagerUtil.getManager().getClassProvider().getLoaderDescriptionFor(f.getDeclaringClass());
-        tracingSra.removeTracingRecorder(clazz + "." + method + "@" + ld.name());
-        f.set(null, null);
+      tracingSra.removeTracingRecorder(clazz + "." + method + "@" + ld.name());
+      f.set(null, null);
     }
   }
   

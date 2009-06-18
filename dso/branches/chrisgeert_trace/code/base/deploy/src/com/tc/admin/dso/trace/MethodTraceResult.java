@@ -5,19 +5,42 @@ package com.tc.admin.dso.trace;
 
 public class MethodTraceResult {
 
-  public int getExecutionCount() {
-    return 0;
+  private final String methodSignature;
+
+  private final long executionCount;
+  private final long executionTime;
+  private final long normalCount;
+  private final long exceptionCount;
+  
+  public MethodTraceResult(String method, long executionCount, long executionTime, long normalCount, long exceptionCount) {
+    this.methodSignature = method;
+    this.executionCount = executionCount;
+    this.executionTime = executionTime;
+    this.normalCount = normalCount;
+    this.exceptionCount = exceptionCount;
+  }
+  
+  public long getExecutionCount() {
+    return executionCount;
   }
 
-  public float getTotalExecutionTime() {
-    return 0;
+  public long getTotalExecutionTime() {
+    return executionTime;
   }
 
+  public long getNormalReturnCount() {
+    return normalCount;
+  }
+  
   public long getExceptionalReturnCount() {
-    return 0;
+    return exceptionCount;
   }
 
   public String getMethodSignature() {
-    return "";
+    return methodSignature;
+  }
+  
+  public String toString() {
+    return getMethodSignature() + " : " + getExecutionCount() + ", " + getTotalExecutionTime() + ", " + getNormalReturnCount() + ", " + getExceptionalReturnCount();
   }
 }
