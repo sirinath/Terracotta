@@ -17,6 +17,7 @@ import com.tc.objectserver.persistence.sleepycat.CustomSerializationAdapterFacto
 import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.persistence.sleepycat.SerializationAdapterFactory;
 import com.tc.objectserver.persistence.sleepycat.SleepycatPersistor;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.io.File;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 public class PartitionDBData extends BaseUtility {
@@ -96,6 +98,17 @@ public class PartitionDBData extends BaseUtility {
       newManagedObject = new ManagedObjectImpl(oldId);
     }
 
+    // get the new references from the old ones
+    Set<ObjectID> oldRef = mo.getObjectReferences();
+    Set<ObjectID> newRef = new ObjectIDSet();
+    for (Iterator<ObjectID> iter = oldRef.iterator(); iter.hasNext();) {
+      ObjectID oid = iter.next();
+      if (changeMap.containsKey(oid)) {
+        newRef.add(changeMap.get(oid));
+      } else {
+        newRef.add(oid);
+      }
+    }
     // XXX: fill in here so that we can get the updated managed object
 
     return newManagedObject;
