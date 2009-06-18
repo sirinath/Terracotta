@@ -1,11 +1,6 @@
-/*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
- */
 package com.tc.modules;
 
-import org.osgi.framework.Bundle;
-
+import com.tc.config.schema.dynamic.ParameterSubstituter;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Autolock;
 import com.terracottatech.config.DistributedMethods;
@@ -24,81 +19,79 @@ import com.terracottatech.config.WebApplications;
 import com.terracottatech.config.DistributedMethods.MethodExpression;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
-public class ModulesConfiguration {
-  private List<ModuleInfo>     fModuleInfoList;
-  private DsoApplication       fApplication;
-  private List<RepositoryInfo> fRepositoryInfoList;
+public class ModulesConfiguration extends ModuleInfoGroup {
+  private Modules                                   modules;
+  private final LinkedHashMap<File, RepositoryInfo> repositoryInfoMap = new LinkedHashMap();
+  private final DsoApplication                      application       = com.terracottatech.config.DsoApplication.Factory
+                                                                          .newInstance();
 
-  public ModulesConfiguration() {
-    fModuleInfoList = new ArrayList();
-    fApplication = DsoApplication.Factory.newInstance();
-    fRepositoryInfoList = new ArrayList();
-  }
-
-  public ModuleInfo add(Module module) {
-    ModuleInfo moduleInfo = new ModuleInfo(module);
-    fModuleInfoList.add(moduleInfo);
-    return moduleInfo;
-  }
-
-  public ModuleInfo getOrAdd(Module module) {
-    ModuleInfo moduleInfo = getModuleInfo(module);
-    if (moduleInfo == null) {
-      moduleInfo = add(module);
+  public void setModules(Modules modules) {
+    this.modules = modules;
+    for (String repo : modules.getRepositoryArray()) {
+      addRepository(repo);
     }
-    return moduleInfo;
   }
 
-  public static boolean sameModule(Module m1, Module m2) {
-    return m1 != null && m2 != null && m1.getName().equals(m2.getName()) && m1.getGroupId().equals(m2.getGroupId())
-           && m1.getVersion().equals(m2.getVersion());
+  public Modules getModules() {
+    return modules;
   }
 
-  public ModuleInfo getModuleInfo(Module module) {
-    for (ModuleInfo moduleInfo : fModuleInfoList) {
-      if (sameModule(module, moduleInfo.getModule())) { return moduleInfo; }
+  public Module addNewModule(String artifactId, String groupId, String version) {
+    Module module = modules.addNewModule();
+    module.setName(artifactId);
+    module.setGroupId(groupId);
+    module.setVersion(version);
+    add(module);
+    return module;
+  }
+
+  public boolean addRepository(String repoDir) {
+    return addRepository(new File(ParameterSubstituter.substitute(repoDir)));
+  }
+
+  public boolean addRepository(File repoDir) {
+    if (!repositoryInfoMap.containsKey(repoDir)) {
+      repositoryInfoMap.put(repoDir, new RepositoryInfo(repoDir));
+      return true;
+    } else {
+      return false;
     }
-    return null;
   }
 
-  public ModuleInfo associateBundle(Bundle bundle) {
-    for (ModuleInfo moduleInfo : fModuleInfoList) {
-      File location = moduleInfo.getLocation();
-      String bundleLocation = bundle.getLocation();
-
-      if (location != null) {
-        try {
-          File bundleFile = new File(new URL(bundleLocation).getPath());
-          String bundleFileLocation = bundleFile.getAbsolutePath();
-          if (bundleFileLocation.equals(location.getAbsolutePath())) {
-            moduleInfo.setBundle(bundle);
-            return moduleInfo;
-          }
-        } catch (Exception e) {
-          // e.printStackTrace();
-        }
-      }
-    }
-    return null;
+  public RepositoryInfo getRepository(String repoDirPath) {
+    return repositoryInfoMap.get(new File(repoDirPath));
   }
 
+  public RepositoryInfo getRepository(File repoDir) {
+    return repositoryInfoMap.get(repoDir);
+  }
+
+  public RepositoryInfo removeRepository(File repoDir) {
+    return repositoryInfoMap.remove(repoDir);
+  }
+
+  public Iterator repositoryInfoIterator() {
+    return repositoryInfoMap.values().iterator();
+  }
+
+  @Override
   public void setModuleApplication(ModuleInfo moduleInfo, DsoApplication application) {
-    moduleInfo.setApplication(application);
+    super.setModuleApplication(moduleInfo, application);
     merge(application);
   }
 
   public DsoApplication getApplication() {
-    return fApplication;
+    return application;
   }
 
-  public void merge(DsoApplication application) {
-    merge(application, fApplication);
+  public void merge(DsoApplication toMerge) {
+    merge(toMerge, application);
   }
 
   public static void merge(DsoApplication src, DsoApplication dest) {
@@ -108,171 +101,98 @@ public class ModulesConfiguration {
           : dest.addNewInstrumentedClasses();
       merge(srcInstrumentedClasses, destInstrumentedClasses);
     }
-
     if (src.isSetTransientFields()) {
       TransientFields srcTransientFields = src.getTransientFields();
       TransientFields destTransientFields = dest.isSetTransientFields() ? dest.getTransientFields() : dest
           .addNewTransientFields();
       merge(srcTransientFields, destTransientFields);
     }
-
     if (src.isSetLocks()) {
       Locks srcLocks = src.getLocks();
       Locks destLocks = dest.isSetLocks() ? dest.getLocks() : dest.addNewLocks();
       merge(srcLocks, destLocks);
     }
-
     if (src.isSetRoots()) {
       Roots srcRoots = src.getRoots();
       Roots destRoots = dest.isSetRoots() ? dest.getRoots() : dest.addNewRoots();
       merge(srcRoots, destRoots);
     }
-
     if (src.isSetDistributedMethods()) {
       DistributedMethods srcDistributedMethods = src.getDistributedMethods();
       DistributedMethods destDistributedMethods = dest.isSetDistributedMethods() ? dest.getDistributedMethods() : dest
           .addNewDistributedMethods();
       merge(srcDistributedMethods, destDistributedMethods);
     }
-
     if (src.isSetAdditionalBootJarClasses()) {
       AdditionalBootJarClasses srcBootClasses = src.getAdditionalBootJarClasses();
       AdditionalBootJarClasses destBootClasses = dest.isSetAdditionalBootJarClasses() ? dest
           .getAdditionalBootJarClasses() : dest.addNewAdditionalBootJarClasses();
       merge(srcBootClasses, destBootClasses);
     }
-
     if (src.isSetWebApplications()) {
       WebApplications srcWebApps = src.getWebApplications();
       WebApplications destWebApps = dest.isSetWebApplications() ? dest.getWebApplications() : dest
           .addNewWebApplications();
       merge(srcWebApps, destWebApps);
     }
-
-    if (src.isSetDsoReflectionEnabled()) {
-      dest.setDsoReflectionEnabled(src.getDsoReflectionEnabled());
-    }
+    if (src.isSetDsoReflectionEnabled()) dest.setDsoReflectionEnabled(src.getDsoReflectionEnabled());
   }
 
   public static void merge(InstrumentedClasses src, InstrumentedClasses dest) {
-    Include[] includes = src.getIncludeArray();
-    List<Include> includeList = new ArrayList(Arrays.asList(includes));
-
+    List includeList = new ArrayList(Arrays.asList(src.getIncludeArray()));
     for (Include include : dest.getIncludeArray()) {
-      includeList.add((Include) include.copy());
+      includeList.add(include.copy());
     }
-    dest.setIncludeArray(includeList.toArray(new Include[0]));
+    dest.setIncludeArray((Include[]) includeList.toArray(new Include[0]));
   }
 
   public static void merge(TransientFields src, TransientFields dest) {
-    String[] fields = src.getFieldNameArray();
-    List<String> fieldList = new ArrayList(Arrays.asList(fields));
-
+    List fieldList = new ArrayList(Arrays.asList(src.getFieldNameArray()));
     fieldList.addAll(Arrays.asList(dest.getFieldNameArray()));
-    dest.setFieldNameArray(fieldList.toArray(new String[0]));
+    dest.setFieldNameArray((String[]) fieldList.toArray(new String[0]));
   }
 
   public static void merge(Locks src, Locks dest) {
-    Autolock[] autolocks = src.getAutolockArray();
-    List<Autolock> autolockList = new ArrayList(Arrays.asList(autolocks));
-
+    List autolockList = new ArrayList(Arrays.asList(src.getAutolockArray()));
     for (Autolock autolock : dest.getAutolockArray()) {
-      autolockList.add((Autolock) autolock.copy());
+      autolockList.add(autolock.copy());
     }
-    dest.setAutolockArray(autolockList.toArray(new Autolock[0]));
+    dest.setAutolockArray((Autolock[]) autolockList.toArray(new Autolock[0]));
 
-    NamedLock[] namedLocks = src.getNamedLockArray();
-    List<NamedLock> namedLockList = new ArrayList(Arrays.asList(namedLocks));
-
+    List namedLockList = new ArrayList(Arrays.asList(src.getNamedLockArray()));
     for (NamedLock namedLock : dest.getNamedLockArray()) {
-      namedLockList.add((NamedLock) namedLock.copy());
+      namedLockList.add(namedLock.copy());
     }
-    dest.setNamedLockArray(namedLockList.toArray(new NamedLock[0]));
+    dest.setNamedLockArray((NamedLock[]) namedLockList.toArray(new NamedLock[0]));
   }
 
   public static void merge(Roots src, Roots dest) {
-    Root[] roots = src.getRootArray();
-    List<Root> rootList = new ArrayList(Arrays.asList(roots));
-
+    List rootList = new ArrayList(Arrays.asList(src.getRootArray()));
     for (Root root : dest.getRootArray()) {
-      rootList.add((Root) root.copy());
+      rootList.add(root.copy());
     }
-    dest.setRootArray(rootList.toArray(new Root[0]));
+    dest.setRootArray((Root[]) rootList.toArray(new Root[0]));
   }
 
   public static void merge(DistributedMethods src, DistributedMethods dest) {
-    MethodExpression[] methodExprs = src.getMethodExpressionArray();
-    List<MethodExpression> exprList = new ArrayList(Arrays.asList(methodExprs));
-
+    List exprList = new ArrayList(Arrays.asList(src.getMethodExpressionArray()));
     for (MethodExpression expr : dest.getMethodExpressionArray()) {
-      exprList.add((MethodExpression) expr.copy());
+      exprList.add(expr.copy());
     }
-    dest.setMethodExpressionArray(exprList.toArray(new MethodExpression[0]));
+    dest.setMethodExpressionArray((MethodExpression[]) exprList.toArray(new MethodExpression[0]));
   }
 
   public static void merge(AdditionalBootJarClasses src, AdditionalBootJarClasses dest) {
-    String[] includes = src.getIncludeArray();
-    List<String> includeList = new ArrayList(Arrays.asList(includes));
-
+    List includeList = new ArrayList(Arrays.asList(src.getIncludeArray()));
     includeList.addAll(Arrays.asList(dest.getIncludeArray()));
-    dest.setIncludeArray(includeList.toArray(new String[0]));
+    dest.setIncludeArray((String[]) includeList.toArray(new String[0]));
   }
 
   public static void merge(WebApplications src, WebApplications dest) {
-    WebApplication[] webApps = src.getWebApplicationArray();
-    List<WebApplication> webAppList = new ArrayList(Arrays.asList(webApps));
-
+    List webAppList = new ArrayList(Arrays.asList(src.getWebApplicationArray()));
     for (WebApplication webApp : dest.getWebApplicationArray()) {
-      webAppList.add((WebApplication) webApp.copy());
+      webAppList.add(webApp.copy());
     }
-    dest.setWebApplicationArray(webAppList.toArray(new WebApplication[0]));
+    dest.setWebApplicationArray((WebApplication[]) webAppList.toArray(new WebApplication[0]));
   }
-
-  public Iterator<RepositoryInfo> repositoryInfoIterator() {
-    return fRepositoryInfoList.iterator();
-  }
-
-  public void addRepository(File repositoryDir) {
-    fRepositoryInfoList.add(new RepositoryInfo(repositoryDir));
-  }
-
-  public void addRepository(String location) {
-    this.addRepository(new File(location));
-  }
-
-  public void removeRepository(File repoDir) {
-	  for (Iterator<RepositoryInfo> i = fRepositoryInfoList.iterator(); i.hasNext();) {
-      if (i.next().getRepositoryDir().equals(repoDir)) {
-    	  i.remove();
-      }
-    }
-  }
-
-  public void setModules(Modules modules) {
-    for (Module module : modules.getModuleArray()) {
-      this.add(module);
-    }
-  }
-
-  public ModuleInfo[] getAllModuleInfos() {
-    return fModuleInfoList.toArray(new ModuleInfo[0]);
-  }
-
-  public RepositoryInfo getRepository(String repo) {
-    for (RepositoryInfo r : fRepositoryInfoList) {
-    	if (r.getRepositoryDir().equals(repo))
-    		return r;
-    }
-    return null;
-  }
-
-  public Module addNewModule(String artifactId, String groupId, String version) {
-	  Module module = Module.Factory.newInstance();
-	  module.setGroupId(groupId);
-	  module.setName(artifactId);
-	  module.setVersion(version);
-    this.add(module);
-    return module;
-  }
-
 }
