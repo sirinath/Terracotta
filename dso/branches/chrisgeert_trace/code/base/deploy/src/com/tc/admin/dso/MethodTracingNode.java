@@ -22,7 +22,7 @@ public class MethodTracingNode extends ComponentNode {
     this.adminClientContext = adminClientContext;
     this.clusterModel = clusterModel;
     
-    setIcon(ServerHelper.getHelper().getThreadDumpsIcon());
+    setIcon(ServerHelper.getHelper().getMethodTracingIcon());
   }
   
   synchronized IClusterModel getClusterModel() {
