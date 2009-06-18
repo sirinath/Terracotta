@@ -3,9 +3,7 @@
  */
 package com.tc.objectserver.persistence.sleepycat.util;
 
-import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.ObjectID;
-import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProvider;
@@ -38,10 +36,6 @@ public class PartitionDBData extends BaseUtility {
   }
 
   public void partitionData(int numberOfPartition) throws Exception {
-    // ArrayList<TreeSet<ObjectID>> arrayList = new ArrayList<TreeSet<ObjectID>>();
-    // for (int i = 0; i < numberOfPartition; i++) {
-    // arrayList.add(new TreeSet<ObjectID>());
-    // }
     SleepycatPersistor persistor = getPersistor(1);
     Map<String, ObjectID> roots = persistor.getManagedObjectPersistor().loadRootNamesToIDs();
     SyncObjectIdSet objectIDSet = persistor.getManagedObjectPersistor().getAllObjectIDs();
@@ -64,19 +58,7 @@ public class PartitionDBData extends BaseUtility {
 
     mapChangeIDs(numberOfPartition, baseManagedObjects);
 
-    // TreeSet<ObjectID> sortedOids = new TreeSet<ObjectID>();
-    // sortedOids.addAll(objectIDSet);
-    // log("total objects: " + objectIDSet.size());
-    // log("objectIds before partition\n" + sortedOids);
-    // int numOfObjectsInEachPartition = objectIDSet.size() / numberOfPartition;
-
     partitionData(numberOfPartition, baseManagedObjects, managedObjectRoots);
-
-    // for (int i = 0; i < numberOfPartition; i++) {
-    // log("size of partition " + (i + 1) + ": " + arrayList.get(i).size());
-    // log("partition " + (i + 1) + "\n" + arrayList.get(i));
-    // }
-
   }
 
   private void partitionData(int numberOfPartition, final ArrayList<ManagedObject> baseManagedObjects,
@@ -96,14 +78,12 @@ public class PartitionDBData extends BaseUtility {
       for (int i = 0; i < numOfObjectsInEachPartition; i++) {
         ManagedObject mo = createUpdatedManagedObjectFrom(iter.next());
         saveManagedObject(i, persistorPartition, mo);
-        // arrayList.get(j).add(mo.getID());
       }
     }
 
     while (iter.hasNext()) {
       ManagedObject mo = createUpdatedManagedObjectFrom(iter.next());
       saveManagedObject(numberOfPartition - 1, persistorPartition, mo);
-      // arrayList.get(numberOfPartition - 1).add(mo.getID());
     }
   }
 
@@ -116,11 +96,8 @@ public class PartitionDBData extends BaseUtility {
       newManagedObject = new ManagedObjectImpl(oldId);
     }
 
-    // fill in here so that we can get the updated managed object
-    TCByteBufferOutputStream out = new TCByteBufferOutputStream();
-    ObjectStringSerializer serializer = new ObjectStringSerializer();
+    // XXX: fill in here so that we can get the updated managed object
 
-    mo.toDNA(out, serializer);
     return newManagedObject;
   }
 
@@ -160,9 +137,18 @@ public class PartitionDBData extends BaseUtility {
       PersistenceTransaction tx = persistenceTransactionProvider.newTransaction();
       root.setIsDirty(true);
       persistor.getManagedObjectPersistor().addRoot(tx, rootName, root.getID());
-      managedObjectPersistor.saveObject(tx, root);
+      managedObjectPersistor.saveObject(tx, entry.getValue());
       tx.commit();
     }
+  }
+
+  private void saveManagedObject(int partition, SleepycatPersistor persistor, ManagedObject mo) {
+    ManagedObjectPersistor managedObjectPersistor = persistor.getManagedObjectPersistor();
+    PersistenceTransactionProvider persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
+    PersistenceTransaction tx = persistenceTransactionProvider.newTransaction();
+    mo.setIsDirty(true);
+    managedObjectPersistor.saveObject(tx, mo);
+    tx.commit();
   }
 
   private SleepycatPersistor createPartitionPersistor(int j) throws Exception {
@@ -173,15 +159,6 @@ public class PartitionDBData extends BaseUtility {
     ManagedObjectStateFactory.disableSingleton(true);
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
     return persistor;
-  }
-
-  private void saveManagedObject(int partition, SleepycatPersistor persistor, ManagedObject mo) {
-    ManagedObjectPersistor managedObjectPersistor = persistor.getManagedObjectPersistor();
-    PersistenceTransactionProvider persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
-    PersistenceTransaction tx = persistenceTransactionProvider.newTransaction();
-    mo.setIsDirty(true);
-    managedObjectPersistor.saveObject(tx, mo);
-    tx.commit();
   }
 
   private static class TestManagedObjectChangeListenerProvider implements ManagedObjectChangeListenerProvider {
