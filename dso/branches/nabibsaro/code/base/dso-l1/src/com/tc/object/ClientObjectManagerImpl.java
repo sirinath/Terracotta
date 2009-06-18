@@ -375,7 +375,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  private static void wrapIfNeededAndThrow(Throwable t) {
+  private static void wrapIfNeededAndThrow(final Throwable t) {
     if (t instanceof Error) { throw (Error) t; }
     if (t instanceof RuntimeException) { throw (RuntimeException) t; }
     throw new RuntimeException(t);
@@ -405,7 +405,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
    * @param key Key Object
    * @return value Object in the mapping, null if no mapping present.
    */
-  public Object getValueForKeyInMap(PartialKeysMap map, Object key) throws ClassNotFoundException {
+  public Object getValueForKeyInMap(final PartialKeysMap map, final Object key) throws ClassNotFoundException {
 
     TCObject tcObject = map.__tc_managed();
     if (tcObject == null) { throw new TCRuntimeException(
@@ -431,7 +431,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
    * 
    * @param id Object identifier
    */
-  public void preFetchObject(ObjectID id) {
+  public void preFetchObject(final ObjectID id) {
     synchronized (this) {
       if (basicHasLocal(id)) { return; }
     }
@@ -968,7 +968,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  private void traverse(Object root, NonPortableEventContext context, TraversalAction action) {
+  private void traverse(final Object root, final NonPortableEventContext context, final TraversalAction action) {
     // if set this will be final exception thrown
     Throwable exception = null;
 
@@ -1048,7 +1048,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private abstract class BaseAction implements TraversalAction, PostCreateMethodGatherer {
     private final Map<Object, List<Method>> toCall = new IdentityHashMap<Object, List<Method>>();
 
-    public final void visit(List objects) {
+    public final void visit(final List objects) {
       for (Object pojo : objects) {
         List<Method> postCreateMethods = ClientObjectManagerImpl.this.clazzFactory
             .getOrCreate(pojo.getClass(), ClientObjectManagerImpl.this).getPostCreateMethods();

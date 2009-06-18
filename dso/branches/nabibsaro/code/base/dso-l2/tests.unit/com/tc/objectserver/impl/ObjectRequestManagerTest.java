@@ -44,6 +44,7 @@ import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.context.RespondToObjectRequestContext;
+import com.tc.objectserver.context.ObjectRequestResponseContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.TestDNA;
 import com.tc.objectserver.core.api.TestDNACursor;
@@ -52,7 +53,6 @@ import com.tc.objectserver.impl.ObjectRequestManagerImpl.BatchAndSend;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.LookupContext;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.ObjectRequestCache;
 import com.tc.objectserver.impl.ObjectRequestManagerImpl.RequestedObject;
-import com.tc.objectserver.impl.ObjectRequestManagerImpl.ResponseContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
@@ -523,7 +523,7 @@ public class ObjectRequestManagerTest extends TestCase {
     assertEquals("Thread-1", lookupContext.getRequestingThreadName());
     assertEquals(false, lookupContext.isServerInitiated());
 
-    ResponseContext responseContext = new ResponseContext(clientID, objs, ids, missingIds, false, false, 0, null);
+    ObjectRequestResponseContext responseContext = new ObjectRequestResponseContext(clientID, objs, ids, missingIds, false, false, 0, null);
     assertEquals(clientID, responseContext.getRequestedNodeID());
   }
 

@@ -27,18 +27,18 @@ import java.util.Map.Entry;
  */
 public class HashMapApplicator extends BaseApplicator {
 
-  public HashMapApplicator(DNAEncoding encoding) {
+  public HashMapApplicator(final DNAEncoding encoding) {
     super(encoding);
   }
 
-  public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
+  public TraversedReferences getPortableObjects(final Object pojo, final TraversedReferences addTo) {
     Map m = (Map) pojo;
     filterPortableObjects(m.keySet(), addTo);
     filterPortableObjects(m.values(), addTo);
     return addTo;
   }
 
-  private void filterPortableObjects(Collection objects, TraversedReferences addTo) {
+  private void filterPortableObjects(final Collection objects, final TraversedReferences addTo) {
     for (Iterator i = objects.iterator(); i.hasNext();) {
       Object o = i.next();
       if (o != null && isPortableReference(o.getClass())) {
@@ -47,11 +47,11 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(final ClientObjectManager objectManager, final TCObject tcObject, final DNA dna, final Object po)
+      throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
-    while (cursor.next(encoding)) {
+    while (cursor.next(this.encoding)) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
@@ -59,7 +59,7 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  protected void apply(ClientObjectManager objectManager, Object po, int method, Object[] params)
+  protected void apply(final ClientObjectManager objectManager, final Object po, final int method, final Object[] params)
       throws ClassNotFoundException {
     Map m = (Map) po;
     switch (method) {
@@ -99,30 +99,33 @@ public class HashMapApplicator extends BaseApplicator {
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForValue(ClientObjectManager objectManager, Object v) throws ClassNotFoundException {
+  protected Object getObjectForValue(final ClientObjectManager objectManager, final Object v)
+      throws ClassNotFoundException {
     return (v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v);
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForKey(ClientObjectManager objectManager, Object k) throws ClassNotFoundException {
+  protected Object getObjectForKey(final ClientObjectManager objectManager, final Object k)
+      throws ClassNotFoundException {
     return (k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k);
   }
 
-  private Object getValue(Object[] params) {
+  private Object getValue(final Object[] params) {
     // Hack hack big hack for trove maps which replace the key on set as opposed to HashMaps which do not.
     return params.length == 3 ? params[2] : params[1];
   }
 
-  private Object getKey(Object[] params) {
+  private Object getKey(final Object[] params) {
     return params.length == 3 ? params[1] : params[0];
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(final ClientObjectManager objectManager, final TCObject tcObject, final DNAWriter writer,
+                        final Object pojo) {
     Iterator i = ((Map) pojo).entrySet().iterator();
-    dehydrate(objectManager, tcObject, writer, i);
+    dehydrate(objectManager, writer, i);
   }
-  
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Iterator i) {
+
+  protected void dehydrate(final ClientObjectManager objectManager, final DNAWriter writer, final Iterator i) {
     for (; i.hasNext();) {
       Entry entry = (Entry) i.next();
       Object key = entry.getKey();
@@ -146,7 +149,8 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(final ClientObjectManager objectManager, final DNA dna) throws IOException,
+      ClassNotFoundException {
     if (false) { throw new IOException(); } // silence compiler warning
     if (false) { throw new ClassNotFoundException(); } // silence compiler warning
     throw new UnsupportedOperationException();

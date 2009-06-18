@@ -48,7 +48,8 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
 
   protected NetworkLayer         sendLayer;
 
-  AbstractMessageChannel(TCMessageRouter router, TCLogger logger, TCMessageFactory msgFactory, NodeID remoteNodeID) {
+  AbstractMessageChannel(final TCMessageRouter router, final TCLogger logger, final TCMessageFactory msgFactory,
+                         final NodeID remoteNodeID) {
     this.router = router;
     this.logger = logger;
     this.msgFactory = msgFactory;
@@ -58,20 +59,20 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     this.localNodeID = ClientID.NULL_ID;
   }
 
-  public void addAttachment(String key, Object value, boolean replace) {
-    synchronized (attachmentLock) {
-      boolean exists = attachments.containsKey(key);
+  public void addAttachment(final String key, final Object value, final boolean replace) {
+    synchronized (this.attachmentLock) {
+      boolean exists = this.attachments.containsKey(key);
       if (replace || !exists) {
-        attachments.put(key, value);
+        this.attachments.put(key, value);
       }
     }
   }
 
-  public Object removeAttachment(String key) {
+  public Object removeAttachment(final String key) {
     return this.attachments.remove(key);
   }
 
-  public Object getAttachment(String key) {
+  public Object getAttachment(final String key) {
     return this.attachments.get(key);
   }
 
@@ -83,37 +84,37 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     return this.status.isClosed();
   }
 
-  public void addListener(ChannelEventListener listener) {
+  public void addListener(final ChannelEventListener listener) {
     if (listener == null) { return; }
 
-    listeners.add(listener);
+    this.listeners.add(listener);
   }
 
   public NodeID getLocalNodeID() {
-    return localNodeID;
+    return this.localNodeID;
   }
 
-  public void setLocalNodeID(NodeID localNodeID) {
+  public void setLocalNodeID(final NodeID localNodeID) {
     this.localNodeID = localNodeID;
   }
 
   public NodeID getRemoteNodeID() {
-    return remoteNodeID;
+    return this.remoteNodeID;
   }
 
-  public TCMessage createMessage(TCMessageType type) {
+  public TCMessage createMessage(final TCMessageType type) {
     TCMessage rv = this.msgFactory.createMessage(this, type);
     // TODO: set default channel specific information in the TC message header
 
     return rv;
   }
 
-  public void routeMessageType(TCMessageType messageType, TCMessageSink dest) {
-    router.routeMessageType(messageType, dest);
+  public void routeMessageType(final TCMessageType messageType, final TCMessageSink dest) {
+    this.router.routeMessageType(messageType, dest);
   }
 
-  public void unrouteMessageType(TCMessageType messageType) {
-    router.unrouteMessageType(messageType);
+  public void unrouteMessageType(final TCMessageType messageType) {
+    this.router.unrouteMessageType(messageType);
   }
 
   public abstract NetworkStackID open() throws MaxConnectionsExceededException, TCTimeoutException,
@@ -122,7 +123,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   /**
    * Routes a TCMessage to a sink. The hydrate sink will do the hydrate() work
    */
-  public void routeMessageType(TCMessageType messageType, Sink destSink, Sink hydrateSink) {
+  public void routeMessageType(final TCMessageType messageType, final Sink destSink, final Sink hydrateSink) {
     routeMessageType(messageType, new TCMessageSinkToSedaSink(destSink, hydrateSink));
   }
 
@@ -133,14 +134,14 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   private void fireChannelClosedEvent() {
     fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, AbstractMessageChannel.this));
   }
-  
+
   void channelOpened() {
-    status.open();
+    this.status.open();
     fireChannelOpenedEvent();
   }
-  
+
   public void close() {
-    if (!status.getAndSetIsClosed()) {
+    if (!this.status.getAndSetIsClosed()) {
       Assert.assertNotNull(this.sendLayer);
       this.sendLayer.close();
       fireChannelClosedEvent();
@@ -151,11 +152,11 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     return this.sendLayer != null && this.sendLayer.isConnected();
   }
 
-  public final void setSendLayer(NetworkLayer layer) {
+  public final void setSendLayer(final NetworkLayer layer) {
     this.sendLayer = layer;
   }
 
-  public final void setReceiveLayer(NetworkLayer layer) {
+  public final void setReceiveLayer(final NetworkLayer layer) {
     throw new UnsupportedOperationException();
   }
 
@@ -165,10 +166,10 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   }
 
   public void send(final TCNetworkMessage message) {
-    if (logger.isDebugEnabled()) {
+    if (this.logger.isDebugEnabled()) {
       final Runnable logMsg = new Runnable() {
         public void run() {
-          logger.debug("Message Sent: " + message.toString());
+          AbstractMessageChannel.this.logger.debug("Message Sent: " + message.toString());
         }
       };
 
@@ -181,7 +182,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
             try {
               existingCallback.run();
             } catch (Exception e) {
-              logger.error(e);
+              AbstractMessageChannel.this.logger.error(e);
             } finally {
               logMsg.run();
             }
@@ -197,15 +198,15 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     this.sendLayer.send(message);
   }
 
-  public final void receive(TCByteBuffer[] msgData) {
-    this.router.putMessage(parser.parseMessage(this, msgData));
+  public final void receive(final TCByteBuffer[] msgData) {
+    this.router.putMessage(this.parser.parseMessage(this, msgData));
   }
 
   protected final ChannelStatus getStatus() {
-    return status;
+    return this.status;
   }
 
-  public void notifyTransportDisconnected(MessageTransport transport) {
+  public void notifyTransportDisconnected(final MessageTransport transport) {
     this.remoteAddr.set(null);
     this.localAddr.set(null);
     fireTransportDisconnectedEvent();
@@ -215,17 +216,17 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_DISCONNECTED_EVENT, AbstractMessageChannel.this));
   }
 
-  public void notifyTransportConnected(MessageTransport transport) {
+  public void notifyTransportConnected(final MessageTransport transport) {
     this.remoteAddr.set(transport.getRemoteAddress());
     this.localAddr.set(transport.getLocalAddress());
     fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, AbstractMessageChannel.this));
   }
 
-  public void notifyTransportConnectAttempt(MessageTransport transport) {
+  public void notifyTransportConnectAttempt(final MessageTransport transport) {
     return;
   }
 
-  public void notifyTransportClosed(MessageTransport transport) {
+  public void notifyTransportClosed(final MessageTransport transport) {
     // yeah, we know. We closed it.
     return;
   }
@@ -238,8 +239,8 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     return (TCSocketAddress) this.remoteAddr.get();
   }
 
-  private void fireEvent(ChannelEventImpl event) {
-    for (Iterator i = listeners.iterator(); i.hasNext();) {
+  private void fireEvent(final ChannelEventImpl event) {
+    for (Iterator i = this.listeners.iterator(); i.hasNext();) {
       ((ChannelEventListener) i.next()).notifyChannelEvent(event);
     }
   }
@@ -268,27 +269,27 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
     }
 
     synchronized void open() {
-      Assert.assertTrue("Switch only from init state to open state", ChannelState.INIT.equals(state));
-      state = ChannelState.OPEN;
+      Assert.assertTrue("Switch only from init state to open state", ChannelState.INIT.equals(this.state));
+      this.state = ChannelState.OPEN;
     }
 
     synchronized boolean getAndSetIsClosed() {
       // must not in INIT state
-      Assert.assertFalse("Wrong to be in init state to switch to close state", ChannelState.INIT.equals(state));
-      if (ChannelState.CLOSED.equals(state)) {
+      Assert.assertFalse("Wrong to be in init state to switch to close state", ChannelState.INIT.equals(this.state));
+      if (ChannelState.CLOSED.equals(this.state)) {
         return true;
       } else {
-        state = ChannelState.CLOSED;
+        this.state = ChannelState.CLOSED;
         return false;
       }
     }
-    
+
     synchronized boolean isOpen() {
-      return ChannelState.OPEN.equals(state);
+      return ChannelState.OPEN.equals(this.state);
     }
 
     synchronized boolean isClosed() {
-      return ChannelState.CLOSED.equals(state);
+      return ChannelState.CLOSED.equals(this.state);
     }
 
   }
@@ -304,12 +305,13 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
 
     private final int         state;
 
-    private ChannelState(int state) {
+    private ChannelState(final int state) {
       this.state = state;
     }
 
+    @Override
     public String toString() {
-      switch (state) {
+      switch (this.state) {
         case STATE_INIT:
           return "INIT";
         case STATE_OPEN:
@@ -324,7 +326,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
 
   // for testing purpose
   protected NetworkLayer getSendLayer() {
-    return sendLayer;
+    return this.sendLayer;
   }
 
 }

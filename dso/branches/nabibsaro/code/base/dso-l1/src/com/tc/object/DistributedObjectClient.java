@@ -92,6 +92,7 @@ import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessageImpl;
 import com.tc.object.msg.KeysForOrphanedValuesMessageImpl;
 import com.tc.object.msg.KeysForOrphanedValuesResponseMessageImpl;
 import com.tc.object.msg.LockRequestMessage;
@@ -598,6 +599,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.channel.addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, RequestManagedObjectMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE,
                                  RequestManagedObjectResponseMessageImpl.class);
+    this.channel.addClassMapping(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE,
+                                 KeyValueMappingRequestMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.KEY_VALUE_MAPPING_RESPONSE_MESSAGE,
                                  RespondToKeyValueMappingRequestMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.OBJECTS_NOT_FOUND_RESPONSE_MESSAGE, ObjectsNotFoundMessageImpl.class);

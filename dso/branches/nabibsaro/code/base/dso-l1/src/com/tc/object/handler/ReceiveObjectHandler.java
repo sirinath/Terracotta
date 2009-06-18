@@ -17,7 +17,7 @@ public class ReceiveObjectHandler extends AbstractEventHandler {
   private RemoteObjectManager objectManager;
 
   @Override
-  public void handleEvent(EventContext context) {
+  public void handleEvent(final EventContext context) {
     if (context instanceof RequestManagedObjectResponseMessage) {
       RequestManagedObjectResponseMessage m = (RequestManagedObjectResponseMessage) context;
       this.objectManager.addAllObjects(m.getLocalSessionID(), m.getBatchID(), m.getObjects(), m.getSourceNodeID());
@@ -35,7 +35,7 @@ public class ReceiveObjectHandler extends AbstractEventHandler {
   }
 
   @Override
-  public void initialize(ConfigurationContext context) {
+  public void initialize(final ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;
     this.objectManager = ccc.getObjectManager();

@@ -622,6 +622,8 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     }
 
     public void setValueForKey(final ObjectID mapID, final Object pKey, final Object pValue) {
+      System.err.println("Received response for Map : " + this.oid + " key : " + this.portableKey + " value : "
+                         + pValue);
       if (pValue instanceof ObjectID) {
         this.valueID = (ObjectID) pValue;
       } else {
@@ -652,6 +654,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
       if (!this.requestSent) {
         this.requestSent = true;
+        System.err.println("Sending request for Map : " + this.oid + " key : " + this.portableKey);
         KeyValueMappingRequestMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
         mappingMessage.initialize(this.oid, this.portableKey);
         mappingMessage.send();

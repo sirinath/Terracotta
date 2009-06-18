@@ -14,11 +14,9 @@ import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestServerContext;
-import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.net.ChannelStats;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.context.RequestEntryForKeyContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.stats.counter.Counter;
@@ -40,34 +38,26 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
   private final Counter         globalObjectFlushCounter;
   private ObjectRequestManager  objectRequestManager;
   private Sink                  respondToObjectRequestStage;
-  private Sink                  respondToPartialKeysStage;
 
   private static final TCLogger logger = TCLogging.getLogger(ManagedObjectRequestHandler.class);
 
-  public ManagedObjectRequestHandler(Counter globalObjectRequestCounter, Counter globalObjectFlushCounter) {
+  public ManagedObjectRequestHandler(final Counter globalObjectRequestCounter, final Counter globalObjectFlushCounter) {
     this.globalObjectRequestCounter = globalObjectRequestCounter;
     this.globalObjectFlushCounter = globalObjectFlushCounter;
   }
 
   @Override
-  public void handleEvent(EventContext context) {
+  public void handleEvent(final EventContext context) {
     if (context instanceof RequestManagedObjectMessage) {
       handleEventFromClient((RequestManagedObjectMessage) context);
     } else if (context instanceof ObjectRequestServerContext) {
       handleEventFromServer((ObjectRequestServerContext) context);
-    } else if (context instanceof KeyValueMappingRequestMessage) {
-      handleRequestEntryForKey((KeyValueMappingRequestMessage) context);
     } else {
       throw new AssertionError("Unknown context type : " + context);
     }
   }
 
-  private void handleRequestEntryForKey(KeyValueMappingRequestMessage context) {
-    RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(context);
-    this.objectRequestManager.requestObjects(requestContext, this.respondToPartialKeysStage);
-  }
-
-  private void handleEventFromServer(ObjectRequestServerContext context) {
+  private void handleEventFromServer(final ObjectRequestServerContext context) {
     Collection<ObjectID> ids = context.getRequestedObjectIDs();
     // XXX::TODO:: Server initiated lookups are not updated to the channel counter for now
     final int numObjectsRequested = ids.size();
@@ -77,7 +67,7 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
     this.objectRequestManager.requestObjects(context, this.respondToObjectRequestStage);
   }
 
-  private void handleEventFromClient(RequestManagedObjectMessage rmom) {
+  private void handleEventFromClient(final RequestManagedObjectMessage rmom) {
     MessageChannel channel = rmom.getChannel();
     Set<ObjectID> requestedIDs = rmom.getRequestedObjectIDs();
     ClientID clientID = (ClientID) rmom.getSourceNodeID();
@@ -107,16 +97,12 @@ public class ManagedObjectRequestHandler extends AbstractEventHandler {
   }
 
   @Override
-  public void initialize(ConfigurationContext context) {
-    super.initialize(context);
+  public void initialize(final ConfigurationContext context) {
     ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     this.stateManager = oscc.getClientStateManager();
     this.channelStats = oscc.getChannelStats();
     this.objectRequestManager = oscc.getObjectRequestManager();
     this.respondToObjectRequestStage = oscc.getStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE)
         .getSink();
-    this.respondToPartialKeysStage = oscc.getStage(ServerConfigurationContext.RESPOND_TO_PARTIAL_KEYS).getSink();
-
   }
-
 }

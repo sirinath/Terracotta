@@ -116,6 +116,7 @@ import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
+import com.tc.object.msg.RespondToKeyValueMappingRequestMessageImpl;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerImpl;
@@ -152,6 +153,7 @@ import com.tc.objectserver.handler.CommitTransactionChangeHandler;
 import com.tc.objectserver.handler.GarbageDisposeHandler;
 import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
+import com.tc.objectserver.handler.KeyValueMappingRequestHandler;
 import com.tc.objectserver.handler.ManagedObjectFaultHandler;
 import com.tc.objectserver.handler.ManagedObjectFlushHandler;
 import com.tc.objectserver.handler.ManagedObjectRequestHandler;
@@ -854,6 +856,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                              new RespondToObjectRequestHandler(), this.l2Properties
                                  .getInt("seda.managedobjectresponsestage.threads"), maxStageSize);
 
+    Stage partialKeysRequestStage = stageManager.createStage(ServerConfigurationContext.REQUEST_PARTIAL_KEYS,
+                                                             new KeyValueMappingRequestHandler(), 1, maxStageSize);
+
     stageManager.createStage(ServerConfigurationContext.RESPOND_TO_PARTIAL_KEYS,
                              new RespondToPartialKeysRequestHandler(), 1, maxStageSize);
 
@@ -899,7 +904,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     initClassMappings();
     initRouteMessages(processTx, rootRequest, requestLock, objectRequestStage, oidRequest, transactionAck,
                       clientHandshake, txnLwmStage, jmxEventsStage, jmxRemoteTunnelStage,
-                      clientLockStatisticsRespondStage, clusterMetaDataStage);
+                      clientLockStatisticsRespondStage, clusterMetaDataStage, partialKeysRequestStage);
 
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.clientReconnectWindow());
     long reconnectTimeout = l2DSOConfig.clientReconnectWindow().getInt();
@@ -1022,15 +1027,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                    final Stage objectRequestStage, final Stage oidRequest, final Stage transactionAck,
                                    final Stage clientHandshake, final Stage txnLwmStage, final Stage jmxEventsStage,
                                    final Stage jmxRemoteTunnelStage, final Stage clientLockStatisticsRespondStage,
-                                   final Stage clusterMetaDataStage) {
+                                   final Stage clusterMetaDataStage, final Stage partialKeysRequestStage) {
     Sink hydrateSink = this.hydrateStage.getSink();
     this.l1Listener.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.LOCK_REQUEST_MESSAGE, requestLock.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.REQUEST_ROOT_MESSAGE, rootRequest.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequestStage.getSink(),
                                      hydrateSink);
-    this.l1Listener.routeMessageType(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE, objectRequestStage.getSink(),
-                                     hydrateSink);
+    this.l1Listener.routeMessageType(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE,
+                                     partialKeysRequestStage.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.OBJECT_ID_BATCH_REQUEST_MESSAGE, oidRequest.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE, transactionAck.getSink(),
                                      hydrateSink);
@@ -1069,6 +1074,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
         .addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, RequestManagedObjectMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE,
                                     KeyValueMappingRequestMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.KEY_VALUE_MAPPING_RESPONSE_MESSAGE,
+                                    RespondToKeyValueMappingRequestMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE,
                                     RequestManagedObjectResponseMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.OBJECTS_NOT_FOUND_RESPONSE_MESSAGE, ObjectsNotFoundMessageImpl.class);
