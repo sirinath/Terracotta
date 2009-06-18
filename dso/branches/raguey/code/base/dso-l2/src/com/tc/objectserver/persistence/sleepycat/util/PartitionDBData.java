@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 public class PartitionDBData extends BaseUtility {
 
@@ -43,18 +43,19 @@ public class PartitionDBData extends BaseUtility {
     // arrayList.add(new TreeSet<ObjectID>());
     // }
     SleepycatPersistor persistor = getPersistor(1);
-    Set<ObjectID> roots = persistor.getManagedObjectPersistor().loadRoots();
+    Map<String, ObjectID> roots = persistor.getManagedObjectPersistor().loadRootNamesToIDs();
     SyncObjectIdSet objectIDSet = persistor.getManagedObjectPersistor().getAllObjectIDs();
     objectIDSet.snapshot();
 
     // remove roots from others, they are handled differently
-    objectIDSet.removeAll(roots);
+    objectIDSet.removeAll(roots.values());
 
     final ArrayList<ManagedObject> baseManagedObjects = new ArrayList<ManagedObject>();
-    final ArrayList<ManagedObject> managedObjectRoots = new ArrayList<ManagedObject>();
+    final Map<String, ManagedObject> managedObjectRoots = new HashMap<String, ManagedObject>();
 
-    for (Iterator<ObjectID> rootIterator = roots.iterator(); rootIterator.hasNext();) {
-      managedObjectRoots.add(persistor.getManagedObjectPersistor().loadObjectByID(rootIterator.next()));
+    for (Iterator<Entry<String, ObjectID>> rootIterator = roots.entrySet().iterator(); rootIterator.hasNext();) {
+      Entry<String, ObjectID> entry = rootIterator.next();
+      managedObjectRoots.put(entry.getKey(), persistor.getManagedObjectPersistor().loadObjectByID(entry.getValue()));
     }
 
     for (Iterator<ObjectID> iter = objectIDSet.iterator(); iter.hasNext();) {
@@ -79,7 +80,7 @@ public class PartitionDBData extends BaseUtility {
   }
 
   private void partitionData(int numberOfPartition, final ArrayList<ManagedObject> baseManagedObjects,
-                             final ArrayList<ManagedObject> managedObjectRoots) throws Exception {
+                             final Map<String, ManagedObject> managedObjectRoots) throws Exception {
     Iterator<ManagedObject> iter = baseManagedObjects.iterator();
     SleepycatPersistor persistorPartition = null;
 
@@ -140,11 +141,27 @@ public class PartitionDBData extends BaseUtility {
     }
   }
 
-  private void saveRootsToCoordinator(final ArrayList<ManagedObject> managedObjectRoots,
-                                      SleepycatPersistor persistorPartition) {
-    for (int k = 0; k < managedObjectRoots.size(); k++) {
-      ManagedObject mo = createUpdatedManagedObjectFrom(managedObjectRoots.get(k));
-      saveManagedObject(0, persistorPartition, mo);
+  private void mapIDsIfChanged(int partition, ManagedObject mo) {
+    if (mo.getID().getGroupID() != partition) {
+      ObjectID oldId = mo.getID();
+      ObjectID newId = new ObjectID(oldId.getObjectID(), oldId.getGroupID());
+      changeMap.put(oldId, newId);
+    }
+  }
+
+  private void saveRootsToCoordinator(final Map<String, ManagedObject> managedObjectRoots, SleepycatPersistor persistor) {
+    for (Iterator<Entry<String, ManagedObject>> iter = managedObjectRoots.entrySet().iterator(); iter.hasNext();) {
+      Entry<String, ManagedObject> entry = iter.next();
+      String rootName = entry.getKey();
+      ManagedObject root = createUpdatedManagedObjectFrom(entry.getValue());
+
+      ManagedObjectPersistor managedObjectPersistor = persistor.getManagedObjectPersistor();
+      PersistenceTransactionProvider persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
+      PersistenceTransaction tx = persistenceTransactionProvider.newTransaction();
+      root.setIsDirty(true);
+      persistor.getManagedObjectPersistor().addRoot(tx, rootName, root.getID());
+      managedObjectPersistor.saveObject(tx, root);
+      tx.commit();
     }
   }
 
@@ -159,21 +176,12 @@ public class PartitionDBData extends BaseUtility {
   }
 
   private void saveManagedObject(int partition, SleepycatPersistor persistor, ManagedObject mo) {
-    mapIDsIfChanged(partition, mo);
     ManagedObjectPersistor managedObjectPersistor = persistor.getManagedObjectPersistor();
     PersistenceTransactionProvider persistenceTransactionProvider = persistor.getPersistenceTransactionProvider();
     PersistenceTransaction tx = persistenceTransactionProvider.newTransaction();
     mo.setIsDirty(true);
     managedObjectPersistor.saveObject(tx, mo);
     tx.commit();
-  }
-
-  private void mapIDsIfChanged(int partition, ManagedObject mo) {
-    if (mo.getID().getGroupID() != partition) {
-      ObjectID oldId = mo.getID();
-      ObjectID newId = new ObjectID(oldId.getObjectID(), oldId.getGroupID());
-      changeMap.put(oldId, newId);
-    }
   }
 
   private static class TestManagedObjectChangeListenerProvider implements ManagedObjectChangeListenerProvider {
