@@ -22,7 +22,7 @@ import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
-import com.tc.object.msg.RequestValueMappingForKeyMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
 import com.tc.objectserver.core.api.TestDNA;
@@ -541,7 +541,7 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       return this.message;
     }
 
-    public RequestValueMappingForKeyMessage newRequestValueMappingForKeyMessage(NodeID nodeID) {
+    public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(NodeID nodeID) {
       throw new ImplementMe();
     }
   }

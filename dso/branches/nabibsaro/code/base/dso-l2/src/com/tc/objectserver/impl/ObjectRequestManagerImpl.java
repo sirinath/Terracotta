@@ -60,7 +60,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
   private final ObjectManager       objectManager;
 
-  private final Sink                respondObjectRequestSink;
   private final Sink                objectRequestSink;
 
   private final DSOChannelManager   channelManager;
@@ -72,25 +71,25 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
   public ObjectRequestManagerImpl(ObjectManager objectManager, DSOChannelManager channelManager,
                                   ClientStateManager stateManager, Sink objectRequestSink,
-                                  Sink respondObjectRequestSink, ObjectStatsRecorder objectStatsRecorder) {
+                                  ObjectStatsRecorder objectStatsRecorder) {
     this.objectManager = objectManager;
     this.channelManager = channelManager;
     this.stateManager = stateManager;
-    this.respondObjectRequestSink = respondObjectRequestSink;
     this.objectRequestSink = objectRequestSink;
     this.objectRequestCache = new ObjectRequestCache(LOGGING_ENABLED);
     this.objectStatsRecorder = objectStatsRecorder;
   }
 
-  public void requestObjects(ObjectRequestServerContext requestContext) {
+  public void requestObjects(ObjectRequestServerContext requestContext, Sink destination) {
     splitAndRequestObjects(requestContext.getClientID(), requestContext.getRequestID(), requestContext
         .getRequestedObjectIDs(), requestContext.getRequestDepth(), requestContext.isServerInitiated(), requestContext
-        .isPrefetched(), requestContext.getRequestingThreadName());
+        .isPrefetched(), requestContext.getRequestingThreadName(), requestContext, destination);
   }
 
   private void splitAndRequestObjects(ClientID clientID, ObjectRequestID requestID, SortedSet<ObjectID> ids,
                                       int maxRequestDepth, boolean serverInitiated, boolean preFetched,
-                                      String requestingThreadName) {
+                                      String requestingThreadName, ObjectRequestServerContext requestContext,
+                                      Sink destination) {
 
     ObjectIDSet split = new ObjectIDSet();
     for (Iterator<ObjectID> iter = ids.iterator(); iter.hasNext();) {
@@ -98,7 +97,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
       split.add(id);
       if (split.size() >= SPLIT_SIZE || !iter.hasNext()) {
         basicRequestObjects(clientID, requestID, serverInitiated, preFetched, requestingThreadName,
-                            new RequestedObject(split, maxRequestDepth));
+                            new RequestedObject(split, maxRequestDepth), requestContext, destination);
         split = new ObjectIDSet();
       }
     }
@@ -106,15 +105,16 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
   }
 
   private void basicRequestObjects(ClientID clientID, ObjectRequestID requestID, boolean serverInitiated,
-                                   boolean preFetched, String requestingThreadName, RequestedObject requestedObject) {
+                                   boolean preFetched, String requestingThreadName, RequestedObject requestedObject,
+                                   ObjectRequestServerContext requestContext, Sink destination) {
 
     LookupContext lookupContext = null;
 
     synchronized (this) {
       if (this.objectRequestCache.add(requestedObject, clientID)) {
         lookupContext = new LookupContext(clientID, requestID, requestedObject.getLookupIDSet(), requestedObject
-            .getMaxDepth(), requestingThreadName, serverInitiated, preFetched, this.objectRequestSink,
-                                          this.respondObjectRequestSink);
+            .getMaxDepth(), requestingThreadName, serverInitiated, preFetched, this.objectRequestSink, requestContext,
+                                          destination);
       }
     }
     if (lookupContext != null) {
@@ -432,22 +432,23 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
   protected static class LookupContext implements ObjectManagerResultsContext {
 
-    private final ClientID        clientID;
-    private final ObjectRequestID requestID;
-    private final ObjectIDSet     lookupIDs;
-    private final int             maxRequestDepth;
-    private final String          requestingThreadName;
-    private final boolean         serverInitiated;
-    private final Sink            respondObjectRequestSink;
-    private final Sink            objectRequestSink;
-    private final boolean         preFetched;
+    private final ClientID                   clientID;
+    private final ObjectRequestID            requestID;
+    private final ObjectIDSet                lookupIDs;
+    private final int                        maxRequestDepth;
+    private final String                     requestingThreadName;
+    private final boolean                    serverInitiated;
+    private final Sink                       destinationSink;
+    private final Sink                       objectRequestSink;
+    private final boolean                    preFetched;
+    private final ObjectRequestServerContext requestContext;
 
-    private ObjectIDSet           missingObjects;
-    private Map                   objects;
+    private ObjectIDSet                      missingObjects;
+    private Map                              objects;
 
     public LookupContext(ClientID clientID, ObjectRequestID requestID, ObjectIDSet lookupIDs, int maxRequestDepth,
                          String requestingThreadName, boolean serverInitiated, boolean preFetched,
-                         Sink objectRequestSink, Sink respondObjectRequestSink) {
+                         Sink objectRequestSink, ObjectRequestServerContext requestContext, Sink destinationSink) {
       this.clientID = clientID;
       this.requestID = requestID;
       this.lookupIDs = lookupIDs;
@@ -456,7 +457,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
       this.serverInitiated = serverInitiated;
       this.preFetched = preFetched;
       this.objectRequestSink = objectRequestSink;
-      this.respondObjectRequestSink = respondObjectRequestSink;
+      this.requestContext = requestContext;
+      this.destinationSink = destinationSink;
 
     }
 
@@ -482,8 +484,8 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
       }
       ResponseContext responseContext = new ResponseContext(this.clientID, this.objects.values(), this.lookupIDs,
                                                             this.missingObjects, this.serverInitiated, this.preFetched,
-                                                            this.maxRequestDepth);
-      this.respondObjectRequestSink.add(responseContext);
+                                                            this.maxRequestDepth, this.requestContext);
+      this.destinationSink.add(responseContext);
       if (logger.isDebugEnabled()) {
         logger.debug("Adding to respondSink , clientID = " + this.clientID + " , requestID = " + this.requestID + " "
                      + responseContext);
@@ -520,23 +522,25 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
              + this.requestID + " , ids = " + this.lookupIDs + " , lookedup objects.size() = "
              + (this.objects != null ? this.objects.size() : 0) + " , missingObjects  = " + this.missingObjects
              + " , maxRequestDepth = " + this.maxRequestDepth + " , requestingThreadName = "
-             + this.requestingThreadName + " , serverInitiated = " + this.serverInitiated
-             + " , respondObjectRequestSink = " + this.respondObjectRequestSink + " ] ";
+             + this.requestingThreadName + " , serverInitiated = " + this.serverInitiated + " , destinationSink = "
+             + this.destinationSink + " ] ";
     }
   }
 
   protected static class ResponseContext implements RespondToObjectRequestContext {
 
-    private final ClientID    requestedNodeID;
-    private final Collection  objs;
-    private final ObjectIDSet requestedObjectIDs;
-    private final ObjectIDSet missingObjectIDs;
-    private final boolean     serverInitiated;
-    private final int         maxRequestDepth;
-    private final boolean     preFetched;
+    private final ClientID                   requestedNodeID;
+    private final Collection                 objs;
+    private final ObjectIDSet                requestedObjectIDs;
+    private final ObjectIDSet                missingObjectIDs;
+    private final boolean                    serverInitiated;
+    private final int                        maxRequestDepth;
+    private final boolean                    preFetched;
+    private final ObjectRequestServerContext objectRequestServerContext;
 
     public ResponseContext(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
-                           ObjectIDSet missingObjectIDs, boolean serverInitiated, boolean preFetched, int maxDepth) {
+                           ObjectIDSet missingObjectIDs, boolean serverInitiated, boolean preFetched, int maxDepth,
+                           ObjectRequestServerContext objectRequestServerContext) {
       this.requestedNodeID = requestedNodeID;
       this.objs = objs;
       this.requestedObjectIDs = requestedObjectIDs;
@@ -544,6 +548,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
       this.serverInitiated = serverInitiated;
       this.preFetched = preFetched;
       this.maxRequestDepth = maxDepth;
+      this.objectRequestServerContext = objectRequestServerContext;
     }
 
     public ClientID getRequestedNodeID() {
@@ -572,6 +577,10 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
     public boolean isPreFetched() {
       return this.preFetched;
+    }
+
+    public ObjectRequestServerContext getRequestContext() {
+      return this.objectRequestServerContext;
     }
 
     @Override

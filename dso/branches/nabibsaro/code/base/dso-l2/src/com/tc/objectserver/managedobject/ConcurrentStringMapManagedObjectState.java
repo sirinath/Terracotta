@@ -36,8 +36,8 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
   @Override
   protected void addAllObjectReferencesTo(Set refs) {
     super.addAllObjectReferencesTo(refs);
-    if (!lockStrategy.isNull()) {
-      refs.add(lockStrategy);
+    if (!this.lockStrategy.isNull()) {
+      refs.add(this.lockStrategy);
     }
   }
 
@@ -50,11 +50,11 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
 
         String fieldName = physicalAction.getFieldName();
         if (fieldName.equals(DSO_LOCK_TYPE_FIELDNAME)) {
-          dsoLockType = ((Integer) physicalAction.getObject());
+          this.dsoLockType = ((Integer) physicalAction.getObject());
         } else if (fieldName.equals(LOCK_STRATEGY_FIELDNAME)) {
           ObjectID newLockStrategy = (ObjectID) physicalAction.getObject();
-          getListener().changed(objectID, lockStrategy, newLockStrategy);
-          lockStrategy = newLockStrategy;
+          getListener().changed(objectID, this.lockStrategy, newLockStrategy);
+          this.lockStrategy = newLockStrategy;
         } else {
           throw new AssertionError("unexpected field name: " + fieldName);
         }
@@ -69,14 +69,14 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
 
   @Override
   protected void basicWriteTo(ObjectOutput out) throws IOException {
-    out.writeInt(dsoLockType);
-    out.writeLong(lockStrategy.getObjectID());
+    out.writeInt(this.dsoLockType);
+    out.writeLong(this.lockStrategy.getObjectID());
   }
 
   @Override
   public void dehydrate(ObjectID objectID, DNAWriter writer) {
-    writer.addPhysicalAction(DSO_LOCK_TYPE_FIELDNAME, Integer.valueOf(dsoLockType));
-    writer.addPhysicalAction(LOCK_STRATEGY_FIELDNAME, lockStrategy);
+    writer.addPhysicalAction(DSO_LOCK_TYPE_FIELDNAME, Integer.valueOf(this.dsoLockType));
+    writer.addPhysicalAction(LOCK_STRATEGY_FIELDNAME, this.lockStrategy);
     super.dehydrate(objectID, writer);
   }
 
@@ -85,5 +85,9 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
     csmMos.dsoLockType = in.readInt();
     csmMos.lockStrategy = new ObjectID(in.readLong());
     return csmMos;
+  }
+
+  public Object getValueForKey(Object portableKey) {
+    return this.references.get(portableKey);
   }
 }
