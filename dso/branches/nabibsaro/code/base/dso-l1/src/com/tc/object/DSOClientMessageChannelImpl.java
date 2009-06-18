@@ -22,6 +22,7 @@ import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessage;
@@ -36,7 +37,6 @@ import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
-import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.util.TCTimeoutException;
 
@@ -103,9 +103,8 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return this;
   }
 
-  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(NodeID nodeID) {
-    return (KeyValueMappingRequestMessage) this.channel
-        .createMessage(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE);
+  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(final NodeID nodeID) {
+    return (KeyValueMappingRequestMessage) this.channel.createMessage(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE);
   }
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(final NodeID nodeID) {

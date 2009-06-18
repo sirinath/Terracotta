@@ -72,6 +72,7 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String L2_OOO_NET_RECEIVE_STAGE                           = "l2_ooo_net_receive_stage";
   public final static String CLUSTER_METADATA_STAGE                             = "cluster_metadata_stage";
   public static final String RESPOND_TO_PARTIAL_KEYS                            = "respond_to_partial_keys_stage";
+  public static final String REQUEST_PARTIAL_KEYS                               = "request_partial_keys_stage";
 
   // TODO::Move to enterprise
   public static final String AA_TRANSACTION_WATERMARK_BROADCAST_STAGE           = "aa_transaction_watermark_broadcast_stage";

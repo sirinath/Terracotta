@@ -16,14 +16,11 @@ import com.tc.object.msg.RespondToKeyValueMappingRequestMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.context.RequestEntryForKeyContext;
-import com.tc.objectserver.context.RespondToObjectRequestContext;
+import com.tc.objectserver.context.EntryForKeyResponseContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.managedobject.ConcurrentStringMapManagedObjectState;
-
-import java.util.Collection;
 
 public class RespondToPartialKeysRequestHandler extends AbstractEventHandler implements EventHandler {
 
@@ -32,26 +29,13 @@ public class RespondToPartialKeysRequestHandler extends AbstractEventHandler imp
   private ObjectManager         objectManager;
 
   @Override
-  public void handleEvent(EventContext context) {
-    RespondToObjectRequestContext respondContext = (RespondToObjectRequestContext) context;
-    RequestEntryForKeyContext requestContext = (RequestEntryForKeyContext) respondContext.getRequestContext();
+  public void handleEvent(final EventContext context) {
+    EntryForKeyResponseContext responseContext = (EntryForKeyResponseContext) context;
 
-    ObjectID mapID = requestContext.getPartialKeyMapID();
-    Object portableKey = requestContext.getPortableKey();
+    ObjectID mapID = responseContext.getMapID();
+    Object portableKey = responseContext.getPortableKey();
 
-    if (!respondContext.getMissingObjectIDs().isEmpty()) {
-      logger.error("Ignoring Missing ObjectIDs : " + respondContext.getMissingObjectIDs() + " Map ID : " + mapID
-                   + " portable key : " + portableKey);
-      // TODO:: Fix this
-      return;
-    }
-
-    Collection objects = respondContext.getObjs();
-    ManagedObject mo = (ManagedObject) objects.iterator().next();
-
-    if (!mo.getID().equals(mapID) || objects.size() != 0) { throw new AssertionError("Partial Keys Map (mapID " + mapID
-                                                                                     + " ) is not looked up or "); }
-
+    ManagedObject mo = responseContext.getManagedObject();
     ManagedObjectState state = mo.getManagedObjectState();
 
     if (!(state instanceof ConcurrentStringMapManagedObjectState)) { throw new AssertionError(
@@ -62,15 +46,17 @@ public class RespondToPartialKeysRequestHandler extends AbstractEventHandler imp
     ConcurrentStringMapManagedObjectState csmState = (ConcurrentStringMapManagedObjectState) state;
 
     Object portableValue = csmState.getValueForKey(portableKey);
+    System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
+                       + portableValue);
 
     this.objectManager.releaseReadOnly(mo);
 
     MessageChannel channel;
     try {
-      channel = this.channelManager.getActiveChannel(respondContext.getRequestedNodeID());
+      channel = this.channelManager.getActiveChannel(responseContext.getClientID());
     } catch (NoSuchChannelException e) {
-      logger.warn("Client " + respondContext.getRequestedNodeID() + " disconnect before sending Entry for mapID : "
-                  + mapID + " key : " + portableKey);
+      logger.warn("Client " + responseContext.getClientID() + " disconnect before sending Entry for mapID : " + mapID
+                  + " key : " + portableKey);
       return;
     }
 
@@ -82,7 +68,7 @@ public class RespondToPartialKeysRequestHandler extends AbstractEventHandler imp
   }
 
   @Override
-  protected void initialize(ConfigurationContext context) {
+  protected void initialize(final ConfigurationContext context) {
     ServerConfigurationContext scc = (ServerConfigurationContext) context;
     this.channelManager = scc.getChannelManager();
     this.objectManager = scc.getObjectManager();

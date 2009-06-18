@@ -18,31 +18,34 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
   private final MessageMonitor  monitor;
   private final SessionProvider sessionProvider;
 
-  public TCMessageFactoryImpl(SessionProvider sessionProvider, MessageMonitor monitor) {
+  public TCMessageFactoryImpl(final SessionProvider sessionProvider, final MessageMonitor monitor) {
     this.sessionProvider = sessionProvider;
     this.monitor = monitor;
   }
 
-  public TCMessage createMessage(MessageChannel source, TCMessageType type) throws UnsupportedMessageTypeException {
+  public TCMessage createMessage(final MessageChannel source, final TCMessageType type)
+      throws UnsupportedMessageTypeException {
     GeneratedMessageFactory factory = lookupFactory(type);
-    return factory.createMessage(sessionProvider.getSessionID(source.getRemoteNodeID()), monitor, new TCByteBufferOutputStream(4, 4096, false),
-                                 source, type);
+    return factory.createMessage(this.sessionProvider.getSessionID(source.getRemoteNodeID()), this.monitor,
+                                 new TCByteBufferOutputStream(4, 4096, false), source, type);
   }
 
-  public TCMessage createMessage(MessageChannel source, TCMessageType type, TCMessageHeader header, TCByteBuffer[] data) {
+  public TCMessage createMessage(final MessageChannel source, final TCMessageType type, final TCMessageHeader header,
+                                 final TCByteBuffer[] data) {
     GeneratedMessageFactory factory = lookupFactory(type);
-    return factory.createMessage(sessionProvider.getSessionID(source.getRemoteNodeID()), monitor, source, header, data);
+    return factory.createMessage(this.sessionProvider.getSessionID(source.getRemoteNodeID()), this.monitor, source,
+                                 header, data);
   }
 
-  public void addClassMapping(TCMessageType type, Class msgClass) {
+  public void addClassMapping(final TCMessageType type, final Class msgClass) {
     if ((type == null) || (msgClass == null)) { throw new IllegalArgumentException(); }
 
     // This strange synchronization is for things like system tests that will end up using the same
     // message class, but with different TCMessageFactoryImpl instances
     synchronized (msgClass.getName().intern()) {
-      GeneratedMessageFactory factory = (GeneratedMessageFactory) factories.get(type);
+      GeneratedMessageFactory factory = (GeneratedMessageFactory) this.factories.get(type);
       if (factory == null) {
-        factories.put(type, createFactory(type, msgClass));
+        this.factories.put(type, createFactory(type, msgClass));
       } else {
         throw new IllegalStateException("message already has class mapping: " + type);
       }
@@ -50,11 +53,11 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
     }
   }
 
-  private String generatedFactoryClassName(TCMessageType type) {
+  private String generatedFactoryClassName(final TCMessageType type) {
     return getClass().getName() + "$" + type.getTypeName() + "Factory";
   }
 
-  private GeneratedMessageFactory createFactory(TCMessageType type, Class msgClass) {
+  private GeneratedMessageFactory createFactory(final TCMessageType type, final Class msgClass) {
     String factoryClassName = generatedFactoryClassName(type);
 
     ClassLoader loader = msgClass.getClassLoader();
@@ -74,7 +77,8 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
     }
   }
 
-  private Class defineFactory(String className, TCMessageType type, Class msgClass, ClassLoader loader) {
+  private Class defineFactory(final String className, final TCMessageType type, final Class msgClass,
+                              final ClassLoader loader) {
     try {
       byte[] clazz = GeneratedMessageFactoryClassCreator.create(className, msgClass);
 
@@ -90,8 +94,8 @@ public class TCMessageFactoryImpl implements TCMessageFactory {
     }
   }
 
-  private GeneratedMessageFactory lookupFactory(TCMessageType type) {
-    GeneratedMessageFactory factory = (GeneratedMessageFactory) factories.get(type);
+  private GeneratedMessageFactory lookupFactory(final TCMessageType type) {
+    GeneratedMessageFactory factory = (GeneratedMessageFactory) this.factories.get(type);
     if (factory == null) { throw new RuntimeException("No factory for type " + type); }
     return factory;
   }

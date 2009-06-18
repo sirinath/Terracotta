@@ -20,11 +20,11 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
   private int                dsoLockType;
   private ObjectID           lockStrategy;
 
-  private ConcurrentStringMapManagedObjectState(ObjectInput in) throws IOException {
+  private ConcurrentStringMapManagedObjectState(final ObjectInput in) throws IOException {
     super(in);
   }
 
-  protected ConcurrentStringMapManagedObjectState(long classId, Map map) {
+  protected ConcurrentStringMapManagedObjectState(final long classId, final Map map) {
     super(classId, map);
   }
 
@@ -34,7 +34,7 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
   }
 
   @Override
-  protected void addAllObjectReferencesTo(Set refs) {
+  protected void addAllObjectReferencesTo(final Set refs) {
     super.addAllObjectReferencesTo(refs);
     if (!this.lockStrategy.isNull()) {
       refs.add(this.lockStrategy);
@@ -42,7 +42,8 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
   }
 
   @Override
-  public void apply(ObjectID objectID, DNACursor cursor, BackReferences includeIDs) throws IOException {
+  public void apply(final ObjectID objectID, final DNACursor cursor, final BackReferences includeIDs)
+      throws IOException {
     while (cursor.next()) {
       Object action = cursor.getAction();
       if (action instanceof PhysicalAction) {
@@ -68,26 +69,26 @@ public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObje
   }
 
   @Override
-  protected void basicWriteTo(ObjectOutput out) throws IOException {
+  protected void basicWriteTo(final ObjectOutput out) throws IOException {
     out.writeInt(this.dsoLockType);
     out.writeLong(this.lockStrategy.getObjectID());
   }
 
   @Override
-  public void dehydrate(ObjectID objectID, DNAWriter writer) {
+  public void dehydrate(final ObjectID objectID, final DNAWriter writer) {
     writer.addPhysicalAction(DSO_LOCK_TYPE_FIELDNAME, Integer.valueOf(this.dsoLockType));
     writer.addPhysicalAction(LOCK_STRATEGY_FIELDNAME, this.lockStrategy);
     super.dehydrate(objectID, writer);
   }
 
-  static MapManagedObjectState readFrom(ObjectInput in) throws IOException {
+  static MapManagedObjectState readFrom(final ObjectInput in) throws IOException {
     ConcurrentStringMapManagedObjectState csmMos = new ConcurrentStringMapManagedObjectState(in);
     csmMos.dsoLockType = in.readInt();
     csmMos.lockStrategy = new ObjectID(in.readLong());
     return csmMos;
   }
 
-  public Object getValueForKey(Object portableKey) {
+  public Object getValueForKey(final Object portableKey) {
     return this.references.get(portableKey);
   }
 }

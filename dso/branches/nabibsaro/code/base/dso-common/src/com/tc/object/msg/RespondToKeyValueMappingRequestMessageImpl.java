@@ -25,20 +25,23 @@ public class RespondToKeyValueMappingRequestMessageImpl extends DSOMessageBase i
   private Object            portableKey;
   private Object            portableValue;
 
-  public RespondToKeyValueMappingRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                                TCMessageHeader header, TCByteBuffer[] data) {
+  public RespondToKeyValueMappingRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                                    final MessageChannel channel, final TCMessageHeader header,
+                                                    final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public RespondToKeyValueMappingRequestMessageImpl(SessionID sessionID, MessageMonitor monitor,
-                                                TCByteBufferOutputStream out, MessageChannel channel, TCMessageType type) {
+  public RespondToKeyValueMappingRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                                    final TCByteBufferOutputStream out, final MessageChannel channel,
+                                                    final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
-  public void initialize(ObjectID mapObjectID, Object key, Object value) {
+  public void initialize(final ObjectID mapObjectID, final Object key, final Object value) {
     this.mapID = mapObjectID;
     this.portableKey = key;
-    this.portableValue = value;
+    // TODO::Null Value is not supported
+    this.portableValue = (value == null ? ObjectID.NULL_ID : value);
   }
 
   @Override
@@ -58,7 +61,7 @@ public class RespondToKeyValueMappingRequestMessageImpl extends DSOMessageBase i
   }
 
   @Override
-  protected boolean hydrateValue(byte name) throws IOException {
+  protected boolean hydrateValue(final byte name) throws IOException {
     switch (name) {
       case MAP_OBJECT_ID:
         this.mapID = new ObjectID(getLongValue());

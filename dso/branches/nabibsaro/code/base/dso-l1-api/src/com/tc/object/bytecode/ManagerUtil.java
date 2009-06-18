@@ -534,7 +534,7 @@ public class ManagerUtil {
    * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type}, e.g., Class, Integer,
    *         etc.
    */
-  public static boolean isLiteralInstance(Object obj) {
+  public static boolean isLiteralInstance(final Object obj) {
     return getManager().isLiteralInstance(obj);
   }
 

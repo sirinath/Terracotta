@@ -1010,7 +1010,7 @@ public class ManagerImpl implements Manager {
     return this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().getActionInstance(name);
   }
 
-  public Object getValueForKeyInMap(PartialKeysMap map, Object key) throws ClassNotFoundException {
+  public Object getValueForKeyInMap(final PartialKeysMap map, final Object key) throws ClassNotFoundException {
     return this.objectManager.getValueForKeyInMap(map, key);
   }
 }
