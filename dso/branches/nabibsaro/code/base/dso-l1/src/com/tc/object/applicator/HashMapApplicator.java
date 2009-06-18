@@ -118,9 +118,12 @@ public class HashMapApplicator extends BaseApplicator {
   }
 
   public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-
-    Map map = (Map) pojo;
-    for (Iterator i = map.entrySet().iterator(); i.hasNext();) {
+    Iterator i = ((Map) pojo).entrySet().iterator();
+    dehydrate(objectManager, tcObject, writer, i);
+  }
+  
+  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Iterator i) {
+    for (; i.hasNext();) {
       Entry entry = (Entry) i.next();
       Object key = entry.getKey();
       Object value = entry.getValue();

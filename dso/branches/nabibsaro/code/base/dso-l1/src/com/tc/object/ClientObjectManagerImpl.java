@@ -413,7 +413,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     ObjectID mapID = tcObject.getObjectID();
     Object portableKey = (key instanceof Manageable ? ((Manageable) key).__tc_managed().getObjectID() : key);
 
-    if (portableKey == null || LiteralValues.isLiteralInstance(portableKey)) {
+    if (portableKey == null || !LiteralValues.isLiteralInstance(portableKey)) {
       // stupid eclipse formatting
       throw new TCRuntimeException("Key is not portable. It needs to be portable for PartialKeysMap. Key = "
                                    + portableKey + " map id = " + mapID);
