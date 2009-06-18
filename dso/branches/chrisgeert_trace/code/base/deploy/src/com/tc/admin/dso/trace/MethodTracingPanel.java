@@ -16,6 +16,7 @@ import com.tc.admin.model.ClientConnectionListener;
 import com.tc.admin.model.IClient;
 import com.tc.admin.model.IClusterModel;
 import com.tc.admin.model.IServer;
+import com.tc.admin.model.IServerGroup;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -95,6 +96,16 @@ public class MethodTracingPanel extends XContainer implements ActionListener, Cl
 
   private void addNodePanels() {
     pagedView.removeAll();
+    for (IServerGroup group : clusterModel.getServerGroups()) {
+      for (IServer server : group.getMembers()) {
+        if (server.isActiveCoordinator()) {
+          for (IClient client : server.getClients()) {
+            pagedView.addPage(createClientViewPanel(client));
+          }
+          server.addClientConnectionListener(this);
+        }
+      }
+    }
     pagedView.addPropertyChangeListener(this);
     inited = true;
   }
@@ -170,7 +181,7 @@ public class MethodTracingPanel extends XContainer implements ActionListener, Cl
   }
 
   protected Component createClientViewPanel(IClient client) {
-    ClientMethodTracingPanel panel = new ClientMethodTracingPanel(client, adminClientContext);
+    ClientMethodTracingPanel panel = new ClientMethodTracingPanel(clusterModel, client, adminClientContext);
     panel.setName(client.toString());
     return panel;
   }

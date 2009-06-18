@@ -4,7 +4,6 @@
 package com.tc.admin.dso.trace;
 
 import com.tc.admin.common.XObjectTable;
-import com.tc.admin.dso.locks.ServerLockTableModel;
 import com.tc.admin.dso.locks.StatValueRenderer;
 
 import java.awt.Component;
@@ -32,7 +31,7 @@ public class MethodTracingTable extends XObjectTable {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {
       Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-      ServerLockTableModel model = (ServerLockTableModel) table.getModel();
+      MethodTracingTableModel model = (MethodTracingTableModel) table.getModel();
       ((JComponent) c).setToolTipText(model.columnTip(column));
       return c;
     }
