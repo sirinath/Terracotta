@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.
-public class ConcurrentStringMapManagedObjectState extends PartialMapManagedObjectState {
+public class ConcurrentStringMapManagedObjectState extends MapManagedObjectState {
   public static final String DSO_LOCK_TYPE_FIELDNAME = "dsoLockType";
   public static final String LOCK_STRATEGY_FIELDNAME = "lockStrategy";
 
