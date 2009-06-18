@@ -6,6 +6,8 @@ package com.tc.object.bytecode.trace;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.loaders.LoaderDescription;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 
@@ -21,7 +23,7 @@ public class TracingManager extends AbstractTerracottaMBean implements TracingMa
   private final TracingSRA tracingSra;
   
   public TracingManager(StatisticsAgentSubSystem statisticsAgentSubSystem) throws NotCompliantMBeanException {
-    super(TracingManagerMBean.class, true);
+    super(TracingManagerMBean.class, false);
     StatisticsRetrievalRegistry srr = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
     tracingSra = (TracingSRA) srr.getActionInstance(TracingSRA.ACTION_NAME);
   }
@@ -71,6 +73,10 @@ public class TracingManager extends AbstractTerracottaMBean implements TracingMa
   }
 
   public void reset() {
-    // What should this do?
+    //
+  }
+  
+  public boolean isMethodTracingEnabled() {
+    return TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.METHOD_TRACING_ENABLED);
   }
 }
