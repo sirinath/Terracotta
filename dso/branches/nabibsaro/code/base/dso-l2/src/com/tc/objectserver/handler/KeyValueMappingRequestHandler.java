@@ -22,7 +22,7 @@ public class KeyValueMappingRequestHandler extends AbstractEventHandler implemen
   public void handleEvent(final EventContext context) {
     KeyValueMappingRequestMessage kvmContext = (KeyValueMappingRequestMessage) context;
     RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(kvmContext, this.respondToPartialKeysStage);
-    // System.err.println("Server : Receive look up request for " + requestContext);
+    System.err.println("Server : Receive look up request for " + requestContext);
     this.objectManager.lookupObjectsAndSubObjectsFor(kvmContext.getClientID(), requestContext, -1);
   }
 

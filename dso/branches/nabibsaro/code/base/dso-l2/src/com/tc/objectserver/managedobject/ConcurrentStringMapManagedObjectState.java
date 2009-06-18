@@ -9,6 +9,7 @@ import com.tc.object.dna.api.PhysicalAction;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,6 +67,25 @@ public class ConcurrentStringMapManagedObjectState extends MapManagedObjectState
         applyMethod(objectID, includeIDs, method, params);
       }
     }
+  }
+
+  @Override
+  protected void addPruneConditions(final BackReferences includeIDs, final Object old, final ObjectID objectID) {
+    if (old instanceof ObjectID) {
+      includeIDs.addConditionsForBroadcast(objectID, (ObjectID) old);
+    } else if (old == null) {
+      // Dont broadcast
+      includeIDs.addConditionsForBroadcast(objectID, ObjectID.NULL_ID);
+    }
+  }
+
+  @Override
+  public void addObjectReferencesTo(final ManagedObjectTraverser traverser) {
+    if (!this.lockStrategy.isNull()) {
+      traverser.addRequiredObjectIDs(Collections.singleton(this.lockStrategy));
+    }
+    traverser.addReachableObjectIDs(getObjectReferencesFrom(this.references.keySet()));
+    traverser.addReachableObjectIDs(getObjectReferencesFrom(this.references.values()));
   }
 
   @Override
