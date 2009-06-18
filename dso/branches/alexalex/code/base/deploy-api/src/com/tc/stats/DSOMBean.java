@@ -66,4 +66,6 @@ public interface DSOMBean extends DSOStats, DGCMBean, TerracottaMBean {
                                                        TimeUnit unit);
 
   Map<ObjectName, Object> invoke(Set<ObjectName> onSet, String operation, long timeout, TimeUnit unit);
+
+  Map<ObjectName, Object> invoke(Set<ObjectName> onSet, String operation, Object[] args, String[] signatures, long timeout, TimeUnit unit);
 }

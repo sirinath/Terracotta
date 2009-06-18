@@ -551,16 +551,20 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
   private class SimpleInvokeTask implements Callable<SimpleInvokeResult> {
     private final ObjectName objectName;
     private final String     operation;
+    private final Object[]   args;
+    private final String[]   signature;
 
-    SimpleInvokeTask(ObjectName objectName, String operation) {
+    SimpleInvokeTask(ObjectName objectName, String operation, Object[] args, String[] signature) {
       this.objectName = objectName;
       this.operation = operation;
+      this.args = args;
+      this.signature = signature;
     }
 
     public SimpleInvokeResult call() {
       Object result;
       try {
-        result = mbeanServer.invoke(objectName, operation, SIMPLE_INVOKE_PARAMS, SIMPLE_INVOKE_SIG);
+        result = mbeanServer.invoke(objectName, operation, args, signature);
       } catch (Exception e) {
         result = e;
       }
@@ -569,11 +573,15 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
   }
 
   public Map<ObjectName, Object> invoke(Set<ObjectName> onSet, String operation, long timeout, TimeUnit unit) {
+    return invoke(onSet, operation, SIMPLE_INVOKE_PARAMS, SIMPLE_INVOKE_SIG, timeout, unit);
+  }
+  
+  public Map<ObjectName, Object> invoke(Set<ObjectName> onSet, String operation, Object[] args, String[] signature, long timeout, TimeUnit unit) {
     Map<ObjectName, Object> result = new HashMap<ObjectName, Object>();
     List<Callable<SimpleInvokeResult>> tasks = new ArrayList<Callable<SimpleInvokeResult>>();
     Iterator<ObjectName> onIter = onSet.iterator();
     while (onIter.hasNext()) {
-      tasks.add(new SimpleInvokeTask(onIter.next(), operation));
+      tasks.add(new SimpleInvokeTask(onIter.next(), operation, args, signature));
     }
     try {
       List<Future<SimpleInvokeResult>> results = pool.invokeAll(tasks, timeout, unit);
