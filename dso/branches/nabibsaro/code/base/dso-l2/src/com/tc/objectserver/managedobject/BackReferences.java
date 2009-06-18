@@ -19,12 +19,15 @@ public class BackReferences {
 
   private final Set parents;
 
+  private final Map conditions;
+
   public BackReferences() {
     this.parents = new HashSet();
     this.nodes = new HashMap();
+    this.conditions = new HashMap();
   }
 
-  public void addBackReference(ObjectID child, ObjectID parent) {
+  public void addBackReference(final ObjectID child, final ObjectID parent) {
     if (child.isNull()) { return; }
     Node c = getOrCreateNode(child);
     Node p = getOrCreateNode(parent);
@@ -32,7 +35,7 @@ public class BackReferences {
     this.parents.add(parent);
   }
 
-  private Node getOrCreateNode(ObjectID id) {
+  private Node getOrCreateNode(final ObjectID id) {
     Node n = (Node) this.nodes.get(id);
     if (n == null) {
       n = new Node(id);
@@ -45,7 +48,7 @@ public class BackReferences {
     return new HashSet(this.parents);
   }
 
-  public Set addReferencedChildrenTo(Set objectIDs, Set interestedParents) {
+  public Set addReferencedChildrenTo(final Set objectIDs, final Set interestedParents) {
     for (Iterator i = interestedParents.iterator(); i.hasNext();) {
       ObjectID pid = (ObjectID) i.next();
       Node p = getOrCreateNode(pid);
@@ -54,12 +57,33 @@ public class BackReferences {
     return objectIDs;
   }
 
+  public void addConditionsForBroadcast(final ObjectID objectID, final ObjectID old) {
+    HashSet shouldContain = (HashSet) this.conditions.get(objectID);
+    if (shouldContain == null) {
+      shouldContain = new HashSet();
+      this.conditions.put(objectID, shouldContain);
+    }
+    shouldContain.add(old);
+  }
+
+  public boolean shouldBroadcast(final Set references, final ObjectID objectID) {
+    HashSet shouldContain = (HashSet) this.conditions.get(objectID);
+    if (shouldContain != null) {
+      for (Iterator i = shouldContain.iterator(); i.hasNext();) {
+        ObjectID old = (ObjectID) i.next();
+        if (references.contains(old)) { return true; }
+      }
+      return false;
+    }
+    return true;
+  }
+
   private static class Node {
 
     private final ObjectID id;
     private final Set      children;
 
-    public Node(ObjectID id) {
+    public Node(final ObjectID id) {
       this.id = id;
       this.children = new HashSet();
     }
@@ -74,7 +98,7 @@ public class BackReferences {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (o instanceof Node) {
         Node other = (Node) o;
         return this.id.equals(other.id);
@@ -82,11 +106,11 @@ public class BackReferences {
       return false;
     }
 
-    public void addChild(Node c) {
+    public void addChild(final Node c) {
       this.children.add(c);
     }
 
-    public Set addAllReferencedChildrenTo(Set objectIDs) {
+    public Set addAllReferencedChildrenTo(final Set objectIDs) {
       for (Iterator i = this.children.iterator(); i.hasNext();) {
         Node child = (Node) i.next();
         if (objectIDs.add(child.getID())) {

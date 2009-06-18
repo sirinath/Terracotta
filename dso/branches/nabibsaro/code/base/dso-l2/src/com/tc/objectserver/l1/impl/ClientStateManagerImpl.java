@@ -39,17 +39,18 @@ public class ClientStateManagerImpl implements ClientStateManager {
   private final TCLogger                 logger;
 
   // for testing
-  public ClientStateManagerImpl(TCLogger logger, Map<NodeID, ClientState> states) {
+  public ClientStateManagerImpl(final TCLogger logger, final Map<NodeID, ClientState> states) {
     this.logger = logger;
     this.clientStates = states;
   }
 
-  public ClientStateManagerImpl(TCLogger logger) {
+  public ClientStateManagerImpl(final TCLogger logger) {
     this(logger, new HashMap<NodeID, ClientState>());
   }
 
-  public synchronized List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, BackReferences includeIDs,
-                                                                    NodeID id, Set<ObjectID> lookupObjectIDs) {
+  public synchronized List<DNA> createPrunedChangesAndAddObjectIDTo(final Collection<DNA> changes,
+                                                                    final BackReferences includeIDs, final NodeID id,
+                                                                    final Set<ObjectID> lookupObjectIDs) {
     assertStarted();
     ClientStateImpl clientState = getClientState(id);
     if (clientState == null) {
@@ -60,12 +61,15 @@ public class ClientStateManagerImpl implements ClientStateManager {
 
     List<DNA> prunedChanges = new LinkedList<DNA>();
 
+    Set parents = includeIDs.getAllParents();
     for (final DNA dna : changes) {
       if (clientState.containsReference(dna.getObjectID())) {
-        if (dna.isDelta()) {
+        ObjectID oid = dna.getObjectID();
+        if (dna.isDelta() && includeIDs.shouldBroadcast(clientState.getReferences(), oid)) {
           prunedChanges.add(dna);
         } else {
-          // This new Object must have already been sent as a part of a different lookup. So ignoring this change.
+          // Ignore this parent as we are not interested in this one.
+          parents.remove(oid);
         }
         // else if (clientState.containsParent(dna.getObjectID(), includeIDs)) {
         // these objects needs to be looked up from the client during apply
@@ -73,13 +77,14 @@ public class ClientStateManagerImpl implements ClientStateManager {
         // }
       }
     }
-    clientState.addReferencedChildrenTo(lookupObjectIDs, includeIDs);
+    parents.retainAll(clientState.getReferences());
+    includeIDs.addReferencedChildrenTo(lookupObjectIDs, parents);
     clientState.removeReferencedObjectIDsFrom(lookupObjectIDs);
 
     return prunedChanges;
   }
 
-  public synchronized void addReference(NodeID id, ObjectID objectID) {
+  public synchronized void addReference(final NodeID id, final ObjectID objectID) {
     assertStarted();
     ClientStateImpl c = getClientState(id);
     if (c != null) {
@@ -89,7 +94,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     }
   }
 
-  public synchronized void removeReferences(NodeID id, Set<ObjectID> removed) {
+  public synchronized void removeReferences(final NodeID id, final Set<ObjectID> removed) {
     assertStarted();
     ClientStateImpl c = getClientState(id);
     if (c != null) {
@@ -99,7 +104,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     }
   }
 
-  public synchronized boolean hasReference(NodeID id, ObjectID objectID) {
+  public synchronized boolean hasReference(final NodeID id, final ObjectID objectID) {
     ClientStateImpl c = getClientState(id);
     if (c != null) {
       return c.containsReference(objectID);
@@ -109,14 +114,14 @@ public class ClientStateManagerImpl implements ClientStateManager {
     }
   }
 
-  public synchronized void addAllReferencedIdsTo(Set<ObjectID> ids) {
+  public synchronized void addAllReferencedIdsTo(final Set<ObjectID> ids) {
     assertStarted();
     for (final ClientState s : this.clientStates.values()) {
       s.addReferencedIdsTo(ids);
     }
   }
 
-  public synchronized void removeReferencedFrom(NodeID id, Set<ObjectID> oids) {
+  public synchronized void removeReferencedFrom(final NodeID id, final Set<ObjectID> oids) {
     ClientState cs = getClientState(id);
     if (cs == null) {
       this.logger.warn(": removeReferencedFrom : Client state is NULL (probably due to disconnect) : " + id);
@@ -130,7 +135,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
   /*
    * returns newly added references
    */
-  public synchronized Set<ObjectID> addReferences(NodeID id, Set<ObjectID> oids) {
+  public synchronized Set<ObjectID> addReferences(final NodeID id, final Set<ObjectID> oids) {
     ClientState cs = getClientState(id);
     if (cs == null) {
       this.logger.warn(": addReferences : Client state is NULL (probably due to disconnect) : " + id);
@@ -151,7 +156,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     return newReferences;
   }
 
-  public synchronized void shutdownNode(NodeID waitee) {
+  public synchronized void shutdownNode(final NodeID waitee) {
     if (!isStarted()) {
       // it's too late to remove the client from the database. On startup, this guy will fail to reconnect
       // within the timeout period and be slain.
@@ -160,7 +165,7 @@ public class ClientStateManagerImpl implements ClientStateManager {
     this.clientStates.remove(waitee);
   }
 
-  public synchronized void startupNode(NodeID nodeID) {
+  public synchronized void startupNode(final NodeID nodeID) {
     if (!isStarted()) { return; }
     Object old = this.clientStates.put(nodeID, new ClientStateImpl(nodeID));
     if (old != null) { throw new AssertionError("Client connected before disconnecting : old Client state = " + old); }
@@ -180,11 +185,11 @@ public class ClientStateManagerImpl implements ClientStateManager {
     if (this.state != STARTED) { throw new AssertionError("Not started."); }
   }
 
-  private ClientStateImpl getClientState(NodeID id) {
+  private ClientStateImpl getClientState(final NodeID id) {
     return (ClientStateImpl) this.clientStates.get(id);
   }
 
-  public int getReferenceCount(NodeID nodeID) {
+  public int getReferenceCount(final NodeID nodeID) {
     ClientState clientState = getClientState(nodeID);
     return clientState != null ? clientState.getReferences().size() : 0;
   }
@@ -210,18 +215,12 @@ public class ClientStateManagerImpl implements ClientStateManager {
     private final NodeID        nodeID;
     private final Set<ObjectID> managed = new ObjectIDSet();
 
-    public ClientStateImpl(NodeID nodeID) {
+    public ClientStateImpl(final NodeID nodeID) {
       this.nodeID = nodeID;
     }
 
-    public void removeReferencedObjectIDsFrom(Set<ObjectID> lookupObjectIDs) {
+    public void removeReferencedObjectIDsFrom(final Set<ObjectID> lookupObjectIDs) {
       lookupObjectIDs.removeAll(this.managed);
-    }
-
-    public void addReferencedChildrenTo(Set objectIDs, BackReferences includeIDs) {
-      Set parents = includeIDs.getAllParents();
-      parents.retainAll(this.managed);
-      includeIDs.addReferencedChildrenTo(objectIDs, parents);
     }
 
     @Override
@@ -233,25 +232,27 @@ public class ClientStateManagerImpl implements ClientStateManager {
       return this.managed;
     }
 
-    public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    public PrettyPrinter prettyPrint(final PrettyPrinter out) {
       out.println(getClass().getName());
       out.duplicateAndIndent().indent().print("managed: ").visit(this.managed);
       return out;
     }
 
-    public void addReference(ObjectID id) {
-      this.managed.add(id);
+    public void addReference(final ObjectID id) {
+      if (!id.isNull()) {
+        this.managed.add(id);
+      }
     }
 
-    public boolean containsReference(ObjectID id) {
+    public boolean containsReference(final ObjectID id) {
       return this.managed.contains(id);
     }
 
-    public void removeReferences(Set<ObjectID> references) {
+    public void removeReferences(final Set<ObjectID> references) {
       this.managed.removeAll(references);
     }
 
-    public void addReferencedIdsTo(Set<ObjectID> ids) {
+    public void addReferencedIdsTo(final Set<ObjectID> ids) {
       ids.addAll(this.managed);
     }
 

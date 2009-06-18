@@ -46,8 +46,8 @@ public class RespondToPartialKeysRequestHandler extends AbstractEventHandler imp
     ConcurrentStringMapManagedObjectState csmState = (ConcurrentStringMapManagedObjectState) state;
 
     Object portableValue = csmState.getValueForKey(portableKey);
-    // System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
-    // + portableValue);
+    System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
+                       + portableValue);
 
     this.objectManager.releaseReadOnly(mo);
 

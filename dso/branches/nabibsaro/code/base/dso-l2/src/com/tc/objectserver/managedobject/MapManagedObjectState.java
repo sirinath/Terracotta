@@ -32,16 +32,17 @@ import java.util.Map.Entry;
 public class MapManagedObjectState extends LogicalManagedObjectState implements PrettyPrintable, PersistableObjectState {
   protected Map references;
 
-  protected MapManagedObjectState(long classID, Map map) {
+  protected MapManagedObjectState(final long classID, final Map map) {
     super(classID);
     this.references = map;
   }
 
-  protected MapManagedObjectState(ObjectInput in) throws IOException {
+  protected MapManagedObjectState(final ObjectInput in) throws IOException {
     super(in);
   }
 
-  public void apply(ObjectID objectID, DNACursor cursor, BackReferences includeIDs) throws IOException {
+  public void apply(final ObjectID objectID, final DNACursor cursor, final BackReferences includeIDs)
+      throws IOException {
     while (cursor.next()) {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
@@ -50,14 +51,15 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
     }
   }
 
-  protected void applyMethod(ObjectID objectID, BackReferences includeIDs, int method, Object[] params) {
+  protected void applyMethod(final ObjectID objectID, final BackReferences includeIDs, final int method,
+                             final Object[] params) {
     switch (method) {
       case SerializationUtil.PUT:
 
         mapPreProcess(params);
         Object key = getKey(params);
         Object value = getValue(params);
-        this.references.put(key, value);
+        Object old = this.references.put(key, value);
         if (key instanceof ObjectID) {
           ObjectID v = (ObjectID) key;
           getListener().changed(objectID, null, v);
@@ -68,9 +70,11 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
           getListener().changed(objectID, null, v);
           addBackReferenceForValue(includeIDs, v, objectID);
         }
+        addPruneConditions(includeIDs, old, objectID);
         break;
       case SerializationUtil.REMOVE:
-        this.references.remove(params[0]);
+        old = this.references.remove(params[0]);
+        addPruneConditions(includeIDs, old, objectID);
         break;
       case SerializationUtil.CLEAR:
         this.references.clear();
@@ -78,35 +82,38 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
       default:
         throw new AssertionError("Invalid action:" + method);
     }
-
   }
 
-  protected void addBackReferenceForKey(BackReferences includeIDs, ObjectID key, ObjectID map) {
+  protected void addPruneConditions(final BackReferences includeIDs, final Object old, final ObjectID objectID) {
+    // Override if you need to specify conditions
+  }
+
+  protected void addBackReferenceForKey(final BackReferences includeIDs, final ObjectID key, final ObjectID map) {
     includeIDs.addBackReference(key, map);
   }
 
-  protected void addBackReferenceForValue(BackReferences includeIDs, ObjectID value, ObjectID map) {
+  protected void addBackReferenceForValue(final BackReferences includeIDs, final ObjectID value, final ObjectID map) {
     includeIDs.addBackReference(value, map);
   }
 
-  private Object getKey(Object[] params) {
+  private Object getKey(final Object[] params) {
     // Hack hack big hack for trove maps which replace the key on set as opposed to HashMaps which do not.
     return params.length == 3 ? params[1] : params[0];
   }
 
-  private Object getValue(Object[] params) {
+  private Object getValue(final Object[] params) {
     // Hack hack big hack for trove maps which replace the key on set as opposed to HashMaps which do not.
     return params.length == 3 ? params[2] : params[1];
   }
 
-  private void mapPreProcess(Object[] params) {
+  private void mapPreProcess(final Object[] params) {
     // Hack hack big hack for trove maps which replace the key on set as opposed to HashMaps which do not.
     if (params.length == 3) {
       this.references.remove(params[0]);
     }
   }
 
-  public void dehydrate(ObjectID objectID, DNAWriter writer) {
+  public void dehydrate(final ObjectID objectID, final DNAWriter writer) {
     for (Iterator i = this.references.entrySet().iterator(); i.hasNext();) {
       Entry entry = (Entry) i.next();
       Object key = entry.getKey();
@@ -116,7 +123,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   @Override
-  protected void addAllObjectReferencesTo(Set refs) {
+  protected void addAllObjectReferencesTo(final Set refs) {
     addAllObjectReferencesFromIteratorTo(this.references.keySet().iterator(), refs);
     addAllObjectReferencesFromIteratorTo(this.references.values().iterator(), refs);
   }
@@ -128,7 +135,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
     return rv;
   }
 
-  public ManagedObjectFacade createFacade(ObjectID objectID, String className, int limit) {
+  public ManagedObjectFacade createFacade(final ObjectID objectID, final String className, int limit) {
     final int size = this.references.size();
 
     if (limit < 0) {
@@ -152,12 +159,12 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   @Override
-  protected void basicWriteTo(ObjectOutput out) throws IOException {
+  protected void basicWriteTo(final ObjectOutput out) throws IOException {
     // CollectionsPersistor will save retrieve data in references map.
     if (false) { throw new IOException(); }
   }
 
-  public void setMap(Map map) {
+  public void setMap(final Map map) {
     if (this.references != null) { throw new AssertionError("The references map is already set ! " + this.references); }
     this.references = map;
   }
@@ -167,7 +174,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   // CollectionsPersistor will save retrieve data in references map.
-  static MapManagedObjectState readFrom(ObjectInput in) throws IOException, ClassNotFoundException {
+  static MapManagedObjectState readFrom(final ObjectInput in) throws IOException, ClassNotFoundException {
     if (false) {
       // This is added to make the compiler happy. For some reason if I have readFrom() method throw
       // ClassNotFoundException in LinkedHashMapManagedObjectState, it shows as an error !!
@@ -181,7 +188,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   @Override
-  protected boolean basicEquals(LogicalManagedObjectState o) {
+  protected boolean basicEquals(final LogicalManagedObjectState o) {
     MapManagedObjectState mmo = (MapManagedObjectState) o;
     return this.references.equals(mmo.references);
   }
@@ -190,7 +197,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
     return (PersistableCollection) getMap();
   }
 
-  public void setPersistentCollection(PersistableCollection collection) {
+  public void setPersistentCollection(final PersistableCollection collection) {
     setMap((Map) collection);
   }
 }
