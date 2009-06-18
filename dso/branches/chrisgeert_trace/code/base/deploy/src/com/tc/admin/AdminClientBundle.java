@@ -75,6 +75,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "cluster.topology", "Topology" },
         { "cluster.features", "My application" },
         { "dso.runtime.stats", "Runtime statistics" },
+        { "dso.method.tracing", "Method tracing" },
         { "dso.roots.suffix.singular", "root" },
         { "dso.roots.suffix.plural", "roots" },
         { "dso.client.roots", "Client objects" },
@@ -238,6 +239,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "dashboard.txn-size-rate", "Txn Size KB/s" }, { "dashboard.unacked-txns", "Unacked Txns" },
         { "dashboard.transactions", "Transactions" }, { "dashboard.impeding-factors", "Impeding Factors" },
         { "dashboard.dial.tip.format", "<html>{0}:<br>Max={1}, Average={2}</html>" },
-        { "dashboard.header.label.font", new Font("SansSerif", Font.PLAIN, 12) }, };
+        { "dashboard.header.label.font", new Font("SansSerif", Font.PLAIN, 12) },
+        { "method.tracing.per.client.view", "Per Client View"}};
   }
 }

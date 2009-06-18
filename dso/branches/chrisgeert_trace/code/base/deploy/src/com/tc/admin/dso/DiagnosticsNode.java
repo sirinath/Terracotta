@@ -46,12 +46,17 @@ public class DiagnosticsNode extends ComponentNode implements HyperlinkListener 
     }
     add(createThreadDumpsNode(clusterNode));
     add(createStatsRecorderNode());
+    add(createMethodTracingNode());
   }
 
   protected RuntimeStatsNode createRuntimeStatsNode() {
     return new RuntimeStatsNode(adminClientContext, clusterModel);
   }
 
+  protected MethodTracingNode createMethodTracingNode() {
+    return new MethodTracingNode(adminClientContext, clusterModel);
+  }
+  
   protected LocksNode createLocksNode(ClusterNode clusterNode) {
     return new LocksNode(adminClientContext, clusterNode);
   }
