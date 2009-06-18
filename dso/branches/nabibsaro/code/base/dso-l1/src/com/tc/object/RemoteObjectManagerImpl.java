@@ -6,6 +6,7 @@ package com.tc.object;
 
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
@@ -604,16 +605,16 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
   private static class PartialKeysRequestContext {
 
-    // private final static TCLogger logger = TCLogging.getLogger(PartialKeysRequestContext.class);
+    private final static TCLogger logger      = TCLogging.getLogger(PartialKeysRequestContext.class);
 
-    private final ObjectID oid;
-    private final Object   portableKey;
-    private final GroupID  groupID;
-    private final String   comboKey;
+    private final ObjectID        oid;
+    private final Object          portableKey;
+    private final GroupID         groupID;
+    private final String          comboKey;
 
-    private boolean        requestSent = false;
-    private int            count;
-    private ObjectID       valueID;
+    private boolean               requestSent = false;
+    private int                   count;
+    private ObjectID              valueID;
 
     public PartialKeysRequestContext(final ObjectID oid, final Object portableKey, final GroupID groupID,
                                      final String comboKey) {
@@ -625,8 +626,9 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
 
     public void setValueForKey(final ObjectID mapID, final Object pKey, final Object pValue) {
 
-      System.err.println("Received response for Map : " + this.oid + " key : " + this.portableKey + " value : "
-                         + pValue);
+      if (ENABLE_LOGGING) {
+        logger.info("Received response for Map : " + this.oid + " key : " + this.portableKey + " value : " + pValue);
+      }
       if (pValue instanceof ObjectID) {
         this.valueID = (ObjectID) pValue;
       } else {
@@ -657,7 +659,9 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
       if (!this.requestSent) {
         this.requestSent = true;
-        System.err.println("Sending request for Map : " + this.oid + " key : " + this.portableKey);
+        if (ENABLE_LOGGING) {
+          logger.info("Sending request for Map : " + this.oid + " key : " + this.portableKey);
+        }
         KeyValueMappingRequestMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
         mappingMessage.initialize(this.oid, this.portableKey);
         mappingMessage.send();
