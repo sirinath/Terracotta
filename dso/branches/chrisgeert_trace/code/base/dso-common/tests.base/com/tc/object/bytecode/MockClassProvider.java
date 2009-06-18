@@ -7,6 +7,9 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.loaders.NamedClassLoader;
 
+import java.util.Collections;
+import java.util.Set;
+
 
 public class MockClassProvider implements ClassProvider {
   
@@ -26,6 +29,14 @@ public class MockClassProvider implements ClassProvider {
 
   public Class getClassFor(String className, LoaderDescription desc) throws ClassNotFoundException {
     return getClass().getClassLoader().loadClass(className);
+  }
+  
+  public Set<Class> getLoadedClasses(String className) {
+    try {
+      return Collections.singleton((Class) getClass().getClassLoader().loadClass(className));
+    } catch (ClassNotFoundException e) {
+      return Collections.emptySet();
+    }
   }
   
   public LoaderDescription getLoaderDescriptionFor(ClassLoader loader) {

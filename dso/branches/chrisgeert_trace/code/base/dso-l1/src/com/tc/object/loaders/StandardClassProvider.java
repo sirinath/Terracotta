@@ -94,6 +94,24 @@ public class StandardClassProvider implements ClassProvider {
     }
   }
   
+  public Set<Class> getLoadedClasses(String className) {
+    HashSet result = new HashSet();
+    
+    for (WeakReference<NamedClassLoader> weakLoaderRef : loaders.values()) {
+      NamedClassLoader loader = weakLoaderRef.get();
+      if (loader != null) {
+        try {
+          Class clazz = Class.forName(className, false, (ClassLoader) loader);
+          result.add(clazz);
+        } catch (ClassNotFoundException e) {
+          //
+        }
+      }
+    }
+    
+    return Collections.unmodifiableSet(result);
+  }
+
   /**
    * @param loader must implement both ClassLoader and NamedClassLoader
    * @param appGroup an appGroup to support sharing roots between apps, or null if

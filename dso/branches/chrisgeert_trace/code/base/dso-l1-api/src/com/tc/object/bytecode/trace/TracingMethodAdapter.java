@@ -27,9 +27,7 @@ public class TracingMethodAdapter extends AdviceAdapter implements MethodVisitor
     super.visitFieldInsn(GETSTATIC, info.getDeclaringType().getName().replace('.', '/'), listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;");
     super.visitInsn(DUP);
     super.visitJumpInsn(IFNULL, nullListener);
-    super.visitLdcInsn(info.getDeclaringType().getName());
-    super.visitLdcInsn(info.getName() + info.getSignature());
-    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodEnter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodEnter", "()V");
     super.visitJumpInsn(GOTO, finish);
     
     super.visitLabel(nullListener);
@@ -39,20 +37,18 @@ public class TracingMethodAdapter extends AdviceAdapter implements MethodVisitor
   
   @Override
   protected void onMethodExit(int opcode) {
-//    Label start = new Label();
-//    Label end = new Label();
-//    Label handler = new Label();
-//    Label finish = new Label();
-//    super.visitTryCatchBlock(start, end, handler, null);
-//
-//    super.visitLabel(start);
-//    super.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-//    super.visitLdcInsn("Exiting Method " + name);
-//    super.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
-//    super.visitLabel(end);
-//    super.visitJumpInsn(GOTO, finish);
-//    super.visitLabel(handler);
-//    super.visitInsn(POP);      
-//    super.visitLabel(finish);
+    Label nullListener = new Label();
+    Label finish = new Label();
+
+    super.visitFieldInsn(GETSTATIC, info.getDeclaringType().getName().replace('.', '/'), listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;");
+    super.visitInsn(DUP);
+    super.visitJumpInsn(IFNULL, nullListener);
+    super.visitLdcInsn(Integer.valueOf(opcode));
+    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodExit", "(I)V");
+    super.visitJumpInsn(GOTO, finish);
+    
+    super.visitLabel(nullListener);
+    super.visitInsn(POP);
+    super.visitLabel(finish);
   }
 }

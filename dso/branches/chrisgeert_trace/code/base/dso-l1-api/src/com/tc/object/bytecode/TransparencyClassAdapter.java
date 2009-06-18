@@ -21,6 +21,8 @@ import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 
@@ -32,7 +34,8 @@ import java.util.Set;
  * @author steve
  */
 public class TransparencyClassAdapter extends ClassAdapterBase {
-  private static final boolean             METHOD_TRACING_ENABLED = true;
+  private static final boolean             METHOD_TRACING_ENABLED = TCPropertiesImpl.getProperties()
+                                                                      .getBoolean(TCPropertiesConsts.METHOD_TRACING_ENABLED);
   
   private static final TCLogger            logger          = TCLogging.getLogger(TransparencyClassAdapter.class);
 
@@ -191,7 +194,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       String listenerField = null;
       if (shouldTraceMethod(memberInfo)) {
-        listenerField = "__tc_trace_" + name + desc;
+        listenerField = ("__tc_trace_" + name + desc).replaceAll("[^\\p{javaJavaIdentifierPart}]", "_");
         FieldVisitor fv = super.visitField(ACC_STATIC | ACC_SYNTHETIC | ACC_VOLATILE | ACC_TRANSIENT,
                                            listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;", null, null);
         fv.visitEnd();
@@ -1220,7 +1223,13 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
   }
   
   private static boolean shouldTraceMethod(MemberInfo info) {
-    return METHOD_TRACING_ENABLED && "java.util.ArrayList".equals(info.getDeclaringType().getName());
+    if (METHOD_TRACING_ENABLED) {
+      String className = info.getDeclaringType().getName();
+      return  !(className.startsWith("java.") || className.startsWith("javax.")
+          || className.startsWith("com.sun.") || className.startsWith("com.tc."));
+    } else {
+      return false;
+    }
   }
   
 }
