@@ -50,6 +50,7 @@ import com.tc.net.protocol.transport.HealthCheckerConfigClientImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
+import com.tc.object.bytecode.trace.TracingSRA;
 import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
@@ -296,6 +297,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       registry.registerActionInstance(new SRAL1TransactionSize(transactionSizeCounter));
       registry.registerActionInstance(new SRAL1PendingBatchesSize(pendingBatchesSize));
       registry.registerActionInstance(new SRAHttpSessions());
+      registry.registerActionInstance(new TracingSRA());
       registry.registerActionInstance(new SRAL1TransactionCount(txCounter));
       registry.registerActionInstance(new SRAVmGarbageCollector(SRAVmGarbageCollectorType.L1_VM_GARBAGE_COLLECTOR));
 

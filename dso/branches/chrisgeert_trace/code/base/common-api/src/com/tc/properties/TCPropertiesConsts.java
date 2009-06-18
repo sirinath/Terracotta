@@ -579,4 +579,12 @@ public interface TCPropertiesConsts {
   public static final String   LICENSE_RESOURCE_PATH                                              = "license.resource.path";
   public static final String   LICENSE_URL                                                        = "license.url";
 
+  /*********************************************************************************************************************
+   * <code>
+   * Section :  ExperimentalMethodTracing
+   * method.tracing.enabled                      - if true will enable experimental method tracing support
+   * </code>
+   ********************************************************************************************************************/
+  public static final String   METHOD_TRACING_ENABLED                                             = "method.tracing.enabled";
+
 }

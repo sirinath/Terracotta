@@ -26,6 +26,8 @@ import com.tc.management.exposed.TerracottaCluster;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnectionServer;
+import com.tc.object.bytecode.trace.TracingManager;
+import com.tc.object.bytecode.trace.TracingManagerMBean;
 import com.tc.object.config.MBeanSpec;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.RuntimeLogger;
@@ -63,7 +65,8 @@ public final class L1Management extends TerracottaManagement {
   private final InstrumentationLogging   instrumentationLoggingBean;
   private final RuntimeOutputOptions     runtimeOutputOptionsBean;
   private final RuntimeLogging           runtimeLoggingBean;
-
+  private final TracingManager           tracingManagerBean;
+  
   private final StatisticsAgentSubSystem statisticsAgentSubSystem;
 
   private final MBeanSpec[]              mbeanSpecs;
@@ -90,6 +93,7 @@ public final class L1Management extends TerracottaManagement {
       instrumentationLoggingBean = new InstrumentationLogging(instrumentationLogger);
       runtimeOutputOptionsBean = new RuntimeOutputOptions(runtimeLogger);
       runtimeLoggingBean = new RuntimeLogging(runtimeLogger);
+      tracingManagerBean = new TracingManager(statisticsAgentSubSystem);
     } catch (NotCompliantMBeanException ncmbe) {
       throw new TCRuntimeException(
                                    "Unable to construct one of the L1 MBeans: this is a programming error in one of those beans",
@@ -156,6 +160,7 @@ public final class L1Management extends TerracottaManagement {
     else if (objectName.equals(L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC)) return instrumentationLoggingBean;
     else if (objectName.equals(L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC)) return runtimeOutputOptionsBean;
     else if (objectName.equals(L1MBeanNames.RUNTIME_LOGGING_PUBLIC)) return runtimeLoggingBean;
+    else if (objectName.equals(L1MBeanNames.TRACING_MANAGER_PUBLIC)) return tracingManagerBean;
     else {
       synchronized (mBeanServerLock) {
         if (mBeanServer != null) { return findMBean(objectName, mBeanInterface, mBeanServer); }
@@ -188,6 +193,10 @@ public final class L1Management extends TerracottaManagement {
     return runtimeLoggingBean;
   }
 
+  public TracingManagerMBean findTracingManagerMBean() {
+    return tracingManagerBean;
+  }
+
   private void attemptToRegister(final boolean createDedicatedMBeanServer) throws InstanceAlreadyExistsException,
       MBeanRegistrationException, NotCompliantMBeanException {
     synchronized (mBeanServerLock) {
@@ -215,6 +224,7 @@ public final class L1Management extends TerracottaManagement {
     mBeanServer.registerMBean(instrumentationLoggingBean, L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     mBeanServer.registerMBean(runtimeOutputOptionsBean, L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);
     mBeanServer.registerMBean(runtimeLoggingBean, L1MBeanNames.RUNTIME_LOGGING_PUBLIC);
+    mBeanServer.registerMBean(tracingManagerBean, L1MBeanNames.TRACING_MANAGER_PUBLIC);
     if (mbeanSpecs != null) {
       for (MBeanSpec spec : mbeanSpecs) {
         for (Map.Entry<ObjectName, Object> bean : spec.getMBeans().entrySet()) {

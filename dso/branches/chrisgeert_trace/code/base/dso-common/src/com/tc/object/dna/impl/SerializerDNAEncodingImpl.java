@@ -9,6 +9,9 @@ import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.util.Assert;
 
+import java.util.Collections;
+import java.util.Set;
+
 public class SerializerDNAEncodingImpl extends BaseDNAEncodingImpl {
 
   private static final ClassProvider LOCAL_PROVIDER = new LocalClassProvider();
@@ -45,6 +48,14 @@ public class SerializerDNAEncodingImpl extends BaseDNAEncodingImpl {
       }
     }
 
+    public Set<Class> getLoadedClasses(String className) {
+      try {
+        return Collections.singleton((Class) Class.forName(className));
+      } catch (ClassNotFoundException e) {
+        throw new AssertionError(e);
+      }
+    }
+    
     public LoaderDescription getLoaderDescriptionFor(Class clazz) {
       return LOADER_DESC;
     }

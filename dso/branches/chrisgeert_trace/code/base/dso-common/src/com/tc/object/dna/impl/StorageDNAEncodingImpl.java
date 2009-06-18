@@ -7,6 +7,8 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.loaders.NamedClassLoader;
 
+import java.util.Set;
+
 public class StorageDNAEncodingImpl extends BaseDNAEncodingImpl {
 
   private static final ClassProvider FAILURE_PROVIDER                     = new FailureClassProvider();
@@ -33,6 +35,10 @@ public class StorageDNAEncodingImpl extends BaseDNAEncodingImpl {
       throw new AssertionError();
     }
 
+    public Set<Class> getLoadedClasses(String className) {
+      throw new AssertionError();
+    }
+    
     public LoaderDescription getLoaderDescriptionFor(Class clazz) {
       throw new AssertionError();
     }

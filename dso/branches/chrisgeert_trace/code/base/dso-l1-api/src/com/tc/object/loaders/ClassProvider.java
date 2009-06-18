@@ -3,6 +3,8 @@
  */
 package com.tc.object.loaders;
 
+import java.util.Set;
+
 /**
  * Manage loading relationship between named classloaders and classes
  */
@@ -16,6 +18,14 @@ public interface ClassProvider {
    * @throws ClassNotFoundException If class not found through loader
    */
   Class getClassFor(String className, LoaderDescription desc) throws ClassNotFoundException;
+
+  /**
+   * Given a class name, returns a collection of all loaded classes
+   * with the given name (across all named loaders).
+   * @param className Class name
+   * @return Class 
+   */
+  Set<Class> getLoadedClasses(String className);
 
   /**
    * Convenience wrapper around {@link #getLoaderDescriptionFor(ClassLoader)}
