@@ -15,6 +15,7 @@ public class BaseHelper {
   protected Icon                runtimeStatsIcon;
   protected Icon                statsRecorderIcon;
   protected Icon                statsRecordingIcon;
+  protected Icon                methodTracingIcon;
 
   protected static final String ICONS_PATH = "/com/tc/admin/icons/";
 
@@ -34,6 +35,14 @@ public class BaseHelper {
     return threadDumpsIcon;
   }
 
+  public Icon getMethodTracingIcon() {
+    if (methodTracingIcon == null) {
+      URL url = getClass().getResource(ICONS_PATH + "tracing_icon.png");
+      methodTracingIcon = new ImageIcon(url);
+    }
+    return methodTracingIcon;
+  }
+  
   public Icon getRuntimeStatsIcon() {
     if (runtimeStatsIcon == null) {
       URL url = getClass().getResource(ICONS_PATH + "chart_bar.png");
