@@ -10,6 +10,7 @@ import com.tc.cli.command.DBDiffCommand;
 import com.tc.cli.command.DBUsageCommand;
 import com.tc.cli.command.FastLoadOidLogAnalysisCommand;
 import com.tc.cli.command.ManagedObjectReportCommand;
+import com.tc.cli.command.PartitionDBCommand;
 import com.tc.cli.command.ReviveClassFilesCommand;
 import com.tc.cli.command.SetDbCleanCommand;
 import com.tc.util.ProductInfo;
@@ -37,14 +38,15 @@ public class CommandLineMain {
     initialize();
     helpCommand = new HelpCommand(commands, writer);
   }
-  
-   CommandLineMain(Writer writer) {
+
+  CommandLineMain(Writer writer) {
     this.writer = writer;
     initialize();
     helpCommand = new HelpCommand(commands, writer);
   }
 
   private void initialize() {
+    registerCommand(new PartitionDBCommand(writer));
     registerCommand(new ManagedObjectReportCommand(writer));
     registerCommand(new FastLoadOidLogAnalysisCommand(writer));
     registerCommand(new ReviveClassFilesCommand(writer));
@@ -115,7 +117,7 @@ public class CommandLineMain {
     }
 
     public void execute(String[] args) {
-      println("Usage: <command> [args]");   
+      println("Usage: <command> [args]");
       println("Terracotta command-line utility, version " + ProductInfo.getInstance().version());
       println("Type 'help <command>' for help on a specific command.");
       println("\n");
