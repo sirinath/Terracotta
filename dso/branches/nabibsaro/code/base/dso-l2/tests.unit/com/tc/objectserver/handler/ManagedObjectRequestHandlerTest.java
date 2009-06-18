@@ -40,10 +40,9 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     TestDSOChannelManager channelManager = new TestDSOChannelManager();
     TestClientStateManager clientStateManager = new TestClientStateManager();
     TestSink requestSink = new TestSink();
-    TestSink respondSink = new TestSink();
     ObjectRequestManagerImpl objectRequestManager = new ObjectRequestManagerImpl(objectManager, channelManager,
                                                                                  clientStateManager, requestSink,
-                                                                                 respondSink, new ObjectStatsRecorder());
+                                                                                 new ObjectStatsRecorder());
 
     TestServerConfigurationContext context = new TestServerConfigurationContext();
     context.setObjectRequestManager(objectRequestManager);
@@ -72,7 +71,7 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     assertEquals(100, channelRemCounter.getValue());
   }
 
-  private ObjectIDSet makeRemovedSet(int num) {
+  private ObjectIDSet makeRemovedSet(final int num) {
     ObjectIDSet rv = new ObjectIDSet();
     for (int i = 0; i < num; i++) {
       rv.add(new ObjectID(i));
@@ -85,33 +84,33 @@ public class ManagedObjectRequestHandlerTest extends TestCase {
     private final Counter channelReqCounter;
     private final Counter channelRemCounter;
 
-    public TestChannelStats(Counter channelReqCounter, Counter channelRemCounter) {
+    public TestChannelStats(final Counter channelReqCounter, final Counter channelRemCounter) {
       this.channelReqCounter = channelReqCounter;
       this.channelRemCounter = channelRemCounter;
     }
 
-    public Counter getCounter(MessageChannel channel, String name) {
+    public Counter getCounter(final MessageChannel channel, final String name) {
       throw new RuntimeException(name);
     }
 
-    public void notifyTransaction(NodeID nodeID, int numTxns) {
+    public void notifyTransaction(final NodeID nodeID, final int numTxns) {
       throw new ImplementMe();
     }
 
-    public void notifyObjectRemove(MessageChannel channel, int numObjectsRemoved) {
+    public void notifyObjectRemove(final MessageChannel channel, final int numObjectsRemoved) {
       this.channelRemCounter.increment(numObjectsRemoved);
     }
 
-    public void notifyObjectRequest(MessageChannel channel, int numObjectsRequested) {
+    public void notifyObjectRequest(final MessageChannel channel, final int numObjectsRequested) {
       this.channelReqCounter.increment(numObjectsRequested);
     }
 
-    public void notifyTransactionAckedFrom(NodeID nodeID) {
+    public void notifyTransactionAckedFrom(final NodeID nodeID) {
       throw new ImplementMe();
 
     }
 
-    public void notifyTransactionBroadcastedTo(NodeID nodeID) {
+    public void notifyTransactionBroadcastedTo(final NodeID nodeID) {
       throw new ImplementMe();
 
     }

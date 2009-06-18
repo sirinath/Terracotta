@@ -4,6 +4,7 @@
  */
 package com.tc.objectserver.api;
 
+import com.tc.async.api.Sink;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestServerContext;
 import com.tc.util.ObjectIDSet;
@@ -12,7 +13,7 @@ import java.util.Collection;
 
 public interface ObjectRequestManager {
 
-  public void requestObjects(ObjectRequestServerContext requestContext);
+  public void requestObjects(ObjectRequestServerContext requestContext, Sink destination);
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
                           ObjectIDSet missingObjectIDs, boolean isServerInitiated, boolean isPrefetched,

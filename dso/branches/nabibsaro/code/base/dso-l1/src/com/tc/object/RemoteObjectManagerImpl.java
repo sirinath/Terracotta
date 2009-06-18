@@ -11,11 +11,11 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.ClientHandshakeMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
-import com.tc.object.msg.RequestValueMappingForKeyMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.properties.TCPropertiesConsts;
@@ -158,7 +158,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     }
   }
 
-  public synchronized void preFetchObject(ObjectID id) {
+  public synchronized void preFetchObject(final ObjectID id) {
     if (this.dnaRequests.containsKey(id)) { return; }
     this.preFetchInProgress.add(id);
     ObjectRequestContext ctxt = new ObjectRequestContextImpl(this.cip.getClientID(),
@@ -234,7 +234,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     return (DNA) this.dnaRequests.remove(id);
   }
 
-  private boolean removePreFetchInProgress(ObjectID id) {
+  private boolean removePreFetchInProgress(final ObjectID id) {
     if (this.preFetchInProgress.size() > 0) { return this.preFetchInProgress.remove(id); }
     return false;
   }
@@ -359,6 +359,77 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     notifyAll();
   }
 
+  public synchronized ObjectID getMappingForKey(final ObjectID oid, final Object portableKey) {
+    boolean isInterrupted = false;
+    if (oid.getGroupID() != this.groupID.toInt()) {
+      //
+      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " id : " + oid
+                               + " portableKey : " + portableKey);
+    }
+
+    PartialKeysRequestContext context = getOrCreateRequestValueMappingContext(oid, portableKey);
+    context.incrementLookupCount();
+    ObjectID valueID;
+    while (true) {
+      waitUntilRunning();
+      context.sendRequestIfNecessary(this.rmomFactory);
+      valueID = context.getValueMappingObjectID();
+      if (valueID != null) {
+        context.decrementLookupCount();
+        cleanupRequestValueMappingContextIfNecessary(context);
+        break;
+      }
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        isInterrupted = true;
+      }
+    }
+    Util.selfInterruptIfNeeded(isInterrupted);
+    return valueID;
+  }
+
+  private void cleanupRequestValueMappingContextIfNecessary(final PartialKeysRequestContext context) {
+    if (context.lookupComplete()) {
+      this.valueMappingRequests.remove(context.getCompositeKey());
+    }
+
+  }
+
+  private PartialKeysRequestContext getOrCreateRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
+    String comboKey = oid.toString() + "::" + portableKey.toString();
+    PartialKeysRequestContext context = (PartialKeysRequestContext) this.valueMappingRequests.get(comboKey);
+    if (context == null) {
+      context = new PartialKeysRequestContext(oid, portableKey, this.groupID, comboKey);
+      this.valueMappingRequests.put(comboKey, context);
+    }
+    return context;
+  }
+
+  private PartialKeysRequestContext getRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
+    String comboKey = oid.toString() + "::" + portableKey.toString();
+    return (PartialKeysRequestContext) this.valueMappingRequests.get(comboKey);
+  }
+
+  public synchronized void addResponseForKeyValueMapping(final SessionID sessionID, final ObjectID mapID,
+                                                         final Object portableKey, final Object portableValue,
+                                                         final NodeID nodeID) {
+    waitUntilRunning();
+    if (!this.sessionManager.isCurrentSession(nodeID, sessionID)) {
+      this.logger.warn("Ignoring addResponseForKeyValueMapping " + mapID + " , " + portableKey + " , " + portableValue
+                       + " : from a different session: " + sessionID + ", " + this.sessionManager);
+      return;
+    }
+    PartialKeysRequestContext context = getRequestValueMappingContext(mapID, portableKey);
+    if (context != null) {
+      context.setValueForKey(mapID, portableKey, portableValue);
+    } else {
+      this.logger.warn("Key Value Mapping Context is null for " + mapID + " key : " + portableKey + " value : "
+                       + portableValue);
+    }
+    notifyAll();
+  }
+
   // Used only for testing
   synchronized void addObject(final DNA dna) {
     if (!this.removeObjects.contains(dna.getObjectID())) {
@@ -430,7 +501,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     }
 
     private ObjectRequestContextImpl(final ClientID clientID, final ObjectRequestID requestID,
-                                     final ObjectIDSet objectIDs, final int depth, boolean prefetch) {
+                                     final ObjectIDSet objectIDs, final int depth, final boolean prefetch) {
       this.timestamp = System.currentTimeMillis();
       this.clientID = clientID;
       this.requestID = requestID;
@@ -531,54 +602,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     }
   }
 
-  public synchronized ObjectID getMappingForKey(ObjectID oid, Object portableKey) {
-    boolean isInterrupted = false;
-    if (oid.getGroupID() != this.groupID.toInt()) {
-      //
-      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " id : " + oid
-                               + " portableKey : " + portableKey);
-    }
-
-    RequestValueMappingContext context = getOrCreateRequestValueMappingContext(oid, portableKey);
-    context.incrementLookupCount();
-    ObjectID valueID;
-    while (true) {
-      waitUntilRunning();
-      context.sendRequestIfNecessary(this.rmomFactory);
-      valueID = context.getValueMappingObjectID();
-      if (valueID != null) {
-        context.decrementLookupCount();
-        cleanupRequestValueMappingContextIfNecessary(context);
-        break;
-      }
-      try {
-        wait();
-      } catch (InterruptedException e) {
-        isInterrupted = true;
-      }
-    }
-    Util.selfInterruptIfNeeded(isInterrupted);
-    return valueID;
-  }
-
-  private void cleanupRequestValueMappingContextIfNecessary(RequestValueMappingContext context) {
-    if (context.lookupComplete()) {
-      this.valueMappingRequests.remove(context.getCompositeKey());
-    }
-
-  }
-
-  private RequestValueMappingContext getOrCreateRequestValueMappingContext(ObjectID oid, Object portableKey) {
-    String comboKey = oid.toString() + "::" + portableKey.toString();
-    RequestValueMappingContext context = (RequestValueMappingContext) this.valueMappingRequests.get(comboKey);
-    if (context == null) {
-      context = new RequestValueMappingContext(oid, portableKey, this.groupID, comboKey);
-      this.valueMappingRequests.put(comboKey, context);
-    }
-    return context;
-  }
-
-  private static class RequestValueMappingContext {
+  private static class PartialKeysRequestContext {
 
     private final ObjectID oid;
     private final Object   portableKey;
@@ -589,11 +613,20 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     private int            count;
     private ObjectID       valueID;
 
-    public RequestValueMappingContext(ObjectID oid, Object portableKey, GroupID groupID, String comboKey) {
+    public PartialKeysRequestContext(final ObjectID oid, final Object portableKey, final GroupID groupID,
+                                     final String comboKey) {
       this.oid = oid;
       this.portableKey = portableKey;
       this.groupID = groupID;
       this.comboKey = comboKey;
+    }
+
+    public void setValueForKey(final ObjectID mapID, final Object pKey, final Object pValue) {
+      if (pValue instanceof ObjectID) {
+        this.valueID = (ObjectID) pValue;
+      } else {
+        throw new AssertionError("Unsupported now");
+      }
     }
 
     public Object getCompositeKey() {
@@ -616,10 +649,10 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
       this.count++;
     }
 
-    public void sendRequestIfNecessary(RequestManagedObjectMessageFactory factory) {
+    public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
       if (!this.requestSent) {
         this.requestSent = true;
-        RequestValueMappingForKeyMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
+        KeyValueMappingRequestMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
         mappingMessage.initialize(this.oid, this.portableKey);
         mappingMessage.send();
       }

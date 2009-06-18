@@ -10,6 +10,6 @@ public interface RequestManagedObjectMessageFactory {
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID);
 
-  public RequestValueMappingForKeyMessage newRequestValueMappingForKeyMessage(NodeID nodeID);
+  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(NodeID nodeID);
 
 }

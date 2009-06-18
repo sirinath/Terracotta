@@ -11,21 +11,30 @@ import com.tc.object.ClientConfigurationContext;
 import com.tc.object.RemoteObjectManager;
 import com.tc.object.msg.ObjectsNotFoundMessage;
 import com.tc.object.msg.RequestManagedObjectResponseMessage;
+import com.tc.object.msg.RespondToKeyValueMappingRequestMessage;
 
 public class ReceiveObjectHandler extends AbstractEventHandler {
   private RemoteObjectManager objectManager;
 
+  @Override
   public void handleEvent(EventContext context) {
     if (context instanceof RequestManagedObjectResponseMessage) {
       RequestManagedObjectResponseMessage m = (RequestManagedObjectResponseMessage) context;
-      objectManager.addAllObjects(m.getLocalSessionID(), m.getBatchID(), m.getObjects(), m.getSourceNodeID());
-    } else {
+      this.objectManager.addAllObjects(m.getLocalSessionID(), m.getBatchID(), m.getObjects(), m.getSourceNodeID());
+    } else if (context instanceof ObjectsNotFoundMessage) {
       ObjectsNotFoundMessage notFound = (ObjectsNotFoundMessage) context;
-      objectManager.objectsNotFoundFor(notFound.getLocalSessionID(), notFound.getBatchID(), notFound
+      this.objectManager.objectsNotFoundFor(notFound.getLocalSessionID(), notFound.getBatchID(), notFound
           .getMissingObjectIDs(), notFound.getSourceNodeID());
+    } else if (context instanceof RespondToKeyValueMappingRequestMessage) {
+      RespondToKeyValueMappingRequestMessage kvMsg = (RespondToKeyValueMappingRequestMessage) context;
+      this.objectManager.addResponseForKeyValueMapping(kvMsg.getLocalSessionID(), kvMsg.getMapID(), kvMsg
+          .getPortableKey(), kvMsg.getPortableValue(), kvMsg.getSourceNodeID());
+    } else {
+      throw new AssertionError("Unsupported type : " + context);
     }
   }
 
+  @Override
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;

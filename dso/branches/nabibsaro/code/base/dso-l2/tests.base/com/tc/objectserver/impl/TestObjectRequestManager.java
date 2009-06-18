@@ -4,6 +4,7 @@
  */
 package com.tc.objectserver.impl;
 
+import com.tc.async.api.Sink;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectRequestServerContext;
 import com.tc.objectserver.api.ObjectRequestManager;
@@ -16,7 +17,7 @@ public class TestObjectRequestManager implements ObjectRequestManager {
 
   public LinkedBlockingQueue<ObjectRequestServerContext> requestedObjects = new LinkedBlockingQueue<ObjectRequestServerContext>();
 
-  public void requestObjects(ObjectRequestServerContext requestContext) {
+  public void requestObjects(final ObjectRequestServerContext requestContext, final Sink destination) {
     try {
       this.requestedObjects.put(requestContext);
     } catch (InterruptedException e) {
@@ -25,9 +26,10 @@ public class TestObjectRequestManager implements ObjectRequestManager {
 
   }
 
-  public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
-                          ObjectIDSet missingObjectIDs, boolean isServerInitiated, boolean isPrefetched,
-                          int maxRequestDepth) {
+  public void sendObjects(final ClientID requestedNodeID, final Collection objs, final ObjectIDSet requestedObjectIDs,
+                          final ObjectIDSet missingObjectIDs, final boolean isServerInitiated,
+                          final boolean isPrefetched, final int maxRequestDepth) {
     // not implemented
   }
+
 }

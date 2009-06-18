@@ -3,6 +3,7 @@
  */
 package com.tc.objectserver.impl;
 
+import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
@@ -26,20 +27,20 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionListener implements ObjectRequestManager {
 
-  private final static State                      INIT                 = new State("INITIAL");
-  private final static State                      STARTING             = new State("STARTING");
-  private final static State                      STARTED              = new State("STARTED");
+  private final static State             INIT                 = new State("INITIAL");
+  private final static State             STARTING             = new State("STARTING");
+  private final static State             STARTED              = new State("STARTED");
 
-  private final static TCLogger                   logger               = TCLogging
-                                                                           .getLogger(ObjectRequestManagerRestartImpl.class);
+  private final static TCLogger          logger               = TCLogging
+                                                                  .getLogger(ObjectRequestManagerRestartImpl.class);
 
-  private final ObjectRequestManager              delegate;
-  private final ServerTransactionManager          transactionManager;
-  private final ObjectManager                     objectManager;
+  private final ObjectRequestManager     delegate;
+  private final ServerTransactionManager transactionManager;
+  private final ObjectManager            objectManager;
 
-  private final Set                               resentTransactionIDs = Collections.synchronizedSet(new HashSet());
-  private final Queue<ObjectRequestServerContext> pendingRequests      = new LinkedBlockingQueue<ObjectRequestServerContext>();
-  private volatile State                          state                = INIT;
+  private final Set                      resentTransactionIDs = Collections.synchronizedSet(new HashSet());
+  private final Queue<PendingContext>    pendingRequests      = new LinkedBlockingQueue<PendingContext>();
+  private volatile State                 state                = INIT;
 
   public ObjectRequestManagerRestartImpl(ObjectManager objectMgr, ServerTransactionManager transactionManager,
                                          ObjectRequestManager delegate) {
@@ -94,10 +95,10 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
 
   private void processPending() {
     logger.info("Processing Pending Lookups = " + this.pendingRequests.size());
-    ObjectRequestServerContext lookupContext;
-    while ((lookupContext = this.pendingRequests.poll()) != null) {
-      logger.info("Processing pending Looking up : " + toString(lookupContext));
-      this.delegate.requestObjects(lookupContext);
+    PendingContext pendingContext;
+    while ((pendingContext = this.pendingRequests.poll()) != null) {
+      logger.info("Processing pending Looking up : " + toString(pendingContext.getRequestContext()));
+      this.delegate.requestObjects(pendingContext.getRequestContext(), pendingContext.getDestination());
     }
   }
 
@@ -106,16 +107,16 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
            + c.getRequestID() + " : " + c.getRequestDepth() + " : " + c.getRequestingThreadName() + "] ";
   }
 
-  public void requestObjects(ObjectRequestServerContext requestContext) {
+  public void requestObjects(ObjectRequestServerContext requestContext, Sink destination) {
     if (this.state != STARTED) {
-      this.pendingRequests.add(requestContext);
+      this.pendingRequests.add(new PendingContext(requestContext, destination));
       if (logger.isDebugEnabled()) {
         logger.debug("RequestObjectManager is not started, lookup has been added to pending request: "
                      + toString(requestContext));
       }
       return;
     }
-    this.delegate.requestObjects(requestContext);
+    this.delegate.requestObjects(requestContext, destination);
   }
 
   public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
@@ -123,7 +124,25 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
                           int maxRequestDepth) {
     this.delegate.sendObjects(requestedNodeID, objs, requestedObjectIDs, missingObjectIDs, isServerInitiated,
                               isPrefetched, maxRequestDepth);
+  }
 
+  private static class PendingContext {
+
+    private final ObjectRequestServerContext requestContext;
+    private final Sink                       destination;
+
+    public PendingContext(ObjectRequestServerContext requestContext, Sink destination) {
+      this.requestContext = requestContext;
+      this.destination = destination;
+    }
+
+    public ObjectRequestServerContext getRequestContext() {
+      return this.requestContext;
+    }
+
+    public Sink getDestination() {
+      return this.destination;
+    }
   }
 
 }

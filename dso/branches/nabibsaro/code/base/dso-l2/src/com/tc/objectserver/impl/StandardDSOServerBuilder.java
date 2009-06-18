@@ -45,25 +45,29 @@ import java.util.List;
 
 public class StandardDSOServerBuilder implements DSOServerBuilder {
 
-  public StandardDSOServerBuilder(TCLogger logger) {
+  public StandardDSOServerBuilder(final TCLogger logger) {
     logger.info("Standard DSO Server created");
   }
 
-  public GarbageCollector createGarbageCollector(List<PostInit> toInit, ObjectManagerConfig objectManagerConfig,
-                                                 ObjectManager objectMgr, ClientStateManager stateManager,
-                                                 StageManager stageManager, int maxStageSize,
-                                                 GarbageCollectionInfoPublisher gcPublisher,
-                                                 ObjectManager objectManager, ClientStateManager clientStateManger,
-                                                 GCStatsEventPublisher gcEventListener,
-                                                 StatisticsAgentSubSystem statsAgentSubSystem) {
+  public GarbageCollector createGarbageCollector(final List<PostInit> toInit,
+                                                 final ObjectManagerConfig objectManagerConfig,
+                                                 final ObjectManager objectMgr, final ClientStateManager stateManager,
+                                                 final StageManager stageManager, final int maxStageSize,
+                                                 final GarbageCollectionInfoPublisher gcPublisher,
+                                                 final ObjectManager objectManager,
+                                                 final ClientStateManager clientStateManger,
+                                                 final GCStatsEventPublisher gcEventListener,
+                                                 final StatisticsAgentSubSystem statsAgentSubSystem) {
     MarkAndSweepGarbageCollector gc = new MarkAndSweepGarbageCollector(objectManagerConfig, objectMgr, stateManager,
                                                                        gcPublisher);
     gc.addListener(gcEventListener);
     return gc;
   }
 
-  public GroupManager createGroupCommManager(boolean networkedHA, L2TVSConfigurationSetupManager configManager,
-                                             StageManager stageManager, ServerID serverNodeID, Sink httpSink) {
+  public GroupManager createGroupCommManager(final boolean networkedHA,
+                                             final L2TVSConfigurationSetupManager configManager,
+                                             final StageManager stageManager, final ServerID serverNodeID,
+                                             final Sink httpSink) {
     if (networkedHA) {
       return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink);
     } else {
@@ -71,35 +75,36 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     }
   }
 
-  public ObjectRequestManager createObjectRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
-                                                         ClientStateManager clientStateMgr,
-                                                         ServerTransactionManager transactionMgr,
-                                                         Sink objectRequestSink, Sink respondObjectRequestSink,
-                                                         ObjectStatsRecorder statsRecorder, List<PostInit> toInit,
-                                                         StageManager stageManager, int maxStageSize) {
+  public ObjectRequestManager createObjectRequestManager(final ObjectManager objectMgr,
+                                                         final DSOChannelManager channelManager,
+                                                         final ClientStateManager clientStateMgr,
+                                                         final ServerTransactionManager transactionMgr,
+                                                         final Sink objectRequestSink,
+                                                         final ObjectStatsRecorder statsRecorder,
+                                                         final List<PostInit> toInit, final StageManager stageManager,
+                                                         final int maxStageSize) {
     ObjectRequestManagerImpl orm = new ObjectRequestManagerImpl(objectMgr, channelManager, clientStateMgr,
-                                                                objectRequestSink, respondObjectRequestSink,
-                                                                statsRecorder);
+                                                                objectRequestSink, statsRecorder);
     return new ObjectRequestManagerRestartImpl(objectMgr, transactionMgr, orm);
   }
 
   public ServerConfigurationContext createServerConfigurationContext(
-                                                                     StageManager stageManager,
-                                                                     ObjectManager objMgr,
-                                                                     ObjectRequestManager objRequestMgr,
-                                                                     ManagedObjectStore objStore,
-                                                                     LockManager lockMgr,
-                                                                     DSOChannelManager channelManager,
-                                                                     ClientStateManager clientStateMgr,
-                                                                     ServerTransactionManager txnMgr,
-                                                                     TransactionalObjectManager txnObjectMgr,
-                                                                     ChannelStatsImpl channelStats,
-                                                                     L2Coordinator coordinator,
-                                                                     TransactionBatchManagerImpl transactionBatchManager,
-                                                                     ServerGlobalTransactionManager gtxm,
-                                                                     ServerClientHandshakeManager clientHandshakeManager,
-                                                                     ServerClusterMetaDataManager clusterMetaDataManager,
-                                                                     DSOGlobalServerStats serverStats) {
+                                                                     final StageManager stageManager,
+                                                                     final ObjectManager objMgr,
+                                                                     final ObjectRequestManager objRequestMgr,
+                                                                     final ManagedObjectStore objStore,
+                                                                     final LockManager lockMgr,
+                                                                     final DSOChannelManager channelManager,
+                                                                     final ClientStateManager clientStateMgr,
+                                                                     final ServerTransactionManager txnMgr,
+                                                                     final TransactionalObjectManager txnObjectMgr,
+                                                                     final ChannelStatsImpl channelStats,
+                                                                     final L2Coordinator coordinator,
+                                                                     final TransactionBatchManagerImpl transactionBatchManager,
+                                                                     final ServerGlobalTransactionManager gtxm,
+                                                                     final ServerClientHandshakeManager clientHandshakeManager,
+                                                                     final ServerClusterMetaDataManager clusterMetaDataManager,
+                                                                     final DSOGlobalServerStats serverStats) {
     return new ServerConfigurationContextImpl(stageManager, objMgr, objRequestMgr, objStore, lockMgr, channelManager,
                                               clientStateMgr, txnMgr, txnObjectMgr, clientHandshakeManager,
                                               channelStats, coordinator,
@@ -107,13 +112,14 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                               transactionBatchManager, gtxm, clusterMetaDataManager);
   }
 
-  public TransactionFilter getTransactionFilter(List<PostInit> toInit, StageManager stageManager, int maxStageSize) {
+  public TransactionFilter getTransactionFilter(final List<PostInit> toInit, final StageManager stageManager,
+                                                final int maxStageSize) {
     PassThruTransactionFilter txnFilter = new PassThruTransactionFilter();
     toInit.add(txnFilter);
     return txnFilter;
   }
 
-  public void populateAdditionalStatisticsRetrivalRegistry(StatisticsRetrievalRegistry registry) {
+  public void populateAdditionalStatisticsRetrivalRegistry(final StatisticsRetrievalRegistry registry) {
     // Add any additional Statistics here
   }
 
@@ -129,7 +135,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     // Nothing to dump
   }
 
-  public void initializeContext(ConfigurationContext context) {
+  public void initializeContext(final ConfigurationContext context) {
     // Nothing to initialize here
   }
 

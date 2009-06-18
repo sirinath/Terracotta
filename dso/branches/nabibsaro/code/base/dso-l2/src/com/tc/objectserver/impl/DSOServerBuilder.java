@@ -43,8 +43,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
   ObjectRequestManager createObjectRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
                                                   ClientStateManager clientStateMgr,
                                                   ServerTransactionManager transactionMgr, Sink objectRequestSink,
-                                                  Sink respondObjectRequestSink, ObjectStatsRecorder statsRecorder,
-                                                  List<PostInit> toInit, StageManager stageManager, int maxStageSize);
+                                                  ObjectStatsRecorder statsRecorder, List<PostInit> toInit,
+                                                  StageManager stageManager, int maxStageSize);
 
   void populateAdditionalStatisticsRetrivalRegistry(StatisticsRetrievalRegistry registry);
 

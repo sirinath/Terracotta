@@ -100,6 +100,7 @@ import com.tc.object.msg.ClusterMembershipMessage;
 import com.tc.object.msg.CommitTransactionMessageImpl;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessageImpl;
 import com.tc.object.msg.KeysForOrphanedValuesMessageImpl;
 import com.tc.object.msg.KeysForOrphanedValuesResponseMessageImpl;
 import com.tc.object.msg.LockRequestMessage;
@@ -160,6 +161,7 @@ import com.tc.objectserver.handler.RequestLockUnLockHandler;
 import com.tc.objectserver.handler.RequestObjectIDBatchHandler;
 import com.tc.objectserver.handler.RequestRootHandler;
 import com.tc.objectserver.handler.RespondToObjectRequestHandler;
+import com.tc.objectserver.handler.RespondToPartialKeysRequestHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
 import com.tc.objectserver.handler.ServerClusterMetaDataHandler;
 import com.tc.objectserver.handler.TransactionAcknowledgementHandler;
@@ -848,15 +850,17 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                         this.l2Properties
                                                             .getInt("seda.managedobjectrequeststage.threads"),
                                                         maxStageSize);
-    Stage respondToObjectRequestStage = stageManager
-        .createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE, new RespondToObjectRequestHandler(),
-                     this.l2Properties.getInt("seda.managedobjectresponsestage.threads"), maxStageSize);
+    stageManager.createStage(ServerConfigurationContext.RESPOND_TO_OBJECT_REQUEST_STAGE,
+                             new RespondToObjectRequestHandler(), this.l2Properties
+                                 .getInt("seda.managedobjectresponsestage.threads"), maxStageSize);
+
+    stageManager.createStage(ServerConfigurationContext.RESPOND_TO_PARTIAL_KEYS,
+                             new RespondToPartialKeysRequestHandler(), 1, maxStageSize);
 
     this.objectRequestManager = this.serverBuilder.createObjectRequestManager(this.objectManager, channelManager,
                                                                               this.clientStateManager,
                                                                               this.transactionManager,
                                                                               objectRequestStage.getSink(),
-                                                                              respondToObjectRequestStage.getSink(),
                                                                               this.objectStatsRecorder, toInit,
                                                                               stageManager, maxStageSize);
     Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
@@ -1025,6 +1029,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     this.l1Listener.routeMessageType(TCMessageType.REQUEST_ROOT_MESSAGE, rootRequest.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, objectRequestStage.getSink(),
                                      hydrateSink);
+    this.l1Listener.routeMessageType(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE, objectRequestStage.getSink(),
+                                     hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.OBJECT_ID_BATCH_REQUEST_MESSAGE, oidRequest.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE, transactionAck.getSink(),
                                      hydrateSink);
@@ -1055,12 +1061,14 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     this.l1Listener.addClassMapping(TCMessageType.LOCK_RECALL_MESSAGE, LockResponseMessage.class);
     this.l1Listener.addClassMapping(TCMessageType.LOCK_QUERY_RESPONSE_MESSAGE, LockResponseMessage.class);
     this.l1Listener.addClassMapping(TCMessageType.LOCK_STAT_MESSAGE, LockStatisticsMessage.class);
-    this.l1Listener
-        .addClassMapping(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, LockStatisticsResponseMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE,
+                                    LockStatisticsResponseMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.COMMIT_TRANSACTION_MESSAGE, CommitTransactionMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.REQUEST_ROOT_RESPONSE_MESSAGE, RequestRootResponseMessage.class);
     this.l1Listener
         .addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE, RequestManagedObjectMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.KEY_VALUE_MAPPING_REQUEST_MESSAGE,
+                                    KeyValueMappingRequestMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.REQUEST_MANAGED_OBJECT_RESPONSE_MESSAGE,
                                     RequestManagedObjectResponseMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.OBJECTS_NOT_FOUND_RESPONSE_MESSAGE, ObjectsNotFoundMessageImpl.class);
