@@ -108,6 +108,7 @@ import com.tc.object.bytecode.NotClearable;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.NullTCObject;
 import com.tc.object.bytecode.OverridesHashCode;
+import com.tc.object.bytecode.PartialKeysMap;
 import com.tc.object.bytecode.ReentrantLockClassAdapter;
 import com.tc.object.bytecode.ReentrantReadWriteLockClassAdapter;
 import com.tc.object.bytecode.SetRemoveMethodAdapter;
@@ -344,7 +345,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   *
+   * 
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(final File bootJarFile) {
@@ -457,6 +458,7 @@ public class BootJarTool {
 
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(TCMap.class.getName());
+      loadTerracottaClass(PartialKeysMap.class.getName());
       if (Vm.isJDK15Compliant()) {
         loadTerracottaClass("com.tc.util.concurrent.locks.TCLock");
       }
@@ -1497,7 +1499,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   *
+   * 
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1513,7 +1515,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   *
+   * 
    * @param msg The custom message to print
    */
   private final void exit(final String msg) {
@@ -1522,7 +1524,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   *
+   * 
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.
@@ -1993,7 +1995,6 @@ public class BootJarTool {
   private final void addInstrumentedJavaUtilConcurrentLinkedBlockingQueue() {
     if (!Vm.isJDK15Compliant()) { return; }
 
-    
     { // Instrumentation for Itr inner class
       byte[] bytes = getSystemBytes("java.util.concurrent.LinkedBlockingQueue$Itr");
 
@@ -2037,14 +2038,20 @@ public class BootJarTool {
                                                                                        getClass().getClassLoader(),
                                                                                        true, true);
       Map instrumentedContext = new HashMap();
-      ClassVisitor cv = new SerialVersionUIDAdder(new JavaUtilConcurrentLinkedBlockingQueueClassAdapter
-                                                  (new MergeTCToJavaClassAdapter
-                                                   (cw, dsoAdapter, jClassNameDots, tcClassNameDots, tcCN, instrumentedContext)));
+      ClassVisitor cv = new SerialVersionUIDAdder(
+                                                  new JavaUtilConcurrentLinkedBlockingQueueClassAdapter(
+                                                                                                        new MergeTCToJavaClassAdapter(
+                                                                                                                                      cw,
+                                                                                                                                      dsoAdapter,
+                                                                                                                                      jClassNameDots,
+                                                                                                                                      tcClassNameDots,
+                                                                                                                                      tcCN,
+                                                                                                                                      instrumentedContext)));
       jCR.accept(cv, ClassReader.SKIP_FRAMES);
       jData = cw.toByteArray();
-      
-      TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(jClassNameDots,
-                                                                     "com.tc.object.applicator.LinkedBlockingQueueApplicator");
+
+      TransparencyClassSpec spec = this.configHelper
+          .getOrCreateSpec(jClassNameDots, "com.tc.object.applicator.LinkedBlockingQueueApplicator");
       spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
       spec.markPreInstrumented();
       jData = doDSOTransform(spec.getClassName(), jData);
