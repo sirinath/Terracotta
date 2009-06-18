@@ -41,17 +41,18 @@ public class TracingRecorder implements TraceListener {
   public void methodExit(int opcode) {
     long end = System.currentTimeMillis();
     
-    if (opcode == Opcodes.ATHROW) {
-      exceptionalExits.incrementAndGet();
-    } else {
-      normalExits.incrementAndGet();
-    }
-    
     try {
       long start = entryTime.get().pop().longValue();
       totalTime.addAndGet(end - start);
     } catch (EmptyStackException e) {
-      System.err.println("Instrumentation Screw-Up : More Method Exits Than Entries");
+      System.err.println("More method exits than entries - listener arrived during execution?");
+      return;
+    }
+
+    if (opcode == Opcodes.ATHROW) {
+      exceptionalExits.incrementAndGet();
+    } else {
+      normalExits.incrementAndGet();
     }
   }
 
