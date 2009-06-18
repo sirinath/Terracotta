@@ -13,6 +13,7 @@ import com.tc.admin.common.ComponentNode;
 import com.tc.admin.common.XScrollPane;
 import com.tc.admin.common.XTextPane;
 import com.tc.admin.dso.locks.LocksNode;
+import com.tc.admin.dso.trace.MethodTracingNode;
 import com.tc.admin.model.IClusterModel;
 
 import java.awt.Component;

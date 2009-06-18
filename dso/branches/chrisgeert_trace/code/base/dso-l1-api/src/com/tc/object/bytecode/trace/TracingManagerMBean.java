@@ -3,7 +3,11 @@
  */
 package com.tc.object.bytecode.trace;
 
-public interface TracingManagerMBean {
+import com.tc.management.TerracottaMBean;
+
+import javax.management.NotificationEmitter;
+
+public interface TracingManagerMBean extends TerracottaMBean, NotificationEmitter {
 
   void startTracingMethod(String clazz, String method) throws Exception;
   

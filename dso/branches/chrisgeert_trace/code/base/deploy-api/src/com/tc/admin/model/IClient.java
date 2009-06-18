@@ -9,6 +9,7 @@ import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.trace.TracingManagerMBean;
 
 import java.util.Map;
 
@@ -39,6 +40,8 @@ public interface IClient extends IClusterNode {
 
   RuntimeOutputOptionsMBean getRuntimeOutputOptionsBean();
 
+  TracingManagerMBean getTracingManagerBean();
+  
   boolean isResident(ObjectID oid);
 
   ObjectName getTunneledBeanName(ObjectName on);
