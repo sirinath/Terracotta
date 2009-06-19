@@ -3,8 +3,17 @@
  */
 package com.tc.objectserver.persistence.sleepycat.util;
 
+import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.ObjectID;
+import com.tc.object.dna.api.DNA;
+import com.tc.object.dna.impl.ObjectDNAImpl;
+import com.tc.object.dna.impl.ObjectStringSerializer;
+import com.tc.object.dna.impl.VersionizedDNAWrapper;
+import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.core.api.ManagedObject;
+import com.tc.objectserver.impl.ObjectInstanceMonitorImpl;
+import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListener;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProvider;
 import com.tc.objectserver.managedobject.ManagedObjectImpl;
@@ -21,6 +30,7 @@ import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,12 +64,12 @@ public class PartitionDBData extends BaseUtility {
       managedObjectRoots.put(entry.getKey(), persistor.getManagedObjectPersistor().loadObjectByID(entry.getValue()));
     }
 
-    for (Iterator<ObjectID> iter = objectIDSet.iterator(); iter.hasNext();) {
-      baseManagedObjects.add(persistor.getManagedObjectPersistor().loadObjectByID(iter.next()));
+    for (Iterator<ObjectID> objecsIter = objectIDSet.iterator(); objecsIter.hasNext();) {
+      ManagedObject mo = persistor.getManagedObjectPersistor().loadObjectByID(objecsIter.next());
+      baseManagedObjects.add(mo);
     }
 
     mapChangeIDs(numberOfPartition, baseManagedObjects);
-
     partitionData(numberOfPartition, baseManagedObjects, managedObjectRoots);
   }
 
@@ -67,7 +77,6 @@ public class PartitionDBData extends BaseUtility {
                              final Map<String, ManagedObject> managedObjectRoots) throws Exception {
     Iterator<ManagedObject> iter = baseManagedObjects.iterator();
     SleepycatPersistor persistorPartition = null;
-
     int numOfObjectsInEachPartition = (baseManagedObjects.size() + managedObjectRoots.size()) / numberOfPartition;
 
     for (int j = 0; j < numberOfPartition; j++) {
@@ -90,6 +99,9 @@ public class PartitionDBData extends BaseUtility {
   }
 
   private ManagedObject createUpdatedManagedObjectFrom(ManagedObject mo) {
+
+    System.out.println("original mo: " + mo);
+    System.out.println("original object ref: " + mo.getObjectReferences());
     ObjectID oldId = mo.getID();
     ManagedObject newManagedObject = null;
     if (changeMap.containsKey(oldId)) {
@@ -99,6 +111,35 @@ public class PartitionDBData extends BaseUtility {
     }
 
     // get the new references from the old ones
+    Set<ObjectID> newRef = getNewObjectReferences(mo);
+
+    TCByteBufferOutputStream out = new TCByteBufferOutputStream();
+    ObjectStringSerializer serializer = new ObjectStringSerializer();
+    mo.toDNA(out, serializer);
+    TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
+    ObjectDNAImpl dna = new ObjectDNAImpl(serializer, false);
+    try {
+      dna.deserializeFrom(in);
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+    System.out.println(dna);
+
+    BackReferences backReferences = new BackReferences();
+    System.out.println("new ref size: " + newRef.size());
+    for (Iterator<ObjectID> iter = newRef.iterator(); iter.hasNext();) {
+      backReferences.addBackReference(iter.next(), newManagedObject.getID());
+    }
+
+    DNA change = new VersionizedDNAWrapper(dna, 0, true);
+    newManagedObject.apply(change, new TransactionID(1), backReferences, new ObjectInstanceMonitorImpl(), true);
+    System.out.println("new mo: " + newManagedObject);
+    System.out.println("new object ref: " + newManagedObject.getObjectReferences());
+    System.out.println("----------------------------------------------");
+    return newManagedObject;
+  }
+
+  private Set<ObjectID> getNewObjectReferences(ManagedObject mo) {
     Set<ObjectID> oldRef = mo.getObjectReferences();
     Set<ObjectID> newRef = new ObjectIDSet();
     for (Iterator<ObjectID> iter = oldRef.iterator(); iter.hasNext();) {
@@ -109,24 +150,21 @@ public class PartitionDBData extends BaseUtility {
         newRef.add(oid);
       }
     }
-    // XXX: fill in here so that we can get the updated managed object
-
-    return newManagedObject;
+    return newRef;
   }
 
   private void mapChangeIDs(int numberOfPartition, ArrayList<ManagedObject> baseManagedObjects) {
-    Iterator<ManagedObject> iter = baseManagedObjects.iterator();
+    Iterator<ManagedObject> baseManagedObjectIter = baseManagedObjects.iterator();
     int numOfObjectsInEachPartition = baseManagedObjects.size() / numberOfPartition;
     for (int j = 0; j < numberOfPartition; j++) {
-
       for (int i = 0; i < numOfObjectsInEachPartition; i++) {
-        ManagedObject mo = iter.next();
+        ManagedObject mo = baseManagedObjectIter.next();
         mapIDsIfChanged(j, mo);
       }
     }
 
-    while (iter.hasNext()) {
-      ManagedObject mo = iter.next();
+    while (baseManagedObjectIter.hasNext()) {
+      ManagedObject mo = baseManagedObjectIter.next();
       mapIDsIfChanged(numberOfPartition - 1, mo);
     }
   }
@@ -139,7 +177,8 @@ public class PartitionDBData extends BaseUtility {
     }
   }
 
-  private void saveRootsToCoordinator(final Map<String, ManagedObject> managedObjectRoots, SleepycatPersistor persistor) {
+  private void saveRootsToCoordinator(final Map<String, ManagedObject> managedObjectRoots, SleepycatPersistor persistor)
+      throws Exception {
     for (Iterator<Entry<String, ManagedObject>> iter = managedObjectRoots.entrySet().iterator(); iter.hasNext();) {
       Entry<String, ManagedObject> entry = iter.next();
       String rootName = entry.getKey();
