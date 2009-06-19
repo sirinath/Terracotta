@@ -754,6 +754,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // "synchronized * java.util.Vector.subList(..)", "synchronized * java.util.Vector.toString(..)", });
 
     getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
+    
+    getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList", "com.tc.object.applicator.ListApplicator");
   }
 
   private void addJavaUtilConcurrentHashMapSpec() {
