@@ -11,6 +11,7 @@ import com.tc.admin.common.XContainer;
 import com.tc.admin.common.XLabel;
 import com.tc.admin.common.XObjectTable;
 import com.tc.admin.common.XScrollPane;
+import com.tc.admin.common.XTextArea;
 import com.tc.admin.common.XTextField;
 import com.tc.admin.model.IClient;
 import com.tc.admin.model.IClusterModel;
@@ -40,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.management.ObjectName;
-import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 
@@ -52,8 +52,10 @@ public class ClientMethodTracingPanel extends XContainer {
   private MethodTracingTableModel methodTracingTableModel;
   private XTextField              traceMethodInput;
   private StatisticsManagerMBean  statsBean;
-  
-  private static final int              REFRESH_TIMEOUT_SECONDS    = Integer.MAX_VALUE;
+  private XTextArea               onEntryScriptArea;
+  private XTextArea               onExitScriptArea;
+
+  private static final int        REFRESH_TIMEOUT_SECONDS = Integer.MAX_VALUE;
 
   public ClientMethodTracingPanel(IClusterModel clusterModel, IClient client, IAdminClientContext adminClientContext) {
     super(new BorderLayout());
@@ -71,7 +73,7 @@ public class ClientMethodTracingPanel extends XContainer {
 
     topPanel.add(traceMethodInput = new XTextField("org.mypackage.MyClass.method(Ljava/lang/String;)Z"), gbc);
     gbc.gridx++;
-    
+
     XButton addButton = new XButton("Add Tracer");
     topPanel.add(addButton, gbc);
     gbc.gridx++;
@@ -80,8 +82,31 @@ public class ClientMethodTracingPanel extends XContainer {
     XButton refreshButton = new XButton("Refresh All");
     topPanel.add(refreshButton, gbc);
     refreshButton.addActionListener(new RefreshButtonHandler());
-
     add(topPanel, BorderLayout.NORTH);
+
+    XContainer bshPanel = new XContainer(new GridBagLayout());
+    gbc = new GridBagConstraints();
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.weightx = 1.0;
+    gbc.weighty = 1.0;
+    gbc.gridx = gbc.gridy = 0;
+    bshPanel.add(new XLabel("BeanShell OnEntry Script"), gbc);
+    gbc.gridx++;
+    bshPanel.add(new XLabel("BeanShell OnExit Script"), gbc);
+
+    gbc.gridy++;
+    
+    gbc.gridx = 0;
+    onEntryScriptArea = new XTextArea();
+    onEntryScriptArea.setRows(4);
+    bshPanel.add(new XScrollPane(onEntryScriptArea), gbc);
+
+    gbc.gridx++;
+    onExitScriptArea = new XTextArea();
+    onExitScriptArea.setRows(4);
+    bshPanel.add(new XScrollPane(onExitScriptArea), gbc);
+
+    add(bshPanel, BorderLayout.CENTER);
     
     TableMouseListener tableMouseListener = new TableMouseListener();
     TableKeyListener tableKeyListener = new TableKeyListener();
@@ -91,13 +116,11 @@ public class ClientMethodTracingPanel extends XContainer {
     methodTracingTableModel = new MethodTracingTableModel(adminClientContext);
     methodTracingTable.setModel(methodTracingTableModel);
     methodTracingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    JPopupMenu serverLocksPopup = new JPopupMenu();
-    methodTracingTable.setPopupMenu(serverLocksPopup);
     methodTracingTable.addMouseListener(tableMouseListener);
     methodTracingTable.addKeyListener(tableKeyListener);
     methodTracingPanel.add(new XScrollPane(methodTracingTable));
 
-    add(methodTracingPanel, BorderLayout.CENTER);
+    add(methodTracingPanel, BorderLayout.SOUTH);
     
     ObjectName on = client.getTunneledBeanName(StatisticsMBeanNames.STATISTICS_MANAGER);
     statsBean = clusterModel.getActiveCoordinator().getMBeanProxy(on, StatisticsManagerMBean.class);
@@ -133,7 +156,7 @@ public class ClientMethodTracingPanel extends XContainer {
           try {
             client.getTracingManagerBean().stopTracingMethod(methodName.substring(0, separator), methodName.substring(separator + 1));
           } catch (Exception ex) {
-            ex.printStackTrace();
+            adminClientContext.log("Exception while stopping instrumentation of " + methodName + " [" + ex + "]");
           }
         }
         refresh();
@@ -236,11 +259,21 @@ public class ClientMethodTracingPanel extends XContainer {
     public void actionPerformed(ActionEvent ae) {
       String methodName = traceMethodInput.getText();
       int separator = methodName.lastIndexOf('.');
-      
+
+      String bshOnEntry = onEntryScriptArea.getText();
+      String bshOnExit = onExitScriptArea.getText();
+
       try {
-        client.getTracingManagerBean().startTracingMethod(methodName.substring(0, separator), methodName.substring(separator + 1));
+        if ((bshOnEntry.length() == 0) && (bshOnExit.length() == 0)) {
+          client.getTracingManagerBean().startTracingMethod(methodName.substring(0, separator),
+                                                            methodName.substring(separator + 1));
+        } else {
+          client.getTracingManagerBean().startTracingMethodWithBeanShell(methodName.substring(0, separator),
+                                                                         methodName.substring(separator + 1),
+                                                                         bshOnEntry, bshOnExit);
+        }
       } catch (Exception e) {
-        e.printStackTrace();
+        adminClientContext.log("Exception while starting instrumentation of " + methodName + " [" + e + "]");
       }
       refresh();
     }

@@ -15,11 +15,11 @@ public class LoggingTraceListener implements TraceListener {
     this.method = method;
   }
   
-  public void methodEnter() {
+  public void methodEnter(Object self) {
     System.err.println(Thread.currentThread().getName() + " entering method " + clazz + "." + method);
   }
 
-  public void methodExit(int opcode) {
+  public void methodExit(Object self, int opcode) {
     System.err.println(Thread.currentThread().getName() + " exiting method " + clazz + "." + method + " [" + opcodeToString(opcode) + "]");
   }
   

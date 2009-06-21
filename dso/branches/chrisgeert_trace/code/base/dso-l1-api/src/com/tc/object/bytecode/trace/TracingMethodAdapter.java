@@ -27,7 +27,13 @@ public class TracingMethodAdapter extends AdviceAdapter implements MethodVisitor
     super.visitFieldInsn(GETSTATIC, info.getDeclaringType().getName().replace('.', '/'), listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;");
     super.visitInsn(DUP);
     super.visitJumpInsn(IFNULL, nullListener);
-    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodEnter", "()V");
+    if ((info.getModifiers() & ACC_STATIC) == 0) {
+      //instance method
+      super.visitVarInsn(ALOAD, 0);
+    } else {
+      super.visitInsn(ACONST_NULL);
+    }
+    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodEnter", "(Ljava/lang/Object;)V");
     super.visitJumpInsn(GOTO, finish);
     
     super.visitLabel(nullListener);
@@ -43,8 +49,15 @@ public class TracingMethodAdapter extends AdviceAdapter implements MethodVisitor
     super.visitFieldInsn(GETSTATIC, info.getDeclaringType().getName().replace('.', '/'), listenerField, "Lcom/tc/object/bytecode/trace/TraceListener;");
     super.visitInsn(DUP);
     super.visitJumpInsn(IFNULL, nullListener);
+    if ((info.getModifiers() & ACC_STATIC) == 0) {
+      //instance method
+      super.visitVarInsn(ALOAD, 0);
+    } else {
+      //static method
+      super.visitInsn(ACONST_NULL);
+    }
     super.visitLdcInsn(Integer.valueOf(opcode));
-    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodExit", "(I)V");
+    super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/trace/TraceListener", "methodExit", "(Ljava/lang/Object;I)V");
     super.visitJumpInsn(GOTO, finish);
     
     super.visitLabel(nullListener);

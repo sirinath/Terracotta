@@ -5,7 +5,7 @@ package com.tc.object.bytecode.trace;
 
 public interface TraceListener {
 
-  void methodEnter();
+  void methodEnter(Object self);
   
-  void methodExit(int opcode);
+  void methodExit(Object self, int opcode);
 }
