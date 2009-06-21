@@ -9,6 +9,8 @@ import javax.management.NotificationEmitter;
 
 public interface TracingManagerMBean extends TerracottaMBean, NotificationEmitter {
 
+  void startTracingMethodWithBeanShell(String clazz, String method, String bshOnEntry, String bshOnExit) throws Exception;
+
   void startTracingMethod(String clazz, String method) throws Exception;
   
   void stopTracingMethod(String clazz, String method) throws Exception;

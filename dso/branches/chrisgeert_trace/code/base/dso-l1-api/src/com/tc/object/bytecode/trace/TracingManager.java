@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode.trace;
 
+import com.tc.logging.TCLogger;
 import com.tc.management.AbstractTerracottaMBean;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.loaders.LoaderDescription;
@@ -19,27 +20,33 @@ import java.util.Set;
 import javax.management.NotCompliantMBeanException;
 
 public class TracingManager extends AbstractTerracottaMBean implements TracingManagerMBean {
-
-  private final TracingSRA tracingSra;
+  private static final TCLogger LOGGING = ManagerUtil.getLogger(TracingManager.class.getName());
+  
+  private TracingSRA tracingSra;
   
   public TracingManager(StatisticsAgentSubSystem statisticsAgentSubSystem) throws NotCompliantMBeanException {
     super(TracingManagerMBean.class, false);
     StatisticsRetrievalRegistry srr = statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
-    tracingSra = (TracingSRA) srr.getActionInstance(TracingSRA.ACTION_NAME);
+    if (srr != null) {
+      tracingSra = (TracingSRA) srr.getActionInstance(TracingSRA.ACTION_NAME);
+    } else {
+      LOGGING.error("The statistics retrieval registry is not available - tracing stats will not be available");
+    }
   }
 
-  public void startTracingMethod(String clazz, String method) throws Exception {
-    try {
-      Set<Field> fields = getTracerFields(clazz, method);
+  public void startTracingMethodWithBeanShell(String clazz, String method, String bshOnEntry, String bshOnExit) throws Exception {
+    Set<Field> fields = getTracerFields(clazz, method);
 
-      for (Field f : fields) {
-        LoaderDescription ld = ManagerUtil.getManager().getClassProvider().getLoaderDescriptionFor(f.getDeclaringClass());
-        TracingRecorder tr = tracingSra.getOrCreateTracingRecorder(clazz + "." + method + "@" + ld.name());
-        f.set(null, tr);
-      }
-    } catch (Throwable t) {
-      t.printStackTrace();
+    for (Field f : fields) {
+      LoaderDescription ld = ManagerUtil.getManager().getClassProvider().getLoaderDescriptionFor(f.getDeclaringClass());
+      String signature = clazz + "." + method + "@" + ld.name();
+      TracingRecorder tr = tracingSra.getOrCreateTracingRecorder(signature, new TracingRecorder(signature, bshOnEntry, bshOnExit));
+      f.set(null, tr);
     }
+  }
+  
+  public void startTracingMethod(String clazz, String method) throws Exception {
+    startTracingMethodWithBeanShell(clazz, method, null, null);
   }
 
   public void stopTracingMethod(String clazz, String method) throws Exception {

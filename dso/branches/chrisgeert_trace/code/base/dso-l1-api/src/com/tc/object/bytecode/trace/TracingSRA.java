@@ -24,17 +24,18 @@ public class TracingSRA implements StatisticRetrievalAction {
     return StatisticType.SNAPSHOT;
   }
 
-  public TracingRecorder getOrCreateTracingRecorder(String methodSignature) {
-    TracingRecorder tr = tracings.get(methodSignature);
-    if (tr == null) {
-      tr = new TracingRecorder(methodSignature);
+  public TracingRecorder getOrCreateTracingRecorder(String methodSignature, TracingRecorder tr) {
+    TracingRecorder installed = tracings.get(methodSignature);
+    if (installed == null) {
       TracingRecorder old = tracings.putIfAbsent(methodSignature, tr);
       if (old != null) {
-        tr = old;
+        installed = old;
+      } else {
+        installed = tr;
       }
     }
     
-    return tr;
+    return installed;
   }
   
   public void removeTracingRecorder(String methodSignature) {
