@@ -20,6 +20,7 @@ import com.tc.statistics.beans.StatisticsMBeanNames;
 import com.tc.statistics.beans.StatisticsManagerMBean;
 
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -98,12 +99,12 @@ public class ClientMethodTracingPanel extends XContainer {
     
     gbc.gridx = 0;
     onEntryScriptArea = new XTextArea();
-    onEntryScriptArea.setRows(4);
+    onEntryScriptArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
     bshPanel.add(new XScrollPane(onEntryScriptArea), gbc);
 
     gbc.gridx++;
     onExitScriptArea = new XTextArea();
-    onExitScriptArea.setRows(4);
+    onExitScriptArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
     bshPanel.add(new XScrollPane(onExitScriptArea), gbc);
 
     add(bshPanel, BorderLayout.CENTER);
@@ -129,6 +130,8 @@ public class ClientMethodTracingPanel extends XContainer {
       traceMethodInput.setEnabled(false);
       addButton.setEnabled(false);
       refreshButton.setEnabled(false);
+      onEntryScriptArea.setEnabled(false);
+      onExitScriptArea.setEnabled(false);
     }
   }
 
