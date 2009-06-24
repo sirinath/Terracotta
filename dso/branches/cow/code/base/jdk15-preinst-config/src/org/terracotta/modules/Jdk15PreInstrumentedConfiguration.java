@@ -95,8 +95,5 @@ public class Jdk15PreInstrumentedConfiguration extends TerracottaConfiguratorMod
                              ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE);  
     configHelper.addAutolock("* java.util.concurrent.CopyOnWriteArrayList.subList(..)",
                              ConfigLockLevel.AUTO_SYNCHRONIZED_WRITE); 
-//    getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList$COWIterator");
-//    getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList$COWSubList");
-//    getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList$COWSubListIterator");
   }
 }
