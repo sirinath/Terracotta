@@ -60,6 +60,8 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put(java.util.TreeSet.class.getName(), new Byte(ManagedObjectState.TREE_SET_TYPE));
     classNameToStateMap.put(java.util.LinkedList.class.getName(), new Byte(ManagedObjectState.LINKED_LIST_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), new Byte(ManagedObjectState.LIST_TYPE));
+    classNameToStateMap.put(java.util.concurrent.CopyOnWriteArrayList.class.getName(),
+                            new Byte(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Vector.class.getName(), new Byte(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Stack.class.getName(), new Byte(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_LIST.getClass().getName(),

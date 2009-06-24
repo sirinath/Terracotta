@@ -12,7 +12,6 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 
-import java.lang.reflect.Method;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,18 +59,18 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
+    // lists.add(new ArrayList());
     lists.add(new CopyOnWriteArrayList());
-    lists.add(new LinkedList());
-    lists.add(new ArrayList());
-    lists.add(new Vector());
-    lists.add(new Stack());
-    lists.add(new MyArrayList());
-    lists.add(new MyArrayList5());
-    lists.add(new MyArrayList6());
-    lists.add(new MyLinkedList());
-    lists.add(new MyVector());
-    lists.add(new MyStack());
-    lists.add(new MyAbstractListSubclass());
+    // lists.add(new LinkedList());
+    // lists.add(new Vector());
+    // lists.add(new Stack());
+    // lists.add(new MyArrayList());
+    // lists.add(new MyArrayList5());
+    // lists.add(new MyArrayList6());
+    // lists.add(new MyLinkedList());
+    // lists.add(new MyVector());
+    // lists.add(new MyStack());
+    // lists.add(new MyAbstractListSubclass());
 
     sharedMap.put("lists", lists);
     sharedMap.put("arrayforLinkedList", new Object[2]);
@@ -89,7 +88,26 @@ public class GenericListTestApp extends GenericTransparentApp {
     sharedMap.put("arrayforMyAbstractListSubclass", new Object[2]);
   }
 
-  void testBasicAdd(List list, boolean validate, int v) {
+   void testBasicRemove(List list, boolean validate, int v) {
+    if (validate) {
+      assertEmptyList(list);
+    } else {
+      synchronized (list) {
+        Object o = E("http://en.wikipedia.org/wiki/PEBKAC", v);
+        boolean added = list.add(o);
+        Assert.assertTrue(added);
+      }
+
+      synchronized (list) {
+        boolean removed = list.remove(E("http://en.wikipedia.org/wiki/PEBKAC", v));
+        System.out.println("LIST SIZE = " + list.size());
+        Assert.assertTrue(removed);
+      }
+
+    }
+  }
+
+  void bestBasicAdd(List list, boolean validate, int v) {
     if (validate) {
       assertSingleElement(list, E("rollin in my 6-4", v));
     } else {
@@ -100,24 +118,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testBasicRemove(List list, boolean validate, int v) {
-    if (validate) {
-      assertEmptyList(list);
-    } else {
-      synchronized (list) {
-        boolean added = list.add(E("http://en.wikipedia.org/wiki/PEBKAC", v));
-        Assert.assertTrue(added);
-      }
-
-      synchronized (list) {
-        boolean removed = list.remove(E("http://en.wikipedia.org/wiki/PEBKAC", v));
-        Assert.assertTrue(removed);
-      }
-
-    }
-  }
-
-  void testVectorSetSizeGrow(List list, boolean validate, int v) {
+  void bestVectorSetSizeGrow(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     int size = 5;
@@ -139,7 +140,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorSetSizeShrink(List list, boolean validate, int v) {
+  void bestVectorSetSizeShrink(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -160,7 +161,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorAddElement(List list, boolean validate, int v) {
+  void bestVectorAddElement(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -175,7 +176,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorRetainAll(List list, boolean validate, int v) {
+  void bestVectorRetainAll(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -197,7 +198,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorRemoveAll(List list, boolean validate, int v) {
+  void bestVectorRemoveAll(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -217,7 +218,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorRemoveAllElements(List list, boolean validate, int v) {
+  void bestVectorRemoveAllElements(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -235,7 +236,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorSetElementAt(List list, boolean validate, int v) {
+  void bestVectorSetElementAt(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -254,7 +255,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testVectorInsertElementAt(List list, boolean validate, int v) {
+  void bestVectorInsertElementAt(List list, boolean validate, int v) {
     if (!(list instanceof Vector)) { return; }
 
     Vector vector = (Vector) list;
@@ -272,7 +273,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testLinkedListRemoveFirst(List list, boolean validate, int v) {
+  void bestLinkedListRemoveFirst(List list, boolean validate, int v) {
     if (!(list instanceof LinkedList)) { return; }
 
     LinkedList linkedList = (LinkedList) list;
@@ -291,7 +292,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testLinkedListRemoveLast(List list, boolean validate, int v) {
+  void bestLinkedListRemoveLast(List list, boolean validate, int v) {
     if (!(list instanceof LinkedList)) { return; }
 
     LinkedList linkedList = (LinkedList) list;
@@ -310,7 +311,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testLinkedListAddFirst(List list, boolean validate, int v) {
+  void bestLinkedListAddFirst(List list, boolean validate, int v) {
     if (!(list instanceof LinkedList)) { return; }
 
     LinkedList linkedList = (LinkedList) list;
@@ -328,7 +329,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testLinkedListAddLast(List list, boolean validate, int v) {
+  void bestLinkedListAddLast(List list, boolean validate, int v) {
     if (!(list instanceof LinkedList)) { return; }
 
     LinkedList linkedList = (LinkedList) list;
@@ -346,7 +347,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testBasicAddNull(List list, boolean validate, int v) {
+  void bestBasicAddNull(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { null, null, E("my cat hates you", v), null }), list);
@@ -365,7 +366,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testBasicAddAt(List list, boolean validate, int v) {
+  void bestBasicAddAt(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("1", v), E("2", v), E("3", v), E("4", v) }), list);
@@ -385,7 +386,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testAdd(List list, boolean validate, int v) {
+  void bestAdd(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("element", v) }), list);
@@ -396,7 +397,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testAddAll(List list, boolean validate, int v) {
+  void bestAddAll(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("patty", v), E("calahan", v), E("was", v), E("here", v) }), list);
@@ -413,7 +414,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testAddAllAt(List list, boolean validate, int v) {
+  void bestAddAllAt(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("uno", v), E("dos", v), E("tres", v), E("catorce?", v) }), list);
@@ -433,7 +434,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testClear(List list, boolean validate, int v) {
+  void bestClear(List list, boolean validate, int v) {
 
     if (validate) {
       assertEmptyList(list);
@@ -453,7 +454,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testSetElementAt(List list, boolean validate, int v) {
+  void bestSetElementAt(List list, boolean validate, int v) {
 
     if (validate) {
       assertSingleElement(list, E("new", v));
@@ -468,7 +469,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testRemoveAt(List list, boolean validate, int v) {
+  void bestRemoveAt(List list, boolean validate, int v) {
 
     if (validate) {
       Object item0 = list.get(0);
@@ -489,7 +490,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testRemoveNull1(List list, boolean validate, int v) {
+  void bestRemoveNull1(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("third element", v) }), list);
@@ -506,7 +507,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testRemoveNull2(List list, boolean validate, int v) {
+  void bestRemoveNull2(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -524,7 +525,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testSubList(List list, boolean validate, int v) {
+  void bestSubList(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -543,56 +545,56 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testRemoveAll(List list, boolean validate, int v) {
+  // void bestRemoveAll(List list, boolean validate, int v) {
+  //
+  // if (validate) {
+  // assertEmptyList(list);
+  // } else {
+  // synchronized (list) {
+  // list.add(E("first element", v));
+  // list.add(E("second element", v));
+  // }
+  // List removeList = new ArrayList(2);
+  // removeList.add(E("first element", v));
+  // removeList.add(E("second element", v));
+  // synchronized (list) {
+  // list.removeAll(removeList);
+  // }
+  // }
+  // }
 
-    if (validate) {
-      assertEmptyList(list);
-    } else {
-      synchronized (list) {
-        list.add(E("first element", v));
-        list.add(E("second element", v));
-      }
-      List removeList = new ArrayList(2);
-      removeList.add(E("first element", v));
-      removeList.add(E("second element", v));
-      synchronized (list) {
-        list.removeAll(removeList);
-      }
-    }
-  }
+  // void bestRemoveRange(List list, boolean validate, int v) {
+  // // using reflection to invoke protected method of a logical subclass does not work.
+  // if (list instanceof MyArrayList6) { return; }
+  //
+  // if (validate) {
+  // assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("fourth element", v) }), list);
+  // } else {
+  // synchronized (list) {
+  // list.add(E("first element", v));
+  // list.add(E("second element", v));
+  // list.add(E("third element", v));
+  // list.add(E("fourth element", v));
+  // }
+  // Class listClass = AbstractList.class;
+  // Class[] parameterType = new Class[2];
+  // parameterType[0] = Integer.TYPE;
+  // parameterType[1] = Integer.TYPE;
+  //
+  // try {
+  // synchronized (list) {
+  // Method m = listClass.getDeclaredMethod("removeRange", parameterType);
+  // m.setAccessible(true); // suppressing java access checking since removeRange is
+  // // a protected method.
+  // m.invoke(list, new Object[] { new Integer(1), new Integer(3) });
+  // }
+  // } catch (Exception e) {
+  // // ignore Exception in test.
+  // }
+  // }
+  // }
 
-  void testRemoveRange(List list, boolean validate, int v) {
-    // using reflection to invoke protected method of a logical subclass does not work.
-    if (list instanceof MyArrayList6) { return; }
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("fourth element", v) }), list);
-    } else {
-      synchronized (list) {
-        list.add(E("first element", v));
-        list.add(E("second element", v));
-        list.add(E("third element", v));
-        list.add(E("fourth element", v));
-      }
-      Class listClass = AbstractList.class;
-      Class[] parameterType = new Class[2];
-      parameterType[0] = Integer.TYPE;
-      parameterType[1] = Integer.TYPE;
-
-      try {
-        synchronized (list) {
-          Method m = listClass.getDeclaredMethod("removeRange", parameterType);
-          m.setAccessible(true); // suppressing java access checking since removeRange is
-          // a protected method.
-          m.invoke(list, new Object[] { new Integer(1), new Integer(3) });
-        }
-      } catch (Exception e) {
-        // ignore Exception in test.
-      }
-    }
-  }
-
-  void testToArray(List list, boolean validate, int v) {
+  void bestToArray(List list, boolean validate, int v) {
 
     Object[] array = getArray(list);
 
@@ -610,7 +612,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testToArray2(List list, boolean validate, int v) {
+  void bestToArray2(List list, boolean validate, int v) {
     Object[] array = getArray(list);
 
     if (validate) {
@@ -639,7 +641,8 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // List Iterator testing methods.
-  void testListIteratorSet1(List list, boolean validate, int v) {
+  void bestListIteratorSet1(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("second element", v),
@@ -658,7 +661,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorSet2(List list, boolean validate, int v) {
+  void bestListIteratorSet2(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("modified second element", v),
@@ -678,7 +682,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorSetRemove1(List list, boolean validate, int v) {
+  void bestListIteratorSetRemove1(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("third element", v) }), list);
@@ -699,7 +704,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorSetRemove2(List list, boolean validate, int v) {
+  void bestListIteratorSetRemove2(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("modified second element", v) }), list);
@@ -720,7 +726,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorDuplicateElementRemove(List list, boolean validate, int v) {
+  void bestListIteratorDuplicateElementRemove(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -740,7 +747,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAdd1(List list, boolean validate, int v) {
+  void bestListIteratorAdd1(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -758,7 +766,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAdd2(List list, boolean validate, int v) {
+  void bestListIteratorAdd2(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -776,7 +785,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAddSet1(List list, boolean validate, int v) {
+  void bestListIteratorAddSet1(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("second element", v),
@@ -795,7 +805,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAddSet2(List list, boolean validate, int v) {
+  void bestListIteratorAddSet2(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -815,7 +826,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAddSet3(List list, boolean validate, int v) {
+  void bestListIteratorAddSet3(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -836,7 +848,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAddNull(List list, boolean validate, int v) {
+  void bestListIteratorAddNull(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { null, null, E("third element", v) }), list);
@@ -850,7 +863,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorAddRemove(List list, boolean validate, int v) {
+  void bestListIteratorAddRemove(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("second element", v), E("third element", v) }), list);
@@ -868,7 +882,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorRemoveNull(List list, boolean validate, int v) {
+  void bestListIteratorRemoveNull(List list, boolean validate, int v) {
+    if (list instanceof CopyOnWriteArrayList) return;
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("third element", v) }), list);
@@ -889,9 +904,9 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Read only testing methods.
-  void testReadOnlyAdd(List list, boolean validate, int v) {
+  void bestReadOnlyAdd(List list, boolean validate, int v) {
 
-    if (list instanceof Vector) { return; }
+    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -907,8 +922,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testReadOnlySet(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
+  void bestReadOnlySet(List list, boolean validate, int v) {
+    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -925,7 +940,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Setting up for the ReadOnly test for remove.
-  void testSetUpRemove(List list, boolean validate, int v) {
+  void bestSetUpRemove(List list, boolean validate, int v) {
     if (list instanceof Vector) { return; }
 
     if (validate) {
@@ -941,6 +956,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // tryReadOnlyRemove() goes hand in hand with testSetUpRemove().
   private void tryReadOnlyRemove(List list, int v) {
+    if (list instanceof CopyOnWriteArrayList) { return; }
+
     synchronized (list) {
       try {
         list.remove(E("second element", v));
@@ -951,7 +968,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testSetUpToArray(List list, boolean validate, int v) {
+  void bestSetUpToArray(List list, boolean validate, int v) {
     if (list instanceof Vector) { return; }
 
     Object[] array = getArray(list);
@@ -980,7 +997,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Setting up for the ReadOnly test for Iterator remove.
-  void testSetUpIteratorRemove(List list, boolean validate, int v) {
+  void bestSetUpIteratorRemove(List list, boolean validate, int v) {
     if (list instanceof Vector) { return; }
 
     if (validate) {
@@ -996,6 +1013,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // tryReadOnlyIteratorRemove() goes hand in hand with testSetUpIteratorRemove().
   private void tryReadOnlyIteratorRemove(List list) {
+    if (list instanceof CopyOnWriteArrayList) { return; }
+
     synchronized (list) {
       try {
         Iterator iterator = list.iterator();
@@ -1009,8 +1028,8 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Setting up for the ReadOnly test for clear.
-  void testSetUpClear(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
+  void bestSetUpClear(List list, boolean validate, int v) {
+    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1036,7 +1055,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Setting up for the ReadOnly test for retainAll.
-  void testSetUpRetainAll(List list, boolean validate, int v) {
+  void bestSetUpRetainAll(List list, boolean validate, int v) {
     if (list instanceof Vector) { return; }
 
     if (validate) {
@@ -1052,6 +1071,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // tryReadOnlyRetainAll() goes hand in hand with testSetUpRetainAll().
   private void tryReadOnlyRetainAll(List list, int v) {
+    if (list instanceof CopyOnWriteArrayList) { return; }
+
     synchronized (list) {
       List toRetain = new ArrayList();
       toRetain.add(E("first element", v));
@@ -1065,7 +1086,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Setting up for the ReadOnly test for removeAll.
-  void testSetUpRemoveAll(List list, boolean validate, int v) {
+  void bestSetUpRemoveAll(List list, boolean validate, int v) {
     if (list instanceof Vector) { return; }
 
     if (validate) {
@@ -1081,6 +1102,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // tryReadOnlyRemoveAll() goes hand in hand with testSetUpRemoveAll().
   private void tryReadOnlyRemoveAll(List list, int v) {
+    if (list instanceof CopyOnWriteArrayList) { return; }
+
     synchronized (list) {
       List toRemove = new ArrayList();
       toRemove.add(E("first element", v));
@@ -1093,8 +1116,8 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testListIteratorReadOnlyAdd(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
+  void bestListIteratorReadOnlyAdd(List list, boolean validate, int v) {
+    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -1111,7 +1134,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testCollectionsAddAll(List list, boolean validate, int v) {
+  void bestCollectionsAddAll(List list, boolean validate, int v) {
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
@@ -1125,68 +1148,80 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   // Iterator testing methods.
-  void testIteratorRemove(List list, boolean validate, int v) {
+  // void bestIteratorRemove(List list, boolean validate, int v) {
+  //
+  // if (validate) {
+  // assertListsEqual(Arrays.asList(new Object[] { E("second element", v) }), list);
+  // } else {
+  // synchronized (list) {
+  // list.add(E("first element", v));
+  // list.add(E("second element", v));
+  // }
+  // synchronized (list) {
+  // Iterator iterator = list.iterator();
+  // Assert.assertEquals(true, iterator.hasNext());
+  // iterator.next();
+  // try {
+  // iterator.remove();
+  // } catch (UnsupportedOperationException e2) {
+  // // Expected
+  // }
+  // }
+  // }
+  // }
 
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("second element", v) }), list);
-    } else {
-      synchronized (list) {
-        list.add(E("first element", v));
-        list.add(E("second element", v));
-      }
-      synchronized (list) {
-        Iterator iterator = list.iterator();
-        Assert.assertEquals(true, iterator.hasNext());
-        iterator.next();
-        iterator.remove();
-      }
-    }
-  }
+  // void bestIteratorDuplicateElementRemove(List list, boolean validate, int v) {
+  //
+  // if (validate) {
+  // assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
+  // } else {
+  // synchronized (list) {
+  // list.add(E("first element", v));
+  // list.add(E("second element", v));
+  // list.add(E("first element", v));
+  // }
+  // synchronized (list) {
+  // Iterator iterator = list.iterator();
+  // Assert.assertEquals(true, iterator.hasNext());
+  // iterator.next();
+  // iterator.next();
+  // iterator.next();
+  // try {
+  // iterator.remove();
+  // } catch (UnsupportedOperationException e2) {
+  // // Expected
+  // }
+  // }
+  // }
+  // }
 
-  void testIteratorDuplicateElementRemove(List list, boolean validate, int v) {
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
-    } else {
-      synchronized (list) {
-        list.add(E("first element", v));
-        list.add(E("second element", v));
-        list.add(E("first element", v));
-      }
-      synchronized (list) {
-        Iterator iterator = list.iterator();
-        Assert.assertEquals(true, iterator.hasNext());
-        iterator.next();
-        iterator.next();
-        iterator.next();
-        iterator.remove();
-      }
-    }
-  }
-
-  void testIteratorRemoveNull(List list, boolean validate, int v) {
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("second element", v) }), list);
-    } else {
-      synchronized (list) {
-        list.add(E("first element", v));
-        list.add(null);
-        list.add(null);
-        list.add(E("second element", v));
-      }
-      synchronized (list) {
-        Iterator iterator = list.iterator();
-        Assert.assertEquals(true, iterator.hasNext());
-        iterator.next();
-        iterator.next();
-        iterator.remove();
-      }
-    }
-  }
+  // void bestIteratorRemoveNull(List list, boolean validate, int v) {
+  //
+  // if (validate) {
+  // assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("second element", v) }), list);
+  // } else {
+  // synchronized (list) {
+  // list.add(E("first element", v));
+  // list.add(null);
+  // list.add(null);
+  // list.add(E("second element", v));
+  // }
+  // synchronized (list) {
+  // Iterator iterator = list.iterator();
+  // Assert.assertEquals(true, iterator.hasNext());
+  // iterator.next();
+  // iterator.next();
+  // try {
+  // iterator.remove();
+  // } catch (UnsupportedOperationException e2) {
+  // // Expected
+  // }
+  // }
+  // }
+  // }
 
   // Stack specific testing method.
-  void testStackPush(List list, boolean validate, int v) {
+  void bestStackPush(List list, boolean validate, int v) {
     if (!(list instanceof Stack)) { return; }
 
     if (validate) {
@@ -1200,7 +1235,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testStackPop(List list, boolean validate, int v) {
+  void bestStackPop(List list, boolean validate, int v) {
     if (!(list instanceof Stack)) { return; }
 
     if (validate) {
@@ -1218,7 +1253,7 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  void testAddNonPortableObject(List list, boolean validate, int v) {
+  void bestAddNonPortableObject(List list, boolean validate, int v) {
     if (!validate) {
       synchronized (list) {
         try {
@@ -1273,6 +1308,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   private static void assertEmptyList(List list) {
+    System.out.println("assertEmptyList: " + list.size());
     Assert.assertEquals(list.getClass(), 0, list.size());
     Assert.assertTrue(list.getClass(), list.isEmpty());
 
