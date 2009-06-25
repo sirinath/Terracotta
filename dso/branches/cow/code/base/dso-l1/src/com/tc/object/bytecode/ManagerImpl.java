@@ -239,7 +239,9 @@ public class ManagerImpl implements Manager {
 
   public void logicalInvoke(final Object object, final String methodSignature, final Object[] params) {
     if (object.getClass().getName().endsWith("CopyOnWriteArrayList")  || object.getClass().getName().endsWith("MyArrayList")) {
-      System.out.println("logicalInvoke: method=" + methodSignature);
+      System.out.println("logicalInvoke: method=" + methodSignature + ", thread=" + Thread.currentThread().getName());
+      Thread.dumpStack();
+      System.err.flush();
     }
 
     Manageable m = (Manageable) object;
