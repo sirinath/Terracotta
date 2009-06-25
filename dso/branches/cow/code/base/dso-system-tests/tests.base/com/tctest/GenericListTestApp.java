@@ -59,8 +59,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
-    // lists.add(new ArrayList());
-    lists.add(new CopyOnWriteArrayList());
+    //lists.add(new ArrayList());
+    //lists.add(new CopyOnWriteArrayList());
     // lists.add(new LinkedList());
     // lists.add(new Vector());
     // lists.add(new Stack());
@@ -89,21 +89,24 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
    void testBasicRemove(List list, boolean validate, int v) {
+    System.out.println("variant=" + v);
     if (validate) {
+      System.out.println("validate");
       assertEmptyList(list);
     } else {
       synchronized (list) {
+        System.out.println("adding");
         Object o = E("http://en.wikipedia.org/wiki/PEBKAC", v);
         boolean added = list.add(o);
         Assert.assertTrue(added);
       }
 
       synchronized (list) {
+        System.out.println("removing");
         boolean removed = list.remove(E("http://en.wikipedia.org/wiki/PEBKAC", v));
-        System.out.println("LIST SIZE = " + list.size());
         Assert.assertTrue(removed);
       }
-
+      System.out.println("DONE removing in mutator");
     }
   }
 
