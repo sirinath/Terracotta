@@ -59,8 +59,8 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
-    //lists.add(new ArrayList());
-    //lists.add(new CopyOnWriteArrayList());
+    // lists.add(new ArrayList());
+     lists.add(new CopyOnWriteArrayList());
     // lists.add(new LinkedList());
     // lists.add(new Vector());
     // lists.add(new Stack());
@@ -89,24 +89,24 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
    void testBasicRemove(List list, boolean validate, int v) {
-    System.out.println("variant=" + v);
+    System.out.println("variant=" + v + ", " + Thread.currentThread().getName());
     if (validate) {
-      System.out.println("validate");
+      System.out.println("validate: " + Thread.currentThread().getName());
       assertEmptyList(list);
     } else {
       synchronized (list) {
-        System.out.println("adding");
+        System.out.println("adding: " + Thread.currentThread().getName());
         Object o = E("http://en.wikipedia.org/wiki/PEBKAC", v);
         boolean added = list.add(o);
         Assert.assertTrue(added);
       }
 
       synchronized (list) {
-        System.out.println("removing");
+        System.out.println("removing: " + Thread.currentThread().getName());
         boolean removed = list.remove(E("http://en.wikipedia.org/wiki/PEBKAC", v));
         Assert.assertTrue(removed);
       }
-      System.out.println("DONE removing in mutator");
+      System.out.println("DONE removing in mutator: "  + Thread.currentThread().getName());
     }
   }
 
