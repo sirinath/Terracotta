@@ -18,6 +18,7 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -41,6 +42,7 @@ public class ListApplicator extends BaseApplicator {
 
   public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
+    System.out.println("ListApplicator.hydrate, list=" + po.getClass());
     List list = (List) po;
     DNACursor cursor = dna.getCursor();
 
@@ -65,6 +67,9 @@ public class ListApplicator extends BaseApplicator {
   }
 
   private void apply(List list, int method, Object[] params) {
+    System.out.println("ListApplicator.apply, list=" + list.getClass() + ", method=" + method + ", params="
+                       + Arrays.asList(params));
+
     final int size = list.size();
     switch (method) {
       case SerializationUtil.ADD:
@@ -150,6 +155,7 @@ public class ListApplicator extends BaseApplicator {
   }
 
   public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+    System.out.println("ListApplicator.dehydrate, list=" + pojo.getClass());
     List list = (List) pojo;
 
     for (int i = 0; i < list.size(); i++) {
