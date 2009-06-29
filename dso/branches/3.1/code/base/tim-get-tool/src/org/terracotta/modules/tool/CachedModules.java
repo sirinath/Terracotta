@@ -147,9 +147,11 @@ public class CachedModules implements Modules {
           throw new RuntimeException("Error parsing index file: " + e.getMessage(), e);
         }
       } catch (FileNotFoundException e) {
-        throw new RemoteIndexIOException("Remote index file not found: " + e.getMessage(), e);
+        throw new RemoteIndexIOException("Remote index file not found: " + e.getMessage(), e, dataLoader
+            .getLocalDataFile(), dataLoader.getRemoteDataUrl());
       } catch (IOException e) {
-        throw new RemoteIndexIOException("Error reading remote index file: " + e.getMessage(), e);
+        throw new RemoteIndexIOException("Error reading remote index file: " + e.getMessage(), e, dataLoader
+            .getLocalDataFile(), dataLoader.getRemoteDataUrl());
       } finally {
         IOUtils.closeQuietly(dataStream);
       }
@@ -296,7 +298,7 @@ public class CachedModules implements Modules {
   public String apiVersion() {
     return apiVersion;
   }
-  
+
   public String indexTimeStamp() {
     return timeStamp;
   }
