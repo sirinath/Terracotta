@@ -57,7 +57,7 @@ bundled_components:
               - dso-l2-common
               - dso-statistics-api
               - management-api
-        - terracotta-api-api.version:
+        - api-api.version:
             javadoc: true
             install_directory: lib
             modules:
