@@ -81,8 +81,8 @@ bundled_components:
               - legacy-test-tree
               - license-common
               - simulator
-        - terracotta-api-api.version:
-            javadoc: true   
+        - api-api.version:
+            javadoc: true
             install_directory: lib
             modules:
               - dso-cluster-api
@@ -203,8 +203,8 @@ postscripts:
           inject: 
             - lib/resources/build-data.txt
         - groupId: org.terracotta.api
-          artifact: terracotta-api
-          file: lib/terracotta-api-api.version.jar
+          artifact: api
+          file: lib/api-api.version.jar
           pom: poms/terracotta-api-pom.xml
           version: api.version
         - groupId: org.terracotta.api

@@ -5,7 +5,7 @@ root_directory: terracotta-api
 bundled_components:
   - base:
       module_packages:
-        - terracotta-api-api.version:
+        - api-api.version:
             modules:
               - dso-cluster-api
 packaging:
