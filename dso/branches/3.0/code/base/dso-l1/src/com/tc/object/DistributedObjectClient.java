@@ -343,11 +343,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     String serverHost = connectionInfo[0].getHostname();
     int serverPort = connectionInfo[0].getPort();
 
-    int timeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
-    if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
-
+    int socketConnectTimeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
+    int maxReconnectTries = tcProperties.getInt(TCPropertiesConsts.L1_MAX_CONNECT_RETRIES);
+    if (socketConnectTimeout < 0) { throw new IllegalArgumentException("invalid socket time value: "
+                                                                       + socketConnectTimeout); }
     this.channel = this.dsoClientBuilder.createDSOClientMessageChannel(this.communicationsManager,
-                                                                       this.connectionComponents, sessionProvider);
+                                                                       this.connectionComponents, sessionProvider,
+                                                                       maxReconnectTries, socketConnectTimeout);
     ClientIDLoggerProvider cidLoggerProvider = new ClientIDLoggerProvider(this.channel.getClientIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -408,7 +410,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // for SRA L1 Tx count
     SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
     SampledCounter txnCounter = (SampledCounter) this.counterManager.createCounter(sampledCounterConfig);
-    
+
     // setup statistics subsystem
     if (this.statisticsAgentSubSystem.setup(this.config.getNewCommonL1Config())) {
       populateStatisticsRetrievalRegistry(this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry(), stageManager,
@@ -528,8 +530,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.dsoClientBuilder.getObjectIDClientHandshakeRequester(batchSequenceReceiver));
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);
     ProductInfo pInfo = ProductInfo.getInstance();
-    this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager, this.dsoCluster,
-                                                            pInfo, clientHandshakeCallbacks);
+    this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager,
+                                                               this.dsoCluster, pInfo, clientHandshakeCallbacks);
     this.channel.addListener(this.clientHandshakeManager);
 
     ClientConfigurationContext cc = new ClientConfigurationContext(stageManager, this.lockManager, remoteObjectManager,
@@ -655,10 +657,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   // this method is only intended for tests for plugging-in custom ClientHandshakeManagerImpl
-  protected ClientHandshakeManagerImpl createClientHandshakeManager(DSOClientMessageChannel chanel, Stage pauseStage,
-                                                                 SessionManager sessionManager,
-                                                                 DsoClusterInternal dsoClustr, ProductInfo pInfo,
-                                                                 List<ClientHandshakeCallback> clientHandshakeCallbacks) {
+  protected ClientHandshakeManagerImpl createClientHandshakeManager(
+                                                                    DSOClientMessageChannel chanel,
+                                                                    Stage pauseStage,
+                                                                    SessionManager sessionManager,
+                                                                    DsoClusterInternal dsoClustr,
+                                                                    ProductInfo pInfo,
+                                                                    List<ClientHandshakeCallback> clientHandshakeCallbacks) {
     return new ClientHandshakeManagerImpl(new ClientIDLogger(chanel.getClientIDProvider(), TCLogging
         .getLogger(ClientHandshakeManagerImpl.class)), chanel, chanel.getClientHandshakeMessageFactory(), pauseStage
         .getSink(), sessionManager, dsoClustr, pInfo.version(), Collections
