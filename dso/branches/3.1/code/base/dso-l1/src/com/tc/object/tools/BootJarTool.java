@@ -97,6 +97,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
+import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedHashMapClassAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
@@ -344,7 +345,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   * 
+   *
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(final File bootJarFile) {
@@ -453,6 +454,8 @@ public class BootJarTool {
 
       addJdk15SpecificPreInstrumentedClasses();
 
+      addInstrumentedWeakHashMap();
+
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(TCMap.class.getName());
       if (Vm.isJDK15Compliant()) {
@@ -531,6 +534,11 @@ public class BootJarTool {
       loadTerracottaClass(CompressedData.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
 
+      // These classes need to be specified as literal in order to prevent
+      // the static block of IdentityWeakHashMap from executing during generating
+      // the boot jar.
+      loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
+      loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
       loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
       loadTerracottaClass(ProxyInstance.class.getName());
@@ -1490,7 +1498,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   * 
+   *
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1506,7 +1514,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   * 
+   *
    * @param msg The custom message to print
    */
   private final void exit(final String msg) {
@@ -1515,7 +1523,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   * 
+   *
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.
@@ -2486,6 +2494,17 @@ public class BootJarTool {
     jData = cw.toByteArray();
     jData = doDSOTransform(jClassNameDots, jData);
     loadClassIntoJar(jClassNameDots, jData, true);
+  }
+
+  private final void addInstrumentedWeakHashMap() {
+    ClassReader reader = new ClassReader(getSystemBytes("java.util.WeakHashMap"));
+    ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
+
+    ClassVisitor cv = new JavaUtilWeakHashMapAdapter().create(writer, null);
+
+    reader.accept(cv, ClassReader.SKIP_FRAMES);
+
+    loadClassIntoJar("java.util.WeakHashMap", writer.toByteArray(), false);
   }
 
   private final void addInstrumentedClassLoader() {
