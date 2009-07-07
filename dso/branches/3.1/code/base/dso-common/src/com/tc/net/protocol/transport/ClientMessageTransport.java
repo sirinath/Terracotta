@@ -277,7 +277,7 @@ public class ClientMessageTransport extends MessageTransportBase {
     return "Your product key only allows maximum " + maxConnections  + " clients to connect.";
   }
 
-  TCProtocolAdaptor getProtocolAdapter() {
+  protected TCProtocolAdaptor getProtocolAdapter() {
     return wireProtocolAdaptorFactory.newWireProtocolAdaptor(new WireProtocolMessageSink() {
       public void putMessage(WireProtocolMessage message) {
         receiveTransportMessage(message);
