@@ -40,6 +40,12 @@ bundled_components:
           - tc-config-reference
   - common:
       module_packages:
+        - terracotta-l1:
+            # install in 'api-jars' folder so it can be deleted later
+            install_directory: api-jars
+            add_dependencies: true
+            modules:
+              - dso-l1
         - terracotta-jmx-api:
             install_directory: lib
             modules:
@@ -168,6 +174,12 @@ postscripts:
           inject: 
             - lib/resources/build-data.txt
             - lib/resources/tim-get.properties
+        - groupId: org.terracotta
+          artifact: terracotta-l1
+          file: api-jars/terracotta-l1.jar
+          pom: poms/terracotta-l1-pom.xml
+          inject: 
+            - lib/resources/build-data.txt           
         - groupId: org.terracotta
           artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
