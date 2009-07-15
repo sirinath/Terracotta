@@ -171,7 +171,7 @@ public class DefaultModuleReport extends ModuleReport {
     child.setAttribute("name", module.artifactId());
     child.setAttribute("version", module.version());
     if (!isUsingDefaultGroupId(module)) child.setAttribute("group-id", module.groupId());
-    document.getDocumentElement().appendChild(parent);
+    document.appendChild(parent);
 
     out.println("Configuration:\n ");
     try {
