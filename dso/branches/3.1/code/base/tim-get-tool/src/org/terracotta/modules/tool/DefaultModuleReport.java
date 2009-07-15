@@ -176,7 +176,6 @@ public class DefaultModuleReport extends ModuleReport {
     out.println("Configuration:\n ");
     try {
       serialize(document, out);
-      out.println(indent(out.toString()));
     } catch (Exception e) {
       out.println(e.getMessage());
     }
