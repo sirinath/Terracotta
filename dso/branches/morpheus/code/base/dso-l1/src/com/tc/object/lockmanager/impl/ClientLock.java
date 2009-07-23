@@ -814,18 +814,12 @@ class ClientLock implements TimerCallback, LockFlushCallback {
   }
 
   public synchronized void pin() {
-    if (!pinned) {
-      pinned = true;
-    }
+    pinned = true;
   }
   
   public synchronized boolean unpin() {
-    if (pinned) {
-      pinned = false;
-      return (useCount == 0);
-    } else {
-      return false;
-    }
+    pinned = false;
+    return (useCount == 0);
   }
   
   public synchronized boolean pinned() {
