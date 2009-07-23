@@ -606,16 +606,16 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   }
 
   public synchronized void pinLock(final LockID lockId) {
-    ClientLock lock = getOrCreateLock(lockId, MISSING_LOCK_TEXT);
-    lock.pin();
+//    ClientLock lock = getOrCreateLock(lockId, MISSING_LOCK_TEXT);
+//    lock.pin();
   }
 
   public synchronized void unpinLock(final LockID lockId) {
-    ClientLock lock = locksByID.get(lockId);
-    if (lock != null && lock.unpin()) {
-      gcCandidates.add(lockId);
-      cleanUp(lock);
-    }
+//    ClientLock lock = locksByID.get(lockId);
+//    if (lock != null && lock.unpin()) {
+//      gcCandidates.add(lockId);
+//      cleanUp(lock);
+//    }
   }
 
   public synchronized void evictLock(final LockID lockId) {
