@@ -9,6 +9,9 @@ Support:       http://www.terracotta.org/web/display/enterprise/Support
 Known Issues
 -------------
 Standalone Hibernate Second Level Cache Jar (terracotta-hibernate-cache.jar)
+- LinkageError occurs if multiple session factories are created in the
+  same application (http://jira.terracotta.org/jira/browse/CDV-1326)
+
 - Do not run more than one client per machine
 - Hibernate 3.3 must be used
 
@@ -38,6 +41,8 @@ Terracotta Developer Console
 -- Null Pointer Exception in Hibernate statistics panel when server is restarted
 -- Blank Tab 
 ---Workaround: Restart the Developer Console
+
+
 
 
 
