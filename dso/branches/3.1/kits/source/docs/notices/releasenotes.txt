@@ -18,7 +18,7 @@ tim-get in Feature Complete and Stable builds
 - Maven users will need to manually update the pom.xml to point to the corresponding repository
 --- For 3.1.0-stable1 kit: http://www.terracotta.org/download/reflector/stable/3.1.0-stable1
 
-e.g. add these the pom.xml
+e.g. add these to the pom.xml
 
   <repositories>
     <repository>
