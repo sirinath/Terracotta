@@ -12,27 +12,24 @@ Standalone Hibernate Second Level Cache Jar (terracotta-hibernate-cache.jar)
 - LinkageError occurs if multiple session factories are created in the
   same application (http://jira.terracotta.org/jira/browse/CDV-1326)
 
-- Do not run more than one client per machine
-- Hibernate 3.3 must be used
-
 tim-get in Feature Complete and Stable builds
 - Terracotta has introduced stable repositories for our Forge to coincide with stable kit releases
 - tim-get will automatically point to its corresponding stable repository
 - Maven users will need to manually update the pom.xml to point to the corresponding repository
--- For 3.1.0 builds the naming will be as follows
---- For 3.1.0-FC kit: http://www.terracotta.org/download/reflector/stable/3.1.0-FC
 --- For 3.1.0-stable1 kit: http://www.terracotta.org/download/reflector/stable/3.1.0-stable1
-e.g.
-<repositories>
+
+e.g. add these the pom.xml
+
+  <repositories>
     <repository>
       <id>terracotta-repository</id>
-      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-FC </url>
+      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-stable1</url>
     </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
       <id>terracotta-repository</id>
-      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-FC </url>
+      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-stable1</url>
     </pluginRepository>
   </pluginRepositories> 
 
