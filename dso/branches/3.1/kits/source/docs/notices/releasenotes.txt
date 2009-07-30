@@ -39,8 +39,10 @@ Terracotta Developer Console
 -- Blank Tab 
 ---Workaround: Restart the Developer Console
 
-
-
+Optional TIM versions in tc-config.xml
+- This is a new feature in 3.1 such that versions are optional. If you start your application
+using the tc-maven-plugin for Maven, incorrect jar versions may be used.  To work around
+this issue, specify a version for each <module> in the tc-config.xml.
 
 
 
