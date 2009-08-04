@@ -36,7 +36,7 @@
 
   <properties>
     <tcVersion>3.1.0-SNAPSHOT</tcVersion>
-    <sigar.version>1.6.0</sigar.version>
+    <sigar.version>1.6.3</sigar.version>
     <jetty.version>6.1.8</jetty.version>
   </properties>
 
