@@ -1,50 +1,11 @@
 
-3.1.0 Stable1 Build
+3.1.0 
 
 Documentation: http://www.terracotta.org/web/display/docs/Home
 Forums:        http://forums.terracotta.org/forums/forums/list.page
 Mailing Lists: http://lists.terracotta.org
 Support:       http://www.terracotta.org/web/display/enterprise/Support
-
-Known Issues
--------------
-Standalone Hibernate Second Level Cache Jar (terracotta-hibernate-cache.jar)
-- LinkageError occurs if multiple session factories are created in the
-  same application (http://jira.terracotta.org/jira/browse/CDV-1326)
-
-tim-get in Feature Complete and Stable builds
-- Terracotta has introduced stable repositories for our Forge to coincide with stable kit releases
-- tim-get will automatically point to its corresponding stable repository
-- Maven users will need to manually update the pom.xml to point to the corresponding repository
---- For 3.1.0-stable1 kit: http://www.terracotta.org/download/reflector/stable/3.1.0-stable1
-
-e.g. add these to the pom.xml
-
-  <repositories>
-    <repository>
-      <id>terracotta-repository</id>
-      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-stable1</url>
-    </repository>
-  </repositories>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>terracotta-repository</id>
-      <url>http://www.terracotta.org/download/reflector/stable/3.1.0-stable1</url>
-    </pluginRepository>
-  </pluginRepositories> 
-
-Terracotta Developer Console
-- Occasional timing issues in the Developer Console may cause 
--- Null Pointer Exception in Hibernate statistics panel when server is restarted
--- Blank Tab 
----Workaround: Restart the Developer Console
-
-Optional TIM versions in tc-config.xml
-- This is a new feature in 3.1 such that versions are optional. If you start your application
-using the tc-maven-plugin for Maven, incorrect jar versions may be used.  To work around
-this issue, specify a version for each <module> in the tc-config.xml.
-
-
+Release Notes:  http://www.terracotta.org/web/display/docs/Release+Notes
 
 ----------------------------------------
 Copyright Terracotta, Inc. All rights reserved. 
