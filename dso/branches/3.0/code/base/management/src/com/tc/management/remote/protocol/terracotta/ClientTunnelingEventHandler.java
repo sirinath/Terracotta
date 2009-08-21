@@ -4,6 +4,8 @@
  */
 package com.tc.management.remote.protocol.terracotta;
 
+import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
@@ -15,7 +17,6 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.util.Assert;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.management.MBeanServer;
@@ -79,9 +80,14 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
 
   public ClientTunnelingEventHandler() {
     l2MBeanServer = (MBeanServer) MBeanServerFactory.findMBeanServer(null).get(0);
-    channelIdToJmxConnector = new HashMap();
-    channelIdToMsgConnection = new HashMap();
+    channelIdToJmxConnector = newCHM();
+    channelIdToMsgConnection = newCHM();
     sinkLock = new Object();
+  }
+
+  private static Map newCHM() {
+    // XXX: replace this with j.u.c.CHM when merging to 3.0+
+    return new ConcurrentHashMap();
   }
 
   public void handleEvent(final EventContext context) {
@@ -116,9 +122,9 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
     final MessageChannel channel = messageEnvelope.getChannel();
     final ChannelID channelID = channel.getChannelID();
     final TunnelingMessageConnection tmc;
-    synchronized (channelIdToMsgConnection) {
-      tmc = (TunnelingMessageConnection) channelIdToMsgConnection.get(channelID);
-    }
+
+    tmc = (TunnelingMessageConnection) channelIdToMsgConnection.get(channelID);
+
     if (tmc != null) {
       tmc.incomingNetworkMessage(message);
     } else {
