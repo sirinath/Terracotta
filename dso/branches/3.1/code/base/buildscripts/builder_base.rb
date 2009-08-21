@@ -294,21 +294,16 @@ class TerracottaBuilder
     java_opts = ["-D#{prefix}.includeSnapshots=#{include_snapshots}",
       "-D#{prefix}.cache=#{self.tim_get_index_cache}"]
 
-    puts "XXX: index url #{@config_source['tim-get.index.url']}"
     if index_url = @config_source['tim-get.index.url']
       java_opts << "-D#{prefix}.dataFileUrl=#{index_url}"
     end
 
 
-    puts "XXX: relativeUrlBase: #{@config_source['tim-get.index.relativeUrlBase']}"
     if relative_url_base = @config_source['tim-get.index.relativeUrlBase']
       java_opts << "-D#{prefix}.relativeUrlBase=#{relative_url_base}"
     end
 
     ENV['JAVA_OPTS'] = java_opts.join(' ')
-
-    puts "java opts: #{java_opts}"
-    puts("tim-get JAVA_OPTS: #{ENV['JAVA_OPTS']}")
 
     result = yield [@tim_get.to_s.gsub(/\\/, '/'), subcommand.to_s, *flags]
 
