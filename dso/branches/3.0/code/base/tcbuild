@@ -19,7 +19,7 @@ for j in $build_system_dir/jruby-lib/*; do
 done
 
 if [ `uname | grep CYGWIN` ]; then
-  cache_dir=c:/temp/tc
+  cache_dir=`cygpath -u c:/temp/tc`
 fi
 
 if [ ! -d "$cache_dir" ]; then
