@@ -12,8 +12,8 @@ import com.tc.management.TerracottaMBean;
 import com.tc.management.TerracottaManagement;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.ClientProvider;
-import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler.L1ConnectionMessage;
 import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnection;
+import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler.L1ConnectionMessage;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.statistics.StatisticsGateway;
@@ -98,37 +98,33 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
 
     protected String getClassName(MBeanInfo info) {
       Object proxy = getImplementation();
-      if(proxy instanceof NotificationBroadcaster) {
-        return NotificationBroadcaster.class.getName();
-      }
+      if (proxy instanceof NotificationBroadcaster) { return NotificationBroadcaster.class.getName(); }
       return super.getClassName(info);
     }
 
     public void addNotificationListener(NotificationListener listener, NotificationFilter filter, Object handback)
         throws IllegalArgumentException {
       Object proxy = getImplementation();
-      if(proxy instanceof NotificationBroadcaster) {
-        ((NotificationBroadcaster)proxy).addNotificationListener(listener, filter, handback);
+      if (proxy instanceof NotificationBroadcaster) {
+        ((NotificationBroadcaster) proxy).addNotificationListener(listener, filter, handback);
       }
     }
 
     public MBeanNotificationInfo[] getNotificationInfo() {
       Object proxy = getImplementation();
-      if(proxy instanceof NotificationBroadcaster) {
-        return ((NotificationBroadcaster)proxy).getNotificationInfo();
-      }
+      if (proxy instanceof NotificationBroadcaster) { return ((NotificationBroadcaster) proxy).getNotificationInfo(); }
       return new MBeanNotificationInfo[0];
     }
 
     public void removeNotificationListener(NotificationListener listener) throws ListenerNotFoundException {
       Object proxy = getImplementation();
-      if(proxy instanceof NotificationBroadcaster) {
-        ((NotificationBroadcaster)proxy).removeNotificationListener(listener);
+      if (proxy instanceof NotificationBroadcaster) {
+        ((NotificationBroadcaster) proxy).removeNotificationListener(listener);
       }
     }
 
   }
-  
+
   private void addJmxConnection(final L1ConnectionMessage msg) {
     final MessageChannel channel = msg.getChannel();
     final TCSocketAddress remoteAddress = channel != null ? channel.getRemoteAddress() : null;
@@ -239,33 +235,27 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
     final Map channelIdToMsgConnection = msg.getChannelIdToMsgConnector();
 
     try {
-      synchronized (channelIdToMsgConnection) {
-        final TunnelingMessageConnection tmc = (TunnelingMessageConnection) channelIdToMsgConnection.remove(channel
-            .getChannelID());
-        if (tmc != null) {
-          tmc.close();
-        }
+      final TunnelingMessageConnection tmc = (TunnelingMessageConnection) channelIdToMsgConnection.remove(channel
+          .getChannelID());
+      if (tmc != null) {
+        tmc.close();
       }
     } catch (Throwable t) {
       logger.error("unhandled exception closing TunnelingMessageConnection for " + channel, t);
     }
 
     try {
-      synchronized (channelIdToJmxConnector) {
-        if (channelIdToJmxConnector.containsKey(channel.getChannelID())) {
-          final JMXConnector jmxConnector = (JMXConnector) channelIdToJmxConnector.remove(channel.getChannelID());
-          if (jmxConnector != null) {
-            statisticsGateway.removeStatisticsAgent(channel.getChannelID());
-            
-            try {
-              jmxConnector.close();
-            } catch (IOException ioe) {
-              logger.debug("Unable to close JMX connector to DSO client[" + channel + "]", ioe);
-            }
-          }
-        } else {
-          logger.debug("DSO client channel closed without a corresponding tunneled JMX connection");
+      final JMXConnector jmxConnector = (JMXConnector) channelIdToJmxConnector.remove(channel.getChannelID());
+      if (jmxConnector != null) {
+        statisticsGateway.removeStatisticsAgent(channel.getChannelID());
+
+        try {
+          jmxConnector.close();
+        } catch (IOException ioe) {
+          logger.debug("Unable to close JMX connector to DSO client[" + channel + "]", ioe);
         }
+      } else {
+        logger.debug("DSO client channel closed without a corresponding tunneled JMX connection");
       }
     } catch (Throwable t) {
       logger.error("unhandled exception closing JMX connector for " + channel, t);
