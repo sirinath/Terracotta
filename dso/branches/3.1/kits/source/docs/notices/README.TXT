@@ -1,4 +1,4 @@
-Getting Started with Terracotta 3.1.0 - Simple Scale for Enterprise Java
+Getting Started with Terracotta - Simple Scale for Enterprise Java
 ========================================================================
 
 Terracotta offers powerful solutions for scaling Java applications and 
@@ -95,5 +95,5 @@ match the one used by the Terracotta Server. Control the JVM that the Terracotta
 uses by setting the JAVA_HOME environment variable.
 
 ----
-Copyright (c) 2009, Terracotta, Inc.
+Copyright (c) Terracotta, Inc.
 http://www.terracotta.org

@@ -100,5 +100,5 @@ applications) in the same way.
 Your application should now be running with the Terracotta second-level cache. 
 
 ----
-Copyright (c) 2009, Terracotta, Inc.
+Copyright (c) Terracotta, Inc.
 http://www.terracotta.org
