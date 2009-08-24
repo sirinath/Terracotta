@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-  All content copyright (c) 2003-2007 Terracotta, Inc.,
+  All content copyright (c) Terracotta, Inc.,
   except as may otherwise be noted in a separate copyright notice.
   All rights reserved.
 
 -->
 <site>
    <feature url="features/org.terracotta.dso_VERSION.jar" id="org.terracotta.dso" version="VERSION">
+      <category name="dso"/>
+   </feature>
+
+   <feature url="features/org.terracotta.dso_3.1.0.r13440_v20090820.jar" id="org.terracotta.dso" version="3.1.0.r13440_v20090820">
       <category name="dso"/>
    </feature>
 
