@@ -343,10 +343,6 @@ public class RogueClientTestApp extends AbstractTransparentApp {
   private static class MyNode {
     private final int id;
 
-    public MyNode() {
-      this(-1);
-    }
-
     public MyNode(final int id) {
       this.id = id;
     }
