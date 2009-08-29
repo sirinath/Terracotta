@@ -74,6 +74,7 @@ import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Clearable;
+import com.tc.object.bytecode.CopyOnWriteArrayListAdapter;
 import com.tc.object.bytecode.DataOutputStreamAdapter;
 import com.tc.object.bytecode.DuplicateMethodAdapter;
 import com.tc.object.bytecode.HashMapClassAdapter;
@@ -341,7 +342,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   *
+   * 
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(final File bootJarFile) {
@@ -1490,7 +1491,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   *
+   * 
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1506,7 +1507,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   *
+   * 
    * @param msg The custom message to print
    */
   private final void exit(final String msg) {
@@ -1515,7 +1516,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   *
+   * 
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.
@@ -2151,13 +2152,16 @@ public class BootJarTool {
     }
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
     addSerializationInstrumentedCode(spec);
-    
-    spec = this.configHelper.getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList", "com.tc.object.applicator.ListApplicator");
+
+    spec = this.configHelper.getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList",
+                                             "com.tc.object.applicator.ListApplicator");
     spec.addAlwaysLogSpec(SerializationUtil.ADD_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_SIGNATURE);
+    if (Vm.isJDK15()) {
+      spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE, new CopyOnWriteArrayListAdapter.RemoveAdaptor());
+    }
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_RANGE_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.SET_SIGNATURE);
