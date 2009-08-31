@@ -45,6 +45,7 @@ public interface ManagedObjectState {
   // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.
   public static final byte CONCURRENT_STRING_MAP_TYPE    = 0x11;
   public static final byte TC_HIBERNATE_SERIALIZED_ENTRY = 0x12;
+  public static final byte COW_ARRAY_LIST_TYPE           = 0x13;
 
   public void apply(ObjectID objectID, DNACursor cursor, BackReferences includeIDs) throws IOException;
 

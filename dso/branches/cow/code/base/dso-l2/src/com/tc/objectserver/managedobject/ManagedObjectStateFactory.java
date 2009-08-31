@@ -168,6 +168,8 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.LINKED_LIST_TYPE:
         return new LinkedListManagedObjectState(classID);
+      case ManagedObjectState.COW_ARRAY_LIST_TYPE:
+        return new COWArrayListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
       case ManagedObjectState.DATE_TYPE:

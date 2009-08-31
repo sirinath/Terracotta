@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +42,7 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      applyOperation(method, objectID, includeIDs, params );
+      applyOperation(method, objectID, includeIDs, params);
     }
   }
 
@@ -75,6 +76,10 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
         if (references.size() > index) {
           references.remove(index);
         }
+        break;
+      case SerializationUtil.REMOVE_ALL:
+        System.err.println("XXXX: " + params[0].getClass());
+        references.removeAll((Collection)params[0]);
         break;
       case SerializationUtil.REMOVE_RANGE: {
         int size = references.size();
