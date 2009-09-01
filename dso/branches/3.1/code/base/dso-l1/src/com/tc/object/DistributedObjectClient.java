@@ -685,6 +685,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       CONSOLE_LOGGER.error("MaxConnectRetries '" + maxConnectRetries + "' attempted. Exiting.");
       System.exit(-1);
     }
+
+    dsoCluster.init(clusterMetaDataManager, objectManager);
     this.clientHandshakeManager.waitForHandshake();
 
     final TCSocketAddress remoteAddress = this.channel.channel().getRemoteAddress();
