@@ -490,6 +490,7 @@ public class BootJarTool {
       loadTerracottaClass(InstrumentationLogger.class.getName());
       loadTerracottaClass(NullInstrumentationLogger.class.getName());
       loadTerracottaClass(NullManager.class.getName());
+      loadTerracottaClass(NullTCLogger.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
