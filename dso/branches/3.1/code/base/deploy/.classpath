@@ -13,7 +13,7 @@
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jfreechart-1.0.11.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jline-0.9.9.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jmxremote-1.0.1_04.jar"/>
-	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jmxremote_optional-1.0.1_04.jar"/>
+	<classpathentry exported="true" kind="lib" path="/dependencies/lib/jmxremote_optional-1.0.1_04.jar" sourcepath="E:/jmx_remote-1_0_1_03/jmxremote-1_0_1-src/src"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/treemap-2.5.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/aspectwerkz"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
@@ -33,4 +33,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/sigarstats"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty-api"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
