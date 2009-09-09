@@ -1,0 +1,142 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
+package com.tc.objectserver.impl;
+
+import com.tc.async.api.ConfigurationContext;
+import com.tc.async.api.PostInit;
+import com.tc.async.api.Sink;
+import com.tc.async.api.StageManager;
+import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.l2.api.L2Coordinator;
+import com.tc.logging.TCLogger;
+import com.tc.net.ServerID;
+import com.tc.net.groups.GroupManager;
+import com.tc.net.groups.SingleNodeGroupManager;
+import com.tc.net.groups.TCGroupManagerImpl;
+import com.tc.object.net.ChannelStatsImpl;
+import com.tc.object.net.DSOChannelManager;
+import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectRequestManager;
+import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
+import com.tc.objectserver.core.api.DSOGlobalServerStats;
+import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.core.impl.ServerConfigurationContextImpl;
+import com.tc.objectserver.dgc.api.GarbageCollectionInfoPublisher;
+import com.tc.objectserver.dgc.api.GarbageCollector;
+import com.tc.objectserver.dgc.impl.GCStatsEventPublisher;
+import com.tc.objectserver.dgc.impl.MarkAndSweepGarbageCollector;
+import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
+import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
+import com.tc.objectserver.l1.api.ClientStateManager;
+import com.tc.objectserver.lockmanager.api.LockManager;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
+import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
+import com.tc.objectserver.tx.PassThruTransactionFilter;
+import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.objectserver.tx.TransactionBatchManagerImpl;
+import com.tc.objectserver.tx.TransactionFilter;
+import com.tc.objectserver.tx.TransactionalObjectManager;
+import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
+
+import java.util.List;
+
+public class StandardDSOServerBuilder implements DSOServerBuilder {
+
+  public StandardDSOServerBuilder(final TCLogger logger) {
+    logger.info("Standard DSO Server created");
+  }
+
+  public GarbageCollector createGarbageCollector(final List<PostInit> toInit,
+                                                 final ObjectManagerConfig objectManagerConfig,
+                                                 final ObjectManager objectMgr, final ClientStateManager stateManager,
+                                                 final StageManager stageManager, final int maxStageSize,
+                                                 final GarbageCollectionInfoPublisher gcPublisher,
+                                                 final ObjectManager objectManager,
+                                                 final ClientStateManager clientStateManger,
+                                                 final GCStatsEventPublisher gcEventListener,
+                                                 final StatisticsAgentSubSystem statsAgentSubSystem) {
+    MarkAndSweepGarbageCollector gc = new MarkAndSweepGarbageCollector(objectManagerConfig, objectMgr, stateManager,
+                                                                       gcPublisher);
+    gc.addListener(gcEventListener);
+    return gc;
+  }
+
+  public GroupManager createGroupCommManager(final boolean networkedHA,
+                                             final L2TVSConfigurationSetupManager configManager,
+                                             final StageManager stageManager, final ServerID serverNodeID,
+                                             final Sink httpSink) {
+    if (networkedHA) {
+      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink);
+    } else {
+      return new SingleNodeGroupManager();
+    }
+  }
+
+  public ObjectRequestManager createObjectRequestManager(final ObjectManager objectMgr,
+                                                         final DSOChannelManager channelManager,
+                                                         final ClientStateManager clientStateMgr,
+                                                         final ServerTransactionManager transactionMgr,
+                                                         final Sink objectRequestSink,
+                                                         final ObjectStatsRecorder statsRecorder,
+                                                         final List<PostInit> toInit, final StageManager stageManager,
+                                                         final int maxStageSize) {
+    ObjectRequestManagerImpl orm = new ObjectRequestManagerImpl(objectMgr, channelManager, clientStateMgr,
+                                                                objectRequestSink, statsRecorder);
+    return new ObjectRequestManagerRestartImpl(objectMgr, transactionMgr, orm);
+  }
+
+  public ServerConfigurationContext createServerConfigurationContext(
+                                                                     final StageManager stageManager,
+                                                                     final ObjectManager objMgr,
+                                                                     final ObjectRequestManager objRequestMgr,
+                                                                     final ManagedObjectStore objStore,
+                                                                     final LockManager lockMgr,
+                                                                     final DSOChannelManager channelManager,
+                                                                     final ClientStateManager clientStateMgr,
+                                                                     final ServerTransactionManager txnMgr,
+                                                                     final TransactionalObjectManager txnObjectMgr,
+                                                                     final ChannelStatsImpl channelStats,
+                                                                     final L2Coordinator coordinator,
+                                                                     final TransactionBatchManagerImpl transactionBatchManager,
+                                                                     final ServerGlobalTransactionManager gtxm,
+                                                                     final ServerClientHandshakeManager clientHandshakeManager,
+                                                                     final ServerClusterMetaDataManager clusterMetaDataManager,
+                                                                     final DSOGlobalServerStats serverStats) {
+    return new ServerConfigurationContextImpl(stageManager, objMgr, objRequestMgr, objStore, lockMgr, channelManager,
+                                              clientStateMgr, txnMgr, txnObjectMgr, clientHandshakeManager,
+                                              channelStats, coordinator,
+                                              new CommitTransactionMessageToTransactionBatchReader(serverStats),
+                                              transactionBatchManager, gtxm, clusterMetaDataManager);
+  }
+
+  public TransactionFilter getTransactionFilter(final List<PostInit> toInit, final StageManager stageManager,
+                                                final int maxStageSize) {
+    PassThruTransactionFilter txnFilter = new PassThruTransactionFilter();
+    toInit.add(txnFilter);
+    return txnFilter;
+  }
+
+  public void populateAdditionalStatisticsRetrivalRegistry(final StatisticsRetrievalRegistry registry) {
+    // Add any additional Statistics here
+  }
+
+  public GroupManager getClusterGroupCommManager() {
+    throw new AssertionError("Not supported");
+  }
+
+  public GCStatsEventPublisher getLocalDGCStatsEventPublisher() {
+    throw new AssertionError("Not supported");
+  }
+
+  public void dump() {
+    // Nothing to dump
+  }
+
+  public void initializeContext(final ConfigurationContext context) {
+    // Nothing to initialize here
+  }
+
+}
