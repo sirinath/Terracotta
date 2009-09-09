@@ -27,7 +27,7 @@ public class TcHibernateSerializedEntryManagedObjectState extends AbstractManage
   private static final TCLogger logger                 = TCLogging
                                                            .getLogger(TcHibernateSerializedEntryManagedObjectState.class);
 
-  public static final String    SERIALIZED_ENTRY       = "org.terracotta.modules.hibernatecache.SerializedEntry";
+  public static final String    SERIALIZED_ENTRY       = "org.terracotta.modules.hibernatecache.clustered.SerializedEntry";
 
   public static final String    CREATE_TIME_FIELD      = SERIALIZED_ENTRY + ".createTime";
   public static final String    LAST_ACCESS_TIME_FIELD = SERIALIZED_ENTRY + ".lastAccessedTime";
@@ -89,6 +89,16 @@ public class TcHibernateSerializedEntryManagedObjectState extends AbstractManage
         }
       }
     }
+  }
+
+  /**
+   * This method returns whether this ManagedObjectState can have references or not.
+   * @ return true : The Managed object represented by this state object will never have any reference to other objects.
+   *         false : The Managed object represented by this state object can have references to other objects. 
+   */
+  @Override
+  public boolean hasNoReferences() {
+    return true;
   }
 
   private static void logInvalidType(String field, Object val) {

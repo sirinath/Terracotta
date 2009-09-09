@@ -4,6 +4,7 @@
  */
 package com.tc.object.config;
 
+import org.knopflerfish.framework.BundleClassLoader;
 import org.terracotta.groupConfigForL1.ServerGroup;
 import org.terracotta.groupConfigForL1.ServerGroupsDocument;
 import org.terracotta.groupConfigForL1.ServerInfo;
@@ -153,14 +154,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   /**
    * A map of class names to TransparencyClassSpec
-   *
+   * 
    * @GuardedBy {@link #specLock}
    */
   private final Map                                          userDefinedBootSpecs               = new HashMap();
 
   /**
    * A map of class names to TransparencyClassSpec for individual classes
-   *
+   * 
    * @GuardedBy {@link #specLock}
    */
   private final Map                                          classSpecs                         = new HashMap();
@@ -192,6 +193,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private final InjectionInstrumentationRegistry             injectionRegistry                  = new InjectionInstrumentationRegistry();
 
+  private final boolean                                      hasBootJar;
+
   public StandardDSOClientConfigHelperImpl(final L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
     this(configSetupManager, true);
@@ -207,7 +210,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   public StandardDSOClientConfigHelperImpl(final L1TVSConfigurationSetupManager configSetupManager,
-                                           final boolean interrogateBootJar) throws ConfigurationSetupException {
+                                           final boolean hasBootJar) throws ConfigurationSetupException {
+    this.hasBootJar = hasBootJar;
     this.portability = new PortabilityImpl(this);
     this.configSetupManager = configSetupManager;
     helperLogger = new DSOClientConfigHelperLogger(logger);
@@ -239,8 +243,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     supportSharingThroughReflection = appConfig.supportSharingThroughReflection().getBoolean();
     try {
-      doPreInstrumentedAutoconfig(interrogateBootJar);
-      doAutoconfig(interrogateBootJar);
+      doPreInstrumentedAutoconfig();
+      doAutoconfig();
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
@@ -363,7 +367,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return this.configSetupManager.dsoL1Config().instrumentationLoggingOptions();
   }
 
-  private void doPreInstrumentedAutoconfig(final boolean interrogateBootJar) {
+  private void doPreInstrumentedAutoconfig() {
     TransparencyClassSpec spec = null;
 
     spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
@@ -420,12 +424,13 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
 
     spec = getOrCreateSpec("java.util.Collections");
-    spec = getOrCreateSpec("java.util.Collections$EmptyList", "com.tc.object.applicator.ListApplicator");
-    spec = getOrCreateSpec("java.util.Collections$EmptyMap", "com.tc.object.applicator.HashMapApplicator");
-    spec = getOrCreateSpec("java.util.Collections$EmptySet", "com.tc.object.applicator.HashSetApplicator");
+    spec = getOrCreateSpec("java.util.Collections$EmptyList");
+    spec = getOrCreateSpec("java.util.Collections$EmptyMap");
+    spec = getOrCreateSpec("java.util.Collections$EmptySet");
 
     spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection");
     spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection$1");
     spec = getOrCreateSpec("java.util.Collections$1");
     spec.setHonorJDKSubVersionSpecific(true);
     spec = getOrCreateSpec("java.util.Collections$2");
@@ -436,6 +441,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.setHonorTransient(true);
     spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap");
     spec.setHonorTransient(true);
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap$UnmodifiableEntrySet");
+    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap$UnmodifiableEntrySet$1");
     spec = getOrCreateSpec("java.util.Collections$UnmodifiableRandomAccessList");
     spec.setHonorTransient(true);
     spec = getOrCreateSpec("java.util.Collections$UnmodifiableSet");
@@ -545,7 +552,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     markAllSpecsPreInstrumented();
   }
 
-  private void doAutoconfig(final boolean interrogateBootJar) throws Exception {
+  private void doAutoconfig() throws Exception {
     TransparencyClassSpec spec;
 
     addJDK15InstrumentedSpec();
@@ -595,7 +602,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // hard code junk for Axis2 problem (CDV-525)
     addCustomAdapter("org.codehaus.jam.internal.reflect.ReflectClassBuilder", new ReflectClassBuilderAdapter());
 
-    if (interrogateBootJar) {
+    if (hasBootJar) {
       // pre-load specs from boot jar
       BootJar bootJar = null;
       try {
@@ -793,7 +800,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     synchronized (customAdapters) {
       Collection<ClassAdapterFactory> adapters = customAdapters.get(name);
       if (null == adapters) {
-        adapters = new HashSet<ClassAdapterFactory>();
+        adapters = new ArrayList<ClassAdapterFactory>();
         customAdapters.put(name, adapters);
       }
       adapters.add(factory);
@@ -812,12 +819,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
+  public void addClassReplacement(String originalClassName, String replacementClassName, URL replacementResource,
+                                  ClassReplacementTest test) {
+    this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource, test);
+  }
+
   public void addClassReplacement(final String originalClassName, final String replacementClassName,
                                   final URL replacementResource) {
-    synchronized (classReplacements) {
-      String prev = this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource);
-      Assert.assertNull(prev);
-    }
+    addClassReplacement(originalClassName, replacementClassName, replacementResource, null);
   }
 
   public ClassReplacementMapping getClassReplacementMapping() {
@@ -833,7 +842,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
-  public URL getClassResource(final String className, final ClassLoader loader, final boolean hideSystemLoaderOnlyResources) {
+  public URL getClassResource(final String className, final ClassLoader loader,
+                              final boolean hideSystemLoaderOnlyResources) {
+    // don't allow export to a TIM loader. Use Import-Package instead
+    if (loader instanceof BundleClassLoader) return null;
+
     Resource res = this.classResources.get(className);
     if (res == null) return null;
 
@@ -1420,12 +1433,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
 
     ClassAdapter dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, lgr, caller, portability);
-    ClassAdapterFactory factory = spec.getCustomClassAdapter();
-    ClassVisitor cv;
-    if (factory == null) {
-      cv = dsoAdapter;
-    } else {
-      cv = factory.create(dsoAdapter, caller);
+    List<ClassAdapterFactory> factories = spec.getCustomClassAdapters();
+    ClassVisitor cv = dsoAdapter;
+    if (factories != null && !factories.isEmpty()) {
+      for (ClassAdapterFactory factory : factories) {
+        cv = factory.create(cv, caller);
+      }
     }
 
     return new SafeSerialVersionUIDAdder(new OverridesHashCodeAdapter(cv));
@@ -2060,6 +2073,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return !clazz.getName().equals("java.util.concurrent.ConcurrentHashMap");
   }
 
+  public boolean hasBootJar() {
+    return this.hasBootJar;
+  }
+
   private static class Resource {
 
     private final URL     resource;
@@ -2076,6 +2093,11 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     boolean isTargetSystemLoaderOnly() {
       return targetSystemLoaderOnly;
+    }
+
+    @Override
+    public String toString() {
+      return resource.toExternalForm();
     }
   }
 

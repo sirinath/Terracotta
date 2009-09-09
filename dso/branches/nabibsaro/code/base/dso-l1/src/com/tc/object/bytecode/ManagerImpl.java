@@ -49,6 +49,7 @@ import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.runtime.Vm;
+import com.tcclient.cluster.DsoClusterInternal;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -68,7 +69,7 @@ public class ManagerImpl implements Manager {
   private final Thread                             shutdownAction;
   private final Portability                        portability;
   private final StatisticsAgentSubSystem           statisticsAgentSubSystem;
-  private final DsoClusterImpl                     dsoCluster;
+  private final DsoClusterInternal                 dsoCluster;
   private final RuntimeLogger                      runtimeLogger;
 
   private final InstrumentationLogger              instrumentationLogger;
@@ -82,20 +83,20 @@ public class ManagerImpl implements Manager {
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(this.serializer);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, config, connectionComponents, true);
+    this(true, null, null, config, connectionComponents, true, null, null);
   }
 
-  // For tests
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final DSOClientConfigHelper config,
                      final PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, config, connectionComponents, true);
+    this(startClient, objectManager, txManager, config, connectionComponents, true, null, null);
   }
 
-  // For tests
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final DSOClientConfigHelper config,
-                     final PreparedComponentsFromL2Connection connectionComponents, final boolean shutdownActionRequired) {
+                     final PreparedComponentsFromL2Connection connectionComponents,
+                     final boolean shutdownActionRequired, final RuntimeLogger runtimeLogger,
+                     final ClassProvider classProvider) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
@@ -112,9 +113,11 @@ public class ManagerImpl implements Manager {
     } else {
       this.shutdownAction = null;
     }
-    this.runtimeLogger = new RuntimeLoggerImpl(config);
-    this.classProvider = new StandardClassProvider(this.runtimeLogger);
-    registerStandardLoaders();
+    this.runtimeLogger = runtimeLogger == null ? new RuntimeLoggerImpl(config) : runtimeLogger;
+    this.classProvider = classProvider == null ? new StandardClassProvider(this.runtimeLogger) : classProvider;
+    if (config.hasBootJar()) {
+      registerStandardLoaders();
+    }
   }
 
   private void registerStandardLoaders() {
@@ -186,7 +189,7 @@ public class ManagerImpl implements Manager {
     lookupExistingOrNull(o);
     monitorEnter(o, LOCK_TYPE_WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     monitorExit(o);
-    logicalInvoke(new HashMap(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
+    logicalInvoke(new FakeManageableObject(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
   }
 
   private void startClient(final boolean forTests) {
@@ -205,12 +208,10 @@ public class ManagerImpl implements Manager {
         if (forTests) {
           ManagerImpl.this.dso.setCreateDedicatedMBeanServer(true);
         }
-        ManagerImpl.this.dso.start();
-        ManagerImpl.this.objectManager = ManagerImpl.this.dso.getObjectManager();
-        ManagerImpl.this.txManager = ManagerImpl.this.dso.getTransactionManager();
-        ManagerImpl.this.methodCallManager = ManagerImpl.this.dso.getDmiManager();
-        ManagerImpl.this.dsoCluster.init(ManagerImpl.this.dso.getClusterMetaDataManager(),
-                                         ManagerImpl.this.objectManager);
+        dso.start();
+        objectManager = dso.getObjectManager();
+        txManager = dso.getTransactionManager();
+        methodCallManager = dso.getDmiManager();
 
         ManagerImpl.this.shutdownManager = new ClientShutdownManager(
                                                                      ManagerImpl.this.objectManager,
@@ -221,6 +222,8 @@ public class ManagerImpl implements Manager {
                                                                      ManagerImpl.this.dso.getClientHandshakeManager(),
                                                                      ManagerImpl.this.dso.getStatisticsAgentSubSystem(),
                                                                      ManagerImpl.this.connectionComponents);
+
+        dsoCluster.init(dso.getClusterMetaDataManager(), objectManager);
       }
 
     };
@@ -520,6 +523,8 @@ public class ManagerImpl implements Manager {
   }
 
   public boolean isDsoMonitorEntered(final Object o) {
+    if (this.objectManager.isCreationInProgress()) { return false; }
+
     String lockName = getLockName(o);
     if (lockName == null) { return false; }
     boolean dsoMonitorEntered = this.txManager.isLockOnTopStack(lockName);
@@ -723,6 +728,8 @@ public class ManagerImpl implements Manager {
   }
 
   public TCObject lookupExistingOrNull(final Object pojo) {
+    if (pojo == null) return null;
+
     if (pojo instanceof Manageable) { return ((Manageable) pojo).__tc_managed(); }
 
     try {
@@ -851,6 +858,10 @@ public class ManagerImpl implements Manager {
   private static String generateLiteralLockName(final Object obj) {
     Assert.assertNotNull(obj);
     return ByteCodeUtil.generateLiteralLockName(LiteralValues.valueFor(obj).name(), obj);
+  }
+
+  public Object getChangeApplicator(final Class clazz) {
+    return this.config.getChangeApplicator(clazz);
   }
 
   public boolean isLogical(final Object object) {
@@ -1005,7 +1016,7 @@ public class ManagerImpl implements Manager {
   }
 
   public StatisticRetrievalAction getStatisticRetrievalActionInstance(final String name) {
-    this.statisticsAgentSubSystem.waitUntilActive();
+    this.statisticsAgentSubSystem.waitUntilSetupComplete();
 
     return this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().getActionInstance(name);
   }
@@ -1013,4 +1024,20 @@ public class ManagerImpl implements Manager {
   public Object getValueForKeyInMap(final PartialKeysMap map, final Object key) throws ClassNotFoundException {
     return this.objectManager.getValueForKeyInMap(map, key);
   }
+
+  private static class FakeManageableObject implements Manageable {
+
+    public boolean __tc_isManaged() {
+      return false;
+    }
+
+    public void __tc_managed(final TCObject t) {
+      //
+    }
+
+    public TCObject __tc_managed() {
+      return null;
+    }
+  }
+
 }

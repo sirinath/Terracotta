@@ -38,14 +38,15 @@ import com.tc.backport175.bytecode.spi.BytecodeProvider;
 import com.tc.exception.TCLogicalSubclassNotPortableException;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.RenameClassesAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
 import com.tc.object.config.ClassReplacementMapping;
 import com.tc.object.config.DSOClientConfigHelper;
+import com.tc.object.config.Replacement;
 import com.tc.object.logging.InstrumentationLogger;
-import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.util.AdaptedClassDumper;
 import com.tc.util.InitialClassDumper;
 
@@ -66,7 +67,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * A weaving strategy implementing a weaving scheme based on statical compilation, and no reflection.
- *
+ * 
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bon&#233;r </a>
  * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur </a>
  */
@@ -78,12 +79,13 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
     // being loaded by a child class loader as this would result in a
     // ClassCircularityError exception
     InitialClassDumper dummy = InitialClassDumper.INSTANCE;
-    if (false && dummy != dummy) {
+    if (false && dummy.getClass() != dummy.getClass()) {
       // silence eclipse warning
     }
   }
 
   private static final TCLogger                   consoleLogger = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                   logger        = TCLogging.getLogger(DefaultWeavingStrategy.class);
 
   private static final AnnotationByteCodeProvider BYTECODE_PROVIDER;
 
@@ -95,14 +97,19 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
   }
 
   private final DSOClientConfigHelper             m_configHelper;
-  private final InstrumentationLogger             m_logger;
   private final InstrumentationLogger             m_instrumentationLogger;
+  private final boolean                           m_skipDSO;
 
   public DefaultWeavingStrategy(final DSOClientConfigHelper configHelper,
                                 final InstrumentationLogger instrumentationLogger) {
+    this(configHelper, instrumentationLogger, false);
+  }
+
+  public DefaultWeavingStrategy(final DSOClientConfigHelper configHelper,
+                                final InstrumentationLogger instrumentationLogger, boolean skipDSO) {
     m_configHelper = configHelper;
     m_instrumentationLogger = instrumentationLogger;
-    m_logger = new InstrumentationLoggerImpl(m_configHelper.getInstrumentationLoggingOptions());
+    m_skipDSO = skipDSO;
 
     // deploy all system aspect modules
     StandardAspectModuleDeployer.deploy(getClass().getClassLoader(), StandardAspectModuleDeployer.ASPECT_MODULES);
@@ -113,7 +120,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Performs the weaving of the target class.
-   *
+   * 
    * @param className
    * @param context
    */
@@ -133,6 +140,18 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
       final ClassLoader loader = context.getLoader();
 
+      // attempt to create the ClassInfo based on the initial bytecode
+      // if this fails for some reason, log something but do not treat this as a fatal error (DEV-3168)
+      ClassInfo classInfo;
+      try {
+        classInfo = AsmClassInfo.getClassInfo(className, context.getCurrentBytecode(), loader);
+      } catch (Exception e) {
+        context.setCurrentBytecode(context.getInitialBytecode());
+        logger.warn("Exception parsing intial bytes for class " + className + ". " + e.getClass().getName() + "("
+                    + e.getMessage() + ")");
+        return;
+      }
+
       Map aspectModules = m_configHelper.getAspectModules();
       for (Iterator it = aspectModules.entrySet().iterator(); it.hasNext();) {
         Map.Entry e = (Map.Entry) it.next();
@@ -143,8 +162,6 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
           }
         }
       }
-
-      ClassInfo classInfo = AsmClassInfo.getClassInfo(className, context.getCurrentBytecode(), loader);
 
       // skip Java reflect proxies for which we cannot get the resource as a stream
       // which leads to warnings when using annotation matching
@@ -161,7 +178,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         return;
       }
 
-      final boolean isDsoAdaptable = m_configHelper.shouldBeAdapted(classInfo);
+      final boolean isDsoAdaptable = m_skipDSO ? false : m_configHelper.shouldBeAdapted(classInfo);
       final boolean hasCustomAdapters = m_configHelper.hasCustomAdapters(classInfo);
 
       // TODO match on (within, null, classInfo) should be equivalent to those ones.
@@ -180,15 +197,15 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
       }
 
       // handle replacement classes
-      if (isDsoAdaptable || hasCustomAdapters) {
-        ClassReplacementMapping mapping = m_configHelper.getClassReplacementMapping();
-        String replacementClassName = mapping.getReplacementClassName(className);
+      ClassReplacementMapping mapping = m_configHelper.getClassReplacementMapping();
+      final Replacement replacement = mapping.getReplacement(className, loader);
+      if (replacement != null) {
+        String replacementClassName = replacement.getReplacementClassName();
 
         // check if there's a replacement class
         if (replacementClassName != null && !replacementClassName.equals(className)) {
-          // obtain the resource of the replacement class either from a module bundle, or from the
-          // active classloader
-          URL replacementResource = mapping.getReplacementResource(replacementClassName, loader);
+          // obtain the resource of the replacement class
+          URL replacementResource = replacement.getReplacementResource();
           if (replacementResource == null) { throw new ClassNotFoundException("No resource found for class: "
                                                                               + replacementClassName); }
 
@@ -350,14 +367,15 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
       if (isDsoAdaptable) {
         final ClassReader dsoReader = new ClassReader(context.getCurrentBytecode());
         final ClassWriter dsoWriter = new ClassWriter(dsoReader, ClassWriter.COMPUTE_MAXS);
-        ClassVisitor dsoVisitor = m_configHelper.createClassAdapterFor(dsoWriter, classInfo, m_logger, loader);
+        ClassVisitor dsoVisitor = m_configHelper.createClassAdapterFor(dsoWriter, classInfo, m_instrumentationLogger,
+                                                                       loader);
         try {
           dsoReader.accept(dsoVisitor, ClassReader.SKIP_FRAMES);
           context.setCurrentBytecode(dsoWriter.toByteArray());
         } catch (TCLogicalSubclassNotPortableException e) {
           List l = new ArrayList(1);
           l.add(e.getSuperClassName());
-          m_logger.subclassOfLogicallyManagedClasses(e.getClassName(), l);
+          m_instrumentationLogger.subclassOfLogicallyManagedClasses(e.getClassName(), l);
         }
 
         // CDV-237
@@ -416,7 +434,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Filters out the classes that are not eligible for transformation.
-   *
+   * 
    * @param definitions the definitions
    * @param ctxs an array with the contexts
    * @param classInfo the class to filter
@@ -436,7 +454,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
 
   /**
    * Filters out the classes that are not eligible for transformation.
-   *
+   * 
    * @param definition the definition
    * @param ctxs an array with the contexts
    * @param classInfo the class to filter

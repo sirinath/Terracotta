@@ -4,6 +4,7 @@
  */
 package com.tc.object;
 
+import com.google.common.collect.MapMaker;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.exception.TCRuntimeException;
@@ -39,7 +40,6 @@ import com.tc.object.msg.JMXMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
-import com.tc.object.util.IdentityWeakHashMap;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.object.walker.ObjectGraphWalker;
 import com.tc.text.ConsoleNonPortableReasonFormatter;
@@ -83,6 +83,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private static final long                    CONCURRENT_LOOKUP_TIMED_WAIT = 1000;
   private static final State                   PAUSED                       = new State("PAUSED");
   private static final State                   RUNNING                      = new State("RUNNING");
+  private static final State                   STARTING                     = new State("STARTING");
 
   private static final TCLogger                staticLogger                 = TCLogging
                                                                                 .getLogger(ClientObjectManager.class);
@@ -98,7 +99,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private final Object                         shutdownLock                 = new Object();
   private final Map                            roots                        = new HashMap();
   private final Map                            idToManaged                  = new HashMap();
-  private final Map                            pojoToManaged                = new IdentityWeakHashMap();
+  private final Map                            pojoToManaged                = new MapMaker().weakKeys().makeMap();
   private final ClassProvider                  classProvider;
   private final RemoteObjectManager            remoteObjectManager;
   private final EvictionPolicy                 cache;
@@ -193,7 +194,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   public synchronized void unpause(final NodeID remote, final int disconnected) {
-    assertPaused("Attempt to unpause while not PAUSED");
+    assertNotRunning("Attempt to unpause while RUNNING");
     this.state = RUNNING;
     notifyAll();
   }
@@ -201,6 +202,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public synchronized void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
                                                final ClientHandshakeMessage handshakeMessage) {
     assertPaused("Attempt to initiateHandshake while not PAUSED");
+    this.state = STARTING;
     addAllObjectIDs(handshakeMessage.getObjectIDs());
 
     // Ignore objects reaped before handshaking otherwise those won't be in the list sent to L2 at handshaking.
@@ -229,6 +231,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void assertNotPaused(final Object message) {
     if (this.state == PAUSED) { throw new AssertionError(message + ": " + this.state); }
+  }
+
+  private void assertNotRunning(final Object message) {
+    if (this.state == RUNNING) { throw new AssertionError(message + ": " + this.state); }
+
   }
 
   protected synchronized boolean isPaused() {
@@ -921,15 +928,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private TCObject basicLookup(final Object obj) {
-    TCObject tcobj;
-    if (obj instanceof Manageable) {
-      tcobj = ((Manageable) obj).__tc_managed();
-    } else {
-      synchronized (this.pojoToManaged) {
-        tcobj = (TCObject) this.pojoToManaged.get(obj);
-      }
-    }
-    return tcobj;
+    if (obj == null) return null;
+
+    if (obj instanceof Manageable) { return ((Manageable) obj).__tc_managed(); }
+
+    return (TCObject) this.pojoToManaged.get(obj);
   }
 
   private void basicAddLocal(final TCObject obj, final boolean fromLookup) {
@@ -947,18 +950,16 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
           ManagerUtil.register(pojo, obj);
         }
 
-        synchronized (this.pojoToManaged) {
-          if (pojo instanceof Manageable) {
-            Manageable m = (Manageable) pojo;
-            if (m.__tc_managed() == null) {
-              m.__tc_managed(obj);
-            } else {
-              Assert.assertTrue(m.__tc_managed() == obj);
-            }
+        if (pojo instanceof Manageable) {
+          Manageable m = (Manageable) pojo;
+          if (m.__tc_managed() == null) {
+            m.__tc_managed(obj);
           } else {
-            if (!isLiteralPojo(pojo)) {
-              this.pojoToManaged.put(obj.getPeerObject(), obj);
-            }
+            Assert.assertTrue(m.__tc_managed() == obj);
+          }
+        } else {
+          if (!isLiteralPojo(pojo)) {
+            this.pojoToManaged.put(pojo, obj);
           }
         }
       }
@@ -1365,10 +1366,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
     public void setObject(final TCObject obj) {
       this.object = obj;
-    }
-
-    public ObjectID getObjectID() {
-      return this.objectID;
     }
 
     public ResetableLatch getLatch() {

@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Authenticator;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
@@ -79,6 +80,7 @@ public class DownloadUtil {
 
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
   private Proxy            proxy;
+  private String           proxyAuth;
   private int              bufferSize          = DEFAULT_BUFFER_SIZE;
 
   public DownloadUtil() {
@@ -95,6 +97,10 @@ public class DownloadUtil {
 
   public void setProxy(Proxy proxy) {
     this.proxy = proxy;
+  }
+
+  public void setProxyAuth(String auth) {
+    this.proxyAuth = auth;
   }
 
   public int getBufferSize() {
@@ -147,6 +153,9 @@ public class DownloadUtil {
       }
 
       URLConnection connection = remoteFile.openConnection(proxy);
+      if (proxyAuth != null) {
+        Authenticator.setDefault(new ProxyAuthenticator(proxyAuth));
+      }
       if (destinationFile.exists() && downloadOptions.ifModified()) {
         if (connection.getLastModified() < destinationFile.lastModified()) {
           // TODO: log the fact that download was skipped

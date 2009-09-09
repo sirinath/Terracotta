@@ -8,9 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -20,8 +17,13 @@ import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.nio.SelectChannelConnector;
 import org.mortbay.thread.BoundedThreadPool;
 import org.terracotta.modules.tool.DocumentToAttributes.DependencyType;
+import org.terracotta.modules.tool.commands.ActionLog;
 import org.terracotta.modules.tool.config.Config;
 import org.terracotta.modules.tool.util.ChecksumUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.tc.test.TCTestCase;
 
@@ -35,14 +37,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+
 public final class ModuleTest extends TCTestCase {
   protected Config testConfig;
 
+  @Override
   public void setUp() {
     testConfig = TestConfig.createTestConfig();
   }
 
   public void testInstall() throws Exception {
+    ActionLog actionLog = new ActionLog();
+
     File basedir = new File(this.getTempDirectory(), "repo");
     int port = 8888;
 
@@ -57,7 +64,7 @@ public final class ModuleTest extends TCTestCase {
     Module module = modules.get("foo.bar", "baz", "0.0.0");
     assertNotNull(module);
     List<String> installedList = new ArrayList<String>();
-    module.install(new Listener(installedList), InstallOption.SKIP_INSPECT, InstallOption.FAIL_FAST);
+    module.install(new Listener(installedList), actionLog, InstallOption.SKIP_INSPECT, InstallOption.FAIL_FAST);
     assertTrue(module.isInstalled());
 
     assertEquals(1, installedList.size());
@@ -66,7 +73,7 @@ public final class ModuleTest extends TCTestCase {
     module = modules.get("foo.bar", "baz", "0.0.1");
     assertNotNull(module);
     installedList = new ArrayList<String>();
-    module.install(new Listener(installedList), InstallOption.SKIP_INSPECT);
+    module.install(new Listener(installedList), actionLog, InstallOption.SKIP_INSPECT);
     assertTrue(module.isInstalled());
     assertEquals(4, installedList.size());
     assertTrue(installedList.contains(createModule("foo.bar", "baz", "0.0.1").toString()));
@@ -77,7 +84,7 @@ public final class ModuleTest extends TCTestCase {
     module = modules.get("foo.bar", "quux", "0.0.0");
     assertNotNull(module);
     installedList = new ArrayList<String>();
-    module.install(new Listener(installedList));
+    module.install(new Listener(installedList), actionLog);
     assertTrue(module.isInstalled());
     assertEquals(3, installedList.size());
     assertTrue(installedList.contains(createModule("foo.bar", "quux", "0.0.0").toString()));
@@ -91,7 +98,7 @@ public final class ModuleTest extends TCTestCase {
     module = modules.get("foo.bar", "baz", "0.0.2");
     assertNotNull(module);
     installedList = new ArrayList<String>();
-    module.install(new Listener(installedList), InstallOption.SKIP_INSPECT);
+    module.install(new Listener(installedList), actionLog, InstallOption.SKIP_INSPECT);
     assertTrue(module.isInstalled());
     assertEquals(1, installedList.size());
     assertTrue(installedList.contains(createModule("foo.bar", "baz", "0.0.2").toString()));
@@ -307,12 +314,19 @@ public final class ModuleTest extends TCTestCase {
     InputStream data = null;
     try {
       data = getClass().getResourceAsStream("/testData01.xml");
-      Document document = new SAXBuilder().build(data);
-      List<Element> modules = document.getRootElement().getChildren();
-      assertEquals(2, modules.size());
+      Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(data);
+      NodeList childNodes = document.getDocumentElement().getChildNodes();
+      List<Element> elemList = new ArrayList<Element>();
+      for (int i = 0; i < childNodes.getLength(); i++) {
+        Node node = childNodes.item(i);
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+          elemList.add((Element) node);
+        }
+      }
+      assertEquals(2, elemList.size());
 
       // tim-ehache-1.3
-      Module module = new Module(null, modules.get(0), testConfig.getRelativeUrlBase());
+      Module module = new Module(null, elemList.get(0), testConfig.getRelativeUrlBase());
       assertEquals("tim-ehcache-1.3", module.artifactId());
       assertEquals("1.0.2", module.version());
       assertEquals("org.terracotta.modules", module.groupId());
@@ -327,6 +341,7 @@ public final class ModuleTest extends TCTestCase {
                    module.repoUrl().toString());
       assertEquals(FilenameUtils.separatorsToSystem("org/terracotta/modules/tim-ehcache-1.3/1.0.2"), module
           .installPath().toString());
+      assertEquals(FilenameUtils.separatorsToSystem("/dummy/org/terracotta/modules/tim-ehcache-1.3/1.0.2/tim-ehcache-1.3-1.0.2.jar"), module.installLocationInRepository(new File("/dummy")).toString());
       assertEquals("tim-ehcache-1.3-1.0.2.jar", module.filename());
 
       assertFalse(module.docUrl().toURI().equals(module.website().toURI()));
@@ -356,7 +371,7 @@ public final class ModuleTest extends TCTestCase {
       assertEquals("org.terracotta.modules", reference.groupId());
 
       // tim-ehache-commons
-      module = new Module(null, modules.get(1), testConfig.getRelativeUrlBase());
+      module = new Module(null, elemList.get(1), testConfig.getRelativeUrlBase());
       assertEquals("tim-ehcache-commons", module.artifactId());
       assertEquals("1.0.2", module.version());
       assertEquals("org.terracotta.modules", module.groupId());

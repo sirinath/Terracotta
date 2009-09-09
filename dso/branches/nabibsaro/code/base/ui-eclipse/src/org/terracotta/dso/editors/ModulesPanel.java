@@ -36,28 +36,28 @@ import com.terracottatech.config.Client;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
-import java.io.File;
+import java.net.URL;
 
 public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectStructureListener {
-  private Client                 m_dsoClient;
-  private Modules                m_modules;
+  private Client                       m_dsoClient;
+  private Modules                      m_modules;
 
-  private Layout                 m_layout;
+  private final Layout                 m_layout;
 
-  private TableSelectionListener m_tableSelectionListener;
-  private TableDataListener      m_tableDataListener;
-  private MouseMoveListener      m_moduleMouseMoveListener;
-  private AddModuleHandler       m_addModuleHandler;
-  private RemoveModuleHandler    m_removeModuleHandler;
-  private AddRepoHandler         m_addRepoHandler;
-  private RemoveRepoHandler      m_removeRepoHandler;
+  private final TableSelectionListener m_tableSelectionListener;
+  private final TableDataListener      m_tableDataListener;
+  private final MouseMoveListener      m_moduleMouseMoveListener;
+  private final AddModuleHandler       m_addModuleHandler;
+  private final RemoveModuleHandler    m_removeModuleHandler;
+  private final AddRepoHandler         m_addRepoHandler;
+  private final RemoveRepoHandler      m_removeRepoHandler;
 
-  private static final String    MODULE_DECLARATION    = "Module Declaration";
-  private static final String    MODULE_REPO_LOCATION  = "Repository Location";
-  private static final String    REPO_DECLARATION      = "Repository Declaration";
+  private static final String          MODULE_DECLARATION    = "Module Declaration";
+  private static final String          MODULE_REPO_LOCATION  = "Repository Location";
+  private static final String          REPO_DECLARATION      = "Repository Declaration";
 
-  private static final int       MODULE_NAME_INDEX     = 0;
-  private static final int       MODULE_GROUP_ID_INDEX = 0;
+  private static final int             MODULE_NAME_INDEX     = 0;
+  private static final int             MODULE_GROUP_ID_INDEX = 0;
 
   public ModulesPanel(Composite parent, int style) {
     super(parent, style);
@@ -81,6 +81,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
     return m_modules;
   }
 
+  @Override
   public void ensureXmlObject() {
     super.ensureXmlObject();
     if (m_modules == null) {
@@ -156,14 +157,6 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
     return m_modules != null && (m_modules.sizeOfRepositoryArray() > 0 || m_modules.sizeOfModuleArray() > 0);
   }
 
-  // private void internalAddModule(String groupId, String name, String version) {
-  // Module module = ensureModules().addNewModule();
-  // module.setName(name);
-  // module.setGroupId(groupId);
-  // module.setVersion(version);
-  // createModuleTableItem(module);
-  // }
-
   private void createModuleTableItem(Module module) {
     TableItem item = new TableItem(m_layout.m_moduleTable, SWT.NONE);
     String groupId = module.isSetGroupId() ? module.getGroupId() : "org.terracotta.modules";
@@ -175,8 +168,8 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
     m_layout.m_moduleTable.removeAll();
     if (m_modules == null) return;
     Module[] modules = m_modules.getModuleArray();
-    for (int i = 0; i < modules.length; i++) {
-      createModuleTableItem(modules[i]);
+    for (Module module : modules) {
+      createModuleTableItem(module);
     }
     if (modules.length > 0) {
       m_layout.m_moduleTable.setSelection(0);
@@ -197,8 +190,8 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
     m_layout.m_moduleRepoTable.removeAll();
     if (m_modules == null) return;
     String[] repos = m_modules.getRepositoryArray();
-    for (int i = 0; i < repos.length; i++) {
-      createModuleRepoTableItem(repos[i]);
+    for (String repo : repos) {
+      createModuleRepoTableItem(repo);
     }
     if (repos.length > 0) {
       m_layout.m_moduleRepoTable.setSelection(0);
@@ -226,13 +219,6 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
     private Table               m_moduleTable;
     private Button              m_addModule;
     private Button              m_removeModule;
-
-    public void reset() {
-      m_moduleRepoTable.removeAll();
-      m_removeModuleRepo.setEnabled(false);
-      m_moduleTable.removeAll();
-      m_removeModule.setEnabled(false);
-    }
 
     private Layout(Composite parent) {
       parent.setLayout(new GridLayout());
@@ -358,6 +344,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   }
 
   class TableSelectionListener extends SelectionAdapter {
+    @Override
     public void widgetSelected(SelectionEvent e) {
       Table table = (Table) e.widget;
       boolean removeEnabled = table.getItemCount() > 0;
@@ -406,9 +393,9 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
             if (error != null) {
               tip = error.getMessage();
             } else {
-              File loc = moduleInfo.getLocation();
+              URL loc = moduleInfo.getLocation();
               if (loc != null) {
-                tip = loc.getAbsolutePath();
+                tip = loc.toExternalForm();
               }
             }
           }
@@ -423,6 +410,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   }
 
   class AddModuleHandler extends SelectionAdapter {
+    @Override
     public void widgetSelected(SelectionEvent e) {
       m_layout.m_moduleTable.forceFocus();
       NewAddModuleDialog dialog = new NewAddModuleDialog(getShell(), MODULE_DECLARATION, MODULE_DECLARATION, m_modules);
@@ -438,6 +426,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   }
 
   class RemoveModuleHandler extends SelectionAdapter {
+    @Override
     public void widgetSelected(SelectionEvent e) {
       m_layout.m_moduleTable.forceFocus();
       int[] selection = m_layout.m_moduleTable.getSelectionIndices();
@@ -453,6 +442,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   }
 
   class AddRepoHandler extends SelectionAdapter {
+    @Override
     public void widgetSelected(SelectionEvent e) {
       m_layout.m_moduleRepoTable.forceFocus();
       RepoLocationDialog dialog = new RepoLocationDialog(getShell(), REPO_DECLARATION, MODULE_REPO_LOCATION);
@@ -470,6 +460,7 @@ public class ModulesPanel extends ConfigurationEditorPanel implements XmlObjectS
   }
 
   class RemoveRepoHandler extends SelectionAdapter {
+    @Override
     public void widgetSelected(SelectionEvent e) {
       m_layout.m_moduleRepoTable.forceFocus();
       int[] selection = m_layout.m_moduleRepoTable.getSelectionIndices();

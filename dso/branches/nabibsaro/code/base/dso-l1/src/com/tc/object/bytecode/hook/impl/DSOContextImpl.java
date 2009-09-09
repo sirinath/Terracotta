@@ -8,6 +8,8 @@ import org.apache.commons.io.CopyUtils;
 
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
+import com.tc.bundles.Repository;
+import com.tc.bundles.VirtualTimRepository;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -22,11 +24,12 @@ import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.IncompleteBootJarException;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.object.config.UnverifiedBootJarException;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.SingleLoaderClassProvider;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.tools.BootJarException;
 import com.tc.plugins.ModulesLoader;
 import com.tc.util.Assert;
@@ -40,12 +43,16 @@ import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 public class DSOContextImpl implements DSOContext {
 
-  private static final TCLogger                     logger        = TCLogging.getLogger(DSOContextImpl.class);
-  private static final TCLogger                     consoleLogger = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                     logger                 = TCLogging.getLogger(DSOContextImpl.class);
+  private static final TCLogger                     consoleLogger          = CustomerLogging.getConsoleLogger();
 
   private static DSOClientConfigHelper              staticConfigHelper;
   private static PreparedComponentsFromL2Connection preparedComponentsFromL2Connection;
@@ -55,6 +62,20 @@ public class DSOContextImpl implements DSOContext {
   private final InstrumentationLogger               instrumentationLogger;
   private final WeavingStrategy                     weavingStrategy;
 
+  private final static String                       UNVERIFIED_BOOTJAR_MSG = "\n********************************************************************************\n"
+                                                                             + "There is a mismatch between the expected Terracotta boot JAR file and the\n"
+                                                                             + "existing Terracotta boot JAR file. Recreate the boot JAR file using the\n"
+                                                                             + "following command from the Terracotta home directory:\n"
+                                                                             + "\n"
+                                                                             + "bin/make-boot-jar.sh -f <path/to/Terracotta/configuration/file>\n"
+                                                                             + "\n"
+                                                                             + "or\n"
+                                                                             + "\n"
+                                                                             + "bin\\make-boot-jar.bat -f <path\\to\\Terracotta\\configuration\\file>\n"
+                                                                             + "\n"
+                                                                             + "Enter the make-boot-jar command with the -h switch for help.\n"
+                                                                             + "********************************************************************************\n";
+
   /**
    * Creates a "global" DSO Context. This context is appropriate only when there is only one DSO Context that applies to
    * the entire VM
@@ -62,7 +83,7 @@ public class DSOContextImpl implements DSOContext {
   public static DSOContext createGlobalContext() throws ConfigurationSetupException {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
     Manager manager = new ManagerImpl(configHelper, preparedComponentsFromL2Connection);
-    return new DSOContextImpl(configHelper, manager.getClassProvider(), manager);
+    return new DSOContextImpl(configHelper, manager.getClassProvider(), manager, Collections.EMPTY_LIST);
   }
 
   public static DSOContext createContext(String configSpec) throws ConfigurationSetupException {
@@ -85,31 +106,72 @@ public class DSOContextImpl implements DSOContext {
     Manager manager = new ManagerImpl(configHelper, l2Connection);
     manager.init();
     return createContext(configHelper, manager);
+  }
 
+  public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader,
+                                                   Map<String, URL> virtualTimJars) throws ConfigurationSetupException {
+    // XXX: refactor this to not duplicate createContext() so much
+    StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
+                                                                                                          (String[]) null,
+                                                                                                          false,
+                                                                                                          new FatalIllegalConfigurationChangeHandler(),
+                                                                                                          configSpec);
+
+    L1TVSConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager();
+    config.setupLogging();
+    PreparedComponentsFromL2Connection l2Connection;
+    try {
+      l2Connection = validateMakeL2Connection(config);
+    } catch (Exception e) {
+      throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
+    }
+
+    boolean HAS_BOOT_JAR = false;
+
+    DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config, HAS_BOOT_JAR);
+    RuntimeLoggerImpl runtimeLogger = new RuntimeLoggerImpl(configHelper);
+    // XXX: what should the appGroup and loaderDesc be? In theory we might want "regular" clients to access this shared
+    // state too
+    ClassProvider classProvider = new SingleLoaderClassProvider(null, "standalone", loader);
+    Manager manager = new ManagerImpl(true, null, null, configHelper, l2Connection, true, runtimeLogger, classProvider);
+
+    Collection<Repository> repos = new ArrayList<Repository>();
+    repos.add(new VirtualTimRepository(virtualTimJars));
+    DSOContext context = createContext(configHelper, manager, repos);
+    manager.init();
+    return context;
   }
 
   /**
    * For tests
    */
+
   public static DSOContext createContext(DSOClientConfigHelper configHelper, Manager manager) {
-    return new DSOContextImpl(configHelper, manager.getClassProvider(), manager);
+    return createContext(configHelper, manager, Collections.EMPTY_LIST);
+  }
+
+  public static DSOContext createContext(DSOClientConfigHelper configHelper, Manager manager,
+                                         Collection<Repository> repos) {
+    return new DSOContextImpl(configHelper, manager.getClassProvider(), manager, repos);
   }
 
   public static boolean isDSOSessions(String appName) throws ConfigurationSetupException {
     return getGlobalConfigHelper().isDSOSessions(appName);
   }
 
-  private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager) {
-    checkForProperlyInstrumentedBaseClasses();
+  private DSOContextImpl(DSOClientConfigHelper configHelper, ClassProvider classProvider, Manager manager,
+                         Collection<Repository> repos) {
     Assert.assertNotNull(configHelper);
 
     this.configHelper = configHelper;
     this.manager = manager;
     this.instrumentationLogger = manager.getInstrumentationLogger();
-    weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
+    this.weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
+
+    checkForProperlyInstrumentedBaseClasses();
 
     try {
-      ModulesLoader.initModules(configHelper, classProvider, false);
+      ModulesLoader.initModules(configHelper, classProvider, false, repos);
       configHelper.validateSessionConfig();
       validateBootJar();
     } catch (Exception e) {
@@ -120,26 +182,22 @@ public class DSOContextImpl implements DSOContext {
   }
 
   private void validateBootJar() throws BootJarException {
+    if (!configHelper.hasBootJar()) { return; }
+
     try {
       configHelper.verifyBootJarContents(null);
     } catch (final UnverifiedBootJarException e) {
-      StringBuffer msg = new StringBuffer(e.getMessage() + " ");
+      StringBuilder msg = new StringBuilder(UNVERIFIED_BOOTJAR_MSG);
+      msg.append(e.getMessage() + " ");
       msg.append("Unable to verify the contents of the boot jar; ");
       msg.append("Please check the client logs for more information.");
-      throw new BootJarException(msg.toString(), e);
-    } catch (final IncompleteBootJarException e) {
-      StringBuffer msg = new StringBuffer(e.getMessage() + " ");
-      msg.append("The DSO boot jar appears to be incomplete --- some pre-instrumented classes ");
-      msg.append("listed in your tc-config is not included in the boot jar file. This could ");
-      msg.append("happen if you've modified your DSO clients' tc-config file to specify additional ");
-      msg.append("classes for inclusion in the boot jar, but forgot to rebuild the boot jar. Or, you ");
-      msg.append("could be a using an older boot jar against a newer Terracotta client installation. ");
-      msg.append("Please check the client logs for the list of classes that were not found in your boot jar.");
       throw new BootJarException(msg.toString(), e);
     }
   }
 
   private void checkForProperlyInstrumentedBaseClasses() {
+    if (!configHelper.hasBootJar()) { return; }
+
     if (!Manageable.class.isAssignableFrom(HashMap.class)) {
       StringBuffer msg = new StringBuffer();
       msg.append("The DSO boot jar is not prepended to your bootclasspath! ");

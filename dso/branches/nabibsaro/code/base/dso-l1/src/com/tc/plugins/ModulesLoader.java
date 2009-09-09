@@ -16,6 +16,7 @@ import org.osgi.framework.ServiceReference;
 
 import com.tc.bundles.EmbeddedOSGiEventHandler;
 import com.tc.bundles.EmbeddedOSGiRuntime;
+import com.tc.bundles.Repository;
 import com.tc.bundles.Resolver;
 import com.tc.bundles.ResolverUtils;
 import com.tc.bundles.exception.BundleExceptionSummary;
@@ -38,6 +39,7 @@ import com.tc.object.util.JarResourceLoader;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.ProductInfo;
 import com.tc.util.StringUtil;
 import com.tc.util.VendorVmSignature;
 import com.tc.util.VendorVmSignatureException;
@@ -47,7 +49,6 @@ import com.terracottatech.config.Modules;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
@@ -56,6 +57,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -70,32 +73,32 @@ import javax.management.StandardMBean;
 
 public class ModulesLoader {
 
-  private static final Comparator SERVICE_COMPARATOR = new Comparator() {
+  private static final Comparator SERVICE_COMPARATOR  = new Comparator() {
 
-                                                       public int compare(final Object arg0, final Object arg1) {
-                                                         ServiceReference s1 = (ServiceReference) arg0;
-                                                         ServiceReference s2 = (ServiceReference) arg1;
+                                                        public int compare(final Object arg0, final Object arg1) {
+                                                          ServiceReference s1 = (ServiceReference) arg0;
+                                                          ServiceReference s2 = (ServiceReference) arg1;
 
-                                                         Integer r1 = (Integer) s1
-                                                             .getProperty(Constants.SERVICE_RANKING);
-                                                         Integer r2 = (Integer) s2
-                                                             .getProperty(Constants.SERVICE_RANKING);
+                                                          Integer r1 = (Integer) s1
+                                                              .getProperty(Constants.SERVICE_RANKING);
+                                                          Integer r2 = (Integer) s2
+                                                              .getProperty(Constants.SERVICE_RANKING);
 
-                                                         if (r1 == null) r1 = OsgiServiceSpec.NORMAL_RANK;
-                                                         if (r2 == null) r2 = OsgiServiceSpec.NORMAL_RANK;
+                                                          if (r1 == null) r1 = OsgiServiceSpec.NORMAL_RANK;
+                                                          if (r2 == null) r2 = OsgiServiceSpec.NORMAL_RANK;
 
-                                                         return r2.compareTo(r1);
-                                                       }
+                                                          return r2.compareTo(r1);
+                                                        }
 
-                                                     };
+                                                      };
 
-  private static final TCLogger   logger             = TCLogging.getLogger(ModulesLoader.class);
-  private static final TCLogger   consoleLogger      = CustomerLogging.getConsoleLogger();
+  private static final TCLogger   logger              = TCLogging.getLogger(ModulesLoader.class);
+  private static final TCLogger   consoleLogger       = CustomerLogging.getConsoleLogger();
 
-  private static final Object     lock               = new Object();
-  private static final String     NEWLINE            = System.getProperty("line.separator", "\n");
+  private static final Object     lock                = new Object();
+  private static final String     NEWLINE             = System.getProperty("line.separator", "\n");
 
-  public static final String TC_BOOTJAR_CREATION = "tc.bootjar.creation";
+  public static final String      TC_BOOTJAR_CREATION = "tc.bootjar.creation";
 
   private ModulesLoader() {
     // cannot be instantiated
@@ -103,6 +106,11 @@ public class ModulesLoader {
 
   public static void initModules(final DSOClientConfigHelper configHelper, final ClassProvider classProvider,
                                  final boolean forBootJar) throws Exception {
+    initModules(configHelper, classProvider, forBootJar, Collections.EMPTY_LIST);
+  }
+
+  public static void initModules(final DSOClientConfigHelper configHelper, final ClassProvider classProvider,
+                                 final boolean forBootJar, Collection<Repository> addlRepos) throws Exception {
     if (forBootJar) {
       System.setProperty(TC_BOOTJAR_CREATION, Boolean.TRUE.toString());
     }
@@ -116,7 +124,7 @@ public class ModulesLoader {
 
       try {
         osgiRuntime = EmbeddedOSGiRuntime.Factory.createOSGiRuntime(modules);
-        initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), forBootJar);
+        initModules(osgiRuntime, configHelper, classProvider, modules.getModuleArray(), forBootJar, addlRepos);
         if (!forBootJar) {
           getModulesCustomApplicatorSpecs(osgiRuntime, configHelper);
           getModulesMBeanSpecs(osgiRuntime, configHelper);
@@ -146,6 +154,12 @@ public class ModulesLoader {
   static void initModules(final EmbeddedOSGiRuntime osgiRuntime, final DSOClientConfigHelper configHelper,
                           final ClassProvider classProvider, final Module[] modules, final boolean forBootJar)
       throws BundleException {
+    initModules(osgiRuntime, configHelper, classProvider, modules, forBootJar, Collections.EMPTY_LIST);
+  }
+
+  static void initModules(final EmbeddedOSGiRuntime osgiRuntime, final DSOClientConfigHelper configHelper,
+                          final ClassProvider classProvider, final Module[] modules, final boolean forBootJar,
+                          Collection<Repository> addlRepos) throws BundleException {
 
     if (configHelper instanceof StandardDSOClientConfigHelper) {
       final Dictionary serviceProps = new Hashtable();
@@ -182,20 +196,13 @@ public class ModulesLoader {
     final Module[] allModules = (Module[]) moduleList.toArray(new Module[moduleList.size()]);
 
     final URL[] osgiRepositories = osgiRuntime.getRepositories();
-    final Resolver resolver = new Resolver(ResolverUtils.urlsToStrings(osgiRepositories));
-    final File[] locations = resolver.resolve(allModules);
+    final ProductInfo info = ProductInfo.getInstance();
+    final Resolver resolver = new Resolver(ResolverUtils.urlsToStrings(osgiRepositories), true, info
+        .mavenArtifactsVersion(), info.apiVersion(), addlRepos);
+    final URL[] locations = resolver.resolve(allModules);
 
-    final URL[] bundleURLs = new URL[locations.length];
-    for (int i = 0; i < locations.length; i++) {
-      try {
-        bundleURLs[i] = locations[i].toURL();
-      } catch (MalformedURLException e) {
-        throw new BundleException("Malformed file URL for bundle: " + locations[i].getAbsolutePath(), e);
-      }
-    }
-
-    osgiRuntime.installBundles(bundleURLs);
-    osgiRuntime.startBundles(bundleURLs, handler);
+    osgiRuntime.installBundles(locations);
+    osgiRuntime.startBundles(locations, handler);
   }
 
   private static void installTIMByteProvider(final Bundle bundle) {
@@ -223,7 +230,8 @@ public class ModulesLoader {
 
   protected static void printModuleBuildInfo(Bundle bundle) {
     Dictionary headers = bundle.getHeaders();
-    StringBuilder sb = new StringBuilder("BuildInfo for module: " + bundle.getSymbolicName() + StringUtil.LINE_SEPARATOR);
+    StringBuilder sb = new StringBuilder("BuildInfo for module: " + bundle.getSymbolicName()
+                                         + StringUtil.LINE_SEPARATOR);
     boolean found = false;
     for (Enumeration keys = headers.keys(); keys.hasMoreElements();) {
       String key = (String) keys.nextElement();
@@ -279,12 +287,13 @@ public class ModulesLoader {
 
   private static void registerClassLoader(final DSOClientConfigHelper config, final ClassProvider classProvider,
                                           final Bundle bundle) throws BundleException {
-    NamedClassLoader ncl = getClassLoader(bundle);
-
-    String loaderName = Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, ncl.toString());
-    ncl.__tc_setClassLoaderName(loaderName);
-    String appGroup = config.getAppGroup(loaderName, null);
-    classProvider.registerNamedLoader(ncl, appGroup);
+    if (config.hasBootJar()) {
+      NamedClassLoader ncl = getClassLoader(bundle);
+      String loaderName = Namespace.createLoaderName(Namespace.MODULES_NAMESPACE, ncl.toString());
+      ncl.__tc_setClassLoaderName(loaderName);
+      String appGroup = config.getAppGroup(loaderName, null);
+      classProvider.registerNamedLoader(ncl, appGroup);
+    }
   }
 
   private static NamedClassLoader getClassLoader(final Bundle bundle) throws BundleException {

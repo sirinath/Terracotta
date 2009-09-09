@@ -156,12 +156,16 @@ public class RogueClientTestApp extends AbstractTransparentApp {
         consume();
       } else if (this.type == TYPE_PRODUCER) {
         produce();
+        try {
+          finished.await();
+        } catch (Exception e) {
+          throw new AssertionError(e);
+        }
       } else {
         throw new AssertionError("Usage : Client <id> <type>, Please pass the arguments correctly");
       }
       try {
         System.out.println("Client " + this.clientId + " finished, waiting to be killed");
-        finished.await();
         // wait indefinitly, coordinator will kill u
         Thread.currentThread().join(Long.MAX_VALUE);
       } catch (Exception e) {
@@ -338,10 +342,6 @@ public class RogueClientTestApp extends AbstractTransparentApp {
 
   private static class MyNode {
     private final int id;
-
-    public MyNode() {
-      this(-1);
-    }
 
     public MyNode(final int id) {
       this.id = id;

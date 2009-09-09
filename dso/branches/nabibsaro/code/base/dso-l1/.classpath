@@ -5,6 +5,7 @@
 	<classpathentry excluding="**/.svn/*" kind="src" output="build.eclipse/tests.unit.classes" path="tests.unit"/>
 	<classpathentry excluding="**/.svn/*" kind="src" output="build.eclipse/tests.unit.classes" path="tests.unit.resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+	<classpathentry exported="true" kind="lib" path="/dependencies/lib/ant-launcher-1.7.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/aspectwerkz"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common-api"/>
@@ -17,6 +18,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/license-common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/management"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/management-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/sigarstats"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty-api"/>
 </classpath>

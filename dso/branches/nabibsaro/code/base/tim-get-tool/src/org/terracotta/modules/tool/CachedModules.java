@@ -6,10 +6,8 @@ package org.terracotta.modules.tool;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
+import org.terracotta.modules.tool.commands.KitTypes;
+import org.terracotta.modules.tool.commands.ManifestAttributes;
 import org.terracotta.modules.tool.config.Config;
 import org.terracotta.modules.tool.config.ConfigAnnotation;
 import org.terracotta.modules.tool.config.InvalidConfigurationException;
@@ -18,10 +16,16 @@ import org.terracotta.modules.tool.util.ChecksumUtil;
 import org.terracotta.modules.tool.util.DataLoader;
 import org.terracotta.modules.tool.util.DownloadUtil;
 import org.terracotta.modules.tool.util.DownloadUtil.DownloadOption;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.tc.bundles.OSGiToMaven;
+import com.tc.util.version.VersionMatcher;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,6 +41,9 @@ import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class CachedModules implements Modules {
   static final String        FORMAT_VERSION = "2";
@@ -101,11 +108,33 @@ public class CachedModules implements Modules {
   }
 
   private static boolean attributesVerified(File srcfile, AbstractModule module) throws IOException {
+    String moduleName = null;
+    String moduleVersion = null;
+    
     Manifest mf = (new JarFile(srcfile)).getManifest();
     Attributes attrs = mf.getMainAttributes();
-    String sym = attrs.getValue("Bundle-SymbolicName");
-    String ver = OSGiToMaven.bundleVersionToProjectVersion(attrs.getValue("Bundle-Version"));
-    return sym.equals(module.symbolicName()) && ver.equals(module.version());
+    moduleName = attrs.getValue(ManifestAttributes.OSGI_SYMBOLIC_NAME.attribute());
+    String osgiVersion = attrs.getValue(ManifestAttributes.OSGI_VERSION.attribute());
+    
+    if(moduleName == null || osgiVersion == null) {
+      // Try to use Terracotta-ArtifactCoordinates instead
+      String coords = attrs.getValue(ManifestAttributes.TERRACOTTA_COORDINATES.attribute());
+      if(coords == null || coords.length() == 0) {
+        return false;
+      } 
+      
+      String[] parts = coords.split(":");
+      if(parts.length != 3) {
+        return false;
+      }
+      moduleName = parts[0] + "." + parts[1];
+      moduleVersion = parts[2];
+    } else {
+      // Normal bundle
+      moduleVersion = OSGiToMaven.bundleVersionToProjectVersion(osgiVersion);
+    }
+    
+    return moduleName.equals(module.symbolicName()) && moduleVersion.equals(module.version());
   }
 
   private void download(URL url, File dest) throws IOException {
@@ -123,7 +152,8 @@ public class CachedModules implements Modules {
   /**
    * XXX: This constructor is used for tests only
    */
-  CachedModules(Config config, File repository, InputStream inputStream) throws JDOMException, IOException {
+  CachedModules(Config config, File repository, InputStream inputStream) throws ParserConfigurationException,
+      SAXException, IOException {
     this.config = config;
     this.tcVersion = config.getTcVersion();
     this.apiVersion = config.getApiVersion();
@@ -142,30 +172,36 @@ public class CachedModules implements Modules {
 
         try {
           loadData(dataStream);
-        } catch (JDOMException e) {
+        } catch (Exception e) {
           throw new RuntimeException("Error parsing index file: " + e.getMessage(), e);
         }
       } catch (FileNotFoundException e) {
-        throw new RemoteIndexIOException("Remote index file not found: " + e.getMessage(), e);
+        throw new RemoteIndexIOException("Remote index file not found: " + e.getMessage(), e, dataLoader
+            .getLocalDataFile(), dataLoader.getRemoteDataUrl());
       } catch (IOException e) {
-        throw new RemoteIndexIOException("Error reading remote index file: " + e.getMessage(), e);
+        throw new RemoteIndexIOException("Error reading remote index file: " + e.getMessage(), e, dataLoader
+            .getLocalDataFile(), dataLoader.getRemoteDataUrl());
       } finally {
         IOUtils.closeQuietly(dataStream);
       }
     }
   }
 
-  private void loadData(InputStream inputStream) throws JDOMException, IOException {
+  private void loadData(InputStream inputStream) throws ParserConfigurationException, SAXException, IOException {
     if (modules != null) return;
 
-    Document document = new SAXBuilder().build(inputStream);
-    validateFormatVersion(document.getRootElement().getAttributeValue("format-version"));
-    timeStamp = document.getRootElement().getAttributeValue("timestamp");
+    Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
+    validateFormatVersion(document.getDocumentElement().getAttribute("format-version"));
+    timeStamp = document.getDocumentElement().getAttribute("timestamp");
     modules = new ArrayList<Module>();
-    List<Element> children = document.getRootElement().getChildren();
-    for (Element child : children) {
-      Module module = new Module(this, DocumentToAttributes.transform(child), relativeUrlBase());
-      modules.add(module);
+    NodeList children = document.getDocumentElement().getChildNodes();
+    for (int i = 0; i < children.getLength(); i++) {
+      Node node = children.item(i);
+      if (node.getNodeType() == Node.ELEMENT_NODE) {
+        Element child = (Element) node;
+        Module module = new Module(this, DocumentToAttributes.transform(child), relativeUrlBase());
+        modules.add(module);
+      }
     }
   }
 
@@ -242,7 +278,19 @@ public class CachedModules implements Modules {
   }
 
   boolean qualify(Module module) {
-    return new VersionMatcher(tcVersion, apiVersion).matches(module.tcVersion(), module.apiVersion());
+    return isKitEditionMatch(module) && new VersionMatcher(tcVersion, apiVersion).matches(module.tcVersion(), module.apiVersion());
+  }
+  
+  boolean isKitEditionMatch(Module module) {
+    if(module.kit().equals(KitTypes.ALL.type())) {
+      return true;
+    } else if(module.kit().equals(KitTypes.ENTERPRISE.type())) {
+      return config.isEnterpriseKit();
+    } else if(module.kit().equals(KitTypes.OPEN_SOURCE.type())) {
+      return config.isOpenSourceKit();
+    } else {
+      throw new IllegalArgumentException("Unknown <tc-kit> value for module " + module.groupId + ":" + module.artifactId + ":" + module.version() + ": " + module.kit());
+    }
   }
 
   public List<Module> list() {
@@ -295,7 +343,7 @@ public class CachedModules implements Modules {
   public String apiVersion() {
     return apiVersion;
   }
-  
+
   public String indexTimeStamp() {
     return timeStamp;
   }

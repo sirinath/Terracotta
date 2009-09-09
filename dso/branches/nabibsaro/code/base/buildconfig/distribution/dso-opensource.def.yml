@@ -25,21 +25,30 @@ bundled_components:
   - base:
       documentations:
         notices:
-          - readme
+          - README
           - releasenotes
           - thirdpartylicenses
           - disclaimer
           - license
+          - INSTALL
+          - INSTALL_HIBERNATE_ONLY
   - shared-base:
       documentations:
         install_directory: docs
         guides:
           - TerracottaDSOGuide
           - TerracottaSessionsQuickStart
+          - TerracottaHibernateQuickStartGuide
         references:
           - tc-config-reference
   - common:
       module_packages:
+        - terracotta-l1:
+            # install in 'api-jars' folder so it can be deleted later
+            install_directory: api-jars
+            add_dependencies: true
+            modules:
+              - dso-l1
         - terracotta-jmx-api:
             install_directory: lib
             modules:
@@ -73,8 +82,8 @@ bundled_components:
               - legacy-test-tree
               - license-common
               - simulator
-        - api-api.version:
-            javadoc: true
+        - terracotta-api-api.version:
+            javadoc: true   
             install_directory: lib
             modules:
               - dso-cluster-api
@@ -129,10 +138,24 @@ postscripts:
   - make-build-data:
       args:
         - lib/resources
+  - modify-tim-get-properties:
+      args:
+        - location: lib/resources/tim-get.properties
+        - kit-type:
+            stable:
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/stable/version
   - install-forge-tims:
       args:
         - tim-apache-struts-1.1
         - tim-jetty-6.1
+        - terracotta-hibernate-cache
+  - extract-hibernate-cache-reference:
+      args:
+        - dest: hibernate
+          agent-pattern: terracotta-hibernate-agent
+          provider-pattern: tim-hibernate-cache-provider
+          reference-file: org/terracotta/hibernate/reference-config.xml
   - inject-forge-tims:
       args:
         - tims: 
@@ -150,10 +173,15 @@ postscripts:
         - samples/sessions
   - maven-deploy:
       args:
+        - artifact_count: 11
         - groupId: org.terracotta
           artifact: parent
           srcfile: pom.xml
           pom: pom.xml
+        - groupId: org.terracotta
+          artifact: terracotta-l1-parent
+          srcfile: poms/terracotta-l1-parent-pom.xml
+          pom: poms/terracotta-l1-parent-pom.xml        
         - groupId: org.terracotta
           artifact: terracotta
           file: lib/tc.jar
@@ -161,6 +189,12 @@ postscripts:
           inject: 
             - lib/resources/build-data.txt
             - lib/resources/tim-get.properties
+        - groupId: org.terracotta
+          artifact: terracotta-l1
+          file: api-jars/terracotta-l1.jar
+          pom: poms/terracotta-l1-os-pom.xml
+          inject: 
+            - lib/resources/build-data.txt           
         - groupId: org.terracotta
           artifact: tcconfig
           file: lib/tcconfig-xmlbeans-generated.jar
@@ -187,8 +221,8 @@ postscripts:
           inject: 
             - lib/resources/build-data.txt
         - groupId: org.terracotta.api
-          artifact: api
-          file: lib/api-api.version.jar
+          artifact: terracotta-api
+          file: lib/terracotta-api-api.version.jar
           pom: poms/terracotta-api-pom.xml
           version: api.version
         - groupId: org.terracotta.api

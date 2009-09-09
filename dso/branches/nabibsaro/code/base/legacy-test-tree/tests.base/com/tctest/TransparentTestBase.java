@@ -475,6 +475,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
     initializeTestRunner(isMutateValidateTest, transparentAppConfig, runnerConfig);
+    loadPostActions();
     initPostActions();
   }
 
@@ -494,7 +495,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void initializeTestRunner(boolean isMutateValidateTest, TransparentAppConfig transparentAppCfg,
                                    DistributedTestRunnerConfig runnerCfg) throws Exception {
-    runner = new DistributedTestRunner(runnerCfg, configFactory(), configHelper(), getApplicationClass(),
+    runner = new DistributedTestRunner(runnerCfg, configFactory(), this, getApplicationClass(),
                                        getOptionalAttributes(), getApplicationConfigBuilder().newApplicationConfig(),
                                        getStartServer(), isMutateValidateTest, isMultipleServerTest(), null,
                                        transparentAppCfg);
@@ -558,6 +559,25 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
+  protected void duringRunningCluster() throws Exception {
+         // do not delete this method, it is used by tests that override it
+  }
+  
+  private Thread executeDuringRunningCluster() {
+    Thread t = new Thread(new Runnable() {
+      public void run() {
+        try {
+          duringRunningCluster();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    });
+    t.setName(getClass().getName() + " duringRunningCluster");
+    t.start();
+    return t;
+  }
+  
   public void test() throws Exception {
     if (canRun()) {
       if (controlledCrashMode && serverControls != null) {
@@ -576,7 +596,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
           proxyMgr.startProxyTest();
         }
       }
+      final Thread duringRunningClusterThread = executeDuringRunningCluster();
       this.runner.run();
+      duringRunningClusterThread.join();
       if (this.runner.executionTimedOut() || this.runner.startTimedOut()) {
         try {
           if (isCrashy() && canRunCrash()) {

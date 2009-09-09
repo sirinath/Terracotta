@@ -489,10 +489,9 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   private final AtomicBoolean addingChildren = new AtomicBoolean(false);
 
   void tryAddChildren() {
-    if (addingChildren.get()) { return; }
+    if (addingChildren.getAndSet(true)) { return; }
 
     try {
-      addingChildren.set(true);
       if (getChildCount() == 0) {
         addChildren();
         AdminClientController controller = adminClientContext.getAdminClientController();
@@ -515,14 +514,14 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   TopologyNode topologyNode;
 
   protected void addChildren() {
-    add(createFeaturesNode());
+    createFeaturesNode();
     add(createClusteredHeapNode());
     add(createDiagnosticsNode());
     add(topologyNode = createTopologyNode());
   }
 
   protected FeaturesNode createFeaturesNode() {
-    return new FeaturesNode(adminClientContext, getClusterModel());
+    return new FeaturesNode(this, adminClientContext, getClusterModel());
   }
 
   protected ClusteredHeapNode createClusteredHeapNode() {

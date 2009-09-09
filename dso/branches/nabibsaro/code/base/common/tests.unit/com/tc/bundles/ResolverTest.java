@@ -9,6 +9,7 @@ import org.osgi.framework.BundleException;
 
 import com.tc.bundles.exception.MissingDefaultRepositoryException;
 import com.tc.test.TestConfigObject;
+import com.tc.util.ProductInfo;
 import com.terracottatech.config.Module;
 
 import java.io.File;
@@ -17,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
@@ -26,8 +28,17 @@ import junit.framework.TestCase;
 
 public class ResolverTest extends TestCase {
   private static final Pattern ARTIFACT_PATTERN = Pattern.compile("(.*)-(\\d+.*)");
-  private static boolean PASS = true;
-  private static boolean FAIL = false;
+  private static boolean       PASS             = true;
+  private static boolean       FAIL             = false;
+
+  private final String         apiVersion;
+  private final String         tcVersion;
+
+  public ResolverTest() {
+     ProductInfo info = ProductInfo.getInstance();
+     apiVersion = info.apiVersion();
+     tcVersion = info.mavenArtifactsVersion();
+  }
 
   public void testResolveBundle() throws IOException {
     resolveBundles(new String[] { System.getProperty("com.tc.l1.modules.repositories") }, jarFiles(), PASS);
@@ -37,7 +48,7 @@ public class ResolverTest extends TestCase {
     String flatRepoUrl = makeFlatRepo("modules.1");
     resolveBundles(new String[] { flatRepoUrl }, jarFiles(), PASS);
   }
-  
+
   public void testResolveBundleInFlatRepoWithSpaces() throws IOException {
     String flatRepoUrl = makeFlatRepo("modules 1");
     resolveBundles(new String[] { flatRepoUrl }, jarFiles(), PASS);
@@ -79,8 +90,8 @@ public class ResolverTest extends TestCase {
     for (int i = 0; i < repo.length; i++)
       repo[i] = makeRepoDir(repo[i]);
 
-    for (int i = 0; i < repo.length; i++)
-      assertNotNull("repository location '" + repo[i] + "' ignored.", Resolver.resolveRepositoryLocation(repo[i]));
+    for (String element : repo)
+      assertNotNull("repository location '" + element + "' ignored.", Resolver.resolveRepositoryLocation(element));
 
     for (int i = 0; i < repo.length; i++) {
       repo[i] = "file://" + repo[i];
@@ -94,11 +105,11 @@ public class ResolverTest extends TestCase {
     for (int i = 0; i < repo.length; i++)
       repo[i] = deleteRepoDir(repo[i]);
 
-    for (int i = 0; i < repo.length; i++) {
-      File repoDir = new File(repo[i]);
-      assertFalse("repository location '" + repo[i] + "' should've been deleted.", repoDir.exists());
-      assertNull("non-existent repository location '" + repo[i] + "' was not ignored.", Resolver
-          .resolveRepositoryLocation(repo[i]));
+    for (String element : repo) {
+      File repoDir = new File(element);
+      assertFalse("repository location '" + element + "' should've been deleted.", repoDir.exists());
+      assertNull("non-existent repository location '" + element + "' was not ignored.", Resolver
+          .resolveRepositoryLocation(element));
     }
 
     for (int i = 0; i < repo.length; i++) {
@@ -113,6 +124,26 @@ public class ResolverTest extends TestCase {
       repo[i] = "http://" + repo[i];
       assertNull("bad protocol used to specify repository URL '" + repo[i] + "' but was not ignored.", Resolver
           .resolveRepositoryLocation(repo[i]));
+    }
+  }
+
+  public void testAllModulesCanBeLoadedWithoutVersion() throws Exception {
+    String[] repoLocation = new String[] { System.getProperty("com.tc.l1.modules.repositories") };
+    Collection<File> files = jarFiles();
+    for (File file : files) {
+      Manifest manifest = Resolver.getManifest(file.toURI().toURL());
+      if (manifest != null) {
+        Attributes attrs = manifest.getMainAttributes();
+        String symbolicName = attrs.getValue(Resolver.BUNDLE_SYMBOLICNAME);
+        if (symbolicName != null) {
+          String groupId = OSGiToMaven.groupIdFromSymbolicName(symbolicName);
+          String artifactId = OSGiToMaven.artifactIdFromSymbolicName(symbolicName);
+          File resolvedFile = resolve(repoLocation, groupId, artifactId, null, true);
+
+          assertNotNull(resolvedFile);
+          assertEquals(file, resolvedFile);
+        }
+      }
     }
   }
 
@@ -168,27 +199,24 @@ public class ResolverTest extends TestCase {
 
   private String makeFlatRepo(String name) throws IOException {
     String flatRepoUrl = makeRepoDir(name);
-    Collection jars = jarFiles();
-    for (Iterator i = jars.iterator(); i.hasNext();) {
-      FileUtils.copyFileToDirectory((File) i.next(), new File(flatRepoUrl));
+    Collection<File> jars = jarFiles();
+    for (File file : jars) {
+      FileUtils.copyFileToDirectory(file, new File(flatRepoUrl));
     }
     return flatRepoUrl;
   }
 
-  private Collection jarFiles() {
+  private Collection<File> jarFiles() {
     String jarFileDir = repoPropToFile();
     return jarFiles(new File(jarFileDir));
   }
 
-  private Collection jarFiles(File directory) {
+  private Collection<File> jarFiles(File directory) {
     return FileUtils.listFiles(directory, new String[] { "jar" }, true);
   }
 
-  private void resolveJars(String[] repos, Collection jars, boolean expected) {
-    for (Iterator i = jars.iterator(); i.hasNext();) {
-      String fileName = ((File) i.next()).toString();
-      File jar = new File(fileName);
-
+  private void resolveJars(String[] repos, Collection<File> jars, boolean expected) {
+    for (File jar : jars) {
       String jarName = jar.getName();
       jarName = jarName.substring(0, jarName.lastIndexOf(".jar"));
       Matcher m = ARTIFACT_PATTERN.matcher(jarName);
@@ -207,8 +235,8 @@ public class ResolverTest extends TestCase {
       JarFile jar = new JarFile((File) i.next());
       Manifest manifest = jar.getManifest();
       String[] reqmts = BundleSpec.getRequirements(manifest);
-      for (int j = 0; j < reqmts.length; j++) {
-        BundleSpec spec = BundleSpec.newInstance(reqmts[j]);
+      for (String reqmt : reqmts) {
+        BundleSpec spec = BundleSpec.newInstance(reqmt);
         resolveBundle(repos, spec, expected);
       }
     }
@@ -216,8 +244,10 @@ public class ResolverTest extends TestCase {
 
   private void resolveBundle(String[] repos, BundleSpec spec, boolean expected) throws IOException {
     try {
-      Resolver resolver = new Resolver(repos, false);
-      File file = resolver.resolveBundle(spec);
+      Resolver resolver = new Resolver(repos, false, tcVersion, apiVersion);
+      URL location = resolver.resolveBundle(spec);
+      File file = FileUtils.toFile(location);
+
       if (expected) {
         assertNotNull(spec.getSymbolicName(), file);
         assertEquals(file.getAbsolutePath().endsWith(".jar"), expected);
@@ -236,17 +266,28 @@ public class ResolverTest extends TestCase {
   }
 
   private void resolve(String[] repos, String name, String version, boolean expected) {
+    resolve(repos, "org.terracotta.modules", name, version, expected);
+  }
+
+  private File resolve(String[] repos, String groupId, String name, String version, boolean expected) {
     try {
-      Resolver resolver = new Resolver(repos, false);
+      Resolver resolver = new Resolver(repos, false, tcVersion, apiVersion);
       Module module = Module.Factory.newInstance();
       module.setName(name);
       module.setVersion(version);
-      module.setGroupId("org.terracotta.modules");
-      File file = resolver.resolve(module);
-      assertEquals(file.getAbsolutePath().endsWith(name + "-" + version + ".jar"), expected);
+      module.setGroupId(groupId);
+      File file = FileUtils.toFile(resolver.resolve(module));
+      if (version != null) {
+        assertEquals(expected, file.getAbsolutePath().endsWith(name + "-" + version + ".jar"));
+      } else {
+        assertEquals(expected, file.getAbsolutePath().indexOf(name) >= 0);
+      }
+      return file;
     } catch (BundleException e) {
       if (PASS == expected) fail(e.getMessage());
       else assertTrue(FAIL == expected);
+      return null;
     }
   }
+
 }

@@ -4,6 +4,8 @@
  */
 package org.terracotta.dso;
 
+import org.apache.commons.io.FileUtils;
+import org.h2.util.StringUtils;
 import org.osgi.framework.Bundle;
 
 import com.terracottatech.config.AdditionalBootJarClasses;
@@ -29,8 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ModulesConfiguration {
-  private List<ModuleInfo> fModuleInfoList;
-  private DsoApplication   fApplication;
+  private final List<ModuleInfo> fModuleInfoList;
+  private final DsoApplication   fApplication;
 
   public ModulesConfiguration() {
     fModuleInfoList = new ArrayList();
@@ -53,7 +55,7 @@ public class ModulesConfiguration {
 
   public static boolean sameModule(Module m1, Module m2) {
     return m1 != null && m2 != null && m1.getName().equals(m2.getName()) && m1.getGroupId().equals(m2.getGroupId())
-           && m1.getVersion().equals(m2.getVersion());
+           && StringUtils.equals(m1.getVersion(), m2.getVersion());
   }
 
   public ModuleInfo getModuleInfo(Module module) {
@@ -65,7 +67,7 @@ public class ModulesConfiguration {
 
   public ModuleInfo associateBundle(Bundle bundle) {
     for (ModuleInfo moduleInfo : fModuleInfoList) {
-      File location = moduleInfo.getLocation();
+      File location = FileUtils.toFile(moduleInfo.getLocation());
       String bundleLocation = bundle.getLocation();
 
       if (location != null) {

@@ -3,7 +3,7 @@
  */
 package com.tctest;
 
-import com.tc.test.TCTestCase;
+import com.tc.object.BaseDSOTestCase;
 import com.tc.util.Grep;
 import com.tc.util.TcConfigBuilder;
 import com.tctest.process.ExternalDsoServer;
@@ -11,7 +11,7 @@ import com.tctest.process.ExternalDsoServer;
 import java.io.File;
 import java.util.List;
 
-public class UnSupportedServerStripingTest extends TCTestCase {
+public class UnSupportedServerStripingTest extends BaseDSOTestCase {
 
   /**
    * Test scenario when DSO server in open source mode, used with server striping
