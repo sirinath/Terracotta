@@ -26,7 +26,7 @@ public class UpgradeCommand extends ModuleOperatorCommand {
 
   private static final String             LONGOPT_OVERWRITE = "overwrite";
   private static final String             LONGOPT_FORCE     = "force";
-  private static final String             LONGOPT_PRETEND   = "pretend";
+  private static final String             LONGOPT_DRYRUN   = "dry-run";
   private static final String             LONGOPT_NOVERIFY  = "no-verify";
 
   private final Collection<InstallOption> installOptions;
@@ -34,7 +34,7 @@ public class UpgradeCommand extends ModuleOperatorCommand {
   public UpgradeCommand() {
     options.addOption(buildOption(LONGOPT_OVERWRITE, "Install anyway, even if already installed"));
     options.addOption(buildOption(LONGOPT_FORCE, "Synonym to overwrite"));
-    options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
+    options.addOption(buildOption(LONGOPT_DRYRUN, "Do not perform actual installation"));
     options.addOption(buildOption(LONGOPT_NOVERIFY, "Skip checksum verification"));
     arguments.put("file", "The path to tc-config.xml");
     installOptions = new ArrayList<InstallOption>();
@@ -59,7 +59,7 @@ public class UpgradeCommand extends ModuleOperatorCommand {
   public void execute(CommandLine cli) {
     if (cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.FORCE);
     if (cli.hasOption(LONGOPT_OVERWRITE) || cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.OVERWRITE);
-    if (cli.hasOption(LONGOPT_PRETEND)) installOptions.add(InstallOption.PRETEND);
+    if (cli.hasOption(LONGOPT_DRYRUN)) installOptions.add(InstallOption.DRYRUN);
     if (cli.hasOption(LONGOPT_NOVERIFY)) installOptions.add(InstallOption.SKIP_VERIFY);
     try {
       process(cli);
@@ -97,7 +97,10 @@ public class UpgradeCommand extends ModuleOperatorCommand {
     com.terracottatech.config.Module[] xmlModules = tcConfig.getClients().getModules().getModuleArray();
     
     for (com.terracottatech.config.Module xmlModule : xmlModules) {
-      out.print("* Parsing module: " + xmlModule.getName() + "-" + xmlModule.getVersion());
+      String version = xmlModule.getVersion();
+      String versionStr = (version == null) ? "latest" : version;
+
+      out.print("* Parsing module: " + xmlModule.getName() + ":" + versionStr);
       Module latest = modules.findLatest(xmlModule.getName(), xmlModule.getGroupId());
       boolean neededToInstall = false;
       
@@ -107,7 +110,9 @@ public class UpgradeCommand extends ModuleOperatorCommand {
         if (!latest.isInstalled()) {
           neededToInstall = true;
         } else {
-          if (latest.version().compareTo(xmlModule.getVersion()) > 0) {
+          if (version != null && latest.version().compareTo(version) > 0) {
+            // if version is null, then tc-config did not specify a version and no need to update tc-config
+            // if versions is specified, but older than latest, also need to update
             neededToInstall = true;
           } else {
             out.println(": up to date");
@@ -117,15 +122,21 @@ public class UpgradeCommand extends ModuleOperatorCommand {
       
       if (neededToInstall) {
         out.println(": latest version " + latest.version());
-        xmlModule.setVersion(latest.version());
-        latest.install(listener, installOptions);
+        latest.install(listener, actionLog(), installOptions);
         out.println();
-        updateConfig = true;
+        
+        // Don't update config if module version is not specified - it will automatically pick up the latest
+        if(version != null) {
+          actionLog.addModifiedModuleAction(xmlModule.getGroupId(), xmlModule.getName(), xmlModule.getVersion(), latest.version());
+
+          xmlModule.setVersion(latest.version());
+          updateConfig = true;
+        }
       }
     }
 
     // save original file to .original if found newer module
-    if (updateConfig) {
+    if (updateConfig && !cli.hasOption(LONGOPT_DRYRUN)) {
       File originalFile = new File(tcConfigPath.getAbsolutePath() + ".original");
       FileUtils.copyFile(tcConfigPath, originalFile);
       out.println("Your original config file has been saved to " + originalFile);

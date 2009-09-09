@@ -96,7 +96,6 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
 import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
-import com.tc.object.bytecode.JavaUtilWeakHashMapAdapter;
 import com.tc.object.bytecode.LinkedHashMapClassAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
@@ -454,8 +453,6 @@ public class BootJarTool {
 
       addJdk15SpecificPreInstrumentedClasses();
 
-      addInstrumentedWeakHashMap();
-
       loadTerracottaClass(DebugUtil.class.getName());
       loadTerracottaClass(TCMap.class.getName());
       loadTerracottaClass(PartialKeysMap.class.getName());
@@ -494,6 +491,7 @@ public class BootJarTool {
       loadTerracottaClass(InstrumentationLogger.class.getName());
       loadTerracottaClass(NullInstrumentationLogger.class.getName());
       loadTerracottaClass(NullManager.class.getName());
+      loadTerracottaClass(NullTCLogger.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
@@ -535,11 +533,6 @@ public class BootJarTool {
       loadTerracottaClass(CompressedData.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
 
-      // These classes need to be specified as literal in order to prevent
-      // the static block of IdentityWeakHashMap from executing during generating
-      // the boot jar.
-      loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap");
-      loadTerracottaClass("com.tc.object.util.IdentityWeakHashMap$TestKey");
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
       loadTerracottaClass("com.tc.object.bytecode.NonDistributableObjectRegistry");
       loadTerracottaClass(ProxyInstance.class.getName());
@@ -2506,17 +2499,6 @@ public class BootJarTool {
     loadClassIntoJar(jClassNameDots, jData, true);
   }
 
-  private final void addInstrumentedWeakHashMap() {
-    ClassReader reader = new ClassReader(getSystemBytes("java.util.WeakHashMap"));
-    ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-
-    ClassVisitor cv = new JavaUtilWeakHashMapAdapter().create(writer, null);
-
-    reader.accept(cv, ClassReader.SKIP_FRAMES);
-
-    loadClassIntoJar("java.util.WeakHashMap", writer.toByteArray(), false);
-  }
-
   private final void addInstrumentedClassLoader() {
     // patch the java.lang.ClassLoader
     ClassLoaderPreProcessorImpl adapter = new ClassLoaderPreProcessorImpl();
@@ -2671,7 +2653,17 @@ public class BootJarTool {
       BootJarTool bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile,
                                            systemLoader, !verbose);
       if (mode.equals(MAKE_MODE)) {
+        boolean validating = false;
         boolean makeItAnyway = cmdLine.hasOption("w");
+        if (targetFile.exists()) {
+          if (makeItAnyway) {
+            consoleLogger.info("Overwrite mode specified, existing boot JAR file at '" + targetFile.getCanonicalPath()
+                               + "' will be overwritten.");
+          } else {
+            consoleLogger.info("Found boot JAR file at '" + targetFile.getCanonicalPath() + "'; validating...");
+            validating = true;
+          }
+        }
         if (makeItAnyway || !targetFile.exists() || (targetFile.exists() && !bjTool.isBootJarComplete(targetFile))) {
           // Don't reuse boot jar tool instance since its config might have been mutated by isBootJarComplete()
           bjTool = new BootJarTool(new StandardDSOClientConfigHelperImpl(config, false), targetFile, systemLoader,
@@ -2679,8 +2671,13 @@ public class BootJarTool {
           bjTool.generateJar();
         }
         bjTool.verifyJar(targetFile);
+        if (validating) {
+          consoleLogger.info("Valid.");
+        }
       } else if (mode.equals(SCAN_MODE)) {
+        consoleLogger.info("Scanning boot JAR file at '" + targetFile.getCanonicalPath() + "'...");
         bjTool.scanJar(targetFile);
+        consoleLogger.info("Done.");
       } else {
         consoleLogger.fatal("\nInvalid mode specified, valid modes are: '" + MAKE_MODE + "' and '" + SCAN_MODE + "';"
                             + "use the -h option to view the options for this tool.");

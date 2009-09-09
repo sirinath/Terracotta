@@ -68,14 +68,8 @@ public class TcConfigBuilder {
     tcConfig = tcConfigDocument.getTcConfig();
   }
 
-  public void randomizePorts() {
-    PortChooser pc = new PortChooser();
-    Server[] servers = tcConfig.getServers().getServerArray();
-    for (Server server : servers) {
-      server.setDsoPort(pc.chooseRandomPort());
-      server.setJmxPort(pc.chooseRandomPort());
-      server.setL2GroupPort(pc.chooseRandomPort());
-    }
+  public Server[] getServers() {
+    return tcConfig.getServers().getServerArray();
   }
 
   public InputStream newInputStream() {
@@ -102,6 +96,16 @@ public class TcConfigBuilder {
     tcConfig.getServers().getServerArray(serverIndex).setDsoPort(portNo);
   }
 
+  public void setGroupPort(int portNo) {
+    setGroupPort(0, portNo);
+  }
+
+  public void setGroupPort(int serverIndex, int portNo) {
+    ensureServers();
+    Assert.assertNotNull(tcConfig.getServers().getServerArray(serverIndex));
+    tcConfig.getServers().getServerArray(serverIndex).setL2GroupPort(portNo);
+  }
+
   public int getDsoPort() {
     return getDsoPort(0);
   }
@@ -110,6 +114,16 @@ public class TcConfigBuilder {
     ensureServers();
     Assert.assertNotNull(tcConfig.getServers().getServerArray(serverIndex));
     return tcConfig.getServers().getServerArray(serverIndex).getDsoPort();
+  }
+
+  public int getGroupPort() {
+    return getGroupPort(0);
+  }
+
+  public int getGroupPort(int serverIndex) {
+    ensureServers();
+    Assert.assertNotNull(tcConfig.getServers().getServerArray(serverIndex));
+    return tcConfig.getServers().getServerArray(serverIndex).getL2GroupPort();
   }
 
   public void setJmxPort(int portNo) {
@@ -296,6 +310,16 @@ public class TcConfigBuilder {
       wa.setSynchronousWrite(synchWrite);
     }
     wa.setSessionLocking(sessionLocking);
+  }
+
+  public void randomizePorts() {
+    PortChooser pc = new PortChooser();
+    Server[] servers = getServers();
+    for (Server server : servers) {
+      server.setDsoPort(pc.chooseRandomPort());
+      server.setJmxPort(pc.chooseRandomPort());
+      server.setL2GroupPort(pc.chooseRandomPort());
+    }
   }
 
   @Override

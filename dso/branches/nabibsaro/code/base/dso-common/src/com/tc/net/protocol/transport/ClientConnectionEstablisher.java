@@ -33,12 +33,22 @@ import java.net.UnknownHostException;
 public class ClientConnectionEstablisher {
 
   private static final long               CONNECT_RETRY_INTERVAL;
+  private static final long               MIN_RETRY_INTERVAL    = 10;
+  public static final String              RECONNECT_THREAD_NAME = "ConnectionEstablisher";
 
-  private static final long               MIN_RETRY_INTERVAL = 10;
+  private final String                    desc;
+  private final int                       maxReconnectTries;
+  private final int                       timeout;
+  private final ConnectionAddressProvider connAddressProvider;
+  private final TCConnectionManager       connManager;
+  private final SynchronizedBoolean       asyncReconnecting     = new SynchronizedBoolean(false);
+  private final SynchronizedBoolean       allowReconnects                = new SynchronizedBoolean(true);
+
+  private Thread                          connectionEstablisher;
+  private NoExceptionLinkedQueue          reconnectRequest      = new NoExceptionLinkedQueue();  // <ConnectionRequest>
 
   static {
     TCLogger logger = TCLogging.getLogger(ClientConnectionEstablisher.class);
-
     long value = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.L1_SOCKET_RECONNECT_WAIT_INTERVAL);
     if (value < MIN_RETRY_INTERVAL) {
       logger.warn("Forcing reconnect wait interval to " + MIN_RETRY_INTERVAL + " (configured value was " + value + ")");
@@ -47,18 +57,6 @@ public class ClientConnectionEstablisher {
 
     CONNECT_RETRY_INTERVAL = value;
   }
-
-  private final String                    desc;
-  private final int                       maxReconnectTries;
-  private final int                       timeout;
-  private final ConnectionAddressProvider connAddressProvider;
-  private final TCConnectionManager       connManager;
-
-  private final SynchronizedBoolean       asyncReconnecting  = new SynchronizedBoolean(false);
-
-  private Thread                          connectionEstablisher;
-
-  private NoExceptionLinkedQueue          reconnectRequest   = new NoExceptionLinkedQueue();  // <ConnectionRequest>
 
   public ClientConnectionEstablisher(TCConnectionManager connManager, ConnectionAddressProvider connAddressProvider,
                                      int maxReconnectTries, int timeout) {
@@ -84,7 +82,9 @@ public class ClientConnectionEstablisher {
   public TCConnection open(ClientMessageTransport cmt) throws TCTimeoutException, IOException {
     synchronized (asyncReconnecting) {
       Assert.eval("Can't call open() while asynch reconnect occurring", !asyncReconnecting.get());
-      return connectTryAllOnce(cmt);
+      TCConnection rv = connectTryAllOnce(cmt);
+      allowReconnects.set(true);
+      return rv;
     }
   }
 
@@ -114,7 +114,7 @@ public class ClientConnectionEstablisher {
    * @throws IOException
    * @throws MaxConnectionsExceededException
    */
-  TCConnection connect(TCSocketAddress sa, ClientMessageTransport cmt) throws TCTimeoutException, IOException {
+  private TCConnection connect(TCSocketAddress sa, ClientMessageTransport cmt) throws TCTimeoutException, IOException {
 
     TCConnection connection = this.connManager.createConnection(cmt.getProtocolAdapter());
     cmt.fireTransportConnectAttemptEvent();
@@ -154,10 +154,10 @@ public class ClientConnectionEstablisher {
 
           // DEV-1945
           if (i == 0) {
-            String previousConnectHostName = cmt.getRemoteAddress().getAddress().getHostName();
-            String connectingToHostName = "";
+            String previousConnectHost = cmt.getRemoteAddress().getAddress().getHostAddress();
+            String connectingToHost = "";
             try {
-              connectingToHostName = InetAddress.getByName(connInfo.getHostname()).getHostName();
+              connectingToHost = InetAddress.getByName(connInfo.getHostname()).getHostAddress();
             } catch (UnknownHostException e) {
               // these errors are caught even before
             }
@@ -165,7 +165,7 @@ public class ClientConnectionEstablisher {
             int previousConnectHostPort = cmt.getRemoteAddress().getPort();
             int connectingToHostPort = connInfo.getPort();
 
-            if ((addresses.hasNext()) && (previousConnectHostName.equals(connectingToHostName))
+            if ((addresses.hasNext()) && (previousConnectHost.equals(connectingToHost))
                 && (previousConnectHostPort == connectingToHostPort)) {
               continue;
             }
@@ -266,15 +266,17 @@ public class ClientConnectionEstablisher {
   }
 
   private void putReconnectRequest(ConnectionRequest request) {
-    if (connectionEstablisher == null) {
+
+    if (!allowReconnects.get()) { return; }
+
+    if ((connectionEstablisher == null) && (!request.isQuit())) {
       // First time
       // Allow the async thread reconnects/restores only when cmt was connected atleast once
       if ((request.getClientMessageTransport() == null) || (!request.getClientMessageTransport().wasOpened())) return;
 
-      connectionEstablisher = new Thread(new AsyncReconnect(this), "ConnectionEstablisher");
+      connectionEstablisher = new Thread(new AsyncReconnect(this), RECONNECT_THREAD_NAME);
       connectionEstablisher.setDaemon(true);
       connectionEstablisher.start();
-
     }
 
     // DEV-1140 : avoiding the race condition
@@ -284,6 +286,7 @@ public class ClientConnectionEstablisher {
 
   public void quitReconnectAttempts() {
     putReconnectRequest(new ConnectionRequest(ConnectionRequest.QUIT, null));
+    allowReconnects.set(false);
   }
 
   static class AsyncReconnect implements Runnable {

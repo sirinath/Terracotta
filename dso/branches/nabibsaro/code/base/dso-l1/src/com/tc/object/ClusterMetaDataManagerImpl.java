@@ -4,6 +4,8 @@
  */
 package com.tc.object;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
@@ -36,10 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
 
+  private static final TCLogger                             LOGGER                                   = TCLogging.getLogger(ClusterMetaDataManagerImpl.class);
+
   private static final long                                 RETRIEVE_WAIT_INTERVAL                   = 15000;
 
   private static final State                                PAUSED                                   = new State("PAUSED");
   private static final State                                RUNNING                                  = new State("RUNNING");
+  private static final State                                STARTING                                 = new State("STARTING");
 
   private State                                             state                                    = RUNNING;
 
@@ -56,6 +61,7 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
 
   private final Map<ThreadID, WaitForResponse>              waitObjects                              = new HashMap<ThreadID, WaitForResponse>();
   private final Map<ThreadID, Object>                       responses                                = new HashMap<ThreadID, Object>();
+  private volatile boolean                                  isShutdown                               = false;
 
   public ClusterMetaDataManagerImpl(final GroupID groupID, final DNAEncoding encoding,
                                     final ThreadIDManager threadIDManager,
@@ -83,7 +89,10 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
     final Map<ObjectID, Set<NodeID>> response = sendNodesWithObjectsMessageAndWait(message);
 
     // no response arrived in time, returning an empty set
-    if (null == response) { return Collections.emptySet(); }
+    if (null == response) {
+      LOGGER.warn("No response arrived in time for getNodesWithObject for object '" + objectID + "', returning empty set");
+      return Collections.emptySet();
+    }
 
     return response.get(objectID);
   }
@@ -99,7 +108,10 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
     final Map<ObjectID, Set<NodeID>> response = sendNodesWithObjectsMessageAndWait(message);
 
     // no response arrived in time, returning an empty map
-    if (null == response) { return Collections.emptyMap(); }
+    if (null == response) {
+      LOGGER.warn("No response arrived in time for getNodesWithObjects, returning empty map");
+      return Collections.emptyMap();
+    }
 
     return response;
   }
@@ -107,7 +119,7 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
   public Set<?> getKeysForOrphanedValues(final TCMap tcMap) {
     waitUntilRunning();
 
-    final ObjectID mapObjectID = ((Manageable)tcMap).__tc_managed().getObjectID();
+    final ObjectID mapObjectID = ((Manageable) tcMap).__tc_managed().getObjectID();
 
     final KeysForOrphanedValuesMessage message = kfovFactory.newKeysForOrphanedValuesMessage(groupID);
     message.setMapObjectID(mapObjectID);
@@ -115,7 +127,10 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
     final Set<?> response = sendKeysForOrphanedValuesMessageAndWait(message);
 
     // no response arrived in time, returning an empty set
-    if (null == response) { return Collections.emptySet(); }
+    if (null == response) {
+      LOGGER.warn("No response arrived in time for getKeysForOrphanedValues for map with object ID '" + mapObjectID + "', returning empty set");
+      return Collections.emptySet();
+    }
 
     return response;
   }
@@ -242,7 +257,12 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
     }
   }
 
+  public void shutdown() {
+    isShutdown = true;
+  }
+
   public void pause(final NodeID remote, final int disconnected) {
+    if (isShutdown) return;
     synchronized (this) {
       assertNotPaused("Attempt to pause while PAUSED");
       this.state = PAUSED;
@@ -252,12 +272,17 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
 
   public void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
                                   final ClientHandshakeMessage handshakeMessage) {
-    // NOP
+    if (isShutdown) return;
+    synchronized (this) {
+      assertPaused("Attempt to initializeHandshake while not PAUSED");
+      this.state = STARTING;
+    }
   }
 
   public void unpause(final NodeID remote, final int disconnected) {
+    if (isShutdown) return;
     synchronized (this) {
-      assertPaused("Attempt to unpause while not PAUSED");
+      assertNotRunning("Attempt to unpause while RUNNING");
       this.state = RUNNING;
       resendOutstanding();
       this.notifyAll();
@@ -284,6 +309,10 @@ public class ClusterMetaDataManagerImpl implements ClusterMetaDataManager {
 
   private void assertNotPaused(final Object message) {
     if (this.state == PAUSED) { throw new AssertionError(message + ": " + this.state); }
+  }
+  
+  private void assertNotRunning(final Object message) {
+    if (this.state == RUNNING) { throw new AssertionError(message + ": " + this.state); }
   }
 
   private class WaitForResponse {

@@ -129,6 +129,7 @@ import com.tc.runtime.logging.LongGCLogger;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemCallback;
+import com.tc.statistics.StatisticsSystemType;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
@@ -181,8 +182,12 @@ import java.util.List;
  */
 public class DistributedObjectClient extends SEDA implements TCClient {
 
-  protected static final TCLogger                    DSO_LOGGER                 = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                      CONSOLE_LOGGER             = CustomerLogging.getConsoleLogger();
+  public final static String                         DEFAULT_AGENT_DIFFERENTIATOR_PREFIX = "L1/";
+
+  protected static final TCLogger                    DSO_LOGGER                          = CustomerLogging
+                                                                                             .getDSOGenericLogger();
+  private static final TCLogger                      CONSOLE_LOGGER                      = CustomerLogging
+                                                                                             .getConsoleLogger();
 
   private final DSOClientBuilder                     dsoClientBuilder;
   private final DSOClientConfigHelper                config;
@@ -208,7 +213,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private L1Management                               l1Management;
   private TCProperties                               l1Properties;
   private DmiManager                                 dmiManager;
-  private boolean                                    createDedicatedMBeanServer = false;
+  private boolean                                    createDedicatedMBeanServer          = false;
   private CounterManager                             counterManager;
   private ThreadIDManager                            threadIDManager;
 
@@ -382,11 +387,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     String serverHost = connectionInfo[0].getHostname();
     int serverPort = connectionInfo[0].getPort();
 
-    int timeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
-    if (timeout < 0) { throw new IllegalArgumentException("invalid socket time value: " + timeout); }
-
+    int socketConnectTimeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
+    int maxConnectRetries = tcProperties.getInt(TCPropertiesConsts.L1_MAX_CONNECT_RETRIES);
+    if (socketConnectTimeout < 0) { throw new IllegalArgumentException("invalid socket time value: "
+                                                                       + socketConnectTimeout); }
     this.channel = this.dsoClientBuilder.createDSOClientMessageChannel(this.communicationsManager,
-                                                                       this.connectionComponents, sessionProvider);
+                                                                       this.connectionComponents, sessionProvider,
+                                                                       maxConnectRetries, socketConnectTimeout);
     ClientIDLoggerProvider cidLoggerProvider = new ClientIDLoggerProvider(this.channel.getClientIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -453,7 +460,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.statisticsAgentSubSystem.addCallback(new StatisticsSetupCallback(stageManager, mm, outstandingBatchesCounter,
                                                                           pendingBatchesSize, transactionSizeCounter,
                                                                           transactionsPerBatchCounter, txnCounter));
-    this.statisticsAgentSubSystem.setup(this.config.getNewCommonL1Config());
+    this.statisticsAgentSubSystem.setup(StatisticsSystemType.CLIENT, this.config.getNewCommonL1Config());
 
     RemoteObjectManager remoteObjectManager = this.dsoClientBuilder
         .createRemoteObjectManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
@@ -661,7 +668,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.channel.routeMessageType(TCMessageType.NODE_META_DATA_RESPONSE_MESSAGE, clusterMetaDataStage.getSink(),
                                   hydrateSink);
 
-    final int maxConnectRetries = this.l1Properties.getInt("max.connect.retries");
     int i = 0;
     while (maxConnectRetries <= 0 || i < maxConnectRetries) {
       try {
@@ -690,6 +696,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       CONSOLE_LOGGER.error("MaxConnectRetries '" + maxConnectRetries + "' attempted. Exiting.");
       System.exit(-1);
     }
+
     this.clientHandshakeManager.waitForHandshake();
 
     final TCSocketAddress remoteAddress = this.channel.channel().getRemoteAddress();
@@ -698,7 +705,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     DSO_LOGGER.info(infoMsg);
 
     if (this.statisticsAgentSubSystem.isActive()) {
-      this.statisticsAgentSubSystem.setDefaultAgentDifferentiator("L1/"
+      this.statisticsAgentSubSystem.setDefaultAgentDifferentiator(DEFAULT_AGENT_DIFFERENTIATOR_PREFIX
                                                                   + this.channel.channel().getChannelID().toLong());
     }
 

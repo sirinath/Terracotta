@@ -49,6 +49,12 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   private ConnectionHealthCheckerContext           healthCheckerContext   = null;
   private int                                      remoteCallbackPort     = TransportHandshakeMessage.NO_CALLBACK_PORT;
 
+  /**
+   * This is same as status.DISCONNECTED, except this flag is not reset before firing the disconnected event. Needed by
+   * OOO ConnectionWatcher. XXX: status can be sent in the event or set in the MessageTransport. needs cleanup.
+   */
+  private final SynchronizedBoolean                forcedDisconnect       = new SynchronizedBoolean(false);
+
   protected MessageTransportBase(MessageTransportState initialState,
                                  TransportHandshakeErrorHandler handshakeErrorHandler,
                                  TransportHandshakeMessageFactory messageFactory, boolean isOpen, TCLogger logger) {
@@ -93,7 +99,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       if (message.getSource() == this.connection) {
         receiveTransportMessageImpl(message);
       } else {
-        logger.warn("Received message from an old connection: " + message);
+        logger.warn("Received message from an old connection: " + message.getSource() + "; " + message);
       }
     }
   }
@@ -132,6 +138,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   }
 
   public void disconnect() {
+    forcedDisconnect.set(true);
     terminate(true);
   }
 
@@ -143,11 +150,15 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
         return;
       }
       if (disconnect) {
-        if (!this.status.isEnd()) this.status.disconnect();
+        synchronized (status) {
+          if (!this.status.isEnd()) this.status.disconnect();
+        }
         // Dont fire any events here. Anyway asynchClose is triggered below and we are expected to receive a closeEvent
         // and upon which we open up the OOO Reconnect window
       } else {
-        if (!this.status.isEnd()) this.status.closed();
+        synchronized (status) {
+          if (!this.status.isEnd()) this.status.closed();
+        }
         isOpen.set(false);
         fireTransportClosedEvent();
       }
@@ -214,6 +225,10 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
     }
   }
 
+  public final boolean wasForcedDisconnect() {
+    return forcedDisconnect.get();
+  }
+
   public final void attachNewConnection(TCConnection newConnection) throws IllegalReconnectException {
     synchronized (attachingNewConnection) {
       if ((this.connection != null) && !allowConnectionReplace) { throw new IllegalReconnectException(); }
@@ -250,12 +265,13 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
           // DEV-1689 : Don't bother for connections which actually didn't make up to Transport Establishment.
           this.transport.status.reset();
           this.transport.fireTransportDisconnectedEvent();
+          this.transport.getConnection().asynchClose();
         } else {
           logger.warn("Old connection " + oldConnection + "might not have been Transport Established ");
         }
       }
       // remove the transport as a listener for the old connection
-      if (oldConnection != null && oldConnection != transport.connection) {
+      if (oldConnection != null && oldConnection != transport.getConnection()) {
         oldConnection.removeListener(transport);
       }
       // set the new connection to the current connection.
@@ -293,6 +309,7 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
         }
       }
       fireTransportDisconnectedEvent();
+      forcedDisconnect.set(false);
     }
   }
 

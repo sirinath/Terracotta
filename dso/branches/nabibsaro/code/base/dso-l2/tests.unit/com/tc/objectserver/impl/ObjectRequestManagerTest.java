@@ -13,7 +13,6 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.net.ServerID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.NetworkStackID;
@@ -741,10 +740,6 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestDSOChannelManager.class);
     }
 
-    public void makeChannelActive(final ClientID clientID, final boolean persistent, final ServerID serverNodeID) {
-      throw new NotImplementedException(TestDSOChannelManager.class);
-    }
-
   }
 
   private static class TestClientStateManager implements ClientStateManager {
@@ -856,10 +851,6 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
-    public ManagedObject getObjectByIDOrNull(final ObjectID id) {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
     public Set getRootIDs() {
       throw new NotImplementedException(TestObjectManager.class);
     }
@@ -940,10 +931,6 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
-    public ManagedObject getObjectFromCacheByIDOrNull(final ObjectID id) {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
     public ObjectIDSet getObjectIDsInCache() {
       throw new NotImplementedException(TestObjectManager.class);
     }
@@ -964,12 +951,15 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
+    public ObjectIDSet getObjectReferencesFrom(ObjectID id, boolean cacheOnly) {
+      throw new NotImplementedException(TestObjectManager.class);
+    }
+
   }
 
   private static class TestMessageChannel implements MessageChannel {
 
-    public List                   createMessageContexts = new ArrayList();
-    public NoExceptionLinkedQueue sendQueue             = new NoExceptionLinkedQueue();
+    public NoExceptionLinkedQueue sendQueue = new NoExceptionLinkedQueue();
     private final ChannelID       channelID;
 
     public TestMessageChannel(final ChannelID channelID) {
@@ -1050,10 +1040,6 @@ public class ObjectRequestManagerTest extends TestCase {
       //      
     }
 
-    public void setRemoteNodeID(final NodeID destination) {
-      //      
-    }
-
   }
 
   private static class TestRequestManagedObjectResponseMessage implements RequestManagedObjectResponseMessage,
@@ -1097,10 +1083,6 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public MessageChannel getChannel() {
-      return null;
-    }
-
-    public ClientID getClientID() {
       return null;
     }
 
@@ -1175,10 +1157,6 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public MessageChannel getChannel() {
-      return null;
-    }
-
-    public ClientID getClientID() {
       return null;
     }
 

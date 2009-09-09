@@ -94,13 +94,30 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
     fireTunneledBeansRegistered();
   }
 
+  private synchronized boolean isListeningForTunneledBeans() {
+    return isListeningForTunneledBeans;
+  }
+
+  private synchronized void setListeningForTunneledBeans(boolean listening) {
+    isListeningForTunneledBeans = listening;
+  }
+
   private void startListeningForTunneledBeans() {
-    if (isListeningForTunneledBeans) return;
+    if (isListeningForTunneledBeans()) return;
     addMBeanNotificationListener(beanName, this, "DSOClientMBean");
-    isListeningForTunneledBeans = true;
+    setListeningForTunneledBeans(true);
+  }
+
+  private void safeRemoveNotificationListener(ObjectName objectName, NotificationListener listener) {
+    try {
+      cc.removeNotificationListener(objectName, listener);
+    } catch (Exception e) {
+      /**/
+    }
   }
 
   private void addMBeanNotificationListener(ObjectName objectName, NotificationListener listener, String beanType) {
+    safeRemoveNotificationListener(objectName, listener);
     try {
       cc.addNotificationListener(objectName, listener);
     } catch (Exception e) {
@@ -109,21 +126,21 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
   }
 
   private void stopListeningForTunneledBeans() {
-    if (!isListeningForTunneledBeans) return;
+    if (!isListeningForTunneledBeans()) return;
+    setListeningForTunneledBeans(false);
     try {
       cc.removeNotificationListener(beanName, this);
     } catch (Exception e) {
       throw new RuntimeException("Removing listener from DSOClientMBean", e);
     }
-    isListeningForTunneledBeans = false;
   }
 
   public void handleNotification(Notification notification, Object handback) {
     String type = notification.getType();
 
-    if (DSOClientMBean.TUNNELED_BEANS_REGISTERED.equals(type)) {
-      setupTunneledBeans();
+    if (DSOClientMBean.TUNNELED_BEANS_REGISTERED.equals(type) && isListeningForTunneledBeans()) {
       stopListeningForTunneledBeans();
+      setupTunneledBeans();
     } else if (type.startsWith("tc.logging.")) {
       Boolean newValue = Boolean.valueOf(notification.getMessage());
       Boolean oldValue = Boolean.valueOf(!newValue.booleanValue());
@@ -232,10 +249,11 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
   }
 
   public void addNotificationListener(NotificationListener listener) throws Exception {
-    cc.addNotificationListener(beanName, listener);
+    addNotificationListener(beanName, listener);
   }
 
   public void addNotificationListener(ObjectName on, NotificationListener listener) throws Exception {
+    safeRemoveNotificationListener(on, listener);
     cc.addNotificationListener(on, listener);
   }
 
@@ -299,10 +317,16 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
     delegate.killClient();
   }
 
+  /**
+   * TODO: Change this to be like the version in com.tc.admin.model.Server. Remove these "positional parameters" and use
+   * string keys.
+   */
   public synchronized ProductVersion getProductInfo() {
     if (productInfo == null) {
-      String[] attributes = { "Version", "Patched", "PatchLevel", "PatchVersion", "BuildID", "Copyright" };
+      String[] attributes = { "Version", "MavenArtifactsVersion", "Patched", "PatchLevel", "PatchVersion", "BuildID",
+          "Copyright" };
       String version = ProductInfo.UNKNOWN_VALUE;
+      String mavenArtifactsVersion = ProductInfo.UNKNOWN_VALUE;
       String patchLevel = ProductInfo.UNKNOWN_VALUE;
       String patchVersion = ProductInfo.UNKNOWN_VALUE;
       String buildID = ProductInfo.UNKNOWN_VALUE;
@@ -313,26 +337,30 @@ public class DSOClient extends BaseClusterNode implements IClient, NotificationL
         if (attrList.get(0) != null) {
           version = (String) ((Attribute) attrList.get(0)).getValue();
         }
-        boolean isPatched = false;
         if (attrList.get(1) != null) {
-          isPatched = (Boolean) ((Attribute) attrList.get(1)).getValue();
+          mavenArtifactsVersion = (String) ((Attribute) attrList.get(1)).getValue();
         }
+        boolean isPatched = false;
         if (attrList.get(2) != null) {
-          patchLevel = isPatched ? (String) ((Attribute) attrList.get(2)).getValue() : null;
+          isPatched = (Boolean) ((Attribute) attrList.get(2)).getValue();
         }
         if (attrList.get(3) != null) {
-          patchVersion = (String) ((Attribute) attrList.get(3)).getValue();
+          patchLevel = isPatched ? (String) ((Attribute) attrList.get(3)).getValue() : null;
         }
         if (attrList.get(4) != null) {
-          buildID = (String) ((Attribute) attrList.get(4)).getValue();
+          patchVersion = (String) ((Attribute) attrList.get(4)).getValue();
         }
         if (attrList.get(5) != null) {
-          copyright = (String) ((Attribute) attrList.get(5)).getValue();
+          buildID = (String) ((Attribute) attrList.get(5)).getValue();
+        }
+        if (attrList.get(6) != null) {
+          copyright = (String) ((Attribute) attrList.get(6)).getValue();
         }
       } catch (Exception e) {
         System.err.println(e);
       }
-      productInfo = new ProductVersion(version, patchLevel, patchVersion, buildID, capabilities, copyright);
+      productInfo = new ProductVersion(version, mavenArtifactsVersion, patchLevel, patchVersion, buildID, capabilities,
+                                       copyright);
     }
     return productInfo;
   }

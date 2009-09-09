@@ -24,7 +24,7 @@ import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.managedobject.ConcurrentStringMapManagedObjectState;
+import com.tc.objectserver.managedobject.ConcurrentDistributedMapManagedObjectState;
 import com.tc.util.ObjectIDSet;
 
 public class RespondToPartialKeysRequestHandler extends AbstractEventHandler implements EventHandler {
@@ -44,12 +44,12 @@ public class RespondToPartialKeysRequestHandler extends AbstractEventHandler imp
     ManagedObject mo = responseContext.getManagedObject();
     ManagedObjectState state = mo.getManagedObjectState();
 
-    if (!(state instanceof ConcurrentStringMapManagedObjectState)) { throw new AssertionError(
+    if (!(state instanceof ConcurrentDistributedMapManagedObjectState)) { throw new AssertionError(
                                                                                               " Map "
                                                                                                   + mapID
                                                                                                   + " is not a ConcurrentStringMap ManagedObjectState."); }
 
-    ConcurrentStringMapManagedObjectState csmState = (ConcurrentStringMapManagedObjectState) state;
+    ConcurrentDistributedMapManagedObjectState csmState = (ConcurrentDistributedMapManagedObjectState) state;
 
     Object portableValue = csmState.getValueForKey(portableKey);
     // System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "

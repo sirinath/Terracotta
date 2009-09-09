@@ -11,8 +11,6 @@ import com.tc.async.api.StageManager;
 import com.tc.async.impl.ConfigurationContextImpl;
 import com.tc.async.impl.MockSink;
 import com.tc.async.impl.StageManagerImpl;
-import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferOutput;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.l2.msg.L2StateMessage;
@@ -33,7 +31,6 @@ import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.QueueFactory;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +46,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     // disableAllUntil("2008-03-15");
   }
 
+  @Override
   public void setUp() {
     threadGroup = new TCThreadGroup(new ThrowableHandler(logger), "StateManagerTestGroup");
   }
@@ -313,6 +311,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
 
     // move following join nodes to passive-standby
     groupMgr[0].registerForGroupEvents(new MyGroupEventListener(groupMgr[0].getLocalNodeID()) {
+      @Override
       public void nodeJoined(NodeID nodeID) {
         // save nodeID for moving to passive
         joinedNodes.add(nodeID);
@@ -396,8 +395,6 @@ public class TCGroupStateManagerTest extends TCTestCase {
 
     groupMgr[localIndex] = gm;
     MyGroupEventListener gel = new MyGroupEventListener(gm.getLocalNodeID());
-    MyListener l = new MyListener();
-    gm.registerForMessages(TestMessage.class, l);
     gm.registerForGroupEvents(gel);
     sinks[localIndex] = new ChangeSink(localIndex);
     MyStateManagerConfig config = new MyStateManagerConfig();
@@ -419,6 +416,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
     public L2StateMessageStage(StateManager mgr) {
       this.mgr = mgr;
       this.sink = new MockSink() {
+        @Override
         public void add(EventContext ec) {
           processQ.put(ec);
         }
@@ -439,6 +437,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       return sink;
     }
 
+    @Override
     public void run() {
       while (!isStopped()) {
         L2StateMessage m = (L2StateMessage) processQ.poll(3000);
@@ -460,6 +459,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       this.mgr = mgr;
     }
 
+    @Override
     public void run() {
       mgr.startElection();
     }
@@ -474,27 +474,29 @@ public class TCGroupStateManagerTest extends TCTestCase {
   }
 
   private static class ElectionIfNecessaryThread extends Thread {
-    private StateManager mgr;
-    private NodeID       disconnectedNode;
+    private final StateManager mgr;
+    private final NodeID       disconnectedNode;
 
     public ElectionIfNecessaryThread(StateManager mgr, NodeID disconnectedNode) {
       this.mgr = mgr;
       this.disconnectedNode = disconnectedNode;
     }
 
+    @Override
     public void run() {
       mgr.startElectionIfNecessary(disconnectedNode);
     }
   }
 
   private static class ChangeSink extends MockSink {
-    private int               serverIndex;
+    private final int         serverIndex;
     private StateChangedEvent event = null;
 
     public ChangeSink(int index) {
       serverIndex = index;
     }
 
+    @Override
     public void add(EventContext context) {
       event = (StateChangedEvent) context;
       System.out.println("*** Server[" + serverIndex + "]: " + event);
@@ -505,6 +507,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
       return event.getCurrentState();
     }
 
+    @Override
     public String toString() {
       State st = getState();
       return ((st != null) ? st.toString() : "<state unknown>");
@@ -514,9 +517,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
 
   private static class MyGroupEventListener implements GroupEventsListener {
 
-    private NodeID lastNodeJoined;
-    private NodeID lastNodeLeft;
-    private NodeID gmNodeID;
+    private final NodeID gmNodeID;
 
     public MyGroupEventListener(NodeID nodeID) {
       this.gmNodeID = nodeID;
@@ -524,79 +525,12 @@ public class TCGroupStateManagerTest extends TCTestCase {
 
     public void nodeJoined(NodeID nodeID) {
       System.err.println("\n### " + gmNodeID + ": nodeJoined -> " + nodeID);
-      lastNodeJoined = nodeID;
     }
 
     public void nodeLeft(NodeID nodeID) {
       System.err.println("\n### " + gmNodeID + ": nodeLeft -> " + nodeID);
-      lastNodeLeft = nodeID;
     }
 
-    public NodeID getLastNodeJoined() {
-      return lastNodeJoined;
-    }
-
-    public NodeID getLastNodeLeft() {
-      return lastNodeLeft;
-    }
-
-    public void reset() {
-      lastNodeJoined = lastNodeLeft = null;
-    }
-  }
-
-  private static final class MyListener implements GroupMessageListener {
-
-    NoExceptionLinkedQueue queue = new NoExceptionLinkedQueue();
-
-    public void messageReceived(NodeID fromNode, GroupMessage msg) {
-      queue.put(msg);
-    }
-
-    public GroupMessage take() {
-      return (GroupMessage) queue.take();
-    }
-
-  }
-
-  private static final class TestMessage extends AbstractGroupMessage {
-
-    // to make serialization sane
-    public TestMessage() {
-      super(0);
-    }
-
-    public TestMessage(String message) {
-      super(0);
-      this.msg = message;
-    }
-    
-    protected void basicDeserializeFrom(TCByteBufferInput in) throws IOException {
-      msg = in.readString();
-    }
-
-    protected void basicSerializeTo(TCByteBufferOutput out) {
-      out.writeString(msg);
-    }
-
-
-    String msg;
-
-    public int hashCode() {
-      return msg.hashCode();
-    }
-
-    public boolean equals(Object o) {
-      if (o instanceof TestMessage) {
-        TestMessage other = (TestMessage) o;
-        return this.msg.equals(other.msg);
-      }
-      return false;
-    }
-
-    public String toString() {
-      return "TestMessage [ " + msg + "]";
-    }
   }
 
 }

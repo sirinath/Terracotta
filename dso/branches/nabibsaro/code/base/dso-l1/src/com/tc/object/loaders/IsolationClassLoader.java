@@ -12,6 +12,7 @@ import com.tc.asm.ClassWriter;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
+import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.DSOContextImpl;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
@@ -57,8 +58,9 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   }
 
   public void init() {
+    DSOContext context = DSOContextImpl.createContext(config, manager);
     manager.initForTests();
-    ClassProcessorHelper.setContext(this, DSOContextImpl.createContext(config, manager));
+    ClassProcessorHelper.setContext(this, context);
   }
 
   private static URL[] getSystemURLS() {
@@ -68,7 +70,8 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
   private Manager createManager(boolean startClient, ClientObjectManager objectManager,
                                 ClientTransactionManager txManager, DSOClientConfigHelper theConfig,
                                 PreparedComponentsFromL2Connection connectionComponents) {
-    Manager rv = new ManagerImpl(startClient, objectManager, txManager, theConfig, connectionComponents, false);
+    Manager rv = new ManagerImpl(startClient, objectManager, txManager, theConfig, connectionComponents, false, null,
+                                 null);
     rv.registerNamedLoader(this, null);
     return rv;
   }
@@ -77,6 +80,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
     this.manager.stop();
   }
 
+  @Override
   public Class loadClass(String name) throws ClassNotFoundException {
     throwIfNeeded(name);
 
@@ -161,6 +165,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
     onLoadErrors.put(className, errorMessage);
   }
 
+  @Override
   protected Class findClass(String name) throws ClassNotFoundException {
     throwIfNeeded(name);
     return super.findClass(name);

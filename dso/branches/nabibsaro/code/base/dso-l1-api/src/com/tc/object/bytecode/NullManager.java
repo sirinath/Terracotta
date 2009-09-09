@@ -5,6 +5,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.cluster.DsoCluster;
+import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
@@ -207,7 +208,7 @@ public final class NullManager implements Manager {
   }
 
   public final TCLogger getLogger(final String loggerName) {
-    throw new UnsupportedOperationException();
+    return new NullTCLogger();
   }
 
   public final SessionMonitor getHttpSessionMonitor() {
@@ -303,6 +304,10 @@ public final class NullManager implements Manager {
   }
 
   public Object getValueForKeyInMap(PartialKeysMap pojo, Object key) {
+    return null;
+  }
+
+  public Object getChangeApplicator(final Class clazz) {
     return null;
   }
 }

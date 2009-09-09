@@ -131,6 +131,10 @@ public class TestRemoteObjectManager implements RemoteObjectManager {
     throw new ImplementMe();
 
   }
+  
+  public void shutdown() {
+    // NOP
+  }
 
   public void preFetchObject(final ObjectID id) {
     throw new ImplementMe();

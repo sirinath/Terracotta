@@ -26,7 +26,7 @@ public class InstallForCommand extends ModuleOperatorCommand {
 
   private static final String             LONGOPT_OVERWRITE = "overwrite";
   private static final String             LONGOPT_FORCE     = "force";
-  private static final String             LONGOPT_PRETEND   = "pretend";
+  private static final String             LONGOPT_DRYRUN   = "dry-run";
   private static final String             LONGOPT_NOVERIFY  = "no-verify";
 
   private final Collection<InstallOption> installOptions;
@@ -34,7 +34,7 @@ public class InstallForCommand extends ModuleOperatorCommand {
   public InstallForCommand() {
     options.addOption(buildOption(LONGOPT_OVERWRITE, "Install anyway, even if already installed"));
     options.addOption(buildOption(LONGOPT_FORCE, "Synonym to overwrite"));
-    options.addOption(buildOption(LONGOPT_PRETEND, "Do not perform actual installation"));
+    options.addOption(buildOption(LONGOPT_DRYRUN, "Do not perform actual installation"));
     options.addOption(buildOption(LONGOPT_NOVERIFY, "Skip checksum verification"));
     arguments.put("file", "The path to tc-config.xml");
     installOptions = new ArrayList<InstallOption>();
@@ -58,7 +58,7 @@ public class InstallForCommand extends ModuleOperatorCommand {
   public void execute(CommandLine cli) {
     if (cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.FORCE);
     if (cli.hasOption(LONGOPT_OVERWRITE) || cli.hasOption(LONGOPT_FORCE)) installOptions.add(InstallOption.OVERWRITE);
-    if (cli.hasOption(LONGOPT_PRETEND)) installOptions.add(InstallOption.PRETEND);
+    if (cli.hasOption(LONGOPT_DRYRUN)) installOptions.add(InstallOption.DRYRUN);
     if (cli.hasOption(LONGOPT_NOVERIFY)) installOptions.add(InstallOption.SKIP_VERIFY);
     process(cli);
     printEpilogue();
@@ -93,7 +93,7 @@ public class InstallForCommand extends ModuleOperatorCommand {
 
     InstallListener listener = new DefaultInstallListener(report, out);
     for (Module module : neededToInstalledModules) {
-      module.install(listener, installOptions);
+      module.install(listener, actionLog(), installOptions);
     }
 
   }
@@ -107,10 +107,12 @@ public class InstallForCommand extends ModuleOperatorCommand {
     for (com.terracottatech.config.Module xmlModule : xmlModules) {
       List<Module> found = modules.find(Arrays.asList(new String[] { xmlModule.getName(), xmlModule.getVersion(),
           xmlModule.getGroupId() }));
-      out.println("Parsing module: " + xmlModule.getName() + "-" + xmlModule.getVersion());
+      
+      String versionStr = (xmlModule.getVersion() == null) ? "latest" : xmlModule.getVersion();
+      out.println("Parsing module: " + xmlModule.getName() + ":" + versionStr);
       out.flush();
       if (found.isEmpty()) {
-        err.println("No module found matching: " + xmlModule.getName() + "-" + xmlModule.getVersion() + " groupId="
+        err.println("No module found matching: " + xmlModule.getName() + ":" + versionStr + " groupId="
                     + xmlModule.getGroupId());
         err.flush();
       }
