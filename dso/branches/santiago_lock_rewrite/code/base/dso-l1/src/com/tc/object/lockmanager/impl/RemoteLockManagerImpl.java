@@ -9,7 +9,6 @@ import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockID;
-import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.ThreadID;
@@ -17,6 +16,7 @@ import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.locks.LockLevel;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.tx.TimerSpec;
@@ -42,9 +42,9 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   }
 
   public void requestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
-    Assert.assertTrue(LockLevel.isDiscrete(lockType));
+    Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeObtainLock(lockID, threadID, lockType, lockObjectType);
+    req.initializeLock(lockID, threadID, LockLevel.fromLegacyInt(lockType), lockObjectType);
     send(req);
   }
 
@@ -54,27 +54,27 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   }
 
   public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
-    Assert.assertTrue(LockLevel.isDiscrete(lockType));
+    Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeTryObtainLock(lockID, threadID, timeout, lockType, lockObjectType);
+    req.initializeTryLock(lockID, threadID, timeout, LockLevel.fromLegacyInt(lockType), lockObjectType);
     send(req);
   }
 
   public void releaseLock(LockID lockID, ThreadID threadID) {
     LockRequestMessage req = createRequest();
-    req.initializeLockRelease(lockID, threadID);
+    req.initializeUnlock(lockID, threadID);
     send(req);
   }
 
   public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
     LockRequestMessage req = createRequest();
-    req.initializeLockReleaseWait(lockID, threadID, call);
+    req.initializeWait(lockID, threadID, call);
     send(req);
   }
 
   public void queryLock(LockID lockID, ThreadID threadID) {
     LockRequestMessage req = createRequest();
-    req.initializeQueryLock(lockID, threadID);
+    req.initializeQuery(lockID, threadID);
     send(req);
   }
 
@@ -92,7 +92,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests,
                            Collection pendingTryLockRequests) {
     LockRequestMessage req = createRequest();
-    req.initializeLockRecallCommit(lockID);
+    req.initializeRecallCommit(lockID);
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
       LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request

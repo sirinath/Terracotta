@@ -10,6 +10,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.locks.LockLevel;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
@@ -33,19 +34,28 @@ public class LockResponseHandler extends AbstractEventHandler {
       logger.warn("Ignoring " + msg + " from a previous session:" + sessionID + ", " + sessionManager);
       return;
     }
-    if (msg.isLockAward()) {
-      lockManager.awardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
-    } else if (msg.isLockRecall()) {
-        lockManager.recall(msg.getLockID(), msg.getThreadID(), msg.getLockLevel(), msg.getAwardLeaseTime());
-    } else if (msg.isLockWaitTimeout()) {
-      lockManager.waitTimedOut(msg.getLockID(), msg.getThreadID());
-    } else if (msg.isLockNotAwarded()) {
-      lockManager.cannotAwardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
-    } else if (msg.isLockInfo()) {
-      lockManager.queryLockCommit(msg.getThreadID(), msg.getGlobalLockInfo());
-    } else {
-      logger.error("Unknown lock response message: " + msg);
+    
+    switch (msg.getResponseType()) {
+      case AWARD:
+        lockManager.awardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), LockLevel.toLegacyInt(msg.getLockLevel()));
+        return;
+      case RECALL:
+        lockManager.recall(msg.getLockID(), msg.getThreadID(), LockLevel.toLegacyInt(msg.getLockLevel()), 0);
+        return;
+      case RECALL_WITH_TIMEOUT:
+        lockManager.recall(msg.getLockID(), msg.getThreadID(), LockLevel.toLegacyInt(msg.getLockLevel()), msg.getAwardLeaseTime());
+        return;
+      case REFUSE:
+        lockManager.cannotAwardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), LockLevel.toLegacyInt(msg.getLockLevel()));
+        return;
+      case WAIT_TIMEOUT:
+        lockManager.waitTimedOut(msg.getLockID(), msg.getThreadID());
+        return;
+      case INFO:
+        lockManager.queryLockCommit(msg.getThreadID(), msg.getGlobalLockInfo());
+        return;
     }
+    logger.error("Unknown lock response message: " + msg);
   }
 
   public void initialize(ConfigurationContext context) {

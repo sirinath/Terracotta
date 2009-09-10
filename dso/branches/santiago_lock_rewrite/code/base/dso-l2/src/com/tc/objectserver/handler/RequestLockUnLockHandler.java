@@ -12,7 +12,9 @@ import com.tc.async.impl.NullSink;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockLevel;
 import com.tc.object.msg.LockRequestMessage;
+import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.lockmanager.api.LockManager;
 
@@ -33,26 +35,36 @@ public class RequestLockUnLockHandler extends AbstractEventHandler {
     LockID lid = lrm.getLockID();
     NodeID cid = lrm.getSourceNodeID();
     ThreadID tid = lrm.getThreadID();
-    if (lrm.isObtainLockRequest()) {
-      lockManager.requestLock(lid, cid, tid, lrm.getLockLevel(), lrm.getLockType(), lockResponseSink);
-    } else if (lrm.isTryObtainLockRequest()) {
-      lockManager.tryRequestLock(lid, cid, tid, lrm.getLockLevel(), lrm.getLockType(), lrm.getWaitInvocation(), lockResponseSink);
-    } else if (lrm.isReleaseLockRequest()) {
-      if (lrm.isWaitRelease()) {
-        lockManager.wait(lid, cid, tid, lrm.getWaitInvocation(), lockResponseSink);
-      } else {
+    
+    switch (lrm.getRequestType()) {
+      case LOCK:
+        lockManager.requestLock(lid, cid, tid, LockLevel.toLegacyInt(lrm.getLockLevel()), "", lockResponseSink);
+        return;
+      case TRY_LOCK:
+        long waitMillis = lrm.getTimeout();
+        TimerSpec ts = (waitMillis < 0) ? new TimerSpec() : new TimerSpec(waitMillis);
+        lockManager.tryRequestLock(lid, cid, tid, LockLevel.toLegacyInt(lrm.getLockLevel()), "", ts, lockResponseSink);
+        return;
+      case UNLOCK:
         lockManager.unlock(lid, cid, tid);
-      }
-    } else if (lrm.isRecallCommitLockRequest()) {
-      lockManager.recallCommit(lid, cid, lrm.getLockContexts(), lrm.getWaitContexts(), lrm.getPendingLockContexts(),
-                               lrm.getPendingTryLockContexts(), lockResponseSink);
-    } else if (lrm.isQueryLockRequest()) {
-      lockManager.queryLock(lid, cid, tid, lockResponseSink);
-    } else if (lrm.isInterruptWaitRequest()) {
-      lockManager.interrupt(lid, cid, tid);
-    } else {
-      throw new AssertionError("Unknown lock request message: " + lrm);
+        return;
+      case WAIT:
+        waitMillis = lrm.getTimeout();
+        ts = (waitMillis < 0) ? new TimerSpec() : new TimerSpec(waitMillis);
+        lockManager.wait(lid, cid, tid, ts, lockResponseSink);
+        return;
+      case RECALL_COMMIT:
+        lockManager.recallCommit(lid, cid, lrm.getLockContexts(), lrm.getWaitContexts(), lrm.getPendingLockContexts(),
+                                 lrm.getPendingTryLockContexts(), lockResponseSink);
+        return;
+      case QUERY:
+        lockManager.queryLock(lid, cid, tid, lockResponseSink);
+        return;
+      case INTERRUPT_WAIT:
+        lockManager.interrupt(lid, cid, tid);
+        return;
     }
+    throw new AssertionError("Unknown lock request message: " + lrm);
   }
 
   public void initialize(ConfigurationContext context) {
