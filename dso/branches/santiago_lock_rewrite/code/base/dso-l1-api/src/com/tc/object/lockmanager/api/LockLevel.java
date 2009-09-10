@@ -22,9 +22,9 @@ public class LockLevel {
   public final static int  CONCURRENT        = 4;
 
   /** GREEDY bit */
-  private final static int GREEDY            = 0x80;
+  public final static int GREEDY            = 0x80;
   /** SYNCHRONOUS bit, used with WRITE as SYNCHRONOUS_WRITE */
-  private final static int SYNCHRONOUS       = 0X40;
+  public final static int SYNCHRONOUS       = 0X40;
 
   /** Combination of WRITE with SYNCHRONOUS flag */
   public final static int  SYNCHRONOUS_WRITE = WRITE | SYNCHRONOUS;
