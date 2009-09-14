@@ -16,7 +16,7 @@ import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
-import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.tx.TimerSpec;
@@ -44,7 +44,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   public void requestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
     Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeLock(lockID, threadID, LockLevel.fromLegacyInt(lockType), lockObjectType);
+    req.initializeLock(lockID, threadID, ServerLockLevel.fromLegacyInt(lockType), lockObjectType);
     send(req);
   }
 
@@ -56,7 +56,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeTryLock(lockID, threadID, timeout, LockLevel.fromLegacyInt(lockType), lockObjectType);
+    req.initializeTryLock(lockID, threadID, timeout, ServerLockLevel.fromLegacyInt(lockType), lockObjectType);
     send(req);
   }
 
