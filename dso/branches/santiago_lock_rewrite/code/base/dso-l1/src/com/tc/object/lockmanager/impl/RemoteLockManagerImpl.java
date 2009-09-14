@@ -6,17 +6,16 @@ package com.tc.object.lockmanager.impl;
 
 import com.tc.net.GroupID;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.TryLockRequest;
-import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.tx.TimerSpec;
@@ -95,30 +94,66 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
     req.initializeRecallCommit(lockID);
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType());
-      req.addLockContext(ctxt);
+      State state = null;
+      switch (request.lockLevel()) {
+        case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.READ:
+          state = State.GREEDY_HOLDER_READ;
+          break;
+        case com.tc.object.lockmanager.api.LockLevel.READ:
+          state = State.HOLDER_READ;
+          break;
+        case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.WRITE:
+          state = State.GREEDY_HOLDER_WRITE;
+          break;
+        case com.tc.object.lockmanager.api.LockLevel.WRITE:
+          state = State.HOLDER_WRITE;
+          break;
+      }
+
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), req
+          .getSourceNodeID(), request.threadID(), state);
+      req.addContext(ctxt);
     }
 
     for (Iterator i = waitContext.iterator(); i.hasNext();) {
       WaitLockRequest request = (WaitLockRequest) i.next();
-      WaitContext ctxt = new WaitContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType(), request.getTimerSpec());
-      req.addWaitContext(ctxt);
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), req
+          .getSourceNodeID(), request.threadID(), State.WAITER, request.getTimerSpec().getMillis());
+      req.addContext(ctxt);
     }
 
     for (Iterator i = pendingRequests.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType());
-      req.addPendingLockContext(ctxt);
+
+      State state = null;
+      switch (request.lockLevel()) {
+        case com.tc.object.lockmanager.api.LockLevel.READ:
+          state = State.PENDING_READ;
+          break;
+        case com.tc.object.lockmanager.api.LockLevel.WRITE:
+          state = State.PENDING_WRITE;
+          break;
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), req
+          .getSourceNodeID(), request.threadID(), state);
+      req.addContext(ctxt);
     }
 
     for (Iterator i = pendingTryLockRequests.iterator(); i.hasNext();) {
       TryLockRequest request = (TryLockRequest) i.next();
-      LockContext ctxt = new TryLockContext(request.lockID(), req.getSourceNodeID(), request.threadID(), request
-          .lockLevel(), request.lockType(), request.getTimerSpec());
-      req.addPendingTryLockContext(ctxt);
+
+      State state = null;
+      switch (request.lockLevel()) {
+        case com.tc.object.lockmanager.api.LockLevel.READ:
+          state = State.TRY_PENDING_READ;
+          break;
+        case com.tc.object.lockmanager.api.LockLevel.WRITE:
+          state = State.TRY_PENDING_WRITE;
+          break;
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), req
+          .getSourceNodeID(), request.threadID(), state, request.getTimerSpec().getMillis());
+      req.addContext(ctxt);
     }
 
     send(req);

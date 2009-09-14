@@ -11,10 +11,8 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.api.TryLockContext;
-import com.tc.object.lockmanager.api.WaitContext;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
@@ -23,11 +21,9 @@ import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,31 +33,35 @@ import java.util.Set;
  */
 public class LockRequestMessage extends DSOMessageBase {
 
-  private final static byte LOCK_ID                  = 1;
-  private final static byte LOCK_LEVEL               = 2;
-  private final static byte THREAD_ID                = 3;
-  private final static byte REQUEST_TYPE             = 4;
-  private final static byte WAIT_MILLIS              = 5;
-  private static final byte WAIT_CONTEXT             = 6;
-  private static final byte LOCK_CONTEXT             = 7;
-  private static final byte PENDING_LOCK_CONTEXT     = 8;
-  private static final byte PENDING_TRY_LOCK_CONTEXT = 9;
+  private final static byte LOCK_ID      = 1;
+  private final static byte LOCK_LEVEL   = 2;
+  private final static byte THREAD_ID    = 3;
+  private final static byte REQUEST_TYPE = 4;
+  private final static byte WAIT_MILLIS  = 5;
+  private static final byte CONTEXT      = 6;
+
+  // private static final byte WAIT_CONTEXT = 6;
+  // private static final byte LOCK_CONTEXT = 7;
+  // private static final byte PENDING_LOCK_CONTEXT = 8;
+  // private static final byte PENDING_TRY_LOCK_CONTEXT = 9;
 
   // request types
   public static enum RequestType {
     LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT;
   }
 
-  private final Set       lockContexts           = new LinkedHashSet();
-  private final Set       waitContexts           = new LinkedHashSet();
-  private final Set       pendingLockContexts    = new LinkedHashSet();
-  private final List      pendingTryLockContexts = new ArrayList();
+  private final Set<ClientServerExchangeLockContext> contexts    = new LinkedHashSet<ClientServerExchangeLockContext>();
 
-  private LockID          lockID                 = StringLockID.NULL_ID;
-  private ServerLockLevel lockLevel              = null;
-  private ThreadID        threadID               = ThreadID.NULL_ID;
-  private RequestType     requestType            = null;
-  private long            waitMillis             = -1;
+  // private final Set lockContexts = new LinkedHashSet();
+  // private final Set waitContexts = new LinkedHashSet();
+  // private final Set pendingLockContexts = new LinkedHashSet();
+  // private final List pendingTryLockContexts = new ArrayList();
+
+  private LockID                                     lockID      = StringLockID.NULL_ID;
+  private ServerLockLevel                            lockLevel   = null;
+  private ThreadID                                   threadID    = ThreadID.NULL_ID;
+  private RequestType                                requestType = null;
+  private long                                       waitMillis  = -1;
 
   public LockRequestMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                             MessageChannel channel, TCMessageType type) {
@@ -107,20 +107,8 @@ public class LockRequestMessage extends DSOMessageBase {
         break;
       case RECALL_COMMIT:
         putNVPair(LOCK_ID, lockID);
-        for (Iterator i = lockContexts.iterator(); i.hasNext();) {
-          putNVPair(LOCK_CONTEXT, (TCSerializable) i.next());
-        }
-
-        for (Iterator i = waitContexts.iterator(); i.hasNext();) {
-          putNVPair(WAIT_CONTEXT, (TCSerializable) i.next());
-        }
-
-        for (Iterator i = pendingLockContexts.iterator(); i.hasNext();) {
-          putNVPair(PENDING_LOCK_CONTEXT, (TCSerializable) i.next());
-        }
-
-        for (Iterator i = pendingTryLockContexts.iterator(); i.hasNext();) {
-          putNVPair(PENDING_TRY_LOCK_CONTEXT, (TCSerializable) i.next());
+        for (Iterator i = contexts.iterator(); i.hasNext();) {
+          putNVPair(CONTEXT, (TCSerializable) i.next());
         }
         break;
     }
@@ -135,14 +123,8 @@ public class LockRequestMessage extends DSOMessageBase {
     if (waitMillis >= 0) {
       rv.append("Timeout : ").append(waitMillis).append("ms\n");
     }
-    if (waitContexts.size() > 0) {
-      rv.append("Wait contexts size = ").append(waitContexts.size()).append('\n');
-    }
-    if (lockContexts.size() > 0) {
-      rv.append("Lock contexts size = ").append(lockContexts.size()).append('\n');
-    }
-    if (pendingLockContexts.size() > 0) {
-      rv.append("Pending Lock contexts size = ").append(pendingLockContexts.size()).append('\n');
+    if (contexts.size() > 0) {
+      rv.append("Holder/Waiters/Pending contexts size = ").append(contexts.size()).append('\n');
     }
 
     return rv.toString();
@@ -174,17 +156,8 @@ public class LockRequestMessage extends DSOMessageBase {
       case WAIT_MILLIS:
         waitMillis = getLongValue();
         return true;
-      case LOCK_CONTEXT:
-        lockContexts.add(getObject(new LockContext()));
-        return true;
-      case WAIT_CONTEXT:
-        waitContexts.add(getObject(new WaitContext()));
-        return true;
-      case PENDING_LOCK_CONTEXT:
-        pendingLockContexts.add(getObject(new LockContext()));
-        return true;
-      case PENDING_TRY_LOCK_CONTEXT:
-        pendingTryLockContexts.add(getObject(new TryLockContext()));
+      case CONTEXT:
+        contexts.add((ClientServerExchangeLockContext) getObject(new ClientServerExchangeLockContext()));
         return true;
       default:
         return false;
@@ -207,52 +180,15 @@ public class LockRequestMessage extends DSOMessageBase {
     return lockLevel;
   }
 
-  public void addLockContext(LockContext ctxt) {
-    synchronized (lockContexts) {
-      Assert.assertTrue(lockContexts.add(ctxt));
+  public void addContext(ClientServerExchangeLockContext ctxt) {
+    synchronized (contexts) {
+      Assert.assertTrue(contexts.add(ctxt));
     }
   }
 
-  public Collection getLockContexts() {
-    synchronized (lockContexts) {
-      return new LinkedHashSet(lockContexts);
-    }
-  }
-
-  public void addWaitContext(WaitContext ctxt) {
-    synchronized (waitContexts) {
-      Assert.assertTrue(waitContexts.add(ctxt));
-    }
-  }
-
-  public Collection getWaitContexts() {
-    synchronized (waitContexts) {
-      return new LinkedHashSet(waitContexts);
-    }
-  }
-
-  public void addPendingLockContext(LockContext ctxt) {
-    synchronized (pendingLockContexts) {
-      Assert.assertTrue(pendingLockContexts.add(ctxt));
-    }
-  }
-
-  public Collection getPendingLockContexts() {
-    synchronized (pendingLockContexts) {
-      return new LinkedHashSet(pendingLockContexts);
-    }
-  }
-
-  public void addPendingTryLockContext(LockContext ctxt) {
-    Assert.eval(ctxt instanceof TryLockContext);
-    synchronized (pendingTryLockContexts) {
-      pendingTryLockContexts.add(ctxt);
-    }
-  }
-
-  public Collection getPendingTryLockContexts() {
-    synchronized (pendingTryLockContexts) {
-      return new ArrayList(pendingTryLockContexts);
+  public Collection<ClientServerExchangeLockContext> getContexts() {
+    synchronized (contexts) {
+      return contexts;
     }
   }
 
