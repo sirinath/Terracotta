@@ -10,13 +10,22 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
 import com.tc.net.NodeID;
+import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.TryLockContext;
+import com.tc.object.lockmanager.api.WaitContext;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.lockmanager.api.LockManager;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Makes the request for a lock on behalf of a client
@@ -55,8 +64,32 @@ public class RequestLockUnLockHandler extends AbstractEventHandler {
         lockManager.wait(lid, cid, tid, ts, lockResponseSink);
         return;
       case RECALL_COMMIT:
-        lockManager.recallCommit(lid, cid, lrm.getLockContexts(), lrm.getWaitContexts(), lrm.getPendingLockContexts(),
-                                 lrm.getPendingTryLockContexts(), lockResponseSink);
+        List<LockContext> holders = new ArrayList<LockContext>();
+        List<LockContext> pending = new ArrayList<LockContext>();
+        List<WaitContext> waiters = new ArrayList<WaitContext>();
+        List<TryLockContext> tryPending = new ArrayList<TryLockContext>();
+
+        Collection<ClientServerExchangeLockContext> contexts = lrm.getContexts();
+        for(Iterator<ClientServerExchangeLockContext> iterator = contexts.iterator(); iterator.hasNext();){
+          ClientServerExchangeLockContext cxt = iterator.next();
+          switch(cxt.getState().getType()) {
+            case GREEDY_HOLDER:
+            case HOLDER:
+              holders.add(cxt.getLockContext());
+              break;
+            case WAITER:
+              waiters.add(cxt.getWaitContext());
+              break;
+            case PENDING:
+              pending.add(cxt.getLockContext());
+              break;
+            case TRY_PENDING:
+              tryPending.add(cxt.getTryWaitContext());
+              break;
+          }
+        }
+
+        lockManager.recallCommit(lid, cid, holders, waiters, pending, tryPending, lockResponseSink);
         return;
       case QUERY:
         lockManager.queryLock(lid, cid, tid, lockResponseSink);
