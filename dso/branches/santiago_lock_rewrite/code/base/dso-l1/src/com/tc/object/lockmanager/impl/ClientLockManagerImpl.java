@@ -15,7 +15,6 @@ import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.ClientLockManagerConfig;
 import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.Notify;
@@ -28,6 +27,8 @@ import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
@@ -648,8 +649,8 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
   }
 
   public LockID lockIDFor(final String id) {
-    if (id == null) { return LockID.NULL_ID; }
-    return new LockID(id);
+    if (id == null) { return StringLockID.NULL_ID; }
+    return new StringLockID(id);
   }
 
   public synchronized Collection addAllWaitersTo(final Collection c, NodeID nodeID) {

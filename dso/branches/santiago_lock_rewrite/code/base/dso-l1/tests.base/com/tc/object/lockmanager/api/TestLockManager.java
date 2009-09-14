@@ -7,6 +7,8 @@ package com.tc.object.lockmanager.api;
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
@@ -30,7 +32,7 @@ public class TestLockManager implements ClientLockManager {
 
   public LockID lockIDFor(final String id) {
     this.lockIDForCalls.add(id);
-    return new LockID(id);
+    return new StringLockID(id);
   }
 
   public void awardLock(final NodeID nid, final SessionID sessionID, final LockID id, final ThreadID threadID,

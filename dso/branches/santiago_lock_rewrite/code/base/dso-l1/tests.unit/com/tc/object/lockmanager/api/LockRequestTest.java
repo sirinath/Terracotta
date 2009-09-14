@@ -3,6 +3,9 @@
  */
 package com.tc.object.lockmanager.api;
 
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
+
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -12,11 +15,11 @@ public class LockRequestTest extends TestCase {
     Random random = new Random();
     int instanceCount = 1000000;
 
-    LockRequest notEqual = new LockRequest(new LockID("nothing like me"), new ThreadID(Integer.MAX_VALUE),
+    LockRequest notEqual = new LockRequest(new StringLockID("nothing like me"), new ThreadID(Integer.MAX_VALUE),
                                            LockLevel.WRITE);
     long[] samples = new long[instanceCount];
     for (int i = 0; i < instanceCount; i++) {
-      LockID lid = new LockID(random.nextInt(Integer.MAX_VALUE - 1) + "");
+      LockID lid = new StringLockID(random.nextInt(Integer.MAX_VALUE - 1) + "");
       ThreadID tid = new ThreadID(random.nextInt(Integer.MAX_VALUE - 1));
       int lockType = (i % 2 == 0) ? LockLevel.READ : LockLevel.WRITE;
 
@@ -24,7 +27,7 @@ public class LockRequestTest extends TestCase {
       LockRequest a = new LockRequest(lid, tid, lockType);
       samples[i] = System.currentTimeMillis() - t0;
 
-      LockRequest b = new LockRequest(new LockID(lid.asString()), new ThreadID(tid.toLong()), lockType);
+      LockRequest b = new LockRequest(new StringLockID(lid.asString()), new ThreadID(tid.toLong()), lockType);
       assertEquals(a, b);
       assertEquals(a.hashCode(), b.hashCode());
       assertFalse(a.equals(notEqual));

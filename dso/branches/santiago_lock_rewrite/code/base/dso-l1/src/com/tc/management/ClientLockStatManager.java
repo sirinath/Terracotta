@@ -5,9 +5,9 @@ package com.tc.management;
 
 import com.tc.async.api.Sink;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.LockDistributionStrategy;
+import com.tc.object.locks.LockID;
 import com.tc.object.net.DSOClientMessageChannel;
 
 public interface ClientLockStatManager {

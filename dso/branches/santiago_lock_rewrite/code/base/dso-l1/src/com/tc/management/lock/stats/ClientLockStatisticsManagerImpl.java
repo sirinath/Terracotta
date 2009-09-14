@@ -11,9 +11,9 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.object.bytecode.ByteCodeUtil;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.LockDistributionStrategy;
+import com.tc.object.locks.LockID;
 import com.tc.object.net.DSOClientMessageChannel;
 
 import java.lang.reflect.Field;
@@ -55,8 +55,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     this.sink = sinkArg;
   }
 
-  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo,
-                                               int numberOfPendingLockRequests) {
+  public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo, int numberOfPendingLockRequests) {
     if (!isClientStatEnabled()) { return; }
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());

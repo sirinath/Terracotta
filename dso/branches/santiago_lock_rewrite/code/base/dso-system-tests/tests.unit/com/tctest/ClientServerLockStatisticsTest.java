@@ -37,7 +37,6 @@ import com.tc.net.protocol.tcm.TCMessageImpl;
 import com.tc.net.protocol.tcm.TCMessageSink;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ClientIDProvider;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
@@ -45,6 +44,8 @@ import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
 import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
@@ -125,7 +126,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     serverLockStatManager.start(new TestChannelManager(channel1), null);
     clientServerGlue.set(clientLockManager, serverLockManager, clientLockStatManager, serverLockStatManager);
 
-    final LockID l1 = new LockID("1");
+    final LockID l1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(1);
 
@@ -153,7 +154,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
   }
 
   public void testCollectLockStackTraces() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(1);
 

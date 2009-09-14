@@ -7,6 +7,7 @@ package com.tc.object.lockmanager.api;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.ClientID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
 
@@ -16,13 +17,13 @@ public class LockContextTest extends TestCase {
 
   public void testHashCode() throws Exception {
 
-    LockContext lc = new LockContext(new LockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
+    LockContext lc = new LockContext(new StringLockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
                                      "lock-type");
 
-    WaitContext wc = new WaitContext(new LockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
+    WaitContext wc = new WaitContext(new StringLockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
                                      "lock-type", new TimerSpec());
 
-    TryLockContext tlc = new TryLockContext(new LockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
+    TryLockContext tlc = new TryLockContext(new StringLockID("lock tock"), new ClientID(2), new ThreadID(3), LockLevel.WRITE,
                                             "lock-type", new TimerSpec());
 
     assertHashCodeAfterDeserialize(lc);

@@ -32,7 +32,7 @@ import com.tc.admin.model.IServer;
 import com.tc.admin.model.IServerGroup;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.object.ObjectID;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.locks.LockID;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 
 import java.awt.BorderLayout;

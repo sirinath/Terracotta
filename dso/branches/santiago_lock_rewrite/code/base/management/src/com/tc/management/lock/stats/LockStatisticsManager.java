@@ -5,8 +5,8 @@
 package com.tc.management.lock.stats;
 
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockID;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Counter;

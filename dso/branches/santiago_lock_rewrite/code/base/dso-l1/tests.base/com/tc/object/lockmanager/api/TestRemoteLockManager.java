@@ -6,6 +6,7 @@ package com.tc.object.lockmanager.api;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.GroupID;
+import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TransactionID;

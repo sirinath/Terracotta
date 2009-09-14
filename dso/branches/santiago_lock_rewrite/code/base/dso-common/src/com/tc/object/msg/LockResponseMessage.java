@@ -10,9 +10,9 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.session.SessionID;
 
@@ -55,18 +55,18 @@ public class LockResponseMessage extends DSOMessageBase {
       case REFUSE:
       case RECALL:
       case WAIT_TIMEOUT:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         break;
       case RECALL_WITH_TIMEOUT:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         putNVPair(LOCK_LEASE_MILLIS, leaseTimeInMs);
         break;
       case INFO:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         putNVPair(GLOBAL_LOCK_INFO, globalLockInfo);
         break;
@@ -95,7 +95,7 @@ public class LockResponseMessage extends DSOMessageBase {
         return true;
       case LOCK_ID:
         // TODO: Make this use a lockID factory so that we can avoid dups
-        lockID = new LockID(getStringValue());
+        lockID = getLockIDValue();
         return true;
       case LOCK_LEVEL:
         try {

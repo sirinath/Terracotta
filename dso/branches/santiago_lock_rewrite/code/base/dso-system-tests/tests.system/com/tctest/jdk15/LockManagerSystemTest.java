@@ -31,13 +31,14 @@ import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.TestClientGlobalTransactionManager;
 import com.tc.object.handler.LockResponseHandler;
 import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.StripedClientLockManagerImpl;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.msg.LockResponseMessage;
@@ -133,7 +134,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   }
 
   public void testLockAwardOrder() throws Exception {
-    final LockID l1 = new LockID("1");
+    final LockID l1 = new StringLockID("1");
 
     final ThreadID tid1 = new ThreadID(1);
     final ThreadID tid2 = new ThreadID(2);
@@ -187,7 +188,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   }
 
   public void testUpgradeNotSupported() throws Exception {
-    final LockID l1 = new LockID("1");
+    final LockID l1 = new StringLockID("1");
 
     final ThreadID tid1 = new ThreadID(1);
     final ThreadID tid2 = new ThreadID(2);
@@ -254,8 +255,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   }
 
   public void testBasic() throws Exception {
-    final LockID l1 = new LockID("1");
-    final LockID l3 = new LockID("3");
+    final LockID l1 = new StringLockID("1");
+    final LockID l3 = new StringLockID("3");
 
     final ThreadID tid1 = new ThreadID(1);
     final ThreadID tid2 = new ThreadID(2);
@@ -360,7 +361,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   }
 
   public void testTryLock() throws Throwable {
-    final LockID l1 = new LockID("1");
+    final LockID l1 = new StringLockID("1");
 
     final ThreadID tid1 = new ThreadID(1);
     final ThreadID tid2 = new ThreadID(2);

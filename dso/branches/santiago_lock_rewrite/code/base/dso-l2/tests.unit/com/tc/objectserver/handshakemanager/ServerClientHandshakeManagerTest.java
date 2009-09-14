@@ -17,10 +17,10 @@ import com.tc.net.protocol.tcm.TestTCMessage;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitContext;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.msg.ClientHandshakeAckMessage;
 import com.tc.object.msg.TestClientHandshakeMessage;
@@ -194,13 +194,13 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
 
     List lockContexts = new LinkedList();
 
-    lockContexts.add(new LockContext(new LockID("my lock"), clientID1, new ThreadID(10001), LockLevel.WRITE,
+    lockContexts.add(new LockContext(new StringLockID("my lock"), clientID1, new ThreadID(10001), LockLevel.WRITE,
                                      String.class.getName()));
-    lockContexts.add(new LockContext(new LockID("my other lock)"), clientID1, new ThreadID(10002), LockLevel.READ,
+    lockContexts.add(new LockContext(new StringLockID("my other lock)"), clientID1, new ThreadID(10002), LockLevel.READ,
                                      String.class.getName()));
     handshake.lockContexts.addAll(lockContexts);
 
-    WaitContext waitContext = new WaitContext(new LockID("d;alkjd"), clientID1, new ThreadID(101), LockLevel.WRITE,
+    WaitContext waitContext = new WaitContext(new StringLockID("d;alkjd"), clientID1, new ThreadID(101), LockLevel.WRITE,
                                               String.class.getName(), new TimerSpec());
     handshake.waitContexts.add(waitContext);
     handshake.isChangeListener = true;

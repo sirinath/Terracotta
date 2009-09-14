@@ -7,6 +7,8 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.config.lock.LockContextInfo;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.runtime.NullThreadIDMapImpl;
 import com.tc.util.runtime.ThreadIDManagerImpl;
@@ -31,7 +33,7 @@ public class ThreadLockManagerTest extends TestCase {
   }
 
   public void testLock() throws Exception {
-    final LockID lockID = new LockID("lock");
+    final LockID lockID = new StringLockID("lock");
     final int lockLevel = LockLevel.WRITE;
     assertEquals(0, lm.locks.size());
     tlm.lock(lockID, lockLevel, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
@@ -84,7 +86,7 @@ public class ThreadLockManagerTest extends TestCase {
   }
 
   public void testWait() throws Exception {
-    final LockID lockID = new LockID("lock");
+    final LockID lockID = new StringLockID("lock");
     final TimerSpec call = new TimerSpec();
     final Object lockObject = new Object();
     final WaitListener waitListener = null;
@@ -138,7 +140,7 @@ public class ThreadLockManagerTest extends TestCase {
 
   public void testNotify() throws Exception {
     final boolean notifyAll = false;
-    final LockID lockID = new LockID("lock");
+    final LockID lockID = new StringLockID("lock");
 
     tlm.notify(lockID, notifyAll);
     verifyNotifyArgs(lockID, new ThreadID(1), notifyAll, getNotifyCallArgs());
@@ -185,7 +187,7 @@ public class ThreadLockManagerTest extends TestCase {
   }
 
   public void testUnlock() throws Exception {
-    final LockID lockID = new LockID("lock");
+    final LockID lockID = new StringLockID("lock");
     tlm.unlock(lockID);
     verifyUnlockArgs(lockID, new ThreadID(1), getUnlockArgs());
 

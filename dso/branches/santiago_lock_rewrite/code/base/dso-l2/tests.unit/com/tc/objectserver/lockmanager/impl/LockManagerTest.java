@@ -13,11 +13,12 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.LockHolder;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.context.LockResponseContext;
@@ -95,9 +96,9 @@ public class LockManagerTest extends TestCase {
     final ClientID cid1 = new ClientID(1);
     final ClientID cid2 = new ClientID(2);
 
-    LockID lid1 = new LockID("1");
-    LockID lid2 = new LockID("2");
-    LockID lid3 = new LockID("3");
+    LockID lid1 = new StringLockID("1");
+    LockID lid2 = new StringLockID("2");
+    LockID lid3 = new StringLockID("3");
     ThreadID tid1 = new ThreadID(1);
     ThreadID tid2 = new ThreadID(2);
     TimerSpec wait = new TimerSpec(Integer.MAX_VALUE);
@@ -253,7 +254,7 @@ public class LockManagerTest extends TestCase {
 
 
   public void testReestablishWait() throws Exception {
-    LockID lockID1 = new LockID("my lock");
+    LockID lockID1 = new StringLockID("my lock");
     ClientID nid1 = new ClientID(1);
     ThreadID tx1 = new ThreadID(1);
     ThreadID tx2 = new ThreadID(2);
@@ -288,7 +289,7 @@ public class LockManagerTest extends TestCase {
   }
 
   public void testReestablishLockAfterReestablishWait() throws Exception {
-    LockID lockID1 = new LockID("my lock");
+    LockID lockID1 = new StringLockID("my lock");
     ClientID cid1 = new ClientID(1);
     ThreadID tx1 = new ThreadID(1);
     ThreadID tx2 = new ThreadID(2);
@@ -319,7 +320,7 @@ public class LockManagerTest extends TestCase {
   }
 
   public void testReestablishReadLock() throws Exception {
-    LockID lockID1 = new LockID("my lock");
+    LockID lockID1 = new StringLockID("my lock");
     ClientID cid1 = new ClientID(1);
     ThreadID tx1 = new ThreadID(1);
     ThreadID tx2 = new ThreadID(2);
@@ -375,8 +376,8 @@ public class LockManagerTest extends TestCase {
 
   public void testReestablishWriteLock() throws Exception {
 
-    LockID lockID1 = new LockID("my lock");
-    LockID lockID2 = new LockID("my other lock");
+    LockID lockID1 = new StringLockID("my lock");
+    LockID lockID2 = new StringLockID("my other lock");
     ClientID cid1 = new ClientID(1);
     ClientID cid2 = new ClientID(2);
     ThreadID tx1 = new ThreadID(1);
@@ -432,7 +433,7 @@ public class LockManagerTest extends TestCase {
   }
 
   public void testWaitTimeoutsIgnoredDuringStartup() throws Exception {
-    LockID lockID = new LockID("my lcok");
+    LockID lockID = new StringLockID("my lcok");
     ClientID cid1 = new ClientID(1);
     ThreadID tx1 = new ThreadID(1);
     try {
@@ -456,7 +457,7 @@ public class LockManagerTest extends TestCase {
   public void testWaitTimeoutsIgnoredDuringShutdown() throws InterruptedException {
 
     ClientID cid = new ClientID(1);
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
 
     lockManager.start();
@@ -480,7 +481,7 @@ public class LockManagerTest extends TestCase {
     if (true) return;
     List queue = sink.getInternalQueue();
     ClientID cid = new ClientID(1);
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
 
     final LinkedQueue shutdownSteps = new LinkedQueue();
@@ -511,7 +512,7 @@ public class LockManagerTest extends TestCase {
   public void testOffDoesNotBlockUntilNoOutstandingLocksViaUnlock() throws Exception {
     List queue = sink.getInternalQueue();
     ClientID cid1 = new ClientID(1);
-    LockID lock1 = new LockID("1");
+    LockID lock1 = new StringLockID("1");
     ThreadID tx1 = new ThreadID(1);
 
     final LinkedQueue shutdownSteps = new LinkedQueue();
@@ -538,7 +539,7 @@ public class LockManagerTest extends TestCase {
   public void testOffStopsGrantingNewLocks() throws Exception {
     List queue = sink.getInternalQueue();
     ClientID cid = new ClientID(1);
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
     try {
       // Test that the normal case works as expected...
@@ -565,7 +566,7 @@ public class LockManagerTest extends TestCase {
   public void testRequestDoesntGrantPendingLocks() throws Exception {
     List queue = sink.getInternalQueue();
     ClientID cid = new ClientID(1);
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
 
     try {
@@ -586,7 +587,7 @@ public class LockManagerTest extends TestCase {
   public void testUnlockIgnoredDuringShutdown() throws Exception {
     List queue = sink.getInternalQueue();
     ClientID cid = new ClientID(1);
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
     try {
       lockManager.start();
@@ -612,7 +613,7 @@ public class LockManagerTest extends TestCase {
   }
 
   public void testLockManagerBasics() {
-    LockID l1 = new LockID("1");
+    LockID l1 = new StringLockID("1");
     ClientID c1 = new ClientID(1);
     ThreadID s1 = new ThreadID(0);
 
@@ -653,8 +654,8 @@ public class LockManagerTest extends TestCase {
     // A simple deadlock. Thread 1 holds lock1, wants lock2. Thread2 holds
     // lock2, wants lock1
 
-    LockID l1 = new LockID("1");
-    LockID l2 = new LockID("2");
+    LockID l1 = new StringLockID("1");
+    LockID l2 = new StringLockID("2");
     ClientID c1 = new ClientID(1);
 
     ThreadID s1 = new ThreadID(1);
@@ -702,13 +703,13 @@ public class LockManagerTest extends TestCase {
     // test that includes locks with more than 1 holder
 
     // contended locks
-    LockID l1 = new LockID("1");
-    LockID l2 = new LockID("2");
+    LockID l1 = new StringLockID("1");
+    LockID l2 = new StringLockID("2");
 
     // uncontended read locks
-    LockID l3 = new LockID("3");
-    LockID l4 = new LockID("4");
-    LockID l5 = new LockID("5");
+    LockID l3 = new StringLockID("3");
+    LockID l4 = new StringLockID("4");
+    LockID l5 = new StringLockID("5");
 
     ClientID c1 = new ClientID(1);
     ThreadID s1 = new ThreadID(1);
@@ -749,7 +750,7 @@ public class LockManagerTest extends TestCase {
 
   public void disableTestUpgradeDeadLock() {
     // Detect deadlock in competing upgrades
-    LockID l1 = new LockID("L1");
+    LockID l1 = new StringLockID("L1");
 
     ClientID c0 = new ClientID(0);
     ThreadID s1 = new ThreadID(1);
@@ -868,7 +869,7 @@ public class LockManagerTest extends TestCase {
   private LockID[] makeUniqueLocks(int num) {
     LockID[] rv = new LockID[num];
     for (int i = 0; i < num; i++) {
-      rv[i] = new LockID("lock-" + i);
+      rv[i] = new StringLockID("lock-" + i);
     }
 
     return rv;
@@ -896,9 +897,9 @@ public class LockManagerTest extends TestCase {
     // -- Thread2 holds lock2, wants lock3
     // -- Thread3 holds lock3, wants lock1
 
-    LockID l1 = new LockID("L1");
-    LockID l2 = new LockID("L2");
-    LockID l3 = new LockID("L3");
+    LockID l1 = new StringLockID("L1");
+    LockID l2 = new StringLockID("L2");
+    LockID l3 = new StringLockID("L3");
     ClientID c0 = new ClientID(0);
     ThreadID s1 = new ThreadID(1);
     ThreadID s2 = new ThreadID(2);
