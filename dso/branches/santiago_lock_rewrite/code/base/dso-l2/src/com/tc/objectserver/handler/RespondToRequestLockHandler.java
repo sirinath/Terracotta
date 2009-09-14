@@ -8,15 +8,24 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
+import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.lockmanager.impl.GlobalLockStateInfo;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.context.LockResponseContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+
+import java.util.Collection;
 
 /**
  * @author steve
@@ -46,8 +55,43 @@ public class RespondToRequestLockHandler extends AbstractEventHandler {
         responseMessage.initializeWaitTimeout(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
       } else if (lrc.isLockInfo()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_QUERY_RESPONSE_MESSAGE);
-        responseMessage.initializeLockInfo(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()), lrc
-            .getGlobalLockInfo());
+        responseMessage.initializeLockInfo(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
+        GlobalLockInfo gli = lrc.getGlobalLockInfo();
+        
+        for (GlobalLockStateInfo s : (Collection<GlobalLockStateInfo>) gli.getGreedyHoldersInfo()) {
+          switch (s.getLockLevel()) {
+            case LockLevel.READ:
+              responseMessage.addContext(new ClientServerExchangeLockContext(s.getLockID(), s.getNodeID(), s.getThreadID(), State.GREEDY_HOLDER_READ));
+              break;
+            case LockLevel.WRITE:
+              responseMessage.addContext(new ClientServerExchangeLockContext(s.getLockID(), s.getNodeID(), s.getThreadID(), State.GREEDY_HOLDER_WRITE));
+              break;
+            default:
+              throw new AssertionError();
+          }
+        }
+        
+        for (GlobalLockStateInfo s : (Collection<GlobalLockStateInfo>) gli.getHoldersInfo()) {
+          switch (s.getLockLevel()) {
+            case LockLevel.READ:
+              responseMessage.addContext(new ClientServerExchangeLockContext(s.getLockID(), s.getNodeID(), s.getThreadID(), State.HOLDER_READ));
+              break;
+            case LockLevel.WRITE:
+              responseMessage.addContext(new ClientServerExchangeLockContext(s.getLockID(), s.getNodeID(), s.getThreadID(), State.HOLDER_WRITE));
+              break;
+            default:
+              throw new AssertionError();
+          }
+        }
+        
+        for (GlobalLockStateInfo s : (Collection<GlobalLockStateInfo>) gli.getWaitersInfo()) {
+          responseMessage.addContext(new ClientServerExchangeLockContext(s.getLockID(), s.getNodeID(), s.getThreadID(), State.WAITER));
+        }
+        
+        for (int i = 0; i < gli.getLockRequestQueueLength(); i++) {
+          responseMessage.addContext(new ClientServerExchangeLockContext(gli.getLockID(), ClientID.NULL_ID, ThreadID.NULL_ID, State.PENDING_READ));
+        }
+        
       } else {
         throw new AssertionError("Unknown lock response context : " + lrc);
       }

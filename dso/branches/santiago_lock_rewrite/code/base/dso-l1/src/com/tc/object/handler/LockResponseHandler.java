@@ -12,10 +12,16 @@ import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.lockmanager.impl.GlobalLockStateInfo;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author steve
@@ -56,7 +62,7 @@ public class LockResponseHandler extends AbstractEventHandler {
         lockManager.waitTimedOut(msg.getLockID(), msg.getThreadID());
         return;
       case INFO:
-        lockManager.queryLockCommit(msg.getThreadID(), msg.getGlobalLockInfo());
+        lockManager.queryLockCommit(msg.getThreadID(), getGliFromMessage(msg));
         return;
     }
     logger.error("Unknown lock response message: " + msg);
@@ -71,6 +77,32 @@ public class LockResponseHandler extends AbstractEventHandler {
     return level;
   }
 
+  private GlobalLockInfo getGliFromMessage(LockResponseMessage msg) {
+    Collection<GlobalLockStateInfo> greedyHolders = new ArrayList<GlobalLockStateInfo>();
+    Collection<GlobalLockStateInfo> holders = new ArrayList<GlobalLockStateInfo>();
+    Collection<GlobalLockStateInfo> waiters = new ArrayList<GlobalLockStateInfo>();
+    int queueLength = 0;
+    
+    for (ClientServerExchangeLockContext cselc : msg.getContexts()) {
+      switch (cselc.getState().getType()) {
+        case GREEDY_HOLDER:
+          greedyHolders.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
+          break;
+        case HOLDER:
+          holders.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
+          break;
+        case WAITER:
+          waiters.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
+          break;
+        case PENDING:
+        case TRY_PENDING:
+          queueLength++;
+      }
+    }
+    
+    return new GlobalLockInfo(msg.getLockID(), getLevelFromMessage(msg), queueLength, greedyHolders, holders, waiters);
+  }
+  
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;
