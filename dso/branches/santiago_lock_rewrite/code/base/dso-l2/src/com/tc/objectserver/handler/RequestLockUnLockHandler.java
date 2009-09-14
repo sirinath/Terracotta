@@ -12,7 +12,7 @@ import com.tc.async.impl.NullSink;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -35,15 +35,16 @@ public class RequestLockUnLockHandler extends AbstractEventHandler {
     LockID lid = lrm.getLockID();
     NodeID cid = lrm.getSourceNodeID();
     ThreadID tid = lrm.getThreadID();
-    
+
     switch (lrm.getRequestType()) {
       case LOCK:
-        lockManager.requestLock(lid, cid, tid, LockLevel.toLegacyInt(lrm.getLockLevel()), "", lockResponseSink);
+        lockManager.requestLock(lid, cid, tid, ServerLockLevel.toLegacyInt(lrm.getLockLevel()), "", lockResponseSink);
         return;
       case TRY_LOCK:
         long waitMillis = lrm.getTimeout();
         TimerSpec ts = (waitMillis < 0) ? new TimerSpec() : new TimerSpec(waitMillis);
-        lockManager.tryRequestLock(lid, cid, tid, LockLevel.toLegacyInt(lrm.getLockLevel()), "", ts, lockResponseSink);
+        lockManager.tryRequestLock(lid, cid, tid, ServerLockLevel.toLegacyInt(lrm.getLockLevel()), "", ts,
+                                   lockResponseSink);
         return;
       case UNLOCK:
         lockManager.unlock(lid, cid, tid);

@@ -11,7 +11,7 @@ import com.tc.logging.TCLogger;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
@@ -34,19 +34,19 @@ public class RespondToRequestLockHandler extends AbstractEventHandler {
 
       if (lrc.isLockAward()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_RESPONSE_MESSAGE);
-        responseMessage.initializeAward(lrc.getLockID(), lrc.getThreadID(), LockLevel.fromLegacyInt(lrc.getLockLevel()));
+        responseMessage.initializeAward(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
       } else if (lrc.isLockNotAwarded()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_RESPONSE_MESSAGE);
-        responseMessage.initializeRefuse(lrc.getLockID(), lrc.getThreadID(), LockLevel.fromLegacyInt(lrc.getLockLevel()));
+        responseMessage.initializeRefuse(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
       } else if (lrc.isLockRecall()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_RECALL_MESSAGE);
-        responseMessage.initializeRecallWithTimeout(lrc.getLockID(), lrc.getThreadID(), LockLevel.fromLegacyInt(lrc.getLockLevel()), lrc.getAwardLeaseTime());
+        responseMessage.initializeRecallWithTimeout(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()), lrc.getAwardLeaseTime());
       } else if (lrc.isLockWaitTimeout()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_RESPONSE_MESSAGE);
-        responseMessage.initializeWaitTimeout(lrc.getLockID(), lrc.getThreadID(), LockLevel.fromLegacyInt(lrc.getLockLevel()));
+        responseMessage.initializeWaitTimeout(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
       } else if (lrc.isLockInfo()) {
         responseMessage = createMessage(context, TCMessageType.LOCK_QUERY_RESPONSE_MESSAGE);
-        responseMessage.initializeLockInfo(lrc.getLockID(), lrc.getThreadID(), LockLevel.fromLegacyInt(lrc.getLockLevel()), lrc
+        responseMessage.initializeLockInfo(lrc.getLockID(), lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()), lrc
             .getGlobalLockInfo());
       } else {
         throw new AssertionError("Unknown lock response context : " + lrc);

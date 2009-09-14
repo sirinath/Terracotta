@@ -16,7 +16,7 @@ import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.WaitContext;
-import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
@@ -31,36 +31,39 @@ import java.util.Set;
 
 /**
  * Message for obtaining/releasing locks, and for modifying them (ie. wait/notify)
- *
+ * 
  * @author steve
  */
 public class LockRequestMessage extends DSOMessageBase {
 
-  private final static byte                  LOCK_ID                         = 1;
-  private final static byte                  LOCK_LEVEL                      = 2;
-  private final static byte                  THREAD_ID                       = 3;
-  private final static byte                  REQUEST_TYPE                    = 4;
-  private final static byte                  WAIT_MILLIS                     = 5;
-  private static final byte                  WAIT_CONTEXT                    = 6;
-  private static final byte                  LOCK_CONTEXT                    = 7;
-  private static final byte                  PENDING_LOCK_CONTEXT            = 8;
-  private static final byte                  PENDING_TRY_LOCK_CONTEXT        = 9;
+  private final static byte LOCK_ID                  = 1;
+  private final static byte LOCK_LEVEL               = 2;
+  private final static byte THREAD_ID                = 3;
+  private final static byte REQUEST_TYPE             = 4;
+  private final static byte WAIT_MILLIS              = 5;
+  private static final byte WAIT_CONTEXT             = 6;
+  private static final byte LOCK_CONTEXT             = 7;
+  private static final byte PENDING_LOCK_CONTEXT     = 8;
+  private static final byte PENDING_TRY_LOCK_CONTEXT = 9;
 
   // request types
-  public static enum RequestType {LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT;}
+  public static enum RequestType {
+    LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT;
+  }
 
-  private final Set                          lockContexts                    = new LinkedHashSet();
-  private final Set                          waitContexts                    = new LinkedHashSet();
-  private final Set                          pendingLockContexts             = new LinkedHashSet();
-  private final List                         pendingTryLockContexts          = new ArrayList();
+  private final Set       lockContexts           = new LinkedHashSet();
+  private final Set       waitContexts           = new LinkedHashSet();
+  private final Set       pendingLockContexts    = new LinkedHashSet();
+  private final List      pendingTryLockContexts = new ArrayList();
 
-  private LockID                             lockID                          = LockID.NULL_ID;
-  private LockLevel                          lockLevel                       = null;
-  private ThreadID                           threadID                        = ThreadID.NULL_ID;
-  private RequestType                        requestType                     = null;
-  private long                               waitMillis                      = -1;
+  private LockID          lockID                 = LockID.NULL_ID;
+  private ServerLockLevel lockLevel              = null;
+  private ThreadID        threadID               = ThreadID.NULL_ID;
+  private RequestType     requestType            = null;
+  private long            waitMillis             = -1;
 
-  public LockRequestMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out, MessageChannel channel, TCMessageType type) {
+  public LockRequestMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+                            MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
@@ -80,7 +83,7 @@ public class LockRequestMessage extends DSOMessageBase {
       case UNLOCK:
         putNVPair(LOCK_ID, lockID.asString());
         putNVPair(THREAD_ID, threadID.toLong());
-        //putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        // putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         break;
       case TRY_LOCK:
         putNVPair(LOCK_ID, lockID.asString());
@@ -91,7 +94,7 @@ public class LockRequestMessage extends DSOMessageBase {
       case WAIT:
         putNVPair(LOCK_ID, lockID.asString());
         putNVPair(THREAD_ID, threadID.toLong());
-        //putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        // putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         putNVPair(WAIT_MILLIS, waitMillis);
         break;
       case INTERRUPT_WAIT:
@@ -152,7 +155,7 @@ public class LockRequestMessage extends DSOMessageBase {
         return true;
       case LOCK_LEVEL:
         try {
-          lockLevel = LockLevel.values()[getByteValue()];
+          lockLevel = ServerLockLevel.values()[getByteValue()];
         } catch (ArrayIndexOutOfBoundsException e) {
           return false;
         }
@@ -190,7 +193,7 @@ public class LockRequestMessage extends DSOMessageBase {
   public RequestType getRequestType() {
     return requestType;
   }
-  
+
   public LockID getLockID() {
     return lockID;
   }
@@ -199,7 +202,7 @@ public class LockRequestMessage extends DSOMessageBase {
     return threadID;
   }
 
-  public LockLevel getLockLevel() {
+  public ServerLockLevel getLockLevel() {
     return lockLevel;
   }
 
@@ -264,11 +267,12 @@ public class LockRequestMessage extends DSOMessageBase {
     initialize(lid, id, null, RequestType.QUERY, -1);
   }
 
-  public void initializeLock(LockID lid, ThreadID id, LockLevel level, String lockObjectTypeArg) {
+  public void initializeLock(LockID lid, ThreadID id, ServerLockLevel level, String lockObjectTypeArg) {
     initialize(lid, id, level, RequestType.LOCK, -1);
   }
 
-  public void initializeTryLock(LockID lid, ThreadID id, TimerSpec timeout, LockLevel level, String lockObjectTypeArg) {
+  public void initializeTryLock(LockID lid, ThreadID id, TimerSpec timeout, ServerLockLevel level,
+                                String lockObjectTypeArg) {
     initialize(lid, id, level, RequestType.TRY_LOCK, timeout.getMillis());
   }
 
@@ -284,7 +288,7 @@ public class LockRequestMessage extends DSOMessageBase {
     initialize(lid, ThreadID.VM_ID, null, RequestType.RECALL_COMMIT, -1);
   }
 
-  private void initialize(LockID lid, ThreadID id, LockLevel level, RequestType reqType, long millis) {
+  private void initialize(LockID lid, ThreadID id, ServerLockLevel level, RequestType reqType, long millis) {
     this.lockID = lid;
     this.lockLevel = level;
     this.threadID = id;
