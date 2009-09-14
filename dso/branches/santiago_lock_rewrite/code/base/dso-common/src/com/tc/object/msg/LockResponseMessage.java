@@ -11,32 +11,35 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.session.SessionID;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class LockResponseMessage extends DSOMessageBase {
 
   private static final byte TYPE              = 1;
   private static final byte THREAD_ID         = 2;
   private static final byte LOCK_ID           = 3;
-  private static final byte LOCK_LEVEL        = 7;
-  private static final byte GLOBAL_LOCK_INFO  = 8;
-  private static final byte LOCK_LEASE_MILLIS = 9;
+  private static final byte LOCK_LEVEL        = 4;
+  private static final byte CONTEXT           = 5;
+  private static final byte LOCK_LEASE_MILLIS = 6;
 
   public static enum ResponseType {
     AWARD, RECALL, RECALL_WITH_TIMEOUT, WAIT_TIMEOUT, INFO, REFUSE;
   }
 
-  private ResponseType    responseType;
-  private ThreadID        threadID;
-  private LockID          lockID;
-  private ServerLockLevel lockLevel;
-  private GlobalLockInfo  globalLockInfo;
-  private int             leaseTimeInMs;
+  private final Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
+  
+  private ResponseType                                responseType;
+  private ThreadID                                    threadID;
+  private LockID                                      lockID;
+  private ServerLockLevel                             lockLevel;
+  private int                                         leaseTimeInMs;
 
   public LockResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                              MessageChannel channel, TCMessageType type) {
@@ -68,7 +71,9 @@ public class LockResponseMessage extends DSOMessageBase {
       case INFO:
         putNVPair(LOCK_ID, lockID);
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
-        putNVPair(GLOBAL_LOCK_INFO, globalLockInfo);
+        for (ClientServerExchangeLockContext cselc : contexts) {
+          putNVPair(CONTEXT, cselc);
+        }
         break;
     }
   }
@@ -104,9 +109,8 @@ public class LockResponseMessage extends DSOMessageBase {
           return false;
         }
         return true;
-      case GLOBAL_LOCK_INFO:
-        globalLockInfo = new GlobalLockInfo();
-        getObject(globalLockInfo);
+      case CONTEXT:
+        contexts.add((ClientServerExchangeLockContext) getObject(new ClientServerExchangeLockContext()));
         return true;
       case LOCK_LEASE_MILLIS:
         leaseTimeInMs = getIntValue();
@@ -136,41 +140,43 @@ public class LockResponseMessage extends DSOMessageBase {
     return lockLevel;
   }
 
-  public GlobalLockInfo getGlobalLockInfo() {
-    return globalLockInfo;
+  public void addContext(ClientServerExchangeLockContext ctxt) {
+    contexts.add(ctxt);
+  }
+
+  public Collection<ClientServerExchangeLockContext> getContexts() {
+    return contexts;
   }
 
   public void initializeAward(LockID lid, ThreadID sid, ServerLockLevel level) {
-    initialize(ResponseType.AWARD, lid, sid, level, null, -1);
+    initialize(ResponseType.AWARD, lid, sid, level, -1);
   }
 
   public void initializeRefuse(LockID lid, ThreadID sid, ServerLockLevel level) {
-    initialize(ResponseType.REFUSE, lid, sid, level, null, -1);
+    initialize(ResponseType.REFUSE, lid, sid, level, -1);
   }
 
   public void initializeRecallWithTimeout(LockID lid, ThreadID sid, ServerLockLevel level, int leaseTimeInMills) {
-    initialize(ResponseType.RECALL_WITH_TIMEOUT, lid, sid, level, null, -1);
+    initialize(ResponseType.RECALL_WITH_TIMEOUT, lid, sid, level, -1);
   }
 
   public void initializeRecall(LockID lid, ThreadID sid, ServerLockLevel level) {
-    initialize(ResponseType.RECALL, lid, sid, level, null, -1);
+    initialize(ResponseType.RECALL, lid, sid, level, -1);
   }
 
   public void initializeWaitTimeout(LockID lid, ThreadID sid, ServerLockLevel level) {
-    initialize(ResponseType.WAIT_TIMEOUT, lid, sid, level, null, -1);
+    initialize(ResponseType.WAIT_TIMEOUT, lid, sid, level, -1);
   }
 
-  public void initializeLockInfo(LockID lid, ThreadID sid, ServerLockLevel level, GlobalLockInfo info) {
-    initialize(ResponseType.INFO, lid, sid, level, info, -1);
+  public void initializeLockInfo(LockID lid, ThreadID sid, ServerLockLevel level) {
+    initialize(ResponseType.INFO, lid, sid, level, -1);
   }
 
-  private void initialize(ResponseType requestType, LockID lid, ThreadID sid, ServerLockLevel level,
-                          GlobalLockInfo info, int leaseTimeInMills) {
+  private void initialize(ResponseType requestType, LockID lid, ThreadID sid, ServerLockLevel level, int leaseTimeInMills) {
     this.responseType = requestType;
     this.threadID = sid;
     this.lockID = lid;
     this.lockLevel = level;
-    this.globalLockInfo = info;
     this.leaseTimeInMs = leaseTimeInMills;
   }
 

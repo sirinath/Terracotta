@@ -15,7 +15,6 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
-import com.tc.object.locks.StringLockID;
 import com.tc.object.session.SessionID;
 import com.tc.util.Assert;
 
@@ -39,11 +38,6 @@ public class LockRequestMessage extends DSOMessageBase {
   private final static byte WAIT_MILLIS  = 5;
   private static final byte CONTEXT      = 6;
 
-  // private static final byte WAIT_CONTEXT = 6;
-  // private static final byte LOCK_CONTEXT = 7;
-  // private static final byte PENDING_LOCK_CONTEXT = 8;
-  // private static final byte PENDING_TRY_LOCK_CONTEXT = 9;
-
   // request types
   public static enum RequestType {
     LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT;
@@ -51,14 +45,9 @@ public class LockRequestMessage extends DSOMessageBase {
 
   private final Set<ClientServerExchangeLockContext> contexts    = new LinkedHashSet<ClientServerExchangeLockContext>();
 
-  // private final Set lockContexts = new LinkedHashSet();
-  // private final Set waitContexts = new LinkedHashSet();
-  // private final Set pendingLockContexts = new LinkedHashSet();
-  // private final List pendingTryLockContexts = new ArrayList();
-
-  private LockID                                     lockID      = StringLockID.NULL_ID;
+  private LockID                                     lockID      = null;
   private ServerLockLevel                            lockLevel   = null;
-  private ThreadID                                   threadID    = ThreadID.NULL_ID;
+  private ThreadID                                   threadID    = null;
   private RequestType                                requestType = null;
   private long                                       waitMillis  = -1;
 
@@ -182,15 +171,11 @@ public class LockRequestMessage extends DSOMessageBase {
   }
 
   public void addContext(ClientServerExchangeLockContext ctxt) {
-    synchronized (contexts) {
-      Assert.assertTrue(contexts.add(ctxt));
-    }
+    Assert.assertTrue(contexts.add(ctxt));
   }
 
   public Collection<ClientServerExchangeLockContext> getContexts() {
-    synchronized (contexts) {
-      return contexts;
-    }
+    return contexts;
   }
 
   public long getTimeout() {
