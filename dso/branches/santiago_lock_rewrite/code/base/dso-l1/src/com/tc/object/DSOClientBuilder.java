@@ -23,7 +23,6 @@ import com.tc.object.idprovider.impl.ObjectIDClientHandshakeRequester;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
@@ -80,10 +79,11 @@ public interface DSOClientBuilder {
                                               final ToggleableReferenceManager toggleRefMgr);
 
   ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel, final ClientIDLogger clientIDLogger,
-                                      final RemoteLockManager remoteLockManager, final SessionManager sessionManager,
-                                      final ClientLockStatManager lockStatManager,
+                                      final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
+                                      final LockRequestMessageFactory lockRequestMessageFactory,
+                                      final ClientGlobalTransactionManager clientGlobalTransactionManager,
                                       final ClientLockManagerConfigImpl clientLockManagerConfigImpl);
-
+  
   RemoteTransactionManager createRemoteTransactionManager(final ClientIDProvider cidProvider,
                                                           final DNAEncoding encoding,
                                                           final FoldingConfig foldingConfig,
@@ -102,9 +102,4 @@ public interface DSOClientBuilder {
   ObjectIDProvider createObjectIdProvider(BatchSequence[] sequences, ClientIDProvider clientIDProvider);
 
   BatchSequenceReceiver getBatchReceiver(BatchSequence[] sequences);
-
-  RemoteLockManager createRemoteLockManager(final DSOClientMessageChannel dsoChannel,
-                                            final LockRequestMessageFactory lockRequestMessageFactory,
-                                            final ClientGlobalTransactionManager gtxManager);
-
 }
