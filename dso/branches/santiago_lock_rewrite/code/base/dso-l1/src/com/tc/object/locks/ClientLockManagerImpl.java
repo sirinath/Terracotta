@@ -90,7 +90,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     return locks.get(lock);
   }
   
-  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level) {
+  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     if (paused() || !sessionManager.isCurrentSession(group, session)) {
       logger.warn("Ignoring lock award from a dead server :" + session + ", " + sessionManager + " : "
                        + lock + " " + thread + " " + level + " state = " + state);
@@ -153,7 +153,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
   }
 
-  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level) {
+  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     if (paused() || !sessionManager.isCurrentSession(group, session)) {
       logger.warn("Ignoring lock refuse from a dead server :" + session + ", " + sessionManager + " : "
                        + lock + " " + thread + " " + level + " state = " + state);

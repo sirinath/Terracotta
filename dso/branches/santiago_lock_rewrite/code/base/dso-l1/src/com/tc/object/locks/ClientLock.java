@@ -30,8 +30,8 @@ public interface ClientLock {
 
   public void notified(ThreadID thread);
   public void recall(LockLevel interest, int lease);
-  public void award(ThreadID thread, LockLevel level);
-  public void refuse(ThreadID thread, LockLevel level);
+  public void award(ThreadID thread, ServerLockLevel level);
+  public void refuse(ThreadID thread, ServerLockLevel level);
 
   /*
    * This method supports both the client handshake - (allows you
