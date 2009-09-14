@@ -7,7 +7,8 @@ package com.tc.object.lockmanager.impl;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockIDSerializer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class GlobalLockInfo implements TCSerializable {
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeString(lockID.asString());
+    new LockIDSerializer(lockID).serializeTo(serialOutput);
     serialOutput.writeInt(level);
     serialOutput.writeInt(lockRequestQueueLength);
     serialOutput.writeInt(holdersInfo.size());
@@ -84,7 +85,8 @@ public class GlobalLockInfo implements TCSerializable {
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    this.lockID = new LockID(serialInput.readString());
+    LockIDSerializer lidsr = new LockIDSerializer();
+    this.lockID = ((LockIDSerializer) lidsr.deserializeFrom(serialInput)).getLockID();
     this.level = serialInput.readInt();
     this.lockRequestQueueLength = serialInput.readInt();
     int size = serialInput.readInt();

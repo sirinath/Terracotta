@@ -4,9 +4,9 @@
  */
 package com.tc.object.lockmanager.impl;
 
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockID;
 
 import java.io.Serializable;
 

@@ -3,8 +3,8 @@
  */
 package com.tc.objectserver.lockmanager.impl;
 
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ServerThreadID;
+import com.tc.object.locks.LockID;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 
 /**

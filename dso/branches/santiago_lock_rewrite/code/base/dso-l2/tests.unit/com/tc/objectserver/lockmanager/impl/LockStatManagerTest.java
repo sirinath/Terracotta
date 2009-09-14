@@ -8,9 +8,10 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
@@ -75,7 +76,7 @@ public class LockStatManagerTest extends TestCase {
   public void testLockHeldAggregateDurationWithoutGreedy() {
     lockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
     try {
-      LockID l1 = new LockID("1");
+      LockID l1 = new StringLockID("1");
       final ClientID cid1 = new ClientID(1);
       ThreadID s1 = new ThreadID(0);
       final ClientID cid2 = new ClientID(2);
@@ -105,7 +106,7 @@ public class LockStatManagerTest extends TestCase {
 
   public void testLockHeldAggregateDuration() {
     try {
-      LockID l1 = new LockID("1");
+      LockID l1 = new StringLockID("1");
       final ClientID cid1 = new ClientID(1);
       ThreadID s1 = new ThreadID(0);
       final ClientID cid2 = new ClientID(2);
@@ -145,8 +146,8 @@ public class LockStatManagerTest extends TestCase {
 
   public void testNestedDepth() {
     try {
-      LockID l1 = new LockID("1");
-      LockID l2 = new LockID("2");
+      LockID l1 = new StringLockID("1");
+      LockID l2 = new StringLockID("2");
       final ClientID cid1 = new ClientID(1);
       ThreadID s1 = new ThreadID(0);
 
@@ -173,7 +174,7 @@ public class LockStatManagerTest extends TestCase {
 
       lockStatManager.setLockStatisticsEnabled(false);
 
-      LockID l1 = new LockID("1");
+      LockID l1 = new StringLockID("1");
       ThreadID s1 = new ThreadID(0);
 
       final ClientID cid1 = new ClientID(1);
@@ -192,7 +193,7 @@ public class LockStatManagerTest extends TestCase {
   }
 
   private int verifyLockStatsManagerStatistics(int initialLockRecallCount) {
-    LockID l1 = new LockID("1");
+    LockID l1 = new StringLockID("1");
     ThreadID s1 = new ThreadID(0);
     SampledCounter globalLockCounter = serverStats.getGlobalLockCounter();
 

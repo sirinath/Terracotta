@@ -22,7 +22,6 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
 import com.tc.object.lockmanager.api.ClientLockManagerConfig;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
@@ -33,6 +32,8 @@ import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.lockmanager.api.TestRemoteLockManager.LockResponder;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.TestClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
@@ -98,7 +99,7 @@ public class ClientLockManagerTest extends TCTestCase {
                                                                                   testClientLockManagerConfig);
     rmtLockManager.setClientLockManager(clientLockManagerImpl);
 
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID threadID1 = new ThreadID(1);
 
     rmtLockManager.lockResponder = new LockResponder() {
@@ -146,8 +147,8 @@ public class ClientLockManagerTest extends TCTestCase {
                                                                                   testClientLockManagerConfig);
     rmtLockManager.setClientLockManager(clientLockManagerImpl);
 
-    final LockID lockID1 = new LockID("1");
-    final LockID lockID2 = new LockID("2");
+    final LockID lockID1 = new StringLockID("1");
+    final LockID lockID2 = new StringLockID("2");
     final ThreadID threadID1 = new ThreadID(1);
 
     rmtLockManager.lockResponder = new LockResponder() {
@@ -223,8 +224,8 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testNestedSynchronousWrite() {
-    final LockID lockID_1 = new LockID("1");
-    final LockID lockID_2 = new LockID("2");
+    final LockID lockID_1 = new StringLockID("1");
+    final LockID lockID_2 = new StringLockID("2");
     final ThreadID threadID_1 = new ThreadID(1);
     final ThreadID threadID_2 = new ThreadID(2);
 
@@ -272,8 +273,8 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testSynchronousWriteUnlock() {
-    final LockID lockID_1 = new LockID("1");
-    final LockID lockID_2 = new LockID("2");
+    final LockID lockID_1 = new StringLockID("1");
+    final LockID lockID_2 = new StringLockID("2");
     final ThreadID threadID_1 = new ThreadID(1);
     final ThreadID threadID_2 = new ThreadID(2);
 
@@ -298,8 +299,8 @@ public class ClientLockManagerTest extends TCTestCase {
 
   public void testSynchronousWriteWait() {
 
-    final LockID lockID_1 = new LockID("1");
-    final LockID lockID_2 = new LockID("2");
+    final LockID lockID_1 = new StringLockID("1");
+    final LockID lockID_2 = new StringLockID("2");
     final ThreadID threadID_1 = new ThreadID(1);
     final ThreadID threadID_2 = new ThreadID(2);
 
@@ -399,7 +400,7 @@ public class ClientLockManagerTest extends TCTestCase {
     lockManager = new TryLockClientLockManager(new NullTCLogger(), rmtLockManager, sessionManager, awardBarrier,
                                                new NullClientLockManagerConfig());
 
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID txID = new ThreadID(1);
 
     Thread t1 = new Thread(new Runnable() {
@@ -422,7 +423,7 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testGreedyLockRequest() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
     final NoExceptionLinkedQueue queue = new NoExceptionLinkedQueue();
@@ -456,8 +457,8 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testNotified() throws Exception {
-    final LockID lockID1 = new LockID("1");
-    final LockID lockID2 = new LockID("2");
+    final LockID lockID1 = new StringLockID("1");
+    final LockID lockID2 = new StringLockID("2");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
     final Set heldLocks = new HashSet();
@@ -560,11 +561,11 @@ public class ClientLockManagerTest extends TCTestCase {
     // XXX: The current TestRemoteLockManager doesn't handle multiple
     // read-locks by different transactions properly,
     // so this test doesn't test that case.
-    final LockID lockID = new LockID("my lock");
+    final LockID lockID = new StringLockID("my lock");
     final ThreadID tx1 = new ThreadID(1);
     final int writeLockLevel = LockLevel.WRITE;
 
-    final LockID readLock = new LockID("my read lock");
+    final LockID readLock = new StringLockID("my read lock");
     final ThreadID tx2 = new ThreadID(2);
     final int readLockLevel = LockLevel.READ;
 
@@ -611,7 +612,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
     final L1Info l1info = new L1Info(lockInfoDumpHandler);
 
-    final LockID lockID = new LockID("my lock");
+    final LockID lockID = new StringLockID("my lock");
     final ThreadID tx1 = new ThreadID(1);
     final TimerSpec waitInvocation = new TimerSpec();
     final Object waitObject = new Object();
@@ -646,7 +647,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final LinkedQueue flowControl = new LinkedQueue();
     final LinkedQueue lockComplete = new LinkedQueue();
     final LinkedQueue unlockComplete = new LinkedQueue();
-    final LockID lockID = new LockID("1");
+    final LockID lockID = new StringLockID("1");
     final ThreadID txID = new ThreadID(1);
     final int lockType = LockLevel.WRITE;
 
@@ -742,8 +743,8 @@ public class ClientLockManagerTest extends TCTestCase {
 
     final ThreadID tid0 = new ThreadID(0);
     final ThreadID tid1 = new ThreadID(1);
-    final LockID lid0 = new LockID("0");
-    final LockID lid1 = new LockID("1");
+    final LockID lid0 = new StringLockID("0");
+    final LockID lid1 = new StringLockID("1");
 
     LockRequest lr0 = new LockRequest(lid0, tid0, LockLevel.WRITE);
     LockRequest lr1 = new LockRequest(lid1, tid1, LockLevel.WRITE);
@@ -787,14 +788,14 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testAwardWhenNotPending() throws Exception {
-    LockID lockID = new LockID("1");
+    LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
     lockManager.awardLock(gid, sessionManager.getSessionID(gid), lockID, txID, LockLevel.WRITE);
   }
 
   public void testBasics() throws Exception {
     final ThreadID tid0 = new ThreadID(0);
-    final LockID lid0 = new LockID("0");
+    final LockID lid0 = new StringLockID("0");
 
     final ThreadID tid1 = new ThreadID(1);
 
@@ -1053,7 +1054,7 @@ public class ClientLockManagerTest extends TCTestCase {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     assertEquals(0, rmtLockManager.getUnlockRequestCount());
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     lockManager.lock(lid0, tid0, LockLevel.READ, "", LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     assertEquals(1, rmtLockManager.getLockRequestCount());
@@ -1075,7 +1076,7 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testLockUpgradeMakesRemoteRequest() throws Exception {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     lockManager.lock(lid0, tid0, LockLevel.READ, "", LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     assertEquals(1, rmtLockManager.getLockRequestCount());
@@ -1093,7 +1094,7 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testNestedReadLocksGrantsLocally() throws Exception {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     lockManager.lock(lid0, tid0, LockLevel.READ, "", LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     assertEquals(1, rmtLockManager.getLockRequestCount());
@@ -1121,7 +1122,7 @@ public class ClientLockManagerTest extends TCTestCase {
     assertEquals(0, rmtLockManager.getLockRequestCount());
     assertEquals(0, rmtLockManager.getUnlockRequestCount());
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     lockManager.lock(lid0, tid0, LockLevel.WRITE, "", LockContextInfo.NULL_LOCK_CONTEXT_INFO);
     assertEquals(1, rmtLockManager.getLockRequestCount());
@@ -1143,7 +1144,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
   public void testLockPinning() throws Exception {
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     rmtLockManager.makeLocksGreedy();
 
@@ -1176,7 +1177,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
   public void testLockEviction() throws Exception {
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     rmtLockManager.makeLocksGreedy();
 
@@ -1206,7 +1207,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
   public void testInvalidEvictionAndUnpin() throws Exception {
     ThreadID tid0 = new ThreadID(0);
-    LockID lid0 = new LockID("0");
+    LockID lid0 = new StringLockID("0");
 
     rmtLockManager.makeLocksGreedy();
 

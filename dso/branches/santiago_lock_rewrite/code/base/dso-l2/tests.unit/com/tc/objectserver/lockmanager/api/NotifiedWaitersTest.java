@@ -6,8 +6,9 @@ package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class NotifiedWaitersTest extends TestCase {
     Set forChannel1 = new HashSet();
     Set forChannel2 = new HashSet();
 
-    LockID lockID = new LockID("me");
+    LockID lockID = new StringLockID("me");
     ThreadID txID1 = new ThreadID(1);
     ThreadID txID2 = new ThreadID(2);
     ThreadID txID3 = new ThreadID(3);

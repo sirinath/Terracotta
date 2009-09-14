@@ -11,6 +11,8 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockIDSerializer;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -81,7 +83,7 @@ public class LockContext implements TCSerializable {
   }
 
   public void serializeTo(TCByteBufferOutput output) {
-    output.writeString(lockID.asString());
+    new LockIDSerializer(lockID).serializeTo(output); 
     NodeIDSerializer ns = new NodeIDSerializer(this.nodeID);
     ns.serializeTo(output);
     output.writeLong(threadID.toLong());
@@ -90,7 +92,8 @@ public class LockContext implements TCSerializable {
   }
 
   public Object deserializeFrom(TCByteBufferInput input) throws IOException {
-    lockID = new LockID(input.readString());
+    LockIDSerializer lidsr = new LockIDSerializer();
+    this.lockID = ((LockIDSerializer) lidsr.deserializeFrom(input)).getLockID();
     NodeIDSerializer ns = new NodeIDSerializer();
     ns.deserializeFrom(input);
     nodeID = ns.getNodeID();

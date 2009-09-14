@@ -7,7 +7,7 @@ package com.tc.admin.dso.locks;
 import com.tc.admin.common.ApplicationContext;
 import com.tc.admin.common.XObjectTableModel;
 import com.tc.management.lock.stats.LockSpec;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.locks.LockID;
 
 import java.util.ArrayList;
 import java.util.Collection;

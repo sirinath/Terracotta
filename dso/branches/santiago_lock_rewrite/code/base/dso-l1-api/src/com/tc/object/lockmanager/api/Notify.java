@@ -9,6 +9,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockIDSerializer;
 
 import java.io.IOException;
 
@@ -76,7 +78,7 @@ public class Notify implements TCSerializable {
    */
   public void serializeTo(TCByteBufferOutput out) {
     if (!initialized) throw new AssertionError("Attempt to serialize an uninitialized Notify.");
-    out.writeString(this.lockID.asString());
+    new LockIDSerializer(lockID).serializeTo(out);
     out.writeLong(this.threadID.toLong());
     out.writeBoolean(this.all);
   }
@@ -89,7 +91,9 @@ public class Notify implements TCSerializable {
    * @throws IOException If error reading in
    */
   public Object deserializeFrom(TCByteBufferInput in) throws IOException {
-    initialize(new LockID(in.readString()), new ThreadID(in.readLong()), in.readBoolean());
+    LockIDSerializer lidsr = new LockIDSerializer();
+    LockID lid = ((LockIDSerializer) lidsr.deserializeFrom(in)).getLockID();
+    initialize(lid, new ThreadID(in.readLong()), in.readBoolean());
     return this;
   }
 

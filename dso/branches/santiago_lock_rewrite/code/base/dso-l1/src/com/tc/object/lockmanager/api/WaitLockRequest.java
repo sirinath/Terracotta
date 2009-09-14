@@ -3,6 +3,7 @@
  */
 package com.tc.object.lockmanager.api;
 
+import com.tc.object.locks.LockID;
 import com.tc.object.tx.TimerSpec;
 
 public class WaitLockRequest extends LockRequest {

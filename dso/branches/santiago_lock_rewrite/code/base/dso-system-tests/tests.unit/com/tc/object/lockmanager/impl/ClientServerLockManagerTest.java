@@ -12,12 +12,13 @@ import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.GroupID;
 import com.tc.net.OrderedGroupIDs;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.session.TestSessionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.LockMBean;
@@ -55,8 +56,8 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testRWServer() {
-    final LockID lockID1 = new LockID("1");
-    final LockID lockID2 = new LockID("2");
+    final LockID lockID1 = new StringLockID("1");
+    final LockID lockID2 = new StringLockID("2");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
     final ThreadID tx3 = new ThreadID(3);
@@ -78,8 +79,8 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWRServer() {
-    final LockID lockID1 = new LockID("1");
-    final LockID lockID2 = new LockID("2");
+    final LockID lockID1 = new StringLockID("1");
+    final LockID lockID2 = new StringLockID("2");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
     final ThreadID tx3 = new ThreadID(3);
@@ -102,7 +103,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testLockWaitWriteServer() throws Exception {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
     clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
@@ -141,7 +142,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWaitWRServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
     clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
@@ -175,7 +176,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWaitNotifyRWServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -219,7 +220,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWaitNotifyRWClientServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -274,7 +275,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWaitNotifyWRClientServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -336,7 +337,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testPendingWaitNotifiedRWClientServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -396,7 +397,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testPendingWaitNotifiedWRClientServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -457,7 +458,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testPendingRequestClientServer() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
     clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
@@ -483,7 +484,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testWRClient() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
     clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
@@ -509,7 +510,7 @@ public class ClientServerLockManagerTest extends TestCase {
   }
 
   public void testConcurrentLocksServerRestart() {
-    final LockID lockID1 = new LockID("1");
+    final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 

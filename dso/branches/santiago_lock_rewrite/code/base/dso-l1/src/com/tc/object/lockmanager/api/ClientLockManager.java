@@ -8,6 +8,7 @@ import com.tc.logging.DumpHandler;
 import com.tc.net.NodeID;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
+import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.text.PrettyPrintable;

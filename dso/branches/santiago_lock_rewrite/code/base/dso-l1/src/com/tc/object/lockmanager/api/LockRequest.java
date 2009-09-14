@@ -7,6 +7,7 @@ package com.tc.object.lockmanager.api;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.tc.config.lock.LockContextInfo;
+import com.tc.object.locks.LockID;
 
 public class LockRequest {
   private final LockID   lockID;

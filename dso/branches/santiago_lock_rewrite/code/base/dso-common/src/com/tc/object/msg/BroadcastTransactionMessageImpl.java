@@ -22,7 +22,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnType;
@@ -84,7 +84,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     putNVPair(TRANSACTION_TYPE_ID, this.transactionType.getType());
     for (Iterator i = this.lockIDs.iterator(); i.hasNext();) {
       LockID lockID = (LockID) i.next();
-      putNVPair(LOCK_ID, lockID.asString());
+      putNVPair(LOCK_ID, lockID);
     }
 
     for (Iterator i = this.notifies.iterator(); i.hasNext();) {
@@ -131,7 +131,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
         if (this.lockIDs == null) {
           this.lockIDs = new LinkedList();
         }
-        this.lockIDs.add(new LockID(getStringValue()));
+        this.lockIDs.add(getLockIDValue());
         return true;
       case NOTIFIED:
         this.notifies.add(this.getObject(new LockContext()));

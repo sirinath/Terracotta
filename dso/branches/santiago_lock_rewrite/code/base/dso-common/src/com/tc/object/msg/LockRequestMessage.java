@@ -12,11 +12,12 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.WaitContext;
+import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
@@ -56,7 +57,7 @@ public class LockRequestMessage extends DSOMessageBase {
   private final Set       pendingLockContexts    = new LinkedHashSet();
   private final List      pendingTryLockContexts = new ArrayList();
 
-  private LockID          lockID                 = LockID.NULL_ID;
+  private LockID          lockID                 = StringLockID.NULL_ID;
   private ServerLockLevel lockLevel              = null;
   private ThreadID        threadID               = ThreadID.NULL_ID;
   private RequestType     requestType            = null;
@@ -76,36 +77,36 @@ public class LockRequestMessage extends DSOMessageBase {
     putNVPair(REQUEST_TYPE, (byte) requestType.ordinal());
     switch (requestType) {
       case LOCK:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         break;
       case UNLOCK:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         // putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         break;
       case TRY_LOCK:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         putNVPair(WAIT_MILLIS, waitMillis);
         break;
       case WAIT:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         // putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
         putNVPair(WAIT_MILLIS, waitMillis);
         break;
       case INTERRUPT_WAIT:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
         break;
       case QUERY:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         break;
       case RECALL_COMMIT:
-        putNVPair(LOCK_ID, lockID.asString());
+        putNVPair(LOCK_ID, lockID);
         for (Iterator i = lockContexts.iterator(); i.hasNext();) {
           putNVPair(LOCK_CONTEXT, (TCSerializable) i.next());
         }
@@ -151,7 +152,7 @@ public class LockRequestMessage extends DSOMessageBase {
     switch (name) {
       case LOCK_ID:
         // TODO: Make this use a lockID factory so that we can avoid dups
-        lockID = new LockID(getStringValue());
+        lockID = getLockIDValue();
         return true;
       case LOCK_LEVEL:
         try {

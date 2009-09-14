@@ -6,11 +6,11 @@ package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.GlobalLockInfo;
 import com.tc.object.lockmanager.impl.GlobalLockStateInfo;
+import com.tc.object.locks.LockID;
 import com.tc.objectserver.lockmanager.api.LockWaitContext;
 import com.tc.objectserver.lockmanager.impl.Holder;
 import com.tc.util.Assert;

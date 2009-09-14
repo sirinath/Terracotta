@@ -5,10 +5,10 @@
 package com.tc.object.lockmanager.impl;
 
 import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.ThreadLockManager;
 import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.locks.LockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.runtime.ThreadIDManager;
 

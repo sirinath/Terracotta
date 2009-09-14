@@ -9,8 +9,9 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
-import com.tc.object.lockmanager.api.LockID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockIDSerializer;
 
 import java.io.IOException;
 
@@ -58,7 +59,7 @@ public class GlobalLockStateInfo implements TCSerializable {
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
     serialOutput.writeLong(timestamp);
-    serialOutput.writeString(lockID.asString());
+    new LockIDSerializer(lockID).serializeTo(serialOutput);
     NodeIDSerializer ns = new NodeIDSerializer(nodeID);
     ns.serializeTo(serialOutput);
     serialOutput.writeLong(threadID.toLong());
@@ -67,7 +68,8 @@ public class GlobalLockStateInfo implements TCSerializable {
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.timestamp = serialInput.readLong();
-    this.lockID = new LockID(serialInput.readString());
+    LockIDSerializer lidsr = new LockIDSerializer();
+    this.lockID = ((LockIDSerializer) lidsr.deserializeFrom(serialInput)).getLockID();
     NodeIDSerializer ns = new NodeIDSerializer();
     ns.deserializeFrom(serialInput);
     this.nodeID = ns.getNodeID();

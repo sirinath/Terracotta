@@ -6,7 +6,7 @@ package com.tc.object.tx;
 
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
-import com.tc.object.lockmanager.api.LockID;
+import com.tc.object.locks.LockID;
 import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 

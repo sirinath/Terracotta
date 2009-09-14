@@ -3,6 +3,9 @@
  */
 package com.tc.object.lockmanager.api;
 
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.StringLockID;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,8 +24,8 @@ public class NotifyTest extends TestCase {
     
     for (int i=0; i<1000; i++) {
       long startValue = r.nextLong();
-      LockID lockID1 = new LockID("" + startValue);
-      LockID lockID2 = new LockID("" + (startValue +1));
+      LockID lockID1 = new StringLockID("" + startValue);
+      LockID lockID2 = new StringLockID("" + (startValue +1));
       ThreadID tid1 = new ThreadID(startValue);
       ThreadID tid2 = new ThreadID(startValue + 1);
       
