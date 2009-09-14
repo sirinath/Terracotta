@@ -161,24 +161,6 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
                                         NULL_SINK);
     }
 
-    for (Iterator i = handshakeMessage.getWaitContexts().iterator(); i.hasNext();) {
-      WaitContext request = (WaitContext) i.next();
-      serverLockManager.reestablishWait(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
-                                        request.getTimerSpec(), sink);
-    }
-
-    for (Iterator i = handshakeMessage.getPendingLockContexts().iterator(); i.hasNext();) {
-      LockContext request = (LockContext) i.next();
-      serverLockManager.requestLock(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
-                                    request.getLockType(), sink);
-    }
-
-    for (Iterator i = handshakeMessage.getPendingTryLockContexts().iterator(); i.hasNext();) {
-      TryLockContext request = (TryLockContext) i.next();
-      serverLockManager.tryRequestLock(request.getLockID(), clientID, request.getThreadID(), request.getLockLevel(),
-                                       request.getLockType(), request.getTimerSpec(), sink);
-    }
-
     if (policy == LockManagerImpl.ALTRUISTIC_LOCK_POLICY) {
       this.serverLockManager.setLockPolicy(policy);
     }

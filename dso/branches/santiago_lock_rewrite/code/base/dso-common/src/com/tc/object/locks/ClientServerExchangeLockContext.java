@@ -101,6 +101,10 @@ public class ClientServerExchangeLockContext implements TCSerializable {
   private int calculateHash() {
     return new HashCodeBuilder(5503, 6737).append(lockID).append(nodeID).append(threadID).toHashCode();
   }
+  
+  public long timeout() {
+    return this.timeout;
+  }
 
   public int hasCode() {
     return this.hashCode;
