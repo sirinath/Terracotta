@@ -29,7 +29,7 @@ public class TestTCConnection implements TCConnection {
   }
 
   public void removeListener(TCConnectionEventListener listener) {
-    throw new ImplementMe();
+    //
   }
 
   public void asynchClose() {
