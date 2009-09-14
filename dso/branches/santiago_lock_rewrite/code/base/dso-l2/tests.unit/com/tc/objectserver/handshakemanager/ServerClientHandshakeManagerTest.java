@@ -192,18 +192,18 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     handshake.clientObjectIds.add(new ObjectID(200));
     handshake.clientObjectIds.add(new ObjectID(20002));
 
-    List lockContexts = new LinkedList();
+    List<ClientServerExchangeLockContext> lockContexts = new LinkedList();
 
     lockContexts.add(new ClientServerExchangeLockContext(new StringLockID("my lock"), clientID1, new ThreadID(10001),
                                                          State.HOLDER_WRITE));
     lockContexts.add(new ClientServerExchangeLockContext(new StringLockID("my other lock)"), clientID1,
                                                          new ThreadID(10002), State.HOLDER_READ));
-    handshake.lockContexts.addAll(lockContexts);
-
     ClientServerExchangeLockContext waitContext = new ClientServerExchangeLockContext(new StringLockID("d;alkjd"),
                                                                                       clientID1, new ThreadID(101),
                                                                                       State.WAITER, -1);
-    handshake.lockContexts.add(waitContext);
+    lockContexts.add(waitContext);
+    handshake.lockContexts.addAll(lockContexts);
+
     handshake.isChangeListener = true;
 
     assertFalse(this.sequenceValidator.isNext(handshake.getSourceNodeID(), new SequenceID(minSequenceID.toLong())));
@@ -247,7 +247,8 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     assertEquals(lockContexts.size(), handshake.lockContexts.size());
     assertEquals(handshake.lockContexts.size(), this.lockManager.reestablishLockCalls.size());
     for (int i = 0; i < lockContexts.size(); i++) {
-      LockContext lockContext = (LockContext) lockContexts.get(i);
+      ClientServerExchangeLockContext context = lockContexts.get(i);
+      LockContext lockContext = context.getLockContext();
       TestLockManager.ReestablishLockContext ctxt = (ReestablishLockContext) this.lockManager.reestablishLockCalls
           .get(i);
       assertEquals(lockContext.getLockID(), ctxt.lockContext.getLockID());

@@ -79,7 +79,6 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
 import com.tc.object.logging.RuntimeLogger;
@@ -422,11 +421,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
 
-    RemoteLockManager remoteLockManager = this.dsoClientBuilder.createRemoteLockManager(this.channel, this.channel
-        .getLockRequestMessageFactory(), gtxManager);
     this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
-        .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), remoteLockManager, sessionManager,
-                                                               lockStatManager,
+        .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
+                                                               this.channel.getLockRequestMessageFactory(), gtxManager,
                                                                new ClientLockManagerConfigImpl(this.l1Properties
                                                                    .getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));

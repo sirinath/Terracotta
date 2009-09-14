@@ -132,12 +132,14 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
 
   public ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel,
                                              final ClientIDLogger clientIDLogger,
-                                             final RemoteLockManager remoteLockManager,
                                              final SessionManager sessionManager,
                                              final ClientLockStatManager lockStatManager,
+                                             final LockRequestMessageFactory lockRequestMessageFactory,
+                                             final ClientGlobalTransactionManager gtxManager,
                                              final ClientLockManagerConfigImpl clientLockManagerConfigImpl) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
+    RemoteLockManager remoteLockManager = new RemoteLockManagerImpl(defaultGroups[0], lockRequestMessageFactory, gtxManager);
     LockDistributionStrategy strategy = new StandardLockDistributionStrategy(defaultGroups[0]);
     return new StripedClientLockManagerImpl(strategy, new OrderedGroupIDs(defaultGroups), clientIDLogger,
                                             remoteLockManager, sessionManager, lockStatManager,
@@ -193,13 +195,4 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     Assert.assertTrue(sequences.length == 1);
     return sequences[0];
   }
-
-  public RemoteLockManager createRemoteLockManager(final DSOClientMessageChannel dsoChannel,
-                                                   final LockRequestMessageFactory lockRequestMessageFactory,
-                                                   final ClientGlobalTransactionManager gtxManager) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
-    assert defaultGroups != null && defaultGroups.length == 1;
-    return new RemoteLockManagerImpl(defaultGroups[0], lockRequestMessageFactory, gtxManager);
-  }
-
 }
