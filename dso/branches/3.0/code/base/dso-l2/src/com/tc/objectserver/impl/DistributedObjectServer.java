@@ -81,6 +81,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
+import com.tc.net.utils.L2CommUtils;
 import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.cache.CacheManager;
@@ -290,11 +291,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   private final Sink                             httpSink;
   protected final HaConfig                       haConfig;
 
-  private static final int                       MAX_DEFAULT_COMM_THREADS = 16;
-  private static final TCLogger                  logger                   = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                  consoleLogger            = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                  logger           = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger                  consoleLogger    = CustomerLogging.getConsoleLogger();
 
-  private ServerID                               thisServerNodeID         = ServerID.NULL_ID;
+  private ServerID                               thisServerNodeID = ServerID.NULL_ID;
   protected NetworkListener                      l1Listener;
   protected GCStatsEventPublisher                gcStatsEventPublisher;
   private CommunicationsManager                  communicationsManager;
@@ -609,7 +609,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, this.persistor);
 
-    int numCommWorkers = getCommWorkerCount(this.l2Properties);
+    int numCommWorkers = L2CommUtils.getNumCommWorkerThreads();
 
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     final boolean useOOOLayer = this.l1ReconnectConfig.getReconnectEnabled();
@@ -1159,11 +1159,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
       this.serverBuilder.populateAdditionalStatisticsRetrivalRegistry(registry);
     }
-  }
-
-  private int getCommWorkerCount(final TCProperties props) {
-    int def = Math.min(Runtime.getRuntime().availableProcessors(), MAX_DEFAULT_COMM_THREADS);
-    return props.getInt("tccom.workerthreads", def);
   }
 
   public boolean isBlocking() {
