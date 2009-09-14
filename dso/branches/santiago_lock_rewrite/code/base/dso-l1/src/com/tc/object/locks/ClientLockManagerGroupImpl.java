@@ -7,8 +7,10 @@ import com.tc.logging.TCLogger;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
+import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.msg.ClientHandshakeMessage;
+import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.util.runtime.ThreadIDManager;
@@ -21,12 +23,13 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   private final LockDistributionStrategy        distribution;
 
   public ClientLockManagerGroupImpl(TCLogger logger, OrderedGroupIDs groups, LockDistributionStrategy lockDistribution,
-                                    SessionManager sessionManager, ThreadIDManager threadManager) {
+                                    SessionManager sessionManager, ThreadIDManager threadManager,
+                                    LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager) {
     distribution = lockDistribution;
     lockManagers = new HashMap<GroupID, ClientLockManager>();
 
     for (GroupID g : groups.getGroupIDs()) {
-      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(), threadManager));
+      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(g, messageFactory, globalTxManager), threadManager));
     }
   }
   
@@ -106,11 +109,11 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).recall(lock, level, lease);
   }
 
-  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level) {
+  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     getClientLockManagerFor(lock).award(group, session, lock, thread, level);
   }
   
-  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level) {
+  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     getClientLockManagerFor(lock).refuse(group, session, lock, thread, level);
   }
   

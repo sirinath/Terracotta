@@ -17,7 +17,6 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.session.SessionID;
-import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
 
 import java.io.IOException;
@@ -84,7 +83,9 @@ public class LockRequestMessage extends DSOMessageBase {
       case UNLOCK:
         putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
-        // putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        if (lockLevel != null) {
+          putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        }
         break;
       case TRY_LOCK:
         putNVPair(LOCK_ID, lockID);
@@ -204,21 +205,20 @@ public class LockRequestMessage extends DSOMessageBase {
     initialize(lid, id, null, RequestType.QUERY, -1);
   }
 
-  public void initializeLock(LockID lid, ThreadID id, ServerLockLevel level, String lockObjectTypeArg) {
+  public void initializeLock(LockID lid, ThreadID id, ServerLockLevel level) {
     initialize(lid, id, level, RequestType.LOCK, -1);
   }
 
-  public void initializeTryLock(LockID lid, ThreadID id, TimerSpec timeout, ServerLockLevel level,
-                                String lockObjectTypeArg) {
-    initialize(lid, id, level, RequestType.TRY_LOCK, timeout.getMillis());
+  public void initializeTryLock(LockID lid, ThreadID id, long timeout, ServerLockLevel level) {
+    initialize(lid, id, level, RequestType.TRY_LOCK, timeout);
   }
 
-  public void initializeUnlock(LockID lid, ThreadID id) {
-    initialize(lid, id, null, RequestType.UNLOCK, -1);
+  public void initializeUnlock(LockID lid, ThreadID id, ServerLockLevel level) {
+    initialize(lid, id, level, RequestType.UNLOCK, -1);
   }
 
-  public void initializeWait(LockID lid, ThreadID id, TimerSpec call) {
-    initialize(lid, id, null, RequestType.WAIT, call.getMillis());
+  public void initializeWait(LockID lid, ThreadID id, long timeout) {
+    initialize(lid, id, null, RequestType.WAIT, timeout);
   }
 
   public void initializeRecallCommit(LockID lid) {

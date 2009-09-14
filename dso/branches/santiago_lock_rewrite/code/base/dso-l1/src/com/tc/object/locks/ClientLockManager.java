@@ -11,6 +11,6 @@ import com.tc.object.session.SessionID;
 public interface ClientLockManager extends TerracottaLocking, ClientHandshakeCallback {
   public void notified(LockID lock, ThreadID thread);
   public void recall(LockID lock, LockLevel level, int lease);
-  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level);
-  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, LockLevel level);
+  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level);
+  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level);
 }

@@ -43,7 +43,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   public void requestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
     Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeLock(lockID, threadID, ServerLockLevel.fromLegacyInt(lockType), lockObjectType);
+    req.initializeLock(lockID, threadID, ServerLockLevel.fromLegacyInt(lockType));
     send(req);
   }
 
@@ -55,19 +55,29 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
     Assert.assertTrue(com.tc.object.lockmanager.api.LockLevel.isDiscrete(lockType));
     LockRequestMessage req = createRequest();
-    req.initializeTryLock(lockID, threadID, timeout, ServerLockLevel.fromLegacyInt(lockType), lockObjectType);
+    long millis = timeout.getMillis();
+    int nanos = timeout.getNanos();
+    if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+      millis++;
+    }
+    req.initializeTryLock(lockID, threadID, millis, ServerLockLevel.fromLegacyInt(lockType));
     send(req);
   }
 
   public void releaseLock(LockID lockID, ThreadID threadID) {
     LockRequestMessage req = createRequest();
-    req.initializeUnlock(lockID, threadID);
+    req.initializeUnlock(lockID, threadID, null);
     send(req);
   }
 
   public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
     LockRequestMessage req = createRequest();
-    req.initializeWait(lockID, threadID, call);
+    long millis = call.getMillis();
+    int nanos = call.getNanos();
+    if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+      millis++;
+    }
+    req.initializeWait(lockID, threadID, millis);
     send(req);
   }
 
