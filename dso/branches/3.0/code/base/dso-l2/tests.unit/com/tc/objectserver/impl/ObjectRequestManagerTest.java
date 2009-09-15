@@ -845,10 +845,6 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
-    public ManagedObject getObjectByIDOrNull(ObjectID id) {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
     public Set getRootIDs() {
       throw new NotImplementedException(TestObjectManager.class);
     }
@@ -929,10 +925,6 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
-    public ManagedObject getObjectFromCacheByIDOrNull(ObjectID id) {
-      throw new NotImplementedException(TestObjectManager.class);
-    }
-
     public ObjectIDSet getObjectIDsInCache() {
       throw new NotImplementedException(TestObjectManager.class);
     }
@@ -950,6 +942,10 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public void setGarbageCollector(GarbageCollector gc) {
+      throw new NotImplementedException(TestObjectManager.class);
+    }
+
+    public ObjectIDSet getObjectReferencesFrom(ObjectID id, boolean cacheOnly) {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
