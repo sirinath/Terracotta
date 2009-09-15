@@ -1,0 +1,43 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
+package com.tc.object.locks;
+
+public enum ServerLockLevel {
+  READ, WRITE;
+
+  public static LockLevel toClientLockLevel(ServerLockLevel lockLevel) {
+    switch (lockLevel) {
+      case READ:
+        return LockLevel.READ;
+      case WRITE:
+        return LockLevel.WRITE;
+      default:
+        throw new AssertionError("Unknown State: " + lockLevel);
+    }
+  }
+
+  @Deprecated
+  public static ServerLockLevel fromLegacyInt(int level) {
+    switch (level) {
+      case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.READ:
+      case com.tc.object.lockmanager.api.LockLevel.READ:
+        return READ;
+      case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.WRITE:
+      case com.tc.object.lockmanager.api.LockLevel.WRITE:
+        return WRITE;
+    }
+    throw new IllegalArgumentException();
+  }
+
+  @Deprecated
+  public static int toLegacyInt(ServerLockLevel level) {
+    switch (level) {
+      case READ:
+        return com.tc.object.lockmanager.api.LockLevel.READ;
+      case WRITE:
+        return com.tc.object.lockmanager.api.LockLevel.WRITE;
+    }
+    throw new IllegalArgumentException();
+  }
+}
