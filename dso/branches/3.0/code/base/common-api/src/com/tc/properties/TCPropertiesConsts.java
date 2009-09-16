@@ -55,55 +55,84 @@ public interface TCPropertiesConsts {
    * <code>
    * Section : L2 Object Manager Properties Description :
    * This section contains the defaults for the object manager of the L2
-   * cachePolicy : <lru>/<lfu>  - Least Recently Used or Least Frequently used
-   * deleteBatchSize            - Max number of objects deleted in one transaction when removing from the object store after a GC
-   * maxObjectsToCommit         - Max number of Objects commited in one transaction in the commit stage and flush stage
-   * maxObjectsInTxnObjGrouping - Max number of Objects allowed in the TransactionalObject grouping
-   * maxTxnsInTxnObjectGrouping - Max number of Transations allowed in the TransactionalObject grouping
-   * maximumObjectsToLookUp     - Whats the maximum objects that l2 will lookup in one shot
-   * fault.logging.enabled      - Enables/Disables logging of ManagedObject Faults from disk. If enabled, it logs every 100 faults.
-   * loadObjectID.fastLoad      - Enables/Disables fast loading of ObjectIDs. Only effective for persistence with mode permanent-store.
-   *                              This will speed up Object-Ids loading at restart but some overhead occurred at regular operations.
-   *                              You can go from enable to disable but need a fresh start if change from disable to enable for building
-   *                              up compressed object-Id.
-   * loadObjectID.longsPerDiskEntry - Size of long array entry to store object IDs in persistent store. One bit for each ID.
-   * loadObjectID.checkpoint.changes - number of changes to trigger objectID checkpoint
-   * loadObjectID.checkpoint.maxlimit - max number of changes to process in one run checkpoint.
-   * loadObjectID.checkpoint.timeperiod - time period in milliseconds between checkpoints
-   * passive.sync.batch.size    - Number of objects in each message that is sent from active to passive while synching
-   * passive.sync.throttle.timeInMillis - Time to wait before sending the next batch of objects to the passive
-   * dgc.young.enabled          - Enables/Disables the young gen collector
-   * dgc.young.frequencyInMillis - The time in millis between each young gen collection. (default : 1 min, not advisable to run more frequently)
+   * cachePolicy : <lru>/<lfu>      - Least Recently Used or Least Frequenctly used
+   * deleteBatchSize                - Max number of objects deleted in one batch when
+   *                                  removing from the object store after a GC
+   * maxObjectsToCommit             - Max number of Objects commited in one batch in
+   *                                  the commit stage and flush stage
+   * maxObjectsInTxnObjGrouping     - Max number of Objects allowed in the TransactionalObject
+   *                                  grouping
+   * maxTxnsInTxnObjectGrouping     - Max number of Transactions allowed in the
+   *                                  TransactionalObject grouping
+   * objectrequest.split.size       - The maximum number of objects that l2 will lookup in one shot
+   * objectrequest.logging.enabled  - Turn on logging to see what object request cache saved
+   * fault.logging.enabled          - Enables/Disables logging of ManagedObject Faults from
+   *                                  disk. If enabled, it logs every 1000 faults.
+   * request.logging.enabled        - Enables/Disables logging of ManagedObject requests from
+   *                                  clients. If enabled, logs counts of requested instance types
+   *                                  every 5 seconds.
+   * flush.logging.enabled          - Enables/Disables logging of ManagedObject flush to
+   *                                  disk. If enabled, it logs every 1000 faults.
+   * persistor.logging.enabled      - Enables/Disables logging of commits to disk while running
+   *                                  in persistent mode.
+   * loadObjectID.fastLoad          - Enables/Disables fast loading of ObjectIDs.
+   *                                  Only effective for persistence with mode permanent-store.
+   *                                  This will speed up Object-Ids loading at restart but
+   *                                  some overhead occurred at regular operations.
+   *                                  You can go from enable to disable but need a fresh start if
+   *                                  change from disable to enable for building up compressed object-Id.
+   * loadObjectID.longsPerDiskEntry - Size of long array entry to store object IDs
+   *                                  in persistent store. One bit for each ID.
+   * loadObjectID.mapsdatabase.longsPerDiskEntry - Size of long array entry to store existence of
+   *                                  persistent state. One bit for each ID.
+   * loadObjectID.checkpoint.maxlimit - Max number of changes to process in one run checkpoint.
+   * loadObjectID.checkpoint.maxsleep - Max sleep time in milliseconds between checkpoints
+   * passive.sync.batch.size        - Number of objects in each message that is sent from
+   *                                  active to passive while synching
+   * passive.sync.throttle.timeInMillis - Time to wait before sending the next batch of
+   *                                  objects to the passive
+   * dgc.throttle.timeInMillis     - Throttle time for dgc for each cycle for every requestsPerThrottle
+   *                                 requests for references from object manager
+   * l2.objectmanager.persistor.measure.performance - Enable/disable logging for object manager persistor                                 
+   * dgc.throttle.requestsPerThrottle - Number of objects for which object references are requested
+   *                                 from object manager after which dgc will throttle
+   * dgc.faulting.optimization      - This property will not fault in objects that has no references
+   *                                    during DGC mark stage
+   * dgc.young.enabled              - Enables/Disables the young gen collector
+   * dgc.young.frequencyInMillis    - The time in millis between each young gen collection.
+   *                                  (default : 1 min, not advisable to run more frequently)
+   * l2.data.backup.throttle.timeInMillis - time to sleep between copying of each file from the db while taking backup                             
    * </code>
    ********************************************************************************************************************/
 
-  public static final String   L2_OBJECTMANAGER_DELETEBATCHSIZE                                   = "l2.objectmanager.deleteBatchSize";
-  public static final String   L2_OBJECTMANAGER_CACHEPOLICY                                       = "l2.objectmanager.cachePolicy";
-  public static final String   L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT                              = "l2.objectmanager.maxObjectsToCommit";
-  public static final String   L2_OBJECTMANAGER_MAXOBJECTS_INTXNOBJ_GROUPING                      = "l2.objectmanager.maxObjectsInTxnObjGrouping";
-  public static final String   L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING                      = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
-  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE                         = "l2.objectmanager.objectrequest.split.size";
-  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED                    = "l2.objectmanager.objectrequest.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                             = "l2.objectmanager.fault.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED                           = "l2.objectmanager.request.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED                             = "l2.objectmanager.flush.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED                         = "l2.objectmanager.persistor.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                             = "l2.objectmanager.loadObjectID.fastLoad";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY                   = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES                   = "l2.objectmanager.loadObjectID.checkpoint.changes";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT                  = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD                = "l2.objectmanager.loadObjectID.checkpoint.timeperiod";
-  public static final String   L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE                           = "l2.objectmanager.passive.sync.batch.size";
-  public static final String   L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_TIME                        = "l2.objectmanager.passive.sync.throttle.timeInMillis";
-  public static final String   L2_OBJECTMANAGER_DGC_THROTTLE_TIME                                 = "l2.objectmanager.dgc.throttle.timeInMillis";
-  public static final String   L2_OBJECTMANAGER_DGC_REQUEST_PER_THROTTLE                          = "l2.objectmanager.dgc.throttle.requestsPerThrottle";
-  public static final String   L2_OBJECTMANAGER_DGC_YOUNG_ENABLED                                 = "l2.objectmanager.dgc.young.enabled";
-  public static final String   L2_OBJECTMANAGER_DGC_YOUNG_FREQUENCY                               = "l2.objectmanager.dgc.young.frequencyInMillis";
-  public static final String   L2_DATA_BACKUP_THROTTLE_TIME                                       = "l2.data.backup.throttle.timeInMillis";
-  public static final String   L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF                            = "l2.objectmanager.persistor.measure.performance";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MAPDB_LONGS_PERDISKENTRY             = "l2.objectmanager.loadObjectID.mapsdatabase.longsPerDiskEntry";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF                         = "l2.objectmanager.loadObjectID.measure.performance";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP                  = "l2.objectmanager.loadObjectID.checkpoint.maxsleep";
+  public static final String   L2_OBJECTMANAGER_DELETEBATCHSIZE                              = "l2.objectmanager.deleteBatchSize";
+  public static final String   L2_OBJECTMANAGER_CACHEPOLICY                                  = "l2.objectmanager.cachePolicy";
+  public static final String   L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT                         = "l2.objectmanager.maxObjectsToCommit";
+  public static final String   L2_OBJECTMANAGER_MAXOBJECTS_INTXNOBJ_GROUPING                 = "l2.objectmanager.maxObjectsInTxnObjGrouping";
+  public static final String   L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING                 = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
+  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE                    = "l2.objectmanager.objectrequest.split.size";
+  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED               = "l2.objectmanager.objectrequest.logging.enabled";
+  public static final String   L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                        = "l2.objectmanager.fault.logging.enabled";
+  public static final String   L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED                      = "l2.objectmanager.request.logging.enabled";
+  public static final String   L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED                        = "l2.objectmanager.flush.logging.enabled";
+  public static final String   L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED                    = "l2.objectmanager.persistor.logging.enabled";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                        = "l2.objectmanager.loadObjectID.fastLoad";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY              = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES              = "l2.objectmanager.loadObjectID.checkpoint.changes";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT             = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_TIMEPERIOD           = "l2.objectmanager.loadObjectID.checkpoint.timeperiod";
+  public static final String   L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE                      = "l2.objectmanager.passive.sync.batch.size";
+  public static final String   L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_TIME                   = "l2.objectmanager.passive.sync.throttle.timeInMillis";
+  public static final String   L2_OBJECTMANAGER_DGC_THROTTLE_TIME                            = "l2.objectmanager.dgc.throttle.timeInMillis";
+  public static final String   L2_OBJECTMANAGER_DGC_REQUEST_PER_THROTTLE                     = "l2.objectmanager.dgc.throttle.requestsPerThrottle";
+  public static final String   L2_OBJECTMANAGER_DGC_FAULTING_OPTIMIZATION                    = "l2.objectmanager.dgc.faulting.optimization";
+  public static final String   L2_OBJECTMANAGER_DGC_YOUNG_ENABLED                            = "l2.objectmanager.dgc.young.enabled";
+  public static final String   L2_OBJECTMANAGER_DGC_YOUNG_FREQUENCY                          = "l2.objectmanager.dgc.young.frequencyInMillis";
+  public static final String   L2_DATA_BACKUP_THROTTLE_TIME                                  = "l2.data.backup.throttle.timeInMillis";
+  public static final String   L2_OBJECTMANAGER_PERSISTOR_MEASURE_PERF                       = "l2.objectmanager.persistor.measure.performance";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MAPDB_LONGS_PERDISKENTRY        = "l2.objectmanager.loadObjectID.mapsdatabase.longsPerDiskEntry";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF                    = "l2.objectmanager.loadObjectID.measure.performance";
+  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXSLEEP             = "l2.objectmanager.loadObjectID.checkpoint.maxsleep";
 
   /*********************************************************************************************************************
    * <code>
