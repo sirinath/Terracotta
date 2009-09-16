@@ -13,8 +13,10 @@ import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
+import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.runtime.ThreadIDManager;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,13 +25,13 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   private final LockDistributionStrategy        distribution;
 
   public ClientLockManagerGroupImpl(TCLogger logger, OrderedGroupIDs groups, LockDistributionStrategy lockDistribution,
-                                    SessionManager sessionManager, ThreadIDManager threadManager,
+                                    SessionManager sessionManager, ThreadIDManager threadManager, ClientTransactionManager transactionManager,
                                     LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager) {
     distribution = lockDistribution;
     lockManagers = new HashMap<GroupID, ClientLockManager>();
 
     for (GroupID g : groups.getGroupIDs()) {
-      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(g, messageFactory, globalTxManager), threadManager));
+      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(g, messageFactory, globalTxManager), threadManager, transactionManager));
     }
   }
   
@@ -49,11 +51,11 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     return getClientLockManagerFor(lock).tryLock(lock, level);
   }
   
-  public boolean tryLock(LockID lock, LockLevel level, long timeout) {
+  public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
     return getClientLockManagerFor(lock).tryLock(lock, level, timeout);
   }
 
-  public void lockInterruptibly(LockID lock, LockLevel level) {
+  public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
     getClientLockManagerFor(lock).lockInterruptibly(lock, level);
   }
 
@@ -69,11 +71,11 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).notifyAll(lock);
   }
   
-  public void wait(LockID lock) {
+  public void wait(LockID lock) throws InterruptedException {
     getClientLockManagerFor(lock).wait(lock);
   }
   
-  public void wait(LockID lock, long timeout) {
+  public void wait(LockID lock, long timeout) throws InterruptedException {
     getClientLockManagerFor(lock).wait(lock, timeout);
   }
 
@@ -105,7 +107,7 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).notified(lock, thread);
   }
   
-  public void recall(LockID lock, LockLevel level, int lease) {
+  public void recall(LockID lock, ServerLockLevel level, int lease) {
     getClientLockManagerFor(lock).recall(lock, level, lease);
   }
 
@@ -115,6 +117,10 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   
   public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     getClientLockManagerFor(lock).refuse(group, session, lock, thread, level);
+  }
+  
+  public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
+    throw new AssertionError();
   }
   
   public LockID generateLockIdentifier(String str) {
@@ -145,6 +151,20 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   public void shutdown() {
     for (ClientLockManager clm : lockManagers.values()) {
       clm.shutdown();
+    }
+  }
+
+  public String dump() {
+    StringBuilder sb = new StringBuilder();
+    for (ClientLockManager clm : lockManagers.values()) {
+      sb.append(clm.dump());
+    }
+    return sb.toString();
+  }
+
+  public void dumpToLogger() {
+    for (ClientLockManager clm : lockManagers.values()) {
+      clm.dumpToLogger();
     }
   }
 }

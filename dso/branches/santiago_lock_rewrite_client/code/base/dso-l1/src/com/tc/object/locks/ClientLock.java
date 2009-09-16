@@ -10,8 +10,8 @@ import java.util.Collection;
 public interface ClientLock {
   public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level);
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level);
-  public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout);
-  public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level);
+  public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws InterruptedException;
+  public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException;
 
   public void unlock(RemoteLockManager remote, ThreadID thread, LockLevel level);
 
@@ -29,7 +29,7 @@ public interface ClientLock {
   public int globalWaitingCount(RemoteLockManager remote);
 
   public void notified(ThreadID thread);
-  public void recall(LockLevel interest, int lease);
+  public void recall(ServerLockLevel interest, int lease);
   public void award(ThreadID thread, ServerLockLevel level);
   public void refuse(ThreadID thread, ServerLockLevel level);
 

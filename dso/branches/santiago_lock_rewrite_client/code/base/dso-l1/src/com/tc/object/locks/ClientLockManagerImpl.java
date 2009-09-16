@@ -10,9 +10,11 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
+import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.Util;
 import com.tc.util.runtime.ThreadIDManager;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Condition;
@@ -28,14 +30,16 @@ public class ClientLockManagerImpl implements ClientLockManager {
   private final RemoteLockManager                 remoteManager;
   private final ThreadIDManager                   threadManager;
   private final SessionManager                    sessionManager;
+  private final ClientTransactionManager          transactionManager;
   private final TCLogger                          logger;
 
 
-  public ClientLockManagerImpl(TCLogger logger, SessionManager sessionManager, RemoteLockManager remoteManager, ThreadIDManager threadManager) {
+  public ClientLockManagerImpl(TCLogger logger, SessionManager sessionManager, RemoteLockManager remoteManager, ThreadIDManager threadManager, ClientTransactionManager txnManager) {
     this.logger = logger;
     this.remoteManager = remoteManager;
     this.threadManager = threadManager;
     this.sessionManager = sessionManager;
+    this.transactionManager = txnManager;
   }
   
   private void waitUntilRunning() {
@@ -76,7 +80,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
   private ClientLock getOrCreateState(LockID lock) {
     ClientLock lockState = locks.get(lock);
     if (lockState == null) {
-      //lockState = new ClientLockImpl();
+      lockState = new SynchronizedClientLock();
       ClientLock racer = locks.putIfAbsent(lock, lockState);
       if (racer != null) {
         return racer;
@@ -139,7 +143,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     }
   }
 
-  public void recall(LockID lock, LockLevel level, int lease) {
+  public void recall(LockID lock, ServerLockLevel level, int lease) {
     if (paused()) {
       logger.warn("Ignoring recall request from dead server : " + lock + ", interestedLevel : " + level);
       return;
@@ -170,6 +174,10 @@ public class ClientLockManagerImpl implements ClientLockManager {
     }
   }
 
+  public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
+    throw new AssertionError();
+  }
+  
   public LockID generateLockIdentifier(String str) {
     throw new AssertionError();
   }
@@ -271,7 +279,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     }
   }
 
-  public void lockInterruptibly(LockID lock, LockLevel level) {
+  public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
     waitUntilRunning();
     while (true) {
       ClientLock lockState = getOrCreateState(lock);
@@ -289,7 +297,10 @@ public class ClientLockManagerImpl implements ClientLockManager {
     while (true) {
       ClientLock lockState = getOrCreateState(lock);
       try {
-        lockState.notify(remoteManager, threadManager.getThreadID());
+        ThreadID thread = threadManager.getThreadID();
+        if (lockState.notify(remoteManager, thread)) {
+          transactionManager.notify(lock, thread, false);
+        }
         return;
       } catch (GarbageLockException e) {
         // ignore
@@ -302,7 +313,10 @@ public class ClientLockManagerImpl implements ClientLockManager {
     while (true) {
       ClientLock lockState = getOrCreateState(lock);
       try {
-        lockState.notifyAll(remoteManager, threadManager.getThreadID());
+        ThreadID thread = threadManager.getThreadID();
+        if (lockState.notifyAll(remoteManager, thread)) {
+          transactionManager.notify(lock, thread, true);
+        }
         return;
       } catch (GarbageLockException e) {
         // ignore
@@ -322,7 +336,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     }
   }
 
-  public boolean tryLock(LockID lock, LockLevel level, long timeout) {
+  public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
     waitUntilRunning();
     while (true) {
       ClientLock lockState = getOrCreateState(lock);
@@ -349,15 +363,20 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
   public void wait(LockID lock) {
     waitUntilRunning();
+    
+    transactionManager.commit(lock);
+    
     while (true) {
       ClientLock lockState = getOrCreateState(lock);
       try {
         lockState.wait(remoteManager, threadManager.getThreadID());
-        return;
+        break;
       } catch (GarbageLockException e) {
         // ignore
       }
     }
+    
+    transactionManager.begin(lock, LockLevel.WRITE);
   }
 
   public void wait(LockID lock, long timeout) {
@@ -497,5 +516,13 @@ public class ClientLockManagerImpl implements ClientLockManager {
     abstract State initialize();
     
     abstract State shutdown();
+  }
+
+  public String dump() {
+    return "";
+  }
+
+  public void dumpToLogger() {
+    //
   }
 }

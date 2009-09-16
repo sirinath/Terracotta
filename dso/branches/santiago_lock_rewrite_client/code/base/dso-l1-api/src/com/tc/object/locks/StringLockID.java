@@ -36,13 +36,6 @@ public class StringLockID implements LockID {
   }
 
   /**
-   * @return ID type
-   */
-  public String getIdentifierType() {
-    return "LockID";
-  }
-
-  /**
    * @return String value of id value
    */
   public String asString() {
@@ -50,7 +43,7 @@ public class StringLockID implements LockID {
   }
 
   public String toString() {
-    return getIdentifierType() + "(" + id + ")";
+    return getClass().getSimpleName() + "(" + id + ")";
   }
 
   public int hashCode() {
@@ -74,7 +67,11 @@ public class StringLockID implements LockID {
     serialOutput.writeString(id);
   }
 
-  public byte getLockType() {
-    return STRING_TYPE;
+  public LockIDType getLockType() {
+    return LockIDType.STRING;
+  }
+
+  public Object unclusteredObject() {
+    return null;
   }
 }

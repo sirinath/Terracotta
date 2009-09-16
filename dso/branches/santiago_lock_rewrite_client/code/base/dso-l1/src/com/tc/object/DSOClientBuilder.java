@@ -22,8 +22,8 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.ObjectIDClientHandshakeRequester;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
+import com.tc.object.locks.ClientLockManager;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessageFactory;
@@ -32,6 +32,7 @@ import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
+import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.TransactionIDGenerator;
 import com.tc.object.tx.TransactionBatchWriter.FoldingConfig;
@@ -81,6 +82,8 @@ public interface DSOClientBuilder {
   ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel, final ClientIDLogger clientIDLogger,
                                       final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
                                       final LockRequestMessageFactory lockRequestMessageFactory,
+                                      final ThreadIDManager threadManager,
+                                      final ClientTransactionManager transactionManager,
                                       final ClientGlobalTransactionManager clientGlobalTransactionManager,
                                       final ClientLockManagerConfigImpl clientLockManagerConfigImpl);
   

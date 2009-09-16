@@ -78,9 +78,8 @@ import com.tc.object.handshakemanager.ClientHandshakeManagerImpl;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.lockmanager.api.ClientLockManager;
 import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
-import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
+import com.tc.object.locks.ClientLockManager;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
@@ -250,7 +249,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
   public void addAllLocksTo(final LockInfoByThreadID lockInfo) {
     if (this.lockManager != null) {
-      this.lockManager.addAllLocksTo(lockInfo);
+      //this.lockManager.addAllLocksTo(lockInfo);
     } else {
       DSO_LOGGER.error("LockManager not initialised still. LockInfo for threads cannot be updated");
     }
@@ -423,7 +422,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
         .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
-                                                               this.channel.getLockRequestMessageFactory(), gtxManager,
+                                                               this.channel.getLockRequestMessageFactory(), threadIDManager, txManager, gtxManager,
                                                                new ClientLockManagerConfigImpl(this.l1Properties
                                                                    .getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
@@ -505,10 +504,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.l1Management.start(this.createDedicatedMBeanServer);
 
     // Setup the transaction manager
-    this.txManager = new ClientTransactionManagerImpl(
-                                                      this.channel.getClientIDProvider(),
+    this.txManager = new ClientTransactionManagerImpl(this.channel.getClientIDProvider(),
                                                       this.objectManager,
-                                                      new ThreadLockManagerImpl(this.lockManager, this.threadIDManager),
                                                       txFactory, this.rtxManager, this.runtimeLogger, this.l1Management
                                                           .findClientTxMonitorMBean(), txnCounter);
 
@@ -733,6 +730,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     return this.txManager;
   }
 
+  public ClientLockManager getLockManager() {
+    return this.lockManager;
+  }
+  
   public ClientObjectManager getObjectManager() {
     return this.objectManager;
   }

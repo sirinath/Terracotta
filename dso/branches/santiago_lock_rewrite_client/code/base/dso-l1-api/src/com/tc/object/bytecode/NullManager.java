@@ -13,6 +13,10 @@ import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.locks.DsoLockID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.NullInstrumentationLogger;
 import com.tc.properties.TCProperties;
@@ -99,14 +103,6 @@ public final class NullManager implements Manager {
     obj.wait(millis, nanos);
   }
 
-  public void monitorEnterInterruptibly(final Object obj, final int type) {
-    //
-  }
-
-  public final void monitorExit(final Object obj) {
-    //
-  }
-
   public final void logicalInvoke(final Object object, final String methodName, final Object[] params) {
     //
   }
@@ -181,18 +177,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) {
-    throw new UnsupportedOperationException();
-  }
-
-  public final boolean tryBeginLock(final String lockID, final int type) {
-    throw new UnsupportedOperationException();
-  }
-
-  public final boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) {
-    throw new UnsupportedOperationException();
-  }
-
   public final TCObject shareObjectIfNecessary(final Object pojo) {
     throw new UnsupportedOperationException();
   }
@@ -251,10 +235,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public void monitorEnter(final Object obj, final int type, final String contextInfo) {
-    //
-  }
-
   public InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
   }
@@ -279,18 +259,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public void evictLock(final String lockName) {
-    //
-  }
-
-  public void pinLock(final String lockName) {
-    //
-  }
-
-  public void unpinLock(final String lockName) {
-    //
-  }
-
   public MBeanServer getMBeanServer() {
     return null;
   }
@@ -305,5 +273,81 @@ public final class NullManager implements Manager {
 
   public Object getChangeApplicator(final Class clazz) {
     return null;
+  }
+
+  public LockID generateLockIdentifier(String str) {
+    return new StringLockID(str);
+  }
+
+  public LockID generateLockIdentifier(Object obj) {
+    return new DsoLockID(obj);
+  }
+
+  public LockID generateLockIdentifier(Object obj, String field) {
+    throw new UnsupportedOperationException();
+  }
+
+  public LockID generateLockIdentifier(Object obj, long fieldOffset) {
+    throw new UnsupportedOperationException();
+  }
+
+  public int globalHoldCount(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public int globalPendingCount(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
+  public int globalWaitingCount(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isLocked(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public int localHoldCount(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void lock(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void lockInterruptibly(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void notify(LockID lock) {
+    lock.unclusteredObject().notify();
+  }
+
+  public void notifyAll(LockID lock) {
+    lock.unclusteredObject().notifyAll();
+  }
+
+  public boolean tryLock(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean tryLock(LockID lock, LockLevel level, long timeout) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void unlock(LockID lock, LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void wait(LockID lock) throws InterruptedException {
+    lock.unclusteredObject().wait();
+  }
+
+  public void wait(LockID lock, long timeout) throws InterruptedException {
+    lock.unclusteredObject().wait();
   }
 }
