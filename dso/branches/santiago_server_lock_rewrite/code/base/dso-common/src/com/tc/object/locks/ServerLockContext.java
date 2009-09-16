@@ -8,11 +8,9 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.util.SinglyLinkedList.LinkedNode;
 
 public abstract class ServerLockContext implements LinkedNode<ServerLockContext> {
-  private State             state;
-  private final ClientID    clientID;
-  private final ThreadID    threadID;
-
-  private ServerLockContext next;
+  private State          state;
+  private final ClientID clientID;
+  private final ThreadID threadID;
 
   public ServerLockContext(ClientID clientID, ThreadID threadID) {
     this.clientID = clientID;
@@ -69,13 +67,23 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     return this.state;
   }
 
-  public ServerLockContext getNext() {
-    return next;
+  public boolean isWaiter() {
+    if (state.getType() == Type.WAITER) { return true; }
+    return false;
   }
 
-  public ServerLockContext setNext(ServerLockContext next) {
-    ServerLockContext prev = this.next;
-    this.next = next;
-    return prev;
+  public boolean isPending() {
+    if (state.getType() == Type.PENDING || state.getType() == Type.TRY_PENDING) { return true; }
+    return false;
+  }
+
+  public boolean isHolder() {
+    if (state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER) { return true; }
+    return false;
+  }
+
+  public boolean isGreedyHolder() {
+    if (state.getType() == Type.GREEDY_HOLDER) { return true; }
+    return false;
   }
 }

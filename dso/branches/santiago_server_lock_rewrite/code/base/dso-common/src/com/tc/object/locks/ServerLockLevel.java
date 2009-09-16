@@ -3,6 +3,8 @@
  */
 package com.tc.object.locks;
 
+import com.tc.object.locks.LockLevel;
+
 public enum ServerLockLevel {
   READ, WRITE, NONE;
 
