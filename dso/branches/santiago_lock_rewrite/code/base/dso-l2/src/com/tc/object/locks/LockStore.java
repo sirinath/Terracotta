@@ -103,6 +103,7 @@ public class LockStore {
   public class LockIterator {
     private Iterator<Entry<LockID, Lock>> currentIter;
     private int                           currentIndex = -1;
+    private Lock                          oldLock;
 
     /**
      * This method basically fetches the next lock by checking it out and checks back in the oldLock (that was given
@@ -111,16 +112,36 @@ public class LockStore {
      * forever.
      */
     public Lock getNextLock(Lock lock) {
+      validateOldLock(lock);
       if (currentIter == null || !currentIter.hasNext()) {
         if (!tryMovingToNextSegment()) { return null; }
       }
       Assert.assertNotNull(currentIter);
       return currentIter.next().getValue();
     }
+    
+    public void checkIn(Lock lock) {
+      Assert.assertEquals(oldLock, lock);
+      LockStore.this.checkIn(lock);
+    }
+
+    private void validateOldLock(Lock lock) {
+      if (oldLock != null) {
+        Assert.assertEquals(oldLock, lock);
+      } else {
+        Assert.assertNull(lock);
+      }
+
+    }
 
     private boolean tryMovingToNextSegment() {
       currentIndex++;
       if (currentIndex >= segments.length) { return false; }
+      if (currentIndex <= 0) {
+        locks[currentIndex].unlock();
+      }
+
+      locks[currentIndex].lock();
       currentIter = segments[currentIndex].entrySet().iterator();
       return true;
     }
