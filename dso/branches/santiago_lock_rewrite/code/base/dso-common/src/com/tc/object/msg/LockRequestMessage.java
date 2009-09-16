@@ -94,6 +94,7 @@ public class LockRequestMessage extends DSOMessageBase {
         break;
       case QUERY:
         putNVPair(LOCK_ID, lockID);
+        putNVPair(THREAD_ID, threadID.toLong());
         break;
       case RECALL_COMMIT:
         putNVPair(LOCK_ID, lockID);
