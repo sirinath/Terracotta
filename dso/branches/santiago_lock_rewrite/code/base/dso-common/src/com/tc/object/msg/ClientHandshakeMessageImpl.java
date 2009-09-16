@@ -124,7 +124,7 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
         this.objectIDs.add(new ObjectID(getLongValue()));
         return true;
       case LOCK_CONTEXT:
-        this.lockContexts.add(getObject(new LockContext()));
+        this.lockContexts.add(getObject(new ClientServerExchangeLockContext()));
         return true;
       case TRANSACTION_SEQUENCE_IDS:
         this.sequenceIDs.add(new SequenceID(getLongValue()));
