@@ -4,7 +4,7 @@
 package com.tc.object.locks;
 
 public enum ServerLockLevel {
-  READ, WRITE;
+  READ, WRITE, NONE;
 
   public static LockLevel toClientLockLevel(ServerLockLevel lockLevel) {
     switch (lockLevel) {
@@ -20,6 +20,8 @@ public enum ServerLockLevel {
   @Deprecated
   public static ServerLockLevel fromLegacyInt(int level) {
     switch (level) {
+      case com.tc.object.lockmanager.api.LockLevel.NIL_LOCK_LEVEL:
+        return NONE;
       case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.READ:
       case com.tc.object.lockmanager.api.LockLevel.READ:
         return READ;
@@ -27,7 +29,7 @@ public enum ServerLockLevel {
       case com.tc.object.lockmanager.api.LockLevel.WRITE:
         return WRITE;
     }
-    throw new IllegalArgumentException();
+    throw new IllegalArgumentException("Level is " + level);
   }
 
   @Deprecated
@@ -37,6 +39,8 @@ public enum ServerLockLevel {
         return com.tc.object.lockmanager.api.LockLevel.READ;
       case WRITE:
         return com.tc.object.lockmanager.api.LockLevel.WRITE;
+      case NONE:
+        return com.tc.object.lockmanager.api.LockLevel.NIL_LOCK_LEVEL;
     }
     throw new IllegalArgumentException();
   }
