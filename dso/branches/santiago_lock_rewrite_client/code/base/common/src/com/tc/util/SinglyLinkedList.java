@@ -109,6 +109,33 @@ public class SinglyLinkedList<E extends SinglyLinkedList.LinkedNode<E>> {
     return this.tail;
   }
 
+  public E remove(E obj) {
+    E current = null;
+    E next = head;
+    
+    while (next != null) {
+      E prev = current;
+      current = next;
+      next = next.getNext();
+      
+      if (current == obj || obj.equals(current)) {
+        //remove
+        if (prev == null) {
+          head = current.setNext(null);
+        } else {
+          prev.setNext(current.setNext(null));
+        }
+        if (next == null) {
+          tail = prev;
+        }
+        
+        return current;
+      }
+    }
+    
+    return null;
+  }
+  
   public SinglyLinkedListIterator<E> iterator() {
     return new ListIterator();
   }

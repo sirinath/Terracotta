@@ -5,7 +5,6 @@
 package com.tc.object.tx;
 
 import com.tc.exception.TCClassNotFoundException;
-import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.tx.ClientTxMonitorMBean;
@@ -23,10 +22,10 @@ import com.tc.object.appevent.UnlockedSharedObjectEventContext;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
-import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.object.lockmanager.api.ThreadLockManager;
-import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.lockmanager.api.Notify;
+import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.session.SessionID;
 import com.tc.object.util.ReadOnlyException;
@@ -67,14 +66,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   private final ClientTransactionFactory       txFactory;
   private final RemoteTransactionManager       remoteTxManager;
   private final ClientObjectManager            objectManager;
-  private final ThreadLockManager              lockManager;
   private final NonPortableEventContextFactory appEventContextFactory;
-
-  private final WaitListener                   waitListener    = new WaitListener() {
-                                                                 public void handleWaitEvent() {
-                                                                   return;
-                                                                 }
-                                                               };
 
   private final ClientIDProvider               cidProvider;
 
@@ -83,15 +75,8 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
 
   private final boolean                        sendErrors      = System.getProperty("project.name") != null;
 
-  private final ThreadLocal<List<LockID>>      locksWithoutTxn = new ThreadLocal<List<LockID>>() {
-                                                                 @Override
-                                                                 protected List<LockID> initialValue() {
-                                                                   return new LinkedList<LockID>();
-                                                                 }
-                                                               };
-
   public ClientTransactionManagerImpl(final ClientIDProvider cidProvider, final ClientObjectManager objectManager,
-                                      final ThreadLockManager lockManager, final ClientTransactionFactory txFactory,
+                                      final ClientTransactionFactory txFactory,
                                       final RemoteTransactionManager remoteTxManager,
                                       final RuntimeLogger runtimeLogger, final ClientTxMonitorMBean txMonitor,
                                       SampledCounter txCounter) {
@@ -100,193 +85,46 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     this.remoteTxManager = remoteTxManager;
     this.objectManager = objectManager;
     this.objectManager.setTransactionManager(this);
-    this.lockManager = lockManager;
     this.txMonitor = txMonitor;
     this.txCounter = txCounter;
     this.appEventContextFactory = new NonPortableEventContextFactory(cidProvider);
   }
 
-  public int queueLength(final String lockName) {
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    return this.lockManager.queueLength(lockID);
-  }
+  public void begin(final LockID lock, final LockLevel lockLevel) {
+    logBegin0(lock, lockLevel);
 
-  public int waitLength(final String lockName) {
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    return this.lockManager.waitLength(lockID);
-  }
-
-  public int localHeldCount(final String lockName, final int lockLevel) {
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    return this.lockManager.localHeldCount(lockID, lockLevel);
-  }
-
-  public boolean isHeldByCurrentThread(final String lockName, final int lockLevel) {
-    if (isTransactionLoggingDisabled()) { return true; }
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    return this.lockManager.localHeldCount(lockID, lockLevel) > 0;
-  }
-
-  public boolean isLocked(final String lockName, final int lockLevel) {
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    return this.lockManager.isLocked(lockID, lockLevel);
-  }
-
-  public boolean tryBegin(final String lockName, final TimerSpec timeout, final int lockLevel,
-                          final String lockObjectType) {
-    logTryBegin0(lockName, lockLevel);
-
-    if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return true; }
+    if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return; }
 
     ClientTransaction currentTransaction = getTransactionOrNull();
 
-    if ((currentTransaction != null) && lockLevel == LockLevel.CONCURRENT) {
-      // make formatter sane
-      throw new AssertionError("Can't acquire concurrent locks in a nested lock context.");
-    }
-
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    boolean isLocked = this.lockManager.tryLock(lockID, timeout, lockLevel, lockObjectType);
-    if (!isLocked) { return isLocked; }
-
-    pushTxContext(currentTransaction, lockID, lockLevel);
+    pushTxContext(currentTransaction, lock, lockLevel);
 
     if (currentTransaction == null) {
       createTxAndInitContext();
     } else {
       currentTransaction.setTransactionContext(this.peekContext());
     }
-
-    return isLocked;
   }
 
-  public boolean beginInterruptibly(final String lockName, final int lockLevel, final String lockObjectType,
-                                    final String contextInfo) throws InterruptedException {
-    logBeginInterruptibly0(lockName, lockLevel);
-
-    if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return true; }
-
-    ClientTransaction currentTransaction = getTransactionOrNull();
-
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-
-    pushTxContext(currentTransaction, lockID, lockLevel);
-
-    if (currentTransaction == null) {
-      createTxAndInitContext();
-    } else {
-      currentTransaction.setTransactionContext(this.peekContext());
-    }
-
-    try {
-      this.lockManager.lockInterruptibly(lockID, lockLevel, lockObjectType, contextInfo);
-    } catch (TCLockUpgradeNotSupportedError e) {
-      popTransaction(lockID);
-      if (peekContext() != null) {
-        currentTransaction.setTransactionContext(peekContext());
-        setTransaction(currentTransaction);
-      }
-      throw e;
-    } catch (InterruptedException e) {
-      popTransaction(lockID);
-      if (peekContext() != null) {
-        currentTransaction.setTransactionContext(peekContext());
-        setTransaction(currentTransaction);
-      }
-      throw e;
-    }
-
-    return true;
-  }
-
-  public boolean beginLockWithoutTxn(String lockName, int lockLevel, String lockObjectType, String contextInfo) {
-    logBegin0(lockName, lockLevel);
-
-    if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return false; }
-
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-    this.lockManager.lock(lockID, lockLevel, lockObjectType, contextInfo);
-    this.locksWithoutTxn.get().add(lockID);
-    return true;
-  }
-
-  public boolean begin(final String lockName, final int lockLevel, final String lockObjectType, final String contextInfo) {
-    logBegin0(lockName, lockLevel);
-
-    if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return false; }
-
-    ClientTransaction currentTransaction = getTransactionOrNull();
-
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
-
-    pushTxContext(currentTransaction, lockID, lockLevel);
-
-    if (currentTransaction == null) {
-      createTxAndInitContext();
-    } else {
-      currentTransaction.setTransactionContext(this.peekContext());
-    }
-
-    try {
-      this.lockManager.lock(lockID, lockLevel, lockObjectType, contextInfo);
-      return true;
-    } catch (TCLockUpgradeNotSupportedError e) {
-      popTransaction(lockID);
-      if (peekContext() != null) {
-        currentTransaction.setTransactionContext(peekContext());
-        setTransaction(currentTransaction);
-      }
-      throw e;
-    }
-  }
-
-  private TxnType getTxnTypeFromLockLevel(final int lockLevel) {
+  private TxnType getTxnTypeFromLockLevel(final LockLevel lockLevel) {
     switch (lockLevel) {
-      case LockLevel.READ:
-        return TxnType.READ_ONLY;
-      case LockLevel.CONCURRENT:
+      case CONCURRENT:
         return TxnType.CONCURRENT;
-      case LockLevel.WRITE:
-        return TxnType.NORMAL;
-      case LockLevel.SYNCHRONOUS_WRITE:
+      case WRITE:
+      case SYNCHRONOUS_WRITE:
         return TxnType.NORMAL;
       default:
-        throw Assert.failure("don't know how to translate lock level " + lockLevel);
+        throw new AssertionError();
     }
   }
 
-  public void wait(final String lockName, final TimerSpec call, final Object object)
-      throws UnlockedSharedObjectException, InterruptedException {
-    final ClientTransaction topTxn = getTransactionOrNull();
-
-    if (topTxn == null) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
-
-    LockID lockID = this.lockManager.lockIDFor(lockName);
-
-    if (!this.lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(
-                                                                                                      getIllegalMonitorStateExceptionMessage()); }
-
-    commit(lockID, topTxn, true);
-
-    try {
-      this.lockManager.wait(lockID, call, object, this.waitListener);
-    } finally {
-      createTxAndInitContext();
-    }
-  }
-
-  public void notify(final String lockName, final boolean all, final Object object)
+  public void notify(final LockID lock, final ThreadID thread, final boolean all)
       throws UnlockedSharedObjectException {
     final ClientTransaction currentTxn = getTransactionOrNull();
 
-    if (currentTxn == null) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
+    if (currentTxn == null || currentTxn != TxnType.NORMAL) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
-    LockID lockID = this.lockManager.lockIDFor(lockName);
-
-    if (!this.lockManager.isLocked(lockID, LockLevel.WRITE)) { throw new IllegalMonitorStateException(
-                                                                                                      getIllegalMonitorStateExceptionMessage()); }
-
-    currentTxn.addNotify(this.lockManager.notify(lockID, all));
+    currentTxn.addNotify(new Notify(lock, thread, all));
   }
 
   private String getIllegalMonitorStateExceptionMessage() {
@@ -311,21 +149,9 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return Util.getFormattedMessage(errorMsg.toString());
   }
 
-  private void logTryBegin0(final String lockID, final int type) {
+  private void logBegin0(final LockID lock, final LockLevel level) {
     if (logger.isDebugEnabled()) {
-      logger.debug("tryBegin(): lockID=" + (lockID == null ? "null" : lockID) + ", type = " + type);
-    }
-  }
-
-  private void logBeginInterruptibly0(final String lockID, final int type) {
-    if (logger.isDebugEnabled()) {
-      logger.debug("beginInterruptibly(): lockID=" + (lockID == null ? "null" : lockID) + ", type = " + type);
-    }
-  }
-
-  private void logBegin0(final String lockID, final int type) {
-    if (logger.isDebugEnabled()) {
-      logger.debug("begin(): lockID=" + (lockID == null ? "null" : lockID) + ", type = " + type);
+      logger.debug("begin(): lock =" + lock + ", level = " + level);
     }
   }
 
@@ -408,25 +234,17 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
    * weird situations where reentrantLock is mixed with synchronized block will the TransactionContext to be removed be
    * found otherwise.
    */
-  public void commit(final String lockName) throws UnlockedSharedObjectException {
+  public void commit(final LockID lock) throws UnlockedSharedObjectException {
     logCommit0();
     if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return; }
 
-    LockID lockID = this.lockManager.lockIDFor(lockName);
-    // if the current thread holds the lock and the lock is NOT associated with any transactions, just unlock and return
-    if (this.locksWithoutTxn.get().contains(lockID)) {
-      this.lockManager.unlock(lockID);
-      this.locksWithoutTxn.get().remove(lockID);
-      return;
-    }
-
     ClientTransaction tx = getTransaction();
-    if (lockID == null || lockID.isNull()) {
-      lockID = tx.getLockID();
-    }
-    boolean hasCommitted = commit(lockID, tx, false);
+//    if (lockID == null || lockID.isNull()) {
+//      lockID = tx.getLockID();
+//    }
+    boolean hasCommitted = commit(lock, tx, false);
 
-    popTransaction(this.lockManager.lockIDFor(lockName));
+    popTransaction(lock);
 
     if (peekContext() != null) {
       if (hasCommitted) {
@@ -467,14 +285,13 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     return ttc.peekContext();
   }
 
-  public boolean isLockOnTopStack(final String lockName) {
-    final LockID lockID = this.lockManager.lockIDFor(lockName);
+  public boolean isLockOnTopStack(final LockID lock) {
     TransactionContext tc = peekContext();
     if (tc == null) { return false; }
-    return (tc.getLockID().equals(lockID));
+    return (tc.getLockID().equals(lock));
   }
 
-  private void pushTxContext(final ClientTransaction currentTransaction, final LockID lockID, final int lockLevel) {
+  private void pushTxContext(final ClientTransaction currentTransaction, final LockID lockID, final LockLevel lockLevel) {
     final TxnType lockTxnType = getTxnTypeFromLockLevel(lockLevel);
     final TxnType effectiveTxnType;
     if (currentTransaction != null && TxnType.READ_ONLY == lockTxnType
@@ -538,15 +355,6 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       return true;
     } finally {
       enableTransactionLogging();
-
-      // always try to unlock even if we are throwing an exception
-      if (!isWaitContext && !currentTransaction.isNull()) {
-        if (lockID != null && !lockID.isNull()) {
-          this.lockManager.unlock(lockID);
-        } else {
-          throw new AssertionError("Trying to unlock with lockID = null!");
-        }
-      }
     }
   }
 
@@ -824,18 +632,6 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     } finally {
       enableTransactionLogging();
     }
-  }
-
-  public void pinLock(String lockName) {
-    lockManager.pinLock(lockManager.lockIDFor(lockName));
-  }
-
-  public void unpinLock(String lockName) {
-    lockManager.unlock(lockManager.lockIDFor(lockName));
-  }
-  
-  public void evictLock(String lockName) {
-    lockManager.evictLock(lockManager.lockIDFor(lockName));
   }
 
   private ReadOnlyException makeReadOnlyException(final String details) {

@@ -34,15 +34,8 @@ public class LongLockID implements LockID {
     return this == NULL_ID;
   }
 
-  /**
-   * @return ID type
-   */
-  public String getIdentifierType() {
-    return "LockID";
-  }
-
   public String toString() {
-    return getIdentifierType() + "(" + id + ")";
+    return getClass().getSimpleName() + "(" + id + ")";
   }
 
   /**
@@ -73,7 +66,11 @@ public class LongLockID implements LockID {
     serialOutput.writeLong(id);
   }
 
-  public byte getLockType() {
-    return LONG_TYPE;
+  public LockIDType getLockType() {
+    return LockIDType.LONG;
+  }
+
+  public Object unclusteredObject() {
+    return null;
   }
 }

@@ -8,12 +8,15 @@ import com.tc.io.TCSerializable;
 import java.io.Serializable;
 
 public interface LockID extends TCSerializable, Serializable {
-  public static final byte STRING_TYPE = 0x01;
-  public static final byte LONG_TYPE   = 0x02;
+  static enum LockIDType {STRING, LONG, DSO;}
 
-  public byte getLockType();
+  public LockIDType getLockType();
   
+  @Deprecated
   public String asString();
 
+  @Deprecated
   public boolean isNull();
+  
+  public Object unclusteredObject();
 }
