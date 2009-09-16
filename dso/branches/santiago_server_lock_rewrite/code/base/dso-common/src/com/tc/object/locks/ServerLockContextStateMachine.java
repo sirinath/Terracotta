@@ -43,7 +43,7 @@ public class ServerLockContextStateMachine {
   private State moveToWaiter(State oldState) {
     Assert.assertNotNull(oldState);
     Assert.assertTrue(oldState.getType() == Type.HOLDER);
-    Assert.assertTrue(oldState.getLockLevel() == ServerLockLevel.READ);
+    Assert.assertTrue(oldState.getLockLevel() == ServerLockLevel.WRITE);
     switch (oldState.getLockLevel()) {
       case WRITE:
         return State.WAITER;

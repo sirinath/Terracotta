@@ -23,13 +23,13 @@ import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockResponseContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.context.LockResponseContext;
 import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
@@ -141,7 +141,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
         LockResponseContext lrc = (LockResponseContext) ec;
         if (lrc.isLockAward()) {
           clientLockManager.awardLock(lrc.getNodeID(), sessionProvider.getSessionID(lrc.getNodeID()), lrc.getLockID(),
-                                      lrc.getThreadID(), lrc.getLockLevel());
+                                      lrc.getThreadID(), ServerLockLevel.toLegacyInt(lrc.getLockLevel()));
         }
       }
       // ToDO :: implment WaitContext etc..
@@ -157,27 +157,29 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
                                                                                  TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
     clientLockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, handshakeMessage);
 
-    for (Iterator i = handshakeMessage.getLockContexts().iterator(); i.hasNext();) {      
+    for (Iterator i = handshakeMessage.getLockContexts().iterator(); i.hasNext();) {
       ClientServerExchangeLockContext context = ((ClientServerExchangeLockContext) i.next());
       switch (context.getState().getType()) {
         case GREEDY_HOLDER:
         case HOLDER:
-          serverLockManager.reestablishLock(context.getLockID(), context.getNodeID(), context.getThreadID(), ServerLockLevel
-              .toLegacyInt(context.getState().getLockLevel()), NULL_SINK);
+          serverLockManager.reestablishLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
+                                            ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), NULL_SINK);
           break;
         case WAITER:
           TimerSpec spec = context.timeout() == -1 ? new TimerSpec() : new TimerSpec(context.timeout());
-          serverLockManager.reestablishWait(context.getLockID(), context.getNodeID(), context.getThreadID(), ServerLockLevel
-              .toLegacyInt(context.getState().getLockLevel()), spec, NULL_SINK);
+          serverLockManager.reestablishWait(context.getLockID(), context.getNodeID(), context.getThreadID(),
+                                            ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), spec,
+                                            NULL_SINK);
           break;
         case PENDING:
-          serverLockManager.requestLock(context.getLockID(), context.getNodeID(), context.getThreadID(), ServerLockLevel
-              .toLegacyInt(context.getState().getLockLevel()), "", NULL_SINK);
+          serverLockManager.requestLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
+                                        ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), "", NULL_SINK);
           break;
         case TRY_PENDING:
           spec = context.timeout() == -1 ? new TimerSpec() : new TimerSpec(context.timeout());
-          serverLockManager.tryRequestLock(context.getLockID(), context.getNodeID(), context.getThreadID(), ServerLockLevel
-              .toLegacyInt(context.getState().getLockLevel()), "", spec, NULL_SINK);
+          serverLockManager.tryRequestLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
+                                           ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), "", spec,
+                                           NULL_SINK);
           break;
       }
     }

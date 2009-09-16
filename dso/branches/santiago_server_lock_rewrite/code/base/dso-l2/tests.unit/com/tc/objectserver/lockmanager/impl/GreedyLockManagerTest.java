@@ -25,10 +25,11 @@ import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.LockHolder;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockResponseContext;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.context.LockResponseContext;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.LockMBean;
@@ -302,7 +303,7 @@ public class GreedyLockManagerTest extends TestCase {
     assertTrue(ctxt.isLockAward());
     assertTrue(ctxt.getThreadID().equals(tx1));
     assertTrue(ctxt.getLockID().equals(lockID1));
-    assertTrue(!LockLevel.isGreedy(ctxt.getLockLevel()));
+    assertTrue(!LockLevel.isGreedy(ServerLockLevel.toLegacyInt(ctxt.getLockLevel())));
   }
 
   private void assertAwardGreedy(LockResponseContext ctxt, LockID lockID1) {
@@ -310,7 +311,7 @@ public class GreedyLockManagerTest extends TestCase {
     assertTrue(ctxt.isLockAward());
     assertTrue(ctxt.getThreadID().equals(ThreadID.VM_ID));
     assertTrue(ctxt.getLockID().equals(lockID1));
-    assertTrue(LockLevel.isGreedy(ctxt.getLockLevel()));
+    assertTrue(LockLevel.isGreedy(ServerLockLevel.toLegacyInt(ctxt.getLockLevel())));
 
   }
 
