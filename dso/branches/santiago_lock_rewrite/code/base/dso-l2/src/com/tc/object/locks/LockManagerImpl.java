@@ -10,16 +10,16 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.Lock.NotifyAction;
+import com.tc.object.locks.LockStore.LockIterator;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
+import com.tc.util.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-import junit.framework.Assert;
 
 public class LockManagerImpl implements LockManager {
   private enum Status {
@@ -137,11 +137,12 @@ public class LockManagerImpl implements LockManager {
   public void clearAllLocksFor(ClientID cid) {
     // TODO check to see if the lock can be removed
     Lock oldLock = null;
-    Lock lock = lockStore.getNextLock(oldLock);
+    LockIterator iterator = lockStore.iterator();
+    Lock lock = iterator.getNextLock(oldLock);
     do {
       lock.clearStateForNode(cid);
       oldLock = lock;
-      lock = lockStore.getNextLock(oldLock);
+      lock = iterator.getNextLock(oldLock);
     } while (lock != null);
   }
 
