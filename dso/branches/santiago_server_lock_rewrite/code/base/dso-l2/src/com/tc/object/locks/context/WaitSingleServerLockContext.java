@@ -10,20 +10,28 @@ import com.tc.object.locks.LockHelper;
 import java.util.TimerTask;
 
 public class WaitSingleServerLockContext extends SingleServerLockContext implements WaitServerLockContext {
-  private final TimerTask  task;
+  private TimerTask        task;
   private final long       timeout;
   private final LockHelper helper;
 
-  public WaitSingleServerLockContext(ClientID clientID, ThreadID threadID, TimerTask task, long timeout,
+  public WaitSingleServerLockContext(ClientID clientID, ThreadID threadID, long timeout, LockHelper lockHelper) {
+    this(clientID, threadID, timeout, null, lockHelper);
+  }
+
+  public WaitSingleServerLockContext(ClientID clientID, ThreadID threadID, long timeout, TimerTask task,
                                      LockHelper lockHelper) {
     super(clientID, threadID);
-    this.task = task;
     this.timeout = timeout;
     this.helper = lockHelper;
+    this.task = task;
   }
 
   public long getTimeout() {
     return timeout;
+  }
+
+  public void setTimerTask(TimerTask task) {
+    this.task = task;
   }
 
   public TimerTask getTimerTask() {

@@ -175,7 +175,7 @@ public class Lock {
     for (Iterator iter = waiters.iterator(); iter.hasNext();) {
       LockWaitContext waiter = (LockWaitContext) iter.next();
       ServerLockContext context = new WaitLinkedServerLockContext((ClientID) waiter.getNodeID(), waiter.getThreadID(),
-                                                                  null, waiter.getTimerSpec().getMillis(), null);
+                                                                   waiter.getTimerSpec().getMillis(), null);
       context.setState(machine, getState(Type.HOLDER, waiter.lockLevel()));
       context.setState(machine, getState(Type.WAITER, waiter.lockLevel()));
       list.addLast(context);
@@ -256,7 +256,6 @@ public class Lock {
   }
 
   synchronized void queryLock(final ServerThreadContext txn, final Sink lockResponseSink) {
-
     // TODO:
     // The Remote Lock Manager needs to ask the client for lock information when greedy lock is awarded.
     // Currently, the Remote Lock Manager responds to queryLock by looking at the server only.

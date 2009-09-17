@@ -13,7 +13,9 @@ import java.util.TimerTask;
 public interface WaitServerLockContext {
   public long getTimeout();
 
+  public void setTimerTask(TimerTask task);
+
   public TimerTask getTimerTask();
-  
+
   public LockHelper getLockHelper();
 }
