@@ -41,6 +41,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+// Have to get back to this test and write a TestLockManager
 public class ApplyTransactionChangeHandlerTest extends TestCase {
 
   private ApplyTransactionChangeHandler handler;
@@ -67,7 +68,7 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
     context.l2Coordinator = new L2HADisabledCooridinator();
     context.addStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, stageBo);
     context.addStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE, stageCo);
-    context.lockManager = this.lockManager;
+    // context.lockManager = this.lockManager;
 
     this.handler.initializeContext(context);
   }

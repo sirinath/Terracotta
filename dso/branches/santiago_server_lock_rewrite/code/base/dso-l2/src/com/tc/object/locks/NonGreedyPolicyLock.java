@@ -6,7 +6,10 @@ package com.tc.object.locks;
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ServerLockContext.Type;
+import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
+import com.tc.util.Assert;
 
+import java.util.Collection;
 import java.util.List;
 
 public final class NonGreedyPolicyLock extends AbstractLock {
@@ -14,7 +17,6 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     super(lockID);
   }
 
-  @Override
   public void tryLock(ClientID cid, ThreadID tid, ServerLockLevel level, long timeout, LockHelper helper) {
     int noOfPendingRequests = doPreLockCheckAndCalculations(cid, tid, level);
     recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
@@ -59,7 +61,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
 
   @Override
   protected void awardAllReads(LockHelper helper, ServerLockContext request) {
-    List<ServerLockContext> contexts = getAllPendingReadRequests();
+    List<ServerLockContext> contexts = getAllPendingReadRequests(helper);
     contexts.add(request);
 
     for (ServerLockContext context : contexts) {
@@ -69,9 +71,9 @@ public final class NonGreedyPolicyLock extends AbstractLock {
 
   @Override
   protected void processPendingRequests(LockHelper helper) {
-    ServerLockContext request = getNextRequestIfCanAward();
+    ServerLockContext request = getNextRequestIfCanAward(helper);
     if (request == null) { return; }
-
+    
     switch (request.getState().getLockLevel()) {
       case READ:
         awardAllReads(helper, request);
@@ -82,5 +84,34 @@ public final class NonGreedyPolicyLock extends AbstractLock {
       default:
         throw new IllegalStateException("Nil lock level not supported here");
     }
+  }
+
+  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
+    moveFromHolderToWaiter(cid, tid, timeout, helper);
+    processPendingRequests(helper);
+  }
+
+  public void clearStateForNode(ClientID cid, LockHelper helper) {
+    clearContextsForClient(cid, helper);
+
+    if (checkIfLockCanBeCleared(helper)) { return; }
+    processPendingRequests(helper);
+  }
+
+  public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
+    // remove current hold
+    ServerLockContext context = remove(cid, tid, helper);
+    recordLockReleaseStat(cid, tid, helper);
+    
+    Assert.assertNotNull(context);
+    Assert.assertTrue(context.getState().getType() == Type.HOLDER);
+
+    if (checkIfLockCanBeCleared(helper)) { return; }
+    processPendingRequests(helper);
+  }
+
+  public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
+                           LockHelper helper) {
+    // NO-OP
   }
 }

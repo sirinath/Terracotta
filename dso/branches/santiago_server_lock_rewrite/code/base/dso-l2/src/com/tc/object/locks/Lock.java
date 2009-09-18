@@ -29,13 +29,14 @@ public interface Lock extends TimerCallback {
 
   void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts, LockHelper helper);
 
-  void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo, LockHelper helper) throws TCIllegalMonitorStateException;
+  void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo, LockHelper helper)
+      throws TCIllegalMonitorStateException;
 
   void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException;
 
   void reestablishState(ClientServerExchangeLockContext serverLockContext, LockHelper lockHelper);
 
-  void clearStateForNode(ClientID cid);
+  void clearStateForNode(ClientID cid, LockHelper helper);
 
   LockMBean getMBean(DSOChannelManager channelManager);
 
