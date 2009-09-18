@@ -5,10 +5,12 @@
 package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ServerLockContext.State;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -31,15 +33,15 @@ public class NotifiedWaitersTest extends TestCase {
 
     NotifiedWaiters ns = new NotifiedWaiters();
 
-    LockContext lr1 = new LockContext(lockID, clientID1, txID1, 0, String.class.getName());
+    ClientServerExchangeLockContext lr1 = new ClientServerExchangeLockContext(lockID, clientID1, txID1, State.WAITER);
     forChannel1.add(lr1);
     ns.addNotification(lr1);
 
-    LockContext lr2 = new LockContext(lockID, clientID1, txID2, 0, String.class.getName());
+    ClientServerExchangeLockContext lr2 = new ClientServerExchangeLockContext(lockID, clientID1, txID2, State.WAITER);
     forChannel1.add(lr2);
     ns.addNotification(lr2);
 
-    LockContext lr3 = new LockContext(lockID, clientID2, txID3, 0, String.class.getName());
+    ClientServerExchangeLockContext lr3 = new ClientServerExchangeLockContext(lockID, clientID1, txID3, State.WAITER);
     forChannel2.add(lr3);
     ns.addNotification(lr3);
 

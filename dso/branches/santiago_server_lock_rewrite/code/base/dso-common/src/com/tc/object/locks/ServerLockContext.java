@@ -96,7 +96,6 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     final int prime = 31;
     int result = 1;
     result = prime * result + ((clientID == null) ? 0 : clientID.hashCode());
-    result = prime * result + ((state == null) ? 0 : state.hashCode());
     result = prime * result + ((threadID == null) ? 0 : threadID.hashCode());
     return result;
   }
@@ -108,7 +107,6 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     if (!(obj instanceof ServerLockContext)) return false;
     ServerLockContext other = (ServerLockContext) obj;
     if (!clientID.equals(other.clientID)) return false;
-    if (!state.equals(other.state)) return false;
     if (!threadID.equals(other.threadID)) return false;
     return true;
   }

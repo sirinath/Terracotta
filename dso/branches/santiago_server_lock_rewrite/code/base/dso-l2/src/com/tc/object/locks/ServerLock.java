@@ -11,8 +11,6 @@ import com.tc.object.locks.ServerLockContext.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.Assert;
-
 public final class ServerLock extends AbstractLock {
   private boolean isRecalled = false;
 
@@ -91,21 +89,8 @@ public final class ServerLock extends AbstractLock {
     queue(cid, tid, level, type, timeout, helper);
   }
 
-  @Override
-  public void interrupt(ClientID cid, ThreadID tid, LockHelper helper) {
-    // check if waiters are present
-    ServerLockContext waiter = remove(cid, tid);
-    if (waiter == null) {
-      logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
-      return;
-    }
-    Assert.assertTrue(waiter.getState() == State.WAITER);
-
-    int noOfPendingRequests = getNoOfPendingRequests();
-    recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
-    cancelTryLockOrWaitTimer(waiter, helper);
-    // Add a pending request
-    queue(cid, tid, waiter.getState().getLockLevel(), Type.PENDING, -1, helper);
+  protected void changeWaiterToPending(ClientID cid, ThreadID tid, LockHelper helper, ServerLockContext waiter) {
+    super.changeWaiterToPending(cid, tid, helper, waiter);
 
     // recall greedy holders if present
     if (hasGreedyHolders()) {

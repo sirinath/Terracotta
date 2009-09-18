@@ -24,13 +24,13 @@ import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockResponseContext;
+import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 
