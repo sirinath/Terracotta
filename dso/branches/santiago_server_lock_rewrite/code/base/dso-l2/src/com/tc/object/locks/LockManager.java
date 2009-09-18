@@ -3,14 +3,16 @@
  */
 package com.tc.object.locks;
 
+import com.tc.logging.DumpHandler;
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.Lock.NotifyAction;
-import com.tc.objectserver.lockmanager.api.LockMBean;
+import com.tc.objectserver.lockmanager.api.LockManagerMBean;
+import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
 
-public interface LockManager {
+public interface LockManager extends DumpHandler, PrettyPrintable, LockManagerMBean {
   void lock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level);
 
   void tryLock(LockID lid, ClientID cid, ThreadID threadID, ServerLockLevel level, long timeout);
@@ -36,6 +38,4 @@ public interface LockManager {
   void start();
 
   void stop() throws InterruptedException;
-  
-  public LockMBean[] getAllLocks();
 }

@@ -24,7 +24,6 @@ import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.TimerTask;
 
@@ -34,7 +33,7 @@ import java.util.TimerTask;
  */
 public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> implements Lock {
   protected final LockID          lockID;
-  protected static final TCLogger logger = TCLogging.getLogger(ServerLock.class);
+  protected static final TCLogger logger = TCLogging.getLogger(AbstractLock.class);
 
   public AbstractLock(LockID lockID) {
     this.lockID = lockID;
@@ -46,8 +45,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     requestLock(cid, tid, level, Type.PENDING, -1, helper);
   }
 
-  public abstract void tryLock(ClientID cid, ThreadID tid, ServerLockLevel level, long timeout, LockHelper helper);
-
   public void queryLock(ClientID cid, ThreadID tid, LockHelper helper) {
     LockResponseContext lrc = LockResponseContextFactory.createLockQueriedResponseContext(this.lockID, cid, tid, this
         .holderLevel(), this);
@@ -56,37 +53,18 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   public void interrupt(ClientID cid, ThreadID tid, LockHelper helper) {
     // check if waiters are present
-    ServerLockContext waiter = remove(cid, tid);
+    ServerLockContext waiter = remove(cid, tid, helper);
     if (waiter == null) {
       logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
       return;
     }
     Assert.assertTrue(waiter.getState() == State.WAITER);
-    changeWaiterToPending(cid, tid, helper, waiter);
-  }
-
-  public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
-    // remove current hold
-    ServerLockContext context = remove(cid, tid);
-    Assert.assertNotNull(context);
-    Assert.assertTrue(context.getState().getType() == Type.HOLDER);
-
-    if (isEmpty()) {
-      LockStore store = helper.getLockStore();
-      store.remove(lockID);
-    }
-
-    processPendingRequests(helper);
-  }
-
-  public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
-                           LockHelper helper) {
-    // TODO
+    changeWaiterToPending(waiter, helper);
   }
 
   public void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
                      LockHelper helper) throws TCIllegalMonitorStateException {
-    ServerLockContext holder = remove(cid, tid);
+    ServerLockContext holder = get(cid, tid);
     validateWaitNotifyState(cid, tid, holder);
 
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
@@ -96,84 +74,35 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, context.getClientID(),
                                                                                     context.getThreadID(), State.WAITER);
         addNotifiedWaitersTo.addNotification(cselc);
+        iter.remove();
         switch (action) {
           case ALL:
-            changeWaiterToPending(cid, tid, helper, context);
+            changeWaiterToPending(context, helper);
             break;
           case ONE:
-            changeWaiterToPending(cid, tid, helper, context);
+            changeWaiterToPending(context, helper);
             return;
         }
       }
     }
-  }
-
-  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
-    ServerLockContext holder = remove(cid, tid);
-    validateWaitNotifyState(cid, tid, holder);
-
-    ServerLockContext waiter = createWaitOrTryPendingServerLockContext(cid, tid, State.WAITER, timeout, helper);
-    if (timeout > 0) {
-      TimerTask task = helper.getLockTimer().scheduleTimer(this, timeout, waiter);
-      ((WaitServerLockContext) waiter).setTimerTask(task);
-    }
-    addWaiter(waiter, helper);
-
-    processPendingRequests(helper);
-  }
-
-  private void validateWaitNotifyState(ClientID cid, ThreadID tid, ServerLockContext holder)
-      throws TCIllegalMonitorStateException {
-    if (holder == null) {
-      throw new TCIllegalMonitorStateException("No holder present for " + cid + "," + tid);
-    } else if (holder.getState() != State.HOLDER_WRITE) { throw new TCIllegalMonitorStateException(
-                                                                                                   "Holder not in correct state "
-                                                                                                       + holder
-                                                                                                           .getState()); }
+    postStepsForRemove(helper);
   }
 
   public void reestablishState(ClientServerExchangeLockContext cselc, LockHelper helper) {
     switch (cselc.getState().getType()) {
       case GREEDY_HOLDER:
       case HOLDER:
-        break;
-      case PENDING:
-        break;
-      case TRY_PENDING:
-        tryLock((ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState().getLockLevel(), cselc.timeout(),
-                helper);
+        if (!canAwardRequest(cselc.getState().getLockLevel())) { throw new AssertionError(
+                                                                                          "Lock could not be awarded as it is already held "
+                                                                                              + cselc); }
+        reestablishLock(cselc, helper);
         break;
       case WAITER:
         ServerLockContext context = createWaiterAndScheduleTask(cselc, helper);
         addWaiter(context, helper);
         break;
-    }
-  }
-
-  private ServerLockContext createWaiterAndScheduleTask(ClientServerExchangeLockContext cselc, LockHelper helper) {
-    ServerLockContext context = createWaitOrTryPendingServerLockContext((ClientID) cselc.getNodeID(), cselc
-        .getThreadID(), cselc.getState(), cselc.timeout(), helper);
-    if (cselc.timeout() > 0) {
-      TimerTask task = helper.getLockTimer().scheduleTimer(this, cselc.timeout(), context);
-      ((WaitServerLockContext) context).setTimerTask(task);
-    }
-    return context;
-  }
-
-  public void clearStateForNode(ClientID cid) {
-    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
-    while (iter.hasNext()) {
-      ServerLockContext context = iter.next();
-      if (context.getClientID().equals(cid)) {
-        iter.remove();
-      }
-      switch (context.getState().getType()) {
-        case WAITER:
-        case TRY_PENDING:
-          ((WaitServerLockContext) context).getTimerTask().cancel();
-          break;
-        default:
-      }
+      default:
+        throw new IllegalArgumentException("Called with wrong type = " + cselc.getState().getType());
     }
   }
 
@@ -194,7 +123,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     store.checkOut(lockID);
 
     // Remove from pending requests
-    remove(context.getClientID(), context.getThreadID());
+    remove(context.getClientID(), context.getThreadID(), helper);
     Assert.assertTrue(context.getState().getType() == Type.PENDING || context.getState() == State.WAITER);
 
     if (context.isWaiter()) {
@@ -206,6 +135,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     store.checkIn(this);
   }
 
+  // 
   private void tryLockTimeout(ServerLockContext context, LockHelper helper) {
     Assert.assertTrue(context.getState().getType() == Type.PENDING);
     cannotAward(context.getClientID(), context.getThreadID(), context.getState().getLockLevel(), helper);
@@ -220,12 +150,60 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     lock(context.getClientID(), context.getThreadID(), context.getState().getLockLevel(), helper);
   }
 
+  protected ServerLockContext createWaiterAndScheduleTask(ClientServerExchangeLockContext cselc, LockHelper helper) {
+    ServerLockContext context = createWaitOrTryPendingServerLockContext((ClientID) cselc.getNodeID(), cselc
+        .getThreadID(), cselc.getState(), cselc.timeout(), helper);
+    if (cselc.timeout() > 0) {
+      TimerTask task = helper.getLockTimer().scheduleTimer(this, cselc.timeout(), context);
+      ((WaitServerLockContext) context).setTimerTask(task);
+    }
+    return context;
+  }
+
+  protected boolean checkIfLockCanBeCleared(LockHelper helper) {
+    if (isEmpty()) {
+      LockStore store = helper.getLockStore();
+      store.remove(lockID);
+      return true;
+    }
+    return false;
+  }
+
+  protected void reestablishLock(ClientServerExchangeLockContext cselc, LockHelper helper) {
+    awardLock(helper, createPendingContext((ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState()
+        .getLockLevel(), helper));
+  }
+
+  protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper)
+      throws TCIllegalMonitorStateException {
+    ServerLockContext holder = remove(cid, tid, helper);
+    validateWaitNotifyState(cid, tid, holder);
+
+    recordLockReleaseStat(cid, tid, helper);
+    ServerLockContext waiter = createWaitOrTryPendingServerLockContext(cid, tid, State.WAITER, timeout, helper);
+    if (timeout > 0) {
+      TimerTask task = helper.getLockTimer().scheduleTimer(this, timeout, waiter);
+      ((WaitServerLockContext) waiter).setTimerTask(task);
+    }
+    addWaiter(waiter, helper);
+  }
+
+  protected void validateWaitNotifyState(ClientID cid, ThreadID tid, ServerLockContext holder)
+      throws TCIllegalMonitorStateException {
+    if (holder == null) {
+      throw new TCIllegalMonitorStateException("No holder present for " + cid + "," + tid);
+    } else if (holder.getState() != State.HOLDER_WRITE && holder.getState() != State.GREEDY_HOLDER_WRITE) { throw new TCIllegalMonitorStateException(
+                                                                                                                                                     "Holder not in correct state "
+                                                                                                                                                         + holder
+                                                                                                                                                             .getState()); }
+  }
+
   protected void queue(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout, LockHelper helper) {
     ServerLockContext context = null;
     switch (type) {
       case TRY_PENDING:
         context = createTryPendingServerLockContext(cid, tid, level, timeout, helper);
-        Assert.assertFalse(timeout <= 0);
+        Assert.assertTrue(timeout > 0);
         TimerTask task = helper.getLockTimer().scheduleTimer(this, timeout, context);
         ((WaitServerLockContext) context).setTimerTask(task);
         addTryPending(context, helper);
@@ -251,9 +229,11 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         case GREEDY_HOLDER:
         case HOLDER:
           if (isUpgradeRequest(cid, tid, reqLevel, context)) { throw new TCLockUpgradeNotSupportedError(
-                                                                                                        "Lock upgrade is not supported."); }
+                                                                                                        "Lock upgrade is not supported."
+                                                                                                            + context); }
           if (isAlreadyHeldBySameContext(cid, tid, reqLevel, context)) { throw new AssertionError(
-                                                                                                  "Client requesting already held lock!"); }
+                                                                                                  "Client requesting already held lock!"
+                                                                                                      + context); }
           break;
         case PENDING:
         case TRY_PENDING:
@@ -269,8 +249,29 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return noOfPendingRequests;
   }
 
-  private boolean isUpgradeRequest(ClientID cid, ThreadID tid, ServerLockLevel reqLevel, ServerLockContext context) {
-    if (reqLevel == ServerLockLevel.WRITE && context.getClientID().equals(cid) && context.getThreadID().equals(tid)) { return true; }
+  protected void clearContextsForClient(ClientID cid, LockHelper helper) {
+    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
+
+    // clear contexts and cancel timer tasks
+    while (iter.hasNext()) {
+      ServerLockContext context = iter.next();
+      if (context.getClientID().equals(cid)) {
+        iter.remove();
+      }
+      switch (context.getState().getType()) {
+        case WAITER:
+        case TRY_PENDING:
+          ((WaitServerLockContext) context).getTimerTask().cancel();
+          break;
+        default:
+      }
+    }
+    postStepsForRemove(helper);
+  }
+
+  private boolean isUpgradeRequest(ClientID cid, ThreadID tid, ServerLockLevel reqLevel, ServerLockContext holder) {
+    if (reqLevel == ServerLockLevel.WRITE && this.isRead() && holder.getClientID().equals(cid)
+        && holder.getThreadID().equals(tid)) { return true; }
     return false;
   }
 
@@ -281,12 +282,12 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected void changeWaiterToPending(ClientID cid, ThreadID tid, LockHelper helper, ServerLockContext waiter) {
+  protected void changeWaiterToPending(ServerLockContext waiter, LockHelper helper) {
     int noOfPendingRequests = getNoOfPendingRequests();
-    recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
+    recordLockRequestStat(waiter.getClientID(), waiter.getThreadID(), noOfPendingRequests, helper);
     cancelTryLockOrWaitTimer(waiter, helper);
     // Add a pending request
-    queue(cid, tid, waiter.getState().getLockLevel(), Type.PENDING, -1, helper);
+    queue(waiter.getClientID(), waiter.getThreadID(), waiter.getState().getLockLevel(), Type.PENDING, -1, helper);
   }
 
   protected abstract void processPendingRequests(LockHelper helper);
@@ -319,7 +320,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
                                                                                         request.getThreadID(), request
                                                                                             .getState().getLockLevel());
     helper.getLockSink().add(lrc);
-
     // record award to the stats
     recordLockAward(helper, request);
   }
@@ -333,11 +333,14 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addHolder(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
+    checkDuplicate(request);
     this.addFirst(request);
   }
 
   protected void addTryPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
+    checkDuplicate(request);
+
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       switch (iter.next().getState().getType()) {
@@ -357,6 +360,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
+    checkDuplicate(request);
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       switch (iter.next().getState().getType()) {
@@ -376,6 +380,8 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addWaiter(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
+    checkDuplicate(request);
+
     this.addLast(request);
   }
 
@@ -387,7 +393,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
    * WaitLinkedServerLockContext is required.
    */
   protected void preStepsForAdd(LockHelper helper) {
-    if (isEmpty() || getFirst().getNext() != null) { return; }
+    if (isEmpty() || (!isEmpty() && (getFirst().getNext() != null || getFirst() instanceof LinkedServerLockContext))) { return; }
 
     // Since there is only 1 element in the list, a change is required.
     SingleServerLockContext context = (SingleServerLockContext) removeFirst();
@@ -402,6 +408,39 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       case TRY_PENDING:
       case WAITER:
         newContext = new WaitLinkedServerLockContext(context.getClientID(), context.getThreadID(),
+                                                     ((WaitServerLockContext) context).getTimeout(),
+                                                     ((WaitServerLockContext) context).getTimerTask(),
+                                                     ((WaitServerLockContext) context).getLockHelper());
+        newContext.setState(helper.getContextStateMachine(), context.getState());
+        break;
+    }
+    this.addFirst(newContext);
+  }
+
+  protected void checkDuplicate(ServerLockContext context) {
+    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
+    while (iter.hasNext()) {
+      ServerLockContext temp = iter.next();
+      if (context.equals(temp)) { throw new RuntimeException("Duplicate " + context + ", " + temp); }
+    }
+  }
+
+  protected void postStepsForRemove(LockHelper helper) {
+    if (isEmpty() || (!isEmpty() && (getFirst().getNext() != null || getFirst() instanceof SingleServerLockContext))) { return; }
+
+    // Since there is only 1 element in the list, a change is required.
+    LinkedServerLockContext context = (LinkedServerLockContext) removeFirst();
+    SingleServerLockContext newContext = null;
+    switch (context.getState().getType()) {
+      case GREEDY_HOLDER:
+      case HOLDER:
+      case PENDING:
+        newContext = new SingleServerLockContext(context.getClientID(), context.getThreadID());
+        newContext.setState(helper.getContextStateMachine(), context.getState());
+        break;
+      case TRY_PENDING:
+      case WAITER:
+        newContext = new WaitSingleServerLockContext(context.getClientID(), context.getThreadID(),
                                                      ((WaitServerLockContext) context).getTimeout(),
                                                      ((WaitServerLockContext) context).getTimerTask(),
                                                      ((WaitServerLockContext) context).getLockHelper());
@@ -426,7 +465,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected ServerLockContext getNextRequestIfCanAward() {
+  protected ServerLockContext getNextRequestIfCanAward(LockHelper helper) {
     // Fetch the next pending context
     SinglyLinkedListIterator<ServerLockContext> contexts = iterator();
     while (contexts.hasNext()) {
@@ -436,6 +475,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         case TRY_PENDING:
           if (canAwardRequest(request.getState().getLockLevel())) {
             contexts.remove();
+            postStepsForRemove(helper);
             return request;
           }
           return null;
@@ -487,6 +527,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     } else {
       context = new LinkedServerLockContext(request.getClientID(), request.getThreadID());
     }
+    context.setState(helper.getContextStateMachine(), request.getState());
     return context;
   }
 
@@ -578,10 +619,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return isRead();
   }
 
-  protected boolean hasOnlyWriteHolders() {
-    return isWrite();
-  }
-
   protected boolean hasWaiters() {
     if (!isEmpty() && getLast().isWaiter()) { return true; }
     return false;
@@ -609,7 +646,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected List<ServerLockContext> getAllPendingReadRequests() {
+  protected List<ServerLockContext> getAllPendingReadRequests(LockHelper helper) {
     List<ServerLockContext> requests = new ArrayList<ServerLockContext>();
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
     while (iterator.hasNext()) {
@@ -627,6 +664,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         default:
       }
     }
+    postStepsForRemove(helper);
     return requests;
   }
 
@@ -681,21 +719,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return count;
   }
 
-  protected boolean hasTryLockRequests() {
-    SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
-    while (iterator.hasNext()) {
-      ServerLockContext context = iterator.next();
-      switch (context.getState().getType()) {
-        case TRY_PENDING:
-          return true;
-        case WAITER:
-          return false;
-        default:
-      }
-    }
-    return false;
-  }
-
   protected ServerLockLevel holderLevel() {
     if (!hasHolders()) { return ServerLockLevel.NONE; }
     ServerLockContext holder = getFirst();
@@ -712,13 +735,26 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
+  protected ServerLockContext remove(ClientID cid, ThreadID tid, LockHelper helper) {
     ServerLockContext temp = null;
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       temp = iter.next();
       if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) {
         iter.remove();
+        break;
+      }
+    }
+    postStepsForRemove(helper);
+    return temp;
+  }
+
+  private ServerLockContext get(ClientID cid, ThreadID tid) {
+    ServerLockContext temp = null;
+    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
+    while (iter.hasNext()) {
+      temp = iter.next();
+      if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) {
         break;
       }
     }

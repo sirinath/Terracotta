@@ -92,6 +92,11 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
   }
 
   @Override
+  public String toString() {
+    return "ServerLockContext [clientID=" + clientID + ", state=" + state + ", threadID=" + threadID + "]";
+  }
+
+  @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;

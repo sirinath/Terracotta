@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+// Have to come back and check this test
 public class LockManagerSystemTest extends BaseDSOTestCase {
 
   // please keep this set to true so that tests on slow/loaded machines don't fail. When working on this test though, it
@@ -94,7 +95,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     TestServerConfigurationContext serverLockUnlockContext = new TestServerConfigurationContext();
     MockStage serverStage = new MockStage("LockManagerSystemTest");
     serverLockUnlockContext.addStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE, serverStage);
-    serverLockUnlockContext.lockManager = serverLockManager;
+    // serverLockUnlockContext.lockManager = serverLockManager;
 
     serverLockUnlockHandler.initializeContext(serverLockUnlockContext);
 
