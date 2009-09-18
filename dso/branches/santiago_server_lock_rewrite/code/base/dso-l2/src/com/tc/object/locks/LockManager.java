@@ -7,7 +7,6 @@ import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.Lock.NotifyAction;
 import com.tc.objectserver.lockmanager.api.LockMBean;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 
 import java.util.Collection;
 

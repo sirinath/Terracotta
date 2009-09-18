@@ -21,7 +21,7 @@ import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.gtx.GlobalTransactionID;
-import com.tc.object.lockmanager.api.LockContext;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
@@ -69,13 +69,15 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private GlobalTransactionID    lowWatermark;
   private ObjectStringSerializer serializer;
 
-  public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor, final TCByteBufferOutputStream out,
-                                         final MessageChannel channel, final TCMessageType type) {
+  public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                         final TCByteBufferOutputStream out, final MessageChannel channel,
+                                         final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
-  public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor, final MessageChannel channel,
-                                         final TCMessageHeader header, final TCByteBuffer[] data) {
+  public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                         final MessageChannel channel, final TCMessageHeader header,
+                                         final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
@@ -88,7 +90,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     }
 
     for (Iterator i = this.notifies.iterator(); i.hasNext();) {
-      LockContext notified = (LockContext) i.next();
+      ClientServerExchangeLockContext notified = (ClientServerExchangeLockContext) i.next();
       putNVPair(NOTIFIED, notified);
     }
 
@@ -134,7 +136,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
         this.lockIDs.add(getLockIDValue());
         return true;
       case NOTIFIED:
-        this.notifies.add(this.getObject(new LockContext()));
+        this.notifies.add(this.getObject(new ClientServerExchangeLockContext()));
         return true;
       case CHANGE_ID:
         this.changeID = getLongValue();
@@ -164,10 +166,10 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     }
   }
 
-  public void initialize(final List chges, final ObjectStringSerializer aSerializer, final LockID[] lids, final long cid, final TransactionID txID,
-                         final NodeID client, final GlobalTransactionID gtx, final TxnType txnType,
-                         final GlobalTransactionID lowGlobalTransactionIDWatermark, final Collection theNotifies, final Map roots,
-                         final DmiDescriptor[] dmiDescs) {
+  public void initialize(final List chges, final ObjectStringSerializer aSerializer, final LockID[] lids,
+                         final long cid, final TransactionID txID, final NodeID client, final GlobalTransactionID gtx,
+                         final TxnType txnType, final GlobalTransactionID lowGlobalTransactionIDWatermark,
+                         final Collection theNotifies, final Map roots, final DmiDescriptor[] dmiDescs) {
     Assert.eval(lids.length > 0);
     Assert.assertNotNull(txnType);
 

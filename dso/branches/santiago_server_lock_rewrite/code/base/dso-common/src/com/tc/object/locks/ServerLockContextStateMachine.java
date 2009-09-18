@@ -15,7 +15,7 @@ public class ServerLockContextStateMachine {
   public boolean canSetState(State oldState, State newState) {
     State expectedState = null;
 
-    if (oldState == null && newState != State.WAITER) { return true; }
+    if (oldState == null) { return true; }
 
     switch (newState.getType()) {
       case GREEDY_HOLDER:

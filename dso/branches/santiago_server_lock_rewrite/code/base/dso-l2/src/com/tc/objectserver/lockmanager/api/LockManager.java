@@ -8,6 +8,7 @@ import com.tc.logging.DumpHandler;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.tx.TimerSpec;
 import com.tc.text.PrettyPrintable;
 

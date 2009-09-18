@@ -5,12 +5,9 @@ package com.tc.object.locks;
 
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 
 import java.util.List;
-
-import junit.framework.Assert;
 
 public final class NonGreedyPolicyLock extends AbstractLock {
   public NonGreedyPolicyLock(LockID lockID) {
@@ -28,23 +25,6 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     }
 
     requestLock(cid, tid, level, Type.TRY_PENDING, timeout, helper);
-  }
-
-  @Override
-  public void interrupt(ClientID cid, ThreadID tid, LockHelper helper) {
-    // check if waiters are present
-    ServerLockContext waiter = remove(cid, tid);
-    if (waiter == null) {
-      logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
-      return;
-    }
-    Assert.assertTrue(waiter.getState() == State.WAITER);
-
-    int noOfPendingRequests = getNoOfPendingRequests();
-    recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
-    cancelTryLockOrWaitTimer(waiter, helper);
-    // Add a pending request
-    queue(cid, tid, waiter.getState().getLockLevel(), Type.PENDING, -1, helper);
   }
 
   @Override

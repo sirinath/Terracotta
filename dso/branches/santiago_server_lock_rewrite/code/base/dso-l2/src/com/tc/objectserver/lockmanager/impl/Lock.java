@@ -12,16 +12,17 @@ import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TimerCallback;
 import com.tc.object.lockmanager.impl.LockHolder;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockResponseContext;
 import com.tc.object.locks.LockResponseContextFactory;
+import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockContextStateMachine;
 import com.tc.object.locks.ServerLockLevel;
@@ -34,7 +35,6 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.LockWaitContext;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.lockmanager.api.Waiter;
@@ -175,7 +175,7 @@ public class Lock {
     for (Iterator iter = waiters.iterator(); iter.hasNext();) {
       LockWaitContext waiter = (LockWaitContext) iter.next();
       ServerLockContext context = new WaitLinkedServerLockContext((ClientID) waiter.getNodeID(), waiter.getThreadID(),
-                                                                   waiter.getTimerSpec().getMillis(), null);
+                                                                  waiter.getTimerSpec().getMillis(), null);
       context.setState(machine, getState(Type.HOLDER, waiter.lockLevel()));
       context.setState(machine, getState(Type.WAITER, waiter.lockLevel()));
       list.addLast(context);
@@ -529,8 +529,9 @@ public class Lock {
         removeAndCancelWaitTimer(wait);
         recordLockRequestStat(wait.getNodeID(), wait.getThreadID());
         createPendingFromWaiter(wait);
-        addNotifiedWaitersTo.addNotification(new LockContext(lockID, wait.getNodeID(), wait.getThreadID(), wait
-            .lockLevel(), lockType));
+        ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, wait.getNodeID(), wait
+            .getThreadID(), State.WAITER);
+        addNotifiedWaitersTo.addNotification(cselc);
       }
     }
   }

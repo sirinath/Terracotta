@@ -13,7 +13,7 @@ import com.tc.object.locks.Lock.NotifyAction;
 import com.tc.object.locks.LockStore.LockIterator;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
+import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.util.Assert;
 
 import java.util.ArrayList;
@@ -108,7 +108,11 @@ public class LockManagerImpl implements LockManager {
 
     // TODO in lock remember to check that if the lock state is not empty
     Lock lock = lockStore.checkOut(lid);
-    lock.notify(cid, tid, action, addNotifiedWaitersTo, lockHelper);
+    try {
+      lock.notify(cid, tid, action, addNotifiedWaitersTo, lockHelper);
+    } catch (TCIllegalMonitorStateException e) {
+      throw new RuntimeException(e);
+    }
     lockStore.checkIn(lock);
   }
 
@@ -117,19 +121,37 @@ public class LockManagerImpl implements LockManager {
 
     // TODO in lock remember to check that if the lock state is not empty
     Lock lock = lockStore.checkOut(lid);
-    lock.wait(cid, tid, timeout, lockHelper);
+    try {
+      lock.wait(cid, tid, timeout, lockHelper);
+    } catch (TCIllegalMonitorStateException e) {
+      throw new RuntimeException(e);
+    }
     lockStore.checkIn(lock);
   }
 
   public void reestablishState(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts) {
-    Assert.assertFalse("Wait was called before the LockManager was started.", isStarting());
+    Assert.assertTrue("Reestablish was called after the LockManager was started.", isStarting());
 
     for (Iterator<ClientServerExchangeLockContext> iter = serverLockContexts.iterator(); iter.hasNext();) {
-      ClientServerExchangeLockContext context = iter.next();
-      LockID lid = context.getLockID();
+      ClientServerExchangeLockContext cselc = iter.next();
+      LockID lid = cselc.getLockID();
 
       Lock lock = lockStore.checkOut(lid);
-      lock.reestablishState(cid, context, lockHelper);
+      switch (cselc.getState().getType()) {
+        case GREEDY_HOLDER:
+        case HOLDER:
+        case WAITER:
+          lock.reestablishState(cselc, lockHelper);
+          break;
+        case PENDING:
+          lock(lid, (ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState().getLockLevel());
+          break;
+        case TRY_PENDING:
+          tryLock(lid, (ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState().getLockLevel(), cselc
+              .timeout());
+          break;
+      }
+
       lockStore.checkIn(lock);
     }
   }
@@ -218,10 +240,10 @@ public class LockManagerImpl implements LockManager {
 
   private boolean preCheckStateAndContinue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level,
                                            RequestType type, long timeout) {
-    if (status != Status.STARTING) {
+    if (isStarting()) {
       queueRequest(lid, cid, tid, level, type, timeout);
       return false;
-    } else if (status != Status.STARTED) { return false; }
+    } else if (!isStarted()) { return false; }
     if (!this.channelManager.isActiveID(cid)) { return false; }
     return true;
   }
