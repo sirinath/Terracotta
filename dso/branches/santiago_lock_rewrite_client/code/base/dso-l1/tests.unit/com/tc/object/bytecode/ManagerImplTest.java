@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCNonPortableObjectError;
-import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.ClientObjectManager;
@@ -17,7 +16,7 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.DsoLockID;
@@ -25,6 +24,7 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransactionManager;
@@ -49,7 +49,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
   private static class LockMgr implements ClientLockManager {
 
-    public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+    public void award(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
       throw new ImplementMe();      
     }
 
@@ -68,7 +68,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       
     }
 
-    public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+    public void refuse(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
       throw new ImplementMe();
       
     }
@@ -150,6 +150,14 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
+    public void wait(LockID lock, WaitListener listener) {
+      throw new ImplementMe();
+    }
+
+    public void wait(LockID lock, WaitListener listener, long timeout) {
+      throw new ImplementMe();
+    }
+
     public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
       throw new ImplementMe();
     }
@@ -174,6 +182,9 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
+    public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
+      throw new ImplementMe();
+    }
   }
 
   private static class ObjMgr implements ClientObjectManager {

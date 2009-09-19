@@ -22,7 +22,6 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.ObjectIDClientHandshakeRequester;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
@@ -84,8 +83,7 @@ public interface DSOClientBuilder {
                                       final LockRequestMessageFactory lockRequestMessageFactory,
                                       final ThreadIDManager threadManager,
                                       final ClientTransactionManager transactionManager,
-                                      final ClientGlobalTransactionManager clientGlobalTransactionManager,
-                                      final ClientLockManagerConfigImpl clientLockManagerConfigImpl);
+                                      final ClientGlobalTransactionManager clientGlobalTransactionManager);
   
   RemoteTransactionManager createRemoteTransactionManager(final ClientIDProvider cidProvider,
                                                           final DNAEncoding encoding,

@@ -18,5 +18,7 @@ public interface LockID extends TCSerializable, Serializable {
   @Deprecated
   public boolean isNull();
   
-  public Object unclusteredObject();
+  public Object javaObject();
+  
+  public boolean isClustered();
 }

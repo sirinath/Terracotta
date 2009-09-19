@@ -8,7 +8,7 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.session.SessionID;
@@ -16,6 +16,7 @@ import com.tc.object.session.SessionManager;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.runtime.ThreadIDManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,6 +80,14 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).wait(lock, timeout);
   }
 
+  public void wait(LockID lock, WaitListener listener) throws InterruptedException {
+    getClientLockManagerFor(lock).wait(lock, listener);
+  }
+
+  public void wait(LockID lock, WaitListener listener, long timeout) throws InterruptedException {
+    getClientLockManagerFor(lock).wait(lock, listener, timeout);
+  }
+
   public boolean isLocked(LockID lock, LockLevel level) {
     return getClientLockManagerFor(lock).isLocked(lock, level);
   }
@@ -111,12 +120,12 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).recall(lock, level, lease);
   }
 
-  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
-    getClientLockManagerFor(lock).award(group, session, lock, thread, level);
+  public void award(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+    getClientLockManagerFor(lock).award(node, session, lock, thread, level);
   }
   
-  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
-    getClientLockManagerFor(lock).refuse(group, session, lock, thread, level);
+  public void refuse(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+    getClientLockManagerFor(lock).refuse(node, session, lock, thread, level);
   }
   
   public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
@@ -166,5 +175,13 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     for (ClientLockManager clm : lockManagers.values()) {
       clm.dumpToLogger();
     }
+  }
+
+  public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
+    Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
+    for (ClientLockManager clm : lockManagers.values()) {
+      contexts.addAll(clm.getAllLockContexts());
+    }
+    return contexts;
   }
 }

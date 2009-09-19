@@ -7,8 +7,8 @@ package com.tc.management.lock.stats;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 
 import java.io.Serializable;
 import java.util.Collection;

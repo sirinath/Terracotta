@@ -9,7 +9,6 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.GroupID;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.session.SessionID;
@@ -37,7 +36,7 @@ public class LockResponseHandler extends AbstractEventHandler {
 
     switch (msg.getResponseType()) {
       case AWARD:
-        lockManager.award((GroupID) msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
+        lockManager.award(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
         return;
       case RECALL:
         lockManager.recall(msg.getLockID(), msg.getLockLevel(), -1);
@@ -46,7 +45,7 @@ public class LockResponseHandler extends AbstractEventHandler {
         lockManager.recall(msg.getLockID(), msg.getLockLevel(), msg.getAwardLeaseTime());
         return;
       case REFUSE:
-        lockManager.refuse((GroupID) msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
+        lockManager.refuse(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
         return;
       case WAIT_TIMEOUT:
         lockManager.notified(msg.getLockID(), msg.getThreadID());

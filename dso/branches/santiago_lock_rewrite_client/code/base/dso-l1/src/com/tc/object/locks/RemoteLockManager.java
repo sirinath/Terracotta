@@ -3,8 +3,6 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.LockFlushCallback;
-import com.tc.object.lockmanager.api.ThreadID;
 
 import java.util.Collection;
 

@@ -8,7 +8,7 @@ import com.tc.logging.LossyTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockFlushCallback;
+import com.tc.object.locks.LockFlushCallback;
 import com.tc.object.locks.LockID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;

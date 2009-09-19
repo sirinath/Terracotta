@@ -191,8 +191,8 @@ public class ManagerImpl implements Manager {
       }
     };
     lookupExistingOrNull(o);
-    lock(new StringLockID("test"), LockLevel.WRITE);
-    unlock(new StringLockID("test"), LockLevel.WRITE);
+    //lock(new StringLockID("test"), LockLevel.WRITE);
+    //unlock(new StringLockID("test"), LockLevel.WRITE);
     logicalInvoke(new FakeManageableObject(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
   }
 
@@ -676,7 +676,11 @@ public class ManagerImpl implements Manager {
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    return new DsoLockID(obj);
+    if (obj instanceof String) {
+      return generateLockIdentifier((String) obj);
+    } else {
+      return new DsoLockID(obj);
+    }
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
@@ -712,7 +716,9 @@ public class ManagerImpl implements Manager {
   }
 
   public void lock(LockID lock, LockLevel level) {
-    lockManager.lock(lock, level);
+    if (lock.isClustered()) {
+      lockManager.lock(lock, level);
+    }
   }
 
   public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
@@ -720,46 +726,56 @@ public class ManagerImpl implements Manager {
   }
 
   public void notify(LockID lock) {
-    if (lock.unclusteredObject() == null) {
+    if (lock.isClustered()) {
       lockManager.notify(lock);
     } else {
-      lock.unclusteredObject().notify();
+      lock.javaObject().notify();
     }
   }
 
   public void notifyAll(LockID lock) {
-    if (lock.unclusteredObject() == null) {
+    if (lock.isClustered()) {
       lockManager.notifyAll(lock);
     } else {
-      lock.unclusteredObject().notifyAll();
+      lock.javaObject().notifyAll();
     }
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {
-    return lockManager.tryLock(lock, level);
+    if (lock.isClustered()) {
+      return lockManager.tryLock(lock, level);
+    } else {
+      return true;
+    }
   }
 
   public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
-    return lockManager.tryLock(lock, level, timeout);
+    if (lock.isClustered()) {
+      return lockManager.tryLock(lock, level, timeout);
+    } else {
+      return true;
+    }
   }
 
   public void unlock(LockID lock, LockLevel level) {
-    lockManager.unlock(lock, level);
+    if (lock.isClustered()) {
+      lockManager.unlock(lock, level);
+    }
   }
 
   public void wait(LockID lock) throws InterruptedException {
-    if (lock.unclusteredObject() == null) {
+    if (lock.isClustered()) {
       lockManager.wait(lock);
     } else {
-      lock.unclusteredObject().wait();
+      lock.javaObject().wait();
     }
   }
 
   public void wait(LockID lock, long timeout) throws InterruptedException {
-    if (lock.unclusteredObject() == null) {
+    if (lock.isClustered()) {
       lockManager.wait(lock, timeout);
     } else {
-      lock.unclusteredObject().wait(timeout);
+      lock.javaObject().wait(timeout);
     }
   }
 

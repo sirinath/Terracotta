@@ -7,6 +7,7 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.NodeID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TimerSpecFactory;
 

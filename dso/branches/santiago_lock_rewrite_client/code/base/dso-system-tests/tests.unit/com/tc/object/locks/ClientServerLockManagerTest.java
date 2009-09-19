@@ -2,34 +2,26 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.impl;
+package com.tc.object.locks;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
-import com.tc.config.lock.LockContextInfo;
 import com.tc.logging.NullTCLogger;
-import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
-import com.tc.net.GroupID;
-import com.tc.net.OrderedGroupIDs;
-import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.object.lockmanager.api.LockRequest;
-import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.lockmanager.impl.LockHolder;
+import com.tc.object.locks.ClientServerLockManagerGlue;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.session.TestSessionManager;
-import com.tc.object.tx.TimerSpec;
+import com.tc.object.tx.MockTransactionManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
 import com.tc.objectserver.lockmanager.api.Waiter;
 import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.util.Assert;
-
-import java.util.HashSet;
-import java.util.Iterator;
 
 import junit.framework.TestCase;
 
@@ -39,16 +31,14 @@ public class ClientServerLockManagerTest extends TestCase {
   private LockManagerImpl             serverLockManager;
   private ClientServerLockManagerGlue glue;
   private TestSessionManager          sessionManager;
+  private ManualThreadIDManager             threadManager;
 
   protected void setUp() throws Exception {
     super.setUp();
     sessionManager = new TestSessionManager();
     glue = new ClientServerLockManagerGlue(sessionManager);
-    clientLockManager = new ClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
-                                                  new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
-                                                  new NullTCLogger(), glue, sessionManager,
-                                                  ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
-                                                  new NullClientLockManagerConfig());
+    threadManager = new ManualThreadIDManager();
+    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, glue, threadManager, new MockTransactionManager());
 
     serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
     serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
@@ -62,12 +52,12 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx2 = new ThreadID(2);
     final ThreadID tx3 = new ThreadID(3);
 
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID2, tx2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.READ);
+    threadManager.setThreadID(tx3);
+    clientLockManager.lock(lockID1, LockLevel.READ);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID2, LockLevel.READ);
     // clientLockManager.lock(lockID2, tx2, LockLevel.WRITE); // Upgrade
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
@@ -85,14 +75,13 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx2 = new ThreadID(2);
     final ThreadID tx3 = new ThreadID(3);
 
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(lockID2, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID2, tx2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.READ);
+    threadManager.setThreadID(tx3);
+    clientLockManager.lock(lockID1, LockLevel.READ);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID2, LockLevel.WRITE);
+    clientLockManager.lock(lockID2, LockLevel.READ);
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
 
@@ -106,16 +95,16 @@ public class ClientServerLockManagerTest extends TestCase {
     final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
 
     final CyclicBarrier barrier = new CyclicBarrier(2);
     Thread waitCallThread = new Thread() {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1, new WaitListener() {
             public void handleWaitEvent() {
               try {
                 barrier.barrier();
@@ -145,20 +134,15 @@ public class ClientServerLockManagerTest extends TestCase {
     final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
+    clientLockManager.lock(lockID1, LockLevel.READ);
     Thread waitCallThread = new Thread() {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -180,19 +164,15 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
 
     Thread waitCallThread = new Thread() {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -201,14 +181,14 @@ public class ClientServerLockManagerTest extends TestCase {
     waitCallThread.start();
     sleep(1000l);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
     /*
      * Since this call is no longer in Lock manager, forced to call the server lock manager directly
      * clientLockManager.notify(lockID1,tx2, true);
      */
     glue.notify(lockID1, tx2, true);
-    clientLockManager.unlock(lockID1, tx2);
+    clientLockManager.unlock(lockID1, LockLevel.WRITE);
     sleep(1000l);
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
@@ -224,8 +204,8 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
 
@@ -233,12 +213,8 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -247,21 +223,22 @@ public class ClientServerLockManagerTest extends TestCase {
     waitCallThread.start();
     sleep(1000l);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
     /*
      * Since this call is no longer in Lock manager, forced to call the server lock manager directly
      * clientLockManager.notify(lockID1,tx2, true);
      */
     glue.notify(lockID1, tx2, true);
-    clientLockManager.unlock(lockID1, tx2);
+    clientLockManager.unlock(lockID1, LockLevel.WRITE);
     sleep(1000l);
 
     boolean found = false;
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      if (request.lockID().equals(lockID1) && request.threadID().equals(tx1)) {
-        if (LockLevel.isRead(request.lockLevel())) { throw new AssertionError("Should not have READ lock level."); }
+    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
+      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx1)) {
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) {
+          throw new AssertionError("Should not have READ lock level.");
+        }
         found = true;
         break;
       }
@@ -279,10 +256,9 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
+    clientLockManager.lock(lockID1, LockLevel.READ);
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
 
@@ -290,12 +266,8 @@ public class ClientServerLockManagerTest extends TestCase {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -304,30 +276,30 @@ public class ClientServerLockManagerTest extends TestCase {
     waitCallThread.start();
     sleep(1000l);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
     /*
      * Since this call is no longer in Lock manager, forced to call the server lock manager directly
      * clientLockManager.notify(lockID1,tx2, true);
      */
     glue.notify(lockID1, tx2, true);
-    clientLockManager.unlock(lockID1, tx2);
+    clientLockManager.unlock(lockID1, LockLevel.WRITE);
     sleep(1000l);
 
     boolean found = false;
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      if (request.lockID().equals(lockID1) && request.threadID().equals(tx1)) {
-        // Since READ was given locally only WRITE gets here
-        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
-          // Format
-          throw new AssertionError("Server Lock Level is not WRITE only on the client side");
+    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
+      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx1)) {
+//        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) {
+          throw new AssertionError("Server Lock Level is not WRITE only on tx2 the client side");
         }
         found = true;
         break;
       }
     }
-    Assert.assertTrue(clientLockManager.haveLock(lockID1, tx1, LockLevel.READ | LockLevel.WRITE));
+    threadManager.setThreadID(tx1);
+    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.READ));
+    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.WRITE));
     if (!found) {
       // formatter
       throw new AssertionError("Didn't find the lock I am looking for");
@@ -341,19 +313,15 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
 
     Thread waitCallThread = new Thread() {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -362,8 +330,8 @@ public class ClientServerLockManagerTest extends TestCase {
     waitCallThread.start();
     sleep(1000l);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
     /*
      * Since this call is no longer in Lock manager, forced to call the server lock manager directly
      * clientLockManager.notify(lockID1,tx2, true);
@@ -372,11 +340,10 @@ public class ClientServerLockManagerTest extends TestCase {
     sleep(1000l);
 
     boolean found = false;
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      if (request.lockID().equals(lockID1) && request.threadID().equals(tx2)) {
-        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
-          // Formatter
+    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
+      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx2)) {
+//        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) {
           throw new AssertionError("Server Lock Level is not WRITE only on tx2 the client side");
         }
         found = true;
@@ -401,21 +368,16 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
+    clientLockManager.lock(lockID1, LockLevel.READ);
 
     Thread waitCallThread = new Thread() {
 
       public void run() {
         try {
-          clientLockManager.wait(lockID1, tx1, new TimerSpec(), new Object(), new WaitListener() {
-
-            public void handleWaitEvent() {
-              // Formatter
-            }
-          });
+          threadManager.setThreadID(tx1);
+          clientLockManager.wait(lockID1);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -424,8 +386,8 @@ public class ClientServerLockManagerTest extends TestCase {
     waitCallThread.start();
     sleep(1000l);
 
-    clientLockManager.lock(lockID1, tx2, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
     /*
      * Since this call is no longer in Lock manager, forced to call the server lock manager directly
      * clientLockManager.notify(lockID1,tx2, true);
@@ -434,11 +396,10 @@ public class ClientServerLockManagerTest extends TestCase {
     sleep(1000l);
 
     boolean found = false;
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      if (request.lockID().equals(lockID1) && request.threadID().equals(tx2)) {
-        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
-          // Formatter
+    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
+      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx2)) {
+//        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) {
           throw new AssertionError("Server Lock Level is not WRITE only on tx2 the client side");
         }
         found = true;
@@ -461,16 +422,15 @@ public class ClientServerLockManagerTest extends TestCase {
     final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
+    clientLockManager.lock(lockID1, LockLevel.READ);
 
     Thread pendingLockRequestThread = new Thread() {
 
       public void run() {
-        clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                               LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        threadManager.setThreadID(tx1);
+        clientLockManager.lock(lockID1, LockLevel.WRITE);
       }
     };
     pendingLockRequestThread.start();
@@ -487,19 +447,17 @@ public class ClientServerLockManagerTest extends TestCase {
     final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.WRITE, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager
-        .lock(lockID1, tx1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO); // Local
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.WRITE);
+    clientLockManager.lock(lockID1, LockLevel.READ); // Local
     // Upgrade
-    clientLockManager.unlock(lockID1, tx1); // should release READ
+    clientLockManager.unlock(lockID1, LockLevel.READ); // should release READ
 
     boolean found = false;
-    for (Iterator i = clientLockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      if (request.lockID().equals(lockID1) && request.threadID().equals(tx1)) {
-        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
-          //
+    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
+      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx1)) {
+//        if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) {
           throw new AssertionError("Lock Level is not WRITE only");
         }
         found = true;
@@ -514,10 +472,10 @@ public class ClientServerLockManagerTest extends TestCase {
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
-    clientLockManager.lock(lockID1, tx1, LockLevel.CONCURRENT, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(lockID1, tx2, LockLevel.CONCURRENT, String.class.getName(),
-                           LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tx1);
+    clientLockManager.lock(lockID1, LockLevel.CONCURRENT);
+    threadManager.setThreadID(tx2);
+    clientLockManager.lock(lockID1, LockLevel.CONCURRENT);
 
     LockMBean[] lockBeans1 = serverLockManager.getAllLocks();
 

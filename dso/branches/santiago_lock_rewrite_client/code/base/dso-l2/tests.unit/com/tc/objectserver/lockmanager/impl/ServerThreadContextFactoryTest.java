@@ -5,7 +5,7 @@ package com.tc.objectserver.lockmanager.impl;
 
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 import com.tc.test.TCTestCase;
 import com.tc.util.UUID;
 import com.tc.util.concurrent.ThreadUtil;

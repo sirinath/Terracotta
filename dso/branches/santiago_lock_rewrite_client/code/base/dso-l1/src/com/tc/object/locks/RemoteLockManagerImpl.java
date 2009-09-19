@@ -5,8 +5,6 @@ package com.tc.object.locks;
 
 import com.tc.net.GroupID;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
-import com.tc.object.lockmanager.api.LockFlushCallback;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 

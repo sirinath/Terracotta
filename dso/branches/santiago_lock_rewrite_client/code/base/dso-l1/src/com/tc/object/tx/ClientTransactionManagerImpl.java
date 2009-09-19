@@ -23,9 +23,9 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.lockmanager.api.Notify;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.session.SessionID;
 import com.tc.object.util.ReadOnlyException;
@@ -113,16 +113,17 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       case WRITE:
       case SYNCHRONOUS_WRITE:
         return TxnType.NORMAL;
+      case READ:
+        return TxnType.READ_ONLY;
       default:
         throw new AssertionError();
     }
   }
 
-  public void notify(final LockID lock, final ThreadID thread, final boolean all)
-      throws UnlockedSharedObjectException {
+  public void notify(final LockID lock, final ThreadID thread, final boolean all) throws UnlockedSharedObjectException {
     final ClientTransaction currentTxn = getTransactionOrNull();
 
-    if (currentTxn == null || currentTxn != TxnType.NORMAL) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
+    if (currentTxn == null || currentTxn.getEffectiveType() != TxnType.NORMAL) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }
 
     currentTxn.addNotify(new Notify(lock, thread, all));
   }

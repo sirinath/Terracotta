@@ -30,7 +30,6 @@ import com.tc.object.idprovider.impl.ObjectIDClientHandshakeRequester;
 import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.RemoteLockManager;
@@ -135,8 +134,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final LockRequestMessageFactory lockRequestMessageFactory,
                                              final ThreadIDManager threadManager,
                                              final ClientTransactionManager transactionManager,
-                                             final ClientGlobalTransactionManager gtxManager,
-                                             final ClientLockManagerConfigImpl clientLockManagerConfigImpl) {
+                                             final ClientGlobalTransactionManager gtxManager) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
     RemoteLockManager remoteManager = new RemoteLockManagerImpl(defaultGroups[0], lockRequestMessageFactory, gtxManager);

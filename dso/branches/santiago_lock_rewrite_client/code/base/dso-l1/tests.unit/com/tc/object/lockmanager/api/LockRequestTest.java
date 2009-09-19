@@ -5,6 +5,7 @@ package com.tc.object.lockmanager.api;
 
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 
 import java.util.Random;
 

@@ -17,9 +17,9 @@ import com.tc.net.protocol.tcm.TestTCMessage;
 import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.object.ObjectID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
@@ -198,12 +198,13 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
                                                          State.HOLDER_WRITE));
     lockContexts.add(new ClientServerExchangeLockContext(new StringLockID("my other lock)"), clientID1,
                                                          new ThreadID(10002), State.HOLDER_READ));
+    handshake.lockContexts.addAll(lockContexts);
+    
     ClientServerExchangeLockContext waitContext = new ClientServerExchangeLockContext(new StringLockID("d;alkjd"),
                                                                                       clientID1, new ThreadID(101),
                                                                                       State.WAITER, -1);
-    lockContexts.add(waitContext);
-    handshake.lockContexts.addAll(lockContexts);
-
+    handshake.lockContexts.add(waitContext);
+    
     handshake.isChangeListener = true;
 
     assertFalse(this.sequenceValidator.isNext(handshake.getSourceNodeID(), new SequenceID(minSequenceID.toLong())));
@@ -244,8 +245,8 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     assertTrue(handshake.clientObjectIds.isEmpty());
 
     // make sure outstanding locks are reestablished
-    assertEquals(lockContexts.size(), handshake.lockContexts.size());
-    assertEquals(handshake.lockContexts.size(), this.lockManager.reestablishLockCalls.size());
+    assertEquals(lockContexts.size() + 1, handshake.lockContexts.size());
+    assertEquals(lockContexts.size(), this.lockManager.reestablishLockCalls.size());
     for (int i = 0; i < lockContexts.size(); i++) {
       ClientServerExchangeLockContext context = lockContexts.get(i);
       LockContext lockContext = context.getLockContext();
