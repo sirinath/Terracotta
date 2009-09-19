@@ -78,8 +78,8 @@ import com.tc.object.handshakemanager.ClientHandshakeManagerImpl;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.lockmanager.impl.ClientLockManagerConfigImpl;
 import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
@@ -156,6 +156,7 @@ import com.tc.util.TCTimeoutException;
 import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.LockInfoByThreadID;
+import com.tc.util.runtime.LockState;
 import com.tc.util.runtime.ThreadIDManager;
 import com.tc.util.runtime.ThreadIDManagerImpl;
 import com.tc.util.runtime.ThreadIDMap;
@@ -249,7 +250,21 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
   public void addAllLocksTo(final LockInfoByThreadID lockInfo) {
     if (this.lockManager != null) {
-      //this.lockManager.addAllLocksTo(lockInfo);
+      for (ClientServerExchangeLockContext c : lockManager.getAllLockContexts()) {
+        switch (c.getState().getType()) {
+          case GREEDY_HOLDER:
+          case HOLDER:
+            lockInfo.addLock(LockState.HOLDING, c.getThreadID(), c.getLockID().toString());
+            break;
+          case WAITER:
+            lockInfo.addLock(LockState.WAITING_ON, c.getThreadID(), c.getLockID().toString());
+            break;
+          case TRY_PENDING:
+          case PENDING:
+            lockInfo.addLock(LockState.WAITING_TO, c.getThreadID(), c.getLockID().toString());
+            break;
+        }
+      }
     } else {
       DSO_LOGGER.error("LockManager not initialised still. LockInfo for threads cannot be updated");
     }
@@ -418,15 +433,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
         .createClientGlobalTransactionManager(this.rtxManager);
 
-    ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
-
-    this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
-        .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
-                                                               this.channel.getLockRequestMessageFactory(), threadIDManager, txManager, gtxManager,
-                                                               new ClientLockManagerConfigImpl(this.l1Properties
-                                                                   .getPropertiesFor("lockmanager")));
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
-
     RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(this.channel
         .getObjectIDBatchRequestMessageFactory());
 
@@ -510,6 +516,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                           .findClientTxMonitorMBean(), txnCounter);
 
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.txManager));
+
+    //Setup the lock manager
+    ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
+    this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
+        .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
+                                                               this.channel.getLockRequestMessageFactory(), threadIDManager, txManager, gtxManager);
+    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
 
     // Create the SEDA stages
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,

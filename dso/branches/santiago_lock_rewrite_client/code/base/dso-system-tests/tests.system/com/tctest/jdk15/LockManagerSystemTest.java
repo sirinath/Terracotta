@@ -27,13 +27,14 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.TestClientGlobalTransactionManager;
 import com.tc.object.handler.LockResponseHandler;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ManualThreadIDManager;
 import com.tc.object.locks.RemoteLockManagerImpl;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.msg.LockResponseMessage;
@@ -41,6 +42,7 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.MockChannelManager;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
+import com.tc.object.tx.MockTransactionManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
@@ -52,7 +54,6 @@ import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
-import com.tc.util.runtime.ThreadIDManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +79,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                                              clientLockRequestQueue);
 
     threadManager = new ManualThreadIDManager();
-    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, null);
+    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new MockTransactionManager());
     
     LockManager serverLockManager = new LockManagerImpl(new MockChannelManager(), new MockL2LockStatsManager());
 
@@ -252,6 +253,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     clientLockManager.unlock(l1, LockLevel.WRITE);
     assertTrue(secondWriter.isAlive());
 
+    threadManager.setThreadID(tid2);
     clientLockManager.unlock(l1, LockLevel.READ);
     secondWriter.join(60000);
     assertFalse(secondWriter.isAlive());
@@ -593,18 +595,5 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       }
     }
 
-  }
-  
-  private static class ManualThreadIDManager implements ThreadIDManager {
-    
-    private ThreadLocal<ThreadID> threadID = new ThreadLocal<ThreadID>();
-    
-    public void setThreadID(ThreadID thread) {
-      threadID.set(thread);
-    }
-    
-    public ThreadID getThreadID() {
-      return threadID.get();
-    }    
-  }
+  }  
 }

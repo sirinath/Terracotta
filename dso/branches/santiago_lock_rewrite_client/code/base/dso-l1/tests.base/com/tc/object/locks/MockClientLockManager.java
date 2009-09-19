@@ -4,9 +4,8 @@
 package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
-import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 
@@ -28,7 +27,7 @@ public class MockClientLockManager implements ClientLockManager {
     return rv;
   }
   
-  public void award(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+  public void award(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     throw new ImplementMe();
   }
 
@@ -45,7 +44,7 @@ public class MockClientLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public void refuse(GroupID group, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
+  public void refuse(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
     throw new ImplementMe();
   }
 
@@ -125,6 +124,14 @@ public class MockClientLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
+  public void wait(LockID lock, WaitListener listener) {
+    throw new ImplementMe();
+  }
+
+  public void wait(LockID lock, WaitListener listener, long timeout) {
+    throw new ImplementMe();
+  }
+
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
     throw new ImplementMe();
   }
@@ -157,5 +164,9 @@ public class MockClientLockManager implements ClientLockManager {
       this.lock = lock;
       this.level = level;
     }
+  }
+
+  public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
+    throw new ImplementMe();
   }
 }

@@ -32,6 +32,7 @@ public class DsoLockID implements LockID {
   public DsoLockID(ObjectID obj) {
     this.obj = obj;
   }
+  
   public String asString() {
     return null;
   }
@@ -44,23 +45,51 @@ public class DsoLockID implements LockID {
     return this == NULL_ID;
   }
 
-  public Object unclusteredObject() {
+  public Object javaObject() {
     if (obj instanceof ObjectID) {
-      return null;
+      return ManagerUtil.lookupObject((ObjectID) obj);
     } else {
       return obj;
     }
   }
+  
+  public boolean isClustered() {
+    //who gives a crap about not locking on bizarre literals
+    return (obj instanceof ObjectID) || ManagerUtil.isLiteralInstance(obj);
+  }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     obj = new ObjectID(serialInput.readLong());
-    return obj;
+    return this;
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
     if (obj instanceof ObjectID) {
       serialOutput.writeLong(((ObjectID) obj).toLong());
+    } else {
+      throw new AssertionError("Need to serialize type " + obj.getClass());
     }
   }
 
+  public int hashCode() {
+    if (obj instanceof ObjectID) {
+      return obj.hashCode();
+    } else {
+      return ManagerUtil.calculateDsoHashCode(obj);
+    }
+  }
+
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    } else if (o instanceof DsoLockID) {
+      return obj.equals(((DsoLockID) o).obj);
+    } else {
+      return false;
+    }
+  }
+  
+  public String toString() {
+    return "DsoLockID(" + obj + ")";
+  }
 }

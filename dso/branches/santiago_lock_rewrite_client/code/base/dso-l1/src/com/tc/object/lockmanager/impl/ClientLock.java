@@ -10,19 +10,19 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.ClientLockStatManager;
-import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.LockNotPendingError;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.TCLockTimer;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TimerCallback;
 import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
+import com.tc.object.locks.LockFlushCallback;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.util.Assert;
 import com.tc.util.State;
@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.TimerTask;
 import java.util.Map.Entry;
 
-class ClientLock implements TimerCallback, LockFlushCallback {
+public class ClientLock implements TimerCallback, LockFlushCallback {
   private static final int                COLLECTIONS_INTIAL_SIZE    = 4;
   private static final TCLogger           logger                     = TCLogging.getLogger(ClientLock.class);
   private static final Map                EMPTY_MAP                  = Collections.emptyMap();
@@ -75,7 +75,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
   private TimerTask                       recallTimerTask;
   private boolean                         pinned                     = false;
 
-  ClientLock(LockID lockID, String lockObjectType, RemoteLockManager remoteLockManager, TCLockTimer waitTimer,
+  public ClientLock(LockID lockID, String lockObjectType, RemoteLockManager remoteLockManager, TCLockTimer waitTimer,
              ClientLockStatManager lockStatManager) {
     Assert.assertNotNull(lockID);
     this.lockID = lockID;

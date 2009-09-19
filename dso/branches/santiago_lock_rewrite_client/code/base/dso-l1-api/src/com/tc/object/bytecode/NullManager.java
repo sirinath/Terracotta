@@ -75,32 +75,8 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final void beginLock(final String lockID, final int type, final String lockType) {
-    //
-  }
-
   public final TCObject lookupExistingOrNull(final Object obj) {
     return null;
-  }
-
-  public final void objectNotify(final Object obj) {
-    obj.notify();
-  }
-
-  public final void objectNotifyAll(final Object obj) {
-    obj.notifyAll();
-  }
-
-  public final void objectWait(final Object obj) throws InterruptedException {
-    obj.wait();
-  }
-
-  public final void objectWait(final Object obj, final long millis) throws InterruptedException {
-    obj.wait(millis);
-  }
-
-  public final void objectWait(final Object obj, final long millis, final int nanos) throws InterruptedException {
-    obj.wait(millis, nanos);
   }
 
   public final void logicalInvoke(final Object object, final String methodName, final Object[] params) {
@@ -142,34 +118,6 @@ public final class NullManager implements Manager {
 
   public final Object lookupRoot(final String name) {
     throw new UnsupportedOperationException();
-  }
-
-  public final void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
-    // do nothing
-  }
-
-  public final void commitLock(final String lockName) {
-    // do nothing
-  }
-
-  public final boolean isLocked(final Object obj, final int lockLevel) {
-    return false;
-  }
-
-  public final int queueLength(final Object obj) {
-    return 0;
-  }
-
-  public final void commitVolatile(final TCObject tcObject, final String fieldName) {
-    //
-  }
-
-  public final int waitLength(final Object obj) {
-    return 0;
-  }
-
-  public final boolean isHeldByCurrentThread(final Object obj, final int lockLevel) {
-    return false;
   }
 
   public final void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
@@ -243,10 +191,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public void beginLockWithoutTxn(final String lockID, final int type) {
-    //
-  }
-
   public void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     throw new UnsupportedOperationException();
   }
@@ -316,19 +260,25 @@ public final class NullManager implements Manager {
   }
 
   public void lock(LockID lock, LockLevel level) {
-    throw new UnsupportedOperationException();
+    //
   }
 
   public void lockInterruptibly(LockID lock, LockLevel level) {
-    throw new UnsupportedOperationException();
+    //
   }
 
   public void notify(LockID lock) {
-    lock.unclusteredObject().notify();
+    Object jObject = lock.javaObject();
+    if (jObject != null) {
+      jObject.notify();
+    }
   }
 
   public void notifyAll(LockID lock) {
-    lock.unclusteredObject().notifyAll();
+    Object jObject = lock.javaObject();
+    if (jObject != null) {
+      jObject.notifyAll();
+    }
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {
@@ -340,14 +290,20 @@ public final class NullManager implements Manager {
   }
 
   public void unlock(LockID lock, LockLevel level) {
-    throw new UnsupportedOperationException();
+    //
   }
 
   public void wait(LockID lock) throws InterruptedException {
-    lock.unclusteredObject().wait();
+    Object jObject = lock.javaObject();
+    if (jObject != null) {
+      jObject.wait();
+    }
   }
 
   public void wait(LockID lock, long timeout) throws InterruptedException {
-    lock.unclusteredObject().wait();
+    Object jObject = lock.javaObject();
+    if (jObject != null) {
+      jObject.wait(timeout);
+    }
   }
 }

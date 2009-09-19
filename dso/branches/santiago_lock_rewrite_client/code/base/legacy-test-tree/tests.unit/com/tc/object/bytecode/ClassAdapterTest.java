@@ -17,7 +17,9 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.loaders.IsolationClassLoader;
 import com.tc.object.locks.DsoLockID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.MockClientLockManager;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.MockClientLockManager.Begin;
 import com.tc.object.tx.MockTransactionManager;
 import com.tctest.ClassAdapterTestTarget;
@@ -399,7 +401,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
 
     invokeWithNoArgs(methodName);
 
-    assertTrue(checkForLockName(ldnamed.getLockName(), ldnamed.getLockLevelAsInt()));
+    assertTrue(checkForLock(new StringLockID(ldnamed.getLockName()), LockLevel.fromLegacyInt(ldnamed.getLockLevelAsInt())));
     assertTrue(checkForLock(ldnamed));
     assertAutolockCount(1);
     assertTransactionCount(2);
@@ -1268,7 +1270,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
 
     invokeWithNoArgs(methodName);
 
-    assertTrue(checkForLockName(ldnamed.getLockName(), ldnamed.getLockLevelAsInt()));
+    assertTrue(checkForLock(new StringLockID(ldnamed.getLockName()), LockLevel.fromLegacyInt(ldnamed.getLockLevelAsInt())));
     assertTrue(checkForLock(ldnamed));
     assertAutolockCount(1);
     assertTransactionCount(2);
@@ -1295,7 +1297,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
 
     invokeWithNoArgs(methodName);
 
-    assertTrue(checkForLockName(ldnamed.getLockName(), ldnamed.getLockLevelAsInt()));
+    assertTrue(checkForLock(new StringLockID(ldnamed.getLockName()), LockLevel.fromLegacyInt(ldnamed.getLockLevelAsInt())));
     assertTrue(checkForLock(ldnamed));
     assertAutolockCount(1);
     assertTransactionCount(2);
@@ -1566,7 +1568,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
 
   private void assertNamedLockConditionsPostInvocation(int expectedTransactionCount, LockDefinition[] lockDefs) {
     for (int i = 0; i < lockDefs.length; i++) {
-      assertTrue(checkForLockName(lockDefs[i].getLockName(), lockDefs[i].getLockLevelAsInt()));
+      assertTrue(checkForLock(new StringLockID(lockDefs[i].getLockName()), LockLevel.fromLegacyInt(lockDefs[i].getLockLevelAsInt())));
       assertTrue(checkForLock(lockDefs[i]));
     }
     assertTransactionCount(expectedTransactionCount);
@@ -1643,7 +1645,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
   private boolean checkForLock(LockDefinition lockdef, Begin lock) {
     boolean rv = false;
     if (lock != null) {
-      rv = lockdef.getLockName().equals(ByteCodeUtil.stripGeneratedLockHeader(lock.lockName));
+      rv = lockdef.getLockName().equals(ByteCodeUtil.stripGeneratedLockHeader(lock.lock.asString()));
       if (rv) {
         // make sure that the lock type is the same
         rv = checkLockType(lockdef, lock.level);
@@ -1652,28 +1654,28 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     return rv;
   }
 
-  private boolean checkForLockName(LockID lockId, int lockType) {
-    List begins = this.testTransactionManager.getBegins();
+  private boolean checkForLock(LockID lockId, LockLevel lockType) {
+    List begins = this.testLockManager.getBegins();
     for (Iterator i = begins.iterator(); i.hasNext();) {
       Begin lock = (Begin) i.next();
-      if (checkForLockName(lockId, lock)) return true;
+      if (checkForLock(lockId, lock)) return true;
     }
     return false;
   }
 
-  private static boolean checkForLockName(LockID lockId, Begin lock) {
+  private static boolean checkForLock(LockID lockId, Begin lock) {
     return lock.lock.equals(lockId);
   }
 
   /**
    * Check the string representing the actual lock used to make sure that it is the same type
    */
-  private boolean checkLockType(LockDefinition lockdef, int lockType) {
-    return (lockdef.getLockLevelAsInt() == lockType);
+  private boolean checkLockType(LockDefinition lockdef, LockLevel lockType) {
+    return (LockLevel.fromLegacyInt(lockdef.getLockLevelAsInt()) == lockType);
   }
 
   private void assertNoAutolockLiteral() {
-    assertFalse(checkForLockName(LockDefinition.TC_AUTOLOCK_NAME, com.tc.object.lockmanager.api.LockLevel.WRITE));
+    //assertFalse(checkForLock(LockDefinition.TC_AUTOLOCK_NAME, com.tc.object.lockmanager.api.LockLevel.WRITE));
   }
 
   private void createNamedLockDefinition(String lockName) {

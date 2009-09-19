@@ -9,9 +9,9 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class StringLockID implements LockID {
-  /** Indicates no lock identifier */
+public class StringLockID extends NonObjectLockID {  
   public final static StringLockID NULL_ID = new StringLockID("null id");
+  
   private String                   id;
 
   public StringLockID() {
@@ -69,9 +69,5 @@ public class StringLockID implements LockID {
 
   public LockIDType getLockType() {
     return LockIDType.STRING;
-  }
-
-  public Object unclusteredObject() {
-    return null;
   }
 }

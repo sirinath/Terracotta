@@ -3,7 +3,8 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.ThreadID;
+
+import com.tc.object.lockmanager.api.WaitListener;
 
 import java.util.Collection;
 
@@ -17,8 +18,8 @@ public interface ClientLock {
 
   public boolean notify(RemoteLockManager remote, ThreadID thread);
   public boolean notifyAll(RemoteLockManager remote, ThreadID thread);
-  public void wait(RemoteLockManager remote, ThreadID thread);
-  public void wait(RemoteLockManager remote, ThreadID thread, long timeout);
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) throws InterruptedException;
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException;
 
   public boolean isLocked(LockLevel level);
   public boolean isLockedBy(ThreadID thread, LockLevel level);
@@ -40,4 +41,10 @@ public interface ClientLock {
    * record the current lock state).
    */
   public Collection<ClientServerExchangeLockContext> getStateSnapshot();
+  
+  /**
+   * ClientLock implementations must return true (and subsequently throw GarbageLockException) if
+   * they consider themselves garbage.
+   */
+  public boolean garbageCollect();
 }

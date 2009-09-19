@@ -43,7 +43,7 @@ public class LockIDSerializer implements TCSerializable {
           return new DsoLockID();
       }
     } catch (ArrayIndexOutOfBoundsException e) {
-      // stupid javac can't cope with assertion throw here...
+      // stupid javac can't cope with the assertion throw being here...
     }
     throw new AssertionError("Unknown type : " + type);
   }

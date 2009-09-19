@@ -3,7 +3,7 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.util.SinglyLinkedList;
 import com.tc.util.Util;
 
@@ -160,11 +160,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     throw new AssertionError();
   }
 
-  public void wait(RemoteLockManager remote, ThreadID thread) {
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) {
     throw new AssertionError();
   }
 
-  public void wait(RemoteLockManager remote, ThreadID thread, long timeout) {
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) {
     throw new AssertionError();
   }
 
@@ -242,6 +242,10 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return false;
       }
     }
+  }
+
+  public boolean garbageCollect() {
+    return false;
   }
 }
 
