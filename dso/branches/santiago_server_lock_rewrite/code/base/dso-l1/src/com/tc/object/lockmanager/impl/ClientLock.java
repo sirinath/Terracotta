@@ -567,7 +567,7 @@ class ClientLock implements TimerCallback, LockFlushCallback {
         remoteLockManager.releaseLock(lockID, threadID);
         return;
       }
-      if (LockLevel.isGreedy(level)) {
+      if (threadID.equals(ThreadID.VM_ID)) {
         Assert.assertEquals(threadID, ThreadID.VM_ID);
         // A Greedy lock is issued by the server. From now on client handles all lock awards until
         // 1) a recall is issued

@@ -13,8 +13,8 @@ public class LockFactoryImpl implements LockFactory {
   private final LockFactory    factory;
 
   public LockFactoryImpl() {
-    if(false) {
-    //if (LOCK_LEASE_ENABLE) {
+    // if(false) {
+    if (LOCK_LEASE_ENABLE) {
       System.out.println("using greedy factory");
       factory = new GreedyLockFactory();
     } else {

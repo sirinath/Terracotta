@@ -126,4 +126,10 @@ public class ClientServerExchangeLockContext implements TCSerializable {
     TimerSpec spec = timeout == -1 ? new TimerSpec() : new TimerSpec(timeout);
     return new TryLockContext(lockID, nodeID, threadID, ServerLockLevel.toLegacyInt(state.getLockLevel()), "", spec);
   }
+
+  @Override
+  public String toString() {
+    return "ClientServerExchangeLockContext [lockID=" + lockID + ", nodeID=" + nodeID + ", state=" + state
+           + ", threadID=" + threadID + "]";
+  }
 }

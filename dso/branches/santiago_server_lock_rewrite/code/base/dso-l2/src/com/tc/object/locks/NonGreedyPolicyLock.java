@@ -114,4 +114,8 @@ public final class NonGreedyPolicyLock extends AbstractLock {
                            LockHelper helper) {
     // NO-OP
   }
+  
+  protected ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid) {
+    return get(cid, tid);
+  }
 }

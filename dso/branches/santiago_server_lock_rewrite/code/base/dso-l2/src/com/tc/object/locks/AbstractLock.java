@@ -64,7 +64,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   public void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
                      LockHelper helper) throws TCIllegalMonitorStateException {
-    ServerLockContext holder = get(cid, tid);
+    ServerLockContext holder = getPotentialNotifyHolders(cid, tid);
     validateWaitNotifyState(cid, tid, holder);
 
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
@@ -122,8 +122,8 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     store.checkOut(lockID);
 
     // Remove from pending requests
-    remove(context.getClientID(), context.getThreadID(), helper);
-    Assert.assertTrue(context.getState().getType() == Type.PENDING || context.getState() == State.WAITER);
+    context = remove(context.getClientID(), context.getThreadID(), helper);
+    Assert.assertTrue(context.getState().getType() == Type.TRY_PENDING || context.getState() == State.WAITER);
 
     if (context.isWaiter()) {
       tryLockTimeout(context, helper);
@@ -191,10 +191,10 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       throws TCIllegalMonitorStateException {
     if (holder == null) {
       throw new TCIllegalMonitorStateException("No holder present for " + cid + "," + tid);
-    } else if (holder.getState() != State.HOLDER_WRITE && holder.getState() != State.GREEDY_HOLDER_WRITE) { throw new TCIllegalMonitorStateException(
-                                                                                                                                                     "Holder not in correct state "
-                                                                                                                                                         + holder
-                                                                                                                                                             .getState()); }
+    } else if (holder.getState() != State.HOLDER_WRITE && holder.getState() != State.GREEDY_HOLDER_WRITE) {
+      String message = "Holder not in correct state " + lockID + " " + holder;
+      throw new TCIllegalMonitorStateException(message);
+    }
   }
 
   protected void queue(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout, LockHelper helper) {
@@ -272,6 +272,8 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         && holder.getThreadID().equals(tid)) { return true; }
     return false;
   }
+
+  protected abstract ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid);
 
   private boolean isAlreadyHeldBySameContext(ClientID cid, ThreadID tid, ServerLockLevel reqLevel,
                                              ServerLockContext context) {
@@ -419,7 +421,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       ServerLockContext temp = iter.next();
-      if (context.equals(temp)) { throw new RuntimeException("Duplicate " + context + ", " + temp); }
+      if (context.equals(temp)) { throw new RuntimeException("Duplicate " + context + ", " + temp + ", " + lockID); }
     }
   }
 
@@ -713,21 +715,19 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       temp = iter.next();
       if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) {
         iter.remove();
-        break;
+        return temp;
       }
     }
-    return temp;
+    return null;
   }
 
-  private ServerLockContext get(ClientID cid, ThreadID tid) {
+  protected ServerLockContext get(ClientID cid, ThreadID tid) {
     ServerLockContext temp = null;
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       temp = iter.next();
-      if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) {
-        break;
-      }
+      if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) { return temp; }
     }
-    return temp;
+    return null;
   }
 }
