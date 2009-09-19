@@ -170,7 +170,7 @@ public final class ServerLock extends AbstractLock {
     switch (request.getState().getType()) {
       case GREEDY_HOLDER:
         this.addFirst(request);
-        break;
+        return;
       case HOLDER:
         SinglyLinkedListIterator<ServerLockContext> iter = iterator();
         while (iter.hasNext()) {
@@ -260,7 +260,7 @@ public final class ServerLock extends AbstractLock {
           if (cselc.timeout() <= 0) {
             cannotAward(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), helper);
           } else {
-            queue(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), Type.PENDING, cselc.timeout(), helper);
+            queue(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), Type.TRY_PENDING, cselc.timeout(), helper);
           }
           break;
         case WAITER:
@@ -307,7 +307,7 @@ public final class ServerLock extends AbstractLock {
       default:
     }
     // remove holders (from the same client) who have given the lock non greedily till now
-    removeNonGreedyHoldersOfSameClient(request, helper);
+    removeNonGreedyHoldersAndPendingOfSameClient(request, helper);
 
     // greedy requests should have their thread ids as vm id
     request.setThreadID(ThreadID.VM_ID);
@@ -315,7 +315,7 @@ public final class ServerLock extends AbstractLock {
     awardLock(helper, request, state);
   }
 
-  private void removeNonGreedyHoldersOfSameClient(ServerLockContext context, LockHelper helper) {
+  private void removeNonGreedyHoldersAndPendingOfSameClient(ServerLockContext context, LockHelper helper) {
     ClientID cid = context.getClientID();
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
     while (iterator.hasNext()) {
@@ -323,6 +323,8 @@ public final class ServerLock extends AbstractLock {
       switch (next.getState().getType()) {
         case GREEDY_HOLDER:
           break;
+        case PENDING:
+        case TRY_PENDING:
         case HOLDER:
           if (cid.equals(next.getClientID())) {
             iterator.remove();
@@ -332,6 +334,14 @@ public final class ServerLock extends AbstractLock {
           return;
       }
     }
+  }
+
+  protected ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid) {
+    ServerLockContext context = get(cid, tid);
+    if (context == null) {
+      context = get(cid, ThreadID.VM_ID);
+    }
+    return context;
   }
 
   private boolean hasGreedyHolders() {

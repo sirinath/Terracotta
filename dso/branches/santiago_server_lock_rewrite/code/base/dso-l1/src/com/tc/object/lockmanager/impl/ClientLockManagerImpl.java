@@ -618,7 +618,7 @@ public class ClientLockManagerImpl implements ClientLockManager, LockFlushCallba
     final ClientLock lock = this.locksByID.get(lockID);
     if (lock != null) {
       lock.awardLock(threadID, level);
-    } else if (LockLevel.isGreedy(level)) {
+    } else if (threadID.equals(ThreadID.VM_ID)) {
       getOrCreateLock(lockID, MISSING_LOCK_TEXT).awardLock(threadID, level);
     } else {
       this.remoteLockManager.releaseLock(lockID, threadID);

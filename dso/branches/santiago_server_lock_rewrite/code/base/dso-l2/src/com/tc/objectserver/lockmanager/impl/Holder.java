@@ -31,8 +31,7 @@ public class Holder implements LockAwardContext {
   }
 
   synchronized int addLockLevel(int level) {
-    if (LockLevel.isGreedy(level)) {
-      Assert.assertEquals(getThreadID(), ThreadID.VM_ID);
+    if (getThreadID().equals(ThreadID.VM_ID)) {
       level = LockLevel.makeNotGreedy(level);
     }
     return this.lockLevel |= level;
