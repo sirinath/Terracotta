@@ -85,7 +85,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         }
       }
     }
-    postStepsForRemove(helper);
   }
 
   public void reestablishState(ClientServerExchangeLockContext cselc, LockHelper helper) {
@@ -266,7 +265,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         default:
       }
     }
-    postStepsForRemove(helper);
   }
 
   private boolean isUpgradeRequest(ClientID cid, ThreadID tid, ServerLockLevel reqLevel, ServerLockContext holder) {
@@ -425,31 +423,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     }
   }
 
-  protected void postStepsForRemove(LockHelper helper) {
-    if (isEmpty() || (!isEmpty() && (getFirst().getNext() != null || getFirst() instanceof SingleServerLockContext))) { return; }
-
-    // Since there is only 1 element in the list, a change is required.
-    LinkedServerLockContext context = (LinkedServerLockContext) removeFirst();
-    SingleServerLockContext newContext = null;
-    switch (context.getState().getType()) {
-      case GREEDY_HOLDER:
-      case HOLDER:
-      case PENDING:
-        newContext = new SingleServerLockContext(context.getClientID(), context.getThreadID());
-        newContext.setState(helper.getContextStateMachine(), context.getState());
-        break;
-      case TRY_PENDING:
-      case WAITER:
-        newContext = new WaitSingleServerLockContext(context.getClientID(), context.getThreadID(),
-                                                     ((WaitServerLockContext) context).getTimeout(),
-                                                     ((WaitServerLockContext) context).getTimerTask(),
-                                                     ((WaitServerLockContext) context).getLockHelper());
-        newContext.setState(helper.getContextStateMachine(), context.getState());
-        break;
-    }
-    this.addFirst(newContext);
-  }
-
   protected abstract void awardAllReads(LockHelper helper, ServerLockContext request);
 
   protected boolean canAwardRequest(ServerLockLevel requestLevel) {
@@ -475,7 +448,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         case TRY_PENDING:
           if (canAwardRequest(request.getState().getLockLevel())) {
             contexts.remove();
-            postStepsForRemove(helper);
             return request;
           }
           return null;
@@ -664,7 +636,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         default:
       }
     }
-    postStepsForRemove(helper);
     return requests;
   }
 
@@ -745,7 +716,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         break;
       }
     }
-    postStepsForRemove(helper);
     return temp;
   }
 

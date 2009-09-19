@@ -212,8 +212,6 @@ public final class ServerLock extends AbstractLock {
       }
     }
 
-    postStepsForRemove(helper);
-
     // Since this request was already removed from the list, so this is added to the
     // list as well
     contexts.add(request);
@@ -328,7 +326,6 @@ public final class ServerLock extends AbstractLock {
         case HOLDER:
           if (cid.equals(next.getClientID())) {
             iterator.remove();
-            postStepsForRemove(helper);
           }
           break;
         default:
