@@ -16,6 +16,7 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionIDAlreadySetException;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.TestLockManager;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
@@ -27,8 +28,8 @@ import com.tc.objectserver.impl.ObjectInstanceMonitorImpl;
 import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
-import com.tc.objectserver.lockmanager.api.TestLockManager;
 import com.tc.objectserver.managedobject.BackReferences;
+import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.impl.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestTransactionStore;
 import com.tc.stats.counter.Counter;
@@ -77,7 +78,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
     this.channelStats = new TestChannelStats();
     this.gtxm = new TestGlobalTransactionManager();
     this.imo = new ObjectInstanceMonitorImpl();
-//    newTransactionManager();
+    newTransactionManager();
     this.ptxp = new NullPersistenceTransactionProvider();
   }
 
@@ -86,16 +87,16 @@ public class ServerTransactionManagerImplTest extends TestCase {
     super.tearDown();
   }
 
-//  private void newTransactionManager() {
-//    this.transactionManager = new ServerTransactionManagerImpl(this.gtxm, this.transactionStore, this.lockManager,
-//                                                               this.clientStateManager, this.objectManager,
-//                                                               new NullTransactionalObjectManager(), this.action,
-//                                                               this.transactionRateCounter, this.channelStats,
-//                                                               new ServerTransactionManagerConfig(),
-//                                                               new ObjectStatsRecorder());
-//    this.transactionManager.goToActiveMode();
-//    this.transactionManager.start(Collections.EMPTY_SET);
-//  }
+  private void newTransactionManager() {
+    this.transactionManager = new ServerTransactionManagerImpl(this.gtxm, this.transactionStore, this.lockManager,
+                                                               this.clientStateManager, this.objectManager,
+                                                               new NullTransactionalObjectManager(), this.action,
+                                                               this.transactionRateCounter, this.channelStats,
+                                                               new ServerTransactionManagerConfig(),
+                                                               new ObjectStatsRecorder());
+    this.transactionManager.goToActiveMode();
+    this.transactionManager.start(Collections.EMPTY_SET);
+  }
 
   public void testRootCreatedEvent() {
     Map roots = new HashMap();

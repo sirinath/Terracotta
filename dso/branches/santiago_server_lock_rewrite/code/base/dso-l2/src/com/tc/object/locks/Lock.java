@@ -36,7 +36,7 @@ public interface Lock extends TimerCallback {
 
   void reestablishState(ClientServerExchangeLockContext serverLockContext, LockHelper lockHelper);
 
-  void clearStateForNode(ClientID cid, LockHelper helper);
+  boolean clearStateForNode(ClientID cid, LockHelper helper);
 
   LockMBean getMBean(DSOChannelManager channelManager);
 

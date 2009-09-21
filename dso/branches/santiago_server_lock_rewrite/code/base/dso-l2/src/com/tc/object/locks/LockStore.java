@@ -113,13 +113,19 @@ public class LockStore {
      */
     public Lock getNextLock(Lock lock) {
       validateOldLock(lock);
-      if (currentIter == null || !currentIter.hasNext()) {
+      while (currentIter == null || !currentIter.hasNext()) {
         if (!tryMovingToNextSegment()) { return null; }
       }
       Assert.assertNotNull(currentIter);
-      return currentIter.next().getValue();
+      oldLock = currentIter.next().getValue();
+      return oldLock;
     }
     
+    public void remove() {
+      Assert.assertNotNull(currentIter);
+      currentIter.remove();
+    }
+
     public void checkIn(Lock lock) {
       Assert.assertEquals(oldLock, lock);
       LockStore.this.checkIn(lock);
@@ -135,11 +141,11 @@ public class LockStore {
     }
 
     private boolean tryMovingToNextSegment() {
-      currentIndex++;
-      if (currentIndex >= segments.length) { return false; }
-      if (currentIndex <= 0) {
+      if (currentIndex >= 0 && currentIndex < segments.length) {
         locks[currentIndex].unlock();
       }
+      currentIndex++;
+      if (currentIndex >= segments.length) { return false; }
 
       locks[currentIndex].lock();
       currentIter = segments[currentIndex].entrySet().iterator();

@@ -15,6 +15,7 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.TestLockManager;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -25,7 +26,6 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
 import com.tc.objectserver.gtx.TestGlobalTransactionManager;
 import com.tc.objectserver.impl.ObjectInstanceMonitorImpl;
-import com.tc.objectserver.lockmanager.api.TestLockManager;
 import com.tc.objectserver.tx.NullTransactionalObjectManager;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionImpl;
@@ -68,7 +68,7 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
     context.l2Coordinator = new L2HADisabledCooridinator();
     context.addStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, stageBo);
     context.addStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE, stageCo);
-    // context.lockManager = this.lockManager;
+    context.lockManager = this.lockManager;
 
     this.handler.initializeContext(context);
   }
