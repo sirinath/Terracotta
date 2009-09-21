@@ -15,10 +15,8 @@ public class LockFactoryImpl implements LockFactory {
   public LockFactoryImpl() {
     // if(false) {
     if (LOCK_LEASE_ENABLE) {
-      System.out.println("using greedy factory");
       factory = new GreedyLockFactory();
     } else {
-      System.out.println("using non greedy factory");
       factory = new NonGreedyLockFactory();
     }
   }

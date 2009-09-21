@@ -91,11 +91,11 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     processPendingRequests(helper);
   }
 
-  public void clearStateForNode(ClientID cid, LockHelper helper) {
+  public boolean clearStateForNode(ClientID cid, LockHelper helper) {
     clearContextsForClient(cid, helper);
-
-    if (checkIfLockCanBeCleared(helper)) { return; }
     processPendingRequests(helper);
+    
+    return isEmpty();
   }
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
@@ -106,7 +106,6 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     Assert.assertNotNull(context);
     Assert.assertTrue(context.getState().getType() == Type.HOLDER);
 
-    if (checkIfLockCanBeCleared(helper)) { return; }
     processPendingRequests(helper);
   }
 

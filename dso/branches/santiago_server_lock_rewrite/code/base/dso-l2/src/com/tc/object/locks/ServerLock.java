@@ -100,14 +100,14 @@ public final class ServerLock extends AbstractLock {
     }
   }
 
-  public void clearStateForNode(ClientID cid, LockHelper helper) {
+  public boolean clearStateForNode(ClientID cid, LockHelper helper) {
     clearContextsForClient(cid, helper);
 
-    if (checkIfLockCanBeCleared(helper)) { return; }
     if (!hasGreedyHolders()) {
       isRecalled = false;
     }
     processPendingRequests(helper);
+    return isEmpty();
   }
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
@@ -116,9 +116,10 @@ public final class ServerLock extends AbstractLock {
     recordLockReleaseStat(cid, tid, helper);
 
     Assert.assertNotNull(context);
-    Assert.assertTrue(context.getState().getType() == Type.HOLDER);
+    Assert
+        .assertTrue(context.getState().getType() == Type.HOLDER || context.getState().getType() == Type.GREEDY_HOLDER);
 
-    if (checkIfLockCanBeCleared(helper)) { return; }
+    if (clearLockIfRequired(helper)) { return; }
     if (!hasGreedyHolders()) {
       isRecalled = false;
     }
@@ -165,7 +166,7 @@ public final class ServerLock extends AbstractLock {
   @Override
   protected void addHolder(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    checkDuplicate(request);
+    Assert.assertFalse(checkDuplicate(request));
 
     switch (request.getState().getType()) {
       case GREEDY_HOLDER:
@@ -277,7 +278,7 @@ public final class ServerLock extends AbstractLock {
     }
 
     // Also check if the lock can be removed
-    if (checkIfLockCanBeCleared(helper)) { return; }
+    if (clearLockIfRequired(helper)) { return; }
     processPendingRequests(helper);
   }
 
@@ -345,8 +346,7 @@ public final class ServerLock extends AbstractLock {
   }
 
   private boolean hasGreedyHolders() {
-    ServerLockContext context = getFirst();
-    if (context != null && context.isGreedyHolder()) { return true; }
+    if(!isEmpty() && getFirst().isGreedyHolder()) return true;
     return false;
   }
 

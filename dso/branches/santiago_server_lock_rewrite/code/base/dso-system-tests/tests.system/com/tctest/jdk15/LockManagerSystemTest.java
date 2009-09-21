@@ -38,6 +38,8 @@ import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
 import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.StripedClientLockManagerImpl;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockManager;
+import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
@@ -52,9 +54,7 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
 import com.tc.objectserver.handler.RequestLockUnLockHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
-import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
@@ -63,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-// Have to come back and check this test
 public class LockManagerSystemTest extends BaseDSOTestCase {
 
   // please keep this set to true so that tests on slow/loaded machines don't fail. When working on this test though, it
@@ -88,14 +87,15 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                          ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                          new NullClientLockManagerConfig());
 
-    LockManager serverLockManager = new LockManagerImpl(new MockChannelManager(), new MockL2LockStatsManager());
-
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 
     TestServerConfigurationContext serverLockUnlockContext = new TestServerConfigurationContext();
     MockStage serverStage = new MockStage("LockManagerSystemTest");
+    LockManager serverLockManager = new LockManagerImpl(serverStage.sink, new MockL2LockStatsManager(),
+                                                        new MockChannelManager());
+
     serverLockUnlockContext.addStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE, serverStage);
-    // serverLockUnlockContext.lockManager = serverLockManager;
+    serverLockUnlockContext.lockManager = serverLockManager;
 
     serverLockUnlockHandler.initializeContext(serverLockUnlockContext);
 

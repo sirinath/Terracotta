@@ -88,6 +88,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   }
 
   public void reestablishState(ClientServerExchangeLockContext cselc, LockHelper helper) {
+    Assert.assertFalse(checkDuplicate((ClientID) cselc.getNodeID(), cselc.getThreadID()));
     switch (cselc.getState().getType()) {
       case GREEDY_HOLDER:
       case HOLDER:
@@ -126,9 +127,9 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     Assert.assertTrue(context.getState().getType() == Type.TRY_PENDING || context.getState() == State.WAITER);
 
     if (context.isWaiter()) {
-      tryLockTimeout(context, helper);
-    } else {
       waitTimeout(context, helper);
+    } else {
+      tryLockTimeout(context, helper);
     }
 
     store.checkIn(this);
@@ -159,7 +160,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return context;
   }
 
-  protected boolean checkIfLockCanBeCleared(LockHelper helper) {
+  protected boolean clearLockIfRequired(LockHelper helper) {
     if (isEmpty()) {
       LockStore store = helper.getLockStore();
       store.remove(lockID);
@@ -333,13 +334,13 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addHolder(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    checkDuplicate(request);
+    Assert.assertFalse(checkDuplicate(request));
     this.addFirst(request);
   }
 
   protected void addTryPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    checkDuplicate(request);
+    Assert.assertFalse(checkDuplicate(request));
 
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
@@ -360,7 +361,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    checkDuplicate(request);
+    Assert.assertFalse(checkDuplicate(request));
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       switch (iter.next().getState().getType()) {
@@ -380,7 +381,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addWaiter(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    checkDuplicate(request);
+    Assert.assertFalse(checkDuplicate(request));
 
     this.addLast(request);
   }
@@ -417,12 +418,17 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     this.addFirst(newContext);
   }
 
-  protected void checkDuplicate(ServerLockContext context) {
+  protected boolean checkDuplicate(ClientID cid, ThreadID tid) {
+    return checkDuplicate(new SingleServerLockContext(cid, tid));
+  }
+
+  protected boolean checkDuplicate(ServerLockContext context) {
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       ServerLockContext temp = iter.next();
-      if (context.equals(temp)) { throw new RuntimeException("Duplicate " + context + ", " + temp + ", " + lockID); }
+      if (context.equals(temp)) { return true; }
     }
+    return false;
   }
 
   protected abstract void awardAllReads(LockHelper helper, ServerLockContext request);

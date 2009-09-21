@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.api;
 
@@ -51,7 +52,7 @@ public class TestSink implements Sink {
       return (EventContext) queue.remove(0);
     }
   }
-  
+
   public void setAddPredicate(AddPredicate predicate) {
     //
   }
@@ -69,7 +70,7 @@ public class TestSink implements Sink {
   }
 
   public void clear() {
-    throw new ImplementMe();
+    queue.clear();
   }
 
   public void unpause() {
