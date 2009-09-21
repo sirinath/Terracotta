@@ -51,7 +51,6 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-// have to come back and look at this test
 public class ServerTransactionManagerImplTest extends TestCase {
 
   private ServerTransactionManagerImpl       transactionManager;
