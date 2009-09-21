@@ -44,7 +44,9 @@ import com.tc.object.lockmanager.impl.ClientLockManagerImpl;
 import com.tc.object.lockmanager.impl.ClientServerLockStatManagerGlue;
 import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
+import com.tc.object.lockmanager.impl.ClientServerLockManagerGlue.TestServerLockFactory;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
@@ -64,7 +66,6 @@ import com.tc.object.session.SessionID;
 import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
 
@@ -107,8 +108,8 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
 
     DSOChannelManager nullChannelManager = new NullChannelManager();
     serverLockStatManager = new L2LockStatisticsManagerImpl();
-    serverLockManager = new LockManagerImpl(nullChannelManager, serverLockStatManager);
-    serverLockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
+    serverLockManager = new LockManagerImpl(sink, serverLockStatManager, nullChannelManager,
+                                            new TestServerLockFactory());
 
     channel1 = new TestClientMessageChannel(channelId1, sink);
     serverLockStatManager.start(new TestChannelManager(channel1), null);
@@ -121,7 +122,7 @@ public class ClientServerLockStatisticsTest extends TCTestCase {
     final CyclicBarrier localBarrier = new CyclicBarrier(2);
     DSOChannelManager nullChannelManager = new NullChannelManager();
     serverLockStatManager = new MockL2LockStatManagerImpl(localBarrier);
-    serverLockManager = new LockManagerImpl(nullChannelManager, serverLockStatManager);
+    serverLockManager = new LockManagerImpl(sink, serverLockStatManager, nullChannelManager);
 
     serverLockStatManager.start(new TestChannelManager(channel1), null);
     clientServerGlue.set(clientLockManager, serverLockManager, clientLockStatManager, serverLockStatManager);

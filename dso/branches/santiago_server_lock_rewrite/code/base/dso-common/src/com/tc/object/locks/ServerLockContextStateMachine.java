@@ -11,7 +11,9 @@ public class ServerLockContextStateMachine {
   // State diagram
   // (pending, try pending) ==> (greedy holder, holder)
   // (holder) ==> (waiter) ==> (pending)
-  
+
+  private boolean stop = false;
+
   public boolean canSetState(State oldState, State newState) {
     State expectedState = null;
 
@@ -38,8 +40,7 @@ public class ServerLockContextStateMachine {
 
     return false;
   }
-  
-  
+
   private State moveToWaiter(State oldState) {
     Assert.assertNotNull(oldState);
     Assert.assertTrue(oldState.getType() == Type.HOLDER);
@@ -93,5 +94,17 @@ public class ServerLockContextStateMachine {
         // should never come here
         throw new IllegalStateException("Should never come here");
     }
+  }
+
+  public void start() {
+    stop = false;
+  }
+
+  public void stop() {
+    stop = true;
+  }
+
+  public boolean isStopped() {
+    return stop;
   }
 }

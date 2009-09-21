@@ -5,34 +5,33 @@
 package com.tc.object.lockmanager.impl;
 
 import com.tc.async.api.EventContext;
-import com.tc.async.api.Sink;
-import com.tc.async.impl.NullSink;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockFlushCallback;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.TryLockRequest;
-import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.Lock;
+import com.tc.object.locks.LockFactory;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.LockResponseContext;
+import com.tc.object.locks.NonGreedyPolicyLock;
 import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,21 +40,15 @@ import java.util.Set;
 
 public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable {
 
-  private static final Sink       NULL_SINK = new NullSink();
-
   private LockManagerImpl         serverLockManager;
   protected ClientLockManagerImpl clientLockManager;
 
   protected TestSink              sink;
-  private final ClientID          clientID  = new ClientID(1);
-  protected boolean               stop      = false;
+  private final ClientID          clientID = new ClientID(1);
+  protected boolean               stop     = false;
   protected Thread                eventNotifier;
 
   protected final SessionProvider sessionProvider;
-
-  public ClientServerLockManagerGlue(SessionProvider sessionProvider) {
-    this(sessionProvider, new TestSink(), "ClientServerLockManagerGlue");
-  }
 
   protected ClientServerLockManagerGlue(SessionProvider sessionProvider, TestSink sink, String threadName) {
     super();
@@ -67,7 +60,8 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public void requestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
-    serverLockManager.requestLock(lockID, clientID, threadID, lockType, lockObjectType, sink);
+    ServerLockLevel level = ServerLockLevel.fromLegacyInt(lockType);
+    serverLockManager.lock(lockID, clientID, threadID, level);
   }
 
   public void releaseLock(LockID lockID, ThreadID threadID) {
@@ -75,44 +69,83 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
-    serverLockManager.wait(lockID, clientID, threadID, call, sink);
+    serverLockManager.wait(lockID, clientID, threadID, call.getMillis());
   }
 
   public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests,
                            Collection pendingTryLockRequests) {
-    Collection serverLC = new ArrayList();
+    Collection<ClientServerExchangeLockContext> serverContexts = new ArrayList();
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType());
-      serverLC.add(ctxt);
+      State state = null;
+      switch (ServerLockLevel.fromLegacyInt(request.lockLevel())) {
+        case READ:
+          state = State.HOLDER_READ;
+          break;
+        case WRITE:
+          state = State.HOLDER_WRITE;
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), clientID, request
+          .threadID(), state);
+      serverContexts.add(ctxt);
     }
 
-    Collection serverWC = new ArrayList();
     for (Iterator i = waitContext.iterator(); i.hasNext();) {
       WaitLockRequest request = (WaitLockRequest) i.next();
-      WaitContext ctxt = new WaitContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType(), request.getTimerSpec());
-      serverWC.add(ctxt);
+
+      State state = null;
+      switch (ServerLockLevel.fromLegacyInt(request.lockLevel())) {
+        case WRITE:
+          state = State.WAITER;
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), clientID, request
+          .threadID(), state, request.getTimerSpec().getMillis());
+      serverContexts.add(ctxt);
     }
 
-    Collection serverPC = new ArrayList();
     for (Iterator i = pendingRequests.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType());
-      serverPC.add(ctxt);
+      State state = null;
+      switch (ServerLockLevel.fromLegacyInt(request.lockLevel())) {
+        case READ:
+          state = State.PENDING_READ;
+          break;
+        case WRITE:
+          state = State.PENDING_WRITE;
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), clientID, request
+          .threadID(), state);
+      serverContexts.add(ctxt);
     }
 
-    Collection serverPTC = new ArrayList();
     for (Iterator i = pendingTryLockRequests.iterator(); i.hasNext();) {
       TryLockRequest request = (TryLockRequest) i.next();
-      LockContext ctxt = new TryLockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(),
-                                            request.lockType(), request.getTimerSpec());
-      serverPTC.add(ctxt);
+      State state = null;
+      switch (ServerLockLevel.fromLegacyInt(request.lockLevel())) {
+        case READ:
+          state = State.TRY_PENDING_READ;
+          break;
+        case WRITE:
+          state = State.TRY_PENDING_WRITE;
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+      ClientServerExchangeLockContext ctxt = new ClientServerExchangeLockContext(request.lockID(), clientID, request
+          .threadID(), state, request.getTimerSpec().getMillis());
+      serverContexts.add(ctxt);
     }
 
-    serverLockManager.recallCommit(lockID, clientID, serverLC, serverWC, serverPC, serverPTC, sink);
+    serverLockManager.recallCommit(lockID, clientID, serverContexts);
   }
 
   public void flush(LockID lockID) {
@@ -149,44 +182,15 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public LockManagerImpl restartServer() {
-    int policy = this.serverLockManager.getLockPolicy();
-    this.serverLockManager = new LockManagerImpl(new NullChannelManager(), L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
+    this.serverLockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER,
+                                                 new NullChannelManager(), new TestServerLockFactory());
     clientLockManager.pause(GroupID.ALL_GROUPS, 1);
     ClientHandshakeMessageImpl handshakeMessage = new ClientHandshakeMessageImpl(SessionID.NULL_ID, null,
                                                                                  new TCByteBufferOutputStream(), null,
                                                                                  TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
-    clientLockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, handshakeMessage);
+    clientLockManager.initializeHandshake(this.clientID, GroupID.NULL_ID, handshakeMessage);
 
-    for (Iterator i = handshakeMessage.getLockContexts().iterator(); i.hasNext();) {
-      ClientServerExchangeLockContext context = ((ClientServerExchangeLockContext) i.next());
-      switch (context.getState().getType()) {
-        case GREEDY_HOLDER:
-        case HOLDER:
-          serverLockManager.reestablishLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
-                                            ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), NULL_SINK);
-          break;
-        case WAITER:
-          TimerSpec spec = context.timeout() == -1 ? new TimerSpec() : new TimerSpec(context.timeout());
-          serverLockManager.reestablishWait(context.getLockID(), context.getNodeID(), context.getThreadID(),
-                                            ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), spec,
-                                            NULL_SINK);
-          break;
-        case PENDING:
-          serverLockManager.requestLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
-                                        ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), "", NULL_SINK);
-          break;
-        case TRY_PENDING:
-          spec = context.timeout() == -1 ? new TimerSpec() : new TimerSpec(context.timeout());
-          serverLockManager.tryRequestLock(context.getLockID(), context.getNodeID(), context.getThreadID(),
-                                           ServerLockLevel.toLegacyInt(context.getState().getLockLevel()), "", spec,
-                                           NULL_SINK);
-          break;
-      }
-    }
-
-    if (policy == LockManagerImpl.ALTRUISTIC_LOCK_POLICY) {
-      this.serverLockManager.setLockPolicy(policy);
-    }
+    serverLockManager.reestablishState(this.clientID, handshakeMessage.getLockContexts());
     this.serverLockManager.start();
     clientLockManager.unpause(GroupID.ALL_GROUPS, 0);
     return this.serverLockManager;
@@ -194,10 +198,11 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
 
   public void notify(LockID lockID1, ThreadID tx2, boolean all) {
     NotifiedWaiters waiters = new NotifiedWaiters();
-    serverLockManager.notify(lockID1, clientID, tx2, all, waiters);
+    Lock.NotifyAction action = all ? Lock.NotifyAction.ALL : Lock.NotifyAction.ONE;
+    serverLockManager.notify(lockID1, clientID, tx2, action, waiters);
     Set s = waiters.getNotifiedFor(clientID);
     for (Iterator i = s.iterator(); i.hasNext();) {
-      LockContext lc = (LockContext) i.next();
+      ClientServerExchangeLockContext lc = (ClientServerExchangeLockContext) i.next();
       clientLockManager.notified(lc.getLockID(), lc.getThreadID());
     }
   }
@@ -208,11 +213,12 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public void queryLock(LockID lockID, ThreadID threadID) {
-    serverLockManager.queryLock(lockID, clientID, threadID, sink);
+    serverLockManager.queryLock(lockID, clientID, threadID);
   }
 
   public void tryRequestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
-    serverLockManager.tryRequestLock(lockID, clientID, threadID, lockType, lockObjectType, new TimerSpec(0), sink);
+    ServerLockLevel level = ServerLockLevel.fromLegacyInt(lockType);
+    serverLockManager.tryLock(lockID, clientID, threadID, level, -1);
   }
 
   public void interrruptWait(LockID lockID, ThreadID threadID) {
@@ -221,6 +227,13 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
-    serverLockManager.tryRequestLock(lockID, clientID, threadID, lockType, lockObjectType, timeout, sink);
+    ServerLockLevel level = ServerLockLevel.fromLegacyInt(lockType);
+    serverLockManager.tryLock(lockID, clientID, threadID, level, timeout.getMillis());
+  }
+
+  public static class TestServerLockFactory implements LockFactory {
+    public Lock createLock(LockID lid) {
+      return new NonGreedyPolicyLock(lid);
+    }
   }
 }
