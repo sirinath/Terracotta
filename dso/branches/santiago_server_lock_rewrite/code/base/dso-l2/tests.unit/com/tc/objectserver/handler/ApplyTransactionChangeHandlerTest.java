@@ -41,7 +41,6 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-// Have to get back to this test and write a TestLockManager
 public class ApplyTransactionChangeHandlerTest extends TestCase {
 
   private ApplyTransactionChangeHandler handler;

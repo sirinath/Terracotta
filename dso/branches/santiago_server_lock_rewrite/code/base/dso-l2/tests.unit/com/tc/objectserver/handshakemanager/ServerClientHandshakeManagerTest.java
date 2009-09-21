@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// Have to come back and check this test
 public class ServerClientHandshakeManagerTest extends TCTestCase {
 
   private ServerClientHandshakeManager hm;
