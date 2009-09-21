@@ -229,6 +229,7 @@ public class LockManagerImpl implements LockManager {
       }
     }
     this.lockRequestQueue = null;
+    this.lockHelper.getContextStateMachine().start();
   }
 
   public void stop() throws InterruptedException {
@@ -239,6 +240,7 @@ public class LockManagerImpl implements LockManager {
     }
     Assert.assertEquals(Status.STARTED, status);
 
+    this.lockHelper.getContextStateMachine().stop();
     synchronized (this) {
       this.status = Status.STOPPING;
     }
@@ -402,5 +404,19 @@ public class LockManagerImpl implements LockManager {
       lock = iter.getNextLock(oldLock);
     }
     return size;
+  }
+
+  /**
+   * To be used only in tests
+   */
+  public boolean hasPending(LockID lid) {
+    AbstractLock lock = (AbstractLock) lockStore.checkOut(lid);
+    boolean result = false;
+    try {
+      result = lock.hasPendingRequests();
+    } finally {
+      lockStore.checkIn(lock);
+    }
+    return result;
   }
 }

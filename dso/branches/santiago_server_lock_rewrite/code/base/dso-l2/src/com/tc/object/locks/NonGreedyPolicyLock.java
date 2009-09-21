@@ -106,6 +106,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     Assert.assertNotNull(context);
     Assert.assertTrue(context.getState().getType() == Type.HOLDER);
 
+    if (clearLockIfRequired(helper)) { return; }
     processPendingRequests(helper);
   }
 

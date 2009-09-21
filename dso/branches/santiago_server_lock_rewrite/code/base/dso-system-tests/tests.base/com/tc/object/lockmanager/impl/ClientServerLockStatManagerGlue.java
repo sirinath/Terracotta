@@ -10,11 +10,11 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.net.GroupID;
+import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.LockResponseContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
 
 public class ClientServerLockStatManagerGlue extends ClientServerLockManagerGlue {
   private ClientLockStatManager clientLockStatManager;

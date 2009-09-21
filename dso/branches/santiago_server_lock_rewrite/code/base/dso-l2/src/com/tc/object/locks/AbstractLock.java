@@ -119,6 +119,11 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     ServerLockContext context = (ServerLockContext) callbackObject;
     LockHelper helper = ((WaitServerLockContext) callbackObject).getLockHelper();
 
+    // Ignore
+    if(helper.getContextStateMachine().isStopped()) {
+      return;
+    }
+    
     LockStore store = helper.getLockStore();
     store.checkOut(lockID);
 
