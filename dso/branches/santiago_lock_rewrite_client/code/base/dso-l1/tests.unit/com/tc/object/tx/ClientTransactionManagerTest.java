@@ -9,10 +9,13 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 import com.tc.management.beans.tx.MockClientTxMonitor;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.ClientIDProviderImpl;
+import com.tc.object.MockTCObject;
+import com.tc.object.ObjectID;
 import com.tc.object.TestClientObjectManager;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.NullRuntimeLogger;
+import com.tc.object.util.ReadOnlyException;
 import com.tc.stats.counter.sampled.SampledCounter;
 
 import junit.framework.TestCase;
@@ -48,16 +51,15 @@ public class ClientTransactionManagerTest extends TestCase {
       // expected
     }
 
-//    // Test that we get an exception when checking while only holding a read lock
-//    clientTxnMgr.begin("lock", LockLevel.READ, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-//                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-//    try {
-//      clientTxnMgr.checkWriteAccess(new Object());
-//      fail();
-//    } catch (ReadOnlyException roe) {
-//      // expected
-//    }
-//    clientTxnMgr.commit("lock");
+    // Test that we get an exception when checking while only holding a read lock
+    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ);
+    try {
+      clientTxnMgr.checkWriteAccess(new Object());
+      fail();
+    } catch (ReadOnlyException roe) {
+      // expected
+    }
+    clientTxnMgr.commit(new StringLockID("lock"));
 
     clientTxnMgr.begin(new StringLockID("test"), LockLevel.WRITE);
     clientTxnMgr.checkWriteAccess(new Object());
@@ -73,20 +75,19 @@ public class ClientTransactionManagerTest extends TestCase {
   }
 
   public void testDoIllegalReadChange() {
-//    clientTxnMgr.begin("lock", LockLevel.READ, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-//                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-//
-//    try {
-//      clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);
-//      assertFalse(true);
-//    } catch (ReadOnlyException e) {
-//      // expected
-//
-//      // System.out.println("THIS IS A GOOD THING");
-//      // e.printStackTrace();
-//      // System.out.println("THIS IS A GOOD THING");
-//    }
-//
-//    clientTxnMgr.commit("lock");
+    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ);
+
+    try {
+      clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);
+      assertFalse(true);
+    } catch (ReadOnlyException e) {
+      // expected
+
+      // System.out.println("THIS IS A GOOD THING");
+      // e.printStackTrace();
+      // System.out.println("THIS IS A GOOD THING");
+    }
+
+    clientTxnMgr.commit(new StringLockID("lock"));
   }
 }

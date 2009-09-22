@@ -158,10 +158,6 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public LockID generateLockIdentifier(Object obj, long fieldOffset) {
-    throw new ImplementMe();
-  }
-
   public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
     throw new ImplementMe();
   }

@@ -22,15 +22,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     throw new AssertionError();
   }
 
-  public int globalHoldCount(RemoteLockManager remote, LockLevel level) {
+  public int pendingCount() {
     throw new AssertionError();
   }
 
-  public int globalPendingCount(RemoteLockManager remote) {
-    throw new AssertionError();
-  }
-
-  public int globalWaitingCount(RemoteLockManager remote) {
+  public int waitingCount() {
     throw new AssertionError();
   }
 
@@ -42,7 +38,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     throw new AssertionError();
   }
 
-  public int localHoldCount(LockLevel level) {
+  public int holdCount(LockLevel level) {
     throw new AssertionError();
   }
 

@@ -111,15 +111,11 @@ public class WrappedClientLock implements ClientLock {
     return contexts;
   }
 
-  public int globalHoldCount(RemoteLockManager remote, LockLevel level) {
-    throw new AssertionError();
-  }
-
-  public int globalPendingCount(RemoteLockManager remote) {
+  public int pendingCount() {
     return wrappedLock.queueLength();
   }
 
-  public int globalWaitingCount(RemoteLockManager remote) {
+  public int waitingCount() {
     return wrappedLock.waitLength();
   }
 
@@ -131,8 +127,8 @@ public class WrappedClientLock implements ClientLock {
     return wrappedLock.isHeldBy(thread, LockLevel.toLegacyInt(level));
   }
 
-  public int localHoldCount(LockLevel level) {
-    return wrappedLock.localHeldCount(null, LockLevel.toLegacyInt(level));
+  public int holdCount(LockLevel level) {
+    return wrappedLock.localHeldCount(LockLevel.toLegacyInt(level));
   }
 
   public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
@@ -191,5 +187,5 @@ public class WrappedClientLock implements ClientLock {
 
   public boolean garbageCollect() {
     return false;
-  }
+  }  
 }

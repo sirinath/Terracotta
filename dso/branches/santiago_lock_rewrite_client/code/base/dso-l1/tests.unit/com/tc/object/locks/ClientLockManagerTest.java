@@ -428,148 +428,192 @@ public class ClientLockManagerTest extends TCTestCase {
     assertNull(queue.poll(1000l));
   }
 
-//  public void testNotified() throws Exception {
-//    final LockID lockID1 = new StringLockID("1");
-//    final LockID lockID2 = new StringLockID("2");
-//    final ThreadID tx1 = new ThreadID(1);
-//    final ThreadID tx2 = new ThreadID(2);
-//    final Set heldLocks = new HashSet();
-//    final Set waiters = new HashSet();
-//
-//    threadManager.setThreadID(tx1);
-//    heldLocks.add(new LockRequest(lockID1, tx1, ServerLockLevel.WRITE));
-//    lockManager.lock(lockID1, LockLevel.WRITE);
-//    assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
-//
-//    NoExceptionLinkedQueue barrier = new NoExceptionLinkedQueue();
-//    TimerSpec waitInvocation = new TimerSpec();
-//
-//    // In order to wait on a lock, we must first request and be granted the
-//    // write lock. The TestRemoteLockManager
-//    // takes care of awarding the lock when we ask for it.
-//    //
-//    // We don't add this lock request to the set of held locks because the
-//    // call to wait moves it to being not
-//    // held anymore.
-//    threadManager.setThreadID(tx2);
-//    lockManager.lock(lockID2, LockLevel.WRITE);
-//    assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
-//
-//    WaitLockRequest waitLockRequest = new WaitLockRequest(lockID2, tx2, ServerLockLevel.WRITE, waitInvocation);
-//    waiters.add(waitLockRequest);
-//    final LockWaiter waiterThread = new LockWaiter(barrier, waitLockRequest, new Object());
-//    waiterThread.start();
-//
-//    barrier.take();
-//    assertTrue(barrier.isEmpty());
-//    if (!waiterThread.exceptions.isEmpty()) {
-//      for (Iterator i = waiterThread.exceptions.iterator(); i.hasNext();) {
-//        ((Throwable) i.next()).printStackTrace();
-//      }
-//      fail("Waiter thread had exceptions!");
-//    }
-//
-//    Set s = new HashSet();
-//    lockManager.addAllHeldLocksTo(s, GroupID.NULL_ID);
-//    assertEquals(heldLocks, s);
-//
-//    s.clear();
-//    lockManager.addAllWaitersTo(s, GroupID.NULL_ID);
-//    assertEquals(waiters, s);
-//    s.clear();
-//
-//    lockManager.addAllPendingLockRequestsTo(s, GroupID.NULL_ID);
-//    assertTrue(s.size() == 0);
-//
-//    // Make sure there are no pending lock requests
-//    rmtLockManager.lockResponder = rmtLockManager.NULL_LOCK_RESPONDER;
-//    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
-//
-//    // now call notified() and make sure that the appropriate waits become
-//    // pending requests
-//    lockManager.notified(waitLockRequest.lockID(), waitLockRequest.threadID());
-//
-//    // The held locks should be the same
-//    s.clear();
-//    lockManager.addAllHeldLocksTo(s, GroupID.NULL_ID);
-//    assertEquals(heldLocks, s);
-//
-//    // the lock waits should be empty
-//    s.clear();
-//    lockManager.addAllWaitersTo(s, GroupID.NULL_ID);
-//    assertEquals(Collections.EMPTY_SET, s);
-//
-//    lockManager.addAllPendingLockRequestsTo(s, GroupID.NULL_ID);
-//    assertTrue(s.size() == 1);
-//    LockRequest lr = (LockRequest) s.iterator().next();
-//    assertNotNull(lr);
-//    assertEquals(waitLockRequest.lockID(), lr.lockID());
-//    assertEquals(waitLockRequest.threadID(), lr.threadID());
-//    assertTrue(waitLockRequest.lockLevel() == lr.lockLevel());
-//
-//    // now make sure that if you award the lock, the right stuff happens
-//    lockManager.award(gid, sessionManager.getSessionID(gid), waitLockRequest.lockID(), waitLockRequest.threadID(),
-//                          waitLockRequest.lockLevel());
-//    heldLocks.add(waitLockRequest);
-//
-//    // the held locks should contain the newly awarded, previously notified
-//    // lock.
-//    s.clear();
-//    lockManager.addAllHeldLocksTo(s, GroupID.NULL_ID);
-//    assertEquals(heldLocks, s);
-//
-//    // there should still be no waiters
-//    s.clear();
-//    lockManager.addAllWaitersTo(s, GroupID.NULL_ID);
-//    assertEquals(Collections.EMPTY_SET, s);
-//
-//    // the lock should have been awarded and no longer pending
-//    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
-//    lockManager.addAllPendingLockRequestsTo(null, GroupID.NULL_ID);
-//    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
-//  }
-//
-//  public void testAddAllOutstandingLocksTo() throws Exception {
-//
-//    // XXX: The current TestRemoteLockManager doesn't handle multiple
-//    // read-locks by different transactions properly,
-//    // so this test doesn't test that case.
-//    final LockID lockID = new StringLockID("my lock");
-//    final ThreadID tx1 = new ThreadID(1);
-//    final LockLevel writeLockLevel = LockLevel.WRITE;
-//
-//    final LockID readLock = new StringLockID("my read lock");
-//    final ThreadID tx2 = new ThreadID(2);
-//    final LockLevel readLockLevel = LockLevel.READ;
-//
-//    // final LockID synchWriteLock = new LockID("my synch write lock");
-//    // final ThreadID tx3 = new ThreadID(3);
-//    // final int synchWriteLockLevel = LockLevel.SYNCHRONOUS_WRITE;
-//
-//    Set lockRequests = new HashSet();
-//    lockRequests.add(new LockRequest(lockID, tx1, ServerLockLevel.WRITE));
-//    lockRequests.add(new LockRequest(readLock, tx2, ServerLockLevel.READ));
-//    // lockRequests.add(new LockRequest(synchWriteLock, tx3, synchWriteLockLevel));
-//
-//    threadManager.setThreadID(tx1);
-//    lockManager.lock(lockID, writeLockLevel);
-//    threadManager.setThreadID(tx2);
-//    lockManager.lock(readLock, readLockLevel);
-//    // lockManager.lock(synchWriteLock, tx3, synchWriteLockLevel);
-//
-//    Set s = new HashSet();
-//    lockManager.addAllHeldLocksTo(s, GroupID.NULL_ID);
-//    assertEquals(lockRequests.size(), s.size());
-//    assertEquals(lockRequests, s);
-//
-//    threadManager.setThreadID(tx1);
-//    lockManager.unlock(lockID, writeLockLevel);
-//    threadManager.setThreadID(tx2);
-//    lockManager.unlock(readLock, readLockLevel);
-//    // lockManager.unlock(synchWriteLock, tx3);
-//    assertEquals(0, lockManager.addAllHeldLocksTo(new HashSet(), GroupID.NULL_ID).size());
-//  }
-//
+  public void testNotified() throws Exception {
+    final LockID lockID1 = new StringLockID("1");
+    final LockID lockID2 = new StringLockID("2");
+    final ThreadID tx1 = new ThreadID(1);
+    final ThreadID tx2 = new ThreadID(2);
+
+    threadManager.setThreadID(tx1);
+    lockManager.lock(lockID1, LockLevel.WRITE);
+    assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
+
+    NoExceptionLinkedQueue barrier = new NoExceptionLinkedQueue();
+
+    // In order to wait on a lock, we must first request and be granted the
+    // write lock. The TestRemoteLockManager
+    // takes care of awarding the lock when we ask for it.
+    //
+    // We don't add this lock request to the set of held locks because the
+    // call to wait moves it to being not
+    // held anymore.
+    threadManager.setThreadID(tx2);
+    lockManager.lock(lockID2, LockLevel.WRITE);
+    assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
+
+    final LockWaiter waiterThread = new LockWaiter(barrier, lockID2, tx2, -1);
+    waiterThread.start();
+
+    barrier.take();
+    assertTrue(barrier.isEmpty());
+    if (!waiterThread.exceptions.isEmpty()) {
+      for (Iterator i = waiterThread.exceptions.iterator(); i.hasNext();) {
+        ((Throwable) i.next()).printStackTrace();
+      }
+      fail("Waiter thread had exceptions!");
+    }
+
+    for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
+      switch (cselc.getState()) {
+        case HOLDER_READ:
+        case HOLDER_WRITE:
+          Assert.assertEquals(lockID1, cselc.getLockID());
+          Assert.assertEquals(cselc.getThreadID(), tx1);
+          Assert.assertEquals(cselc.getState().getLockLevel(), ServerLockLevel.WRITE);
+          break;
+        case WAITER:
+          Assert.assertEquals(lockID2, cselc.getLockID());
+          Assert.assertEquals(tx2, cselc.getThreadID());
+          Assert.assertEquals(-1, cselc.timeout());
+          break;
+        case PENDING_READ:
+        case PENDING_WRITE:
+          Assert.fail();
+          break;
+        default:
+          break;
+          
+      }
+    }
+
+    // Make sure there are no pending lock requests
+    rmtLockManager.lockResponder = rmtLockManager.NULL_LOCK_RESPONDER;
+    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
+
+    // now call notified() and make sure that the appropriate waits become
+    // pending requests
+    lockManager.notified(lockID2, tx2);
+
+    for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
+      switch (cselc.getState()) {
+        case HOLDER_READ:
+        case HOLDER_WRITE:
+          Assert.assertEquals(lockID1, cselc.getLockID());
+          Assert.assertEquals(tx1, cselc.getThreadID());
+          Assert.assertEquals(ServerLockLevel.WRITE, cselc.getState().getLockLevel());
+          break;
+        case WAITER:
+          Assert.fail();
+          break;
+        case PENDING_READ:
+        case PENDING_WRITE:
+          Assert.assertEquals(lockID2, cselc.getLockID());
+          Assert.assertEquals(tx2, cselc.getThreadID());
+          Assert.assertEquals(ServerLockLevel.WRITE, cselc.getState().getLockLevel());
+          break;
+        default:
+          break;          
+      }
+    }
+
+    // now make sure that if you award the lock, the right stuff happens
+    lockManager.award(gid, sessionManager.getSessionID(gid), lockID2, tx2, ServerLockLevel.WRITE);
+
+    for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
+      switch (cselc.getState()) {
+        case HOLDER_READ:
+        case HOLDER_WRITE:
+          LockID lid = cselc.getLockID();
+          if (lockID1.equals(lid)) {
+            Assert.assertEquals(lockID1, cselc.getLockID());
+            Assert.assertEquals(tx1, cselc.getThreadID());
+            Assert.assertEquals(ServerLockLevel.WRITE, cselc.getState().getLockLevel());
+          } else if (lockID2.equals(lid)) {
+            Assert.assertEquals(lockID2, cselc.getLockID());
+            Assert.assertEquals(tx2, cselc.getThreadID());
+            Assert.assertEquals(ServerLockLevel.WRITE, cselc.getState().getLockLevel());
+          } else {
+            Assert.fail();
+          }
+          break;
+        case WAITER:
+          Assert.fail();
+          break;
+        case PENDING_READ:
+        case PENDING_WRITE:
+          Assert.fail();
+          break;
+        default:
+          break;          
+      }
+    }
+    
+    // the lock should have been awarded and no longer pending
+    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
+  }
+
+  public void testAddAllOutstandingLocksTo() throws Exception {
+
+    // XXX: The current TestRemoteLockManager doesn't handle multiple
+    // read-locks by different transactions properly,
+    // so this test doesn't test that case.
+    final LockID lockID = new StringLockID("my lock");
+    final ThreadID tx1 = new ThreadID(1);
+    final LockLevel writeLockLevel = LockLevel.WRITE;
+
+    final LockID readLock = new StringLockID("my read lock");
+    final ThreadID tx2 = new ThreadID(2);
+    final LockLevel readLockLevel = LockLevel.READ;
+
+    // final LockID synchWriteLock = new LockID("my synch write lock");
+    // final ThreadID tx3 = new ThreadID(3);
+    // final int synchWriteLockLevel = LockLevel.SYNCHRONOUS_WRITE;
+
+    threadManager.setThreadID(tx1);
+    lockManager.lock(lockID, writeLockLevel);
+    threadManager.setThreadID(tx2);
+    lockManager.lock(readLock, readLockLevel);
+    // lockManager.lock(synchWriteLock, tx3, synchWriteLockLevel);
+
+    for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
+      switch (cselc.getState()) {
+        case HOLDER_READ:
+        case HOLDER_WRITE:
+          LockID lid = cselc.getLockID();
+          if (lockID.equals(lid)) {
+            Assert.assertEquals(lockID, cselc.getLockID());
+            Assert.assertEquals(tx1, cselc.getThreadID());
+            Assert.assertEquals(ServerLockLevel.WRITE, cselc.getState().getLockLevel());
+          } else if (readLock.equals(lid)) {
+            Assert.assertEquals(readLock, cselc.getLockID());
+            Assert.assertEquals(tx2, cselc.getThreadID());
+            Assert.assertEquals(ServerLockLevel.READ, cselc.getState().getLockLevel());
+          } else {
+            Assert.fail();
+          }
+          break;
+        default:
+          break;          
+      }
+    }
+
+    threadManager.setThreadID(tx1);
+    lockManager.unlock(lockID, writeLockLevel);
+    threadManager.setThreadID(tx2);
+    lockManager.unlock(readLock, readLockLevel);
+    // lockManager.unlock(synchWriteLock, tx3);
+    for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
+      switch (cselc.getState()) {
+        case HOLDER_READ:
+        case HOLDER_WRITE:
+          Assert.fail();
+          break;
+        default:
+          break;          
+      }
+    }
+  }
+
 //  public void testAddAllOutstandingWaitersTo() throws Exception {
 //
 //    final LockInfoDumpHandler lockInfoDumpHandler = new LockInfoDumpHandler() {

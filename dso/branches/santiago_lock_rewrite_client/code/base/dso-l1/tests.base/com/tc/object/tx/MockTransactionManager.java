@@ -172,6 +172,10 @@ public class MockTransactionManager implements ClientTransactionManager {
     return (txnStack != null) && (((ThreadTransactionLoggingStack) txnStack).get() > 0);
   }
 
+  public boolean isObjectCreationInProgress() {
+    return false;
+  }
+  
   public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
     throw new ImplementMe();
   }

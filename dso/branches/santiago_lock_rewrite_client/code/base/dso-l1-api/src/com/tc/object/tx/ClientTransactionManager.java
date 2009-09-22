@@ -167,6 +167,11 @@ public interface ClientTransactionManager extends DumpHandler, PrettyPrintable {
   public boolean isTransactionLoggingDisabled();
 
   /**
+   * Check whether object creation is in progress
+   */
+  public boolean isObjectCreationInProgress();
+  
+  /**
    * Record an array change in the current transaction
    * 
    * @param src The TCObject for the array

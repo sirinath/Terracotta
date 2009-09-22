@@ -1220,13 +1220,14 @@ public class ClientLock implements TimerCallback, LockFlushCallback {
     return count;
   }
 
-  public int localHeldCount(ThreadID threadID, int lockLevel) {
-    LockHold holder;
+  public int localHeldCount(int lockLevel) {
+    int holdCount = 0;
     synchronized (holders) {
-      holder = holders.get(threadID);
+      for (LockHold holder : holders.values()) {
+        holdCount += holder.heldCount(lockLevel);
+      }
     }
-    if (holder == null) return 0;
-    else return holder.heldCount(lockLevel);
+    return holdCount;
   }
 
   public synchronized int queueLength() {

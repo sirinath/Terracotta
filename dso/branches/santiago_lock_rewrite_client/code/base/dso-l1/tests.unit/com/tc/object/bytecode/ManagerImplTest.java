@@ -85,10 +85,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public LockID generateLockIdentifier(Object obj, long fieldOffset) {
-      throw new ImplementMe();
-    }
-
     public int globalHoldCount(LockID lock, LockLevel level) {
       throw new ImplementMe();
     }
