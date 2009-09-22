@@ -602,7 +602,7 @@ public class ManagerUtil {
   public static boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000000);
   }
 
   /**

@@ -34,6 +34,7 @@ import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.DsoLockID;
+import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.StringLockID;
@@ -278,7 +279,7 @@ public class ManagerImpl implements Manager {
 
   public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
                                            final Object[] params) {
-    LockID lock = generateLockIdentifier(object);
+    LockID lock = generateLockIdentifier(lockObject);
     lock(lock, LockLevel.WRITE);
     try {
       logicalInvoke(object, methodName, params);
@@ -684,11 +685,7 @@ public class ManagerImpl implements Manager {
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    throw new AssertionError();
-  }
-
-  public LockID generateLockIdentifier(Object obj, long fieldOffset) {
-    throw new AssertionError();
+    return new DsoVolatileLockID(obj, field);
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {
@@ -722,7 +719,9 @@ public class ManagerImpl implements Manager {
   }
 
   public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
-    lockManager.lockInterruptibly(lock, level);
+    if (lock.isClustered()) {
+      lockManager.lockInterruptibly(lock, level);
+    }
   }
 
   public void notify(LockID lock) {

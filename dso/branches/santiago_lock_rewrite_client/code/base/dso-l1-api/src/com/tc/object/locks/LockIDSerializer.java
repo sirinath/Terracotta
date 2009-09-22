@@ -41,6 +41,8 @@ public class LockIDSerializer implements TCSerializable {
           return new StringLockID();
         case DSO:
           return new DsoLockID();
+        case DSO_VOLATILE:
+          return new DsoVolatileLockID();
       }
     } catch (ArrayIndexOutOfBoundsException e) {
       // stupid javac can't cope with the assertion throw being here...

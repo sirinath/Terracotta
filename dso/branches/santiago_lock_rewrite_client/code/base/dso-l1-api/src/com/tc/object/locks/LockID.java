@@ -8,7 +8,7 @@ import com.tc.io.TCSerializable;
 import java.io.Serializable;
 
 public interface LockID extends TCSerializable, Serializable {
-  static enum LockIDType {STRING, LONG, DSO;}
+  static enum LockIDType {STRING, LONG, DSO, DSO_VOLATILE;}
 
   public LockIDType getLockType();
   

@@ -235,14 +235,15 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
    * weird situations where reentrantLock is mixed with synchronized block will the TransactionContext to be removed be
    * found otherwise.
    */
-  public void commit(final LockID lock) throws UnlockedSharedObjectException {
+  public void commit(LockID lock) throws UnlockedSharedObjectException {
     logCommit0();
     if (isTransactionLoggingDisabled() || this.objectManager.isCreationInProgress()) { return; }
 
-    ClientTransaction tx = getTransaction();
-//    if (lockID == null || lockID.isNull()) {
-//      lockID = tx.getLockID();
-//    }
+    ClientTransaction tx = getTransactionOrNull();
+    if (lock == null || lock.isNull()) {
+      lock = tx.getLockID();
+    }
+    
     boolean hasCommitted = commit(lock, tx, false);
 
     popTransaction(lock);
@@ -696,6 +697,10 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   public boolean isTransactionLoggingDisabled() {
     Object txnStack = this.txnLogging.get();
     return (txnStack != null) && (((ThreadTransactionLoggingStack) txnStack).get() > 0);
+  }
+  
+  public boolean isObjectCreationInProgress() {
+    return objectManager.isCreationInProgress();
   }
 
   public static class ThreadTransactionLoggingStack {

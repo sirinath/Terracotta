@@ -14,6 +14,7 @@ import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.DsoLockID;
+import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.StringLockID;
@@ -228,11 +229,7 @@ public final class NullManager implements Manager {
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    throw new UnsupportedOperationException();
-  }
-
-  public LockID generateLockIdentifier(Object obj, long fieldOffset) {
-    throw new UnsupportedOperationException();
+    return new DsoVolatileLockID(obj, field);
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {

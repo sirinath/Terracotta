@@ -141,9 +141,6 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   public LockID generateLockIdentifier(Object obj, String field) {
     throw new AssertionError();
   }
-  public LockID generateLockIdentifier(Object obj, long fieldOffset) {
-    throw new AssertionError();
-  }
 
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
     getClientLockManagerFor((GroupID) remoteNode).initializeHandshake(thisNode, remoteNode, handshakeMessage);

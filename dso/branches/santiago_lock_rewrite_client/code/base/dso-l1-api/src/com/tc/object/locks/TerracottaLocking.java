@@ -29,5 +29,4 @@ public interface TerracottaLocking {
   public LockID generateLockIdentifier(String str);
   public LockID generateLockIdentifier(Object obj);
   public LockID generateLockIdentifier(Object obj, String field);
-  public LockID generateLockIdentifier(Object obj, long fieldOffset);  
 }

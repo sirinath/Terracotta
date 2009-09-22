@@ -24,10 +24,9 @@ public interface ClientLock {
   public boolean isLocked(LockLevel level);
   public boolean isLockedBy(ThreadID thread, LockLevel level);
 
-  public int localHoldCount(LockLevel level);
-  public int globalHoldCount(RemoteLockManager remote, LockLevel level);
-  public int globalPendingCount(RemoteLockManager remote);
-  public int globalWaitingCount(RemoteLockManager remote);
+  public int holdCount(LockLevel level);
+  public int pendingCount();
+  public int waitingCount();
 
   public void notified(ThreadID thread);
   public void recall(ServerLockLevel interest, int lease);

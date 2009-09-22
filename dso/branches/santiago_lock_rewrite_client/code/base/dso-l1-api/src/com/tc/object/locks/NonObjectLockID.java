@@ -10,7 +10,7 @@ public abstract class NonObjectLockID implements LockID {
   /** Indicates no lock identifier */
   public final static ConcurrentMap<NonObjectLockID, Object> JAVA_OBJECTS = new ConcurrentHashMap<NonObjectLockID, Object>();
 
-  public final boolean isClustered() {
+  public boolean isClustered() {
     return true;
   }
 
