@@ -56,7 +56,8 @@ public class ServerLockContextStateMachine {
 
   private State moveToGreedy(State oldState) {
     Assert.assertNotNull(oldState);
-    Assert.assertTrue(oldState.getType() == Type.PENDING || oldState.getType() == Type.TRY_PENDING);
+    Assert.assertTrue(oldState.getType() == Type.PENDING || oldState.getType() == Type.TRY_PENDING
+                      || oldState.getType() == Type.WAITER);
     switch (oldState.getLockLevel()) {
       case READ:
         return State.GREEDY_HOLDER_READ;
@@ -70,7 +71,8 @@ public class ServerLockContextStateMachine {
 
   private State moveToHolder(State oldState) {
     Assert.assertNotNull(oldState);
-    Assert.assertTrue(oldState.getType() == Type.PENDING || oldState.getType() == Type.TRY_PENDING);
+    Assert.assertTrue(oldState.getType() == Type.PENDING || oldState.getType() == Type.TRY_PENDING
+                      || oldState.getType() == Type.WAITER);
     switch (oldState.getLockLevel()) {
       case READ:
         return State.HOLDER_READ;

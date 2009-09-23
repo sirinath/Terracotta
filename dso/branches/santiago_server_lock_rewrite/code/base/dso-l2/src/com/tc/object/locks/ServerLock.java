@@ -217,8 +217,12 @@ public final class ServerLock extends AbstractLock {
     // list as well
     contexts.add(request);
 
+    ArrayList<ClientID> listOfClients = new ArrayList<ClientID>();
     for (ServerLockContext context : contexts) {
-      awardLockGreedily(helper, context);
+      if (!listOfClients.contains(context.getClientID())) {
+        awardLockGreedily(helper, context);
+        listOfClients.add(context.getClientID());
+      }
     }
 
     if (hasPendingWrite) {
