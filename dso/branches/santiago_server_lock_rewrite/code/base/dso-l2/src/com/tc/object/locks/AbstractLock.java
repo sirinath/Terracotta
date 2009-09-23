@@ -67,23 +67,21 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     ServerLockContext holder = getPotentialNotifyHolders(cid, tid);
     validateWaitNotifyState(cid, tid, holder);
 
-    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
-    while (iter.hasNext()) {
-      ServerLockContext context = iter.next();
-      if (context.isWaiter()) {
-        ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, context.getClientID(),
-                                                                                    context.getThreadID(), State.WAITER);
-        addNotifiedWaitersTo.addNotification(cselc);
-        iter.remove();
-        switch (action) {
-          case ALL:
-            changeWaiterToPending(context, helper);
-            break;
-          case ONE:
-            changeWaiterToPending(context, helper);
-            return;
-        }
+    List<ServerLockContext> waiters = removeWaiters(action);
+    for (ServerLockContext waiter : waiters) {
+      Assert.assertTrue(waiter.getState() == State.WAITER);
+      switch (action) {
+        case ALL:
+          changeWaiterToPending(waiter, helper);
+          break;
+        case ONE:
+          Assert.assertEquals(1, waiters.size());
+          changeWaiterToPending(waiter, helper);
+          break;
       }
+      ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, waiter.getClientID(), waiter
+          .getThreadID(), State.WAITER);
+      addNotifiedWaitersTo.addNotification(cselc);
     }
   }
 
@@ -738,5 +736,22 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       if (temp.getClientID().equals(cid) && temp.getThreadID().equals(tid)) { return temp; }
     }
     return null;
+  }
+
+  private List<ServerLockContext> removeWaiters(NotifyAction action) {
+    List<ServerLockContext> contexts = new ArrayList<ServerLockContext>();
+    SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
+    while (iterator.hasNext()) {
+      ServerLockContext context = iterator.next();
+      switch (context.getState().getType()) {
+        case WAITER:
+          iterator.remove();
+          contexts.add(context);
+          if (action == NotifyAction.ONE) { return contexts; }
+          break;
+        default:
+      }
+    }
+    return contexts;
   }
 }
