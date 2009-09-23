@@ -7,8 +7,6 @@ package com.tc.objectserver.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.async.api.Sink;
-import com.tc.async.impl.NullSink;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
@@ -26,9 +24,7 @@ import java.util.Collection;
  * @author steve
  */
 public class RequestLockUnLockHandler extends AbstractEventHandler {
-  public static final Sink NULL_SINK = new NullSink();
-
-  private LockManager      lockManager;
+  private LockManager lockManager;
 
   public void handleEvent(EventContext context) {
     LockRequestMessage lrm = (LockRequestMessage) context;
@@ -61,7 +57,6 @@ public class RequestLockUnLockHandler extends AbstractEventHandler {
         lockManager.interrupt(lid, (ClientID) cid, tid);
         return;
     }
-    throw new AssertionError("Unknown lock request message: " + lrm);
   }
 
   public void initialize(ConfigurationContext context) {

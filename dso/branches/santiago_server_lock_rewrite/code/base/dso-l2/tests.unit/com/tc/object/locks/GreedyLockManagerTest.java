@@ -137,7 +137,7 @@ public class GreedyLockManagerTest extends TestCase {
     // validateBean1(bean1, start);
     // validateBean2(bean2, start);
     // validateBean3(bean3, start, wait);
-    
+
     System.out.println("Lock Count = " + lockManager.getLockCount());
 
     lockManager.clearAllLocksFor(cid1);
@@ -242,6 +242,28 @@ public class GreedyLockManagerTest extends TestCase {
       ArrayList<ClientServerExchangeLockContext> lockContexts = new ArrayList<ClientServerExchangeLockContext>();
       lockContexts.add(new ClientServerExchangeLockContext(lockID1, cid1, tx2, State.HOLDER_WRITE));
       lockManager.reestablishState(cid1, lockContexts);
+    } finally {
+      lockManager = null;
+      resetLockManager();
+    }
+  }
+
+  public void testWaitTimeoutsIgnoredDuringStartup() throws Exception {
+    LockID lockID = new StringLockID("my lcok");
+    ClientID cid1 = new ClientID(1);
+    ThreadID tx1 = new ThreadID(1);
+    try {
+      long waitTime = 1000;
+      ArrayList<ClientServerExchangeLockContext> lockContexts = new ArrayList<ClientServerExchangeLockContext>();
+      lockContexts.add(new ClientServerExchangeLockContext(lockID, cid1, tx1, State.WAITER, waitTime));
+      lockManager.reestablishState(cid1, lockContexts);
+
+      LockResponseContext ctxt = (LockResponseContext) sink.waitForAdd(waitTime * 2);
+      assertNull(ctxt);
+
+      lockManager.start();
+      ctxt = (LockResponseContext) sink.waitForAdd(0);
+      assertNotNull(ctxt);
     } finally {
       lockManager = null;
       resetLockManager();

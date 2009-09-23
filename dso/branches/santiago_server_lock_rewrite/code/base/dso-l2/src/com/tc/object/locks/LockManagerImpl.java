@@ -160,11 +160,11 @@ public class LockManagerImpl implements LockManager {
     for (ClientServerExchangeLockContext cselc : serverLockContexts) {
       LockID lid = cselc.getLockID();
 
-      Lock lock = lockStore.checkOut(lid);
       switch (cselc.getState().getType()) {
         case GREEDY_HOLDER:
         case HOLDER:
         case WAITER:
+          Lock lock = lockStore.checkOut(lid);
           try {
             lock.reestablishState(cselc, lockHelper);
           } finally {
@@ -172,14 +172,12 @@ public class LockManagerImpl implements LockManager {
           }
           break;
         case PENDING:
-          lockStore.checkIn(lock);
           lock(lid, (ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState().getLockLevel());
-          return;
+          break;
         case TRY_PENDING:
-          lockStore.checkIn(lock);
           tryLock(lid, (ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState().getLockLevel(), cselc
               .timeout());
-          return;
+          break;
       }
     }
   }

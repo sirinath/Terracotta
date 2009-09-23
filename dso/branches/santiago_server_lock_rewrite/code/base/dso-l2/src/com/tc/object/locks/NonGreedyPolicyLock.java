@@ -61,7 +61,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
 
   @Override
   protected void awardAllReads(LockHelper helper, ServerLockContext request) {
-    List<ServerLockContext> contexts = getAllPendingReadRequests(helper);
+    List<ServerLockContext> contexts = removeAllPendingReadRequests(helper);
     contexts.add(request);
 
     for (ServerLockContext context : contexts) {
@@ -100,7 +100,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
     // remove current hold
-    ServerLockContext context = remove(cid, tid, helper);
+    ServerLockContext context = remove(cid, tid);
     recordLockReleaseStat(cid, tid, helper);
     
     Assert.assertNotNull(context);

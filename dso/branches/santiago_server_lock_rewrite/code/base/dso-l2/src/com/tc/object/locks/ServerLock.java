@@ -112,7 +112,7 @@ public final class ServerLock extends AbstractLock {
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
     // remove current hold
-    ServerLockContext context = remove(cid, tid, helper);
+    ServerLockContext context = remove(cid, tid);
     recordLockReleaseStat(cid, tid, helper);
 
     Assert.assertNotNull(context);
@@ -242,7 +242,7 @@ public final class ServerLock extends AbstractLock {
 
   public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
                            LockHelper helper) {
-    ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID, helper);
+    ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID);
     Assert.assertNotNull(greedyHolder);
 
     recordLockReleaseStat(cid, ThreadID.VM_ID, helper);
@@ -324,14 +324,19 @@ public final class ServerLock extends AbstractLock {
       switch (next.getState().getType()) {
         case GREEDY_HOLDER:
           break;
-        case PENDING:
         case TRY_PENDING:
+          if (cid.equals(next.getClientID())) {
+            cancelTryLockOrWaitTimer(next, helper);
+            iterator.remove();
+          }
+          break;
+        case PENDING:
         case HOLDER:
           if (cid.equals(next.getClientID())) {
             iterator.remove();
           }
           break;
-        default:
+        case WAITER:
           return;
       }
     }
@@ -346,7 +351,7 @@ public final class ServerLock extends AbstractLock {
   }
 
   private boolean hasGreedyHolders() {
-    if(!isEmpty() && getFirst().isGreedyHolder()) return true;
+    if (!isEmpty() && getFirst().isGreedyHolder()) return true;
     return false;
   }
 

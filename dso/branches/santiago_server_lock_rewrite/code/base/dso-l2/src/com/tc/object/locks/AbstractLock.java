@@ -53,7 +53,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   public void interrupt(ClientID cid, ThreadID tid, LockHelper helper) {
     // check if waiters are present
-    ServerLockContext waiter = remove(cid, tid, helper);
+    ServerLockContext waiter = remove(cid, tid);
     if (waiter == null) {
       logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
       return;
@@ -119,17 +119,21 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     ServerLockContext context = (ServerLockContext) callbackObject;
     LockHelper helper = ((WaitServerLockContext) callbackObject).getLockHelper();
 
-    // Ignore
-    if(helper.getContextStateMachine().isStopped()) {
-      return;
-    }
-    
+    if (helper.getContextStateMachine().isStopped()) { return; }
+
     LockStore store = helper.getLockStore();
     store.checkOut(lockID);
 
+    // Ignore contexts for which time out could not be canceled
+    context = get(context.getClientID(), context.getThreadID());
+    if (context == null
+        || (context.getState().getType() != Type.TRY_PENDING && context.getState().getType() != Type.WAITER)) {
+      store.checkIn(this);
+      return;
+    }
+
     // Remove from pending requests
-    context = remove(context.getClientID(), context.getThreadID(), helper);
-    Assert.assertTrue(context.getState().getType() == Type.TRY_PENDING || context.getState() == State.WAITER);
+    context = remove(context.getClientID(), context.getThreadID());
 
     if (context.isWaiter()) {
       waitTimeout(context, helper);
@@ -142,7 +146,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   // 
   private void tryLockTimeout(ServerLockContext context, LockHelper helper) {
-    Assert.assertTrue(context.getState().getType() == Type.PENDING);
+    Assert.assertTrue(context.getState().getType() == Type.TRY_PENDING);
     cannotAward(context.getClientID(), context.getThreadID(), context.getState().getLockLevel(), helper);
   }
 
@@ -152,7 +156,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     LockResponseContext lrc = LockResponseContextFactory.createLockWaitTimeoutResponseContext(this.lockID, context
         .getClientID(), context.getThreadID(), context.getState().getLockLevel());
     helper.getLockSink().add(lrc);
-    lock(context.getClientID(), context.getThreadID(), context.getState().getLockLevel(), helper);
+    lock(context.getClientID(), context.getThreadID(), ServerLockLevel.WRITE, helper);
   }
 
   protected ServerLockContext createWaiterAndScheduleTask(ClientServerExchangeLockContext cselc, LockHelper helper) {
@@ -181,7 +185,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper)
       throws TCIllegalMonitorStateException {
-    ServerLockContext holder = remove(cid, tid, helper);
+    ServerLockContext holder = remove(cid, tid);
     validateWaitNotifyState(cid, tid, holder);
 
     recordLockReleaseStat(cid, tid, helper);
@@ -262,13 +266,13 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       ServerLockContext context = iter.next();
       if (context.getClientID().equals(cid)) {
         iter.remove();
-      }
-      switch (context.getState().getType()) {
-        case WAITER:
-        case TRY_PENDING:
-          ((WaitServerLockContext) context).getTimerTask().cancel();
-          break;
-        default:
+        switch (context.getState().getType()) {
+          case WAITER:
+          case TRY_PENDING:
+            ((WaitServerLockContext) context).getTimerTask().cancel();
+            break;
+          default:
+        }
       }
     }
   }
@@ -453,14 +457,14 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected ServerLockContext getNextRequestIfCanAward(LockHelper helper) {
     // Fetch the next pending context
-    SinglyLinkedListIterator<ServerLockContext> contexts = iterator();
-    while (contexts.hasNext()) {
-      ServerLockContext request = contexts.next();
+    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
+    while (iter.hasNext()) {
+      ServerLockContext request = iter.next();
       switch (request.getState().getType()) {
         case PENDING:
         case TRY_PENDING:
           if (canAwardRequest(request.getState().getLockLevel())) {
-            contexts.remove();
+            iter.remove();
             return request;
           }
           return null;
@@ -475,12 +479,6 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   // Contexts methods
   protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
     Assert.assertTrue(state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER);
-    return changeStateToHolderOrPending(request, state, helper);
-  }
-
-  protected ServerLockContext changeStateToPending(ServerLockContext request, State state, LockHelper helper) {
-    Assert.assertTrue(request.getState() == State.WAITER);
-    Assert.assertTrue(state.getType() == Type.PENDING);
     return changeStateToHolderOrPending(request, state, helper);
   }
 
@@ -631,7 +629,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected List<ServerLockContext> getAllPendingReadRequests(LockHelper helper) {
+  protected List<ServerLockContext> removeAllPendingReadRequests(LockHelper helper) {
     List<ServerLockContext> requests = new ArrayList<ServerLockContext>();
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
     while (iterator.hasNext()) {
@@ -719,7 +717,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected ServerLockContext remove(ClientID cid, ThreadID tid, LockHelper helper) {
+  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
     ServerLockContext temp = null;
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {

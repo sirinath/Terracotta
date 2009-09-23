@@ -13,7 +13,7 @@ public class LockFactoryImpl implements LockFactory {
   private final LockFactory    factory;
 
   public LockFactoryImpl() {
-    // if(false) {
+    // if (false) {
     if (LOCK_LEASE_ENABLE) {
       factory = new GreedyLockFactory();
     } else {
