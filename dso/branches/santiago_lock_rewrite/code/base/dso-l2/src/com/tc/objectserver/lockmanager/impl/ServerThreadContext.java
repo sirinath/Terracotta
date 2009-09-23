@@ -6,7 +6,7 @@ package com.tc.objectserver.lockmanager.impl;
 
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ServerThreadID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 import com.tc.util.Assert;
 
 class ServerThreadContext implements TimerKey {

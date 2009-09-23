@@ -57,9 +57,9 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
 
   private List                   changes               = new LinkedList();
   private final List             dmis                  = new LinkedList();
-  private final Collection       notifies              = new LinkedList();
+  private final Collection<LockContext> notifies              = new LinkedList();
   private final Map              newRoots              = new HashMap();
-  private List                   lockIDs;
+  private List<LockID>           lockIDs;
 
   private long                   changeID;
   private TransactionID          transactionID;
@@ -134,7 +134,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
         this.lockIDs.add(getLockIDValue());
         return true;
       case NOTIFIED:
-        this.notifies.add(this.getObject(new LockContext()));
+        this.notifies.add((LockContext) this.getObject(new LockContext()));
         return true;
       case CHANGE_ID:
         this.changeID = getLongValue();
@@ -166,7 +166,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
 
   public void initialize(final List chges, final ObjectStringSerializer aSerializer, final LockID[] lids, final long cid, final TransactionID txID,
                          final NodeID client, final GlobalTransactionID gtx, final TxnType txnType,
-                         final GlobalTransactionID lowGlobalTransactionIDWatermark, final Collection theNotifies, final Map roots,
+                         final GlobalTransactionID lowGlobalTransactionIDWatermark, final Collection<LockContext> theNotifies, final Map roots,
                          final DmiDescriptor[] dmiDescs) {
     Assert.eval(lids.length > 0);
     Assert.assertNotNull(txnType);

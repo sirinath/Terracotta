@@ -8,9 +8,9 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.management.lock.stats.LockStatisticsMessage;
-import com.tc.net.NodeID;
+//import com.tc.net.NodeID;
 import com.tc.object.ClientConfigurationContext;
-import com.tc.object.lockmanager.api.ClientLockManager;
+import com.tc.object.locks.ClientLockManager;
 
 public class LockStatisticsEnableDisableHandler extends AbstractEventHandler {
   // private static final TCLogger logger = TCLogging.getLogger(LockStatisticsEnableDisableHandler.class);
@@ -20,12 +20,12 @@ public class LockStatisticsEnableDisableHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) {
     LockStatisticsMessage msg = (LockStatisticsMessage) context;
     if (msg.isLockStatsEnable()) {
-      clientLockManager.setLockStatisticsConfig(msg.getTraceDepth(), msg.getGatherInterval());
+      //clientLockManager.setLockStatisticsConfig(msg.getTraceDepth(), msg.getGatherInterval());
     } else if (msg.isLockStatsDisable()) {
-      clientLockManager.setLockStatisticsEnabled(false);
+      //clientLockManager.setLockStatisticsEnabled(false);
     } else if (msg.isGatherLockStatistics()) {
-      NodeID nodeID = msg.getSourceNodeID();
-      clientLockManager.requestLockSpecs(nodeID);
+      //NodeID nodeID = msg.getSourceNodeID();
+      //clientLockManager.requestLockSpecs(nodeID);
     } else {
       throw new AssertionError("Invalid tasks type from Lock Statistics Message.");
     }

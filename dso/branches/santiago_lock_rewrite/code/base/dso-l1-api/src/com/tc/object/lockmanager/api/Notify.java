@@ -11,6 +11,7 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
+import com.tc.object.locks.ThreadID;
 
 import java.io.IOException;
 

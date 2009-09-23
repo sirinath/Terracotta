@@ -6,9 +6,9 @@ package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 
 import java.util.HashSet;
 import java.util.Set;

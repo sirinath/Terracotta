@@ -10,25 +10,16 @@ import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
-import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.GlobalLockInfo;
-import com.tc.object.lockmanager.impl.GlobalLockStateInfo;
-import com.tc.object.locks.ClientServerExchangeLockContext;
-import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * @author steve
  */
 public class LockResponseHandler extends AbstractEventHandler {
   private static final TCLogger logger = TCLogging.getLogger(LockResponseHandler.class);
-  private ClientLockManager     lockManager;
+  private com.tc.object.locks.ClientLockManager     lockManager;
   private final SessionManager  sessionManager;
 
   public LockResponseHandler(SessionManager sessionManager) {
@@ -45,64 +36,27 @@ public class LockResponseHandler extends AbstractEventHandler {
 
     switch (msg.getResponseType()) {
       case AWARD:
-        lockManager.awardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(),
-                              getLevelFromMessage(msg));
+        lockManager.award(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
         return;
       case RECALL:
-        lockManager.recall(msg.getLockID(), msg.getThreadID(), getLevelFromMessage(msg), 0);
+        lockManager.recall(msg.getLockID(), msg.getLockLevel(), -1);
         return;
       case RECALL_WITH_TIMEOUT:
-        lockManager.recall(msg.getLockID(), msg.getThreadID(), getLevelFromMessage(msg), msg.getAwardLeaseTime());
+        lockManager.recall(msg.getLockID(), msg.getLockLevel(), msg.getAwardLeaseTime());
         return;
       case REFUSE:
-        lockManager.cannotAwardLock(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(),
-                                    getLevelFromMessage(msg));
+        lockManager.refuse(msg.getSourceNodeID(), msg.getLocalSessionID(), msg.getLockID(), msg.getThreadID(), msg.getLockLevel());
         return;
       case WAIT_TIMEOUT:
-        lockManager.waitTimedOut(msg.getLockID(), msg.getThreadID());
+        lockManager.notified(msg.getLockID(), msg.getThreadID());
         return;
       case INFO:
-        lockManager.queryLockCommit(msg.getThreadID(), getGliFromMessage(msg));
+        lockManager.info(msg.getThreadID(), msg.getContexts());
         return;
     }
     logger.error("Unknown lock response message: " + msg);
   }
 
-  private int getLevelFromMessage(final LockResponseMessage msg) {
-    int level;
-    level = ServerLockLevel.toLegacyInt(msg.getLockLevel());
-    if (msg.getThreadID().equals(ThreadID.VM_ID)) {
-      level = com.tc.object.lockmanager.api.LockLevel.makeGreedy(level);
-    }
-    return level;
-  }
-
-  private GlobalLockInfo getGliFromMessage(LockResponseMessage msg) {
-    Collection<GlobalLockStateInfo> greedyHolders = new ArrayList<GlobalLockStateInfo>();
-    Collection<GlobalLockStateInfo> holders = new ArrayList<GlobalLockStateInfo>();
-    Collection<GlobalLockStateInfo> waiters = new ArrayList<GlobalLockStateInfo>();
-    int queueLength = 0;
-    
-    for (ClientServerExchangeLockContext cselc : msg.getContexts()) {
-      switch (cselc.getState().getType()) {
-        case GREEDY_HOLDER:
-          greedyHolders.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
-          break;
-        case HOLDER:
-          holders.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
-          break;
-        case WAITER:
-          waiters.add(new GlobalLockStateInfo(cselc.getLockID(), cselc.getNodeID(), cselc.getThreadID(), -1L, ServerLockLevel.toLegacyInt(cselc.getState().getLockLevel())));
-          break;
-        case PENDING:
-        case TRY_PENDING:
-          queueLength++;
-      }
-    }
-    
-    return new GlobalLockInfo(msg.getLockID(), getLevelFromMessage(msg), queueLength, greedyHolders, holders, waiters);
-  }
-  
   public void initialize(ConfigurationContext context) {
     super.initialize(context);
     ClientConfigurationContext ccc = (ClientConfigurationContext) context;

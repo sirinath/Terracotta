@@ -9,8 +9,8 @@ import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.text.PrettyPrinter;
 

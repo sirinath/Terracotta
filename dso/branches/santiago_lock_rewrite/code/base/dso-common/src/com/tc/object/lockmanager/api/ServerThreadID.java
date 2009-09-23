@@ -6,6 +6,7 @@ package com.tc.object.lockmanager.api;
 
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
+import com.tc.object.locks.ThreadID;
 
 public class ServerThreadID {
   public static final ServerThreadID NULL_ID = new ServerThreadID(ClientID.NULL_ID, ThreadID.NULL_ID);

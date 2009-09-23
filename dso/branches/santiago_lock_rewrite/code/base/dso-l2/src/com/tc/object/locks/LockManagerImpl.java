@@ -8,7 +8,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.Lock.NotifyAction;
 import com.tc.object.locks.LockStore.LockIterator;
 import com.tc.object.net.DSOChannelManager;

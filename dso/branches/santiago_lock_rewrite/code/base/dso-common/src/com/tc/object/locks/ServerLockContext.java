@@ -4,7 +4,6 @@
 package com.tc.object.locks;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.util.SinglyLinkedList.LinkedNode;
 
 public abstract class ServerLockContext implements LinkedNode<ServerLockContext> {
