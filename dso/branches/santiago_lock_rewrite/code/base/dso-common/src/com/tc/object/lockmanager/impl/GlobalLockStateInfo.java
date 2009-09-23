@@ -9,9 +9,9 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
+import com.tc.object.locks.ThreadID;
 
 import java.io.IOException;
 

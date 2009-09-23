@@ -10,19 +10,16 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.async.impl.MockStage;
 import com.tc.async.impl.TestClientConfigurationContext;
-import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
-import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.TCStackTraceElement;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.net.OrderedGroupIDs;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestMessageChannel;
@@ -30,15 +27,14 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.TestClientGlobalTransactionManager;
 import com.tc.object.handler.LockResponseHandler;
-import com.tc.object.lockmanager.api.ClientLockManager;
-import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.object.lockmanager.api.NullClientLockManagerConfig;
-import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.RemoteLockManagerImpl;
-import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
-import com.tc.object.lockmanager.impl.StripedClientLockManagerImpl;
+import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.ManualThreadIDManager;
+import com.tc.object.locks.RemoteLockManagerImpl;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.msg.LockResponseMessage;
@@ -46,7 +42,7 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.MockChannelManager;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
-import com.tc.object.tx.TimerSpec;
+import com.tc.object.tx.MockTransactionManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
@@ -72,7 +68,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
   private static final TCLogger logger = CustomerLogging.getDSOGenericLogger();
 
   private ClientLockManager     clientLockManager;
-
+  private ManualThreadIDManager threadManager;
+  
   public void setUp() throws Exception {
     BoundedLinkedQueue clientLockRequestQueue = new BoundedLinkedQueue();
     BoundedLinkedQueue serverLockRespondQueue = new BoundedLinkedQueue();
@@ -81,12 +78,9 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                                              new TestClientGlobalTransactionManager(),
                                                                              clientLockRequestQueue);
 
-    clientLockManager = new StripedClientLockManagerImpl(new StandardLockDistributionStrategy(GroupID.NULL_ID),
-                                                         new OrderedGroupIDs(new GroupID[] { GroupID.NULL_ID }),
-                                                         logger, rmtLockManager, new NullSessionManager(),
-                                                         ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
-                                                         new NullClientLockManagerConfig());
-
+    threadManager = new ManualThreadIDManager();
+    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new MockTransactionManager());
+    
     LockManager serverLockManager = new LockManagerImpl(new MockChannelManager(), new MockL2LockStatsManager());
 
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
@@ -143,14 +137,16 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     final List lockRequestOrder = new ArrayList(2);
     final List lockAwardOrder = new ArrayList(2);
 
-    clientLockManager.lock(l1, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l1, LockLevel.READ);
     Thread t1 = new Thread() {
       public void run() {
         String threadName = "t1";
         System.err.println("Thread " + threadName + " request lock");
         lockRequestOrder.add(threadName);
-        LockManagerSystemTest.this.clientLockManager.lock(l1, tid3, LockLevel.WRITE, String.class.getName(),
-                                                          LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        LockManagerSystemTest.this.threadManager.setThreadID(tid3);
+        LockManagerSystemTest.this.clientLockManager.lock(l1, LockLevel.WRITE);
         System.err.println("Thread " + threadName + " obtain lock");
         lockAwardOrder.add(threadName);
       }
@@ -163,8 +159,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
         lockRequestOrder.add(threadName);
         // to make sure that lock request order is correct i.e. t2 request the lock after t1
         ThreadUtil.reallySleep(30000);
-        LockManagerSystemTest.this.clientLockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(),
-                                                          LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        LockManagerSystemTest.this.threadManager.setThreadID(tid2);
+        LockManagerSystemTest.this.clientLockManager.lock(l1, LockLevel.READ);
         System.err.println("Thread " + threadName + " obtain lock");
         lockAwardOrder.add(threadName);
       }
@@ -175,9 +171,11 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t2.start();
 
     sleep(50);
-    clientLockManager.unlock(l1, tid1);
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l1, LockLevel.READ);
     t1.join();
-    clientLockManager.unlock(l1, tid3);
+    threadManager.setThreadID(tid3);
+    clientLockManager.unlock(l1, LockLevel.WRITE);
     t2.join();
 
     System.err.println(lockRequestOrder);
@@ -195,15 +193,18 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     final ThreadID tid3 = new ThreadID(3);
 
     final SetOnceFlag flag = new SetOnceFlag();
-    clientLockManager.lock(l1, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(l1, tid3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l1, LockLevel.READ);
+    threadManager.setThreadID(tid2);
+    clientLockManager.lock(l1, LockLevel.READ);
+    threadManager.setThreadID(tid3);
+    clientLockManager.lock(l1, LockLevel.READ);
 
     Thread t = new Thread() {
       public void run() {
         try {
-          LockManagerSystemTest.this.clientLockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(),
-                                                            LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+          LockManagerSystemTest.this.threadManager.setThreadID(tid1);
+          LockManagerSystemTest.this.clientLockManager.lock(l1, LockLevel.WRITE);
           throw new AssertionError("Should have thrown a TCLockUpgradeNotSupportedError.");
         } catch (TCLockUpgradeNotSupportedError e) {
           flag.set();
@@ -215,16 +216,18 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     sleep(5);
     assertTrue(flag.isSet());
 
-    clientLockManager.unlock(l1, tid2);
-    clientLockManager.unlock(l1, tid3);
+    threadManager.setThreadID(tid2);
+    clientLockManager.unlock(l1, LockLevel.READ);
+    threadManager.setThreadID(tid3);
+    clientLockManager.unlock(l1, LockLevel.READ);
 
     t.join();
 
     Thread secondReader = new Thread() {
       public void run() {
         System.out.println("Read requested !");
-        LockManagerSystemTest.this.clientLockManager.lock(l1, tid2, LockLevel.READ, String.class.getName(),
-                                                          LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        LockManagerSystemTest.this.threadManager.setThreadID(tid2);
+        LockManagerSystemTest.this.clientLockManager.lock(l1, LockLevel.READ);
         System.out.println("Got Read !");
       }
     };
@@ -235,8 +238,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     Thread secondWriter = new Thread() {
       public void run() {
         System.out.println("Write requested !");
-        LockManagerSystemTest.this.clientLockManager.lock(l1, tid3, LockLevel.WRITE, String.class.getName(),
-                                                          LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        LockManagerSystemTest.this.threadManager.setThreadID(tid3);
+        LockManagerSystemTest.this.clientLockManager.lock(l1, LockLevel.WRITE);
         System.out.println("Got Write !");
       }
     };
@@ -246,10 +249,12 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     secondReader.join(5000);
     assertFalse(secondReader.isAlive());
 
-    clientLockManager.unlock(l1, tid1);
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l1, LockLevel.WRITE);
     assertTrue(secondWriter.isAlive());
 
-    clientLockManager.unlock(l1, tid2);
+    threadManager.setThreadID(tid2);
+    clientLockManager.unlock(l1, LockLevel.READ);
     secondWriter.join(60000);
     assertFalse(secondWriter.isAlive());
   }
@@ -265,12 +270,14 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     // Get the lock for threadID 1
     System.out.println("Asked for first lock");
-    clientLockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l1, LockLevel.WRITE);
 
     System.out.println("Got first lock");
 
     // Try to get it again, this should pretty much be a noop as we handle recursive lock calls
-    clientLockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l1, LockLevel.WRITE);
     System.out.println("Got first lock again");
 
     final boolean[] done = new boolean[2];
@@ -280,8 +287,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     Thread t = new Thread() {
       public void run() {
         System.out.println("Asked for second lock");
-        clientLockManager.lock(l1, tid2, LockLevel.WRITE, String.class.getName(),
-                               LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        threadManager.setThreadID(tid2);
+        clientLockManager.lock(l1, LockLevel.WRITE);
         System.out.println("Got second lock");
         done[0] = true;
       }
@@ -290,21 +297,25 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t.start();
     sleep(5);
     assertFalse(done[0]);
-    clientLockManager.unlock(l1, tid1);
-    clientLockManager.unlock(l1, tid1); // should unblock thread above
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l1, LockLevel.WRITE);
+    clientLockManager.unlock(l1, LockLevel.WRITE); // should unblock thread above
     sleep(5);
     assertTrue(done[0]); // thread should have been unblocked and finished
 
     // Get a bunch of read locks on l3
-    clientLockManager.lock(l3, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(l3, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    clientLockManager.lock(l3, tid3, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l3, LockLevel.READ);
+    threadManager.setThreadID(tid2);
+    clientLockManager.lock(l3, LockLevel.READ);
+    threadManager.setThreadID(tid3);
+    clientLockManager.lock(l3, LockLevel.READ);
     done[0] = false;
     t = new Thread() {
       public void run() {
         System.out.println("Asking for write lock");
-        clientLockManager.lock(l3, tid4, LockLevel.WRITE, String.class.getName(),
-                               LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        threadManager.setThreadID(tid4);
+        clientLockManager.lock(l3, LockLevel.WRITE);
         System.out.println("Got write lock");
         done[0] = true;
       }
@@ -313,15 +324,18 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     sleep(5);
     assertFalse(done[0]);
 
-    clientLockManager.unlock(l3, tid1);
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l3, LockLevel.READ);
     sleep(5);
     assertFalse(done[0]);
 
-    clientLockManager.unlock(l3, tid2);
+    threadManager.setThreadID(tid2);
+    clientLockManager.unlock(l3, LockLevel.READ);
     sleep(5);
     assertFalse(done[0]);
 
-    clientLockManager.unlock(l3, tid3);
+    threadManager.setThreadID(tid3);
+    clientLockManager.unlock(l3, LockLevel.READ);
     sleep(5);
     assertTrue(done[0]);
 
@@ -329,8 +343,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t = new Thread() {
       public void run() {
         System.out.println("Asking for read lock");
-        clientLockManager
-            .lock(l3, tid1, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        threadManager.setThreadID(tid1);
+        clientLockManager.lock(l3, LockLevel.READ);
         System.out.println("Got read lock");
         done[0] = true;
       }
@@ -341,8 +355,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     t = new Thread() {
       public void run() {
         System.out.println("Asking for read lock");
-        clientLockManager
-            .lock(l3, tid2, LockLevel.READ, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+        threadManager.setThreadID(tid2);
+        clientLockManager.lock(l3, LockLevel.READ);
         System.out.println("Got read lock");
         done[1] = true;
       }
@@ -352,12 +366,15 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     sleep(5);
     assertFalse(done[0]);
     assertFalse(done[1]);
-    clientLockManager.unlock(l3, tid4);
+    threadManager.setThreadID(tid4);
+    clientLockManager.unlock(l3, LockLevel.WRITE);
     sleep(5);
     assertTrue(done[0]);
     assertTrue(done[1]);
-    clientLockManager.unlock(l3, tid1);
-    clientLockManager.unlock(l3, tid2);
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l3, LockLevel.READ);
+    threadManager.setThreadID(tid2);
+    clientLockManager.unlock(l3, LockLevel.READ);
   }
 
   public void testTryLock() throws Throwable {
@@ -368,7 +385,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     // Get the first lock
     System.out.println("Asked for first lock");
-    clientLockManager.lock(l1, tid1, LockLevel.WRITE, String.class.getName(), LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    threadManager.setThreadID(tid1);
+    clientLockManager.lock(l1, LockLevel.WRITE);
     System.out.println("Got first lock");
 
     final int[] count1 = new int[1];
@@ -379,9 +397,13 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       public void run() {
         System.out.println("Trying second lock 100 times");
         for (int i = 0; i < 100; i++) {
-          if (!clientLockManager.tryLock(l1, tid2, new TimerSpec(0), LockLevel.WRITE,
-                                         LockContextInfo.NULL_LOCK_OBJECT_TYPE)) {
-            count1[0]++;
+          threadManager.setThreadID(tid2);
+          try {
+            if (!clientLockManager.tryLock(l1, LockLevel.WRITE, 0)) {
+              count1[0]++;
+            }
+          } catch (InterruptedException e) {
+            System.out.println("XXX INTERRUPTED XXX");
           }
         }
       }
@@ -394,7 +416,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     assertEquals(100, count1[0]);
 
     System.out.println("Releasing first lock");
-    clientLockManager.unlock(l1, tid1);
+    threadManager.setThreadID(tid1);
+    clientLockManager.unlock(l1, LockLevel.WRITE);
 
     final int[] count2 = new int[1];
 
@@ -404,9 +427,13 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       public void run() {
         System.out.println("Trying second lock once more 100 times");
         for (int i = 0; i < 100; i++) {
-          if (!clientLockManager.tryLock(l1, tid2, new TimerSpec(0), LockLevel.WRITE,
-                                         LockContextInfo.NULL_LOCK_OBJECT_TYPE)) {
-            count2[0]++;
+          threadManager.setThreadID(tid2);
+          try {
+            if (!clientLockManager.tryLock(l1, LockLevel.WRITE, 0L)) {
+              count2[0]++;
+            }
+          } catch (InterruptedException e) {
+            System.out.println("XXX INTERRUPTED XXX");
           }
         }
       }
@@ -428,7 +455,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       this.clientLockRequestQueue = clientLockRequestQueue;
     }
 
-    protected void send(LockRequestMessage req) {
+    protected void sendMessage(LockRequestMessage req) {
       try {
         clientLockRequestQueue.put(req);
       } catch (Exception e) {
@@ -568,5 +595,5 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       }
     }
 
-  }
+  }  
 }

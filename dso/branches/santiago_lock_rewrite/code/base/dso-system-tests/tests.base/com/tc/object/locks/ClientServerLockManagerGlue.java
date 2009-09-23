@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.impl;
+package com.tc.object.locks;
 
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
@@ -13,14 +13,8 @@ import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.LockFlushCallback;
-import com.tc.object.lockmanager.api.LockRequest;
-import com.tc.object.lockmanager.api.RemoteLockManager;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TryLockContext;
-import com.tc.object.lockmanager.api.TryLockRequest;
 import com.tc.object.lockmanager.api.WaitContext;
-import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
@@ -66,50 +60,43 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     eventNotifier.start();
   }
 
-  public void requestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
-    serverLockManager.requestLock(lockID, clientID, threadID, lockType, lockObjectType, sink);
+  public void lock(LockID lockID, ThreadID threadID, ServerLockLevel level) {
+    serverLockManager.requestLock(lockID, clientID, threadID, ServerLockLevel.toLegacyInt(level), "", sink);
   }
 
-  public void releaseLock(LockID lockID, ThreadID threadID) {
+  public void unlock(LockID lockID, ThreadID threadID, ServerLockLevel level) {
     serverLockManager.unlock(lockID, clientID, threadID);
   }
 
-  public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
-    serverLockManager.wait(lockID, clientID, threadID, call, sink);
+  public void wait(LockID lockID, ThreadID threadID, long timeout) {
+    if (timeout < 0) {
+      serverLockManager.wait(lockID, clientID, threadID, new TimerSpec(), sink);      
+    } else {
+      serverLockManager.wait(lockID, clientID, threadID, new TimerSpec(timeout), sink);
+    }
   }
 
-  public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests,
-                           Collection pendingTryLockRequests) {
-    Collection serverLC = new ArrayList();
-    for (Iterator i = lockContext.iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType());
-      serverLC.add(ctxt);
-    }
+  public void recallCommit(LockID lockID, Collection<ClientServerExchangeLockContext> contexts) {
+    Collection<LockContext> serverLC = new ArrayList<LockContext>();
+    Collection<WaitContext> serverWC = new ArrayList<WaitContext>();
+    Collection<LockContext> serverPC = new ArrayList<LockContext>();
+    Collection<TryLockContext> serverPTC = new ArrayList<TryLockContext>();
 
-    Collection serverWC = new ArrayList();
-    for (Iterator i = waitContext.iterator(); i.hasNext();) {
-      WaitLockRequest request = (WaitLockRequest) i.next();
-      WaitContext ctxt = new WaitContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType(), request.getTimerSpec());
-      serverWC.add(ctxt);
-    }
-
-    Collection serverPC = new ArrayList();
-    for (Iterator i = pendingRequests.iterator(); i.hasNext();) {
-      LockRequest request = (LockRequest) i.next();
-      LockContext ctxt = new LockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(), request
-          .lockType());
-      serverPC.add(ctxt);
-    }
-
-    Collection serverPTC = new ArrayList();
-    for (Iterator i = pendingTryLockRequests.iterator(); i.hasNext();) {
-      TryLockRequest request = (TryLockRequest) i.next();
-      LockContext ctxt = new TryLockContext(request.lockID(), clientID, request.threadID(), request.lockLevel(),
-                                            request.lockType(), request.getTimerSpec());
-      serverPTC.add(ctxt);
+    for (ClientServerExchangeLockContext c : contexts) {
+      switch (c.getState().getType()) {
+        case HOLDER:
+        case GREEDY_HOLDER:
+          serverLC.add(c.getLockContext());
+          break;
+        case WAITER:
+          serverWC.add(c.getWaitContext());
+          break;
+        case PENDING:
+          serverPC.add(c.getLockContext());
+          break;
+        case TRY_PENDING:
+          serverPTC.add(c.getTryWaitContext());
+      }
     }
 
     serverLockManager.recallCommit(lockID, clientID, serverLC, serverWC, serverPC, serverPTC, sink);
@@ -140,8 +127,8 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
       if (ec instanceof LockResponseContext) {
         LockResponseContext lrc = (LockResponseContext) ec;
         if (lrc.isLockAward()) {
-          clientLockManager.awardLock(lrc.getNodeID(), sessionProvider.getSessionID(lrc.getNodeID()), lrc.getLockID(),
-                                      lrc.getThreadID(), lrc.getLockLevel());
+          clientLockManager.award(GroupID.NULL_ID, sessionProvider.getSessionID(lrc.getNodeID()), lrc.getLockID(),
+                                      lrc.getThreadID(), ServerLockLevel.fromLegacyInt(lrc.getLockLevel()));
         }
       }
       // ToDO :: implment WaitContext etc..
@@ -205,20 +192,15 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     eventNotifier.interrupt();
   }
 
-  public void queryLock(LockID lockID, ThreadID threadID) {
+  public void query(LockID lockID, ThreadID threadID) {
     serverLockManager.queryLock(lockID, clientID, threadID, sink);
   }
 
-  public void tryRequestLock(LockID lockID, ThreadID threadID, int lockType, String lockObjectType) {
-    serverLockManager.tryRequestLock(lockID, clientID, threadID, lockType, lockObjectType, new TimerSpec(0), sink);
-  }
-
-  public void interrruptWait(LockID lockID, ThreadID threadID) {
+  public void interrupt(LockID lockID, ThreadID threadID) {
     serverLockManager.interrupt(lockID, clientID, threadID);
-
   }
 
-  public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
-    serverLockManager.tryRequestLock(lockID, clientID, threadID, lockType, lockObjectType, timeout, sink);
+  public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {
+    serverLockManager.tryRequestLock(lockID, clientID, threadID, ServerLockLevel.toLegacyInt(level), "", new TimerSpec(timeout), sink);
   }
 }

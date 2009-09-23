@@ -8,15 +8,15 @@ import com.tc.object.locks.LockID;
 public interface TerracottaLocking {
   public void lock(LockID lock, LockLevel level);
   public boolean tryLock(LockID lock, LockLevel level);
-  public boolean tryLock(LockID lock, LockLevel level, long timeout);
-  public void lockInterruptibly(LockID lock, LockLevel level);
+  public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException;
+  public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException;
 
   public void unlock(LockID lock, LockLevel level);
 
   public void notify(LockID lock);
   public void notifyAll(LockID lock);
-  public void wait(LockID lock);
-  public void wait(LockID lock, long timeout);
+  public void wait(LockID lock) throws InterruptedException;
+  public void wait(LockID lock, long timeout) throws InterruptedException;
 
   public boolean isLocked(LockID lock, LockLevel level);
   public boolean isLockedByCurrentThread(LockID lock, LockLevel level);
@@ -29,5 +29,4 @@ public interface TerracottaLocking {
   public LockID generateLockIdentifier(String str);
   public LockID generateLockIdentifier(Object obj);
   public LockID generateLockIdentifier(Object obj, String field);
-  public LockID generateLockIdentifier(Object obj, long fieldOffset);  
 }

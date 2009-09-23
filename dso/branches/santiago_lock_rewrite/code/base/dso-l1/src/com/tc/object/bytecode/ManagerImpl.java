@@ -11,7 +11,6 @@ import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.client.AbstractClientFactory;
 import com.tc.cluster.DsoCluster;
 import com.tc.cluster.DsoClusterImpl;
-import com.tc.config.lock.LockContextInfo;
 import com.tc.lang.StartupHelper;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
@@ -33,13 +32,17 @@ import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
-import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.DsoLockID;
+import com.tc.object.locks.DsoVolatileLockID;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.tx.ClientTransactionManager;
-import com.tc.object.tx.TimerSpec;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticRetrievalAction;
@@ -77,29 +80,31 @@ public class ManagerImpl implements Manager {
   private ClientObjectManager                      objectManager;
   private ClientShutdownManager                    shutdownManager;
   private ClientTransactionManager                 txManager;
+  private ClientLockManager                        lockManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
   private final SerializationUtil                  serializer    = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, config, connectionComponents, true, null, null);
+    this(true, null, null, null, config, connectionComponents, true, null, null);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
-                     final ClientTransactionManager txManager, final DSOClientConfigHelper config,
-                     final PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, config, connectionComponents, true, null, null);
+                     final ClientTransactionManager txManager, final ClientLockManager lockManager,
+                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
+    this(startClient, objectManager, txManager, lockManager, config, connectionComponents, true, null, null);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
-                     final ClientTransactionManager txManager, final DSOClientConfigHelper config,
-                     final PreparedComponentsFromL2Connection connectionComponents,
+                     final ClientTransactionManager txManager, final ClientLockManager lockManager,
+                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
                      final boolean shutdownActionRequired, final RuntimeLogger runtimeLogger,
                      final ClassProvider classProvider) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
+    this.lockManager = lockManager;
     this.config = config;
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
@@ -187,8 +192,8 @@ public class ManagerImpl implements Manager {
       }
     };
     lookupExistingOrNull(o);
-    monitorEnter(o, LOCK_TYPE_WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    monitorExit(o);
+    //lock(new StringLockID("test"), LockLevel.WRITE);
+    //unlock(new StringLockID("test"), LockLevel.WRITE);
     logicalInvoke(new FakeManageableObject(), SerializationUtil.CLEAR_SIGNATURE, new Object[] {});
   }
 
@@ -208,6 +213,7 @@ public class ManagerImpl implements Manager {
         dso.start();
         objectManager = dso.getObjectManager();
         txManager = dso.getTransactionManager();
+        lockManager = dso.getLockManager();
         methodCallManager = dso.getDmiManager();
 
         shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
@@ -273,11 +279,12 @@ public class ManagerImpl implements Manager {
 
   public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
                                            final Object[] params) {
-    monitorEnter(lockObject, LockLevel.WRITE, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    LockID lock = generateLockIdentifier(lockObject);
+    lock(lock, LockLevel.WRITE);
     try {
       logicalInvoke(object, methodName, params);
     } finally {
-      monitorExit(lockObject);
+      unlock(lock, LockLevel.WRITE);
     }
   }
 
@@ -340,172 +347,6 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void beginLockWithoutTxn(final String lockID, final int type) {
-    boolean locked = this.txManager.beginLockWithoutTxn(lockID, type, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                                                        LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, null, null);
-    }
-  }
-
-  public void beginLock(final String lockID, final int type, final String contextInfo) {
-    try {
-      begin(lockID, type, null, null, contextInfo);
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
-    if (tcObject == null) { throw new NullPointerException("beginVolatile called on a null TCObject"); }
-
-    begin(generateVolatileLockName(tcObject, fieldName), type, null, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-  }
-
-  private void begin(final String lockID, final int type, final Object instance, final TCObject tcobj,
-                     final String contextInfo) {
-    String lockObjectClass = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-
-    boolean locked = this.txManager.begin(lockID, type, lockObjectClass, contextInfo);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
-    }
-  }
-
-  private void beginInterruptibly(final String lockID, final int type, final Object instance, final TCObject tcobj,
-                                  final String contextInfo) throws InterruptedException {
-    String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-
-    boolean locked = this.txManager.beginInterruptibly(lockID, type, lockObjectType, contextInfo);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
-    }
-  }
-
-  private boolean tryBegin(final String lockID, final int type, final Object instance, final TimerSpec timeout,
-                           final TCObject tcobj) {
-    String lockObjectType = instance == null ? LockContextInfo.NULL_LOCK_OBJECT_TYPE : instance.getClass().getName();
-
-    boolean locked = this.txManager.tryBegin(lockID, timeout, type, lockObjectType);
-    if (locked && runtimeLogger.getLockDebug()) {
-      runtimeLogger.lockAcquired(lockID, type, instance, tcobj);
-    }
-    return locked;
-  }
-
-  private boolean tryBegin(final String lockID, final int type, final Object instance, final TCObject tcobj) {
-    return tryBegin(lockID, type, instance, new TimerSpec(0), tcobj);
-  }
-
-  public void commitVolatile(final TCObject tcObject, final String fieldName) {
-    if (tcObject == null) { throw new NullPointerException("commitVolatile called on a null TCObject"); }
-
-    commitLock(generateVolatileLockName(tcObject, fieldName));
-  }
-
-  public void commitLock(final String lockName) {
-
-    try {
-      this.txManager.commit(lockName);
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public void objectNotify(final Object obj) {
-    if (obj == null) { throw new NullPointerException("notify() called on a null reference"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      managedObjectNotify(obj, tco, false);
-    } else {
-      obj.notify();
-    }
-  }
-
-  public void objectNotifyAll(final Object obj) {
-    if (obj == null) { throw new NullPointerException("notifyAll() called on a null reference"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      managedObjectNotify(obj, tco, true);
-    } else {
-      obj.notifyAll();
-    }
-  }
-
-  private void managedObjectNotify(final Object obj, final TCObject tco, final boolean all) {
-    try {
-      if (runtimeLogger.getWaitNotifyDebug()) {
-        runtimeLogger.objectNotify(all, obj, tco);
-      }
-      this.txManager.notify(generateAutolockName(tco), all, obj);
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public void objectWait(final Object obj) throws InterruptedException {
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      try {
-        TimerSpec call = new TimerSpec();
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
-        }
-        this.txManager.wait(generateAutolockName(tco), call, obj);
-      } catch (InterruptedException ie) {
-        throw ie;
-      } catch (Throwable t) {
-        Util.printLogAndRethrowError(t, logger);
-      }
-    } else {
-      obj.wait();
-    }
-  }
-
-  public void objectWait(final Object obj, final long millis) throws InterruptedException {
-    TCObject tco = lookupExistingOrNull(obj);
-    if (tco != null) {
-      try {
-        TimerSpec call = new TimerSpec(millis);
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
-        }
-        this.txManager.wait(generateAutolockName(tco), call, obj);
-      } catch (InterruptedException ie) {
-        throw ie;
-      } catch (Throwable t) {
-        Util.printLogAndRethrowError(t, logger);
-      }
-    } else {
-      obj.wait(millis);
-    }
-  }
-
-  public void objectWait(final Object obj, final long millis, final int nanos) throws InterruptedException {
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      try {
-        TimerSpec call = new TimerSpec(millis, nanos);
-        if (runtimeLogger.getWaitNotifyDebug()) {
-          runtimeLogger.objectWait(call, obj, tco);
-        }
-        this.txManager.wait(generateAutolockName(tco), call, obj);
-      } catch (InterruptedException ie) {
-        throw ie;
-      } catch (Throwable t) {
-        Util.printLogAndRethrowError(t, logger);
-      }
-    } else {
-      obj.wait(millis, nanos);
-    }
-  }
-
   private boolean isLiteralAutolock(final Object o) {
     if (o instanceof Manageable) { return false; }
     return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && LiteralValues.isLiteralInstance(o);
@@ -514,9 +355,8 @@ public class ManagerImpl implements Manager {
   public boolean isDsoMonitorEntered(final Object o) {
     if (this.objectManager.isCreationInProgress()) { return false; }
 
-    String lockName = getLockName(o);
-    if (lockName == null) { return false; }
-    boolean dsoMonitorEntered = txManager.isLockOnTopStack(lockName);
+    LockID lock = generateLockIdentifier(o);
+    boolean dsoMonitorEntered = txManager.isLockOnTopStack(lock);
 
     if (!dsoMonitorEntered && isManaged(o)) {
       logger
@@ -529,172 +369,6 @@ public class ManagerImpl implements Manager {
     }
 
     return dsoMonitorEntered;
-  }
-
-  private String getLockName(final Object obj) {
-    TCObject tco = lookupExistingOrNull(obj);
-    if (tco != null) {
-      return generateAutolockName(tco);
-    } else if (isLiteralAutolock(obj)) { return generateLiteralLockName(obj); }
-    return null;
-  }
-
-  public void monitorEnter(final Object obj, final int type, final String contextInfo) {
-    if (obj == null) { throw new NullPointerException("monitorEnter called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    try {
-      if (tco != null) {
-        if (tco.autoLockingDisabled()) { return; }
-
-        begin(generateAutolockName(tco), type, obj, tco, contextInfo);
-      } else if (isLiteralAutolock(obj)) {
-        begin(generateLiteralLockName(obj), type, obj, null, contextInfo);
-      }
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public void monitorExit(final Object obj) {
-    if (obj == null) { throw new NullPointerException("monitorExit called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    try {
-      if (tco != null) {
-        if (tco.autoLockingDisabled()) { return; }
-
-        // don't call this.commit() here, the error handling would happen twice in that case
-        this.txManager.commit(generateAutolockName(tco));
-      } else if (isLiteralAutolock(obj)) {
-        this.txManager.commit(generateLiteralLockName(obj));
-      }
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  public boolean isLocked(final Object obj, final int lockLevel) {
-    if (obj == null) { throw new NullPointerException("isLocked called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.isLocked(generateAutolockName(tco), lockLevel);
-    } else {
-      return this.txManager.isLocked(generateLiteralLockName(obj), lockLevel);
-    }
-  }
-
-  public boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) {
-    if (obj == null) { throw new NullPointerException("monitorEnter called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    try {
-      TimerSpec timeout = createTimerSpecFromNanos(timeoutInNanos);
-
-      if (tco != null) {
-        if (tco.autoLockingDisabled()) { return false; }
-
-        return tryBegin(generateAutolockName(tco), type, obj, timeout, tco);
-      } else if (isLiteralAutolock(obj)) { return tryBegin(generateLiteralLockName(obj), type, obj, timeout, null); }
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-    return false;
-  }
-
-  public void monitorEnterInterruptibly(final Object obj, final int type) throws InterruptedException {
-    if (obj == null) { throw new NullPointerException("monitorEnterInterruptibly called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    try {
-      if (tco != null) {
-        if (tco.autoLockingDisabled()) { return; }
-
-        beginInterruptibly(generateAutolockName(tco), type, obj, tco, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-      } else if (isLiteralAutolock(obj)) {
-        beginInterruptibly(generateLiteralLockName(obj), type, obj, null, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
-      }
-    } catch (InterruptedException e) {
-      throw e;
-    } catch (Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-    }
-  }
-
-  private TimerSpec createTimerSpecFromNanos(final long timeoutInNanos) {
-    TimerSpec timeout = null;
-    if (timeoutInNanos <= 0) {
-      timeout = new TimerSpec(0);
-    } else {
-      long mills = Util.getMillis(timeoutInNanos);
-      int nanos = Util.getNanos(timeoutInNanos, mills);
-      timeout = new TimerSpec(mills, nanos);
-    }
-    return timeout;
-  }
-
-  public boolean tryBeginLock(final String lockID, final int type) {
-    return tryBegin(lockID, type, null, null);
-  }
-
-  public boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) {
-    return tryBegin(lockID, type, null, createTimerSpecFromNanos(timeoutInNanos), null);
-  }
-
-  public int localHeldCount(final Object obj, final int lockLevel) {
-    if (obj == null) { throw new NullPointerException("isHeldByCurrentThread called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.localHeldCount(generateAutolockName(tco), lockLevel);
-    } else {
-      return this.txManager.localHeldCount(generateLiteralLockName(obj), lockLevel);
-    }
-
-  }
-
-  public boolean isHeldByCurrentThread(final Object obj, final int lockLevel) {
-    if (obj == null) { throw new NullPointerException("isHeldByCurrentThread called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.isHeldByCurrentThread(generateAutolockName(tco), lockLevel);
-    } else {
-      return this.txManager.isHeldByCurrentThread(generateLiteralLockName(obj), lockLevel);
-    }
-
-  }
-
-  public int queueLength(final Object obj) {
-    if (obj == null) { throw new NullPointerException("queueLength called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.queueLength(generateAutolockName(tco));
-    } else {
-      return this.txManager.queueLength(generateLiteralLockName(obj));
-    }
-  }
-
-  public int waitLength(final Object obj) {
-    if (obj == null) { throw new NullPointerException("waitLength called on a null object"); }
-
-    TCObject tco = lookupExistingOrNull(obj);
-
-    if (tco != null) {
-      return this.txManager.waitLength(generateAutolockName(tco));
-    } else {
-      return this.txManager.waitLength(generateLiteralLockName(obj));
-    }
   }
 
   public TCObject shareObjectIfNecessary(final Object pojo) {
@@ -729,18 +403,6 @@ public class ManagerImpl implements Manager {
       // shouldn't get here
       throw new AssertionError();
     }
-  }
-
-  public void pinLock(final String lockName) {
-    txManager.pinLock(lockName);
-  }
-
-  public void unpinLock(final String lockName) {
-    txManager.unpinLock(lockName);
-  }
-
-  public void evictLock(final String lockName) {
-    txManager.evictLock(lockName);
   }
 
   public Object lookupObject(final ObjectID id) throws ClassNotFoundException {
@@ -832,21 +494,6 @@ public class ManagerImpl implements Manager {
       // shouldn't get here
       throw new AssertionError();
     }
-  }
-
-  private static String generateVolatileLockName(final TCObject tcobj, final String fieldName) {
-    Assert.assertNotNull(tcobj);
-    return ByteCodeUtil.generateVolatileLockName(tcobj.getObjectID(), fieldName);
-  }
-
-  private static String generateAutolockName(final TCObject tcobj) {
-    Assert.assertNotNull(tcobj);
-    return ByteCodeUtil.generateAutolockName(tcobj.getObjectID());
-  }
-
-  private static String generateLiteralLockName(final Object obj) {
-    Assert.assertNotNull(obj);
-    return ByteCodeUtil.generateLiteralLockName(LiteralValues.valueFor(obj).name(), obj);
   }
 
   public Object getChangeApplicator(final Class clazz) {
@@ -1022,6 +669,112 @@ public class ManagerImpl implements Manager {
 
     public TCObject __tc_managed() {
       return null;
+    }
+  }
+
+  public LockID generateLockIdentifier(String str) {
+    return new StringLockID(str);
+  }
+
+  public LockID generateLockIdentifier(Object obj) {
+    if (obj instanceof String) {
+      return generateLockIdentifier((String) obj);
+    } else {
+      return new DsoLockID(obj);
+    }
+  }
+
+  public LockID generateLockIdentifier(Object obj, String field) {
+    return new DsoVolatileLockID(obj, field);
+  }
+
+  public int globalHoldCount(LockID lock, LockLevel level) {
+    return lockManager.globalHoldCount(lock, level);
+  }
+
+  public int globalPendingCount(LockID lock) {
+    return lockManager.globalPendingCount(lock);
+  }
+
+  public int globalWaitingCount(LockID lock) {
+    return lockManager.globalWaitingCount(lock);
+  }
+
+  public boolean isLocked(LockID lock, LockLevel level) {
+    return lockManager.isLocked(lock, level);
+  }
+
+  public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
+    return lockManager.isLockedByCurrentThread(lock, level);
+  }
+
+  public int localHoldCount(LockID lock, LockLevel level) {
+    return lockManager.localHoldCount(lock, level);
+  }
+
+  public void lock(LockID lock, LockLevel level) {
+    if (lock.isClustered()) {
+      lockManager.lock(lock, level);
+    }
+  }
+
+  public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
+    if (lock.isClustered()) {
+      lockManager.lockInterruptibly(lock, level);
+    }
+  }
+
+  public void notify(LockID lock) {
+    if (lock.isClustered()) {
+      lockManager.notify(lock);
+    } else {
+      lock.javaObject().notify();
+    }
+  }
+
+  public void notifyAll(LockID lock) {
+    if (lock.isClustered()) {
+      lockManager.notifyAll(lock);
+    } else {
+      lock.javaObject().notifyAll();
+    }
+  }
+
+  public boolean tryLock(LockID lock, LockLevel level) {
+    if (lock.isClustered()) {
+      return lockManager.tryLock(lock, level);
+    } else {
+      return true;
+    }
+  }
+
+  public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
+    if (lock.isClustered()) {
+      return lockManager.tryLock(lock, level, timeout);
+    } else {
+      return true;
+    }
+  }
+
+  public void unlock(LockID lock, LockLevel level) {
+    if (lock.isClustered()) {
+      lockManager.unlock(lock, level);
+    }
+  }
+
+  public void wait(LockID lock) throws InterruptedException {
+    if (lock.isClustered()) {
+      lockManager.wait(lock);
+    } else {
+      lock.javaObject().wait();
+    }
+  }
+
+  public void wait(LockID lock, long timeout) throws InterruptedException {
+    if (lock.isClustered()) {
+      lockManager.wait(lock, timeout);
+    } else {
+      lock.javaObject().wait(timeout);
     }
   }
 

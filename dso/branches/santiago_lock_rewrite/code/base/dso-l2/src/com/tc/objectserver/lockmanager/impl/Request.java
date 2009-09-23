@@ -8,8 +8,8 @@ import com.tc.async.api.Sink;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 
 public class Request {
   private final ServerThreadContext threadContext;

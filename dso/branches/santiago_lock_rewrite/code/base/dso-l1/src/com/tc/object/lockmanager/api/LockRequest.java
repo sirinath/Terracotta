@@ -8,6 +8,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.tc.config.lock.LockContextInfo;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 
 public class LockRequest {
   private final LockID   lockID;

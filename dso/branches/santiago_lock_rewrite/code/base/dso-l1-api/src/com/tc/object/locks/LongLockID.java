@@ -8,7 +8,7 @@ import com.tc.io.TCByteBufferOutput;
 
 import java.io.IOException;
 
-public class LongLockID implements LockID {
+public class LongLockID extends NonObjectLockID {
   /** Indicates no lock identifier */
   public final static LongLockID NULL_ID = new LongLockID(-1);
   private long                   id;
@@ -34,15 +34,8 @@ public class LongLockID implements LockID {
     return this == NULL_ID;
   }
 
-  /**
-   * @return ID type
-   */
-  public String getIdentifierType() {
-    return "LockID";
-  }
-
   public String toString() {
-    return getIdentifierType() + "(" + id + ")";
+    return getClass().getSimpleName() + "(" + id + ")";
   }
 
   /**
@@ -73,7 +66,7 @@ public class LongLockID implements LockID {
     serialOutput.writeLong(id);
   }
 
-  public byte getLockType() {
-    return LONG_TYPE;
+  public LockIDType getLockType() {
+    return LockIDType.LONG;
   }
 }

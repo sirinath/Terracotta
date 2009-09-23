@@ -15,6 +15,8 @@ import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockLevel;
 import com.tc.properties.TCProperties;
 
 import java.io.PrintWriter;
@@ -181,7 +183,9 @@ public class ManagerUtil {
    * @param type Lock type
    */
   public static void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
-    getManager().beginVolatile(tcObject, fieldName, type);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
+    mgr.lock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -198,7 +202,7 @@ public class ManagerUtil {
    * Begins a lock without associating any transaction context.
    */
   public static void beginLockWithoutTxn(final String lockID, final int type) {
-    getManager().beginLockWithoutTxn(lockID, type);
+    beginLock(lockID, type);
   }
 
   /**
@@ -209,7 +213,9 @@ public class ManagerUtil {
    * @param contextInfo
    */
   public static void beginLock(final String lockID, final int type, final String contextInfo) {
-    getManager().beginLock(lockID, type, contextInfo);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.lock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -220,7 +226,9 @@ public class ManagerUtil {
    * @return True if lock was successful
    */
   public static boolean tryBeginLock(final String lockID, final int type) {
-    return getManager().tryBeginLock(lockID, type);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -231,8 +239,10 @@ public class ManagerUtil {
    * @param timeoutInNanos Timeout in nanoseconds
    * @return True if lock was successful
    */
-  public static boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) {
-    return getManager().tryBeginLock(lockID, type, timeoutInNanos);
+  public static boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) throws InterruptedException {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000);
   }
 
   /**
@@ -242,7 +252,9 @@ public class ManagerUtil {
    * @param fieldName Field holding the volatile object
    */
   public static void commitVolatile(final TCObject tcObject, final String fieldName) {
-    getManager().commitVolatile(tcObject, fieldName);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
+    mgr.unlock(lock, null);
   }
 
   /**
@@ -251,51 +263,11 @@ public class ManagerUtil {
    * @param lockID Lock name
    */
   public static void commitLock(final String lockID) {
-    getManager().commitLock(lockID);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.unlock(lock, null);
   }
-
-  /**
-   * Manually pin the ClientLock instance associated with this lock.
-   * <p>
-   * Pinning a lock prevents its associated ClientLock instance from become a lock-gc candidate. Until it is unpinned or
-   * evicted the ClientLock will not be removed from the L1 heap. Pinning an already pinned lock is a no-op.
-   * <p>
-   * This method is part of the manual lock management API.
-   * 
-   * @param lockName name of the lock
-   */
-  public static void pinLock(final String lockName) {
-    getManager().pinLock(lockName);
-  }
-
-  /**
-   * Release the ClientLock instance associated with this lock.
-   * <p>
-   * Unpinning a previously pinned lock allows the associated ClientLock object to become a garbage collection candidate
-   * for the client lock-gc algorithm. Unpinning a lock which is not currently pinned is a no-op.
-   * <p>
-   * This method is part of the manual lock management API.
-   * 
-   * @param lockName name of the lock
-   */
-  public static void unpinLock(final String lockName) {
-    getManager().unpinLock(lockName);
-  }
-
-  /**
-   * Evict the ClientLock instance associated with this lock.
-   * <p>
-   * Evicting a pinned lock forces the immediate release of any associated greedy locks and the removal of the
-   * associated ClientLock instance. Evicting a lock which is not currently pinned is a no-op.
-   * <p>
-   * This method is part of the manual lock management API.
-   * 
-   * @param lockName name of the lock
-   */
-  public static void evictLock(final String lockName) {
-    getManager().evictLock(lockName);
-  }
-
+  
   /**
    * Find managed object, which may be null
    * 
@@ -494,7 +466,9 @@ public class ManagerUtil {
    * @param obj Instance
    */
   public static void objectNotify(final Object obj) {
-    getManager().objectNotify(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.notify(lock);
   }
 
   /**
@@ -503,7 +477,9 @@ public class ManagerUtil {
    * @param obj Instance
    */
   public static void objectNotifyAll(final Object obj) {
-    getManager().objectNotifyAll(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.notifyAll(lock);
   }
 
   /**
@@ -512,7 +488,9 @@ public class ManagerUtil {
    * @param obj Instance
    */
   public static void objectWait(final Object obj) throws InterruptedException {
-    getManager().objectWait(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.wait(lock);
   }
 
   /**
@@ -522,7 +500,9 @@ public class ManagerUtil {
    * @param millis Wait time
    */
   public static void objectWait(final Object obj, final long millis) throws InterruptedException {
-    getManager().objectWait(obj, millis);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.wait(lock, millis);
   }
 
   /**
@@ -532,8 +512,12 @@ public class ManagerUtil {
    * @param millis Wait time
    * @param nanos More wait time
    */
-  public static void objectWait(final Object obj, final long millis, final int nanos) throws InterruptedException {
-    getManager().objectWait(obj, millis, nanos);
+  public static void objectWait(final Object obj, long millis, final int nanos) throws InterruptedException {
+    if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+      millis++;
+    }
+    
+    objectWait(obj, millis);
   }
 
   /**
@@ -543,6 +527,7 @@ public class ManagerUtil {
    * @param type Lock type
    */
   public static void monitorEnter(final Object obj, final int type) {
+    
     monitorEnter(obj, type, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 
@@ -554,7 +539,9 @@ public class ManagerUtil {
    * @param contextInfo Configuration text of the lock
    */
   public static void monitorEnter(final Object obj, final int type, final String contextInfo) {
-    getManager().monitorEnter(obj, type, contextInfo);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.lock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -563,7 +550,9 @@ public class ManagerUtil {
    * @param obj Object
    */
   public static void monitorExit(final Object obj) {
-    getManager().monitorExit(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.unlock(lock, null);
   }
 
   /**
@@ -590,9 +579,17 @@ public class ManagerUtil {
    * @throws NullPointerException If obj is null
    */
   public static boolean isLocked(final Object obj, final int lockLevel) {
-    return getManager().isLocked(obj, lockLevel);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.isLocked(lock, LockLevel.fromLegacyInt(lockLevel));
   }
 
+  public static boolean tryMonitorEnter(final Object obj, final int type) {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type));
+  }
+  
   /**
    * Try to enter monitor for specified object
    * 
@@ -602,8 +599,10 @@ public class ManagerUtil {
    * @return True if entered
    * @throws NullPointerException If obj is null
    */
-  public static boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) {
-    return getManager().tryMonitorEnter(obj, type, timeoutInNanos);
+  public static boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) throws InterruptedException {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000000);
   }
 
   /**
@@ -615,7 +614,9 @@ public class ManagerUtil {
    * @throws InterruptedException If interrupted while entering or waiting
    */
   public static void monitorEnterInterruptibly(final Object obj, final int type) throws InterruptedException {
-    getManager().monitorEnterInterruptibly(obj, type);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.lockInterruptibly(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -627,7 +628,9 @@ public class ManagerUtil {
    * @throws NullPointerException If obj is null
    */
   public static int localHeldCount(final Object obj, final int lockLevel) {
-    return getManager().localHeldCount(obj, lockLevel);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.localHoldCount(lock, LockLevel.fromLegacyInt(lockLevel));
   }
 
   /**
@@ -639,7 +642,9 @@ public class ManagerUtil {
    * @throws NullPointerException If obj is null
    */
   public static boolean isHeldByCurrentThread(final Object obj, final int lockLevel) {
-    return getManager().isHeldByCurrentThread(obj, lockLevel);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.isLockedByCurrentThread(lock, LockLevel.fromLegacyInt(lockLevel));
   }
 
   /**
@@ -650,7 +655,9 @@ public class ManagerUtil {
    * @throws NullPointerException If obj is null
    */
   public static int queueLength(final Object obj) {
-    return getManager().queueLength(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.globalPendingCount(lock);
   }
 
   /**
@@ -661,7 +668,9 @@ public class ManagerUtil {
    * @throws NullPointerException If obj is null
    */
   public static int waitLength(final Object obj) {
-    return getManager().waitLength(obj);
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    return mgr.globalWaitingCount(lock);
   }
 
   private ManagerUtil() {

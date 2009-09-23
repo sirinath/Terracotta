@@ -9,9 +9,9 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class StringLockID implements LockID {
-  /** Indicates no lock identifier */
+public class StringLockID extends NonObjectLockID {  
   public final static StringLockID NULL_ID = new StringLockID("null id");
+  
   private String                   id;
 
   public StringLockID() {
@@ -36,13 +36,6 @@ public class StringLockID implements LockID {
   }
 
   /**
-   * @return ID type
-   */
-  public String getIdentifierType() {
-    return "LockID";
-  }
-
-  /**
    * @return String value of id value
    */
   public String asString() {
@@ -50,7 +43,7 @@ public class StringLockID implements LockID {
   }
 
   public String toString() {
-    return getIdentifierType() + "(" + id + ")";
+    return getClass().getSimpleName() + "(" + id + ")";
   }
 
   public int hashCode() {
@@ -74,7 +67,7 @@ public class StringLockID implements LockID {
     serialOutput.writeString(id);
   }
 
-  public byte getLockType() {
-    return STRING_TYPE;
+  public LockIDType getLockType() {
+    return LockIDType.STRING;
   }
 }

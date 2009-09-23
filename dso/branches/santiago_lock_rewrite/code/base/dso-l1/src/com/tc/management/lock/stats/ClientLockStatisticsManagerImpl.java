@@ -11,9 +11,9 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.object.bytecode.ByteCodeUtil;
-import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.lockmanager.impl.LockDistributionStrategy;
+import com.tc.object.locks.LockDistributionStrategy;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOClientMessageChannel;
 
 import java.lang.reflect.Field;
@@ -204,7 +204,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
       Set allLockIDs = lockStats.keySet();
       for (Iterator i = allLockIDs.iterator(); i.hasNext();) {
         LockID lockID = (LockID) i.next();
-        if (strategy.getGroupIdForLock(lockID.asString()).equals(nodeID) || GroupID.ALL_GROUPS.equals(nodeID)) {
+        if (strategy.getGroupIDFor(lockID).equals(nodeID) || GroupID.ALL_GROUPS.equals(nodeID)) {
           LockStatElement lockStatElement = getLockStatElement(lockID);
           allTCLockStatElements.add(new TCStackTraceElement(lockID, lockStatElement));
         }
