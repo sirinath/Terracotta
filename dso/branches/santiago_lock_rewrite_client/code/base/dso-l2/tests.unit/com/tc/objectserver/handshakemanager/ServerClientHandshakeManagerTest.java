@@ -193,7 +193,6 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     handshake.clientObjectIds.add(new ObjectID(20002));
 
     List<ClientServerExchangeLockContext> lockContexts = new LinkedList();
-
     lockContexts.add(new ClientServerExchangeLockContext(new StringLockID("my lock"), clientID1, new ThreadID(10001),
                                                          State.HOLDER_WRITE));
     lockContexts.add(new ClientServerExchangeLockContext(new StringLockID("my other lock)"), clientID1,
@@ -248,23 +247,23 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
     assertEquals(lockContexts.size() + 1, handshake.lockContexts.size());
     assertEquals(lockContexts.size(), this.lockManager.reestablishLockCalls.size());
     for (int i = 0; i < lockContexts.size(); i++) {
-      ClientServerExchangeLockContext context = lockContexts.get(i);
-      LockContext lockContext = context.getLockContext();
-      TestLockManager.ReestablishLockContext ctxt = (ReestablishLockContext) this.lockManager.reestablishLockCalls
-          .get(i);
-      assertEquals(lockContext.getLockID(), ctxt.lockContext.getLockID());
-      assertEquals(lockContext.getNodeID(), ctxt.lockContext.getNodeID());
-      assertEquals(lockContext.getThreadID(), ctxt.lockContext.getThreadID());
-      assertEquals(lockContext.getLockLevel(), ctxt.lockContext.getLockLevel());
+	ClientServerExchangeLockContext context = lockContexts.get(i);
+	LockContext lockContext = context.getLockContext();
+	TestLockManager.ReestablishLockContext ctxt = (ReestablishLockContext) this.lockManager.reestablishLockCalls
+	    .get(i);
+	assertEquals(lockContext.getLockID(), ctxt.lockContext.getLockID());
+	assertEquals(lockContext.getNodeID(), ctxt.lockContext.getNodeID());
+	assertEquals(lockContext.getThreadID(), ctxt.lockContext.getThreadID());
+	assertEquals(lockContext.getLockLevel(), ctxt.lockContext.getLockLevel());
     }
 
     // make sure the wait contexts are reestablished.
     int i = 0;
     for (Iterator<ClientServerExchangeLockContext> iterator = handshake.lockContexts.iterator(); iterator.hasNext();) {
-      ClientServerExchangeLockContext ctxt = iterator.next();
-      if (ctxt.getState().getType() == Type.WAITER) {
-        i++;
-      }
+	ClientServerExchangeLockContext ctxt = iterator.next();
+	if (ctxt.getState().getType() == Type.WAITER) {
+	    i++;
+	}
     }
     assertEquals(1, i);
     assertEquals(i, this.lockManager.reestablishWaitCalls.size());
@@ -305,6 +304,17 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
       TestClientHandshakeAckMessage ack = (TestClientHandshakeAckMessage) new ArrayList(acks).get(0);
       assertNotNull(ack.sendQueue.poll(1));
     }
+  }
+  
+  private int getCountFor(TestClientHandshakeMessage handshake, Type type) {
+    int i = 0;
+    for (Iterator<ClientServerExchangeLockContext> iterator = handshake.lockContexts.iterator(); iterator.hasNext();) {
+      ClientServerExchangeLockContext ctxt = iterator.next();
+      if (ctxt.getState().getType() == type) {
+        i++;
+      }
+    }
+    return i;
   }
 
   public void testObjectIDsInHandshake() throws Exception {
