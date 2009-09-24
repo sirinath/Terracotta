@@ -115,7 +115,11 @@ public final class ServerLock extends AbstractLock {
     ServerLockContext context = remove(cid, tid);
     recordLockReleaseStat(cid, tid, helper);
 
-    Assert.assertNotNull(context);
+    if (context == null) {
+      logger.warn("An attempt was made to unlock:" + lockID + " for channelID:" + cid
+                  + " This lock was not held. This could be do to that node being down so it may not be an error.");
+      return;
+    }
     Assert
         .assertTrue(context.getState().getType() == Type.HOLDER || context.getState().getType() == Type.GREEDY_HOLDER);
 

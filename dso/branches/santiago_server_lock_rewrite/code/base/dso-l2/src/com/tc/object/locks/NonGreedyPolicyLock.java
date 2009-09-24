@@ -73,7 +73,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
   protected void processPendingRequests(LockHelper helper) {
     ServerLockContext request = getNextRequestIfCanAward(helper);
     if (request == null) { return; }
-    
+
     switch (request.getState().getLockLevel()) {
       case READ:
         awardAllReads(helper, request);
@@ -94,7 +94,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
   public boolean clearStateForNode(ClientID cid, LockHelper helper) {
     clearContextsForClient(cid, helper);
     processPendingRequests(helper);
-    
+
     return isEmpty();
   }
 
@@ -102,8 +102,12 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     // remove current hold
     ServerLockContext context = remove(cid, tid);
     recordLockReleaseStat(cid, tid, helper);
-    
-    Assert.assertNotNull(context);
+
+    if (context == null) {
+      logger.warn("An attempt was made to unlock:" + lockID + " for channelID:" + cid
+                  + " This lock was not held. This could be do to that node being down so it may not be an error.");
+      return;
+    }
     Assert.assertTrue(context.getState().getType() == Type.HOLDER);
 
     if (clearLockIfRequired(helper)) { return; }
@@ -114,7 +118,7 @@ public final class NonGreedyPolicyLock extends AbstractLock {
                            LockHelper helper) {
     // NO-OP
   }
-  
+
   protected ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid) {
     return get(cid, tid);
   }
