@@ -53,7 +53,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +63,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -169,26 +169,6 @@ public class ModulesLoader {
       osgiRuntime.registerService(StandardDSOClientConfigHelper.class.getName(), configHelper, serviceProps);
     }
 
-    EmbeddedOSGiEventHandler handler = new EmbeddedOSGiEventHandler() {
-      public void callback(final Object payload) throws BundleException {
-        Assert.assertTrue(payload instanceof Bundle);
-        Bundle bundle = (Bundle) payload;
-        if (bundle != null) {
-          if (!forBootJar) {
-            registerClassLoader(configHelper, classProvider, bundle);
-
-            Dictionary headers = bundle.getHeaders();
-            if (headers.get("Presentation-Factory") != null) {
-              logger.info("Installing TIMByteProvider for bundle '" + bundle.getSymbolicName() + "'");
-              installTIMByteProvider(bundle);
-            }
-          }
-          printModuleBuildInfo(bundle);
-          loadConfiguration(configHelper, bundle);
-        }
-      }
-    };
-
     final List moduleList = new ArrayList();
     moduleList.addAll(getAdditionalModules());
     moduleList.addAll(Arrays.asList(modules));
@@ -201,11 +181,37 @@ public class ModulesLoader {
         .mavenArtifactsVersion(), info.apiVersion(), addlRepos);
     final URL[] locations = resolver.resolve(allModules);
 
-    osgiRuntime.installBundles(locations);
+    final Map<Bundle, URL> bundleURLs = osgiRuntime.installBundles(locations);
+    configHelper.setBundleURLs(bundleURLs);
+
+    EmbeddedOSGiEventHandler handler = new EmbeddedOSGiEventHandler() {
+      public void callback(final Object payload) throws BundleException {
+        Assert.assertTrue(payload instanceof Bundle);
+        Bundle bundle = (Bundle) payload;
+        URL bundleURL = bundleURLs.get(bundle);
+        if (bundleURL == null) { throw new AssertionError("missing URL for " + bundle.getLocation()); }
+
+        if (bundle != null) {
+          if (!forBootJar) {
+            registerClassLoader(configHelper, classProvider, bundle);
+
+            Dictionary headers = bundle.getHeaders();
+            if (headers.get("Presentation-Factory") != null) {
+              logger.info("Installing TIMByteProvider for bundle '" + bundle.getSymbolicName() + "'");
+              installTIMByteProvider(bundle, bundleURL);
+            }
+          }
+          printModuleBuildInfo(bundle);
+          loadConfiguration(configHelper, bundle, bundleURL);
+        }
+      }
+    };
+
     osgiRuntime.startBundles(locations, handler);
+
   }
 
-  private static void installTIMByteProvider(final Bundle bundle) {
+  private static void installTIMByteProvider(final Bundle bundle, final URL bundleURL) {
     try {
       MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       Dictionary headers = bundle.getHeaders();
@@ -220,8 +226,7 @@ public class ModulesLoader {
       }
       ObjectName loader = new ObjectName(prefix + feature);
       if (!mbs.isRegistered(loader)) {
-        mbs.registerMBean(new StandardMBean(new TIMByteProvider(bundle.getLocation()), TIMByteProviderMBean.class),
-                          loader);
+        mbs.registerMBean(new StandardMBean(new TIMByteProvider(bundleURL), TIMByteProviderMBean.class), loader);
       }
     } catch (Exception e) {
       logger.warn("Unable to install TIMByteProvider for bundle '" + bundle.getSymbolicName() + "'", e);
@@ -386,18 +391,16 @@ public class ModulesLoader {
     return paths;
   }
 
-  private static void loadConfiguration(final DSOClientConfigHelper configHelper, final Bundle bundle)
+  private static void loadConfiguration(final DSOClientConfigHelper configHelper, Bundle bundle, final URL url)
       throws BundleException {
     // attempt to load all of the config fragments found in the config-bundle
     final String[] paths = getConfigPath(bundle);
     for (final String configPath : paths) {
       final InputStream is;
       try {
-        is = JarResourceLoader.getJarResource(new URL(bundle.getLocation()), configPath);
-      } catch (MalformedURLException murle) {
-        throw new BundleException("Unable to create URL from: " + bundle.getLocation(), murle);
+        is = JarResourceLoader.getJarResource(url, configPath);
       } catch (IOException ioe) {
-        throw new BundleException("Unable to extract " + configPath + " from URL: " + bundle.getLocation(), ioe);
+        throw new BundleException("Unable to extract " + configPath + " from URL: " + url, ioe);
       }
 
       if (is == null) {
