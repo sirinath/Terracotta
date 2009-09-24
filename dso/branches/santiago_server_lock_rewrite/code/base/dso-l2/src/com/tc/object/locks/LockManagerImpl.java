@@ -193,6 +193,7 @@ public class LockManagerImpl implements LockManager {
       }
       lock = iter.getNextLock(oldLock);
     }
+    this.lockHelper.getLockStatsManager().clearAllStatsFor(cid);
   }
 
   public void enableLockStatsForNodeIfNeeded(ClientID cid) {
