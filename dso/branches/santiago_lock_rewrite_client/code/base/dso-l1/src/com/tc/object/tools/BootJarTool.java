@@ -572,6 +572,11 @@ public class BootJarTool {
       loadTerracottaClass(com.tc.util.ClassUtils.class.getName() + "$1");
       loadTerracottaClass(com.tc.util.ClassUtils.class.getName() + "$ClassSpec");
       loadTerracottaClass(com.tc.util.ClassUtils.class.getName() + "$ClassSpecImpl");
+      
+      loadTerracottaClass(com.tc.net.ClientID.class.getName());
+      loadTerracottaClass(com.tc.net.NodeID.class.getName());
+      loadTerracottaClass(com.tc.net.protocol.tcm.ChannelID.class.getName());
+      
       addManagementClasses();
 
       addRuntimeClasses();

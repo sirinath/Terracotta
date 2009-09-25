@@ -164,9 +164,9 @@ public class DsoLockID implements LockID {
   
   public String toString() {
     if (oid == null) {
-      return "DsoLockID(" + oid + ")";
-    } else {
       return "DsoLockID(" + obj + ")";
+    } else {
+      return "DsoLockID(" + oid + ")";
     }
   }
 }
