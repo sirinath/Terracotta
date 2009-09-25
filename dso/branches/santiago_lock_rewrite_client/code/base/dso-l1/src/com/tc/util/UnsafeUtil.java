@@ -35,10 +35,16 @@ public class UnsafeUtil {
   }
   
   public static void monitorEnter(Object obj) {
+    if (Thread.currentThread().getThreadGroup().getClass().equals(ThreadGroup.class)) {
+      System.err.println("XXXX Monitor Enter " + obj + " " + Thread.currentThread());
+    }
     unsafe.monitorEnter(obj);
   }
   
   public static void monitorExit(Object obj) {
+    if (Thread.currentThread().getThreadGroup().getClass().equals(ThreadGroup.class)) {
+      System.err.println("XXXX Monitor Exit  " + obj + " " + Thread.currentThread());
+    }
     unsafe.monitorExit(obj);
   }
 
