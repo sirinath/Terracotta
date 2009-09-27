@@ -134,10 +134,10 @@ public final class ServerLock extends AbstractLock {
 
   @Override
   protected void reestablishLock(ClientServerExchangeLockContext cselc, LockHelper helper) {
-    // if greedy request then award greedily
+    // if greedy request then award greedily and don't respond
     if (cselc.getThreadID().equals(ThreadID.VM_ID)) {
       awardLockGreedily(helper, createPendingContext((ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc
-          .getState().getLockLevel(), helper));
+          .getState().getLockLevel(), helper), false);
     } else {
       super.reestablishLock(cselc, helper);
     }
@@ -307,6 +307,10 @@ public final class ServerLock extends AbstractLock {
   }
 
   private void awardLockGreedily(LockHelper helper, ServerLockContext request) {
+    awardLockGreedily(helper, request, true);
+  }
+
+  private void awardLockGreedily(LockHelper helper, ServerLockContext request, boolean toRespond) {
     State state = null;
     switch (request.getState().getLockLevel()) {
       case READ:
@@ -323,7 +327,7 @@ public final class ServerLock extends AbstractLock {
     // greedy requests should have their thread ids as vm id
     request.setThreadID(ThreadID.VM_ID);
 
-    awardLock(helper, request, state);
+    awardLock(helper, request, state, toRespond);
   }
 
   private void removeNonGreedyHoldersAndPendingOfSameClient(ServerLockContext context, LockHelper helper) {

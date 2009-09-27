@@ -178,7 +178,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void reestablishLock(ClientServerExchangeLockContext cselc, LockHelper helper) {
     awardLock(helper, createPendingContext((ClientID) cselc.getNodeID(), cselc.getThreadID(), cselc.getState()
-        .getLockLevel(), helper));
+        .getLockLevel(), helper), false);
   }
 
   protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper)
@@ -301,6 +301,10 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   protected abstract void processPendingRequests(LockHelper helper);
 
   protected void awardLock(LockHelper helper, ServerLockContext request) {
+    awardLock(helper, request, true);
+  }
+
+  protected void awardLock(LockHelper helper, ServerLockContext request, boolean toRespond) {
     State state = null;
     switch (request.getState().getLockLevel()) {
       case READ:
@@ -311,25 +315,30 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
         break;
       default:
     }
-    awardLock(helper, request, state);
+    awardLock(helper, request, state, toRespond);
   }
 
   /**
    * Assumption that this context has already been removed from the list
    */
-  protected void awardLock(LockHelper helper, ServerLockContext request, State state) {
+  protected void awardLock(LockHelper helper, ServerLockContext request, State state, boolean toRespond) {
     // add this request to the front of the list
     cancelTryLockOrWaitTimer(request, helper);
     request = changeStateToHolder(request, state, helper);
     addHolder(request, helper);
 
-    // create a lock response context and add it to the sink
-    LockResponseContext lrc = LockResponseContextFactory.createLockAwardResponseContext(lockID, request.getClientID(),
-                                                                                        request.getThreadID(), request
-                                                                                            .getState().getLockLevel());
-    helper.getLockSink().add(lrc);
     // record award to the stats
     recordLockAward(helper, request);
+
+    if (toRespond) {
+      // create a lock response context and add it to the sink
+      LockResponseContext lrc = LockResponseContextFactory.createLockAwardResponseContext(lockID,
+                                                                                          request.getClientID(),
+                                                                                          request.getThreadID(),
+                                                                                          request.getState()
+                                                                                              .getLockLevel());
+      helper.getLockSink().add(lrc);
+    }
   }
 
   protected void cannotAward(ClientID cid, ThreadID tid, ServerLockLevel requestedLockLevel, LockHelper helper) {
