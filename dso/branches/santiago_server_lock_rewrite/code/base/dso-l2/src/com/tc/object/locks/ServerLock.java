@@ -30,7 +30,9 @@ public final class ServerLock extends AbstractLock {
       if (hasGreedyHolders() && holder == null) {
         recall(level, helper);
       }
-      cannotAward(cid, tid, level, helper);
+      if (!canAwardGreedilyOnTheClient(level, holder)) {
+        cannotAward(cid, tid, level, helper);
+      }
       return;
     }
 

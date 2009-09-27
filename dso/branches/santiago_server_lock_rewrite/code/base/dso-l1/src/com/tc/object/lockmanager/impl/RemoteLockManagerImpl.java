@@ -57,7 +57,7 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
     LockRequestMessage req = createRequest();
     long millis = timeout.getMillis();
     int nanos = timeout.getNanos();
-    if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
+    if (nanos >= 500000 || (nanos > 0 && millis == 0)) {
       millis++;
     }
     req.initializeTryLock(lockID, threadID, millis, ServerLockLevel.fromLegacyInt(lockType));
