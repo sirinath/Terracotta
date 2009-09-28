@@ -88,6 +88,27 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       addNotifiedWaitersTo.addNotification(cselc);
     }
   }
+  
+  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
+    moveFromHolderToWaiter(cid, tid, timeout, helper);
+    processPendingRequests(helper);
+  }
+
+  public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
+    // remove current hold
+    ServerLockContext context = remove(cid, tid);
+    recordLockReleaseStat(cid, tid, helper);
+
+    if (context == null) {
+      logger.warn("An attempt was made to unlock:" + lockID + " for channelID:" + cid
+                  + " This lock was not held. This could be do to that node being down so it may not be an error.");
+      return;
+    }
+    Assert.assertTrue(context.isHolder());
+
+    if (clearLockIfRequired(helper)) { return; }
+    processPendingRequests(helper);
+  }
 
   public void reestablishState(ClientServerExchangeLockContext cselc, LockHelper helper) {
     Assert.assertFalse(checkDuplicate((ClientID) cselc.getNodeID(), cselc.getThreadID()));
