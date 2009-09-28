@@ -41,7 +41,7 @@ public class NotifiedWaitersTest extends TestCase {
     forChannel1.add(lr2);
     ns.addNotification(lr2);
 
-    ClientServerExchangeLockContext lr3 = new ClientServerExchangeLockContext(lockID, clientID1, txID3, State.WAITER);
+    ClientServerExchangeLockContext lr3 = new ClientServerExchangeLockContext(lockID, clientID2, txID3, State.WAITER);
     forChannel2.add(lr3);
     ns.addNotification(lr3);
 
