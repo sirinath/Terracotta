@@ -1,9 +1,9 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks.context;
+package com.tc.objectserver.locks.context;
 
-import com.tc.object.locks.LockHelper;
+import com.tc.objectserver.locks.LockHelper;
 
 import java.util.TimerTask;
 

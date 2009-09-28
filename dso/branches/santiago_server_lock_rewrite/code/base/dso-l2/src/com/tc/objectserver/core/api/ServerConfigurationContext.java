@@ -6,7 +6,6 @@ package com.tc.objectserver.core.api;
 
 import com.tc.async.api.ConfigurationContext;
 import com.tc.l2.api.L2Coordinator;
-import com.tc.object.locks.LockManager;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
@@ -15,6 +14,7 @@ import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
+import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;

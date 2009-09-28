@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks.context;
+package com.tc.objectserver.locks.context;
 
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;

@@ -14,12 +14,12 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
-import com.tc.object.locks.LockResponseContext;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.msg.LockResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.locks.LockResponseContext;
 
 import java.util.Collection;
 import java.util.Iterator;

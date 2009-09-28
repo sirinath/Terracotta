@@ -1,13 +1,16 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.logging.DumpHandler;
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.Lock.NotifyAction;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.objectserver.lockmanager.api.LockManagerMBean;
+import com.tc.objectserver.locks.Lock.NotifyAction;
 import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;

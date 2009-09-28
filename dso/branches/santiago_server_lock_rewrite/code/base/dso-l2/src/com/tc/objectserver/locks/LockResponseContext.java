@@ -1,12 +1,16 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.async.api.EventContext;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.context.WaitServerLockContext;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ServerLockLevel;
+import com.tc.objectserver.locks.context.WaitServerLockContext;
 import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 import com.tc.util.SinglyLinkedList.SinglyLinkedListIterator;

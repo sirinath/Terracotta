@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
@@ -9,13 +9,16 @@ import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.Lock.NotifyAction;
-import com.tc.object.locks.LockStore.LockIterator;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
+import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.objectserver.locks.LockStore.LockIterator;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;

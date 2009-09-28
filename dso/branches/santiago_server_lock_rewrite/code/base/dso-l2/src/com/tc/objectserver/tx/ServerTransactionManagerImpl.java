@@ -17,7 +17,6 @@ import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionManager;
-import com.tc.object.locks.LockManager;
 import com.tc.object.net.ChannelStats;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
@@ -28,6 +27,7 @@ import com.tc.objectserver.gtx.GlobalTransactionIDLowWaterMarkProvider;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
+import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
@@ -188,7 +188,9 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
     if (!callBackAdded) {
       this.stateManager.shutdownNode(deadNodeID);
-      this.lockManager.clearAllLocksFor((ClientID) deadNodeID);
+      if (deadNodeID instanceof ClientID) {
+        this.lockManager.clearAllLocksFor((ClientID) deadNodeID);
+      }
       this.gtxm.shutdownNode(deadNodeID);
       fireClientDisconnectedEvent(deadNodeID);
     }

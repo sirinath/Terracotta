@@ -46,7 +46,6 @@ import com.tc.object.lockmanager.impl.StandardLockDistributionStrategy;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
 import com.tc.object.lockmanager.impl.ClientServerLockManagerGlue.TestServerLockFactory;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
@@ -66,6 +65,7 @@ import com.tc.object.session.SessionID;
 import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
+import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
 

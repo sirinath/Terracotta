@@ -8,9 +8,9 @@ import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ServerLockContext.State;
+import com.tc.objectserver.locks.NotifiedWaiters;
 
 import java.util.HashSet;
 import java.util.Set;

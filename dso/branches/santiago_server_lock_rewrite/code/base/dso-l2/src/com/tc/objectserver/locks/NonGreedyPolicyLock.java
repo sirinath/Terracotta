@@ -1,10 +1,14 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.net.ClientID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.util.Assert;

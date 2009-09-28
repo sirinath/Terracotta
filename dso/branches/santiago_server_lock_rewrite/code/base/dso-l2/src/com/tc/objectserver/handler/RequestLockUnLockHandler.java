@@ -12,9 +12,9 @@ import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.LockManager;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.locks.LockManager;
 
 import java.util.Collection;
 

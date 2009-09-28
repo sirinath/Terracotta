@@ -13,11 +13,11 @@ import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
-import com.tc.object.locks.NotifiedWaiters;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
+import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.util.TCAssertionError;
 import com.tc.util.concurrent.ThreadUtil;
 
