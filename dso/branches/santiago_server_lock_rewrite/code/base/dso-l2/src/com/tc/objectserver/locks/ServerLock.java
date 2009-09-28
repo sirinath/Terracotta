@@ -11,7 +11,6 @@ import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
-import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.util.Assert;
 
 import java.util.ArrayList;
@@ -114,26 +113,6 @@ public final class ServerLock extends AbstractLock {
     }
     processPendingRequests(helper);
     return isEmpty();
-  }
-
-  public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
-    // remove current hold
-    ServerLockContext context = remove(cid, tid);
-    recordLockReleaseStat(cid, tid, helper);
-
-    if (context == null) {
-      logger.warn("An attempt was made to unlock:" + lockID + " for channelID:" + cid
-                  + " This lock was not held. This could be do to that node being down so it may not be an error.");
-      return;
-    }
-    Assert
-        .assertTrue(context.getState().getType() == Type.HOLDER || context.getState().getType() == Type.GREEDY_HOLDER);
-
-    if (clearLockIfRequired(helper)) { return; }
-    if (!hasGreedyHolders()) {
-      isRecalled = false;
-    }
-    processPendingRequests(helper);
   }
 
   @Override
@@ -240,15 +219,6 @@ public final class ServerLock extends AbstractLock {
     }
   }
 
-  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
-    moveFromHolderToWaiter(cid, tid, timeout, helper);
-
-    if (!hasGreedyHolders()) {
-      isRecalled = false;
-    }
-    processPendingRequests(helper);
-  }
-
   private boolean canAwardGreedilyOnTheClient(ServerLockLevel level, ServerLockContext holder) {
     return holder != null
            && (holder.getState().getLockLevel() == ServerLockLevel.WRITE || level == ServerLockLevel.READ);
@@ -266,7 +236,8 @@ public final class ServerLock extends AbstractLock {
         case GREEDY_HOLDER:
           throw new IllegalArgumentException("Greedy type not allowed here");
         case HOLDER:
-          awardLock(helper, createPendingContext(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), helper), false);
+          awardLock(helper, createPendingContext(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), helper),
+                    false);
           break;
         case PENDING:
           queue(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), Type.PENDING, -1, helper);
@@ -285,9 +256,7 @@ public final class ServerLock extends AbstractLock {
       }
     }
 
-    if (!hasGreedyHolders()) {
-      isRecalled = false;
-    } else if (!isRecalled && hasPendingRequests()) {
+    if (hasGreedyHolders() && !isRecalled && hasPendingRequests()) {
       recall(ServerLockLevel.WRITE, helper);
     }
 
@@ -403,5 +372,13 @@ public final class ServerLock extends AbstractLock {
       }
     }
     return null;
+  }
+
+  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
+    ServerLockContext temp = super.remove(cid, tid);
+    if (!hasGreedyHolders()) {
+      isRecalled = false;
+    }
+    return temp;
   }
 }

@@ -10,8 +10,6 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ServerLockContext.Type;
-import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
-import com.tc.util.Assert;
 
 import java.util.Collection;
 import java.util.List;
@@ -90,32 +88,11 @@ public final class NonGreedyPolicyLock extends AbstractLock {
     }
   }
 
-  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
-    moveFromHolderToWaiter(cid, tid, timeout, helper);
-    processPendingRequests(helper);
-  }
-
   public boolean clearStateForNode(ClientID cid, LockHelper helper) {
     clearContextsForClient(cid, helper);
     processPendingRequests(helper);
 
     return isEmpty();
-  }
-
-  public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
-    // remove current hold
-    ServerLockContext context = remove(cid, tid);
-    recordLockReleaseStat(cid, tid, helper);
-
-    if (context == null) {
-      logger.warn("An attempt was made to unlock:" + lockID + " for channelID:" + cid
-                  + " This lock was not held. This could be do to that node being down so it may not be an error.");
-      return;
-    }
-    Assert.assertTrue(context.getState().getType() == Type.HOLDER);
-
-    if (clearLockIfRequired(helper)) { return; }
-    processPendingRequests(helper);
   }
 
   public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
