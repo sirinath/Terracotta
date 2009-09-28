@@ -262,8 +262,8 @@ public class Lock {
     // request a lock you already hold
     if (holder != null) {
       if (LockLevel.NIL_LOCK_LEVEL != (holder.getLockLevel() & requestedLockLevel)) {
-        // formatting
-        throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
+//        throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
+        return false;
       }
     }
 

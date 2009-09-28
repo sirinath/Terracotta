@@ -7,6 +7,7 @@ import com.tc.net.ClientID;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.util.SinglyLinkedList;
+import com.tc.util.UnsafeUtil;
 import com.tc.util.Util;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.LockSupport;
 
 public class SynchronizedClientLock extends SinglyLinkedList<State> implements ClientLock {
-  private static final boolean DEBUG    = true;
+  private static final boolean DEBUG    = false;
   
   private static final Timer LOCK_TIMER = new Timer();
   
@@ -26,47 +27,58 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   
   private ClientGreediness   greediness;
   private ServerLockLevel    recalledLevel;
+  private RemoteLockManager  remoteManager;
   
-  public SynchronizedClientLock(LockID lock) {
+  private volatile int gcCycleCount = 0;
+
+  public SynchronizedClientLock(LockID lock, RemoteLockManager remote) {
     this.lock = lock;
+    this.remoteManager = remote;
     this.greediness = ClientGreediness.FREE;
   }
   
-  public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level) {    
+  public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to " + level + " lock");
-    if (!tryAcquire(remote, thread, level, -1)) {
+    if (tryAcquire(remote, thread, level, -1) <= 0) {
       acquireQueued(remote, thread, level);
     }
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " locked " + level);
   }
 
   public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to " + level + " lock interruptibly");
     if (Thread.interrupted()) {
       throw new InterruptedException();
     }
-    if (!tryAcquire(remote, thread, level, -1)) {
+    if (tryAcquire(remote, thread, level, -1) <= 0) {
       acquireQueuedInterruptibly(remote, thread, level);
     }
   }
 
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to " + level + " try lock");
 
-    QueuedLockAcquire node = new QueuedLockAcquire(thread, Thread.currentThread(), level);
+    QueuedLockAcquire node = new QueuedLockAcquire(thread, level);
     try {
       synchronized (this) {
         addLast(node);
       }
-      if (tryAcquire(remote, thread, level, 0)) {
-        return true;
-      } else {
-        while (!node.serverResponded()) {
-          LockSupport.park();
-          Util.selfInterruptIfNeeded(Thread.interrupted());
-        }
-        return tryAcquire(remote, thread, level, 0);
+      
+      switch (tryAcquire(remote, thread, level, 0)) {
+        case SUCCEEDED: return true;
+        case FAILED: return false;
+        case DELEGATED: break;
+        default: throw new AssertionError();
       }
+
+      while (!node.serverResponded()) {
+        node.park();
+        Util.selfInterruptIfNeeded(Thread.interrupted());
+      }
+      return tryAcquire(remote, thread, level, 0) > 0;
     } finally {
       synchronized (this) {
         remove(node);
@@ -75,14 +87,16 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
  }
 
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws InterruptedException {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to " + level + " try lock w/ timeout");
     if (Thread.interrupted()) {
       throw new InterruptedException();
     }
-    return tryAcquire(remote, thread, level, timeout) || acquireQueuedTimeout(remote, thread, level, timeout);
+    return (tryAcquire(remote, thread, level, timeout) > 0) || acquireQueuedTimeout(remote, thread, level, timeout);
   }
 
   public void unlock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to " + level + " unlock");
     if (tryRelease(remote, thread, level)) {
       unparkNextQueuedAcquire();
@@ -90,6 +104,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized boolean notify(RemoteLockManager remote, ThreadID thread) {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " notifying a single lock waiter");
     if (greediness.equals(ClientGreediness.FREE)) {
       //other L1s may be waiting (let server decide who to notify)
@@ -114,6 +129,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized boolean notifyAll(RemoteLockManager remote, ThreadID thread) {
+    markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " notifying all lock waiters");
     if (greediness.equals(ClientGreediness.FREE)) {
       //other L1s may be waiting (let server decide who to notify)
@@ -140,7 +156,8 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException {
-    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " moving to wait with " + ((timeout < 0) ? " no timeout " : (timeout + " ms")));
+    markUsed();
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " moving to wait with " + ((timeout < 0) ? "no timeout" : (timeout + " ms")));
     if (Thread.interrupted()) {
       throw new InterruptedException();
     }
@@ -158,6 +175,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
             holds.push(hold);
             hold.unlocked(remote, lock);
             greediness = greediness.waiting(remote, lock, this, hold);
+            unparkNextQueuedAcquire();
           }
         }
 
@@ -173,10 +191,10 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       synchronized (this) {
         remove(node);
       }
-      
+      remote.interrupt(lock, thread);
       while (!holds.isEmpty()) {
         LockHold lh = holds.pop();
-        lock(remote, thread, lh.getLockLevel());
+        acquireQueued(remote, thread, lh.getLockLevel(), new MonitorBasedQueuedLockAcquire(thread, lh.getLockLevel(), lock.javaObject()));
       }
     }
   }
@@ -277,7 +295,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     return holders;
   }
 
-  public void notified(ThreadID thread) {
+  public synchronized void notified(ThreadID thread) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : server notifying " + thread);
     for (State s : this) {
       if ((s instanceof LockWaiter) && s.getOwner().equals(thread)) {
@@ -298,19 +316,19 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       LOCK_TIMER.schedule(new TimerTask() {
         @Override
         public void run() {
-          recall(remote, interest, 0);
+          doRecall(remote);
         }
       }, lease);
     }
   }
 
-  public void refuse(ThreadID thread, ServerLockLevel level) {
+  public synchronized void refuse(ThreadID thread, ServerLockLevel level) {
     // if this is a try lock w/out timeout then we need to kick the locking thread
     for (State s : this) {
       if ((s instanceof QueuedLockAcquire) && s.getOwner().equals(thread)) {
         if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : server refusing lock request " + level);
         ((QueuedLockAcquire) s).acked();
-        LockSupport.unpark(((QueuedLockAcquire) s).getJavaThread());
+        s.unpark();
       }
     }
   }
@@ -322,15 +340,23 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       unparkNextQueuedAcquire();
     } else {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : server awarded per-thread " + level + " to " + thread);
-      addFirst(new LockAward(thread, level));
-      unparkQueuedAcquire(thread);
+      LockAward award = new LockAward(thread, level);
+      addFirst(award);
+      if (!unparkQueuedAcquire(thread)) {
+        remove(award);
+        remoteManager.unlock(lock, thread, level);
+      }
     }
   }
 
-  private synchronized boolean tryAcquire(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) {
+  private static final int SUCCEEDED = 1;
+  private static final int DELEGATED = 0;
+  private static final int FAILED = -1;
+  
+  private synchronized int tryAcquire(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : " + thread + " attempting to acquire " + level);
     if (level == LockLevel.CONCURRENT) {
-      return true;
+      return SUCCEEDED;
     }
     
     //What can we glean from local lock state
@@ -343,17 +369,17 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
           if (level.isRead()) {
             if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " awarded " + level + " due to existing thread hold");
             addFirst(newHold);
-            return true;
+            return SUCCEEDED;
           }
           if (hold.getLockLevel().isWrite()) {
             if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " awarded " + level + " due to existing WRITE hold");
             addFirst(newHold);
-            return true;
+            return SUCCEEDED;
           }
         } else {
           if (hold.getLockLevel().isWrite()) {
             if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " denied " + level + " due to other thread holding WRITE");
-            return false;
+            return FAILED;
           }
         }
       } else if (s instanceof LockAward) {
@@ -366,7 +392,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
                 it.remove();
                 if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " awarded " + level + " due to per thread award");
                 addFirst(newHold);
-                return true;
+                return SUCCEEDED;
               }
               break;
             case SYNCHRONOUS_WRITE:
@@ -375,7 +401,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
                 it.remove();
                 if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " awarded " + level + " due to per thread award");
                 addFirst(newHold);
-                return true;
+                return SUCCEEDED;
               }
               break;
             default:
@@ -389,11 +415,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     if (greediness.canAward(level)) {
       if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " awarded " + level + " due to client greedy hold");
       addFirst(newHold);
-      return true;
+      return SUCCEEDED;
     } else {
       if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + " : " + thread + " denied " + level + " - contacting server...");
       greediness = greediness.requestLevel(remote, lock, thread, level, timeout);
-      return false;
+      return DELEGATED;
     }
   }
   
@@ -426,7 +452,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   private boolean acquireQueued(RemoteLockManager remote, ThreadID thread, LockLevel level) {
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, Thread.currentThread(), level);
+    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level);
+    return acquireQueued(remote, thread, level, node);
+  }
+  
+  private boolean acquireQueued(RemoteLockManager remote, ThreadID thread, LockLevel level, State node) {
     synchronized (this) {
       addLast(node);
     }
@@ -434,14 +464,18 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       boolean interrupted = false;
       for (;;) {
         synchronized (this) {
-          boolean success = tryAcquire(remote, thread, level, -1);
+          boolean success = tryAcquire(remote, thread, level, -1) > 0;
           unparkNextQueuedAcquire(node.getNext());
           if (success) {
             remove(node);
             return interrupted;
           }
         }
-        node.park();
+        try {
+          node.park();
+        } catch (InterruptedException e) {
+          interrupted = true;
+        }
         if (Thread.interrupted()) {
           interrupted = true;
         }
@@ -453,14 +487,14 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   private void acquireQueuedInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException {
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, Thread.currentThread(), level);
+    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level);
     synchronized (this) {
       addLast(node);
     }
     try {
       for (;;) {
         synchronized (this) {
-          boolean success = tryAcquire(remote, thread, level, -1);
+          boolean success = tryAcquire(remote, thread, level, -1) > 0;
           unparkNextQueuedAcquire(node.getNext());
           if (success) {
             remove(node);
@@ -487,14 +521,14 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   
   private boolean acquireQueuedTimeout(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws InterruptedException {
     long lastTime = System.currentTimeMillis();
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, Thread.currentThread(), level);
+    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level);
     synchronized (this) {
       addLast(node);
     }
     try {
       for (;;) {
         synchronized (this) {
-          boolean success = tryAcquire(remote, thread, level, timeout);
+          boolean success = tryAcquire(remote, thread, level, timeout) > 0;
           unparkNextQueuedAcquire(node.getNext());
           if (success) {
             remove(node);
@@ -543,21 +577,22 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     }
   }
   
-  private synchronized void unparkQueuedAcquire(ThreadID thread) {
+  private synchronized boolean unparkQueuedAcquire(ThreadID thread) {
     for (State s : this) {
       if ((s instanceof QueuedLockAcquire) && s.getOwner().equals(thread)) {
         if (s.unpark()) {
           if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : unparked " + thread + " wanting " + ((QueuedLockAcquire) s).getLockLevel());
-          return;
+          return true;
         }
       }
     }
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + " : failed to unpark " + thread);
+    return false;
   }
 
   protected synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
     if (canRecallNow(recalledLevel)) {
-      remote.flush(lock);
+      doFlush(remote);
       if (remote.isTransactionsForLockFlushed(lock, new LockFlushCallback() {
         public void transactionsForLockFlushed(LockID id) {
           synchronized (SynchronizedClientLock.this) {
@@ -599,8 +634,17 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     return true;
   }
   
+  protected void doFlush(RemoteLockManager remote) {
+    UnsafeUtil.monitorExit(this);
+    try {
+      remote.flush(lock);
+    } finally {
+      UnsafeUtil.monitorEnter(this);
+    }
+  }
+  
   static class LockHold extends State {
-    final LockLevel level;
+    private final LockLevel level;
     
     LockHold(ThreadID owner, LockLevel level) {
       super(owner);
@@ -608,7 +652,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     }
     
     void unlocked(RemoteLockManager remote, LockID lock) {
-      if (level == LockLevel.SYNCHRONOUS_WRITE) {
+      if (LockLevel.SYNCHRONOUS_WRITE.equals(level)) {
         remote.flush(lock);
       }
     }
@@ -626,16 +670,20 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return false;
       }
     }
+    
+    public String toString() {
+      return super.toString() + " : " + level;
+    }
   }
   
   static class QueuedLockAcquire extends State {
-    final LockLevel level;
-    final Thread javaThread;
-    volatile boolean serverResponded;
+    private final LockLevel level;
+    private final Thread javaThread;
+    private volatile boolean serverResponded = false;
     
-    QueuedLockAcquire(ThreadID owner, Thread javaThread, LockLevel level) {
+    QueuedLockAcquire(ThreadID owner, LockLevel level) {
       super(owner);
-      this.javaThread = javaThread;
+      this.javaThread = Thread.currentThread();
       this.level = level;
     }
     
@@ -679,11 +727,54 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return false;
       }
     }
+    
+    
+    public String toString() {
+      return super.toString() + " : " + level;
+    }
+  }
+  
+  static class MonitorBasedQueuedLockAcquire extends QueuedLockAcquire {
+
+    private final Object javaObject;
+    
+    MonitorBasedQueuedLockAcquire(ThreadID owner, LockLevel level, Object javaObject) {
+      super(owner, level);
+      this.javaObject = javaObject;
+    }
+    
+    boolean park() {
+      synchronized (javaObject) {
+        try {
+          javaObject.wait();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+      return true;
+    }
+    
+    boolean park(long timeout) {
+      synchronized (javaObject) {
+        try {
+          javaObject.wait(timeout);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+      return true;
+    }
+    
+    boolean unpark() {
+      getJavaThread().interrupt();
+      return true;
+    }
   }
   
   static class LockWaiter extends State {
     
-    private transient Object waitObject;
+    private final Object waitObject;
+    private boolean parked = false;
     
     LockWaiter(ThreadID owner, Object waitObject) {
       super(owner);
@@ -692,20 +783,28 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     
     boolean park() throws InterruptedException {
       synchronized (waitObject) {
-        waitObject.wait();
+        parked = true;
+        while (parked) {
+          waitObject.wait();
+        }
       }
       return true;
     }
 
     boolean park(long timeout) throws InterruptedException {
       synchronized (waitObject) {
-        waitObject.wait(timeout);
+        parked = true;
+        while (parked) {
+          waitObject.wait(timeout);
+        }
       }
       return true;
     }
     
     boolean unpark() {
+      
       synchronized (waitObject) {
+        parked = false;
         waitObject.notifyAll();
       }
       return true;
@@ -723,7 +822,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
   
   static class LockAward extends State {
-    final ServerLockLevel level;
+    private final ServerLockLevel level;
     
     LockAward(ThreadID target, ServerLockLevel level) {
       super(target);
@@ -743,11 +842,26 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return false;
       }
     }
+    
+    public String toString() {
+      return super.toString() + " : " + level;
+    }
   }
 
-  public boolean garbageCollect() {
-    return false;
+  public synchronized boolean garbageCollect() {
+    if (isEmpty() && gcCycleCount > 0) {
+      greediness = ClientGreediness.GARBAGE;
+      return true;
+    } else {
+      gcCycleCount++;
+      return false;
+    }
   }  
+  
+  private void markUsed() {
+    gcCycleCount = 0;
+  }
+  
 }
 
 abstract class State implements SinglyLinkedList.LinkedNode<State> {
@@ -762,15 +876,15 @@ abstract class State implements SinglyLinkedList.LinkedNode<State> {
   }
   
   boolean park() throws InterruptedException {
-    return false;
+    throw new AssertionError();
   }
 
   boolean park(long timeout) throws InterruptedException {
-    return false;
+    throw new AssertionError();
   }
 
   boolean unpark() {
-    return false;
+    throw new AssertionError();
   }
   
   ThreadID getOwner() {
@@ -795,5 +909,9 @@ abstract class State implements SinglyLinkedList.LinkedNode<State> {
     } else {
       return false;
     }
+  }
+  
+  public String toString() {
+    return getClass().getSimpleName() + " : " + owner;
   }
 }
