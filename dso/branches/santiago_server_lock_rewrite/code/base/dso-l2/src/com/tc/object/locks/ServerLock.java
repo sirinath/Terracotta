@@ -262,7 +262,7 @@ public final class ServerLock extends AbstractLock {
         case GREEDY_HOLDER:
           throw new IllegalArgumentException("Greedy type not allowed here");
         case HOLDER:
-          awardLock(helper, createPendingContext(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), helper));
+          awardLock(helper, createPendingContext(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), helper), false);
           break;
         case PENDING:
           queue(cid, cselc.getThreadID(), cselc.getState().getLockLevel(), Type.PENDING, -1, helper);
