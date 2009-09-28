@@ -19,13 +19,13 @@ import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.impl.ClientServerLockManagerGlue.TestServerLockFactory;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.LockManagerImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.session.TestSessionManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
+import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.util.Assert;
 
 import java.util.HashSet;

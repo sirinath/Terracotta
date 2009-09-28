@@ -18,6 +18,11 @@ import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
+import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.LockFactory;
+import com.tc.objectserver.locks.LockManagerImpl;
+import com.tc.objectserver.locks.LockResponseContext;
+import com.tc.objectserver.locks.NonGreedyPolicyLock;
 import com.tc.text.Banner;
 import com.tc.util.concurrent.ThreadUtil;
 

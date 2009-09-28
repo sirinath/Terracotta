@@ -9,7 +9,6 @@ import com.tc.exception.ImplementMe;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
-import com.tc.object.locks.Lock.NotifyAction;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.tx.TimerSpec;
@@ -17,6 +16,9 @@ import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.LockWaitContext;
+import com.tc.objectserver.locks.LockManager;
+import com.tc.objectserver.locks.NotifiedWaiters;
+import com.tc.objectserver.locks.Lock.NotifyAction;
 import com.tc.text.PrettyPrinter;
 
 import java.util.ArrayList;

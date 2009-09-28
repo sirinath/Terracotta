@@ -1,10 +1,13 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.async.api.Sink;
 import com.tc.management.L2LockStatsManager;
+import com.tc.object.locks.LockTimer;
+import com.tc.object.locks.LockTimerImpl;
+import com.tc.object.locks.ServerLockContextStateMachine;
 
 public class LockHelper {
   private final LockTimer                     lockTimer;

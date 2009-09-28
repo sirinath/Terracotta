@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.logging.TCLogger;
@@ -10,16 +10,20 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
-import com.tc.object.locks.context.LinkedServerLockContext;
-import com.tc.object.locks.context.SingleServerLockContext;
-import com.tc.object.locks.context.WaitLinkedServerLockContext;
-import com.tc.object.locks.context.WaitServerLockContext;
-import com.tc.object.locks.context.WaitSingleServerLockContext;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
+import com.tc.objectserver.locks.context.LinkedServerLockContext;
+import com.tc.objectserver.locks.context.SingleServerLockContext;
+import com.tc.objectserver.locks.context.WaitLinkedServerLockContext;
+import com.tc.objectserver.locks.context.WaitServerLockContext;
+import com.tc.objectserver.locks.context.WaitSingleServerLockContext;
 import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 
@@ -59,7 +63,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       return;
     }
     Assert.assertTrue(waiter.getState() == State.WAITER);
-    changeWaiterToPending(waiter, helper);
+    moveWaiterToPending(waiter, helper);
   }
 
   public void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
@@ -72,11 +76,11 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       Assert.assertTrue(waiter.getState() == State.WAITER);
       switch (action) {
         case ALL:
-          changeWaiterToPending(waiter, helper);
+          moveWaiterToPending(waiter, helper);
           break;
         case ONE:
           Assert.assertEquals(1, waiters.size());
-          changeWaiterToPending(waiter, helper);
+          moveWaiterToPending(waiter, helper);
           break;
       }
       ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, waiter.getClientID(), waiter
@@ -290,7 +294,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return false;
   }
 
-  protected void changeWaiterToPending(ServerLockContext waiter, LockHelper helper) {
+  protected void moveWaiterToPending(ServerLockContext waiter, LockHelper helper) {
     int noOfPendingRequests = getNoOfPendingRequests();
     recordLockRequestStat(waiter.getClientID(), waiter.getThreadID(), noOfPendingRequests, helper);
     cancelTryLockOrWaitTimer(waiter, helper);
@@ -377,7 +381,11 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    Assert.assertFalse(checkDuplicate(request));
+    if (checkDuplicate(request)) {
+      logger.debug("Ignoring existing Request " + request + " in Lock " + lockID);
+      return;
+    }
+
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
       switch (iter.next().getState().getType()) {
