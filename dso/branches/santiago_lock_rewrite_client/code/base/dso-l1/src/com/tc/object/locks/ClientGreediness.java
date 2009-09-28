@@ -75,10 +75,10 @@ enum ClientGreediness {
       } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.SYNCHRONOUS_WRITE)) {
         return this;
       } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.READ) && hold.getLockLevel().isWrite()) {
-        remote.flush(lock);
+        clientLock.doFlush(remote);
         remote.unlock(lock, hold.getOwner(), ServerLockLevel.WRITE);
       } else if (!clientLock.isLockedBy(hold.getOwner(), LockLevel.READ)) {
-        remote.flush(lock);
+        clientLock.doFlush(remote);
         remote.unlock(lock, hold.getOwner(), ServerLockLevel.READ);
       }
       return this;
@@ -90,10 +90,10 @@ enum ClientGreediness {
       } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.SYNCHRONOUS_WRITE)) {
         return this;
       } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.READ) && hold.getLockLevel().isWrite()) {
-        remote.flush(lock);
+        clientLock.doFlush(remote);
         remote.wait(lock, hold.getOwner(), -1);
       } else if (!clientLock.isLockedBy(hold.getOwner(), LockLevel.READ)) {
-        remote.flush(lock);
+        clientLock.doFlush(remote);
         remote.wait(lock, hold.getOwner(), -1);
       }
       return this;
