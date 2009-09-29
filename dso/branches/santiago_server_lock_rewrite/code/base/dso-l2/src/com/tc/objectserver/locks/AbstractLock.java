@@ -792,4 +792,16 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     }
     return contexts;
   }
+  
+  protected void printCurrentQueue() {
+    System.out.print("The current Queue for " + lockID + " is [ ");
+    SinglyLinkedListIterator<ServerLockContext> iter = iterator();
+    while(iter.hasNext()) {
+      System.out.print(iter.next());
+      if(iter.hasNext()) {
+        System.out.print(" , ");
+      }
+    }
+    System.out.println(" ]");
+  }
 }
