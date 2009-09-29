@@ -19,6 +19,7 @@ import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.locks.Lock.NotifyAction;
 import com.tc.objectserver.locks.LockStore.LockIterator;
+import com.tc.objectserver.locks.factory.LockFactoryImpl;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;

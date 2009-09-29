@@ -88,7 +88,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       addNotifiedWaitersTo.addNotification(cselc);
     }
   }
-  
+
   public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
     moveFromHolderToWaiter(cid, tid, timeout, helper);
     processPendingRequests(helper);
@@ -96,7 +96,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
     // remove current hold
-    ServerLockContext context = remove(cid, tid);
+    ServerLockContext context = removeUnlockHolders(cid, tid);
     recordLockReleaseStat(cid, tid, helper);
 
     if (context == null) {
@@ -308,6 +308,8 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected abstract ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid);
 
+  protected abstract ServerLockContext removeUnlockHolders(ClientID cid, ThreadID tid);
+
   private boolean isAlreadyHeldBySameContext(ClientID cid, ThreadID tid, ServerLockLevel reqLevel,
                                              ServerLockContext context) {
     if (reqLevel == context.getState().getLockLevel() && context.getClientID().equals(cid)
@@ -347,13 +349,15 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
    * Assumption that this context has already been removed from the list
    */
   protected void awardLock(LockHelper helper, ServerLockContext request, State state, boolean toRespond) {
+    ThreadID tid = request.getThreadID();
+
     // add this request to the front of the list
     cancelTryLockOrWaitTimer(request, helper);
     request = changeStateToHolder(request, state, helper);
     addHolder(request, helper);
 
     // record award to the stats
-    recordLockAward(helper, request);
+    recordLockAward(helper, request, tid);
 
     if (toRespond) {
       // create a lock response context and add it to the sink
@@ -412,8 +416,8 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
       switch (iter.next().getState().getType()) {
         case GREEDY_HOLDER:
         case HOLDER:
-          break;
         case PENDING:
+          break;
         case TRY_PENDING:
         case WAITER:
           iter.addPrevious(request);
@@ -601,10 +605,10 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   }
 
   // record stats
-  protected void recordLockAward(LockHelper helper, ServerLockContext request) {
+  protected void recordLockAward(LockHelper helper, ServerLockContext request, ThreadID tid) {
     L2LockStatsManager l2LockStats = helper.getLockStatsManager();
-    l2LockStats.recordLockAwarded(lockID, request.getClientID(), request.getThreadID(), request.isGreedyHolder(),
-                                  System.currentTimeMillis());
+    l2LockStats.recordLockAwarded(lockID, request.getClientID(), tid, request.isGreedyHolder(), System
+        .currentTimeMillis());
   }
 
   protected void recordLockHop(LockHelper helper) {
@@ -792,13 +796,13 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     }
     return contexts;
   }
-  
+
   protected void printCurrentQueue() {
     System.out.print("The current Queue for " + lockID + " is [ ");
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       System.out.print(iter.next());
-      if(iter.hasNext()) {
+      if (iter.hasNext()) {
         System.out.print(" , ");
       }
     }
