@@ -20,7 +20,11 @@ enum ClientGreediness {
       throw new GarbageLockException();
     }
 
-    public ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      throw new GarbageLockException();
+    }
+    
+    ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
       throw new GarbageLockException();
     }
   },
@@ -98,6 +102,11 @@ enum ClientGreediness {
       }
       return this;
     }
+    
+    ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
+      remote.interrupt(lock, thread);
+      return this;
+    }
   },
   
   GREEDY_READ {
@@ -107,7 +116,7 @@ enum ClientGreediness {
       return level.isRead();
     }
     
-    public ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
       return RECALLED;
     }
 
@@ -148,7 +157,7 @@ enum ClientGreediness {
       return true;
     }
     
-    public ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
         return LEASED_GREEDY_WRITE;
       } else {
@@ -216,8 +225,12 @@ enum ClientGreediness {
     throw new AssertionError();
   }
 
-  public ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+  ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
     System.err.println(this + " recall - WTF!");
     throw new AssertionError();
+  }
+
+  ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
+    return this;
   }
 }

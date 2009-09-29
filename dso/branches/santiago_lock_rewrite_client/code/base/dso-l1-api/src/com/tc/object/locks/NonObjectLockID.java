@@ -14,7 +14,7 @@ public abstract class NonObjectLockID implements LockID {
     return true;
   }
 
-  public final Object javaObject() {
+  public Object javaObject() {
     Object jObject = JAVA_OBJECTS.get(this);
     if (jObject == null) {
       jObject = new Object();

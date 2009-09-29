@@ -749,6 +749,9 @@ public class Lock {
 
     Holder holder = getHolder(threadContext);
 
+    if (holder != null) {
+      System.err.println("Holder Not Null On Award : " + holder);
+    }
     Assert.assertNull(holder);
     holder = new Holder(this.lockID, threadContext);
     holder.addLockLevel(lockLevel);

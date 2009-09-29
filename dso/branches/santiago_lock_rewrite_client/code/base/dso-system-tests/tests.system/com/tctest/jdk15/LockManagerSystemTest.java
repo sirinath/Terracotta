@@ -250,7 +250,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     assertFalse(secondReader.isAlive());
 
     threadManager.setThreadID(tid1);
-    clientLockManager.unlock(l1, LockLevel.WRITE);
+    clientLockManager.unlock(l1, LockLevel.READ);
     assertTrue(secondWriter.isAlive());
 
     threadManager.setThreadID(tid2);
