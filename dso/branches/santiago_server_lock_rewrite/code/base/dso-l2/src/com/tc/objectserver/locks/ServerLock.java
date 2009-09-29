@@ -296,10 +296,6 @@ public final class ServerLock extends AbstractLock {
     }
     // remove holders (from the same client) who have given the lock non greedily till now
     removeNonGreedyHoldersAndPendingOfSameClient(request, helper);
-
-    // greedy requests should have their thread ids as vm id
-    request.setThreadID(ThreadID.VM_ID);
-
     awardLock(helper, request, state, toRespond);
   }
 
@@ -380,5 +376,23 @@ public final class ServerLock extends AbstractLock {
       isRecalled = false;
     }
     return temp;
+  }
+
+  @Override
+  protected ServerLockContext removeUnlockHolders(ClientID cid, ThreadID tid) {
+    ServerLockContext context = remove(cid, tid);
+    if (context == null) {
+      context = remove(cid, ThreadID.VM_ID);
+    }
+    return context;
+  }
+
+  @Override
+  protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
+    request = super.changeStateToHolder(request, state, helper);
+    if (request.getState().getType() == Type.GREEDY_HOLDER) {
+      request.setThreadID(ThreadID.VM_ID);
+    }
+    return request;
   }
 }

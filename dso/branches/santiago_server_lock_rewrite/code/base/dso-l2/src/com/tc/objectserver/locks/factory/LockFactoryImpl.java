@@ -1,9 +1,11 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.objectserver.locks;
+package com.tc.objectserver.locks.factory;
 
 import com.tc.object.locks.LockID;
+import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.LockFactory;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 
@@ -16,25 +18,13 @@ public class LockFactoryImpl implements LockFactory {
   public LockFactoryImpl() {
     // if (false) {
     if (LOCK_LEASE_ENABLE) {
-      factory = new GreedyLockFactory();
+      factory = new GreedyPolicyFactory();
     } else {
-      factory = new NonGreedyLockFactory();
+      factory = new NonGreedyLockPolicyFactory();
     }
   }
 
   public Lock createLock(LockID lid) {
     return factory.createLock(lid);
-  }
-
-  private static class GreedyLockFactory implements LockFactory {
-    public Lock createLock(LockID lid) {
-      return new ServerLock(lid);
-    }
-  }
-
-  private static class NonGreedyLockFactory implements LockFactory {
-    public Lock createLock(LockID lid) {
-      return new NonGreedyPolicyLock(lid);
-    }
   }
 }

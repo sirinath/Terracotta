@@ -103,4 +103,9 @@ public final class NonGreedyPolicyLock extends AbstractLock {
   protected ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid) {
     return get(cid, tid);
   }
+
+  @Override
+  protected ServerLockContext removeUnlockHolders(ClientID cid, ThreadID tid) {
+    return remove(cid, tid);
+  }
 }
