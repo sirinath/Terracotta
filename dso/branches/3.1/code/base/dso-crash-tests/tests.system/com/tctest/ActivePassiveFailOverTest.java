@@ -75,7 +75,7 @@ public class ActivePassiveFailOverTest extends BaseDSOTestCase {
     JMXConnector jmxConnector = null;
 
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(null, null, "localhost", jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(null, "localhost", jmxPort);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy
           .newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
@@ -101,7 +101,7 @@ public class ActivePassiveFailOverTest extends BaseDSOTestCase {
     JMXConnector jmxConnector = null;
 
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(null, null, "localhost", jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(null, "localhost", jmxPort);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy
           .newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
