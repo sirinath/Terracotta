@@ -255,20 +255,23 @@ public class ClientLockManagerTest extends TCTestCase {
 
     rmtLockManager.resetFlushCount();
 
-    threadManager.setThreadID(threadID_1);    
+    threadManager.setThreadID(threadID_1);
     assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.lock(lockID_1, LockLevel.SYNCHRONOUS_WRITE);
     assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.unlock(lockID_1, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.makeLocksGreedy();
 
+    rmtLockManager.resetFlushCount();
+
     threadManager.setThreadID(threadID_2);    
+    assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.lock(lockID_2, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.unlock(lockID_2, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(2, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.resetFlushCount();
     rmtLockManager.makeLocksNotGreedy();
@@ -402,9 +405,13 @@ public class ClientLockManagerTest extends TCTestCase {
 
     rmtLockManager.lockResponder = new LockResponder() {
 
-      public void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level) {
+      public void respondToLockRequest(final LockID lock, final ThreadID thread, final ServerLockLevel level) {
         queue.put(new Object[] {lock, thread, level});
-        lockManager.award(gid, sessionManager.getSessionID(gid), lock, ThreadID.VM_ID, level);
+        new Thread() {
+          public void run() {
+            lockManager.award(gid, sessionManager.getSessionID(gid), lock, ThreadID.VM_ID, level);
+          }
+        }.start();
       }
     };
 
@@ -979,8 +986,7 @@ public class ClientLockManagerTest extends TCTestCase {
       Assert.eval("The text \"WAITING TO LOCK: [StringLockID(Locky0)]\" should be present in the thread dump", threadDump
           .indexOf("WAITING TO LOCK: [StringLockID(Locky0)]") >= 0);
 
-      Assert.eval((threadDump.indexOf("LOCKED : [StringLockID(Locky1), StringLockID(Locky0)]") >= 0)
-                  || (threadDump.indexOf("LOCKED : [StringLockID(Locky0), StringLockID(Locky1)]") >= 0));
+      Assert.eval(threadDump.indexOf("LOCKED : [StringLockID(Locky0), StringLockID(Locky0), StringLockID(Locky1)]") >= 0);
     }
 
     clientLockManager.unlock(lid0, LockLevel.WRITE);
@@ -990,7 +996,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
     clientLockManager.unlock(lid0, LockLevel.WRITE);
     System.out.println("XXX TERRA  Thread : Again Released WRITE lock0 for tx0");
-    clientLockManager.unlock(lid1, LockLevel.WRITE);
+    clientLockManager.unlock(lid1, LockLevel.READ);
     System.out.println("XXX TERRA Thread : Released READ lock1 for tx0");
     assertFalse(done[1].attempt(500));
     assertFalse(done[2].attempt(500));

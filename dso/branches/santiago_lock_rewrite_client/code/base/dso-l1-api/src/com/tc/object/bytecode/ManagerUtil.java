@@ -528,7 +528,6 @@ public class ManagerUtil {
    * @param type Lock type
    */
   public static void monitorEnter(final Object obj, final int type) {
-    
     monitorEnter(obj, type, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 

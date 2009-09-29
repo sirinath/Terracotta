@@ -12,8 +12,6 @@ import com.tc.object.bytecode.ManagerUtil;
 import java.io.IOException;
 
 public class DsoVolatileLockID extends NonObjectLockID {
-  public final static DsoVolatileLockID NULL_ID = new DsoVolatileLockID(ObjectID.NULL_ID, null);
-
   private Object obj;
   private String   fieldName;
   
@@ -42,8 +40,9 @@ public class DsoVolatileLockID extends NonObjectLockID {
     this.fieldName = fieldName;
   }
   
+  @Deprecated
   public boolean isNull() {
-    return this == NULL_ID;
+    return false;
   }
 
   public String asString() {
