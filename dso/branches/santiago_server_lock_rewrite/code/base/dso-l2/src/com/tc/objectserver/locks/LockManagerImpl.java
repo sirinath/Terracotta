@@ -422,4 +422,11 @@ public class LockManagerImpl implements LockManager {
     }
     return result;
   }
+
+  /**
+   * To be used only in tests
+   */
+  public LockHelper getHelper() {
+    return lockHelper;
+  }
 }
