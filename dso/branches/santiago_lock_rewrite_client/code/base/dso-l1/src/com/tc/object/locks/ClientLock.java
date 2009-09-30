@@ -41,6 +41,9 @@ public interface ClientLock {
    */
   public Collection<ClientServerExchangeLockContext> getStateSnapshot();
   
+  @Deprecated
+  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot();
+
   /**
    * ClientLock implementations must return true (and subsequently throw GarbageLockException) if
    * they consider themselves garbage.

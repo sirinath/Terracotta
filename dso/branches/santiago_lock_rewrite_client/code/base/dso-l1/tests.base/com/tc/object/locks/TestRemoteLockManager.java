@@ -198,7 +198,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
   }
 
   public void interrupt(LockID lockID, ThreadID threadID) {
-    throw new ImplementMe();
+    //
   }
 
   public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {

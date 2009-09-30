@@ -106,6 +106,10 @@ public class WrappedClientLock implements ClientLock {
     return contexts;
   }
 
+  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot() {
+    return getStateSnapshot();
+  }
+  
   public int pendingCount() {
     return wrappedLock.queueLength();
   }

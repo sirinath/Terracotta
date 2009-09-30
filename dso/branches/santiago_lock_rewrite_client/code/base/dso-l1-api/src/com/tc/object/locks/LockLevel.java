@@ -31,6 +31,10 @@ public enum LockLevel {
     }
   }
   
+  public boolean flushOnUnlock() {
+    return SYNCHRONOUS_WRITE.equals(this);
+  }
+  
   @Deprecated
   public static LockLevel fromLegacyInt(int level) {
     switch (level) {
