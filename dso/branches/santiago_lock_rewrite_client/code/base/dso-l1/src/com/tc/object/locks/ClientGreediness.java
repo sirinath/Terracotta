@@ -20,7 +20,7 @@ enum ClientGreediness {
       throw new GarbageLockException();
     }
 
-    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
       throw new GarbageLockException();
     }
     
@@ -69,44 +69,49 @@ enum ClientGreediness {
       return this;
     }
 
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold unlock) {
       //must do remote unlock if downgraded or free
       //downgraded : hold is WRITE/SYNCWRITE and now holding just read
       //free : no holds
-      //XXX this code is really ugly
-      if (clientLock.isLockedBy(hold.getOwner(), LockLevel.WRITE)) {
-        return this;
-      } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.SYNCHRONOUS_WRITE)) {
-        return this;
-      } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.READ) && hold.getLockLevel().isWrite()) {
-        clientLock.doFlush(remote);
-        remote.unlock(lock, hold.getOwner(), ServerLockLevel.WRITE);
-      } else if (!clientLock.isLockedBy(hold.getOwner(), LockLevel.READ)) {
-        clientLock.doFlush(remote);
-        remote.unlock(lock, hold.getOwner(), ServerLockLevel.READ);
+      for (State s : clientLock) {
+        if (s == unlock) continue;
+        
+        if (s instanceof LockHold && s.getOwner().equals(unlock.getOwner())) {
+          LockHold hold = (LockHold) s;
+          if (unlock.getLockLevel().isWrite()) {
+            if (hold.getLockLevel().isWrite()) return this;
+          } else {
+            return this;
+          }
+        }
+      }
+
+      if (unlock.getLockLevel().isWrite()) {
+        remote.unlock(lock, unlock.getOwner(), ServerLockLevel.WRITE);
+      } else {
+        remote.unlock(lock, unlock.getOwner(), ServerLockLevel.READ);
       }
       return this;
     }
 
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
-      if (clientLock.isLockedBy(hold.getOwner(), LockLevel.WRITE)) {
-        return this;
-      } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.SYNCHRONOUS_WRITE)) {
-        return this;
-      } else if (clientLock.isLockedBy(hold.getOwner(), LockLevel.READ) && hold.getLockLevel().isWrite()) {
-        clientLock.doFlush(remote);
-        remote.wait(lock, hold.getOwner(), -1);
-      } else if (!clientLock.isLockedBy(hold.getOwner(), LockLevel.READ)) {
-        clientLock.doFlush(remote);
-        remote.wait(lock, hold.getOwner(), -1);
+    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold unlock) {
+      for (State s : clientLock) {
+        if (s == unlock) continue;
+        
+        if (s instanceof LockHold && s.getOwner().equals(unlock.getOwner())) {
+          LockHold hold = (LockHold) s;
+          if (hold.getLockLevel().isWrite()) return this;
+        }
       }
+
+      remote.wait(lock, unlock.getOwner(), -1);
       return this;
     }
     
     ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
       remote.interrupt(lock, thread);
       return this;
-    }
+    }    
   },
   
   GREEDY_READ {
@@ -116,7 +121,7 @@ enum ClientGreediness {
       return level.isRead();
     }
     
-    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
       return RECALLED;
     }
 
@@ -139,6 +144,9 @@ enum ClientGreediness {
       return this;
     }
     
+    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+      return false;
+    }
   },
 
   // I believe that LEASED_GREEDY_READ cannot exist (or at least cannot be entered)
@@ -157,7 +165,7 @@ enum ClientGreediness {
       return true;
     }
     
-    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
         return LEASED_GREEDY_WRITE;
       } else {
@@ -172,6 +180,10 @@ enum ClientGreediness {
     ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
       return this;
     }
+    
+    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+      return false;
+    }
   },
   
   LEASED_GREEDY_WRITE {
@@ -179,6 +191,10 @@ enum ClientGreediness {
     @Override
     public boolean canAward(LockLevel level) {
       return true;
+    }
+    
+    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+      return false;
     }
   },
   
@@ -225,12 +241,29 @@ enum ClientGreediness {
     throw new AssertionError();
   }
 
-  ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
+  ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
     System.err.println(this + " recall - WTF!");
     throw new AssertionError();
   }
 
   ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
     return this;
+  }
+
+  boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+    if (unlock.getLockLevel().isRead()) {
+      return false;
+    }
+    
+    synchronized (clientLock) {
+      for (State s : clientLock) {
+        if (s == unlock) continue;
+
+        if (s instanceof LockHold && s.getOwner().equals(unlock.getOwner())) {
+          if (((LockHold) s).getLockLevel().isWrite()) return false;
+        }
+      }
+    }
+    return true;
   }
 }

@@ -570,7 +570,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
     if (newState == State.STARTING) {
       for (ClientLock cls : locks.values()) {
-        for (ClientServerExchangeLockContext c: cls.getStateSnapshot()) {
+        for (ClientServerExchangeLockContext c: cls.getLegacyStateSnapshot()) {
           handshakeMessage.addLockContext(c);
         }
       }

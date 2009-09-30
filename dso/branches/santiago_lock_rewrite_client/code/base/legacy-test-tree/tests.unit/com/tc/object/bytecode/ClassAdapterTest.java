@@ -1608,7 +1608,10 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     for (Iterator i = testLockManager.getBegins().iterator(); i.hasNext();) {
       Begin b = (Begin) i.next();
       // hack
-      if (b.lock instanceof DsoLockID) {
+      if ((b.lock instanceof DsoLockID) || (b.lock instanceof DsoLiteralLockID)) {
+        rv++;
+      }
+      if ((b.lock instanceof StringLockID) && (!b.lock.asString().startsWith("^"))) {
         rv++;
       }
     }
