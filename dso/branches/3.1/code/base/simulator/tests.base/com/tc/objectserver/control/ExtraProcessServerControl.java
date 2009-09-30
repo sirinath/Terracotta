@@ -14,6 +14,7 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TestConfigObject;
 import com.tc.util.runtime.Os;
+import com.tc.util.runtime.ThreadDumpUtil;
 import com.tc.util.runtime.Vm;
 
 import java.io.ByteArrayOutputStream;
@@ -222,7 +223,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
     waitUntilStarted();
     System.err.println(this.name + " started.");
   }
-  
+
   public void startAndWait(long seconds) throws Exception {
     startWithoutWait();
     waitUntilStarted(seconds);
@@ -331,6 +332,8 @@ public class ExtraProcessServerControl extends ServerControlBase {
       Thread.sleep(1000);
       if (System.currentTimeMillis() > timeout) {
         System.err.println("TCStoper output: " + stopperOutput);
+        System.out.println("Server was shutdown but still up after " + SHUTDOWN_WAIT_TIME + " ms"
+                            + "\nFull thread dump: " + ThreadDumpUtil.getThreadDump());
         throw new Exception("Server was shutdown but still up after " + SHUTDOWN_WAIT_TIME + " ms");
       }
     }
