@@ -829,20 +829,20 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   }
 
   public String toString() {
-    StringBuffer buffer = new StringBuffer();
-    buffer.append("Lock Info");
-    buffer.append("\n");
-    buffer.append(lockID);
-    buffer.append("\n");
-    buffer.append("Contexts [ ");
+    StringBuilder builder = new StringBuilder();
+    builder.append("Lock Info");
+    builder.append("\n");
+    builder.append(lockID);
+    builder.append("\n");
+    builder.append("Contexts [ ");
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
-      buffer.append(iter.next().toString());
+      builder.append(iter.next().toString());
       if (iter.hasNext()) {
-        buffer.append(" , ");
+        builder.append(" , ");
       }
     }
-    buffer.append(" ]");
-    return buffer.toString();
+    builder.append(" ]");
+    return builder.toString();
   }
 }
