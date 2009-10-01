@@ -828,15 +828,21 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     return contexts;
   }
 
-  protected void printCurrentQueue() {
-    System.out.print("The current Queue for " + lockID + " is [ ");
+  public String toString() {
+    StringBuffer buffer = new StringBuffer();
+    buffer.append("Lock Info");
+    buffer.append("\n");
+    buffer.append(lockID);
+    buffer.append("\n");
+    buffer.append("Contexts [ ");
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
-      System.out.print(iter.next());
+      buffer.append(iter.next().toString());
       if (iter.hasNext()) {
-        System.out.print(" , ");
+        buffer.append(" , ");
       }
     }
-    System.out.println(" ]");
+    buffer.append(" ]");
+    return buffer.toString();
   }
 }
