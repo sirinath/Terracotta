@@ -3,8 +3,6 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.ThreadID;
-
 import java.util.WeakHashMap;
 
 public class ThreadIDFactory {

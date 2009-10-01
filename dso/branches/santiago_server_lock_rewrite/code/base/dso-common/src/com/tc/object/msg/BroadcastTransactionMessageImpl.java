@@ -59,7 +59,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private final List             dmis                  = new LinkedList();
   private final Collection       notifies              = new LinkedList();
   private final Map              newRoots              = new HashMap();
-  private List                   lockIDs;
+  private List<LockID>           lockIDs;
 
   private long                   changeID;
   private TransactionID          transactionID;

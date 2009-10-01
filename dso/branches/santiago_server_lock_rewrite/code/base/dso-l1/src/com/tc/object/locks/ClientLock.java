@@ -3,33 +3,33 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.ThreadID;
+
+import com.tc.object.lockmanager.api.WaitListener;
 
 import java.util.Collection;
 
 public interface ClientLock {
   public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level);
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level);
-  public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout);
-  public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level);
+  public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws InterruptedException;
+  public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException;
 
   public void unlock(RemoteLockManager remote, ThreadID thread, LockLevel level);
 
   public boolean notify(RemoteLockManager remote, ThreadID thread);
   public boolean notifyAll(RemoteLockManager remote, ThreadID thread);
-  public void wait(RemoteLockManager remote, ThreadID thread);
-  public void wait(RemoteLockManager remote, ThreadID thread, long timeout);
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) throws InterruptedException;
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException;
 
   public boolean isLocked(LockLevel level);
   public boolean isLockedBy(ThreadID thread, LockLevel level);
 
-  public int localHoldCount(LockLevel level);
-  public int globalHoldCount(RemoteLockManager remote, LockLevel level);
-  public int globalPendingCount(RemoteLockManager remote);
-  public int globalWaitingCount(RemoteLockManager remote);
+  public int holdCount(LockLevel level);
+  public int pendingCount();
+  public int waitingCount();
 
   public void notified(ThreadID thread);
-  public void recall(LockLevel interest, int lease);
+  public void recall(ServerLockLevel interest, int lease);
   public void award(ThreadID thread, ServerLockLevel level);
   public void refuse(ThreadID thread, ServerLockLevel level);
 
@@ -40,4 +40,10 @@ public interface ClientLock {
    * record the current lock state).
    */
   public Collection<ClientServerExchangeLockContext> getStateSnapshot();
+  
+  /**
+   * ClientLock implementations must return true (and subsequently throw GarbageLockException) if
+   * they consider themselves garbage.
+   */
+  public boolean garbageCollect();
 }

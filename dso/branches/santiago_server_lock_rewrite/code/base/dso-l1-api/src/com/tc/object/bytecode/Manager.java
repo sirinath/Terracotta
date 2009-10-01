@@ -14,6 +14,7 @@ import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.locks.TerracottaLocking;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.properties.TCProperties;
 import com.tc.statistics.StatisticRetrievalAction;
@@ -25,7 +26,7 @@ import javax.management.MBeanServer;
 /**
  * The Manager interface
  */
-public interface Manager {
+public interface Manager extends TerracottaLocking {
 
   /** This class's class path: com/tc/object/bytecode/Manager */
   public static final String CLASS                       = "com/tc/object/bytecode/Manager";
@@ -88,64 +89,6 @@ public interface Manager {
   public Object createOrReplaceRoot(String rootName, Object object);
 
   /**
-   * Begin volatile lock
-   *
-   * @param tcObject TCObject to lock
-   * @param fieldName Field name holding volatile object
-   * @param type Lock type
-   */
-  public void beginVolatile(TCObject tcObject, String fieldName, int type);
-
-  /**
-   * Begin lock
-   *
-   * @param lockID Lock identifier
-   * @param type Lock type
-   * @param contextInfo
-   */
-  public void beginLock(String lockID, int type, String contextInfo);
-
-  /**
-   * Try to begin lock
-   *
-   * @param lockID Lock identifier
-   * @param type Lock type
-   * @return True if lock was successful
-   */
-  public boolean tryBeginLock(String lockID, int type);
-
-  /**
-   * Try to begin lock within a specific timespan
-   *
-   * @param lockID Lock identifier
-   * @param type Lock type
-   * @param timeoutInNanos Timeout in nanoseconds
-   * @return True if lock was successful
-   */
-  public boolean tryBeginLock(String lockID, int type, long timeoutInNanos);
-
-  /**
-   * Commit volatile lock
-   *
-   * @param tcObject Volatile object TCObject
-   * @param fieldName Field holding the volatile object
-   */
-  public void commitVolatile(TCObject tcObject, String fieldName);
-
-  /**
-   * Commit lock
-   *
-   * @param lockName Lock name
-   */
-  public void commitLock(String lockName);
-
-  public void pinLock(String lockName);
-
-  public void unpinLock(String lockName);
-
-  public void evictLock(String lockName);
-
-  /**
    * Look up object by ID, faulting into the JVM if necessary
    *
    * @param id Object identifier
@@ -193,60 +136,6 @@ public interface Manager {
    * @return TCObject for pojo
    */
   public TCObject shareObjectIfNecessary(Object pojo);
-
-  /**
-   * Perform notify on obj
-   *
-   * @param obj Instance
-   */
-  public void objectNotify(Object obj);
-
-  /**
-   * Perform notifyAll on obj
-   *
-   * @param obj Instance
-   */
-  public void objectNotifyAll(Object obj);
-
-  /**
-   * Perform untimed wait on obj
-   *
-   * @param obj Instance
-   */
-  public void objectWait(Object obj) throws InterruptedException;
-
-  /**
-   * Perform timed wait on obj
-   *
-   * @param obj Instance
-   * @param millis Wait time
-   */
-  public void objectWait(Object obj, long millis) throws InterruptedException;
-
-  /**
-   * Perform timed wait on obj
-   *
-   * @param obj Instance
-   * @param millis Wait time
-   * @param nanos More wait time
-   */
-  public void objectWait(Object obj, long millis, int nanos) throws InterruptedException;
-
-  /**
-   * Enter synchronized monitor
-   *
-   * @param obj Object
-   * @param type Lock type
-   * @contextInfo contextInfo
-   */
-  public void monitorEnter(Object obj, int type, String contextInfo);
-
-  /**
-   * Exit synchronized monitor
-   *
-   * @param obj Object
-   */
-  public void monitorExit(Object obj);
 
   /**
    * Perform invoke on logical managed object
@@ -361,75 +250,6 @@ public interface Manager {
   public boolean isRoot(Field field);
 
   /**
-   * Check whether an object is locked at this lockLevel
-   *
-   * @param obj Lock
-   * @param lockLevel Lock level
-   * @return True if locked at this level
-   * @throws NullPointerException If obj is null
-   */
-  public boolean isLocked(Object obj, int lockLevel);
-
-  /**
-   * Try to enter monitor for specified object
-   *
-   * @param obj The object monitor
-   * @param timeoutInNanos Timeout in nanoseconds
-   * @param type The lock level
-   * @return True if entered
-   * @throws NullPointerException If obj is null
-   */
-  public boolean tryMonitorEnter(Object obj, int type, long timeoutInNanos);
-
-  /**
-   * Enter synchronized monitor (interruptibly)
-   *
-   * @param obj The object monitor
-   * @param type The lock level
-   * @throws InterruptedException If interrupted while entering or waiting
-   * @throws NullPointerException If obj is null
-   */
-  public void monitorEnterInterruptibly(Object obj, int type) throws InterruptedException;
-
-  /**
-   * Get number of locks held locally on this object
-   *
-   * @param obj The lock object
-   * @param lockLevel The lock level
-   * @return Lock count
-   * @throws NullPointerException If obj is null
-   */
-  public int localHeldCount(Object obj, int lockLevel);
-
-  /**
-   * Check whether this lock is held by the current thread
-   *
-   * @param obj The lock
-   * @param lockLevel The lock level
-   * @return True if held by current thread
-   * @throws NullPointerException If obj is null
-   */
-  public boolean isHeldByCurrentThread(Object obj, int lockLevel);
-
-  /**
-   * Number in queue waiting on this lock
-   *
-   * @param obj The object
-   * @return Number of waiters
-   * @throws NullPointerException If obj is null
-   */
-  public int queueLength(Object obj);
-
-  /**
-   * Number in queue waiting on this wait()
-   *
-   * @param obj The object
-   * @return Number of waiters
-   * @throws NullPointerException If obj is null
-   */
-  public int waitLength(Object obj);
-
-  /**
    * Get JVM Client identifier
    *
    * @return Client identifier
@@ -478,11 +298,6 @@ public interface Manager {
    * override hashCode()
    */
   public boolean overridesHashCode(Object obj);
-
-  /**
-   * Begins a lock without associating any transaction context.
-   */
-  public void beginLockWithoutTxn(String lockID, int type);
 
   /**
    * Register a named classloader with Terracotta.

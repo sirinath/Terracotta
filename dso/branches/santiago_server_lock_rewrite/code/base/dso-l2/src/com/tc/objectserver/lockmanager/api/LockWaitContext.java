@@ -6,7 +6,7 @@ package com.tc.objectserver.lockmanager.api;
 
 import com.tc.async.api.Sink;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.impl.TimerKey;
 

@@ -107,13 +107,13 @@ public class ReentrantLockTC extends ReentrantLock implements TCLock, NotClearab
 
   private boolean dsoTryLock() {
     if (ManagerUtil.isManaged(this)) {
-      return ManagerUtil.tryMonitorEnter(this, LockLevel.WRITE, 0L);
+      return ManagerUtil.tryMonitorEnter(this, LockLevel.WRITE);
     } else {
       return true;
     }
   }
 
-  public boolean dsoTryLock(long timeout, TimeUnit unit) {
+  public boolean dsoTryLock(long timeout, TimeUnit unit) throws InterruptedException {
     if (ManagerUtil.isManaged(this)) {
       long timeoutInNanos = TimeUnit.NANOSECONDS.convert(timeout, unit);
       return ManagerUtil.tryMonitorEnter(this, LockLevel.WRITE, timeoutInNanos);

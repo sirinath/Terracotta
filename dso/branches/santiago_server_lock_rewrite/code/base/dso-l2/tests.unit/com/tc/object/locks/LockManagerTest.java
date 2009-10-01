@@ -12,7 +12,6 @@ import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ServerThreadID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;

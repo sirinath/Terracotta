@@ -6,21 +6,17 @@ package com.tc.object.tx;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
-import com.tc.config.lock.LockContextInfo;
 import com.tc.management.beans.tx.MockClientTxMonitor;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.TestClientObjectManager;
-import com.tc.object.lockmanager.api.LockLevel;
-import com.tc.object.lockmanager.api.TestLockManager;
-import com.tc.object.lockmanager.impl.ThreadLockManagerImpl;
+import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.object.util.ReadOnlyException;
 import com.tc.stats.counter.sampled.SampledCounter;
-import com.tc.util.runtime.NullThreadIDMapImpl;
-import com.tc.util.runtime.ThreadIDManagerImpl;
 
 import junit.framework.TestCase;
 
@@ -28,7 +24,6 @@ public class ClientTransactionManagerTest extends TestCase {
   ClientTransactionFactory     clientTxnFactory;
   TestRemoteTransactionManager rmtTxnMgr;
   TestClientObjectManager      objMgr;
-  TestLockManager              lockMgr;
   ClientTransactionManagerImpl clientTxnMgr;
   SynchronizedRef              error = new SynchronizedRef(null);
 
@@ -37,9 +32,8 @@ public class ClientTransactionManagerTest extends TestCase {
     clientTxnFactory = new ClientTransactionFactoryImpl(new NullRuntimeLogger());
     rmtTxnMgr = new TestRemoteTransactionManager();
     objMgr = new TestClientObjectManager();
-    lockMgr = new TestLockManager();
     clientTxnMgr = new ClientTransactionManagerImpl(new ClientIDProviderImpl(new TestChannelIDProvider()), objMgr,
-                                                    new ThreadLockManagerImpl(lockMgr, new ThreadIDManagerImpl(new NullThreadIDMapImpl())), clientTxnFactory, rmtTxnMgr,
+                                                    clientTxnFactory, rmtTxnMgr,
                                                     new NullRuntimeLogger(), new MockClientTxMonitor(), SampledCounter.NULL_SAMPLED_COUNTER);
   }
 
@@ -58,35 +52,30 @@ public class ClientTransactionManagerTest extends TestCase {
     }
 
     // Test that we get an exception when checking while only holding a read lock
-    clientTxnMgr.begin("lock", LockLevel.READ, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ);
     try {
       clientTxnMgr.checkWriteAccess(new Object());
       fail();
     } catch (ReadOnlyException roe) {
       // expected
     }
-    clientTxnMgr.commit("lock");
+    clientTxnMgr.commit(new StringLockID("lock"));
 
-    clientTxnMgr.begin("lock", LockLevel.WRITE, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    clientTxnMgr.begin(new StringLockID("test"), LockLevel.WRITE);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit("lock");
+    clientTxnMgr.commit(new StringLockID("test"));
 
-    clientTxnMgr.begin("lock", LockLevel.SYNCHRONOUS_WRITE, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    clientTxnMgr.begin(new StringLockID("test"), LockLevel.SYNCHRONOUS_WRITE);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit("lock");
+    clientTxnMgr.commit(new StringLockID("test"));
 
-    clientTxnMgr.begin("lock", LockLevel.CONCURRENT, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    clientTxnMgr.begin(new StringLockID("test"), LockLevel.CONCURRENT);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit("lock");
+    clientTxnMgr.commit(new StringLockID("test"));
   }
 
   public void testDoIllegalReadChange() {
-    clientTxnMgr.begin("lock", LockLevel.READ, LockContextInfo.NULL_LOCK_OBJECT_TYPE,
-                       LockContextInfo.NULL_LOCK_CONTEXT_INFO);
+    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ);
 
     try {
       clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);
@@ -99,6 +88,6 @@ public class ClientTransactionManagerTest extends TestCase {
       // System.out.println("THIS IS A GOOD THING");
     }
 
-    clientTxnMgr.commit("lock");
+    clientTxnMgr.commit(new StringLockID("lock"));
   }
 }

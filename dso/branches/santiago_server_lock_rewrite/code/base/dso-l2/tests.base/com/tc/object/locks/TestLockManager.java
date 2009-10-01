@@ -8,7 +8,6 @@ import com.tc.async.api.Sink;
 import com.tc.exception.ImplementMe;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.tx.TimerSpec;

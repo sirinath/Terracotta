@@ -4,7 +4,7 @@
  */
 package com.tc.util.runtime;
 
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +37,7 @@ public class LockInfoByThreadIDImpl implements LockInfoByThreadID {
   }
 
   public void addLock(LockState lockState, ThreadID threadID, String value) {
+    System.err.println("Adding " + lockState + " " + threadID + " " + value);
     if (lockState == LockState.HOLDING) {
       addLockTo(heldLocks, threadID, value);
     } else if (lockState == LockState.WAITING_ON) {

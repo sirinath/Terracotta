@@ -2,13 +2,13 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.api;
+package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.GroupID;
+import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionProvider;
-import com.tc.object.tx.TimerSpec;
 import com.tc.object.tx.TransactionID;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
@@ -25,7 +25,7 @@ import java.util.Map;
 public class TestRemoteLockManager implements RemoteLockManager {
   public final LockResponder          LOOPBACK_LOCK_RESPONDER = new LoopbackLockResponder();
   public final LockResponder          NULL_LOCK_RESPONDER     = new LockResponder() {
-                                                                public void respondToLockRequest(LockRequest request) {
+                                                                public void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level) {
                                                                   return;
                                                                 }
                                                               };
@@ -67,20 +67,17 @@ public class TestRemoteLockManager implements RemoteLockManager {
   // by other transactions are not taken into consideration
   // *************************
 
-  public synchronized void requestLock(LockID lockID, ThreadID threadID, int lockLevel, String lockObjectType) {
+  public synchronized void lock(LockID lockID, ThreadID threadID, ServerLockLevel level) {
     lockRequests++;
-    lockRequestCalls.put(new Object[] { lockID, threadID, new Integer(lockLevel) });
+    lockRequestCalls.put(new Object[] { lockID, threadID, level });
 
-    LockRequest request;
     if (isGreedy) {
-      request = new LockRequest(lockID, ThreadID.VM_ID, LockLevel.makeGreedy(lockLevel), lockObjectType);
-    } else {
-      request = new LockRequest(lockID, threadID, lockLevel, lockObjectType);
+      threadID = ThreadID.VM_ID;
     }
 
     if (!locks.containsKey(lockID)) {
-      locks.put(lockID, new LinkedList(Arrays.asList(new Object[] { new Lock(threadID, lockLevel) })));
-      lockResponder.respondToLockRequest(request);
+      locks.put(lockID, new LinkedList(Arrays.asList(new Object[] { new Lock(threadID, level) })));
+      lockResponder.respondToLockRequest(lockID, threadID, level);
       return;
     }
 
@@ -90,12 +87,12 @@ public class TestRemoteLockManager implements RemoteLockManager {
       Lock lock = (Lock) iter.next();
       if (lock.threadID.equals(threadID)) {
         lock.upCount();
-        lockResponder.respondToLockRequest(request);
+        lockResponder.respondToLockRequest(lockID, threadID, level);
         return;
       }
     }
 
-    myLocks.addLast(new Lock(request.threadID(), request.lockLevel()));
+    myLocks.addLast(new Lock(threadID, level));
   }
 
   public synchronized void makeLocksGreedy() {
@@ -106,7 +103,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
     isGreedy = false;
   }
 
-  public synchronized void releaseLock(LockID lockID, ThreadID threadID) {
+  public synchronized void unlock(LockID lockID, ThreadID threadID, ServerLockLevel level) {
     unlockRequests++;
 
     LinkedList myLocks = (LinkedList) locks.get(lockID);
@@ -129,15 +126,14 @@ public class TestRemoteLockManager implements RemoteLockManager {
     }
 
     Lock lock = (Lock) myLocks.remove(0);
-    lockResponder.respondToLockRequest(new LockRequest(lockID, lock.threadID, lock.type));
+    lockResponder.respondToLockRequest(lockID, lock.threadID, lock.level);
   }
 
-  public void releaseLockWait(LockID lockID, ThreadID threadID, TimerSpec call) {
+  public void wait(LockID lockID, ThreadID threadID, long timeout) {
     return;
   }
 
-  public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests,
-                           Collection pendingTryLockRequests) {
+  public void recallCommit(LockID lockID, Collection contexts) {
     return;
   }
 
@@ -165,23 +161,23 @@ public class TestRemoteLockManager implements RemoteLockManager {
   }
 
   public interface LockResponder {
-    void respondToLockRequest(LockRequest request);
+    void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level);
   }
 
   private class LoopbackLockResponder implements LockResponder {
-    public void respondToLockRequest(LockRequest request) {
-      lockManager.awardLock(gid, sessionProvider.getSessionID(gid), request.lockID(), request.threadID(), request.lockLevel());
+    public void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level) {
+      lockManager.award(gid, sessionProvider.getSessionID(gid), lock, thread, level);
     }
   }
 
   private static class Lock {
-    final ThreadID threadID;
-    final int      type;
-    int            count = 1;
+    final ThreadID        threadID;
+    final ServerLockLevel level;
+    int                   count = 1;
 
-    Lock(ThreadID threadID, int type) {
+    Lock(ThreadID threadID, ServerLockLevel level) {
       this.threadID = threadID;
-      this.type = type;
+      this.level = level;
     }
 
     int upCount() {
@@ -193,15 +189,15 @@ public class TestRemoteLockManager implements RemoteLockManager {
     }
   }
 
-  public void queryLock(LockID lockID, ThreadID threadID) {
+  public void query(LockID lockID, ThreadID threadID) {
     throw new ImplementMe();
   }
 
-  public void interrruptWait(LockID lockID, ThreadID threadID) {
+  public void interrupt(LockID lockID, ThreadID threadID) {
     throw new ImplementMe();
   }
 
-  public void tryRequestLock(LockID lockID, ThreadID threadID, TimerSpec timeout, int lockType, String lockObjectType) {
+  public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {
     //
   }
 }

@@ -30,8 +30,9 @@ public enum ServerLockLevel {
       case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.WRITE:
       case com.tc.object.lockmanager.api.LockLevel.WRITE:
         return WRITE;
+      default:
+        return WRITE;
     }
-    throw new IllegalArgumentException("Level is " + level);
   }
 
   @Deprecated

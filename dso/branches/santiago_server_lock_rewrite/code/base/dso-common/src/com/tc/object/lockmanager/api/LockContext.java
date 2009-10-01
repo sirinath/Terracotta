@@ -13,6 +13,7 @@ import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
+import com.tc.object.locks.ThreadID;
 import com.tc.util.Assert;
 
 import java.io.IOException;
