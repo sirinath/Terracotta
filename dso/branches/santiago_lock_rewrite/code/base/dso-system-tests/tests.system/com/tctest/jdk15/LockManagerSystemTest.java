@@ -48,9 +48,9 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
 import com.tc.objectserver.handler.RequestLockUnLockHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
-import com.tc.objectserver.lockmanager.api.LockManager;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
+import com.tc.objectserver.locks.LockManager;
+import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.tc.util.concurrent.ThreadUtil;
@@ -81,12 +81,13 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     threadManager = new ManualThreadIDManager();
     clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new MockTransactionManager());
     
-    LockManager serverLockManager = new LockManagerImpl(new MockChannelManager(), new MockL2LockStatsManager());
-
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 
     TestServerConfigurationContext serverLockUnlockContext = new TestServerConfigurationContext();
     MockStage serverStage = new MockStage("LockManagerSystemTest");
+    LockManager serverLockManager = new LockManagerImpl(serverStage.sink, new MockL2LockStatsManager(),
+                                                        new MockChannelManager());
+
     serverLockUnlockContext.addStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE, serverStage);
     serverLockUnlockContext.lockManager = serverLockManager;
 

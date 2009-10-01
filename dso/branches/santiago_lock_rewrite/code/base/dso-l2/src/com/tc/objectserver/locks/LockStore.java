@@ -1,8 +1,9 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
+import com.tc.object.locks.LockID;
 import com.tc.util.Assert;
 
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class LockStore {
   private static final int            DEFAULT_SEGMENTS = 32;
   private final HashMap<LockID, Lock> segments[];
-  private final ReentrantLock[]       locks;
+  private final ReentrantLock[]       guards;
   private final int                   segmentShift;
   private final int                   segmentMask;
   private final LockFactory           lockFactory;
@@ -38,17 +39,17 @@ public class LockStore {
     noOfSegments = ssize;
 
     segments = new HashMap[noOfSegments];
-    locks = new ReentrantLock[noOfSegments];
+    guards = new ReentrantLock[noOfSegments];
 
     for (int i = 0; i < segments.length; i++) {
       segments[i] = new HashMap();
-      locks[i] = new ReentrantLock();
+      guards[i] = new ReentrantLock();
     }
   }
 
   public Lock checkOut(LockID lockID) {
     int index = indexFor(lockID);
-    locks[index].lock();
+    guards[index].lock();
     Lock lock = segments[index].get(lockID);
     if (lock == null) {
       lock = lockFactory.createLock(lockID);
@@ -60,7 +61,7 @@ public class LockStore {
   // Assumption that the lock is already held i.e. checked out
   public Lock remove(LockID lockID) {
     int index = indexFor(lockID);
-    Assert.assertTrue(locks[index].isHeldByCurrentThread());
+    Assert.assertTrue(guards[index].isHeldByCurrentThread());
     Lock lock = segments[index].remove(lockID);
     return lock;
   }
@@ -68,7 +69,7 @@ public class LockStore {
   public void checkIn(Lock lock) {
     LockID lockID = lock.getLockID();
     int index = indexFor(lockID);
-    locks[index].unlock();
+    guards[index].unlock();
   }
 
   private final int indexFor(Object o) {
@@ -89,10 +90,10 @@ public class LockStore {
   }
 
   public void clear() {
-    for (int i = 0; i < locks.length; i++) {
-      locks[i].lock();
+    for (int i = 0; i < guards.length; i++) {
+      guards[i].lock();
       segments[i].clear();
-      locks[i].unlock();
+      guards[i].unlock();
     }
   }
 
@@ -113,13 +114,19 @@ public class LockStore {
      */
     public Lock getNextLock(Lock lock) {
       validateOldLock(lock);
-      if (currentIter == null || !currentIter.hasNext()) {
+      while (currentIter == null || !currentIter.hasNext()) {
         if (!tryMovingToNextSegment()) { return null; }
       }
       Assert.assertNotNull(currentIter);
-      return currentIter.next().getValue();
+      oldLock = currentIter.next().getValue();
+      return oldLock;
     }
     
+    public void remove() {
+      Assert.assertNotNull(currentIter);
+      currentIter.remove();
+    }
+
     public void checkIn(Lock lock) {
       Assert.assertEquals(oldLock, lock);
       LockStore.this.checkIn(lock);
@@ -135,13 +142,13 @@ public class LockStore {
     }
 
     private boolean tryMovingToNextSegment() {
+      if (currentIndex >= 0 && currentIndex < segments.length) {
+        guards[currentIndex].unlock();
+      }
       currentIndex++;
       if (currentIndex >= segments.length) { return false; }
-      if (currentIndex <= 0) {
-        locks[currentIndex].unlock();
-      }
 
-      locks[currentIndex].lock();
+      guards[currentIndex].lock();
       currentIter = segments[currentIndex].entrySet().iterator();
       return true;
     }

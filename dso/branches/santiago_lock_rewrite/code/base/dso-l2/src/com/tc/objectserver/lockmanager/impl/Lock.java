@@ -10,28 +10,38 @@ import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
+import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.LockContext;
 import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.lockmanager.api.TimerCallback;
 import com.tc.object.lockmanager.impl.LockHolder;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ServerLockContextStateMachine;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ServerLockContext.State;
+import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.TimerSpec;
-import com.tc.objectserver.context.LockResponseContext;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.LockWaitContext;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
 import com.tc.objectserver.lockmanager.api.ServerLockRequest;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.lockmanager.api.Waiter;
+import com.tc.objectserver.locks.LockResponseContext;
+import com.tc.objectserver.locks.LockResponseContextFactory;
+import com.tc.objectserver.locks.NotifiedWaiters;
+import com.tc.objectserver.locks.context.LinkedServerLockContext;
+import com.tc.objectserver.locks.context.WaitLinkedServerLockContext;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.SinglyLinkedList;
 import com.tc.util.LazyMap.LazyHashMap;
 
 import java.util.ArrayList;
@@ -45,29 +55,25 @@ import java.util.Map;
 import java.util.TimerTask;
 
 public class Lock {
-  private static final TCLogger                     logger              = TCLogging.getLogger(Lock.class);
-  private static final Map                          EMPTY_MAP           = Collections.EMPTY_MAP;
+  private static final TCLogger                     logger               = TCLogging.getLogger(Lock.class);
+  private static final Map                          EMPTY_MAP            = Collections.EMPTY_MAP;
 
-  private final static boolean                      LOCK_LEASE_ENABLE   = TCPropertiesImpl
-                                                                            .getProperties()
-                                                                            .getBoolean(
-                                                                                        TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_ENABLED);
-  private final static int                          LOCK_LEASE_TIME     = TCPropertiesImpl
-                                                                            .getProperties()
-                                                                            .getInt(
-                                                                                    TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_LEASETIME_INMILLS);
-  public final static Lock                          NULL_LOCK           = new Lock(
-                                                                                   StringLockID.NULL_ID,
-                                                                                   LockManagerImpl.ALTRUISTIC_LOCK_POLICY,
-                                                                                   ServerThreadContextFactory.DEFAULT_FACTORY,
-                                                                                   L2LockStatsManager.NULL_LOCK_STATS_MANAGER,
-                                                                                   "");
+  private final static boolean                      LOCK_LEASE_ENABLE    = TCPropertiesImpl
+                                                                             .getProperties()
+                                                                             .getBoolean(
+                                                                                         TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_ENABLED);
+  public final static Lock                          NULL_LOCK            = new Lock(
+                                                                                    StringLockID.NULL_ID,
+                                                                                    LockManagerImpl.ALTRUISTIC_LOCK_POLICY,
+                                                                                    ServerThreadContextFactory.DEFAULT_FACTORY,
+                                                                                    L2LockStatsManager.NULL_LOCK_STATS_MANAGER,
+                                                                                    "");
 
   // These settings are optimized for the assumed common case of small size (and often size 1) of the various maps that
   // comprise the lock accounting. With these settings the maps will not grow/rehash until their size reaches the
   // current capacity which is space tradeoff from the default settings that kick in at 75% full
-  private static final int                          MAP_SIZE            = 1;
-  private static final float                        LOAD_FACTOR         = 1F;
+  private static final int                          MAP_SIZE             = 1;
+  private static final float                        LOAD_FACTOR          = 1F;
 
   private final Map<NodeID, Holder>                 greedyHolders        = new LazyHashMap<NodeID, Holder>();
   private final Map<ServerThreadContext, Holder>    holders              = new LazyHashMap<ServerThreadContext, Holder>();
@@ -77,12 +83,12 @@ public class Lock {
   private final L2LockStatsManager                  lockStatsManager;
   private final String                              lockType;
 
-  private Map<TimerKey, TimerTask>                  timers              = EMPTY_MAP;
-  private Map<ServerThreadContext, Request>         pendingLockRequests = EMPTY_MAP;
-  private Map<ServerThreadContext, LockWaitContext> waiters             = EMPTY_MAP;
+  private Map<TimerKey, TimerTask>                  timers               = EMPTY_MAP;
+  private Map<ServerThreadContext, Request>         pendingLockRequests  = EMPTY_MAP;
+  private Map<ServerThreadContext, LockWaitContext> waiters              = EMPTY_MAP;
 
   private int                                       level;
-  private boolean                                   recalled            = false;
+  private boolean                                   recalled             = false;
   private int                                       lockPolicy;
 
   // real constructor used by lock manager
@@ -115,41 +121,96 @@ public class Lock {
 
   static LockResponseContext createLockRejectedResponseContext(final LockID lockID, final ServerThreadID threadID,
                                                                final int level) {
-    return new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(), level,
-                                   LockResponseContext.LOCK_NOT_AWARDED);
+    return LockResponseContextFactory.createLockRejectedResponseContext(lockID, threadID.getNodeID(), threadID
+        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level));
   }
 
   static LockResponseContext createLockAwardResponseContext(final LockID lockID, final ServerThreadID threadID,
                                                             final int level) {
-    LockResponseContext lrc = new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(),
-                                                      level, LockResponseContext.LOCK_AWARD);
-    return lrc;
+    return LockResponseContextFactory.createLockAwardResponseContext(lockID, threadID.getNodeID(), threadID
+        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level));
   }
 
   static LockResponseContext createLockRecallResponseContext(final LockID lockID, final ServerThreadID threadID,
                                                              final int level) {
-    if (LOCK_LEASE_ENABLE) {
-      return new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(), level,
-                                     LockResponseContext.LOCK_RECALL, LOCK_LEASE_TIME);
-    } else {
-      return new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(), level,
-                                     LockResponseContext.LOCK_RECALL);
-    }
+    return LockResponseContextFactory.createLockRecallResponseContext(lockID, threadID.getNodeID(), threadID
+        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level));
   }
 
   static LockResponseContext createLockWaitTimeoutResponseContext(final LockID lockID, final ServerThreadID threadID,
                                                                   final int level) {
-    return new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(), level,
-                                   LockResponseContext.LOCK_WAIT_TIMEOUT);
+    return LockResponseContextFactory.createLockWaitTimeoutResponseContext(lockID, threadID.getNodeID(), threadID
+        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level));
   }
 
   static LockResponseContext createLockQueriedResponseContext(final LockID lockID, final ServerThreadID threadID,
                                                               final int level, final int lockRequestQueueLength,
                                                               final Collection greedyHolders, final Collection holders,
-                                                              final Collection waiters) {
-    return new LockResponseContext(lockID, threadID.getNodeID(), threadID.getClientThreadID(), level,
-                                   lockRequestQueueLength, greedyHolders, holders, waiters,
-                                   LockResponseContext.LOCK_INFO);
+                                                              final Collection waiters, final Collection pendingReqs) {
+    ServerLockContextStateMachine machine = new ServerLockContextStateMachine();
+
+    SinglyLinkedList<ServerLockContext> list = new SinglyLinkedList<ServerLockContext>();
+    for (Iterator iter = greedyHolders.iterator(); iter.hasNext();) {
+      Holder holder = (Holder) iter.next();
+      ServerLockContext context = new LinkedServerLockContext((ClientID) holder.getNodeID(), holder.getThreadID());
+      context.setState(machine, getState(Type.GREEDY_HOLDER, holder.getLockLevel()));
+      list.addLast(context);
+    }
+
+    for (Iterator iter = holders.iterator(); iter.hasNext();) {
+      Holder holder = (Holder) iter.next();
+      ServerLockContext context = new LinkedServerLockContext((ClientID) holder.getNodeID(), holder.getThreadID());
+      context.setState(machine, getState(Type.HOLDER, holder.getLockLevel()));
+      list.addLast(context);
+    }
+
+    for (Iterator iter = pendingReqs.iterator(); iter.hasNext();) {
+      Request request = (Request) iter.next();
+      ServerLockContext context = new LinkedServerLockContext((ClientID) request.getRequesterID(), request
+          .getSourceID());
+      context.setState(machine, getState(Type.PENDING, request.getLockLevel()));
+      list.addLast(context);
+    }
+
+    for (Iterator iter = waiters.iterator(); iter.hasNext();) {
+      LockWaitContext waiter = (LockWaitContext) iter.next();
+      ServerLockContext context = new WaitLinkedServerLockContext((ClientID) waiter.getNodeID(), waiter.getThreadID(),
+                                                                  waiter.getTimerSpec().getMillis(), null);
+      context.setState(machine, getState(Type.HOLDER, waiter.lockLevel()));
+      context.setState(machine, getState(Type.WAITER, waiter.lockLevel()));
+      list.addLast(context);
+    }
+
+    return LockResponseContextFactory.createLockQueriedResponseContext(lockID, threadID.getNodeID(), threadID
+        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level), list);
+  }
+
+  private static State getState(Type type, int l) {
+    ServerLockLevel lev = ServerLockLevel.fromLegacyInt(l);
+    switch (type) {
+      case GREEDY_HOLDER:
+        if (lev == ServerLockLevel.READ) {
+          return State.GREEDY_HOLDER_READ;
+        } else {
+          return State.GREEDY_HOLDER_WRITE;
+        }
+      case HOLDER:
+        if (lev == ServerLockLevel.READ) {
+          return State.HOLDER_READ;
+        } else {
+          return State.HOLDER_WRITE;
+        }
+      case TRY_PENDING:
+      case PENDING:
+        if (lev == ServerLockLevel.READ) {
+          return State.PENDING_READ;
+        } else {
+          return State.PENDING_WRITE;
+        }
+      case WAITER:
+        return State.WAITER;
+    }
+    return null;
   }
 
   private static Request createRequest(final ServerThreadContext txn, final int lockLevel, final Sink lockResponseSink,
@@ -195,13 +256,13 @@ public class Lock {
   }
 
   synchronized void queryLock(final ServerThreadContext txn, final Sink lockResponseSink) {
-
     // TODO:
     // The Remote Lock Manager needs to ask the client for lock information when greedy lock is awarded.
     // Currently, the Remote Lock Manager responds to queryLock by looking at the server only.
     lockResponseSink.add(createLockQueriedResponseContext(this.lockID, txn.getId(), this.level,
                                                           this.pendingLockRequests.size(), this.greedyHolders.values(),
-                                                          this.holders.values(), this.waiters.values()));
+                                                          this.holders.values(), this.waiters.values(),
+                                                          this.pendingLockRequests.values()));
   }
 
   boolean tryRequestLock(final ServerThreadContext txn, final int requestedLockLevel,
@@ -468,8 +529,9 @@ public class Lock {
         removeAndCancelWaitTimer(wait);
         recordLockRequestStat(wait.getNodeID(), wait.getThreadID());
         createPendingFromWaiter(wait);
-        addNotifiedWaitersTo.addNotification(new LockContext(lockID, wait.getNodeID(), wait.getThreadID(), wait
-            .lockLevel(), lockType));
+        ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, wait.getNodeID(), wait
+            .getThreadID(), State.WAITER);
+        addNotifiedWaitersTo.addNotification(cselc);
       }
     }
   }
