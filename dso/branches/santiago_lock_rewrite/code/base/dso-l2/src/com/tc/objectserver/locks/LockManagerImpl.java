@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockManagerImpl implements LockManager {
   private enum Status {
@@ -40,13 +41,14 @@ public class LockManagerImpl implements LockManager {
     LOCK, TRY_LOCK
   }
 
-  private final LockStore          lockStore;
-  private final DSOChannelManager  channelManager;
-  private final LockHelper         lockHelper;
-  private List<RequestLockContext> lockRequestQueue = new ArrayList<RequestLockContext>();
-  private volatile Status          status           = Status.STARTING;
+  private final LockStore              lockStore;
+  private final DSOChannelManager      channelManager;
+  private final LockHelper             lockHelper;
+  private final ReentrantReadWriteLock statusLock       = new ReentrantReadWriteLock();
+  private List<RequestLockContext>     lockRequestQueue = new ArrayList<RequestLockContext>();
+  private Status                       status           = Status.STARTING;
 
-  private static final TCLogger    logger           = TCLogging.getLogger(LockManagerImpl.class);
+  private static final TCLogger        logger           = TCLogging.getLogger(LockManagerImpl.class);
 
   public LockManagerImpl(Sink lockSink, L2LockStatsManager statsManager, DSOChannelManager channelManager) {
     this(lockSink, statsManager, channelManager, new LockFactoryImpl());
@@ -210,9 +212,9 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void start() {
-    Assert.assertEquals(Status.STARTING, status);
+    Assert.assertTrue(isStarting());
+    setStatus(Status.STARTED);
     synchronized (this) {
-      status = Status.STARTED;
       notifyAll();
     }
 
@@ -236,23 +238,28 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void stop() throws InterruptedException {
-    while (status == Status.STARTING) {
+    while (isStarting()) {
       synchronized (this) {
         wait();
       }
     }
-    Assert.assertEquals(Status.STARTED, status);
+    Assert.assertTrue(isStarted());
 
     this.lockHelper.getContextStateMachine().stop();
-    synchronized (this) {
-      this.status = Status.STOPPING;
-    }
+    setStatus(Status.STOPPING);
 
     lockStore.clear();
     lockHelper.getLockTimer().shutdown();
 
-    synchronized (this) {
-      this.status = Status.STOPPED;
+    setStatus(Status.STOPPED);
+  }
+
+  private void setStatus(Status status) {
+    statusLock.writeLock().lock();
+    try {
+      this.status = status;
+    } finally {
+      statusLock.writeLock().unlock();
     }
   }
 
@@ -288,15 +295,30 @@ public class LockManagerImpl implements LockManager {
   }
 
   private boolean isStarted() {
-    return status == Status.STARTED;
+    statusLock.readLock().lock();
+    try {
+      return status == Status.STARTED;
+    } finally {
+      statusLock.readLock().unlock();
+    }
   }
 
   private boolean isStoppped() {
-    return status == Status.STOPPED;
+    statusLock.readLock().lock();
+    try {
+      return status == Status.STOPPED;
+    } finally {
+      statusLock.readLock().unlock();
+    }
   }
 
   private boolean isStarting() {
-    return status == Status.STARTING;
+    statusLock.readLock().lock();
+    try {
+      return status == Status.STARTING;
+    } finally {
+      statusLock.readLock().unlock();
+    }
   }
 
   private static class RequestLockContext {
