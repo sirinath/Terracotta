@@ -172,7 +172,8 @@ import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeActionImpl;
 import com.tc.objectserver.lockmanager.api.LockManagerMBean;
-import com.tc.objectserver.lockmanager.impl.LockManagerImpl;
+import com.tc.objectserver.locks.LockManager;
+import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProviderImpl;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
@@ -305,7 +306,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   private ObjectRequestManager                   objectRequestManager;
   private TransactionalObjectManager             txnObjectManager;
   private CounterManager                         sampledCounterManager;
-  private LockManagerImpl                        lockManager;
+  private LockManager                            lockManager;
   private ServerManagementContext                managementContext;
   private StartupLock                            startupLock;
   private ClientStateManager                     clientStateManager;
@@ -740,7 +741,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     CommitTransactionMessageRecycler recycler = new CommitTransactionMessageRecycler();
     toInit.add(recycler);
 
-    this.lockManager = new LockManagerImpl(channelManager, lockStatsManager);
+    // Creating a stage here so that the sink can be passed
+    Stage respondToLockStage = stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
+                                                        new RespondToRequestLockHandler(), 1, maxStageSize);
+    this.lockManager = new LockManagerImpl(respondToLockStage.getSink(), lockStatsManager, channelManager);
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
 
@@ -832,8 +836,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                                                changesPerBroadcast);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, broadcastChangeHandler, 1,
                              maxStageSize);
-    stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
-                             new RespondToRequestLockHandler(), 1, maxStageSize);
     Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
                                                  new RequestLockUnLockHandler(), 1, maxStageSize);
     ChannelLifeCycleHandler channelLifeCycleHandler = new ChannelLifeCycleHandler(this.communicationsManager,

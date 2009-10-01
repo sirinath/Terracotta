@@ -88,8 +88,8 @@ public class ClientLockManagerImpl implements ClientLockManager {
   private ClientLock getOrCreateState(LockID lock) {
     ClientLock lockState = locks.get(lock);
     if (lockState == null) {
-      lockState = new SynchronizedClientLock(lock, remoteManager);
-//      lockState = new WrappedClientLock(lock, remoteManager);
+//      lockState = new SynchronizedClientLock(lock, remoteManager);
+      lockState = new WrappedClientLock(lock, remoteManager);
       ClientLock racer = locks.putIfAbsent(lock, lockState);
       if (racer != null) {
         return racer;

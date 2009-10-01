@@ -147,11 +147,29 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   }
 
   public void pause(NodeID remoteNode, int disconnected) {
-    getClientLockManagerFor((GroupID) remoteNode).pause(remoteNode, disconnected);
+    if (remoteNode.equals(GroupID.ALL_GROUPS)) {
+      for (ClientLockManager clm : lockManagers.values()) {
+        clm.pause(remoteNode, disconnected);
+      }
+    } else {
+      ClientLockManager clm = getClientLockManagerFor((GroupID) remoteNode);
+      if (clm != null) {
+        clm.pause(remoteNode, disconnected);
+      }
+    }
   }
 
   public void unpause(NodeID remoteNode, int disconnected) {
-    getClientLockManagerFor((GroupID) remoteNode).unpause(remoteNode, disconnected);
+    if (remoteNode.equals(GroupID.ALL_GROUPS)) {
+      for (ClientLockManager clm : lockManagers.values()) {
+        clm.unpause(remoteNode, disconnected);
+      }
+    } else {
+      ClientLockManager clm = getClientLockManagerFor((GroupID) remoteNode);
+      if (clm != null) {
+        clm.unpause(remoteNode, disconnected);
+      }
+    }
   }  
 
   public void shutdown() {

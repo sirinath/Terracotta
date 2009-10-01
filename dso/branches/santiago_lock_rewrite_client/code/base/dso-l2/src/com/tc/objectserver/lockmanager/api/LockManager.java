@@ -9,6 +9,7 @@ import com.tc.net.NodeID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TimerSpec;
+import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;

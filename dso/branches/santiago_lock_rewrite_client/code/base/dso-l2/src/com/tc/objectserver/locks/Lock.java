@@ -1,14 +1,17 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
 import com.tc.net.ClientID;
-import com.tc.object.locks.ThreadID;
 import com.tc.object.lockmanager.api.TimerCallback;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
+import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 
 import java.util.Collection;
 
@@ -29,13 +32,14 @@ public interface Lock extends TimerCallback {
 
   void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts, LockHelper helper);
 
-  void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo, LockHelper helper);
+  void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo, LockHelper helper)
+      throws TCIllegalMonitorStateException;
 
-  void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper);
+  void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException;
 
-  void reestablishState(ClientID cid, ClientServerExchangeLockContext serverLockContext, LockHelper lockHelper);
+  void reestablishState(ClientServerExchangeLockContext serverLockContext, LockHelper lockHelper);
 
-  void clearStateForNode(ClientID cid);
+  boolean clearStateForNode(ClientID cid, LockHelper helper);
 
   LockMBean getMBean(DSOChannelManager channelManager);
 

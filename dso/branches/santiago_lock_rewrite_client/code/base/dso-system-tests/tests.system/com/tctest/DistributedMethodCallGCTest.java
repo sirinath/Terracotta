@@ -21,7 +21,6 @@ public class DistributedMethodCallGCTest extends GCTestBase {
 
   public DistributedMethodCallGCTest() {
     // MNK-714
-    disableAllUntil("2009-09-19"); //extended timebomb
   }
   
   public void doSetUp(TransparentTestIface t) throws Exception {
