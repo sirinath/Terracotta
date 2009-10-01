@@ -89,6 +89,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     ClientLock lockState = locks.get(lock);
     if (lockState == null) {
       lockState = new SynchronizedClientLock(lock, remoteManager);
+//      lockState = new WrappedClientLock(lock, remoteManager);
       ClientLock racer = locks.putIfAbsent(lock, lockState);
       if (racer != null) {
         return racer;
@@ -600,12 +601,12 @@ public class ClientLockManagerImpl implements ClientLockManager {
     try {
       state = state.unpause();
       if (state == State.RUNNING) {
-        resubmitInFlightLockQueries();
         runningCondition.signalAll();
       }
     } finally {
       stateGuard.writeLock().unlock();
     }
+    resubmitInFlightLockQueries();
   }
   
   static enum State {
