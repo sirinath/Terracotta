@@ -7,11 +7,9 @@ import com.tc.net.ClientID;
 import com.tc.util.SinglyLinkedList.LinkedNode;
 
 public abstract class ServerLockContext implements LinkedNode<ServerLockContext> {
-  private State             state;
-  private final ClientID    clientID;
-  private final ThreadID    threadID;
-
-  private ServerLockContext next;
+  private State          state;
+  private final ClientID clientID;
+  private ThreadID       threadID;
 
   public ServerLockContext(ClientID clientID, ThreadID threadID) {
     this.clientID = clientID;
@@ -50,6 +48,10 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     }
   }
 
+  public final void setThreadID(ThreadID threadID) {
+    this.threadID = threadID;
+  }
+
   public final void setState(ServerLockContextStateMachine machine, State newState) {
     if (!machine.canSetState(this.state, newState)) { throw new IllegalStateException("Old=" + this.state + " to "
                                                                                       + newState); }
@@ -68,13 +70,49 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     return this.state;
   }
 
-  public ServerLockContext getNext() {
-    return next;
+  public boolean isWaiter() {
+    if (state.getType() == Type.WAITER) { return true; }
+    return false;
   }
 
-  public ServerLockContext setNext(ServerLockContext next) {
-    ServerLockContext prev = this.next;
-    this.next = next;
-    return prev;
+  public boolean isPending() {
+    if (state.getType() == Type.PENDING || state.getType() == Type.TRY_PENDING) { return true; }
+    return false;
   }
+
+  public boolean isHolder() {
+    if (state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER) { return true; }
+    return false;
+  }
+
+  public boolean isGreedyHolder() {
+    if (state.getType() == Type.GREEDY_HOLDER) { return true; }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return "ServerLockContext [clientID=" + clientID + ", state=" + state + ", threadID=" + threadID + "]";
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((clientID == null) ? 0 : clientID.hashCode());
+    result = prime * result + ((threadID == null) ? 0 : threadID.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (!(obj instanceof ServerLockContext)) return false;
+    ServerLockContext other = (ServerLockContext) obj;
+    if (!clientID.equals(other.clientID)) return false;
+    if (!threadID.equals(other.threadID)) return false;
+    return true;
+  }
+
 }

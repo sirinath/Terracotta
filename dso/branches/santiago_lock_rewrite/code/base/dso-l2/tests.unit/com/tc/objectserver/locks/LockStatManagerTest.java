@@ -2,21 +2,22 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.objectserver.lockmanager.impl;
+package com.tc.objectserver.locks;
 
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ThreadID;
-import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
+import com.tc.objectserver.locks.factory.GreedyPolicyFactory;
+import com.tc.objectserver.locks.factory.NonGreedyLockPolicyFactory;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -40,11 +41,15 @@ public class LockStatManagerTest extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    resetLockManager();
     sink = new TestSink();
+    resetLockManager();
   }
 
   private void resetLockManager() {
+    resetLockManager(new GreedyPolicyFactory());
+  }
+
+  private void resetLockManager(LockFactory factory) {
     if (lockManager != null) {
       try {
         lockManager.stop();
@@ -54,8 +59,11 @@ public class LockStatManagerTest extends TestCase {
     }
 
     lockStatManager = new L2LockStatisticsManagerImpl();
-    lockManager = new LockManagerImpl(new NullChannelManager(), lockStatManager);
-    lockManager.setLockPolicy(LockManagerImpl.GREEDY_LOCK_POLICY);
+    if (factory == null) {
+      lockManager = new LockManagerImpl(sink, lockStatManager, new NullChannelManager());
+    } else {
+      lockManager = new LockManagerImpl(sink, lockStatManager, new NullChannelManager(), factory);
+    }
     lockManager.start();
     final CounterManager counterManager = new CounterManagerImpl();
     final SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
@@ -74,7 +82,7 @@ public class LockStatManagerTest extends TestCase {
   }
 
   public void testLockHeldAggregateDurationWithoutGreedy() {
-    lockManager.setLockPolicy(LockManagerImpl.ALTRUISTIC_LOCK_POLICY);
+    resetLockManager(new NonGreedyLockPolicyFactory());
     try {
       LockID l1 = new StringLockID("1");
       final ClientID cid1 = new ClientID(1);
@@ -82,10 +90,10 @@ public class LockStatManagerTest extends TestCase {
       final ClientID cid2 = new ClientID(2);
       ThreadID s2 = new ThreadID(1);
 
-      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE);
       Thread.sleep(5000);
       lockManager.unlock(l1, cid1, s1);
-      lockManager.requestLock(l1, cid2, s2, LockLevel.READ, String.class.getName(), sink);
+      lockManager.lock(l1, cid2, s2, ServerLockLevel.READ);
       Thread.sleep(3000);
       lockManager.unlock(l1, cid2, s2);
       Collection c = lockStatManager.getLockSpecs();
@@ -112,10 +120,10 @@ public class LockStatManagerTest extends TestCase {
       final ClientID cid2 = new ClientID(2);
       ThreadID s2 = new ThreadID(1);
 
-      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE);
       ThreadUtil.reallySleep(5000);
       lockManager.unlock(l1, cid1, ThreadID.VM_ID);
-      lockManager.requestLock(l1, cid2, s2, LockLevel.READ, String.class.getName(), sink);
+      lockManager.lock(l1, cid2, s2, ServerLockLevel.READ);
       ThreadUtil.reallySleep(3000);
       lockManager.unlock(l1, cid2, ThreadID.VM_ID);
       Collection c = lockStatManager.getLockSpecs();
@@ -151,11 +159,11 @@ public class LockStatManagerTest extends TestCase {
       final ClientID cid1 = new ClientID(1);
       ThreadID s1 = new ThreadID(0);
 
-      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
-      lockManager.requestLock(l2, cid1, s1, LockLevel.READ, String.class.getName(), sink);
+      lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE);
+      lockManager.lock(l2, cid1, s1, ServerLockLevel.READ);
       lockManager.unlock(l2, cid1, ThreadID.VM_ID);
       lockManager.unlock(l1, cid1, ThreadID.VM_ID);
-      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE);
       lockManager.unlock(l1, cid1, ThreadID.VM_ID);
       Collection c = lockStatManager.getLockSpecs();
       Iterator i = c.iterator();
@@ -179,7 +187,7 @@ public class LockStatManagerTest extends TestCase {
 
       final ClientID cid1 = new ClientID(1);
 
-      lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink);
+      lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE);
       assertEquals(0, lockStatManager.getNumberOfLockRequested(l1));
       lockManager.unlock(l1, cid1, ThreadID.VM_ID);
 
@@ -204,13 +212,14 @@ public class LockStatManagerTest extends TestCase {
 
     long lastSampleTime = System.currentTimeMillis();
     lastSampleTime = sampleAndAssertLockCount(lastSampleTime, globalLockCounter, 0);
-    lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink); // c1 get l1 greedily
+    lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE); // c1 get l1 greedily
     lastSampleTime = sampleAndAssertLockCount(lastSampleTime, globalLockCounter, 1);
 
     assertEquals(1, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
 
-    lockManager.requestLock(l1, cid2, s1, LockLevel.WRITE, String.class.getName(), sink); // c2 should pend and issue a
+    lockManager.lock(l1, cid2, s1, ServerLockLevel.WRITE); // c2 should pend and
+    // issue a
     // recall
     assertEquals(2, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(0, lockStatManager.getNumberOfPendingRequests(l1));
@@ -225,7 +234,7 @@ public class LockStatManagerTest extends TestCase {
     }
     assertEquals(1 + initialLockRecallCount, recallCount);
 
-    lockManager.tryRequestLock(l1, cid3, s1, LockLevel.WRITE, String.class.getName(), new TimerSpec(0, 0), sink);
+    lockManager.tryLock(l1, cid3, s1, ServerLockLevel.WRITE, 0);
     assertEquals(3, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
 
@@ -235,7 +244,8 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(1, lockStatManager.getNumberOfLockReleased(l1));
 
-    lockManager.requestLock(l1, cid1, s1, LockLevel.WRITE, String.class.getName(), sink); // c1 request again and issue
+    lockManager.lock(l1, cid1, s1, ServerLockLevel.WRITE); // c1 request again and
+    // issue
     // a recall
     assertEquals(4, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
@@ -256,8 +266,8 @@ public class LockStatManagerTest extends TestCase {
     assertEquals(1, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(2, lockStatManager.getNumberOfLockReleased(l1));
 
-    lockManager.requestLock(l1, cid3, s1, LockLevel.WRITE, String.class.getName(), sink); // issues a recall again
-    lockManager.requestLock(l1, cid4, s1, LockLevel.WRITE, String.class.getName(), sink);
+    lockManager.lock(l1, cid3, s1, ServerLockLevel.WRITE); // issues a recall again
+    lockManager.lock(l1, cid4, s1, ServerLockLevel.WRITE);
     assertEquals(6, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(2, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(3, lockStatManager.getNumberOfLockHopRequests(l1));
@@ -290,7 +300,7 @@ public class LockStatManagerTest extends TestCase {
     lastSampleTime = sampleAndAssertLockCount(lastSampleTime, globalLockCounter, 1);
     assertEquals(2, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(4, lockStatManager.getNumberOfLockReleased(l1));
-    lockManager.requestLock(l1, cid3, s1, LockLevel.WRITE, String.class.getName(), sink); // issues a recall again
+    lockManager.lock(l1, cid3, s1, ServerLockLevel.WRITE); // issues a recall again
     assertEquals(7, lockStatManager.getNumberOfLockRequested(l1));
     assertEquals(2, lockStatManager.getNumberOfPendingRequests(l1));
     assertEquals(5, lockStatManager.getNumberOfLockHopRequests(l1));

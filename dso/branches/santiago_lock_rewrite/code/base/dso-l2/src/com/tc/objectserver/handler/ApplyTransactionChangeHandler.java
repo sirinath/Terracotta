@@ -8,6 +8,7 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.net.ClientID;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionManager;
 import com.tc.object.lockmanager.api.Notify;
@@ -16,8 +17,9 @@ import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.context.ApplyTransactionContext;
 import com.tc.objectserver.context.BroadcastChangeContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.lockmanager.api.LockManager;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
+import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.LockManager;
+import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -69,7 +71,8 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     for (Iterator i = txn.getNotifies().iterator(); i.hasNext();) {
       Notify notify = (Notify) i.next();
-      lockManager.notify(notify.getLockID(), txn.getSourceID(), notify.getThreadID(), notify.getIsAll(),
+      Lock.NotifyAction allOrOne = notify.getIsAll() ? Lock.NotifyAction.ALL : Lock.NotifyAction.ONE;
+      lockManager.notify(notify.getLockID(), (ClientID) txn.getSourceID(), notify.getThreadID(), allOrOne,
                          notifiedWaiters);
     }
 

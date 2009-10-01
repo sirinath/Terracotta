@@ -15,6 +15,7 @@ import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
+import com.tc.object.locks.ThreadIDFactory;
 import com.tc.object.session.SessionID;
 import com.tc.util.Assert;
 
@@ -43,13 +44,15 @@ public class LockRequestMessage extends DSOMessageBase {
     LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT;
   }
 
-  private final Set<ClientServerExchangeLockContext> contexts    = new LinkedHashSet<ClientServerExchangeLockContext>();
+  private static final ThreadIDFactory               threadIDFactory = new ThreadIDFactory();
 
-  private LockID                                     lockID      = null;
-  private ServerLockLevel                            lockLevel   = null;
-  private ThreadID                                   threadID    = null;
-  private RequestType                                requestType = null;
-  private long                                       waitMillis  = -1;
+  private final Set<ClientServerExchangeLockContext> contexts        = new LinkedHashSet<ClientServerExchangeLockContext>();
+
+  private LockID                                     lockID          = null;
+  private ServerLockLevel                            lockLevel       = null;
+  private ThreadID                                   threadID        = null;
+  private RequestType                                requestType     = null;
+  private long                                       waitMillis      = -1;
 
   public LockRequestMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                             MessageChannel channel, TCMessageType type) {
@@ -135,7 +138,7 @@ public class LockRequestMessage extends DSOMessageBase {
         }
         return true;
       case THREAD_ID:
-        threadID = new ThreadID(getLongValue());
+        threadID = threadIDFactory.getOrCreate(getLongValue());
         return true;
       case REQUEST_TYPE:
         try {
