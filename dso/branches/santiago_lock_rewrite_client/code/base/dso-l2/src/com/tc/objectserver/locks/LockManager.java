@@ -1,17 +1,21 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.object.locks;
+package com.tc.objectserver.locks;
 
+import com.tc.logging.DumpHandler;
 import com.tc.net.ClientID;
+import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
-import com.tc.object.locks.Lock.NotifyAction;
-import com.tc.objectserver.lockmanager.api.LockMBean;
-import com.tc.objectserver.lockmanager.api.NotifiedWaiters;
+import com.tc.objectserver.lockmanager.api.LockManagerMBean;
+import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
 
-public interface LockManager {
+public interface LockManager extends DumpHandler, PrettyPrintable, LockManagerMBean {
   void lock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level);
 
   void tryLock(LockID lid, ClientID cid, ThreadID threadID, ServerLockLevel level, long timeout);
@@ -37,6 +41,4 @@ public interface LockManager {
   void start();
 
   void stop() throws InterruptedException;
-  
-  public LockMBean[] getAllLocks();
 }

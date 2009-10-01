@@ -5,7 +5,6 @@ package com.tc.object.locks;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.TimerCallback;
 import com.tc.util.Assert;
 
@@ -15,7 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class LockTimerImpl implements LockTimer {
-  private static final TCLogger logger    = TCLogging.getLogger(TCLockTimer.class);
+  private static final TCLogger logger    = TCLogging.getLogger(LockTimer.class);
 
   private final Timer           timer     = new Timer("DSO Lock Object.wait() timer", true);
   private boolean               started   = false;
