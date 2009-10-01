@@ -29,7 +29,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
                                                                   return;
                                                                 }
                                                               };
-  private ClientLockManager           lockManager;
+  private volatile ClientLockManager           lockManager;
   private Map                         locks                   = new HashMap();
   private int                         lockRequests            = 0;
   private int                         unlockRequests          = 0;
@@ -165,8 +165,12 @@ public class TestRemoteLockManager implements RemoteLockManager {
   }
 
   private class LoopbackLockResponder implements LockResponder {
-    public void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level) {
-      lockManager.award(gid, sessionProvider.getSessionID(gid), lock, thread, level);
+    public void respondToLockRequest(final LockID lock, final ThreadID thread, final ServerLockLevel level) {
+      new Thread() {
+        public void run() {
+          lockManager.award(gid, sessionProvider.getSessionID(gid), lock, thread, level);
+        }
+      }.start();
     }
   }
 
@@ -194,7 +198,7 @@ public class TestRemoteLockManager implements RemoteLockManager {
   }
 
   public void interrupt(LockID lockID, ThreadID threadID) {
-    throw new ImplementMe();
+    //
   }
 
   public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {

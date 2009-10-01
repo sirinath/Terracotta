@@ -10,6 +10,7 @@ import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
+import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
@@ -115,7 +116,7 @@ public class ManagerUtil {
    * 
    * @return Client identifier
    */
-  public static String getClientID() {
+  public static ClientID getClientID() {
     return getManager().getClientID();
   }
 
@@ -527,7 +528,6 @@ public class ManagerUtil {
    * @param type Lock type
    */
   public static void monitorEnter(final Object obj, final int type) {
-    
     monitorEnter(obj, type, LockContextInfo.NULL_LOCK_CONTEXT_INFO);
   }
 

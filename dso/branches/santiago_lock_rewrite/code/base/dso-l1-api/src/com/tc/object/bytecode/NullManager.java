@@ -8,6 +8,7 @@ import com.tc.cluster.DsoCluster;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
+import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
@@ -134,10 +135,10 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public final String getClientID() {
+  public final ClientID getClientID() {
     // XXX: even though this should *probably* throw UnsupportedOperationException, because some innocent tests use
     // ManagerUtil (e.g. ConfigPropertiesTest), it was decided to return "" from this method.
-    return "";
+    return ClientID.NULL_ID;
   }
 
   public final TCLogger getLogger(final String loggerName) {

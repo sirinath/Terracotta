@@ -255,20 +255,23 @@ public class ClientLockManagerTest extends TCTestCase {
 
     rmtLockManager.resetFlushCount();
 
-    threadManager.setThreadID(threadID_1);    
+    threadManager.setThreadID(threadID_1);
     assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.lock(lockID_1, LockLevel.SYNCHRONOUS_WRITE);
     assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.unlock(lockID_1, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.makeLocksGreedy();
 
+    rmtLockManager.resetFlushCount();
+
     threadManager.setThreadID(threadID_2);    
+    assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.lock(lockID_2, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertEquals(0, rmtLockManager.getFlushCount());
     lockManager.unlock(lockID_2, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(2, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.resetFlushCount();
     rmtLockManager.makeLocksNotGreedy();
@@ -289,26 +292,27 @@ public class ClientLockManagerTest extends TCTestCase {
     assertEquals(0, rmtLockManager.getFlushCount());
 
     NoExceptionLinkedQueue barrier = new NoExceptionLinkedQueue();
-    LockWaiter waiterThread = new LockWaiter(barrier,  lockID_1, null, threadID_1, -1);
+    LockWaiter waiterThread = new LockWaiter(barrier,  lockID_1, threadID_1, -1);
     
     waiterThread.start();
     Object o = barrier.take();
     assertNotNull(o);
 
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.makeLocksGreedy();
+    rmtLockManager.resetFlushCount();
 
     threadManager.setThreadID(threadID_2);
     lockManager.lock(lockID_2, LockLevel.SYNCHRONOUS_WRITE);
-    assertEquals(1, rmtLockManager.getFlushCount());
+    assertEquals(0, rmtLockManager.getFlushCount());
 
     waiterThread = new LockWaiter(barrier, lockID_2, null, threadID_2, -1);
     waiterThread.start();
     o = barrier.take();
     assertNotNull(o);
 
-    assertEquals(2, rmtLockManager.getFlushCount());
+    assertTrue(rmtLockManager.getFlushCount() > 0);
 
     rmtLockManager.resetFlushCount();
     rmtLockManager.makeLocksNotGreedy();
@@ -402,9 +406,13 @@ public class ClientLockManagerTest extends TCTestCase {
 
     rmtLockManager.lockResponder = new LockResponder() {
 
-      public void respondToLockRequest(LockID lock, ThreadID thread, ServerLockLevel level) {
+      public void respondToLockRequest(final LockID lock, final ThreadID thread, final ServerLockLevel level) {
         queue.put(new Object[] {lock, thread, level});
-        lockManager.award(gid, sessionManager.getSessionID(gid), lock, ThreadID.VM_ID, level);
+        new Thread() {
+          public void run() {
+            lockManager.award(gid, sessionManager.getSessionID(gid), lock, ThreadID.VM_ID, level);
+          }
+        }.start();
       }
     };
 
@@ -429,8 +437,8 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testNotified() throws Exception {
-    final LockID lockID1 = new StringLockID("1");
-    final LockID lockID2 = new StringLockID("2");
+    final LockID lockID1 = new StringLockID("3");
+    final LockID lockID2 = new StringLockID("4");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
 
@@ -447,6 +455,7 @@ public class ClientLockManagerTest extends TCTestCase {
     // We don't add this lock request to the set of held locks because the
     // call to wait moves it to being not
     // held anymore.
+    System.err.println("LockManager lock" + System.identityHashCode(lockManager));
     threadManager.setThreadID(tx2);
     lockManager.lock(lockID2, LockLevel.WRITE);
     assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
@@ -494,6 +503,8 @@ public class ClientLockManagerTest extends TCTestCase {
     // pending requests
     lockManager.notified(lockID2, tx2);
 
+    Thread.sleep(1000);
+    
     for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
       switch (cselc.getState()) {
         case HOLDER_READ:
@@ -519,6 +530,8 @@ public class ClientLockManagerTest extends TCTestCase {
     // now make sure that if you award the lock, the right stuff happens
     lockManager.award(gid, sessionManager.getSessionID(gid), lockID2, tx2, ServerLockLevel.WRITE);
 
+    waiterThread.join();
+    
     for (ClientServerExchangeLockContext cselc : lockManager.getAllLockContexts()) {
       switch (cselc.getState()) {
         case HOLDER_READ:
@@ -549,7 +562,9 @@ public class ClientLockManagerTest extends TCTestCase {
     }
     
     // the lock should have been awarded and no longer pending
-    assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
+
+    // this doesn't make sense against the new impl
+    //assertTrue(rmtLockManager.lockRequestCalls.isEmpty());
   }
 
   public void testAddAllOutstandingLocksTo() throws Exception {
@@ -979,8 +994,7 @@ public class ClientLockManagerTest extends TCTestCase {
       Assert.eval("The text \"WAITING TO LOCK: [StringLockID(Locky0)]\" should be present in the thread dump", threadDump
           .indexOf("WAITING TO LOCK: [StringLockID(Locky0)]") >= 0);
 
-      Assert.eval((threadDump.indexOf("LOCKED : [StringLockID(Locky1), StringLockID(Locky0)]") >= 0)
-                  || (threadDump.indexOf("LOCKED : [StringLockID(Locky0), StringLockID(Locky1)]") >= 0));
+      Assert.eval(threadDump.indexOf("LOCKED : [StringLockID(Locky0), StringLockID(Locky0), StringLockID(Locky1)]") >= 0);
     }
 
     clientLockManager.unlock(lid0, LockLevel.WRITE);
@@ -990,7 +1004,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
     clientLockManager.unlock(lid0, LockLevel.WRITE);
     System.out.println("XXX TERRA  Thread : Again Released WRITE lock0 for tx0");
-    clientLockManager.unlock(lid1, LockLevel.WRITE);
+    clientLockManager.unlock(lid1, LockLevel.READ);
     System.out.println("XXX TERRA Thread : Released READ lock1 for tx0");
     assertFalse(done[1].attempt(500));
     assertFalse(done[2].attempt(500));
@@ -1214,11 +1228,6 @@ public class ClientLockManagerTest extends TCTestCase {
     private final NoExceptionLinkedQueue preWaitSignalQueue;
     private final List                   exceptions = new LinkedList();
     private final ClientLockManager      clientLockManager;
-
-    private LockWaiter(final NoExceptionLinkedQueue preWaitSignalQueue, final LockID lid,
-                       final ClientLockManager clientLockManager, final long timeout) {
-      this(preWaitSignalQueue, lid, clientLockManager, null, timeout);
-    }
 
     private LockWaiter(final NoExceptionLinkedQueue preWaitSignalQueue, final LockID lid, final ThreadID threadID, final long timeout) {
       this(preWaitSignalQueue, lid, null, threadID, timeout);

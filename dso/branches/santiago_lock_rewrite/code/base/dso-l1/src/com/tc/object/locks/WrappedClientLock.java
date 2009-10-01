@@ -47,12 +47,7 @@ public class WrappedClientLock implements ClientLock {
   }
 
   public Collection<ClientServerExchangeLockContext> getStateSnapshot() {
-    ClientID client;
-    try {
-      client = new ClientID(Long.parseLong(ManagerUtil.getClientID()));
-    } catch (NumberFormatException e) {
-      client = ClientID.NULL_ID;
-    }    
+    ClientID client = ManagerUtil.getClientID();
 
     final Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
     
@@ -111,6 +106,10 @@ public class WrappedClientLock implements ClientLock {
     return contexts;
   }
 
+  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot() {
+    return getStateSnapshot();
+  }
+  
   public int pendingCount() {
     return wrappedLock.queueLength();
   }
@@ -150,7 +149,7 @@ public class WrappedClientLock implements ClientLock {
     return !wrappedLock.notify(thread, true).isNull();
   }
 
-  public void recall(ServerLockLevel interest, int lease) {
+  public void recall(RemoteLockManager remote, ServerLockLevel interest, int lease) {
     if (lease < 0) {
       wrappedLock.recall(ServerLockLevel.toLegacyInt(interest), wrappedLock);
     } else {
