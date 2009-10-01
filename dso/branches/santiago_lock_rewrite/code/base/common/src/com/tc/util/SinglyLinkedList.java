@@ -3,6 +3,7 @@
  */
 package com.tc.util;
 
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -20,7 +21,7 @@ import java.util.NoSuchElementException;
  * supported. An Iterator is implemented to facilitate adding in the middle and iterating all the elements. The Iterator
  * of this class does not throw ConcurrentModificationException as we don't want to store mod count to save space.
  */
-public class SinglyLinkedList<E extends SinglyLinkedList.LinkedNode<E>> {
+public class SinglyLinkedList<E extends SinglyLinkedList.LinkedNode<E>> implements Iterable<E> {
 
   public interface LinkedNode<L extends LinkedNode> {
 
@@ -29,7 +30,7 @@ public class SinglyLinkedList<E extends SinglyLinkedList.LinkedNode<E>> {
     public L setNext(L next);
   }
 
-  public interface SinglyLinkedListIterator<I extends LinkedNode> {
+  public interface SinglyLinkedListIterator<I extends LinkedNode> extends Iterator<I> {
 
     public boolean hasNext();
 

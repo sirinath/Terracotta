@@ -29,7 +29,7 @@ public interface ClientLock {
   public int waitingCount();
 
   public void notified(ThreadID thread);
-  public void recall(ServerLockLevel interest, int lease);
+  public void recall(RemoteLockManager remote, ServerLockLevel interest, int lease);
   public void award(ThreadID thread, ServerLockLevel level);
   public void refuse(ThreadID thread, ServerLockLevel level);
 
@@ -41,6 +41,9 @@ public interface ClientLock {
    */
   public Collection<ClientServerExchangeLockContext> getStateSnapshot();
   
+  @Deprecated
+  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot();
+
   /**
    * ClientLock implementations must return true (and subsequently throw GarbageLockException) if
    * they consider themselves garbage.

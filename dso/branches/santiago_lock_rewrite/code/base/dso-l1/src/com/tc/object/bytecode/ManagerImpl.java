@@ -18,6 +18,7 @@ import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.sessions.SessionMonitor;
+import com.tc.net.ClientID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
@@ -33,6 +34,7 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.DsoLiteralLockID;
 import com.tc.object.locks.DsoLockID;
 import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
@@ -167,8 +169,8 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public String getClientID() {
-    return String.valueOf(this.dso.getChannel().getClientIDProvider().getClientID().toLong());
+  public ClientID getClientID() {
+    return this.dso.getChannel().getClientIDProvider().getClientID();
   }
 
   private void resolveClasses() {
@@ -679,8 +681,15 @@ public class ManagerImpl implements Manager {
   public LockID generateLockIdentifier(Object obj) {
     if (obj instanceof String) {
       return generateLockIdentifier((String) obj);
+    } else if (isLiteralInstance(obj)) {
+      return new DsoLiteralLockID(obj);
     } else {
-      return new DsoLockID(obj);
+      TCObject tco = lookupExistingOrNull(obj);
+      if (tco == null) {
+        return new DsoLockID(obj);
+      } else {
+        return new DsoLockID(tco.getObjectID(), obj);
+      }
     }
   }
 

@@ -5,36 +5,30 @@ package com.tc.object.locks;
 
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
-import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
 import com.tc.object.bytecode.ManagerUtil;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class DsoLockID implements LockID {
-  public final static DsoLockID NULL_ID = new DsoLockID(ObjectID.NULL_ID);
-  
-  private ObjectID oid;
-  private Object   obj;
+  private ObjectID objectID;
+  private Object   javaObject;
   
   public DsoLockID() {
     // for tc serialization
   }
   
-  public DsoLockID(Object obj) {
-    this.obj = obj;
-    
-    TCObject tco = ManagerUtil.lookupExistingOrNull(obj);
-    if (tco != null) {
-      this.oid = tco.getObjectID();
-    }
+  public DsoLockID(ObjectID objectID, Object javaObject) {
+    this.objectID = objectID;
+    this.javaObject = javaObject;
   }
 
-  public DsoLockID(ObjectID oid) {
-    this.oid = oid;
+  public DsoLockID(ObjectID objectID) {
+    this.objectID = objectID;
+  }
+  
+  public DsoLockID(Object javaObject) {
+    this.javaObject = javaObject;
   }
   
   public String asString() {
@@ -45,117 +39,50 @@ public class DsoLockID implements LockID {
     return LockIDType.DSO;
   }
 
+  @Deprecated
   public boolean isNull() {
-    return this == NULL_ID;
+    return false;
   }
 
   public Object javaObject() {
-    return obj;
+    return javaObject;
   }
   
   public boolean isClustered() {
-    if (oid != null) {
-      if (obj != null) {
-        return !ManagerUtil.lookupExistingOrNull(obj).autoLockingDisabled();
-      } else {
-        //this is not strictly correct
-        return true;
-      }
+    if (objectID == null) {
+      return false;
     } else {
-      switch (LiteralValues.valueFor(obj)) {
-        case BIG_DECIMAL:
-        case BIG_INTEGER:
-        case INTEGER:
-          return true;
-        case OBJECT:
-        case OBJECT_ID:
-        case JAVA_LANG_CLASS:
-          return false;
-        default: //want this default to disappear eventually...
-          System.err.println("XXXXXXXXX NOT LOCKING ON LITERAL CLASS " + obj.getClass());
-          return false;
-      }
+      return !ManagerUtil.lookupExistingOrNull(javaObject()).autoLockingDisabled();
     }
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    boolean literal = serialInput.readBoolean();
-    if (literal) {
-      return deserializeLiteral(serialInput);
-    } else {
-      oid = new ObjectID(serialInput.readLong());
-    }
+    objectID = new ObjectID(serialInput.readLong());
     return this;
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    if (oid != null) {
-      serialOutput.writeBoolean(false);
-      serialOutput.writeLong(oid.toLong());
-    } else if (LiteralValues.isLiteralInstance(obj)) {
-      serialOutput.writeBoolean(true);
-      serializeLiteral(serialOutput);
-    } else {
-      throw new AssertionError("Attempting clustered lock on an unshared non-literal : " + obj);
-    }
+    serialOutput.writeLong(objectID.toLong());
   }
 
-  private Object deserializeLiteral(TCByteBufferInput serialInput) throws IOException {
-    LiteralValues type = LiteralValues.values()[serialInput.readByte()];
-    switch (type) {
-      case BIG_DECIMAL:
-        obj = new BigDecimal(serialInput.readString());
-        return this;
-      case BIG_INTEGER:
-        int length = serialInput.readInt();
-        byte[] data = new byte[length];
-        serialInput.readFully(data);
-        obj = new BigInteger(data);
-        return this;
-      case INTEGER:
-        obj = new Integer(serialInput.readInt());
-        return this;
-      default:
-        throw new AssertionError();
-    }
-  }
-
-  private void serializeLiteral(TCByteBufferOutput serialOutput) {
-    LiteralValues type = LiteralValues.valueFor(obj);
-    serialOutput.writeByte(type.ordinal());
-    switch (type) {
-      case BIG_DECIMAL:
-        serialOutput.writeString(((BigDecimal) obj).toString());
-        break;
-      case BIG_INTEGER:
-        byte[] data = ((BigInteger) obj).toByteArray();
-        serialOutput.writeInt(data.length);
-        serialOutput.write(data);
-        break;
-      case INTEGER:
-        serialOutput.writeInt(((Integer) obj).intValue());
-        break;
-      default:
-        throw new AssertionError();
-    }
-  }
-
+  @Override
   public int hashCode() {
-    if (oid != null) {
-      return oid.hashCode();
+    if (objectID == null) {
+      return System.identityHashCode(javaObject());
     } else {
-      return ManagerUtil.calculateDsoHashCode(obj);
+      return objectID.hashCode();
     }
   }
 
+  @Override
   public boolean equals(Object o) {
     if (o == this) {
       return true;
     } else if (o instanceof DsoLockID) {
-      if (oid == null) {
-        return obj.equals(((DsoLockID) o).obj);
+      if (objectID == null) {
+        return javaObject() == ((DsoLockID) o).javaObject();
       } else {
-        return oid.equals(((DsoLockID) o).oid);
+        return objectID.equals(((DsoLockID) o).objectID);
       }
     } else {
       return false;
@@ -163,10 +90,10 @@ public class DsoLockID implements LockID {
   }
   
   public String toString() {
-    if (oid == null) {
-      return "DsoLockID(" + oid + ")";
+    if (objectID == null) {
+      return "DsoLockID(" + hashCode() + ")";
     } else {
-      return "DsoLockID(" + obj + ")";
+      return "DsoLockID(" + objectID + ")";
     }
   }
 }

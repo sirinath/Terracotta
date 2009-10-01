@@ -10,6 +10,31 @@ public enum LockLevel {
   
   GREEDY_READ, GREEDY_WRITE;
   
+  public boolean isWrite() {
+    switch (this) {
+      case WRITE:
+      case SYNCHRONOUS_WRITE:
+      case GREEDY_WRITE:
+        return true;
+      default:
+        return false;
+    }
+  }
+  
+  public boolean isRead() {
+    switch (this) {
+      case READ:
+      case GREEDY_READ:
+        return true;
+      default:
+        return false;
+    }
+  }
+  
+  public boolean flushOnUnlock() {
+    return SYNCHRONOUS_WRITE.equals(this);
+  }
+  
   @Deprecated
   public static LockLevel fromLegacyInt(int level) {
     switch (level) {

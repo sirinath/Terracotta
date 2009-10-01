@@ -323,8 +323,8 @@ public class Lock {
     // request a lock you already hold
     if (holder != null) {
       if (LockLevel.NIL_LOCK_LEVEL != (holder.getLockLevel() & requestedLockLevel)) {
-        // formatting
-        throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
+//        throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
+        return false;
       }
     }
 
@@ -811,6 +811,9 @@ public class Lock {
 
     Holder holder = getHolder(threadContext);
 
+    if (holder != null) {
+      System.err.println("Holder Not Null On Award : " + holder);
+    }
     Assert.assertNull(holder);
     holder = new Holder(this.lockID, threadContext);
     holder.addLockLevel(lockLevel);
