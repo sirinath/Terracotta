@@ -324,6 +324,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized int pendingCount() {
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting pending count");
     int penders = 0;
     for (State s : this) {
       if (s instanceof QueuedLockAcquire) {
@@ -334,6 +335,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized int waitingCount() {
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting waiting count");
     int waiters = 0;
     for (State s : this) {
       if (s instanceof LockWaiter) {
@@ -344,6 +346,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized boolean isLocked(LockLevel level) {
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting isLocked " + level);
     for (State s : this) {
       if ((s instanceof LockHold) && (((LockHold) s).level.equals(level))) {
         return true;
@@ -357,6 +360,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized boolean isLockedBy(ThreadID thread, LockLevel level) {
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting isLocked " + level + " by " + thread);
     for (State s : this) {
       if ((s instanceof LockHold) && ((LockHold) s).getLockLevel().equals(level) && s.getOwner().equals(thread)) {
         return true;
@@ -370,6 +374,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   }
 
   public synchronized int holdCount(LockLevel level) {
+    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting hold count @ " + level);
     int holders = 0;
     for (State s : this) {
       if ((s instanceof LockHold) && ((LockHold) s).level.equals(level)) {
@@ -597,6 +602,8 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " unlocking " + level);
       remove(unlocked);
       greediness = greediness.unlocked(remote, lock, this, unlocked);
+
+      if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " unlocked " + level);
       // this is wrong - but shouldn't break anything
       return true;
     }
