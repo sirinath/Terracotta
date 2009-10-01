@@ -11,7 +11,6 @@ import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
 import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.locks.ServerLockContext.State;

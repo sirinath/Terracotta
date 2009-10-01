@@ -6,7 +6,7 @@ package com.tc.objectserver.lockmanager.impl;
 
 import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ServerThreadID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;

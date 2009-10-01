@@ -4,7 +4,7 @@
 package com.tc.objectserver.locks.context;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
+import com.tc.object.locks.ThreadID;
 import com.tc.objectserver.locks.LockHelper;
 
 import java.util.TimerTask;

@@ -4,11 +4,11 @@
 package com.tc.objectserver.locks;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.lockmanager.api.TimerCallback;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;

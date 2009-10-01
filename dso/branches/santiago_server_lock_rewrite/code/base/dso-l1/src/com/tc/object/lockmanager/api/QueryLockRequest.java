@@ -4,6 +4,7 @@
 package com.tc.object.lockmanager.api;
 
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.ThreadID;
 
 
 public class QueryLockRequest {

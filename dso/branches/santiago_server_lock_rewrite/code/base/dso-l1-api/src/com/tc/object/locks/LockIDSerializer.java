@@ -6,6 +6,7 @@ package com.tc.object.locks;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
+import com.tc.object.locks.LockID.LockIDType;
 
 import java.io.IOException;
 
@@ -32,18 +33,25 @@ public class LockIDSerializer implements TCSerializable {
   }
 
   private LockID getImpl(byte type) {
-    switch (type) {
-      case LockID.LONG_TYPE:
-        return new LongLockID();
-      case LockID.STRING_TYPE:
-        return new StringLockID();
-      default:
-        throw new AssertionError("Unknown type : " + type);
+    try {
+      switch (LockIDType.values()[type]) {
+        case LONG:
+          return new LongLockID();
+        case STRING:
+          return new StringLockID();
+        case DSO:
+          return new DsoLockID();
+        case DSO_VOLATILE:
+          return new DsoVolatileLockID();
+      }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      // stupid javac can't cope with the assertion throw being here...
     }
+    throw new AssertionError("Unknown type : " + type);
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeByte(lockID.getLockType());
+    serialOutput.writeByte((byte) lockID.getLockType().ordinal());
     lockID.serializeTo(serialOutput);
   }
 }

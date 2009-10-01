@@ -4,8 +4,8 @@
 package com.tc.objectserver.locks.context;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ThreadID;
 import com.tc.util.Assert;
 
 /**

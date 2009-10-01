@@ -4,8 +4,8 @@
 package com.tc.objectserver.locks.context;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ServerLockContext;
+import com.tc.object.locks.ThreadID;
 
 public class LinkedServerLockContext extends ServerLockContext {
   private ServerLockContext next;

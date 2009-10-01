@@ -5,10 +5,10 @@
 package com.tc.objectserver.lockmanager.api;
 
 import com.tc.net.ClientID;
-import com.tc.object.lockmanager.api.ThreadID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.locks.NotifiedWaiters;
 
