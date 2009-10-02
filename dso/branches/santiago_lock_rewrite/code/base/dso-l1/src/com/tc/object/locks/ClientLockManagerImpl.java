@@ -85,10 +85,10 @@ public class ClientLockManagerImpl implements ClientLockManager {
     }
   }
   
-  private ClientLock getOrCreateState(LockID lock) {
+  private ClientLock getOrCreateClientLockState(LockID lock) {
     ClientLock lockState = locks.get(lock);
     if (lockState == null) {
-//      lockState = new SynchronizedClientLock(lock, remoteManager);
+//      lockState = new SynchronizedClientLock(lock);
       lockState = new WrappedClientLock(lock, remoteManager);
       ClientLock racer = locks.putIfAbsent(lock, lockState);
       if (racer != null) {
@@ -112,9 +112,9 @@ public class ClientLockManagerImpl implements ClientLockManager {
     
     if (ThreadID.VM_ID.equals(thread)) {
       while (true) {
-        ClientLock lockState = getOrCreateState(lock);
+        ClientLock lockState = getOrCreateClientLockState(lock);
         try {
-          lockState.award(thread, level);
+          lockState.award(remoteManager, thread, level);
           return;
         } catch (GarbageLockException e) {
           // ignorable - thrown when operating on a garbage collected lock
@@ -129,7 +129,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
           return;
         } else {
           try {
-            lockState.award(thread, level);
+            lockState.award(remoteManager, thread, level);
             return;
           } catch (GarbageLockException e) {
             // ignorable - thrown when operating on a garbage collected lock
@@ -220,7 +220,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     
     int holdCount = 0;
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         holdCount += lockState.holdCount(level);
       } catch (GarbageLockException e) {
@@ -372,7 +372,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
   public int localHoldCount(LockID lock, LockLevel level) {
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         return lockState.holdCount(level);
       } catch (GarbageLockException e) {
@@ -387,7 +387,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         lockState.lock(remoteManager, threadManager.getThreadID(), level);
         break;
@@ -404,7 +404,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         lockState.lockInterruptibly(remoteManager, threadManager.getThreadID(), level);
         break;
@@ -419,7 +419,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
   public void notify(LockID lock) {
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         ThreadID thread = threadManager.getThreadID();
         if (lockState.notify(remoteManager, thread)) {
@@ -436,7 +436,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
   public void notifyAll(LockID lock) {
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         ThreadID thread = threadManager.getThreadID();
         if (lockState.notifyAll(remoteManager, thread)) {
@@ -455,7 +455,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         if (lockState.tryLock(remoteManager, threadManager.getThreadID(), level)) {
           transactionManager.begin(lock, level);
@@ -475,7 +475,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
 
     waitUntilRunning();
     while (true) {
-      ClientLock lockState = getOrCreateState(lock);
+      ClientLock lockState = getOrCreateClientLockState(lock);
       try {
         if (lockState.tryLock(remoteManager, threadManager.getThreadID(), level, timeout)) {
           transactionManager.begin(lock, level);
@@ -498,7 +498,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
       transactionManager.commit(lock);
     } finally {
       while (true) {
-        ClientLock lockState = getOrCreateState(lock);
+        ClientLock lockState = getOrCreateClientLockState(lock);
         try {
           lockState.unlock(remoteManager, threadManager.getThreadID(), level);
           break;
@@ -524,7 +524,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     transactionManager.commit(lock);
     try {
       while (true) {
-        ClientLock lockState = getOrCreateState(lock);
+        ClientLock lockState = getOrCreateClientLockState(lock);
         try {
           lockState.wait(remoteManager, listener, threadManager.getThreadID());
           break;
@@ -545,7 +545,7 @@ public class ClientLockManagerImpl implements ClientLockManager {
     transactionManager.commit(lock);
     try {
       while (true) {
-        ClientLock lockState = getOrCreateState(lock);
+        ClientLock lockState = getOrCreateClientLockState(lock);
         try {
           lockState.wait(remoteManager, listener, threadManager.getThreadID(), timeout);
           break;
@@ -560,21 +560,16 @@ public class ClientLockManagerImpl implements ClientLockManager {
   }
 
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
-    State newState;
     stateGuard.writeLock().lock();
     try {
-      newState = state.initialize();
-      state = newState;
-    } finally {
-      stateGuard.writeLock().unlock();
-    }
-
-    if (newState == State.STARTING) {
-      for (ClientLock cls : locks.values()) {
-        for (ClientServerExchangeLockContext c: cls.getLegacyStateSnapshot()) {
-          handshakeMessage.addLockContext(c);
+      state = state.initialize();
+      if (state == State.STARTING) {
+        for (ClientLock cls : locks.values()) {
+          cls.initializeHandshake(handshakeMessage);
         }
       }
+    } finally {
+      stateGuard.writeLock().unlock();
     }
   }
 

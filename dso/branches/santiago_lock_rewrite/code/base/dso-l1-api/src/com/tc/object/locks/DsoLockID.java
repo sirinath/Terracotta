@@ -11,23 +11,24 @@ import com.tc.object.bytecode.ManagerUtil;
 import java.io.IOException;
 
 public class DsoLockID implements LockID {
-  private ObjectID objectID;
-  private Object   javaObject;
+  private long   objectId;
+  private Object javaObject;
   
   public DsoLockID() {
     // for tc serialization
   }
   
-  public DsoLockID(ObjectID objectID, Object javaObject) {
-    this.objectID = objectID;
+  public DsoLockID(ObjectID objectId, Object javaObject) {
+    this.objectId = objectId.toLong();
     this.javaObject = javaObject;
   }
 
-  public DsoLockID(ObjectID objectID) {
-    this.objectID = objectID;
+  public DsoLockID(ObjectID objectId) {
+    this.objectId = objectId.toLong();
   }
   
   public DsoLockID(Object javaObject) {
+    this.objectId = -1;
     this.javaObject = javaObject;
   }
   
@@ -49,7 +50,7 @@ public class DsoLockID implements LockID {
   }
   
   public boolean isClustered() {
-    if (objectID == null) {
+    if (objectId == -1) {
       return false;
     } else {
       return !ManagerUtil.lookupExistingOrNull(javaObject()).autoLockingDisabled();
@@ -57,20 +58,20 @@ public class DsoLockID implements LockID {
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    objectID = new ObjectID(serialInput.readLong());
+    objectId = serialInput.readLong();
     return this;
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    serialOutput.writeLong(objectID.toLong());
+    serialOutput.writeLong(objectId);
   }
 
   @Override
   public int hashCode() {
-    if (objectID == null) {
+    if (objectId == -1) {
       return System.identityHashCode(javaObject());
     } else {
-      return objectID.hashCode();
+      return ((int) objectId) ^ ((int) (objectId >>> 32));
     }
   }
 
@@ -79,10 +80,10 @@ public class DsoLockID implements LockID {
     if (o == this) {
       return true;
     } else if (o instanceof DsoLockID) {
-      if (objectID == null) {
+      if (objectId == -1) {
         return javaObject() == ((DsoLockID) o).javaObject();
       } else {
-        return objectID.equals(((DsoLockID) o).objectID);
+        return objectId == ((DsoLockID) o).objectId;
       }
     } else {
       return false;
@@ -90,10 +91,10 @@ public class DsoLockID implements LockID {
   }
   
   public String toString() {
-    if (objectID == null) {
+    if (objectId == -1) {
       return "DsoLockID(" + hashCode() + ")";
     } else {
-      return "DsoLockID(" + objectID + ")";
+      return "DsoLockID(" + new ObjectID(objectId) + ")";
     }
   }
 }

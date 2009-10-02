@@ -416,7 +416,9 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addTryPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    Assert.assertFalse(checkDuplicate(request));
+    //I'm not sure this is a sensible thing to assert - you are racing with the client on
+    //try lock requests...
+    //Assert.assertFalse(checkDuplicate(request));
 
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
