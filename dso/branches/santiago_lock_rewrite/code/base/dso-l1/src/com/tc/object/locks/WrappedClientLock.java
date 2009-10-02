@@ -13,6 +13,7 @@ import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
 import com.tc.object.locks.ServerLockContext.State;
+import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.tx.TimerSpec;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class WrappedClientLock implements ClientLock {
     this.wrappedLock = new com.tc.object.lockmanager.impl.ClientLock(lock, EMPTY_LOCK_TYPE, this.remoteManager, timer, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
   }
   
-  public void award(ThreadID thread, ServerLockLevel level) {
+  public void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " Awarding " + lockId + " to " + thread + " [" + System.identityHashCode(this) + "]");
     if (ThreadID.VM_ID.equals(thread)) {
       wrappedLock.awardLock(thread, com.tc.object.lockmanager.api.LockLevel.makeGreedy(ServerLockLevel.toLegacyInt(level)));
@@ -106,8 +107,10 @@ public class WrappedClientLock implements ClientLock {
     return contexts;
   }
 
-  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot() {
-    return getStateSnapshot();
+  public void initializeHandshake(ClientHandshakeMessage handshakeMessage) {
+    for (ClientServerExchangeLockContext c : getStateSnapshot()) {
+      handshakeMessage.addLockContext(c);
+    }
   }
   
   public int pendingCount() {

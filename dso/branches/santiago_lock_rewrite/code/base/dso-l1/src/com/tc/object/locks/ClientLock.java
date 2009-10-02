@@ -5,6 +5,7 @@ package com.tc.object.locks;
 
 
 import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.msg.ClientHandshakeMessage;
 
 import java.util.Collection;
 
@@ -30,7 +31,7 @@ public interface ClientLock {
 
   public void notified(ThreadID thread);
   public void recall(RemoteLockManager remote, ServerLockLevel interest, int lease);
-  public void award(ThreadID thread, ServerLockLevel level);
+  public void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level);
   public void refuse(ThreadID thread, ServerLockLevel level);
 
   /*
@@ -41,8 +42,7 @@ public interface ClientLock {
    */
   public Collection<ClientServerExchangeLockContext> getStateSnapshot();
   
-  @Deprecated
-  public Collection<ClientServerExchangeLockContext> getLegacyStateSnapshot();
+  public void initializeHandshake(ClientHandshakeMessage handshake);
 
   /**
    * ClientLock implementations must return true (and subsequently throw GarbageLockException) if

@@ -42,7 +42,7 @@ public class LongLockID extends NonObjectLockID {
    * @return String value of id value
    */
   public String asString() {
-    return id + "";
+    return Long.toString(id);
   }
 
   public int hashCode() {

@@ -5,9 +5,7 @@ package com.tc.object.locks;
 
 import com.tc.io.TCSerializable;
 
-import java.io.Serializable;
-
-public interface LockID extends TCSerializable, Serializable {
+public interface LockID extends TCSerializable {
   static enum LockIDType {STRING, LONG, DSO, DSO_LITERAL, DSO_VOLATILE;}
 
   public LockIDType getLockType();
