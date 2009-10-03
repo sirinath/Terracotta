@@ -22,7 +22,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.LockSupport;
 
-public class SynchronizedClientLock extends SinglyLinkedList<State> implements ClientLock {
+public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLock {
   private static final boolean DEBUG         = false;
   private static final Timer   LOCK_TIMER    = new Timer("ClientLock Greedy Lease Timer", true);
   protected static final int   BLOCKING_LOCK = Integer.MIN_VALUE;
@@ -34,7 +34,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   
   private volatile int         gcCycleCount  = 0;
 
-  public SynchronizedClientLock(LockID lock) {
+  public ClientLockImpl(LockID lock) {
     this.lock = lock;
   }
   
@@ -85,7 +85,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       return local.succeeded();
     } else {
       //we need to talk to the server queue the request...
-      QueuedLockAcquire node = new QueuedLockAcquire(thread, level, 0);
+      PendingLockHold node = new PendingLockHold(thread, level, 0);
       try {
         synchronized (this) {
           addLast(node);
@@ -231,7 +231,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
 
     LockWaiter node = null;
     // stack of reacquires that should locked when leaving the wait...
-    Stack<QueuedLockAcquire> reacquireNodes = new Stack<QueuedLockAcquire>();
+    Stack<PendingLockHold> reacquireNodes = new Stack<PendingLockHold>();
     try {      
       synchronized (this) {
         for (State s : this) {
@@ -245,7 +245,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
             }
             //remove the hold from the state and push into the reacquire stack
             remove(hold);
-            reacquireNodes.push(new MonitorBasedQueuedLockAcquire(thread, hold.getLockLevel(), lock.waitNotifyObject(), -1));
+            reacquireNodes.push(new MonitorBasedPendingLockHold(thread, hold.getLockLevel(), lock.waitNotifyObject(), -1));
           }
         }
         // if no write locks were held then throw here
@@ -285,7 +285,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       }
       //reacquire the locks in their original order using the already in place queue nodes
       while (!reacquireNodes.isEmpty()) {
-        QueuedLockAcquire qa = reacquireNodes.pop();
+        PendingLockHold qa = reacquireNodes.pop();
         if (acquireQueued(remote, thread, qa.getLockLevel(), qa, false))
           Thread.currentThread().interrupt();
       }
@@ -330,10 +330,10 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       } else if (s instanceof LockWaiter) {
         LockWaiter lw = (LockWaiter) s;
         contexts.add(new ClientServerExchangeLockContext(lock, client, lw.getOwner(), ServerLockContext.State.WAITER, lw.getTimeout()));
-      } else if (s instanceof QueuedLockAcquire) {
-        switch (((QueuedLockAcquire) s).getLockLevel()) {
+      } else if (s instanceof PendingLockHold) {
+        switch (((PendingLockHold) s).getLockLevel()) {
           case READ:
-            QueuedLockAcquire qla = (QueuedLockAcquire) s;
+            PendingLockHold qla = (PendingLockHold) s;
             if (qla.getTimeout() < 0) {
               contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.PENDING_READ));
             } else {
@@ -342,7 +342,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
             break;
           case WRITE:
           case SYNCHRONOUS_WRITE:
-            qla = (QueuedLockAcquire) s;
+            qla = (PendingLockHold) s;
             if (qla.getTimeout() < 0) {
               contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.PENDING_WRITE));
             } else {
@@ -362,7 +362,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : getting pending count");
     int penders = 0;
     for (State s : this) {
-      if (s instanceof QueuedLockAcquire) {
+      if (s instanceof PendingLockHold) {
         penders++;
       }
     }
@@ -387,7 +387,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return true;
       } else if (s instanceof LockWaiter) {
         break;
-      } else if (s instanceof QueuedLockAcquire) {
+      } else if (s instanceof PendingLockHold) {
         break;
       }
     }
@@ -401,7 +401,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         return true;
       } else if (s instanceof LockWaiter) {
         break;
-      } else if (s instanceof QueuedLockAcquire) {
+      } else if (s instanceof PendingLockHold) {
         break;
       }
     }
@@ -416,7 +416,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         holders++;
       } else if (s instanceof LockWaiter) {
         break;
-      } else if (s instanceof QueuedLockAcquire) {
+      } else if (s instanceof PendingLockHold) {
         break;
       }
     }
@@ -451,7 +451,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    */
   private synchronized void notify(LockWaiter waiter) {
     if (remove(waiter) != null) {
-      for (QueuedLockAcquire a : waiter.getReacquires()) {
+      for (PendingLockHold a : waiter.getReacquires()) {
         addLast(a);
       }
     }
@@ -475,7 +475,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
         @Override
         public void run() {
           /*if (DEBUG) */System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit after lease expiry");
-          synchronized (SynchronizedClientLock.this) {
+          synchronized (ClientLockImpl.this) {
             greediness = doRecall(remote);
           }
         }
@@ -708,7 +708,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    * Conventional acquire queued - uses a LockSupport based queue object.
    */
   private boolean acquireQueued(RemoteLockManager remote, ThreadID thread, LockLevel level) throws GarbageLockException {
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level, -1);
+    final PendingLockHold node = new PendingLockHold(thread, level, -1);
     synchronized (this) {
       addLast(node);
     }
@@ -718,7 +718,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
   /*
    * Generic acquire - uses an already existing queued node - used during wait notify
    */
-  private boolean acquireQueued(RemoteLockManager remote, ThreadID thread, LockLevel level, QueuedLockAcquire node, boolean delegate) throws GarbageLockException {    
+  private boolean acquireQueued(RemoteLockManager remote, ThreadID thread, LockLevel level, PendingLockHold node, boolean delegate) throws GarbageLockException {    
     try {
       boolean interrupted = false;
       for (;;) {
@@ -763,7 +763,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    * Just like acquireQueued but throws InterruptedException if unparked by interrupt rather then saving the interrupt state
    */
   private void acquireQueuedInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException, GarbageLockException {
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level, -1);
+    final PendingLockHold node = new PendingLockHold(thread, level, -1);
     synchronized (this) {
       addLast(node);
     }
@@ -813,7 +813,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    */
   private boolean acquireQueuedTimeout(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws InterruptedException, GarbageLockException {
     long lastTime = System.currentTimeMillis();
-    final QueuedLockAcquire node = new QueuedLockAcquire(thread, level, timeout);
+    final PendingLockHold node = new PendingLockHold(thread, level, timeout);
     synchronized (this) {
       addLast(node);
     }
@@ -878,10 +878,10 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    */
   private synchronized void unparkNextQueuedAcquire(State node) {
     while (node != null) {
-      if (node instanceof QueuedLockAcquire) {
-        ((QueuedLockAcquire) node).acked();
-        ((QueuedLockAcquire) node).unpark();
-        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + node.getOwner() + " wanting " + ((QueuedLockAcquire) node).getLockLevel());
+      if (node instanceof PendingLockHold) {
+        ((PendingLockHold) node).acked();
+        ((PendingLockHold) node).unpark();
+        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + node.getOwner() + " wanting " + ((PendingLockHold) node).getLockLevel());
         return;
       }
       node = node.getNext();
@@ -893,11 +893,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
    */
   private synchronized boolean unparkQueuedAcquire(ThreadID thread) {
     for (State s : this) {
-      if ((s instanceof QueuedLockAcquire) && s.getOwner().equals(thread)) {
-        QueuedLockAcquire acquire = (QueuedLockAcquire) s;
+      if ((s instanceof PendingLockHold) && s.getOwner().equals(thread)) {
+        PendingLockHold acquire = (PendingLockHold) s;
         acquire.acked();
         acquire.unpark();
-        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + thread + " wanting " + ((QueuedLockAcquire) s).getLockLevel());
+        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + thread + " wanting " + ((PendingLockHold) s).getLockLevel());
         return true;
       }
     }
@@ -910,7 +910,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       doFlush(remote);
       if (remote.isTransactionsForLockFlushed(lock, new LockFlushCallback() {
         public void transactionsForLockFlushed(LockID id) {
-          synchronized (SynchronizedClientLock.this) {
+          synchronized (ClientLockImpl.this) {
             if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit (having flushed transactions)");
             greediness = recallCommit(remote);
           }
@@ -1000,13 +1000,13 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     }
   }
   
-  static class QueuedLockAcquire extends State {
+  static class PendingLockHold extends State {
     private final LockLevel  level;
     private final Thread     javaThread;
     private final long       waitTime;
     private volatile boolean serverResponded = false;
     
-    QueuedLockAcquire(ThreadID owner, LockLevel level, long timeout) {
+    PendingLockHold(ThreadID owner, LockLevel level, long timeout) {
       super(owner);
       this.javaThread = Thread.currentThread();
       this.level = level;
@@ -1048,8 +1048,8 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     public boolean equals(Object o) {
       if (o == this) {
         return true;
-      } else if (o instanceof QueuedLockAcquire) {
-        return super.equals(o) && level.equals(((QueuedLockAcquire) o).level);
+      } else if (o instanceof PendingLockHold) {
+        return super.equals(o) && level.equals(((PendingLockHold) o).level);
       } else {
         return false;
       }
@@ -1061,12 +1061,12 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     }
   }
   
-  static class MonitorBasedQueuedLockAcquire extends QueuedLockAcquire {
+  static class MonitorBasedPendingLockHold extends PendingLockHold {
 
     private final Object waitObject;
     private boolean      parked = false;
     
-    MonitorBasedQueuedLockAcquire(ThreadID owner, LockLevel level, Object waitObject, long timeout) {
+    MonitorBasedPendingLockHold(ThreadID owner, LockLevel level, Object waitObject, long timeout) {
       super(owner, level, timeout);
       if (waitObject == null) {
         this.waitObject = this;
@@ -1110,11 +1110,11 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
     
     private final Object waitObject;
     private final long   waitTime;
-    private final Stack<QueuedLockAcquire> reacquires;
+    private final Stack<PendingLockHold> reacquires;
     
     private boolean      notified;
     
-    LockWaiter(ThreadID owner, Object waitObject, Stack<QueuedLockAcquire> reacquires, long timeout) {
+    LockWaiter(ThreadID owner, Object waitObject, Stack<PendingLockHold> reacquires, long timeout) {
       super(owner);
       if (waitObject == null) {
         this.waitObject = this;
@@ -1129,7 +1129,7 @@ public class SynchronizedClientLock extends SinglyLinkedList<State> implements C
       return waitTime;
     }
 
-    Stack<QueuedLockAcquire> getReacquires() {
+    Stack<PendingLockHold> getReacquires() {
       return reacquires;
     }
     
