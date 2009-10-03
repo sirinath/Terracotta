@@ -3,7 +3,7 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.locks.SynchronizedClientLock.LockHold;
+import com.tc.object.locks.ClientLockImpl.LockHold;
 
 enum ClientGreediness {
   GARBAGE {
@@ -42,7 +42,7 @@ enum ClientGreediness {
       }
       
       switch ((int) timeout) {
-        case SynchronizedClientLock.BLOCKING_LOCK:
+        case ClientLockImpl.BLOCKING_LOCK:
           remote.lock(lock, thread, requestLevel);
           break;
         default:
@@ -53,7 +53,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold unlock) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold unlock) {
       //must do remote unlock if downgraded or free
       //downgraded : hold is WRITE/SYNCWRITE and now holding just read
       //free : no holds
@@ -79,7 +79,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, ThreadID thread, long timeout) {
+    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       remote.wait(lock, thread, timeout);
       return this;
     }
@@ -108,12 +108,12 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
       return RECALLED_READ;
     }
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
       return this;
     }
     
@@ -123,7 +123,7 @@ enum ClientGreediness {
     }
     
     @Override
-    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
       return false;
     }
   },
@@ -145,7 +145,7 @@ enum ClientGreediness {
     }
     
     @Override
-    ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
         return LEASED_GREEDY_WRITE;
       } else {
@@ -154,17 +154,17 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
       return this;
     }
     
     @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, ThreadID thread, long timeout) {
+    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       return this;
     }
     
     @Override
-    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
       return false;
     }
   },
@@ -177,7 +177,7 @@ enum ClientGreediness {
     }
     
     @Override
-    boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
       return false;
     }
   },
@@ -185,7 +185,7 @@ enum ClientGreediness {
   RECALLED_READ {
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
       return clientLock.doRecall(remote);
     }
     
@@ -195,7 +195,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, ThreadID thread, long timeout) {
+    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       return clientLock.doRecall(remote);
     }
     
@@ -213,7 +213,7 @@ enum ClientGreediness {
   RECALLED_WRITE {
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
       return clientLock.doRecall(remote);
     }
     
@@ -223,7 +223,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, ThreadID thread, long timeout) {
+    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       return clientLock.doRecall(remote);
     }
 
@@ -259,12 +259,12 @@ enum ClientGreediness {
     throw new AssertionError();
   }
 
-  ClientGreediness unlocked(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, LockHold hold) {
+  ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
     System.err.println("unlocked while in unexpected state (" + this + ")");
     throw new AssertionError();
   }
 
-  ClientGreediness waiting(RemoteLockManager remote, LockID lock, SynchronizedClientLock clientLock, ThreadID thread, long timeout) {
+  ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
     System.err.println("waiting while in unexpected state (" + this + ")");
     throw new AssertionError();
   }
@@ -274,7 +274,7 @@ enum ClientGreediness {
     throw new AssertionError();
   }
 
-  ClientGreediness recall(SynchronizedClientLock clientLock, ServerLockLevel interest, int lease) {
+  ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
     return this;
   }
 
@@ -282,7 +282,7 @@ enum ClientGreediness {
     return this;
   }
 
-  boolean flushOnUnlock(SynchronizedClientLock clientLock, LockHold unlock) {
+  boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
     if (unlock.getLockLevel().isRead()) {
       return false;
     }
