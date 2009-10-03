@@ -32,6 +32,7 @@ import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.ManualThreadIDManager;
+import com.tc.object.locks.NullClientLockManagerConfig;
 import com.tc.object.locks.RemoteLockManagerImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ThreadID;
@@ -42,7 +43,6 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.MockChannelManager;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
-import com.tc.object.tx.MockTransactionManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
@@ -79,7 +79,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                                              clientLockRequestQueue);
 
     threadManager = new ManualThreadIDManager();
-    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new MockTransactionManager());
+    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new NullClientLockManagerConfig());
     
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 

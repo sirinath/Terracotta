@@ -525,19 +525,21 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       LockDefinition lock = locks[i];
       if (lock.isAutolock() && spec.isClassPortable()) {
         if (Modifier.isSynchronized(access) && !Modifier.isStatic(access)) {
-          callTCMonitorExit(access, c);
+          callTCMonitorExit(access, lock, c);
         }
       } else if (!lock.isAutolock()) {
         c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(lock.getLockName()));
-        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;)V");
+        c.visitLdcInsn(new Integer(lock.getLockLevelAsInt()));
+        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V");
       }
     }
     c.visitLabel(returnLabel);
   }
 
-  private void callTCCommitWithLockName(final String lockName, final MethodVisitor mv) {
+  private void callTCCommitWithLockName(final String lockName, final int type, final MethodVisitor mv) {
     mv.visitLdcInsn(lockName);
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;)V");
+    mv.visitLdcInsn(new Integer(type));
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V");
   }
 
   private void callTCBeginWithLock(final LockDefinition lock, final MethodVisitor c) {
@@ -560,10 +562,11 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginVolatile", "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
   }
 
-  private void callVolatileCommit(final String fieldName, final MethodVisitor mv) {
+  private void callVolatileCommit(final String fieldName, final int lockLevel, final MethodVisitor mv) {
     getManaged(mv);
     mv.visitLdcInsn(fieldName);
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitVolatile", "(Lcom/tc/object/TCObject;Ljava/lang/String;)V");
+    mv.visitIntInsn(BIPUSH, lockLevel);
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitVolatile", "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
   }
 
   private void createPlainGetter(final int methodAccess, final int fieldAccess, final String name, final String desc) {
@@ -603,7 +606,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       gv.visitLabel(l6);
       gv.visitVarInsn(ASTORE, 1);
 
-      callVolatileCommit(spec.getClassNameDots() + "." + name, gv);
+      callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.READ, gv);
       gv.visitVarInsn(RET, 1);
     }
 
@@ -715,7 +718,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       mv.visitLabel(l8);
       mv.visitVarInsn(ASTORE, 2);
-      callTCCommitWithLockName(rootName, mv);
+      callTCCommitWithLockName(rootName, LockLevel.WRITE, mv);
       mv.visitVarInsn(RET, 2);
 
       mv.visitLabel(l5);
@@ -785,7 +788,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       gv.visitInsn(MONITOREXIT);
       if (isVolatile) {
-        callVolatileCommit(spec.getClassNameDots() + "." + name, gv);
+        callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.READ, gv);
       }
       gv.visitInsn(ARETURN);
       gv.visitJumpInsn(GOTO, l0);
@@ -795,7 +798,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       gv.visitInsn(MONITOREXIT);
       if (isVolatile) {
-        callVolatileCommit(spec.getClassNameDots() + "." + name, gv);
+        callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.READ, gv);
       }
       gv.visitInsn(ATHROW);
 
@@ -859,7 +862,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
       scv.visitInsn(ATHROW);
       scv.visitLabel(l6);
       scv.visitVarInsn(ASTORE, 1);
-      callVolatileCommit(spec.getClassNameDots() + "." + name, scv);
+      callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.WRITE, scv);
 
       scv.visitVarInsn(RET, 1);
     }
@@ -978,7 +981,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       scv.visitLabel(finallyStart);
       scv.visitVarInsn(ASTORE, 2);
-      callTCCommitWithLockName(rootName, scv);
+      callTCCommitWithLockName(rootName, LockLevel.WRITE, scv);
       scv.visitVarInsn(RET, 2);
 
       scv.visitLabel(normalExit);
@@ -1030,7 +1033,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
   }
 
   private void generateCodeForVolativeTransactionCommit(final Label l1, final Label l2, final MethodVisitor scv, final int newVar1,
-                                                        final int newVar2, final String fieldName) {
+                                                        final int newVar2, final String fieldName, final int lockLevel) {
     scv.visitJumpInsn(GOTO, l2);
     scv.visitLabel(l1);
     scv.visitVarInsn(ASTORE, newVar2);
@@ -1040,7 +1043,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     scv.visitInsn(ATHROW);
     scv.visitLabel(l5);
     scv.visitVarInsn(ASTORE, newVar1);
-    callVolatileCommit(fieldName, scv);
+    callVolatileCommit(fieldName, lockLevel, scv);
     scv.visitVarInsn(RET, newVar1);
     scv.visitLabel(l2);
     scv.visitJumpInsn(JSR, l5);
@@ -1100,7 +1103,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
                           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;I)V");
 
       if (isVolatile) {
-        generateCodeForVolativeTransactionCommit(l1, l2, scv, 3, 4, spec.getClassNameDots() + "." + name);
+        generateCodeForVolativeTransactionCommit(l1, l2, scv, 3, 4, spec.getClassNameDots() + "." + name, LockLevel.WRITE);
       }
 
       scv.visitLabel(labelArgumentIsNull);
@@ -1154,7 +1157,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
 
       if (isVolatile) {
         generateCodeForVolativeTransactionCommit(l1, l2, mv, 2 + t.getSize(), 3 + t.getSize(), spec.getClassNameDots()
-                                                                                               + "." + name);
+                                                                                               + "." + name, LockLevel.WRITE);
       }
 
       mv.visitLabel(l0);
@@ -1172,10 +1175,11 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     }
   }
 
-  private void callTCMonitorExit(final int callingMethodModifier, final MethodVisitor c) {
+  private void callTCMonitorExit(final int callingMethodModifier, final LockDefinition def, final MethodVisitor c) {
     Assert.eval("Can't call tc monitorenter from a static method.", !Modifier.isStatic(callingMethodModifier));
     ByteCodeUtil.pushThis(c);
-    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "monitorExit", "(Ljava/lang/Object;)V");
+    c.visitLdcInsn(new Integer(def.getLockLevelAsInt()));
+    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "monitorExit", "(Ljava/lang/Object;I)V");
   }
 
   private void callTCMonitorEnter(final int callingMethodModifier, final LockDefinition def, final MethodVisitor c) {

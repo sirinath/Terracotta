@@ -31,6 +31,7 @@ import com.tc.object.idprovider.impl.ObjectIDProviderImpl;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.ClientLockManagerConfig;
 import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.RemoteLockManager;
 import com.tc.object.locks.RemoteLockManagerImpl;
@@ -42,7 +43,6 @@ import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
-import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchFactory;
@@ -133,12 +133,12 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final ClientLockStatManager lockStatManager,
                                              final LockRequestMessageFactory lockRequestMessageFactory,
                                              final ThreadIDManager threadManager,
-                                             final ClientTransactionManager transactionManager,
-                                             final ClientGlobalTransactionManager gtxManager) {
+                                             final ClientGlobalTransactionManager gtxManager,
+                                             final ClientLockManagerConfig config) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
     RemoteLockManager remoteManager = new RemoteLockManagerImpl(defaultGroups[0], lockRequestMessageFactory, gtxManager);
-    return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, transactionManager);
+    return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, config);
   }
 
   public RemoteTransactionManager createRemoteTransactionManager(final ClientIDProvider cidProvider,

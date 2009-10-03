@@ -15,7 +15,6 @@ import com.tc.object.TestClientObjectManager;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.NullRuntimeLogger;
-import com.tc.object.util.ReadOnlyException;
 import com.tc.stats.counter.sampled.SampledCounter;
 
 import junit.framework.TestCase;
@@ -56,22 +55,22 @@ public class ClientTransactionManagerTest extends TestCase {
     try {
       clientTxnMgr.checkWriteAccess(new Object());
       fail();
-    } catch (ReadOnlyException roe) {
+    } catch (UnlockedSharedObjectException roe) {
       // expected
     }
-    clientTxnMgr.commit(new StringLockID("lock"));
+    clientTxnMgr.commit(new StringLockID("lock"), LockLevel.READ);
 
     clientTxnMgr.begin(new StringLockID("test"), LockLevel.WRITE);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"));
+    clientTxnMgr.commit(new StringLockID("test"), LockLevel.WRITE);
 
     clientTxnMgr.begin(new StringLockID("test"), LockLevel.SYNCHRONOUS_WRITE);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"));
+    clientTxnMgr.commit(new StringLockID("test"), LockLevel.SYNCHRONOUS_WRITE);
 
     clientTxnMgr.begin(new StringLockID("test"), LockLevel.CONCURRENT);
     clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"));
+    clientTxnMgr.commit(new StringLockID("test"), LockLevel.CONCURRENT);
   }
 
   public void testDoIllegalReadChange() {
@@ -80,7 +79,7 @@ public class ClientTransactionManagerTest extends TestCase {
     try {
       clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);
       assertFalse(true);
-    } catch (ReadOnlyException e) {
+    } catch (UnlockedSharedObjectException e) {
       // expected
 
       // System.out.println("THIS IS A GOOD THING");
@@ -88,6 +87,6 @@ public class ClientTransactionManagerTest extends TestCase {
       // System.out.println("THIS IS A GOOD THING");
     }
 
-    clientTxnMgr.commit(new StringLockID("lock"));
+    clientTxnMgr.commit(new StringLockID("lock"), LockLevel.READ);
   }
 }

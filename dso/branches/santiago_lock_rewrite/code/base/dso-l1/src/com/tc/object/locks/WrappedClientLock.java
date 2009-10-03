@@ -181,13 +181,13 @@ public class WrappedClientLock implements ClientLock {
   }
 
   public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) throws InterruptedException {
-    wrappedLock.wait(thread, new TimerSpec(), lockId.javaObject(), listener);  }
+    wrappedLock.wait(thread, new TimerSpec(), lockId.waitNotifyObject(), listener);  }
 
   public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException {
-    wrappedLock.wait(thread, new TimerSpec(timeout), lockId.javaObject(), listener);
+    wrappedLock.wait(thread, new TimerSpec(timeout), lockId.waitNotifyObject(), listener);
   }
 
-  public boolean garbageCollect() {
+  public boolean tryToMarkAsGarbage(RemoteLockManager remote) {
     return false;
   }  
 }

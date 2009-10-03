@@ -69,7 +69,7 @@ public class DmiManagerImpl implements DmiManager {
       objMgr.getTransactionManager().addDmiDescriptor(dd);
       return true;
     } finally {
-      objMgr.getTransactionManager().commit(lock);
+      objMgr.getTransactionManager().commit(lock, LockLevel.CONCURRENT);
     }
   }
 

@@ -36,17 +36,6 @@ public interface TransactionContext {
   public TxnType getEffectiveType();
   
   /**
-   * Evaluates the effective transaction type to see if it's read-only.
-   * 
-   * Read the docs of {@link #getEffectiveType()} for more details.
-   * 
-   * @return {@code true} when the effective transaction type is read-only, or
-   * {@code false} when it's not
-   * @see #getEffectiveType()
-   */
-  public boolean isEffectivelyReadOnly();
-
-  /**
    * @return First lock identifier in the transaction
    */
   public LockID getLockID();

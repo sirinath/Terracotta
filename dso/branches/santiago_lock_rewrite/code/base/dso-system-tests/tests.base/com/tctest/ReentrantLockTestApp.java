@@ -337,7 +337,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
       ManagerUtil.beginLock(lockId, LockLevel.WRITE);
       thread1.start();
       localBarrier.await();
-      ManagerUtil.commitLock(lockId);
+      ManagerUtil.commitLock(lockId, LockLevel.WRITE);
     }
 
     barrier.await();

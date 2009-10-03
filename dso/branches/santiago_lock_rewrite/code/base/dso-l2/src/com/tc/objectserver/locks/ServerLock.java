@@ -227,7 +227,7 @@ public final class ServerLock extends AbstractLock {
   public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
                            LockHelper helper) {
     ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID);
-    Assert.assertNotNull(greedyHolder);
+    Assert.assertNotNull("No Greedy Holder Exists For " + cid + " on " + lockID, greedyHolder);
 
     recordLockReleaseStat(cid, ThreadID.VM_ID, helper);
 

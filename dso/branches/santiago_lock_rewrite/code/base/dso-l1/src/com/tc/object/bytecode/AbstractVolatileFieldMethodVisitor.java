@@ -63,8 +63,9 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
     mv.visitVarInsn(ASTORE, exception_var_store);
     mv.visitVarInsn(ALOAD, tcobject_var_store);
     mv.visitLdcInsn(fieldName);
+    mv.visitInsn(ICONST_2);
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
-                       "(Lcom/tc/object/TCObject;Ljava/lang/String;)V");
+                       "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
     mv.visitVarInsn(ALOAD, exception_var_store);
     mv.visitInsn(ATHROW);
 
@@ -72,8 +73,9 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
     mv.visitLabel(label_commit_volatile);
     mv.visitVarInsn(ALOAD, tcobject_var_store);
     mv.visitLdcInsn(fieldName);
+    mv.visitInsn(ICONST_2);
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
-                       "(Lcom/tc/object/TCObject;Ljava/lang/String;)V");
+                       "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
 
     mv.visitLabel(label_tcobject_null);
   }

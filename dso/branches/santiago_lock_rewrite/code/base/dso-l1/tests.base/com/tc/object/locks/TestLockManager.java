@@ -6,6 +6,7 @@ package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.LockID;
@@ -60,12 +61,14 @@ public class TestLockManager implements ClientLockManager {
     this.waitCalls.add(new Object[] { lockID, Long.valueOf(timeout) });
   }
 
-  public void notify(final LockID lockID) {
+  public Notify notify(final LockID lockID) {
     this.notifyCalls.add(new Object[] { lockID, Boolean.FALSE });
+    return null;
   }
 
-  public void notifyAll(final LockID lockID) {
+  public Notify notifyAll(final LockID lockID) {
     this.notifyCalls.add(new Object[] { lockID, Boolean.TRUE });
+    return null;
   }
 
   public void notified(final LockID lockID, final ThreadID threadID) {
@@ -163,6 +166,10 @@ public class TestLockManager implements ClientLockManager {
   }
 
   public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
+    throw new ImplementMe();
+  }
+
+  public int runLockGc() {
     throw new ImplementMe();
   }
 }

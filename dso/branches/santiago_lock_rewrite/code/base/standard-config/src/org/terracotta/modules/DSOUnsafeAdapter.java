@@ -80,8 +80,9 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     mv.visitVarInsn(params[0].getOpcode(ILOAD), pos + 1);
     pos += params[0].getSize();
     mv.visitVarInsn(params[1].getOpcode(ILOAD), pos + 1);
+    mv.visitIntInsn(BIPUSH, LockLevel.WRITE);
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
-                       "(Ljava/lang/Object;J)V");
+                       "(Ljava/lang/Object;JI)V");
   }
 
   private void addCheckedManagedConditionCode(MethodVisitor mv, Type[] params, int objParamIndex, int offsetParamIndex, Label nonSharedLabel,

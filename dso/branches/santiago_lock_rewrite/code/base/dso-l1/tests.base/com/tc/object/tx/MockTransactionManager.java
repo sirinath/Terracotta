@@ -12,9 +12,9 @@ import com.tc.object.ClientIDProvider;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
-import com.tc.object.locks.ThreadID;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransactionManagerImpl.ThreadTransactionLoggingStack;
 import com.tc.text.PrettyPrinter;
@@ -97,7 +97,7 @@ public class MockTransactionManager implements ClientTransactionManager {
     }
   }
 
-  public void notify(LockID lock, ThreadID thread, boolean all) throws UnlockedSharedObjectException {
+  public void notify(Notify notify) throws UnlockedSharedObjectException {
     throw new ImplementMe();
   }
 
@@ -129,7 +129,7 @@ public class MockTransactionManager implements ClientTransactionManager {
     throw new ImplementMe();
   }
 
-  public void commit(LockID lock) throws UnlockedSharedObjectException {
+  public void commit(LockID lock, LockLevel level) throws UnlockedSharedObjectException {
     if (logger.isDebugEnabled()) {
       logger.debug("commit(" + lock + ")");
     }

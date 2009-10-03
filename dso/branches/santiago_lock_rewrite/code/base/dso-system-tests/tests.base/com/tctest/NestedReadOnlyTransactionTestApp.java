@@ -47,7 +47,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
     } finally {
       if (index == 0) {
         dataRoot.setCommit(true);
-        ManagerUtil.monitorExit(dataRoot);
+        ManagerUtil.monitorExit(dataRoot, LockLevel.WRITE);
       }
     }
 
@@ -81,7 +81,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
       barrier.barrier();
     } finally {
       if (index == 0) {
-        ManagerUtil.monitorExit(dataRoot);
+        ManagerUtil.monitorExit(dataRoot, LockLevel.WRITE);
       }
     }
 

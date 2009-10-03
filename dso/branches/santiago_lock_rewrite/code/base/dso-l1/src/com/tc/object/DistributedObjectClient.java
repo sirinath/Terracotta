@@ -79,6 +79,7 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.idprovider.impl.RemoteObjectIDBatchSequenceProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.ClientLockManager;
+import com.tc.object.locks.ClientLockManagerConfigImpl;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
@@ -521,7 +522,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
     this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
         .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
-                                                               this.channel.getLockRequestMessageFactory(), threadIDManager, txManager, gtxManager);
+                                                               this.channel.getLockRequestMessageFactory(), threadIDManager, gtxManager,
+                                                               new ClientLockManagerConfigImpl(this.l1Properties.getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
 
     // Create the SEDA stages

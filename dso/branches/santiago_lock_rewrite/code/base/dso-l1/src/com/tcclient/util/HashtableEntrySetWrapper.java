@@ -37,7 +37,7 @@ public class HashtableEntrySetWrapper extends MapEntrySetWrapper {
                                   new Object[] { ((Map.Entry) o).getKey() });
       }
     } finally {
-      ManagerUtil.monitorExit(map);
+      ManagerUtil.monitorExit(map, LockLevel.WRITE);
     }
     return removed;
   }
@@ -62,7 +62,7 @@ public class HashtableEntrySetWrapper extends MapEntrySetWrapper {
         // started, at end, concurrent mod, etc)
         ManagerUtil.logicalInvoke(map, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { current.getKey() });
       } finally {
-        ManagerUtil.monitorExit(map);
+        ManagerUtil.monitorExit(map, LockLevel.WRITE);
       }
     }
 

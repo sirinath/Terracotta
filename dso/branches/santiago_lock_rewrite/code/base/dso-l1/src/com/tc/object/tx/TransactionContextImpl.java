@@ -39,14 +39,6 @@ public class TransactionContextImpl implements TransactionContext {
     return effectiveTxType;
   }
   
-  public boolean isEffectivelyReadOnly() {
-    if (effectiveTxType != null) {
-      return TxnType.READ_ONLY == effectiveTxType;
-    } else {
-      return TxnType.READ_ONLY == lockTxType;
-    }
-  }
-
   public LockID getLockID() {
     return lockID;
   }

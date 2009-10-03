@@ -29,7 +29,7 @@ public class EnumerationWrapper implements Enumeration {
     try {
       o = realEnumeration.nextElement();
     } finally {
-      ManagerUtil.monitorExit(vector);
+      ManagerUtil.monitorExit(vector, LockLevel.WRITE);
     }
     return o;
   }

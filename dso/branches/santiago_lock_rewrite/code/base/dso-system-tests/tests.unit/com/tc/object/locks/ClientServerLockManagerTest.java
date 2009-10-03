@@ -11,7 +11,6 @@ import com.tc.management.L2LockStatsManager;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.session.TestSessionManager;
-import com.tc.object.tx.MockTransactionManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.LockManagerImpl;
@@ -34,8 +33,7 @@ public class ClientServerLockManagerTest extends TestCase {
     TestSink sink = new TestSink();
     glue = new ClientServerLockManagerGlue(sessionManager, sink, new NonGreedyLockPolicyFactory());
     threadManager = new ManualThreadIDManager();
-    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, glue, threadManager,
-                                                  new MockTransactionManager());
+    clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, glue, threadManager, new NullClientLockManagerConfig());
 
     serverLockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager(),
                                             new NonGreedyLockPolicyFactory());

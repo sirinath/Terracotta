@@ -28,7 +28,7 @@ public class ReentrantLockTC extends ReentrantLock implements TCLock, NotClearab
     try {
       super.lockInterruptibly();
     } catch (InterruptedException e) {
-      ManagerUtil.monitorExit(this);
+      ManagerUtil.monitorExit(this, LockLevel.WRITE);
       throw e;
     }
   }
@@ -39,7 +39,7 @@ public class ReentrantLockTC extends ReentrantLock implements TCLock, NotClearab
 
   public void unlock() {
     super.unlock();
-    ManagerUtil.monitorExit(this);
+    ManagerUtil.monitorExit(this, LockLevel.WRITE);
   }
 
   public int getHoldCount() {

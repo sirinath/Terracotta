@@ -16,14 +16,12 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
-import com.tc.object.lockmanager.api.WaitListener;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientServerExchangeLockContext;
-import com.tc.object.locks.DsoLockID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.ServerLockLevel;
-import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
@@ -74,11 +72,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
     }
 
     public LockID generateLockIdentifier(String str) {
-      return new StringLockID(str);
+      throw new ImplementMe();
     }
 
     public LockID generateLockIdentifier(Object obj) {
-      return new DsoLockID(obj);
+      throw new ImplementMe();
     }
 
     public LockID generateLockIdentifier(Object obj, String field) {
@@ -117,11 +115,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public void notify(LockID lock) {
+    public Notify notify(LockID lock) {
       throw new ImplementMe();
     }
 
-    public void notifyAll(LockID lock) {
+    public Notify notifyAll(LockID lock) {
       throw new ImplementMe();
       
     }
@@ -143,14 +141,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
     }
 
     public void wait(LockID lock, long timeout) {
-      throw new ImplementMe();
-    }
-
-    public void wait(LockID lock, WaitListener listener) {
-      throw new ImplementMe();
-    }
-
-    public void wait(LockID lock, WaitListener listener, long timeout) {
       throw new ImplementMe();
     }
 
