@@ -164,7 +164,7 @@ public class HashtableValuesWrapper implements Collection {
           ManagerUtil.logicalInvoke(hashtable, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { key });
         }
       } finally {
-        ManagerUtil.monitorExit(hashtable);
+        ManagerUtil.monitorExit(hashtable, LockLevel.WRITE);
       }
     }
   }

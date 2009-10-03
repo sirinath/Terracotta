@@ -171,9 +171,9 @@ public class ManagerUtil {
    * @param pojo Instance containing field
    * @param fieldOffset Field offset in pojo
    */
-  public static void commitVolatile(final Object pojo, final long fieldOffset) {
+  public static void commitVolatile(final Object pojo, final long fieldOffset, final int type) {
     TCObject tcObject = lookupExistingOrNull(pojo);
-    commitVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset));
+    commitVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset), type);
   }
 
   /**
@@ -252,10 +252,10 @@ public class ManagerUtil {
    * @param tcObject Volatile object TCObject
    * @param fieldName Field holding the volatile object
    */
-  public static void commitVolatile(final TCObject tcObject, final String fieldName) {
+  public static void commitVolatile(final TCObject tcObject, final String fieldName, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
-    mgr.unlock(lock, null);
+    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**
@@ -263,10 +263,10 @@ public class ManagerUtil {
    * 
    * @param lockID Lock name
    */
-  public static void commitLock(final String lockID) {
+  public static void commitLock(final String lockID, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    mgr.unlock(lock, null);
+    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
   }
   
   /**
@@ -549,10 +549,10 @@ public class ManagerUtil {
    * 
    * @param obj Object
    */
-  public static void monitorExit(final Object obj) {
+  public static void monitorExit(final Object obj, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.unlock(lock, null);
+    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
   }
 
   /**

@@ -110,7 +110,7 @@ public class ConditionObject implements Condition, java.io.Serializable {
       } finally {
         UnsafeUtil.monitorExit(realCondition);
         if (!isLockInUnshared) {
-          ManagerUtil.monitorExit(realCondition);
+          ManagerUtil.monitorExit(realCondition, LockLevel.WRITE);
         }
       }
     } catch (TCRuntimeException e) {
@@ -156,7 +156,7 @@ public class ConditionObject implements Condition, java.io.Serializable {
       } finally {
         UnsafeUtil.monitorExit(realCondition);
         if (!isLockInUnshared) {
-          ManagerUtil.monitorExit(realCondition);
+          ManagerUtil.monitorExit(realCondition, LockLevel.WRITE);
         }
       }
     } finally {
@@ -204,7 +204,7 @@ public class ConditionObject implements Condition, java.io.Serializable {
       } finally {
         UnsafeUtil.monitorExit(realCondition);
         if (!isLockInUnshared) {
-          ManagerUtil.monitorExit(realCondition);
+          ManagerUtil.monitorExit(realCondition, LockLevel.WRITE);
         }
       }
     } catch (TCRuntimeException e) {
@@ -248,7 +248,7 @@ public class ConditionObject implements Condition, java.io.Serializable {
     } finally {
       UnsafeUtil.monitorExit(realCondition);
       if (!isLockInUnshared) {
-        ManagerUtil.monitorExit(realCondition);
+        ManagerUtil.monitorExit(realCondition, LockLevel.WRITE);
       }
     }
   }
@@ -268,7 +268,7 @@ public class ConditionObject implements Condition, java.io.Serializable {
     } finally {
       UnsafeUtil.monitorExit(realCondition);
       if (!isLockInUnshared) {
-        ManagerUtil.monitorExit(realCondition);
+        ManagerUtil.monitorExit(realCondition, LockLevel.WRITE);
       }
     }
   }

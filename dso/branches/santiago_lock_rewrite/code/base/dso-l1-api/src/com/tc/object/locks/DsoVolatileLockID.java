@@ -6,83 +6,66 @@ package com.tc.object.locks;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.bytecode.ManagerUtil;
 
 import java.io.IOException;
 
-public class DsoVolatileLockID extends NonObjectLockID {
-  private Object obj;
+/**
+ * LockID implementation representing a lock on a volatile Object field.
+ * <p>
+ * Locking on these instances allows us to provide volatile read/write semantics across the cluster.
+ */
+public class DsoVolatileLockID implements LockID {
+  private long     objectId;
   private String   fieldName;
   
   public DsoVolatileLockID() {
     //
   }
   
-  public DsoVolatileLockID(Object obj, String fieldName) {
-    if (obj instanceof ObjectID) {
-      this.obj = obj;      
-    } else if (obj instanceof TCObject) {
-      this.obj = ((TCObject) obj).getObjectID();
-    } else {
-      TCObject tco = ManagerUtil.lookupExistingOrNull(obj);
-      if (tco == null) {
-        this.obj = obj;
-      } else {
-        this.obj = tco.getObjectID();
-      }
-    }
-    this.fieldName = fieldName;
-  }
-  
   public DsoVolatileLockID(ObjectID oid, String fieldName) {
-    this.obj = oid;
+    this.objectId = oid.toLong();
     this.fieldName = fieldName;
   }
   
   @Deprecated
-  public boolean isNull() {
-    return false;
-  }
-
   public String asString() {
     return null;
-  }
-
-  public boolean isClustered() {
-    return obj instanceof ObjectID;
   }
 
   public LockIDType getLockType() {
     return LockIDType.DSO_VOLATILE;
   }
+  
+  public Object waitNotifyObject() {
+    return null;
+  }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
-    obj = new ObjectID(serialInput.readLong());
+    objectId = serialInput.readLong();
     fieldName = serialInput.readString();
     return this;
   }
 
   public void serializeTo(TCByteBufferOutput serialOutput) {
-    if (obj instanceof ObjectID) {
-      serialOutput.writeLong(((ObjectID) obj).toLong());
-      serialOutput.writeString(fieldName);
-    } else {
-      throw new AssertionError("Attempting clustered volatiile lock on : " + obj);
-    }
+    serialOutput.writeLong(objectId);
+    serialOutput.writeString(fieldName);
   }
 
   public int hashCode() {
-    return (5 * obj.hashCode()) ^ (7 * fieldName.hashCode());
+    return (5 * (((int)objectId) ^ ((int) (objectId >>> 32)))) ^ (7 * fieldName.hashCode());
   }
   
   public boolean equals(Object o) {
     if (o == this) {
       return true;
     } else if (o instanceof DsoVolatileLockID) {
-      return obj.equals(((DsoVolatileLockID) o).obj) && fieldName.equals(((DsoVolatileLockID) o).fieldName);
+      return (objectId == ((DsoVolatileLockID) o).objectId) && fieldName.equals(((DsoVolatileLockID) o).fieldName);
     } else {
       return false;
     }
+  }
+  
+  public String toString() {
+    return "DsoVolatileLockID(" + new ObjectID(objectId) + "." + fieldName + ")";
   }
 }

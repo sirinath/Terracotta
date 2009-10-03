@@ -205,7 +205,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
         ManagerUtil.monitorEnter(lockName, LockLevel.READ);
       }
       for (int i = 0; i < count; i++) {
-        ManagerUtil.monitorExit(lockName);
+        ManagerUtil.monitorExit(lockName, LockLevel.READ);
       }
 
       waitForAllToMoveOn();
@@ -241,18 +241,18 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ThreadUtil.reallySleep(2000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       ThreadUtil.reallySleep(3000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForAllToMoveOn();
     } else if (index == 2) {
       waitForTwoToMoveOn();
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ThreadUtil.reallySleep(2000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForAllToMoveOn();
     }
     waitForAllToMoveOn();
@@ -274,18 +274,18 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ThreadUtil.reallySleep(2000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       ThreadUtil.reallySleep(3000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForAllToMoveOn();
     } else if (index == 2) {
       waitForTwoToMoveOn();
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ThreadUtil.reallySleep(2000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForAllToMoveOn();
     }
     waitForAllToMoveOn();
@@ -323,7 +323,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       waitForAllToMoveOn();
 
       waitForTwoToMoveOn();
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
 
       waitForAllToMoveOn();
 
@@ -332,7 +332,7 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       Thread.sleep(1000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       waitForAllToMoveOn();
       waitForAllToMoveOn();
@@ -346,13 +346,13 @@ public class LockStatisticsJMXTestApp extends AbstractTransparentApp {
       waitForAllToMoveOn();
 
       Thread.sleep(1000);
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       ManagerUtil.monitorEnter(lockName, LockLevel.WRITE);
       waitForTwoToMoveOn();
       waitForAllToMoveOn();
       waitForAllToMoveOn();
-      ManagerUtil.monitorExit(lockName);
+      ManagerUtil.monitorExit(lockName, LockLevel.WRITE);
     }
 
     waitForAllToMoveOn();

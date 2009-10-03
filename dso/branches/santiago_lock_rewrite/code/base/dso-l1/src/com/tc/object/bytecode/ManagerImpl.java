@@ -33,6 +33,7 @@ import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.DsoLiteralLockID;
 import com.tc.object.locks.DsoLockID;
@@ -40,11 +41,13 @@ import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticRetrievalAction;
@@ -358,9 +361,9 @@ public class ManagerImpl implements Manager {
     if (this.objectManager.isCreationInProgress()) { return false; }
 
     LockID lock = generateLockIdentifier(o);
-    boolean dsoMonitorEntered = txManager.isLockOnTopStack(lock);
+    boolean dsoMonitorEntered = lockManager.isLockedByCurrentThread(lock, null);
 
-    if (!dsoMonitorEntered && isManaged(o)) {
+    if (isManaged(o) && !dsoMonitorEntered) {
       logger
           .info("An unlock is being attempted on an Object of class "
                 + o.getClass().getName()
@@ -681,12 +684,12 @@ public class ManagerImpl implements Manager {
   public LockID generateLockIdentifier(Object obj) {
     if (obj instanceof String) {
       return generateLockIdentifier((String) obj);
-    } else if (isLiteralInstance(obj)) {
+    } else if (isLiteralAutolock(obj)) {
       return new DsoLiteralLockID(obj);
     } else {
       TCObject tco = lookupExistingOrNull(obj);
-      if (tco == null) {
-        return new DsoLockID(obj);
+      if ((tco == null) || tco.autoLockingDisabled()) {
+        return new UnclusteredLockID(obj);
       } else {
         return new DsoLockID(tco.getObjectID(), obj);
       }
@@ -694,7 +697,18 @@ public class ManagerImpl implements Manager {
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    return new DsoVolatileLockID(obj, field);
+    TCObject tco;
+    if (obj instanceof TCObject) {
+      tco = (TCObject) obj;
+    } else {
+      tco = lookupExistingOrNull(obj);
+    }
+    
+    if ((tco == null) || tco.autoLockingDisabled()) {
+      return new UnclusteredLockID(null);
+    } else {
+      return new DsoVolatileLockID(tco.getObjectID(), field);
+    }
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {
@@ -722,68 +736,111 @@ public class ManagerImpl implements Manager {
   }
 
   public void lock(LockID lock, LockLevel level) {
-    if (lock.isClustered()) {
+    if (!(lock instanceof UnclusteredLockID)) {
+      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
       lockManager.lock(lock, level);
+      txManager.begin(lock, level);
     }
   }
 
   public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
-    if (lock.isClustered()) {
+    if (!(lock instanceof UnclusteredLockID)) {
+      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
       lockManager.lockInterruptibly(lock, level);
+      txManager.begin(lock, level);
     }
   }
 
-  public void notify(LockID lock) {
-    if (lock.isClustered()) {
-      lockManager.notify(lock);
+  public Notify notify(LockID lock) {
+    if (!(lock instanceof UnclusteredLockID)) {
+      txManager.notify(lockManager.notify(lock));
     } else {
-      lock.javaObject().notify();
+      lock.waitNotifyObject().notify();
     }
+    return null;
   }
 
-  public void notifyAll(LockID lock) {
-    if (lock.isClustered()) {
-      lockManager.notifyAll(lock);
+  public Notify notifyAll(LockID lock) {
+    if (!(lock instanceof UnclusteredLockID)) {
+      txManager.notify(lockManager.notifyAll(lock));
     } else {
-      lock.javaObject().notifyAll();
+      lock.waitNotifyObject().notifyAll();
     }
+    return null;
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {
-    if (lock.isClustered()) {
-      return lockManager.tryLock(lock, level);
+    if (!(lock instanceof UnclusteredLockID)) {
+      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return true; }      
+      if (lockManager.tryLock(lock, level)) {
+        txManager.begin(lock, level);
+        return true;
+      } else {
+        return false;
+      }
     } else {
       return true;
     }
   }
 
   public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
-    if (lock.isClustered()) {
-      return lockManager.tryLock(lock, level, timeout);
+    if (!(lock instanceof UnclusteredLockID)) {
+      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return true; }      
+      if (lockManager.tryLock(lock, level, timeout)) {
+        txManager.begin(lock, level);
+        return true;
+      } else {
+        return false;
+      }
     } else {
       return true;
     }
   }
 
   public void unlock(LockID lock, LockLevel level) {
-    if (lock.isClustered()) {
-      lockManager.unlock(lock, level);
+    if (!(lock instanceof UnclusteredLockID)) {
+      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
+      try {
+        txManager.commit(lock, level);
+      } finally {
+        lockManager.unlock(lock, level);
+      }
     }
   }
 
   public void wait(LockID lock) throws InterruptedException {
-    if (lock.isClustered()) {
-      lockManager.wait(lock);
+    if (!(lock instanceof UnclusteredLockID)) {
+      try {
+        txManager.commit(lock, LockLevel.WRITE);
+      } catch (UnlockedSharedObjectException e) {
+        throw new IllegalMonitorStateException();
+      }
+      try {
+        lockManager.wait(lock);
+      } finally {
+        // XXX this is questionable
+        txManager.begin(lock, LockLevel.WRITE);
+      }
     } else {
-      lock.javaObject().wait();
+      lock.waitNotifyObject().wait();
     }
   }
 
   public void wait(LockID lock, long timeout) throws InterruptedException {
-    if (lock.isClustered()) {
-      lockManager.wait(lock, timeout);
+    if (!(lock instanceof UnclusteredLockID)) {
+      try {
+        txManager.commit(lock, LockLevel.WRITE);
+      } catch (UnlockedSharedObjectException e) {
+        throw new IllegalMonitorStateException();
+      }
+      try {
+        lockManager.wait(lock, timeout);
+      } finally {
+        // XXX this is questionable
+        txManager.begin(lock, LockLevel.WRITE);
+      }
     } else {
-      lock.javaObject().wait(timeout);
+      lock.waitNotifyObject().wait(timeout);
     }
   }
 

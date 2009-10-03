@@ -11,7 +11,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class DsoLiteralLockID extends NonObjectLockID {
+/**
+ * Represents the a lock on a clustered literal object.
+ * <p>
+ * Literal locks in Terracotta are special as they locks on the value of the
+ * literal object and not on its object identity - as literal objects have no
+ * cluster wide object identity.
+ */
+public class DsoLiteralLockID implements LockID {
 
   private Object literal;
   
@@ -31,36 +38,10 @@ public class DsoLiteralLockID extends NonObjectLockID {
     return LockIDType.DSO_LITERAL;
   }
 
-  public boolean isClustered() {
-    switch (LiteralValues.valueFor(literal)) {
-      case BIG_DECIMAL:
-      case BIG_INTEGER:
-      case INTEGER:
-        return true;
-      case OBJECT:
-        throw new AssertionError();
-      case OBJECT_ID:
-      case JAVA_LANG_CLASS:
-        return false;
-      default: //want this default to disappear eventually...
-        System.err.println("XXXXXXXXX NOT LOCKING ON LITERAL CLASS " + literal.getClass());
-        return false;
-    }
-  }
-
-  public Object javaObject() {
-    if (isClustered()) {
-      return super.javaObject();
-    } else {
-      return literal;
-    }
+  public Object waitNotifyObject() {
+    return literal;
   }
   
-  @Deprecated
-  public boolean isNull() {
-    return false;
-  }
-
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     LiteralValues type = LiteralValues.values()[serialInput.readByte()];
     switch (type) {

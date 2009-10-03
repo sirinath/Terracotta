@@ -113,7 +113,7 @@ public class HashtableKeySetWrapper implements Set {
         // Do the real remove first. If no exception thrown, then proceed with the DSO stuff
         ManagerUtil.logicalInvoke(hashtable, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { last });
       } finally {
-        ManagerUtil.monitorExit(hashtable);
+        ManagerUtil.monitorExit(hashtable, LockLevel.WRITE);
       }
     }
 

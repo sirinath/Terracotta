@@ -14,11 +14,10 @@ import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
-import com.tc.object.locks.DsoLockID;
-import com.tc.object.locks.DsoVolatileLockID;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
-import com.tc.object.locks.StringLockID;
+import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.NullInstrumentationLogger;
 import com.tc.properties.TCProperties;
@@ -222,15 +221,15 @@ public final class NullManager implements Manager {
   }
 
   public LockID generateLockIdentifier(String str) {
-    return new StringLockID(str);
+    return new UnclusteredLockID(null);
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    return new DsoLockID(obj);
+    return new UnclusteredLockID(obj);
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    return new DsoVolatileLockID(obj, field);
+    return new UnclusteredLockID(null);
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {
@@ -265,18 +264,20 @@ public final class NullManager implements Manager {
     //
   }
 
-  public void notify(LockID lock) {
-    Object jObject = lock.javaObject();
+  public Notify notify(LockID lock) {
+    Object jObject = lock.waitNotifyObject();
     if (jObject != null) {
       jObject.notify();
     }
+    return null;
   }
 
-  public void notifyAll(LockID lock) {
-    Object jObject = lock.javaObject();
+  public Notify notifyAll(LockID lock) {
+    Object jObject = lock.waitNotifyObject();
     if (jObject != null) {
       jObject.notifyAll();
     }
+    return null;
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {
@@ -292,14 +293,14 @@ public final class NullManager implements Manager {
   }
 
   public void wait(LockID lock) throws InterruptedException {
-    Object jObject = lock.javaObject();
+    Object jObject = lock.waitNotifyObject();
     if (jObject != null) {
       jObject.wait();
     }
   }
 
   public void wait(LockID lock, long timeout) throws InterruptedException {
-    Object jObject = lock.javaObject();
+    Object jObject = lock.waitNotifyObject();
     if (jObject != null) {
       jObject.wait(timeout);
     }

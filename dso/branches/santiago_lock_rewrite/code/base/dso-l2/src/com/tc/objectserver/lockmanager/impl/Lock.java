@@ -875,7 +875,7 @@ public class Lock {
   }
 
   public boolean isNull() {
-    return this.lockID.isNull();
+    return this.lockID == StringLockID.NULL_ID;
   }
 
   @Override

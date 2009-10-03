@@ -38,7 +38,7 @@ public class RecallUnderConcurrentLockTestApp extends AbstractTransparentApp {
       if (nodeId == 0) {
         // Grab the greedy lock
         ManagerUtil.beginLock(LOCK_STRING, LockLevel.WRITE);
-        ManagerUtil.commitLock(LOCK_STRING);
+        ManagerUtil.commitLock(LOCK_STRING, LockLevel.WRITE);
 
         ManagerUtil.beginLock(LOCK_STRING, LockLevel.CONCURRENT);
         try {
@@ -47,7 +47,7 @@ public class RecallUnderConcurrentLockTestApp extends AbstractTransparentApp {
           ThreadUtil.reallySleep(5000);
         } finally {
           // Unlock before awaiting
-          ManagerUtil.commitLock(LOCK_STRING);
+          ManagerUtil.commitLock(LOCK_STRING, LockLevel.CONCURRENT);
         }
         this.barrier.await();
       } else {
@@ -56,7 +56,7 @@ public class RecallUnderConcurrentLockTestApp extends AbstractTransparentApp {
         try {
           this.barrier.await();
         } finally {
-          ManagerUtil.commitLock(LOCK_STRING);
+          ManagerUtil.commitLock(LOCK_STRING, LockLevel.READ);
         }
       }
 

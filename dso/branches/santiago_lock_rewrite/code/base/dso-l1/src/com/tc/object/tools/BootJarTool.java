@@ -548,7 +548,7 @@ public class BootJarTool {
       //Locking System Classes
       loadTerracottaClass(com.tc.object.locks.LockID.class.getName());
       loadTerracottaClass(com.tc.object.locks.LockID.LockIDType.class.getName());
-      loadTerracottaClass(com.tc.object.locks.NonObjectLockID.class.getName());
+      loadTerracottaClass(com.tc.object.locks.UnclusteredLockID.class.getName());
       loadTerracottaClass(com.tc.object.locks.StringLockID.class.getName());
       loadTerracottaClass(com.tc.object.locks.DsoLockID.class.getName());
       loadTerracottaClass(com.tc.object.locks.DsoLiteralLockID.class.getName());

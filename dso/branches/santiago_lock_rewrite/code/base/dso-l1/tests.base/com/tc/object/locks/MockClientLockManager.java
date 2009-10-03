@@ -5,6 +5,7 @@ package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
+import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
@@ -59,11 +60,11 @@ public class MockClientLockManager implements ClientLockManager {
   }
 
   public LockID generateLockIdentifier(String str) {
-    return new StringLockID(str);
+    throw new ImplementMe();
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    return new DsoLockID(obj);
+    throw new ImplementMe();
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
@@ -102,11 +103,11 @@ public class MockClientLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public void notify(LockID lock) {
+  public Notify notify(LockID lock) {
     throw new ImplementMe();
   }
 
-  public void notifyAll(LockID lock) {
+  public Notify notifyAll(LockID lock) {
     throw new ImplementMe();
   }
 
@@ -173,6 +174,10 @@ public class MockClientLockManager implements ClientLockManager {
   }
 
   public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
+    throw new ImplementMe();
+  }
+
+  public int runLockGc() {
     throw new ImplementMe();
   }
 }

@@ -8,9 +8,8 @@ import com.tc.io.TCByteBufferOutput;
 
 import java.io.IOException;
 
-public class LongLockID extends NonObjectLockID {
+public class LongLockID implements LockID {
   /** Indicates no lock identifier */
-  public final static LongLockID NULL_ID = new LongLockID(-1);
   private long                   id;
 
   public LongLockID() {
@@ -27,17 +26,14 @@ public class LongLockID extends NonObjectLockID {
     this.id = id;
   }
 
-  /**
-   * @return True if is null identifier
-   */
-  public boolean isNull() {
-    return this == NULL_ID;
-  }
-
   public String toString() {
     return getClass().getSimpleName() + "(" + id + ")";
   }
 
+  public Object waitNotifyObject() {
+    return null;
+  }
+  
   /**
    * @return String value of id value
    */
@@ -46,7 +42,7 @@ public class LongLockID extends NonObjectLockID {
   }
 
   public int hashCode() {
-    return (int) id;
+    return ((int) id) ^ ((int) (id >>> 32));
   }
 
   public boolean equals(Object obj) {

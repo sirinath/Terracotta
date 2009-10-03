@@ -71,7 +71,7 @@ public class ReentrantReadWriteLockTC extends ReentrantReadWriteLock implements 
 
     public void unlock() {
       if (ManagerUtil.isManaged(lock)) {
-        ManagerUtil.monitorExit(lock);
+        ManagerUtil.monitorExit(lock, lockLevel);
       }
     }
 

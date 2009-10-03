@@ -9,9 +9,10 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class StringLockID extends NonObjectLockID {  
+public class StringLockID implements LockID {
+  @Deprecated
   public final static StringLockID NULL_ID = new StringLockID("null id");
-  
+
   private String                   id;
 
   public StringLockID() {
@@ -28,13 +29,10 @@ public class StringLockID extends NonObjectLockID {
     this.id = id;
   }
 
-  /**
-   * @return True if is null identifier
-   */
-  public boolean isNull() {
-    return this == NULL_ID;
+  public Object waitNotifyObject() {
+    return null;
   }
-
+  
   /**
    * @return String value of id value
    */
