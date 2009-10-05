@@ -211,6 +211,12 @@ public interface Manager extends TerracottaLocking {
   public boolean isManaged(Object object);
 
   /**
+   * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type}
+   * and is suitable for cluster-wide locking,
+   */
+  public boolean isLiteralAutolock(final Object o);
+  
+  /**
    * Check whether an object is shared
    *
    * @param obj Instance

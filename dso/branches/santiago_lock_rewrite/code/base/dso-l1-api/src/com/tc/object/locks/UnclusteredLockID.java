@@ -8,10 +8,10 @@ import com.tc.io.TCByteBufferOutput;
 
 public class UnclusteredLockID implements LockID {
 
-  private final Object javaObject;
+  private final Object waitObject;
   
   public UnclusteredLockID(Object obj) {
-    javaObject = obj;
+    waitObject = obj;
   }
   
   public String asString() {
@@ -23,7 +23,7 @@ public class UnclusteredLockID implements LockID {
   }
 
   public Object waitNotifyObject() {
-    return javaObject;
+    return waitObject;
   }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) {

@@ -676,6 +676,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       return false;
     }
     
+    boolean doFlush = false;
     LockHold unlocked = null;
     synchronized (this) {
       for (Iterator<State> it = iterator(); it.hasNext();) {
@@ -692,9 +693,11 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       if (unlocked == null) {
         throw new IllegalMonitorStateException();
       }
+      
+      doFlush = unlocked.getLockLevel().flushOnUnlock() || greediness.flushOnUnlock(this, unlocked);
     }
 
-    if (unlocked.getLockLevel().flushOnUnlock() || greediness.flushOnUnlock(this, unlocked)) {
+    if (doFlush) {
       remote.flush(lock);
     }
     
@@ -1000,6 +1003,10 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       }
     }
     
+    public int hashCode() {
+      return (5 * super.hashCode()) ^ (7 * level.hashCode());
+    }
+    
     public String toString() {
       return super.toString() + " : " + level;
     }
@@ -1060,7 +1067,10 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       }
     }
     
-    
+    public int hashCode() {
+      return (5 * super.hashCode()) ^ (7 * level.hashCode());
+    }
+        
     public String toString() {
       return super.toString() + " : " + level;
     }
@@ -1168,6 +1178,10 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
         return false;
       }
     }
+    
+    public int hashCode() {
+      return super.hashCode();
+    }
   }
   
   static class LockAward extends State {
@@ -1190,6 +1204,10 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       } else {
         return false;
       }
+    }
+    
+    public int hashCode() {
+      return (5 * super.hashCode()) ^ (7 * level.hashCode());
     }
     
     public String toString() {
