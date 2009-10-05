@@ -105,6 +105,10 @@ public final class NullManager implements Manager {
     return false;
   }
 
+  public boolean isLiteralAutolock(Object o) {
+    return false;
+  }
+  
   public final int calculateDsoHashCode(final Object object) {
     return 0;
   }

@@ -143,7 +143,6 @@ public interface TerracottaLocking {
    * @see TerracottaLocking#isLocked(LockID, LockLevel)
    * 
    * @param lock lock to query
-   * @param level level to query
    */
   public int globalPendingCount(LockID lock);
   
@@ -154,7 +153,6 @@ public interface TerracottaLocking {
    * @see TerracottaLocking#isLocked(LockID, LockLevel)
    * 
    * @param lock lock to query
-   * @param level level to query
    */
   public int globalWaitingCount(LockID lock);
 

@@ -55,7 +55,7 @@ public class DsoLiteralLockID implements LockID {
         literal = new BigInteger(data);
         return this;
       case INTEGER:
-        literal = new Integer(serialInput.readInt());
+        literal = Integer.valueOf(serialInput.readInt());
         return this;
       default:
         throw new AssertionError();

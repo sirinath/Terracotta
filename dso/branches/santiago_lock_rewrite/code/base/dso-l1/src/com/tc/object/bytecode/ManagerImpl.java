@@ -34,13 +34,10 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.StandardClassProvider;
 import com.tc.object.locks.ClientLockManager;
-import com.tc.object.locks.DsoLiteralLockID;
-import com.tc.object.locks.DsoLockID;
-import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
+import com.tc.object.locks.LockIdFactory;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.Notify;
-import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
@@ -79,6 +76,7 @@ public class ManagerImpl implements Manager {
   private final StatisticsAgentSubSystem           statisticsAgentSubSystem;
   private final DsoClusterInternal                 dsoCluster;
   private final RuntimeLogger                      runtimeLogger;
+  private final LockIdFactory                      lockIdFactory;
 
   private final InstrumentationLogger              instrumentationLogger;
 
@@ -88,6 +86,7 @@ public class ManagerImpl implements Manager {
   private ClientLockManager                        lockManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
+  
   private final SerializationUtil                  serializer    = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
 
@@ -128,6 +127,7 @@ public class ManagerImpl implements Manager {
     if (config.hasBootJar()) {
       registerStandardLoaders();
     }
+    this.lockIdFactory = new LockIdFactory(this);
   }
 
   private void registerStandardLoaders() {
@@ -352,7 +352,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  private boolean isLiteralAutolock(final Object o) {
+  public boolean isLiteralAutolock(final Object o) {
     if (o instanceof Manageable) { return false; }
     return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && LiteralValues.isLiteralInstance(o);
   }
@@ -678,37 +678,15 @@ public class ManagerImpl implements Manager {
   }
 
   public LockID generateLockIdentifier(String str) {
-    return new StringLockID(str);
+    return lockIdFactory.generateLockIdentifier(str);
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    if (obj instanceof String) {
-      return generateLockIdentifier((String) obj);
-    } else if (isLiteralAutolock(obj)) {
-      return new DsoLiteralLockID(obj);
-    } else {
-      TCObject tco = lookupExistingOrNull(obj);
-      if ((tco == null) || tco.autoLockingDisabled()) {
-        return new UnclusteredLockID(obj);
-      } else {
-        return new DsoLockID(tco.getObjectID(), obj);
-      }
-    }
+    return lockIdFactory.generateLockIdentifier(obj);
   }
 
-  public LockID generateLockIdentifier(Object obj, String field) {
-    TCObject tco;
-    if (obj instanceof TCObject) {
-      tco = (TCObject) obj;
-    } else {
-      tco = lookupExistingOrNull(obj);
-    }
-    
-    if ((tco == null) || tco.autoLockingDisabled()) {
-      return new UnclusteredLockID(null);
-    } else {
-      return new DsoVolatileLockID(tco.getObjectID(), field);
-    }
+  public LockID generateLockIdentifier(Object obj, String fieldName) {
+    return lockIdFactory.generateLockIdentifier(obj, fieldName);
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {
