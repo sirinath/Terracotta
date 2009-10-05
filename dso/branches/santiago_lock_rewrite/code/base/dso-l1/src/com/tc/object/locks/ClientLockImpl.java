@@ -232,12 +232,16 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     LockWaiter node = null;
     // stack of reacquires that should locked when leaving the wait...
     Stack<PendingLockHold> reacquireNodes = new Stack<PendingLockHold>();
-    try {      
+    try {
       synchronized (this) {
+        boolean holdsWrite = false;
         for (State s : this) {
-          // find all this threads write holds...
-          if ((s instanceof LockHold) && s.getOwner().equals(thread) && ((LockHold) s).getLockLevel().isWrite()) {
+          // find all this threads holds...
+          if ((s instanceof LockHold) && s.getOwner().equals(thread)) {
             LockHold hold = (LockHold) s;
+            if (hold.getLockLevel().isWrite()) {
+              holdsWrite = true;
+            }
             //if the unlocking of this hold triggers a flush requirement then do it now
             if (hold.getLockLevel().flushOnUnlock() || greediness.flushOnUnlock(this, hold)) {
               if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " flushing transactions on wait");
@@ -248,12 +252,13 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
             reacquireNodes.push(new MonitorBasedPendingLockHold(thread, hold.getLockLevel(), lock.waitNotifyObject(), -1));
           }
         }
-        // if no write locks were held then throw here
-        if (reacquireNodes.isEmpty()) { throw new IllegalMonitorStateException(); }
-
         // add the lock waiter node to the state (and attach the reacquire stack to it - the notifying thread will need the stack later)
-        node = new LockWaiter(thread, lock.waitNotifyObject(), reacquireNodes, timeout);
+        node = new LockWaiter(thread, lock.waitNotifyObject(), reacquireNodes, timeout);        
         addLast(node);
+        
+        // if no write locks were held then throw here
+        if (!holdsWrite) { throw new IllegalMonitorStateException(); }
+        
         // potentially (dependent on greediness state) communicate with the server here
         greediness = greediness.waiting(remote, lock, this, thread, timeout);
         // kick the queue to allow queued acquires to grab the lock
@@ -451,8 +456,9 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
    */
   private synchronized void notify(LockWaiter waiter) {
     if (remove(waiter) != null) {
-      for (PendingLockHold a : waiter.getReacquires()) {
-        addLast(a);
+      Stack<PendingLockHold> reacquires = waiter.getReacquires();
+      for (int i = reacquires.size() - 1; i >= 0; i--) {
+        addLast(reacquires.get(i));
       }
     }
   }
@@ -1192,7 +1198,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     }
   }
 
-  public synchronized boolean tryToMarkAsGarbage(RemoteLockManager remote) {
+  public synchronized boolean tryMarkAsGarbage(RemoteLockManager remote) {
     if (isEmpty() && gcCycleCount > 0) {
       doRecall(remote);
       greediness = ClientGreediness.GARBAGE;
@@ -1219,25 +1225,30 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
   private synchronized Collection<ClientServerExchangeLockContext> getFilteredStateSnapshot(boolean greedy) {
     Collection<ClientServerExchangeLockContext> fullState = getStateSnapshot();
     Collection<ClientServerExchangeLockContext> legacyState = new ArrayList();
+    
     Map<ThreadID, ClientServerExchangeLockContext> holds = new HashMap<ThreadID, ClientServerExchangeLockContext>();
-
+    Map<ThreadID, ClientServerExchangeLockContext> pends = new HashMap<ThreadID, ClientServerExchangeLockContext>();
+    
     for (ClientServerExchangeLockContext context : fullState) {
       switch (context.getState()) {
         case HOLDER_READ:
-        case HOLDER_WRITE:
-          ClientServerExchangeLockContext current = holds.get(context.getThreadID());
-          if (current == null) {
+          if (holds.get(context.getThreadID()) == null) {
             holds.put(context.getThreadID(), context);
-          } else {
-            if (context.getState().getLockLevel().equals(ServerLockLevel.WRITE)) {
-              holds.put(context.getThreadID(), context);
-            }
           }
           break;
+        case HOLDER_WRITE:
+          holds.put(context.getThreadID(), context);
+          break;
         case PENDING_READ:
-        case PENDING_WRITE:
         case TRY_PENDING_READ:
+          if (pends.get(context.getThreadID()) == null) {
+            pends.put(context.getThreadID(), context);
+          }
+          break;
+        case PENDING_WRITE:
         case TRY_PENDING_WRITE:
+          pends.put(context.getThreadID(), context);
+          break;
         case WAITER:
           legacyState.add(context);
           break;
@@ -1250,6 +1261,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       }
     }    
     legacyState.addAll(holds.values());
+    legacyState.addAll(pends.values());
     
     return legacyState;
   }
