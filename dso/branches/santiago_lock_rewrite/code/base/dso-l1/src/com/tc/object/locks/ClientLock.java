@@ -4,7 +4,6 @@
 package com.tc.object.locks;
 
 
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 
 import java.util.Collection;

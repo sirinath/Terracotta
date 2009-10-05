@@ -9,7 +9,6 @@ import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.TCLockTimer;
 import com.tc.object.lockmanager.api.TryLockRequest;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.lockmanager.api.WaitLockRequest;
 import com.tc.object.lockmanager.impl.TCLockTimerImpl;
 import com.tc.object.locks.ServerLockContext.State;

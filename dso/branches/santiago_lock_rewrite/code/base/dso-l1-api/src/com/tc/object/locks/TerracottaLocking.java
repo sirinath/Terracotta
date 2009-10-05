@@ -4,7 +4,6 @@
 package com.tc.object.locks;
 
 import com.tc.exception.TCLockUpgradeNotSupportedError;
-import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.LockID;
 
 public interface TerracottaLocking {

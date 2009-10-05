@@ -5,8 +5,6 @@ package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.Notify;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 

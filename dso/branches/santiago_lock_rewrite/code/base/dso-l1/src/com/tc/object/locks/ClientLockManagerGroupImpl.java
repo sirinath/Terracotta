@@ -8,7 +8,6 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
-import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.session.SessionID;
