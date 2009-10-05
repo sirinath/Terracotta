@@ -50,10 +50,10 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     this.threadManager = threadManager;
     this.sessionManager = sessionManager;
     
-    this.locks = new ConcurrentHashMap<LockID, ClientLock>(config.getStripedCount());
-    this.gcTimer = new Timer("ClientLockManager LockGC", true);
-    long halfGCPeriod = Math.max(config.getTimeoutInterval() / 2, 15000);
-    gcTimer.schedule(new LockGcTimerTask(), halfGCPeriod, halfGCPeriod);
+    locks = new ConcurrentHashMap<LockID, ClientLock>(config.getStripedCount());
+    gcTimer = new Timer("ClientLockManager LockGC", true);
+    long halfGcPeriod = Math.max(config.getTimeoutInterval() / 2, 50);
+    gcTimer.schedule(new LockGcTimerTask(), halfGcPeriod, halfGcPeriod);
   }
   
   private ClientLock getOrCreateClientLockState(LockID lock) {
@@ -664,7 +664,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     public void run() {
       int gcCount = 0;
       for (Entry<LockID, ClientLock> entry : locks.entrySet()) {
-        if (entry.getValue().tryToMarkAsGarbage(remoteManager) && locks.remove(entry.getKey(), entry.getValue())) {
+        if (entry.getValue().tryMarkAsGarbage(remoteManager) && locks.remove(entry.getKey(), entry.getValue())) {
           gcCount++;
         }
       }

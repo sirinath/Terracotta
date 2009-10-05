@@ -43,5 +43,5 @@ public interface ClientLock {
    * they consider themselves garbage.
    * @param remote remote manager to interact with
    */
-  public boolean tryToMarkAsGarbage(RemoteLockManager remote);
+  public boolean tryMarkAsGarbage(RemoteLockManager remote);
 }

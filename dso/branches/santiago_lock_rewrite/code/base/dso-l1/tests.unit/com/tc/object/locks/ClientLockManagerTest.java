@@ -72,7 +72,7 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testRunGC() {
-    NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(Long.MAX_VALUE);
+    NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager, threadManager,                                                                                  
                                                                                   testClientLockManagerConfig);
@@ -111,7 +111,7 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   public void testRunGCWithAHeldLock() {
-    NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(Long.MAX_VALUE);
+    NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager,
                                                                                   threadManager, testClientLockManagerConfig);

@@ -187,7 +187,7 @@ public class WrappedClientLock implements ClientLock {
     wrappedLock.wait(thread, new TimerSpec(timeout), lockId.waitNotifyObject(), listener);
   }
 
-  public boolean tryToMarkAsGarbage(RemoteLockManager remote) {
+  public boolean tryMarkAsGarbage(RemoteLockManager remote) {
     return false;
   }  
 }

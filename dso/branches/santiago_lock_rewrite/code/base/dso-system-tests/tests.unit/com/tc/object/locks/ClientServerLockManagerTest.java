@@ -269,23 +269,9 @@ public class ClientServerLockManagerTest extends TestCase {
     clientLockManager.unlock(lockID1, LockLevel.WRITE);
     sleep(1000l);
 
-    boolean found = false;
-    for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
-      if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx1)) {
-        // if (LockLevel.isRead(request.lockLevel()) || !LockLevel.isWrite(request.lockLevel())) {
-        if (c.getState().getLockLevel() == ServerLockLevel.READ) { throw new AssertionError(
-                                                                                            "Server Lock Level is not WRITE only on tx2 the client side"); }
-        found = true;
-        break;
-      }
-    }
     threadManager.setThreadID(tx1);
     Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.READ));
     Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.WRITE));
-    if (!found) {
-      // formatter
-      throw new AssertionError("Didn't find the lock I am looking for");
-    }
     LockMBean[] lockBeans2 = serverLockManager.getAllLocks();
     if (!equals(lockBeans1, lockBeans2)) { throw new AssertionError("The locks are not the same"); }
   }
@@ -377,8 +363,7 @@ public class ClientServerLockManagerTest extends TestCase {
     boolean found = false;
     for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
       if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx2)) {
-        if (c.getState().getLockLevel() == ServerLockLevel.READ) { throw new AssertionError(
-                                                                                            "Server Lock Level is not WRITE only on tx2 the client side"); }
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) { throw new AssertionError("Server Lock Level is not WRITE only on tx2 the client side"); }
         found = true;
         break;
       }
