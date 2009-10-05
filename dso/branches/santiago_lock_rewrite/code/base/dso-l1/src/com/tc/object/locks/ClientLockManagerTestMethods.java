@@ -3,7 +3,6 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.lockmanager.api.WaitListener;
 
 public interface ClientLockManagerTestMethods {
   /**

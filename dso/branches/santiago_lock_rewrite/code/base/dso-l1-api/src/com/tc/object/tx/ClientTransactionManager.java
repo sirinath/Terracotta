@@ -10,9 +10,9 @@ import com.tc.object.ClientIDProvider;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
-import com.tc.object.lockmanager.api.Notify;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.Notify;
 import com.tc.object.session.SessionID;
 import com.tc.text.PrettyPrintable;
 

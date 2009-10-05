@@ -6,7 +6,6 @@ package com.tc.object.locks;
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.net.ClientID;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.util.SinglyLinkedList;
 import com.tc.util.UnsafeUtil;

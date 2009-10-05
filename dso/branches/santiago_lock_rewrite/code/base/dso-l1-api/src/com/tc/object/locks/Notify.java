@@ -2,15 +2,13 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.api;
+package com.tc.object.locks;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
-import com.tc.object.locks.LockID;
-import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.locks.ThreadID;
 
 import java.io.IOException;

@@ -18,7 +18,6 @@ import com.tc.logging.TCLogger;
 import com.tc.management.L1Info;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ClientLockManagerImpl;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;

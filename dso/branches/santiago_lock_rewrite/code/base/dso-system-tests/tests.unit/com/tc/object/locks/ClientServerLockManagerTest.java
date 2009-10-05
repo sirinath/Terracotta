@@ -8,7 +8,6 @@ import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.logging.NullTCLogger;
 import com.tc.management.L2LockStatsManager;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;

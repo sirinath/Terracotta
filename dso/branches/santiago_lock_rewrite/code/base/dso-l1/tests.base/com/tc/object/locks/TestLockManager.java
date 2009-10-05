@@ -6,8 +6,6 @@ package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.api.Notify;
-import com.tc.object.lockmanager.api.WaitListener;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
