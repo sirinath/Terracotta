@@ -15,7 +15,6 @@ import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
-import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.locks.Lock.NotifyAction;
 import com.tc.objectserver.locks.LockStore.LockIterator;
@@ -222,8 +221,18 @@ public class LockManagerImpl implements LockManager {
   }
 
   public LockMBean[] getAllLocks() {
-    // TODO
-    return null;
+    List<LockMBean> beansList = new ArrayList<LockMBean>();
+
+    Lock oldLock = null;
+    LockIterator iter = lockStore.iterator();
+    Lock lock = iter.getNextLock(oldLock);
+    while (lock != null) {
+      oldLock = lock;
+      beansList.add(lock.getMBean(channelManager));
+      lock = iter.getNextLock(oldLock);
+    }
+
+    return beansList.toArray(new LockMBean[beansList.size()]);
   }
 
   public void start() {

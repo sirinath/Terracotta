@@ -17,7 +17,6 @@ import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.locks.context.LinkedServerLockContext;
 import com.tc.objectserver.locks.context.SingleServerLockContext;
@@ -130,8 +129,30 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   }
 
   public LockMBean getMBean(DSOChannelManager channelManager) {
-    // TODO
-    return null;
+    List<ServerLockContextBean> contextsPresent = new ArrayList<ServerLockContextBean>();
+    SinglyLinkedListIterator<ServerLockContext> contexts = iterator();
+    while (contexts.hasNext()) {
+      ServerLockContext context = contexts.next();
+      ServerLockContextBean clonedContext = null;
+      String client = channelManager.getChannelAddress(context.getClientID());
+      switch (context.getState().getType()) {
+        case GREEDY_HOLDER:
+        case HOLDER:
+        case PENDING:
+          clonedContext = new ServerLockContextBean(client, context.getThreadID(), context.getState());
+          break;
+        case TRY_PENDING:
+        case WAITER:
+          clonedContext = new ServerLockContextBean(client, context.getThreadID(), context.getState(),
+                                                    ((WaitServerLockContext) context).getTimeout());
+          break;
+      }
+      contextsPresent.add(clonedContext);
+    }
+    LockMBean bean = new LockMBeanImpl(lockID, contextsPresent
+        .toArray(new ServerLockContextBean[contextsPresent.size()]));
+
+    return bean;
   }
 
   public LockID getLockID() {
@@ -416,9 +437,9 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
 
   protected void addTryPending(ServerLockContext request, LockHelper helper) {
     preStepsForAdd(helper);
-    //I'm not sure this is a sensible thing to assert - you are racing with the client on
-    //try lock requests...
-    //Assert.assertFalse(checkDuplicate(request));
+    // I'm not sure this is a sensible thing to assert - you are racing with the client on
+    // try lock requests...
+    // Assert.assertFalse(checkDuplicate(request));
 
     SinglyLinkedListIterator<ServerLockContext> iter = iterator();
     while (iter.hasNext()) {
