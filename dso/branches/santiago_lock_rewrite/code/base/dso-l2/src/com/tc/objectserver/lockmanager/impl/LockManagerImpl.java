@@ -24,11 +24,11 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
-import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.LockManager;
-import com.tc.objectserver.lockmanager.api.LockManagerMBean;
 import com.tc.objectserver.lockmanager.api.LockWaitContext;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
+import com.tc.objectserver.locks.LockMBean;
+import com.tc.objectserver.locks.LockManagerMBean;
 import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -426,20 +426,21 @@ public class LockManagerImpl implements LockManager, LockManagerMBean, TimerCall
   }
 
   public LockMBean[] getAllLocks() {
-    final List copy;
-    synchronized (this) {
-      copy = new ArrayList(this.locks.size());
-      copy.addAll(this.locks.values());
-    }
-
-    int count = 0;
-    LockMBean[] rv = new LockMBean[copy.size()];
-    for (Iterator i = copy.iterator(); i.hasNext();) {
-      Lock lock = (Lock) i.next();
-      rv[count++] = lock.getMBean(this.channelManager);
-    }
-
-    return rv;
+    // final List copy;
+    // synchronized (this) {
+    // copy = new ArrayList(this.locks.size());
+    // copy.addAll(this.locks.values());
+    // }
+    //
+    // int count = 0;
+    // LockMBean[] rv = new LockMBean[copy.size()];
+    // for (Iterator i = copy.iterator(); i.hasNext();) {
+    // Lock lock = (Lock) i.next();
+    // rv[count++] = lock.getMBean(this.channelManager);
+    // }
+    //
+    // return rv;
+    return null;
   }
 
   public void start() {

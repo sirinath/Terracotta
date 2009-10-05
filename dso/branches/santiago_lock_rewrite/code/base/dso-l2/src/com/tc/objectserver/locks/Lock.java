@@ -10,7 +10,6 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.LockMBean;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 
 import java.util.Collection;
