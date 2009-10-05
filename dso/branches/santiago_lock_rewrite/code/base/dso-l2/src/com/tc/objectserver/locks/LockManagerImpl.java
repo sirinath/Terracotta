@@ -132,9 +132,14 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo) {
-    Assert.assertFalse("Notify was called before the LockManager was started.", isStarting());
-    if (!isStarted()) {
-      logger.warn("Notify was called after shutdown sequence commenced.");
+    try {
+      lockStatusRead();
+      Assert.assertFalse("Notify was called before the LockManager was started.", isStarting());
+      if (!isStarted()) {
+        logger.warn("Notify was called after shutdown sequence commenced.");
+      }
+    } finally {
+      unlockStatusRead();
     }
 
     Lock lock = lockStore.checkOut(lid);
@@ -148,7 +153,12 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void wait(LockID lid, ClientID cid, ThreadID tid, long timeout) {
-    Assert.assertFalse("Wait was called before the LockManager was started.", isStoppped());
+    try {
+      lockStatusRead();
+      Assert.assertFalse("Wait was called before the LockManager was started.", isStoppped());
+    } finally {
+      unlockStatusRead();
+    }
 
     Lock lock = lockStore.checkOut(lid);
     try {
@@ -161,7 +171,12 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void reestablishState(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts) {
-    Assert.assertTrue("Reestablish was called after the LockManager was started.", isStarting());
+    try {
+      lockStatusRead();
+      Assert.assertTrue("Reestablish was called after the LockManager was started.", isStarting());
+    } finally {
+      unlockStatusRead();
+    }
 
     for (ClientServerExchangeLockContext cselc : serverLockContexts) {
       LockID lid = cselc.getLockID();
@@ -212,63 +227,66 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void start() {
-    Assert.assertTrue(isStarting());
-    setStatus(Status.STARTED);
-    synchronized (this) {
-      notifyAll();
-    }
-
-    // Done to make sure that all wait/try timers are started
-    lockHelper.getLockTimer().start();
-
-    // Go through the request queue and request locks
-    for (Iterator i = this.lockRequestQueue.iterator(); i.hasNext();) {
-      RequestLockContext ctxt = (RequestLockContext) i.next();
-      switch (ctxt.getType()) {
-        case LOCK:
-          lock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel());
-          break;
-        case TRY_LOCK:
-          tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
-              .getTimeout());
+    try {
+      lockStatusWrite();
+      Assert.assertTrue(isStarting());
+      setStatus(Status.STARTED);
+      synchronized (this) {
+        notifyAll();
       }
+
+      // Done to make sure that all wait/try timers are started
+      lockHelper.getLockTimer().start();
+
+      // Go through the request queue and request locks
+      for (Iterator i = this.lockRequestQueue.iterator(); i.hasNext();) {
+        RequestLockContext ctxt = (RequestLockContext) i.next();
+        switch (ctxt.getType()) {
+          case LOCK:
+            lock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel());
+            break;
+          case TRY_LOCK:
+            tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
+                .getTimeout());
+        }
+      }
+      this.lockRequestQueue = null;
+      this.lockHelper.getContextStateMachine().start();
+    } finally {
+      unlockStatusWrite();
     }
-    this.lockRequestQueue = null;
-    this.lockHelper.getContextStateMachine().start();
   }
 
   public void stop() throws InterruptedException {
-    while (isStarting()) {
-      synchronized (this) {
-        wait();
+    try {
+      lockStatusWrite();
+      while (isStarting()) {
+        synchronized (this) {
+          wait();
+        }
       }
+      Assert.assertTrue(isStarted());
+
+      this.lockHelper.getContextStateMachine().stop();
+      setStatus(Status.STOPPING);
+
+      lockStore.clear();
+      lockHelper.getLockTimer().shutdown();
+
+      setStatus(Status.STOPPED);
+    } finally {
+      unlockStatusWrite();
     }
-    Assert.assertTrue(isStarted());
-
-    this.lockHelper.getContextStateMachine().stop();
-    setStatus(Status.STOPPING);
-
-    lockStore.clear();
-    lockHelper.getLockTimer().shutdown();
-
-    setStatus(Status.STOPPED);
   }
 
   private void setStatus(Status status) {
-    statusLock.writeLock().lock();
-    try {
-      this.status = status;
-    } finally {
-      statusLock.writeLock().unlock();
-    }
+    this.status = status;
   }
 
   private void queueRequest(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
                             long timeout) {
-    synchronized (this) {
-      RequestLockContext context = new RequestLockContext(lid, cid, tid, level, type, timeout);
-      lockRequestQueue.add(context);
-    }
+    RequestLockContext context = new RequestLockContext(lid, cid, tid, level, type, timeout);
+    lockRequestQueue.add(context);
   }
 
   private boolean preChecksForLock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {
@@ -277,48 +295,59 @@ public class LockManagerImpl implements LockManager {
 
   private boolean preChecksForLock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
                                    long timeout) {
-    if (isStarting()) {
-      queueRequest(lid, cid, tid, level, type, timeout);
-      return false;
-    } else if (!isStarted()) { return false; }
-    if (!this.channelManager.isActiveID(cid)) { return false; }
-    return true;
+    try {
+      lockStatusRead();
+      if (isStarting()) {
+        queueRequest(lid, cid, tid, level, type, timeout);
+        return false;
+      } else if (!isStarted()) { return false; }
+      if (!this.channelManager.isActiveID(cid)) { return false; }
+      return true;
+    } finally {
+      unlockStatusRead();
+    }
   }
 
   private boolean preCheckLogAndContinue(LockID lid, ClientID cid, ThreadID tid, String callType) {
-    if (isStarting()) {
-      logger.warn(callType + " message received during lock manager is starting -- ignoring the message.\n"
-                  + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
-      return false;
-    } else if (!isStarted()) { return false; }
-    return true;
+    try {
+      lockStatusRead();
+      if (isStarting()) {
+        logger.warn(callType + " message received during lock manager is starting -- ignoring the message.\n"
+                    + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
+        return false;
+      } else if (!isStarted()) { return false; }
+      return true;
+    } finally {
+      unlockStatusRead();
+    }
   }
 
   private boolean isStarted() {
-    statusLock.readLock().lock();
-    try {
-      return status == Status.STARTED;
-    } finally {
-      statusLock.readLock().unlock();
-    }
+    return status == Status.STARTED;
   }
 
   private boolean isStoppped() {
-    statusLock.readLock().lock();
-    try {
-      return status == Status.STOPPED;
-    } finally {
-      statusLock.readLock().unlock();
-    }
+    return status == Status.STOPPED;
   }
 
   private boolean isStarting() {
+    return status == Status.STARTING;
+  }
+
+  private void lockStatusRead() {
     statusLock.readLock().lock();
-    try {
-      return status == Status.STARTING;
-    } finally {
-      statusLock.readLock().unlock();
-    }
+  }
+
+  private void unlockStatusRead() {
+    statusLock.readLock().unlock();
+  }
+
+  private void lockStatusWrite() {
+    statusLock.writeLock().lock();
+  }
+
+  private void unlockStatusWrite() {
+    statusLock.writeLock().unlock();
   }
 
   private static class RequestLockContext {
