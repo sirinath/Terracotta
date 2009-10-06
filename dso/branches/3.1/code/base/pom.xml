@@ -35,11 +35,7 @@
   </licenses>
 
   <properties>
-<<<<<<< .working
-    <tcVersion>3.1.1</tcVersion>
-=======
     <tcVersion>3.1.1-SNAPSHOT</tcVersion>
->>>>>>> .merge-right.r13712
     <sigar.version>1.6.3</sigar.version>
     <jetty.version>6.1.8</jetty.version>
   </properties>
