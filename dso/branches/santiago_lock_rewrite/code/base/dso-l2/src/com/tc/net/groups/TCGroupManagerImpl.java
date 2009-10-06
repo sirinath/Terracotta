@@ -195,9 +195,11 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     if (isUseOOOLayer) {
       final Stage oooSendStage = stageManager.createStage(ServerConfigurationContext.L2_OOO_NET_SEND_STAGE,
-                                                          new OOOEventHandler(), 1, maxStageSize);
+                                                          new OOOEventHandler(), L2CommUtils.getNumCommWorkerThreads(),
+                                                          maxStageSize);
       final Stage oooReceiveStage = stageManager.createStage(ServerConfigurationContext.L2_OOO_NET_RECEIVE_STAGE,
-                                                             new OOOEventHandler(), 1, maxStageSize);
+                                                             new OOOEventHandler(), L2CommUtils
+                                                                 .getNumCommWorkerThreads(), maxStageSize);
       networkStackHarnessFactory = new OOONetworkStackHarnessFactory(
                                                                      new OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl(),
                                                                      oooSendStage.getSink(), oooReceiveStage.getSink(),
@@ -207,7 +209,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     }
 
     l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
-    communicationsManager = new CommunicationsManagerImpl(new NullMessageMonitor(), networkStackHarnessFactory,
+    communicationsManager = new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_GROUPS,
+                                                          new NullMessageMonitor(), networkStackHarnessFactory,
                                                           this.connectionPolicy, L2CommUtils.getNumCommWorkerThreads(),
                                                           new HealthCheckerConfigImpl(l2Properties
                                                               .getPropertiesFor("healthcheck.l2"), "TCGroupManager"),

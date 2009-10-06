@@ -100,11 +100,11 @@ public interface Manager extends TerracottaLocking {
   /**
    * Prefetch object by ID, faulting into the JVM if necessary, Async lookup and will not cause ObjectNotFoundException
    * like lookupObject. Non-existent objects are ignored by the server.
-   * 
+   *
    * @param id Object identifier
    */
   public void preFetchObject(ObjectID id);
-  
+
   /**
    * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
    * more intelligent prefetching is possible at the L2.
@@ -233,7 +233,7 @@ public interface Manager extends TerracottaLocking {
 
   /**
    * Retrieve the customer change applicator that was registered for a particular class.
-   * 
+   *
    * @param clazz The class for which the custom change application has to be returned
    * @return the instance of the custom change applicator; or {@code null} if no custom applicator was registered for
    *         this class
@@ -326,10 +326,10 @@ public interface Manager extends TerracottaLocking {
    * @return the DSO cluster instance for this manager
    */
   public DsoCluster getDsoCluster();
-  
+
   /**
    * Retrieves the MBean server that's used by this Terracotta client
-   * 
+   *
    * @return the MBean server for this client
    */
   public MBeanServer getMBeanServer();

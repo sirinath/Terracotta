@@ -73,10 +73,10 @@ public final class ProductInfo {
 
   private final String                      mavenVersion;
   private final String                      apiVersion;
-  private String                            buildVersion;
+  private final String                      buildVersion;
   private String                            buildID;
   private String                            copyright;
-  private String                            license                      = DEFAULT_LICENSE;
+  private final String                      license                      = DEFAULT_LICENSE;
 
   // XXX: Can't have a logger in this class...
   // private static final TCLogger logger = TCLogging.getLogger(ProductInfo.class);
@@ -106,6 +106,8 @@ public final class ProductInfo {
     this.mavenVersion = getBuildProperty(properties, BUILD_DATA_MAVEN_VERSION_KEY, UNKNOWN_VALUE);
     this.apiVersion = getBuildProperty(properties, BUILD_DATA_API_VERSION_KEY, UNKNOWN_VALUE);
     this.edition = getBuildProperty(properties, BUILD_DATA_EDITION_KEY, OPENSOURCE);
+    if (!isOpenSource() && !isEnterprise() && !isDevMode()) { throw new AssertionError("Can't recognize kit edition: "
+                                                                                       + edition); }
 
     this.timestamp = parseTimestamp(getBuildProperty(properties, BUILD_DATA_TIMESTAMP_KEY, null));
     this.host = getBuildProperty(properties, BUILD_DATA_HOST_KEY, UNKNOWN_VALUE);
@@ -203,16 +205,15 @@ public final class ProductInfo {
   }
 
   /**
-   * Remains for backward compatible reason.
-   * It returns the maven artifact version we use for TC artifacts
+   * Remains for backward compatible reason. It returns the maven artifact version we use for TC artifacts
    */
   public String mavenArtifactsVersion() {
     return mavenVersion;
   }
-  
+
   /**
-   * Version used during kit build for marketing purpose: 3.1.0-FC, 3.1.0-stable1, 3.1.0-nightly
-   * It should not be used to compare version between TC products. Use version() call for that purpose
+   * Version used during kit build for marketing purpose: 3.1.0-FC, 3.1.0-stable1, 3.1.0-nightly It should not be used
+   * to compare version between TC products. Use version() call for that purpose
    */
   public String buildVersion() {
     return buildVersion;
@@ -302,7 +303,7 @@ public final class ProductInfo {
   }
 
   public String toShortString() {
-    return moniker + " " + (OPENSOURCE.equals(edition) ? "" : (edition + " ")) + buildVersion;
+    return moniker + " " + (isOpenSource() ? "" : (edition + " ")) + buildVersion;
   }
 
   public String toLongString() {
@@ -312,7 +313,7 @@ public final class ProductInfo {
   public String buildID() {
     if (buildID == null) {
       String rev = revision;
-      if (ENTERPRISE.equals(edition)) {
+      if (isEnterprise()) {
         rev = ee_revision + "-" + revision;
       }
       buildID = buildTimestampAsString() + " (Revision " + rev + " by " + user + "@" + host + " from " + branch + ")";
@@ -330,7 +331,7 @@ public final class ProductInfo {
 
   public String patchBuildID() {
     String rev = patchRevision;
-    if (ENTERPRISE.equals(edition)) {
+    if (isEnterprise()) {
       rev = patchEERevision + "-" + patchRevision;
     }
 
@@ -338,6 +339,15 @@ public final class ProductInfo {
            + patchBranch + ")";
   }
 
+  public boolean isOpenSource() {
+    return OPENSOURCE.equalsIgnoreCase(edition);
+  }
+
+  public boolean isEnterprise() {
+    return ENTERPRISE.equalsIgnoreCase(edition);
+  }
+
+  @Override
   public String toString() {
     return toShortString();
   }

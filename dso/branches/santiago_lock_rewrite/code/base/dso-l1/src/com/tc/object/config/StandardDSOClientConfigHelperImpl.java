@@ -5,6 +5,7 @@
 package com.tc.object.config;
 
 import org.knopflerfish.framework.BundleClassLoader;
+import org.osgi.framework.Bundle;
 import org.terracotta.groupConfigForL1.ServerGroup;
 import org.terracotta.groupConfigForL1.ServerGroupsDocument;
 import org.terracotta.groupConfigForL1.ServerInfo;
@@ -194,6 +195,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   private final InjectionInstrumentationRegistry             injectionRegistry                  = new InjectionInstrumentationRegistry();
 
   private final boolean                                      hasBootJar;
+
+  private volatile Map<Bundle, URL>                          bundleURLs;
 
   public StandardDSOClientConfigHelperImpl(final L1TVSConfigurationSetupManager configSetupManager)
       throws ConfigurationSetupException {
@@ -419,8 +422,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       spec = getOrCreateSpec("java.util.EnumMap");
       spec.setHonorTransient(false);
       spec = getOrCreateSpec("java.util.EnumSet");
-      spec = getOrCreateSpec("java.util.RegularEnumSet");
-      spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
+      if (!Vm.isIBM() || !Vm.isJDK16Compliant()) {
+        spec = getOrCreateSpec("java.util.RegularEnumSet");
+        spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
+      }
     }
 
     spec = getOrCreateSpec("java.util.Collections");
@@ -2075,6 +2080,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public boolean hasBootJar() {
     return this.hasBootJar;
+  }
+
+  public void setBundleURLs(Map<Bundle, URL> bundleURLs) {
+    this.bundleURLs = Collections.unmodifiableMap(new ConcurrentHashMap<Bundle, URL>(bundleURLs));
+  }
+
+  public URL getBundleURL(Bundle bundle) {
+    return this.bundleURLs.get(bundle);
   }
 
   private static class Resource {
