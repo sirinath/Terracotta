@@ -17,7 +17,7 @@ import com.tc.objectserver.lockmanager.api.LockWaitContext;
 import com.tc.objectserver.locks.LockMBean;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
-import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.text.PrettyPrinter;
 
 import java.util.ArrayList;

@@ -4,12 +4,12 @@
 package com.tc.objectserver.locks.factory;
 
 import com.tc.object.locks.LockID;
-import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.ServerLock;
 import com.tc.objectserver.locks.LockFactory;
-import com.tc.objectserver.locks.NonGreedyPolicyLock;
+import com.tc.objectserver.locks.NonGreedyServerLock;
 
 public class NonGreedyLockPolicyFactory implements LockFactory {
-  public Lock createLock(LockID lid) {
-    return new NonGreedyPolicyLock(lid);
+  public ServerLock createLock(LockID lid) {
+    return new NonGreedyServerLock(lid);
   }
 }

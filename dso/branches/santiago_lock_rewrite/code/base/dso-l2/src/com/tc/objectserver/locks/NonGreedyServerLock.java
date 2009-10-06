@@ -14,13 +14,13 @@ import com.tc.object.locks.ServerLockContext.Type;
 import java.util.Collection;
 import java.util.List;
 
-public final class NonGreedyPolicyLock extends AbstractLock {
-  public NonGreedyPolicyLock(LockID lockID) {
+public final class NonGreedyServerLock extends AbstractServerLock {
+  public NonGreedyServerLock(LockID lockID) {
     super(lockID);
   }
 
   public void tryLock(ClientID cid, ThreadID tid, ServerLockLevel level, long timeout, LockHelper helper) {
-    int noOfPendingRequests = doPreLockCheckAndCalculations(cid, tid, level);
+    int noOfPendingRequests = validateAndGetNumberOfPending(cid, tid, level);
     recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
 
     if (timeout <= 0 && !canAwardRequest(level)) {

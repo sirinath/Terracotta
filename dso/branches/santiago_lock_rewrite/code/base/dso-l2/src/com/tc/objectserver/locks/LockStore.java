@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class LockStore {
   private static final int            DEFAULT_SEGMENTS = 32;
-  private final HashMap<LockID, Lock> segments[];
+  private final HashMap<LockID, ServerLock> segments[];
   private final ReentrantLock[]       guards;
   private final int                   segmentShift;
   private final int                   segmentMask;
@@ -23,23 +23,23 @@ public class LockStore {
     this(DEFAULT_SEGMENTS, factory);
   }
 
-  public LockStore(int noOfSegments, LockFactory factory) {
-    if (noOfSegments <= 0) throw new IllegalArgumentException();
+  public LockStore(int numberOfSegments, LockFactory factory) {
+    if (numberOfSegments <= 0) throw new IllegalArgumentException();
 
     this.lockFactory = factory;
     // Find power-of-two sizes best matching arguments
     int sshift = 0;
     int ssize = 1;
-    while (ssize < noOfSegments) {
+    while (ssize < numberOfSegments) {
       ++sshift;
       ssize <<= 1;
     }
     segmentShift = 32 - sshift;
     segmentMask = ssize - 1;
-    noOfSegments = ssize;
+    numberOfSegments = ssize;
 
-    segments = new HashMap[noOfSegments];
-    guards = new ReentrantLock[noOfSegments];
+    segments = new HashMap[numberOfSegments];
+    guards = new ReentrantLock[numberOfSegments];
 
     for (int i = 0; i < segments.length; i++) {
       segments[i] = new HashMap();
@@ -47,10 +47,10 @@ public class LockStore {
     }
   }
 
-  public Lock checkOut(LockID lockID) {
+  public ServerLock checkOut(LockID lockID) {
     int index = indexFor(lockID);
     guards[index].lock();
-    Lock lock = segments[index].get(lockID);
+    ServerLock lock = segments[index].get(lockID);
     if (lock == null) {
       lock = lockFactory.createLock(lockID);
       segments[index].put(lockID, lock);
@@ -59,14 +59,14 @@ public class LockStore {
   }
 
   // Assumption that the lock is already held i.e. checked out
-  public Lock remove(LockID lockID) {
+  public ServerLock remove(LockID lockID) {
     int index = indexFor(lockID);
     Assert.assertTrue(guards[index].isHeldByCurrentThread());
-    Lock lock = segments[index].remove(lockID);
+    ServerLock lock = segments[index].remove(lockID);
     return lock;
   }
 
-  public void checkIn(Lock lock) {
+  public void checkIn(ServerLock lock) {
     LockID lockID = lock.getLockID();
     int index = indexFor(lockID);
     guards[index].unlock();
@@ -102,9 +102,9 @@ public class LockStore {
   }
 
   public class LockIterator {
-    private Iterator<Entry<LockID, Lock>> currentIter;
+    private Iterator<Entry<LockID, ServerLock>> currentIter;
     private int                           currentIndex = -1;
-    private Lock                          oldLock;
+    private ServerLock                          oldLock;
 
     /**
      * This method basically fetches the next lock by checking it out and checks back in the oldLock (that was given
@@ -112,7 +112,7 @@ public class LockStore {
      * do not complete the iteration then please check back in the lock. Otherwise it might result in a segment locked
      * forever.
      */
-    public Lock getNextLock(Lock lock) {
+    public ServerLock getNextLock(ServerLock lock) {
       validateOldLock(lock);
       while (currentIter == null || !currentIter.hasNext()) {
         if (!tryMovingToNextSegment()) { return null; }
@@ -127,12 +127,12 @@ public class LockStore {
       currentIter.remove();
     }
 
-    public void checkIn(Lock lock) {
+    public void checkIn(ServerLock lock) {
       Assert.assertEquals(oldLock, lock);
       LockStore.this.checkIn(lock);
     }
 
-    private void validateOldLock(Lock lock) {
+    private void validateOldLock(ServerLock lock) {
       if (oldLock != null) {
         Assert.assertEquals(oldLock, lock);
       } else {
