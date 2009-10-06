@@ -19,7 +19,7 @@ import com.tc.objectserver.locks.LockFactory;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
 import com.tc.objectserver.locks.NotifiedWaiters;
-import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.objectserver.locks.ServerLock.NotifyAction;
 
 import java.util.Collection;
 import java.util.Iterator;

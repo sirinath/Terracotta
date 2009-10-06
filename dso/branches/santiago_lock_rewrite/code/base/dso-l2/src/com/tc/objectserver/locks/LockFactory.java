@@ -6,5 +6,5 @@ package com.tc.objectserver.locks;
 import com.tc.object.locks.LockID;
 
 public interface LockFactory {
-  Lock createLock(LockID lid);
+  ServerLock createLock(LockID lid);
 }

@@ -16,7 +16,7 @@ import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
-import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.util.SinglyLinkedList.SinglyLinkedListIterator;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -51,7 +51,7 @@ public class LockTest extends TestCase {
     ThreadID thread3 = new ThreadID(3);
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
     lock.lock(cid1, thread1, ServerLockLevel.READ, helper);
     lock.lock(cid1, thread2, ServerLockLevel.READ, helper);
@@ -113,7 +113,7 @@ public class LockTest extends TestCase {
     ThreadID thread1 = new ThreadID(1);
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -149,7 +149,7 @@ public class LockTest extends TestCase {
     ThreadID badtid = new ThreadID(2);
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new ServerLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new ServerLockImpl(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(goodcid, goodtid, ServerLockLevel.WRITE, helper);
@@ -232,7 +232,7 @@ public class LockTest extends TestCase {
     ThreadID thread2 = new ThreadID(2);
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -267,7 +267,7 @@ public class LockTest extends TestCase {
 
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -302,7 +302,7 @@ public class LockTest extends TestCase {
     LockHelper helper = lockMgr.getHelper();
 
     // Test that a wait() timeout will obtain an uncontended lock
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -343,7 +343,7 @@ public class LockTest extends TestCase {
     lockMgr.start();
     {
       // Test that a wait() timeout will obtain an uncontended lock
-      AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+      AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
       helper.getLockStore().checkOut(lock.getLockID());
 
       lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -376,7 +376,7 @@ public class LockTest extends TestCase {
       // this time the wait timeout will cause the waiter to be put in the
       // pending
       // list (instead of instantly getting the lock)
-      AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+      AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
       helper.getLockStore().checkOut(lock.getLockID());
 
       lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -420,7 +420,7 @@ public class LockTest extends TestCase {
     ThreadID thread1 = new ThreadID(1);
     LockHelper helper = lockMgr.getHelper();
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -442,7 +442,7 @@ public class LockTest extends TestCase {
     ThreadID thread1 = new ThreadID(1);
     ThreadID thread2 = new ThreadID(2);
 
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     lock.lock(cid1, thread1, ServerLockLevel.WRITE, helper);
@@ -483,7 +483,7 @@ public class LockTest extends TestCase {
 
   public void testNotifyAll() throws Exception {
     LockHelper helper = lockMgr.getHelper();
-    AbstractLock lock = createLockWithIndefiniteWaits(100);
+    AbstractServerLock lock = createLockWithIndefiniteWaits(100);
     helper.getLockStore().checkOut(lock.getLockID());
 
     assertEquals(0, getHoldersCount(lock));
@@ -507,7 +507,7 @@ public class LockTest extends TestCase {
 
   public void testNotify() throws Exception {
     LockHelper helper = lockMgr.getHelper();
-    AbstractLock lock = createLockWithIndefiniteWaits(3);
+    AbstractServerLock lock = createLockWithIndefiniteWaits(3);
     helper.getLockStore().checkOut(lock.getLockID());
 
     assertEquals(0, getHoldersCount(lock));
@@ -552,9 +552,9 @@ public class LockTest extends TestCase {
     return new ThreadID(uniqueId++);
   }
 
-  private AbstractLock createLockWithIndefiniteWaits(int numWaits) throws TCIllegalMonitorStateException {
+  private AbstractServerLock createLockWithIndefiniteWaits(int numWaits) throws TCIllegalMonitorStateException {
     LockHelper helper = lockMgr.getHelper();
-    AbstractLock lock = new NonGreedyPolicyLock(new StringLockID("timmy"));
+    AbstractServerLock lock = new NonGreedyServerLock(new StringLockID("timmy"));
     helper.getLockStore().checkOut(lock.getLockID());
 
     for (int i = 0; i < numWaits; i++) {
@@ -574,7 +574,7 @@ public class LockTest extends TestCase {
     return lock;
   }
 
-  private int getHoldersCount(AbstractLock lock) {
+  private int getHoldersCount(AbstractServerLock lock) {
     int count = 0;
     SinglyLinkedListIterator<ServerLockContext> iterator = lock.iterator();
     while (iterator.hasNext()) {
@@ -591,7 +591,7 @@ public class LockTest extends TestCase {
     return count;
   }
 
-  private int getWaitersCount(AbstractLock lock) {
+  private int getWaitersCount(AbstractServerLock lock) {
     int count = 0;
     SinglyLinkedListIterator<ServerLockContext> iterator = lock.iterator();
     while (iterator.hasNext()) {

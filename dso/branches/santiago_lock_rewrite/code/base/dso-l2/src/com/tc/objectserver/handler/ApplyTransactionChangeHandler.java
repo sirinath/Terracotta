@@ -17,7 +17,7 @@ import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.context.ApplyTransactionContext;
 import com.tc.objectserver.context.BroadcastChangeContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.ServerLock;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.objectserver.managedobject.BackReferences;
@@ -71,7 +71,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     for (Iterator i = txn.getNotifies().iterator(); i.hasNext();) {
       Notify notify = (Notify) i.next();
-      Lock.NotifyAction allOrOne = notify.getIsAll() ? Lock.NotifyAction.ALL : Lock.NotifyAction.ONE;
+      ServerLock.NotifyAction allOrOne = notify.getIsAll() ? ServerLock.NotifyAction.ALL : ServerLock.NotifyAction.ONE;
       lockManager.notify(notify.getLockID(), (ClientID) txn.getSourceID(), notify.getThreadID(), allOrOne,
                          notifiedWaiters);
     }

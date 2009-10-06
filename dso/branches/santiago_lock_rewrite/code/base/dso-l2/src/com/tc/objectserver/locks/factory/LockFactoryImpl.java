@@ -4,7 +4,7 @@
 package com.tc.objectserver.locks.factory;
 
 import com.tc.object.locks.LockID;
-import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.ServerLock;
 import com.tc.objectserver.locks.LockFactory;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -24,7 +24,7 @@ public class LockFactoryImpl implements LockFactory {
     }
   }
 
-  public Lock createLock(LockID lid) {
+  public ServerLock createLock(LockID lid) {
     return factory.createLock(lid);
   }
 }

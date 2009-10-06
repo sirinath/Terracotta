@@ -17,11 +17,11 @@ import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.locks.Lock;
+import com.tc.objectserver.locks.ServerLock;
 import com.tc.objectserver.locks.LockFactory;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
-import com.tc.objectserver.locks.NonGreedyPolicyLock;
+import com.tc.objectserver.locks.NonGreedyServerLock;
 import com.tc.text.Banner;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -857,8 +857,8 @@ public class LockManagerTest extends TestCase {
   }
 
   public static class TestServerLockFactory implements LockFactory {
-    public Lock createLock(LockID lid) {
-      return new NonGreedyPolicyLock(lid);
+    public ServerLock createLock(LockID lid) {
+      return new NonGreedyServerLock(lid);
     }
   }
 

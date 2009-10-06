@@ -34,16 +34,16 @@ import java.util.TimerTask;
  * This class extends SinglyLinkedList which stores ServerLockContext. The ServerLockContexts are placed in the order of
  * greedy holders, pending requests, try lock requests and then waiters.
  */
-public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> implements Lock {
+public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockContext> implements ServerLock {
   protected final LockID          lockID;
-  protected static final TCLogger logger = TCLogging.getLogger(AbstractLock.class);
+  protected static final TCLogger logger = TCLogging.getLogger(AbstractServerLock.class);
 
-  public AbstractLock(LockID lockID) {
+  public AbstractServerLock(LockID lockID) {
     this.lockID = lockID;
   }
 
   public void lock(ClientID cid, ThreadID tid, ServerLockLevel level, LockHelper helper) {
-    int noOfPendingRequests = doPreLockCheckAndCalculations(cid, tid, level);
+    int noOfPendingRequests = validateAndGetNumberOfPending(cid, tid, level);
     recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
     requestLock(cid, tid, level, Type.PENDING, -1, helper);
   }
@@ -73,15 +73,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
     List<ServerLockContext> waiters = removeWaiters(action);
     for (ServerLockContext waiter : waiters) {
       Assert.assertTrue(waiter.getState() == State.WAITER);
-      switch (action) {
-        case ALL:
-          moveWaiterToPending(waiter, helper);
-          break;
-        case ONE:
-          Assert.assertEquals(1, waiters.size());
-          moveWaiterToPending(waiter, helper);
-          break;
-      }
+      moveWaiterToPending(waiter, helper);
       ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, waiter.getClientID(), waiter
           .getThreadID(), State.WAITER);
       addNotifiedWaitersTo.addNotification(cselc);
@@ -286,7 +278,7 @@ public abstract class AbstractLock extends SinglyLinkedList<ServerLockContext> i
   protected abstract void requestLock(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout,
                                       LockHelper helper);
 
-  protected int doPreLockCheckAndCalculations(ClientID cid, ThreadID tid, ServerLockLevel reqLevel) {
+  protected int validateAndGetNumberOfPending(ClientID cid, ThreadID tid, ServerLockLevel reqLevel) {
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
     int noOfPendingRequests = 0;
     while (iterator.hasNext()) {

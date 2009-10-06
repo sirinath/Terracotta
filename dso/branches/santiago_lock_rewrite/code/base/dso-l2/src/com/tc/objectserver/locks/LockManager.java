@@ -9,7 +9,7 @@ import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
-import com.tc.objectserver.locks.Lock.NotifyAction;
+import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
