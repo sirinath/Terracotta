@@ -261,7 +261,9 @@ public interface Manager extends TerracottaLocking {
    *
    * @return Client identifier
    */
-  public ClientID getClientID();
+  public String getClientID();
+
+  public ClientID getClientIDObject();
 
   /**
    * Get the named logger

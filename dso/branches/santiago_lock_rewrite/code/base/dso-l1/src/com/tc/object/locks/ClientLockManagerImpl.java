@@ -176,7 +176,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   
     for (ClientServerExchangeLockContext cselc : queryLock(lock)) {
-      if (ManagerUtil.getClientID().equals(cselc.getNodeID())) {
+      if (ManagerUtil.getClientIDObject().equals(cselc.getNodeID())) {
         continue;
       }
       
@@ -230,7 +230,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
     
     for (ClientServerExchangeLockContext cselc : queryLock(lock)) {
-      if (ManagerUtil.getClientID().equals(cselc.getNodeID())) {
+      if (ManagerUtil.getClientIDObject().equals(cselc.getNodeID())) {
         continue;
       }
       

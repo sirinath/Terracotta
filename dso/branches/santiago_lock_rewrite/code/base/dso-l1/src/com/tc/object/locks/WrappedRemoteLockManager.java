@@ -43,7 +43,7 @@ public class WrappedRemoteLockManager implements RemoteLockManager {
 
   public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests, Collection pendingTryLockRequests) {
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>(); 
-    ClientID client = ManagerUtil.getClientID();
+    ClientID client = ManagerUtil.getClientIDObject();
     
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();

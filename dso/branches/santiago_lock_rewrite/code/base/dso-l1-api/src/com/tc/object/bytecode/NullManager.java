@@ -138,9 +138,13 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public final ClientID getClientID() {
+  public final String getClientID() {
     // XXX: even though this should *probably* throw UnsupportedOperationException, because some innocent tests use
     // ManagerUtil (e.g. ConfigPropertiesTest), it was decided to return "" from this method.
+    return "";
+  }
+  
+  public final ClientID getClientIDObject() {
     return ClientID.NULL_ID;
   }
 

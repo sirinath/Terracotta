@@ -47,7 +47,7 @@ public class WrappedClientLock implements ClientLock {
   }
 
   public Collection<ClientServerExchangeLockContext> getStateSnapshot() {
-    ClientID client = ManagerUtil.getClientID();
+    ClientID client = ManagerUtil.getClientIDObject();
 
     final Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
     

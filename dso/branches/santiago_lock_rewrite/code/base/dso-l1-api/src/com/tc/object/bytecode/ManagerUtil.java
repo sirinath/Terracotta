@@ -116,10 +116,14 @@ public class ManagerUtil {
    * 
    * @return Client identifier
    */
-  public static ClientID getClientID() {
+  public static String getClientID() {
     return getManager().getClientID();
   }
 
+  public static ClientID getClientIDObject() {
+    return getManager().getClientIDObject();
+  }
+  
   /**
    * Look up or create a new root object
    * 
