@@ -172,7 +172,11 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public ClientID getClientID() {
+  public String getClientID() {
+    return Long.toString(this.dso.getChannel().getClientIDProvider().getClientID().toLong());
+  }
+  
+  public ClientID getClientIDObject() {
     return this.dso.getChannel().getClientIDProvider().getClientID();
   }
 

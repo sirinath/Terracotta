@@ -297,7 +297,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
   }
 
   public synchronized Collection<ClientServerExchangeLockContext> getStateSnapshot() {
-    ClientID client = ManagerUtil.getClientID();
+    ClientID client = ManagerUtil.getClientIDObject();
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
 
     switch (greediness) {
