@@ -517,7 +517,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       // If the current transactionContext is READ_ONLY, there is no need to commit.
       TransactionContext tc = peekContext(lockID);
       if (TxnType.READ_ONLY == tc.getLockType()) {
-        this.txMonitor.committedReadTransaction();
+        //this.txMonitor.committedReadTransaction();
         return false;
       }
 
