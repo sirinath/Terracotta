@@ -12,8 +12,6 @@ public class ServerLockContextStateMachine {
   // (pending, try pending) ==> (greedy holder, holder)
   // (holder) ==> (waiter) ==> (pending)
 
-  private boolean stop = false;
-
   public boolean canSetState(State oldState, State newState) {
     State expectedState = null;
 
@@ -96,17 +94,5 @@ public class ServerLockContextStateMachine {
         // should never come here
         throw new IllegalStateException("Should never come here");
     }
-  }
-
-  public void start() {
-    stop = false;
-  }
-
-  public void stop() {
-    stop = true;
-  }
-
-  public boolean isStopped() {
-    return stop;
   }
 }

@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockManagerImpl implements LockManager {
   private enum Status {
-    STARTING, STARTED, STOPPING, STOPPED
+    STARTING, STARTED
   }
 
   private enum RequestType {
@@ -130,7 +130,8 @@ public class LockManagerImpl implements LockManager {
     }
   }
 
-  public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo) {
+  public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action,
+                                NotifiedWaiters addNotifiedWaitersTo) {
     try {
       lockStatusRead();
       Assert.assertFalse("Notify was called before the LockManager was started.", isStarting());
@@ -154,7 +155,7 @@ public class LockManagerImpl implements LockManager {
   public void wait(LockID lid, ClientID cid, ThreadID tid, long timeout) {
     try {
       lockStatusRead();
-      Assert.assertFalse("Wait was called before the LockManager was started.", isStopped());
+      Assert.assertTrue("Wait was called before the LockManager was started.", isStarted());
     } finally {
       unlockStatusRead();
     }
@@ -256,29 +257,6 @@ public class LockManagerImpl implements LockManager {
         }
       }
       this.lockRequestQueue = null;
-      this.lockHelper.getContextStateMachine().start();
-    } finally {
-      unlockStatusWrite();
-    }
-  }
-
-  public void stop() throws InterruptedException {
-    try {
-      lockStatusWrite();
-      while (isStarting()) {
-        synchronized (this) {
-          wait();
-        }
-      }
-      Assert.assertTrue(isStarted());
-
-      this.lockHelper.getContextStateMachine().stop();
-      setStatus(Status.STOPPING);
-
-      lockStore.clear();
-      lockHelper.getLockTimer().shutdown();
-
-      setStatus(Status.STOPPED);
     } finally {
       unlockStatusWrite();
     }
@@ -299,7 +277,7 @@ public class LockManagerImpl implements LockManager {
   }
 
   private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
-                                   long timeout) {
+                                long timeout) {
     lockStatusRead();
     try {
       if (isStarting()) {
@@ -328,10 +306,6 @@ public class LockManagerImpl implements LockManager {
 
   private boolean isStarted() {
     return status == Status.STARTED;
-  }
-
-  private boolean isStopped() {
-    return status == Status.STOPPED;
   }
 
   private boolean isStarting() {

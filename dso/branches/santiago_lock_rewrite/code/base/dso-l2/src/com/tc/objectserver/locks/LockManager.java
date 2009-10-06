@@ -38,6 +38,4 @@ public interface LockManager extends DumpHandler, PrettyPrintable, LockManagerMB
   void enableLockStatsForNodeIfNeeded(ClientID cid);
 
   void start();
-
-  void stop() throws InterruptedException;
 }

@@ -50,14 +50,6 @@ public class LockStatManagerTest extends TestCase {
   }
 
   private void resetLockManager(LockFactory factory) {
-    if (lockManager != null) {
-      try {
-        lockManager.stop();
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }
-
     lockStatManager = new L2LockStatisticsManagerImpl();
     if (factory == null) {
       lockManager = new LockManagerImpl(sink, lockStatManager, new NullChannelManager());
