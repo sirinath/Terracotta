@@ -21,6 +21,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.LockSupport;
 
+import junit.framework.Assert;
+
 public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLock {
   private static final boolean DEBUG         = false;
   private static final Timer   LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
@@ -653,8 +655,8 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
       greediness = greediness.requestLevel(remote, lock, thread, level, timeout);      
       if (greediness.isRecalled()) {
         recalledLevel = ServerLockLevel.WRITE;
-          if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : client initiated recall " + ServerLockLevel.WRITE);
-          greediness = doRecall(remote);
+        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : client initiated recall " + ServerLockLevel.WRITE);
+        greediness = doRecall(remote);
       }
       return AcquireResult.DELEGATED;
     } else {
@@ -1033,10 +1035,12 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     }
     
     void park() {
+      Assert.assertEquals(getJavaThread(), Thread.currentThread());
       LockSupport.park();
     }
     
     void park(long timeout) {
+      Assert.assertEquals(getJavaThread(), Thread.currentThread());
       LockSupport.parkNanos(timeout * 1000000L);
     }
     

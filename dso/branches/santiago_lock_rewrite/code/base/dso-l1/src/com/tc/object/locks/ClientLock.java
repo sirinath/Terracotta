@@ -23,7 +23,7 @@ public interface ClientLock {
   /**
    * Try to acquire
    * <p>
-   * Non-blocking try acquires will wait for a definitive server respons - in
+   * Non-blocking try acquires will wait for a definitive server response - in
    * this sense they are not truly non-blocking...
    * 
    * @param remote remote lock manager for delegation

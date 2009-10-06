@@ -247,7 +247,7 @@ public class ManagerUtil {
   public static boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000);
+    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000000);
   }
 
   /**
