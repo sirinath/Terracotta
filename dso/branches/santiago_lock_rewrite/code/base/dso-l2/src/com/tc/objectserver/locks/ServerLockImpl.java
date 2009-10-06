@@ -54,7 +54,7 @@ public final class ServerLockImpl extends AbstractServerLock {
       // add to pending until recall process is complete, those who hold the lock greedily will send the
       // pending state during recall commit.
       if (holder == null) {
-        if (timeout >= 0) {
+        if (timeout >= 0 || !type.equals(Type.TRY_PENDING)) {
           queue(cid, tid, level, type, timeout, helper);
         } else {
           cannotAward(cid, tid, level, helper);
