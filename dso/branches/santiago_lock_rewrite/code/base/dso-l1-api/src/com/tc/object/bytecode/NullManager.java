@@ -41,7 +41,7 @@ public final class NullManager implements Manager {
 
   /**
    * Get instance of the null manager
-   * 
+   *
    * @return NullManager
    */
   public static Manager getInstance() {
@@ -123,6 +123,10 @@ public final class NullManager implements Manager {
 
   public final Object lookupRoot(final String name) {
     throw new UnsupportedOperationException();
+  }
+
+  public final boolean isLockHeldByCurrentThread(final String lockId, final int lockLevel) {
+    return false;
   }
 
   public final void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,

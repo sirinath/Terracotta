@@ -77,7 +77,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                            final NetworkStackHarnessFactory stackHarnessFactory,
                                                            final ConnectionPolicy connectionPolicy,
                                                            final HealthCheckerConfig aConfig) {
-    return new CommunicationsManagerImpl(monitor, stackHarnessFactory, connectionPolicy, aConfig);
+    return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, stackHarnessFactory,
+                                         connectionPolicy, aConfig);
   }
 
   public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch) {
@@ -88,7 +89,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return new ClientGlobalTransactionManagerImpl(remoteTxnMgr);
   }
 
-  public RemoteObjectManager createRemoteObjectManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
+  public RemoteObjectManagerImpl createRemoteObjectManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
                                                        final ObjectRequestMonitor objectRequestMonitor,
                                                        final int faultCount, final SessionManager sessionManager) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();

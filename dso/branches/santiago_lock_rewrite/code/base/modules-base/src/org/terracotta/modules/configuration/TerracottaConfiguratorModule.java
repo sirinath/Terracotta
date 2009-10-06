@@ -72,12 +72,6 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
     // default empty body
   }
 
-  protected final String getBundleJarUrl(final Bundle bundle) {
-    String location = bundle.getLocation();
-    boolean isJar = location.startsWith("file:") && location.endsWith(".jar");
-    return (isJar ? "jar:" : "") + location + "!/";
-  }
-
   protected final void addClassReplacement(final Bundle bundle, final String originalClassName,
                                            final String replacementClassName) {
     addClassReplacement(bundle, originalClassName, replacementClassName, null);
@@ -85,11 +79,28 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected final void addClassReplacement(final Bundle bundle, final String originalClassName,
                                            final String replacementClassName, ClassReplacementTest test) {
-    String url = getBundleJarUrl(bundle) + ByteCodeUtil.classNameToFileName(replacementClassName);
+    URL resource = getBundleResourceURL(bundle, ByteCodeUtil.classNameToFileName(replacementClassName));
+    configHelper.addClassReplacement(originalClassName, replacementClassName, resource, test);
+  }
+
+  private URL getBundleResourceURL(Bundle bundle, String resourceName) {
+    URL bundleURL = configHelper.getBundleURL(bundle);
+    if (bundleURL == null) { throw new RuntimeException(bundle.getLocation() + " was not loaded with this config"); }
+
     try {
-      configHelper.addClassReplacement(originalClassName, replacementClassName, new URL(url), test);
+      if (bundleURL.getProtocol().equals("file") && bundleURL.getPath().endsWith(".jar")) {
+        // this is the normal case where TIMs are regular file based jar URLs
+        return new URL("jar:" + bundleURL.toExternalForm() + "!/" + resourceName);
+      }
+
+      String base = bundleURL.toExternalForm();
+      if (!base.endsWith("/")) {
+        base = base + "/";
+      }
+
+      return new URL(bundleURL, base + resourceName);
     } catch (MalformedURLException e) {
-      throw new RuntimeException("Unexpected error while constructing the URL '" + url + "'", e);
+      throw new RuntimeException("Cannot create URL for " + resourceName, e);
     }
   }
 
@@ -106,12 +117,8 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
    */
   protected final void addExportedBundleClass(final Bundle bundle, final String classname,
                                               final boolean targetSystemLoaderOnly) {
-    String url = getBundleJarUrl(bundle) + ByteCodeUtil.classNameToFileName(classname);
-    try {
-      configHelper.addClassResource(classname, new URL(url), targetSystemLoaderOnly);
-    } catch (MalformedURLException e) {
-      throw new RuntimeException("Unexpected error while constructing the URL '" + url + "'", e);
-    }
+    URL url = getBundleResourceURL(bundle, ByteCodeUtil.classNameToFileName(classname));
+    configHelper.addClassResource(classname, url, targetSystemLoaderOnly);
   }
 
   protected final void addExportedBundleClass(final Bundle bundle, final String classname) {

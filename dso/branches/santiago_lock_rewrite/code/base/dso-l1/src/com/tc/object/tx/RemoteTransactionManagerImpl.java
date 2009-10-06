@@ -6,6 +6,7 @@ package com.tc.object.tx;
 
 import com.tc.logging.LossyTCLogger;
 import com.tc.logging.TCLogger;
+import com.tc.logging.LossyTCLogger.LossyTCLoggerType;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.locks.LockFlushCallback;
@@ -19,12 +20,17 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.sampled.derived.SampledRateCounter;
+import com.tc.text.PrettyPrintable;
+import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 import com.tc.util.State;
 import com.tc.util.TCAssertionError;
 import com.tc.util.Util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +48,7 @@ import java.util.Map.Entry;
 /**
  * Sends off committed transactions
  */
-public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
+public class RemoteTransactionManagerImpl implements RemoteTransactionManager, PrettyPrintable {
 
   private static final long                       FLUSH_WAIT_INTERVAL         = 15 * 1000;
 
@@ -106,11 +112,11 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   }
 
   public void shutdown() {
-    isShutdown = true;
+    this.isShutdown = true;
   }
 
   public void pause(final NodeID remote, final int disconnected) {
-    if (isShutdown) return;
+    if (this.isShutdown) { return; }
     synchronized (this.lock) {
       this.remoteTxManagerTimerTask.reset();
       if (isStoppingOrStopped()) { return; }
@@ -120,7 +126,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
   }
 
   public void unpause(final NodeID remote, final int disconnected) {
-    if (isShutdown) return;
+    if (this.isShutdown) { return; }
     synchronized (this.lock) {
       if (isStoppingOrStopped()) { return; }
       if (this.status == RUNNING) { throw new AssertionError("Attempt to unpause while in running state."); }
@@ -132,7 +138,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
 
   public void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
                                   final ClientHandshakeMessage handshakeMessage) {
-    if (isShutdown) return;
+    if (this.isShutdown) { return; }
     synchronized (this.lock) {
       if (this.status != PAUSED) { throw new AssertionError("At " + this.status + " from " + remoteNode + " to "
                                                             + thisNode + " . "
@@ -178,7 +184,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
       if (this.incompleteBatches.size() != 0) {
         try {
           int incompleteBatchesCount = 0;
-          LossyTCLogger lossyLogger = new LossyTCLogger(this.logger, 5, LossyTCLogger.COUNT_BASED);
+          LossyTCLogger lossyLogger = new LossyTCLogger(this.logger, 5, LossyTCLoggerType.COUNT_BASED);
           while ((this.status != STOPPED)
                  && ((this.ackOnExitTimeout <= 0) || (t0 + this.ackOnExitTimeout) > System.currentTimeMillis())) {
             if (incompleteBatchesCount != this.incompleteBatches.size()) {
@@ -501,5 +507,28 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
     public void reset() {
       this.currentLWM = TransactionID.NULL_ID;
     }
+  }
+
+  public String dump() {
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
+  }
+
+  public void dumpToLogger() {
+    this.logger.info(dump());
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println(getClass().getName());
+    synchronized (this.lock) {
+      out.indent().print("incompleteBatches count: ").println(new Integer(this.incompleteBatches.size()));
+      out.indent().print("batchAccounting: ").println(this.batchAccounting);
+      out.indent().print("lockAccounting: ").println(this.lockAccounting);
+    }
+    return out;
+
   }
 }

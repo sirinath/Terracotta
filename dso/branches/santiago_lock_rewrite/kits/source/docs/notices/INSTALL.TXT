@@ -1,20 +1,22 @@
+Terracotta 3.1.1 - Simple Scale for Enterprise Java
+===================================================
+
+These simplified installation instructions are intended for quick platform 
+deployments such as those performed by operations staff. 
+
+For more information on installing and configuring Terracotta for specific use
+cases, see
+http://www.terracotta.org/kit/reflector?kitID=3.1&pageID=GettingStarted
+
+
 Preparing to Run a Terracotta Cluster
-=====================================
+-------------------------------------
 
 This document is part of the Terracotta download for supported UNIX/Linux 
 platforms and Microsoft Windows. For the latest supported platforms, 
 including JVMs and application servers, see the list of certified Terracotta 
-platforms at http://www.terracotta.org/kit/reflector?kitID=3.2&
-pageID=PlatformSupport.
-
-Use this installation document to ensure that your environment is ready to run 
-a cluster with Terracotta.
-
-NOTE: If you are installing Terracotta for Hibernate, see 
-INSTALL_HIBERNATE_ONLY.TXT in the Terracotta home directory. If you are
-installing Terracotta for Hibernate (Full Terracotta Integration), see
-http://www.terracotta.org/kit/reflector?kitID=3.2&
-pageID=HibernateFullIntegration.
+platforms at 
+http://www.terracotta.org/kit/reflector?kitID=3.1&pageID=PlatformSupport.
 
 
 General Considerations
@@ -40,19 +42,8 @@ The following is a checklist of general preparedness issues:
   log files in the Terracotta configuration file (tc-config.xml by default) 
   using the <logs> element found in the <clients> section and in each 
   <server> section.
+
    
-
-Creating the Terracotta Boot JAR
---------------------------------
-Terracotta clients require a boot JAR that can be created using the script
-make-boot-jar.sh (or make-boot-jar.bat), found in the Terracotta bin directory.
-Run this script from the Terracotta bin directory on each Terracotta client.
-
-There are other methods to create the Terracotta boot JAR, such as using the
-Terracotta dso-java.sh (or dso-java.bat) script. You can find out more about
-boot-JAR related scripts by searching the Terracotta Tools Catalog
-(http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=ToolsOverview).
-
 Configuring Terracotta
 ----------------------
 Terracotta is configured using a configuration file (tc-config.xml by default).
@@ -65,11 +56,6 @@ Servers can be configured with a name, bind (IP) address, and various ports.
 Naming a server is recommended because it allows you to use that name when
 executing commands and scripts that must refer to the server.
 
-Clients are configured with Terracotta Integration Modules (TIMs) to
-integrate Terracotta with popular technologies. The <application> section
-contains the configuration that controls how Terracotta clusters your
-application.
-
 See tc-config-reference.xml in the Terracotta docs directory for an annotated 
 version of the Terracotta configuration file.
 
@@ -80,12 +66,12 @@ way is to start the server with the following flag:
 
 Then start all clients with the following flag:
 
-   -Dtc.config=<server IP or host address>:<DSO port number> 
+   -Dtc.config=<server IP or host address>:<port number> 
 
 Clients started this way obtain their configuration from the specified server 
 (see Starting Terracotta, below).
 
-See http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=
+See http://www.terracotta.org/kit/reflector?kitID=3.1&pageID=
 AboutConfigurationFiles for more information on how 
 Terracotta configuration is propagated.
 
@@ -111,10 +97,7 @@ More Information
 ----------------
 You'll find a number of helpful guides in the documentation section of the 
 Terracotta website (http://www.terracotta.org/web/display/orgsite/Documentation)
-including the following:
 
-* Guides on Running with Eclipse
-** Clustering a Simple Swing Application (under Tutorials)
-** Eclipse Plugin Guide (under Reference Documentation)
-* Setting up Terracotta Server Arrays (under Reference Documentation)
-* The Configuration Guide and Reference (under Reference)
+----
+Copyright (c) 2009, Terracotta, Inc.
+http://www.terracotta.org

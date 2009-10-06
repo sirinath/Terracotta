@@ -1,12 +1,12 @@
+Terracotta 3.1.1 - Simple Scale for Enterprise Java
+===================================================
 
-3.1.0 
-
+Release Notes: http://www.terracotta.org/web/display/docs/Release+Notes
 Documentation: http://www.terracotta.org/web/display/docs/Home
 Forums:        http://forums.terracotta.org/forums/forums/list.page
 Mailing Lists: http://lists.terracotta.org
 Support:       http://www.terracotta.org/web/display/enterprise/Support
-Release Notes:  http://www.terracotta.org/web/display/docs/Release+Notes
 
-----------------------------------------
-Copyright Terracotta, Inc. All rights reserved. 
+----
+Copyright (c) 2009, Terracotta, Inc.
 http://www.terracotta.org
