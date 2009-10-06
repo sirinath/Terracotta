@@ -31,8 +31,8 @@ public interface ServerLock extends TimerCallback {
 
   void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts, LockHelper helper);
 
-  void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo, LockHelper helper)
-      throws TCIllegalMonitorStateException;
+  NotifiedWaiters notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
+                         LockHelper helper) throws TCIllegalMonitorStateException;
 
   void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException;
 

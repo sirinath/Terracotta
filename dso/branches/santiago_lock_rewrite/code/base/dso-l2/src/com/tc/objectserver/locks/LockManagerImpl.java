@@ -130,7 +130,7 @@ public class LockManagerImpl implements LockManager {
     }
   }
 
-  public void notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo) {
+  public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo) {
     try {
       lockStatusRead();
       Assert.assertFalse("Notify was called before the LockManager was started.", isStarting());
@@ -143,7 +143,7 @@ public class LockManagerImpl implements LockManager {
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
-      lock.notify(cid, tid, action, addNotifiedWaitersTo, lockHelper);
+      return lock.notify(cid, tid, action, addNotifiedWaitersTo, lockHelper);
     } catch (TCIllegalMonitorStateException e) {
       throw new RuntimeException(e);
     } finally {
