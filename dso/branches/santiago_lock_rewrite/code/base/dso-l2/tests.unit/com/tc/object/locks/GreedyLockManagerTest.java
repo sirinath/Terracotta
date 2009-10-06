@@ -4,8 +4,6 @@
  */
 package com.tc.object.locks;
 
-import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
-
 import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
@@ -20,7 +18,6 @@ import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
-import com.tc.util.concurrent.ThreadUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,13 +54,6 @@ public class GreedyLockManagerTest extends TestCase {
 
   private void resetLockManager(boolean start) {
     sink.clear();
-    if (lockManager != null) {
-      try {
-        lockManager.stop();
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }
 
     lockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager());
     if (start) {
@@ -405,29 +395,6 @@ public class GreedyLockManagerTest extends TestCase {
     assertEquals(requestedLevel, ctxt.getLockLevel());
   }
 
-  public void testOffDoesNotBlockUntilNoOutstandingLocksViaUnlock() throws Exception {
-    List queue = sink.getInternalQueue();
-    ClientID cid1 = new ClientID(1);
-    LockID lock1 = new StringLockID("1");
-    ThreadID tx1 = new ThreadID(1);
-
-    final LinkedQueue shutdownSteps = new LinkedQueue();
-    ShutdownThread shutdown = new ShutdownThread(shutdownSteps);
-    try {
-      lockManager.start();
-      lockManager.lock(lock1, cid1, tx1, ServerLockLevel.WRITE);
-      assertEquals(1, queue.size());
-
-      shutdown.start();
-      shutdownSteps.take();
-      ThreadUtil.reallySleep(1000);
-      shutdownSteps.take();
-    } finally {
-      lockManager = null;
-      resetLockManager();
-    }
-  }
-
   public void testOffStopsGrantingNewLocks() throws Exception {
     List queue = sink.getInternalQueue();
     ClientID cid = new ClientID(1);
@@ -451,9 +418,6 @@ public class GreedyLockManagerTest extends TestCase {
       // Call shutdown and make sure that the lock isn't granted via the
       // "lock" method
       queue.clear();
-      lockManager.stop();
-      lockManager.lock(lockID, cid, txID, ServerLockLevel.WRITE);
-      assertEquals(0, queue.size());
     } finally {
       lockManager.clearAllLocksFor(cid);
     }
@@ -508,14 +472,6 @@ public class GreedyLockManagerTest extends TestCase {
       assertEquals(ServerLockLevel.WRITE, lrc.getLockLevel());
 
       assertEquals(0, queue.size());
-
-      lockManager.stop();
-
-      // unlock the first lock
-      lockManager.unlock(lockID, cid, txID);
-      // the second lock should still be pending
-      assertEquals(0, queue.size());
-
     } finally {
       lockManager = null;
       resetLockManager();
@@ -767,26 +723,6 @@ public class GreedyLockManagerTest extends TestCase {
     assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
 
     lockManager.clearAllLocksFor(c0);
-  }
-
-  private class ShutdownThread extends Thread {
-    private final LinkedQueue shutdownSteps;
-
-    private ShutdownThread(LinkedQueue shutdownSteps) {
-      this.shutdownSteps = shutdownSteps;
-    }
-
-    @Override
-    public void run() {
-      try {
-        shutdownSteps.put(new Object());
-        lockManager.stop();
-        shutdownSteps.put(new Object());
-      } catch (Exception e) {
-        e.printStackTrace();
-        fail();
-      }
-    }
   }
 
   private static class TestDeadlockResults implements DeadlockResults {

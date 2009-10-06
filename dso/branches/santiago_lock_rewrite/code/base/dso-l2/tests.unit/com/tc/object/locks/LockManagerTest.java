@@ -4,8 +4,6 @@
  */
 package com.tc.object.locks;
 
-import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
-
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
@@ -17,11 +15,11 @@ import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
 import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.locks.ServerLock;
 import com.tc.objectserver.locks.LockFactory;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
 import com.tc.objectserver.locks.NonGreedyServerLock;
+import com.tc.objectserver.locks.ServerLock;
 import com.tc.text.Banner;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -59,14 +57,6 @@ public class LockManagerTest extends TestCase {
   }
 
   private void resetLockManager(boolean start) {
-    if (lockManager != null) {
-      try {
-        lockManager.stop();
-      } catch (InterruptedException e) {
-        fail();
-      }
-    }
-
     lockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager(),
                                       new TestServerLockFactory());
     if (start) {
@@ -350,7 +340,7 @@ public class LockManagerTest extends TestCase {
     assertEquals(requestedLevel, ctxt.getLockLevel());
   }
 
-  public void testWaitTimeoutsIgnoredDuringShutdown() throws InterruptedException {
+  public void testWaitTimeoutsIgnoredDuringShutdown() {
     ClientID cid = new ClientID(1);
     LockID lockID = new StringLockID("1");
     ThreadID txID = new ThreadID(1);
@@ -359,69 +349,7 @@ public class LockManagerTest extends TestCase {
     lockManager.lock(lockID, cid, txID, ServerLockLevel.WRITE);
 
     lockManager.wait(lockID, cid, txID, 1000);
-    lockManager.stop();
-
-    assertEquals(0, lockManager.getLockCount());
-
-    ThreadUtil.reallySleep(1500);
-
-    assertEquals(0, lockManager.getLockCount());
-  }
-
-  public void testOffBlocksUntilNoOutstandingLocksViaWait() throws Exception {
-    // this is no longer expected behavior
-    if (true) return;
-    List queue = sink.getInternalQueue();
-    ClientID cid = new ClientID(1);
-    LockID lockID = new StringLockID("1");
-    ThreadID txID = new ThreadID(1);
-
-    final LinkedQueue shutdownSteps = new LinkedQueue();
-    ShutdownThread shutdown = new ShutdownThread(shutdownSteps);
-
-    try {
-      lockManager.start();
-      lockManager.lock(lockID, cid, txID, ServerLockLevel.WRITE);
-      assertEquals(1, queue.size());
-
-      shutdown.start();
-      shutdownSteps.take();
-      ThreadUtil.reallySleep(500);
-      // make sure shutdown didn't complete.
-      assertTrue(shutdownSteps.peek() == null);
-
-      // make sure that waiting on an outstanding lock causes the lock to be
-      // released and allows shutdown to
-      // complete.
-      lockManager.wait(lockID, cid, new ThreadID(1), -1);
-      shutdownSteps.take();
-
-    } finally {
-      lockManager.clearAllLocksFor(cid);
-    }
-  }
-
-  public void testOffDoesNotBlockUntilNoOutstandingLocksViaUnlock() throws Exception {
-    List queue = sink.getInternalQueue();
-    ClientID cid1 = new ClientID(1);
-    LockID lock1 = new StringLockID("1");
-    ThreadID tx1 = new ThreadID(1);
-
-    final LinkedQueue shutdownSteps = new LinkedQueue();
-    ShutdownThread shutdown = new ShutdownThread(shutdownSteps);
-    try {
-      lockManager.start();
-      lockManager.lock(lock1, cid1, tx1, ServerLockLevel.WRITE);
-      assertEquals(1, queue.size());
-
-      shutdown.start();
-      shutdownSteps.take();
-      ThreadUtil.reallySleep(1000);
-      shutdownSteps.take();
-    } finally {
-      lockManager = null;
-      resetLockManager();
-    }
+    lockManager.clearAllLocksFor(cid);
   }
 
   public void testOffCancelsWaits() throws Exception {
@@ -447,9 +375,6 @@ public class LockManagerTest extends TestCase {
       // Call shutdown and make sure that the lock isn't granted via the
       // "requestLock" method
       queue.clear();
-      lockManager.stop();
-      lockManager.lock(lockID, cid, txID, ServerLockLevel.WRITE);
-      assertEquals(0, queue.size());
     } finally {
       lockManager.clearAllLocksFor(cid);
     }
@@ -490,14 +415,6 @@ public class LockManagerTest extends TestCase {
       lockManager.lock(lockID, cid, new ThreadID(2), ServerLockLevel.WRITE);
       // the second lock should be pending.
       assertEquals(0, queue.size());
-
-      lockManager.stop();
-
-      // unlock the first lock
-      lockManager.unlock(lockID, cid, txID);
-      // the second lock should still be pending
-      assertEquals(0, queue.size());
-
     } finally {
       lockManager = null;
       resetLockManager();
@@ -826,26 +743,6 @@ public class LockManagerTest extends TestCase {
     assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
 
     lockManager.clearAllLocksFor(c0);
-  }
-
-  private class ShutdownThread extends Thread {
-    private final LinkedQueue shutdownSteps;
-
-    private ShutdownThread(LinkedQueue shutdownSteps) {
-      this.shutdownSteps = shutdownSteps;
-    }
-
-    @Override
-    public void run() {
-      try {
-        shutdownSteps.put(new Object());
-        lockManager.stop();
-        shutdownSteps.put(new Object());
-      } catch (Exception e) {
-        e.printStackTrace();
-        fail();
-      }
-    }
   }
 
   private static class TestDeadlockResults implements DeadlockResults {

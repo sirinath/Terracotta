@@ -1252,14 +1252,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
       logger.warn(e);
     }
 
-    try {
-      if (this.lockManager != null) {
-        this.lockManager.stop();
-      }
-    } catch (InterruptedException e) {
-      logger.error(e);
-    }
-
     this.seda.getStageManager().stopAll();
 
     if (this.l1Listener != null) {

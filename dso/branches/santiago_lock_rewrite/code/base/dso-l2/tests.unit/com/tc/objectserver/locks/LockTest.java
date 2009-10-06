@@ -320,18 +320,7 @@ public class LockTest extends TestCase {
     assertEquals(1, getWaitersCount(lock));
     assertFalse(lock.hasPendingRequests());
 
-    // stop the lock manager
-    lockMgr.stop();
-
-    ThreadUtil.reallySleep(250);
-    assertEquals(0, getHoldersCount(lock));
-    assertEquals(1, getWaitersCount(lock));
-    assertFalse(lock.hasPendingRequests());
-
-    ThreadUtil.reallySleep(2000);
-    assertEquals(0, getHoldersCount(lock));
-    assertEquals(1, getWaitersCount(lock));
-    assertFalse(lock.hasPendingRequests());
+    lockMgr.clearAllLocksFor(cid1);
   }
 
   public void testTimedWaits() throws Exception {
