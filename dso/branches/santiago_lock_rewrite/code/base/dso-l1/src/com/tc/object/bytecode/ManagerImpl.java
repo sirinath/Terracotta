@@ -365,7 +365,7 @@ public class ManagerImpl implements Manager {
     if (this.objectManager.isCreationInProgress()) { return false; }
 
     LockID lock = generateLockIdentifier(o);
-    boolean dsoMonitorEntered = lockManager.isLockedByCurrentThread(lock, null);
+    boolean dsoMonitorEntered = lockManager.isLockedByCurrentThread(lock, null) || txManager.isLockOnTopStack(lock);
 
     if (isManaged(o) && !dsoMonitorEntered) {
       logger
