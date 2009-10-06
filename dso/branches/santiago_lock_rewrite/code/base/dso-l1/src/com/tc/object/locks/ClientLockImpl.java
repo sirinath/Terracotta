@@ -23,7 +23,7 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLock {
   private static final boolean DEBUG         = false;
-  private static final Timer   LOCK_TIMER    = new Timer("ClientLock Greedy Lease Timer", true);
+  private static final Timer   LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
   protected static final int   BLOCKING_LOCK = Integer.MIN_VALUE;
   
   private final LockID         lock;
@@ -438,12 +438,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
           final LockWaiter waiter = (LockWaiter) s;
           // move the waiting nodes reacquires into the queue in this thread so we can be certain that the lock state has changed by the time the server gets the txn ack.
           notify(waiter);
-          LOCK_TIMER.schedule(new TimerTask() {
-            @Override
-            public void run() {
-              waiter.unpark();
-            }
-          }, 0);
+          waiter.unpark();
           break;
         }
       }
@@ -1079,7 +1074,7 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
   static class MonitorBasedPendingLockHold extends PendingLockHold {
 
     private final Object waitObject;
-    private boolean      parked = false;
+    private boolean      unparked = false;
     
     MonitorBasedPendingLockHold(ThreadID owner, LockLevel level, Object waitObject, long timeout) {
       super(owner, level, timeout);
@@ -1092,16 +1087,14 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     
     void park() {
       synchronized (waitObject) {
-        parked = true;
-        while (parked) {
+        while (!unparked) {
           try {
             waitObject.wait();
           } catch (InterruptedException e) {
-            //
+            Thread.currentThread().interrupt();
           }
         }
-        Thread.interrupted();
-        parked = false;
+        unparked = false;
       }
     }
 
@@ -1114,10 +1107,15 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     }
     
     void unpark() {
-      if (parked) {
-        parked = false;
-        getJavaThread().interrupt();
-      }
+      LOCK_TIMER.schedule(new TimerTask() {
+        @Override
+        public void run() {
+          synchronized (waitObject) {
+            unparked = true;
+            waitObject.notifyAll();
+          }
+        }
+      }, 0);
     }
   }
   
@@ -1163,10 +1161,15 @@ public class ClientLockImpl extends SinglyLinkedList<State> implements ClientLoc
     }
     
     void unpark() {
-      synchronized (waitObject) {
-        notified = true;
-        waitObject.notifyAll();
-      }
+      LOCK_TIMER.schedule(new TimerTask() {
+        @Override
+        public void run() {
+          synchronized (waitObject) {
+            notified = true;
+            waitObject.notifyAll();
+          }
+        }
+      }, 0);
     }
     
     public boolean equals(Object o) {
