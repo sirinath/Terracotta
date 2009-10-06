@@ -127,13 +127,14 @@ public class TestLockManager implements LockManager {
 
   }
 
-  public void notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo) {
+  public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action,
+                                NotifiedWaiters addNotifiedWaitersTo) {
     boolean isAll = false;
     if (action == NotifyAction.ALL) {
       isAll = true;
     }
     this.notifyCalls.add(new Object[] { lid, cid, tid, new Boolean(isAll), addNotifiedWaitersTo });
-
+    return addNotifiedWaitersTo;
   }
 
   public void queryLock(LockID lid, ClientID cid, ThreadID threadID) {

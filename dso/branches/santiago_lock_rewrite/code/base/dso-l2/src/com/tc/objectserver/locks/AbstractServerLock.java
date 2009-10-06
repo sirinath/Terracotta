@@ -65,8 +65,8 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     moveWaiterToPending(waiter, helper);
   }
 
-  public void notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
-                     LockHelper helper) throws TCIllegalMonitorStateException {
+  public NotifiedWaiters notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
+                                LockHelper helper) throws TCIllegalMonitorStateException {
     ServerLockContext holder = getPotentialNotifyHolders(cid, tid);
     validateNotifyState(cid, tid, holder, helper);
 
@@ -78,6 +78,8 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
           .getThreadID(), State.WAITER);
       addNotifiedWaitersTo.addNotification(cselc);
     }
+
+    return addNotifiedWaitersTo;
   }
 
   public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {

@@ -27,7 +27,7 @@ public interface LockManager extends DumpHandler, PrettyPrintable, LockManagerMB
 
   void recallCommit(LockID lid, ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts);
 
-  void notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo);
+  NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo);
 
   void wait(LockID lid, ClientID cid, ThreadID tid, long timeout);
 
