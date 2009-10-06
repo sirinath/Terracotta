@@ -12,12 +12,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LockStore {
-  private static final int            DEFAULT_SEGMENTS = 32;
+  private static final int                  DEFAULT_SEGMENTS = 32;
   private final HashMap<LockID, ServerLock> segments[];
-  private final ReentrantLock[]       guards;
-  private final int                   segmentShift;
-  private final int                   segmentMask;
-  private final LockFactory           lockFactory;
+  private final ReentrantLock[]             guards;
+  private final int                         segmentShift;
+  private final int                         segmentMask;
+  private final LockFactory                 lockFactory;
 
   public LockStore(LockFactory factory) {
     this(DEFAULT_SEGMENTS, factory);
@@ -69,6 +69,8 @@ public class LockStore {
   public void checkIn(ServerLock lock) {
     LockID lockID = lock.getLockID();
     int index = indexFor(lockID);
+    if (!guards[index].isHeldByCurrentThread()) { throw new AssertionError("Server Lock " + lock
+                                                                           + " was not checked out by the same thread"); }
     guards[index].unlock();
   }
 
@@ -92,8 +94,11 @@ public class LockStore {
   public void clear() {
     for (int i = 0; i < guards.length; i++) {
       guards[i].lock();
-      segments[i].clear();
-      guards[i].unlock();
+      try {
+        segments[i].clear();
+      } finally {
+        guards[i].unlock();
+      }
     }
   }
 
@@ -103,7 +108,7 @@ public class LockStore {
 
   public class LockIterator {
     private Iterator<Entry<LockID, ServerLock>> currentIter;
-    private int                           currentIndex = -1;
+    private int                                 currentIndex = -1;
     private ServerLock                          oldLock;
 
     /**
@@ -115,13 +120,15 @@ public class LockStore {
     public ServerLock getNextLock(ServerLock lock) {
       validateOldLock(lock);
       while (currentIter == null || !currentIter.hasNext()) {
-        if (!tryMovingToNextSegment()) { return null; }
+        HashMap<LockID, ServerLock> nextSegment = fetchNextSegment();
+        if (nextSegment == null) { return null; }
+        currentIter = nextSegment.entrySet().iterator();
       }
       Assert.assertNotNull(currentIter);
       oldLock = currentIter.next().getValue();
       return oldLock;
     }
-    
+
     public void remove() {
       Assert.assertNotNull(currentIter);
       currentIter.remove();
@@ -134,23 +141,22 @@ public class LockStore {
 
     private void validateOldLock(ServerLock lock) {
       if (oldLock != null) {
-        Assert.assertEquals(oldLock, lock);
+        Assert.assertSame(oldLock, lock);
       } else {
         Assert.assertNull(lock);
       }
 
     }
 
-    private boolean tryMovingToNextSegment() {
+    private HashMap<LockID, ServerLock> fetchNextSegment() {
       if (currentIndex >= 0 && currentIndex < segments.length) {
         guards[currentIndex].unlock();
       }
       currentIndex++;
-      if (currentIndex >= segments.length) { return false; }
+      if (currentIndex >= segments.length) { return null; }
 
       guards[currentIndex].lock();
-      currentIter = segments[currentIndex].entrySet().iterator();
-      return true;
+      return segments[currentIndex];
     }
   }
 }
