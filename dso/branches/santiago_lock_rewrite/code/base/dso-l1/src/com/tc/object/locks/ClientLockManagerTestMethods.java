@@ -12,6 +12,6 @@ public interface ClientLockManagerTestMethods {
    */
   public int runLockGc();
 
-  public void wait(LockID lock, WaitListener listener) throws InterruptedException;
-  public void wait(LockID lock, WaitListener listener, long timeout) throws InterruptedException;
+  public void wait(LockID lock, WaitListener listener, Object waitObject) throws InterruptedException;
+  public void wait(LockID lock, WaitListener listener, Object waitObject, long timeout) throws InterruptedException;
 }

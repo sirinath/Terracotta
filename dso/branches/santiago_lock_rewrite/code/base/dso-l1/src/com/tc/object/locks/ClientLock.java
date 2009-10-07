@@ -4,6 +4,7 @@
 package com.tc.object.locks;
 
 import com.tc.exception.TCLockUpgradeNotSupportedError;
+import com.tc.net.ClientID;
 import com.tc.object.msg.ClientHandshakeMessage;
 
 import java.util.Collection;
@@ -74,18 +75,20 @@ public interface ClientLock {
    *
    * @param remote remote lock manager for delegation
    * @param thread id of the locking (current) thread
+   * @param waitObject TODO
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
-  public boolean notify(RemoteLockManager remote, ThreadID thread);
+  public boolean notify(RemoteLockManager remote, ThreadID thread, Object waitObject);
   
   /**
    * Notify all threads waiting on the lock.
    * 
    * @param remote remote lock manager for delegation
    * @param thread id of the locking (current) thread
+   * @param waitObject TODO
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */  
-  public boolean notifyAll(RemoteLockManager remote, ThreadID thread);
+  public boolean notifyAll(RemoteLockManager remote, ThreadID thread, Object waitObject);
   
   /**
    * Move the current thread to wait
@@ -93,19 +96,21 @@ public interface ClientLock {
    * @param remote remote lock manager for delegation
    * @param listener listener to fire just prior to moving to a local JVM Object.wait();
    * @param thread id of the locking (current) thread
+   * @param waitObject TODO
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
-  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) throws InterruptedException, GarbageLockException;
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject) throws InterruptedException;
   /**
    * Move the current thread to wait with timeout.
    * 
    * @param remote remote lock manager for delegation
    * @param listener listener to fire just prior to moving to a local JVM Object.wait();
    * @param thread id of the locking (current) thread
+   * @param waitObject TODO
    * @param timeout maximum time to remain waiting
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */  
-  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException, GarbageLockException;
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject, long timeout) throws InterruptedException;
 
   /**
    * Return true if the given lock is held locally by any thread at the given lock level.
@@ -178,14 +183,14 @@ public interface ClientLock {
    * <li>waiting threads</li>
    * </ul>
    */
-  public Collection<ClientServerExchangeLockContext> getStateSnapshot();
+  public Collection<ClientServerExchangeLockContext> getStateSnapshot(ClientID client);
   
   /**
    * Add the necessary current lock state information to the handshake message. 
    * 
    * @param handshake message to add state to
    */  
-  public void initializeHandshake(ClientHandshakeMessage handshake);
+  public void initializeHandshake(ClientID client, ClientHandshakeMessage handshake);
 
   /**
    * ClientLock implementations must return true (and subsequently throw GarbageLockException) if
@@ -193,4 +198,8 @@ public interface ClientLock {
    * @param remote remote manager to interact with
    */
   public boolean tryMarkAsGarbage(RemoteLockManager remote);
+
+  public void pinLock();
+
+  public void unpinLock();
 }

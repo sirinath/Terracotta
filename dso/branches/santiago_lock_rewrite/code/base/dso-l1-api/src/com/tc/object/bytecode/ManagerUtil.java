@@ -10,7 +10,6 @@ import com.tc.config.lock.LockContextInfo;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
@@ -120,10 +119,6 @@ public class ManagerUtil {
     return getManager().getClientID();
   }
 
-  public static ClientID getClientIDObject() {
-    return getManager().getClientIDObject();
-  }
-  
   /**
    * Look up or create a new root object
    *
@@ -271,6 +266,18 @@ public class ManagerUtil {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
     mgr.unlock(lock, LockLevel.fromLegacyInt(type));
+  }
+  
+  public static void pinLock(final String lockID) {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.pinLock(lock);
+  }
+  
+  public static void unpinLock(final String lockID) {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.unpinLock(lock);
   }
   
   /**
@@ -473,7 +480,7 @@ public class ManagerUtil {
   public static void objectNotify(final Object obj) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.notify(lock);
+    mgr.notify(lock, obj);
   }
 
   /**
@@ -484,7 +491,7 @@ public class ManagerUtil {
   public static void objectNotifyAll(final Object obj) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.notifyAll(lock);
+    mgr.notifyAll(lock, obj);
   }
 
   /**
@@ -495,7 +502,7 @@ public class ManagerUtil {
   public static void objectWait(final Object obj) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.wait(lock);
+    mgr.wait(lock, obj);
   }
 
   /**
@@ -507,7 +514,7 @@ public class ManagerUtil {
   public static void objectWait(final Object obj, final long millis) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.wait(lock, millis);
+    mgr.wait(lock, obj, millis);
   }
 
   /**

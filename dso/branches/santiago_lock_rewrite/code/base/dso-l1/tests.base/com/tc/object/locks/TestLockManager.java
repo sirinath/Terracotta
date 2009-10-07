@@ -43,11 +43,11 @@ public class TestLockManager implements ClientLockManager {
     this.locks.add(new Object[] { id, level });
   }
 
-  public void wait(final LockID lockID) {
+  public void wait(final LockID lockID, Object waitObject) {
     this.waitCalls.add(new Object[] { lockID, null });
   }
 
-  public void wait(final LockID lockID, final long timeout) {
+  public void wait(final LockID lockID, Object waitObject, final long timeout) {
     this.waitCalls.add(new Object[] { lockID, Long.valueOf(timeout) });
   }
 
@@ -59,12 +59,12 @@ public class TestLockManager implements ClientLockManager {
     this.waitCalls.add(new Object[] { lockID, Long.valueOf(timeout) });
   }
 
-  public Notify notify(final LockID lockID) {
+  public Notify notify(final LockID lockID, Object waitObject) {
     this.notifyCalls.add(new Object[] { lockID, Boolean.FALSE });
     return null;
   }
 
-  public Notify notifyAll(final LockID lockID) {
+  public Notify notifyAll(final LockID lockID, Object waitObject) {
     this.notifyCalls.add(new Object[] { lockID, Boolean.TRUE });
     return null;
   }
@@ -169,5 +169,15 @@ public class TestLockManager implements ClientLockManager {
 
   public int runLockGc() {
     throw new ImplementMe();
+  }
+
+  public void pinLock(LockID lock) {
+    throw new ImplementMe();
+    
+  }
+
+  public void unpinLock(LockID lock) {
+    throw new ImplementMe();
+    
   }
 }

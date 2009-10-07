@@ -9,7 +9,6 @@ import com.tc.io.TCByteBufferOutput;
 import java.io.IOException;
 
 public class LongLockID implements LockID {
-  /** Indicates no lock identifier */
   private long                   id;
 
   public LongLockID() {
@@ -28,10 +27,6 @@ public class LongLockID implements LockID {
 
   public String toString() {
     return getClass().getSimpleName() + "(" + id + ")";
-  }
-
-  public Object waitNotifyObject() {
-    return null;
   }
   
   /**

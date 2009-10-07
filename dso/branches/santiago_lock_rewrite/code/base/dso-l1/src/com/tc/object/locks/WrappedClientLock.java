@@ -46,24 +46,22 @@ public class WrappedClientLock implements ClientLock {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " Awarded " + lockId + "[" + System.identityHashCode(this) + "]");
   }
 
-  public Collection<ClientServerExchangeLockContext> getStateSnapshot() {
-    ClientID client = ManagerUtil.getClientIDObject();
-
+  public Collection<ClientServerExchangeLockContext> getStateSnapshot(ClientID client) {
     final Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
     
     for (LockRequest lh : wrappedLock.addHoldersToAsLockRequests(new ArrayList<LockRequest>())) {
-      switch (LockLevel.fromLegacyInt(lh.lockLevel())) {
-        case READ:
+      switch (lh.lockLevel()) {
+        case com.tc.object.lockmanager.api.LockLevel.READ:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, lh.threadID(), State.HOLDER_READ));
           break;
-        case WRITE:
-        case SYNCHRONOUS_WRITE:
+        case com.tc.object.lockmanager.api.LockLevel.WRITE:
+        case com.tc.object.lockmanager.api.LockLevel.SYNCHRONOUS_WRITE:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, lh.threadID(), State.HOLDER_WRITE));
           break;
-        case GREEDY_READ:
+        case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.READ:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, lh.threadID(), State.GREEDY_HOLDER_READ));
           break;
-        case GREEDY_WRITE:
+        case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.WRITE:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, lh.threadID(), State.GREEDY_HOLDER_WRITE));
           break;
         default:
@@ -106,8 +104,8 @@ public class WrappedClientLock implements ClientLock {
     return contexts;
   }
 
-  public void initializeHandshake(ClientHandshakeMessage handshakeMessage) {
-    for (ClientServerExchangeLockContext c : getStateSnapshot()) {
+  public void initializeHandshake(ClientID client, ClientHandshakeMessage handshakeMessage) {
+    for (ClientServerExchangeLockContext c : getStateSnapshot(client)) {
       handshakeMessage.addLockContext(c);
     }
   }
@@ -143,11 +141,11 @@ public class WrappedClientLock implements ClientLock {
     wrappedLock.notified(thread);
   }
 
-  public boolean notify(RemoteLockManager remote, ThreadID thread) {
+  public boolean notify(RemoteLockManager remote, ThreadID thread, Object waitObject) {
     return !wrappedLock.notify(thread, false).isNull();
   }
 
-  public boolean notifyAll(RemoteLockManager remote, ThreadID thread) {
+  public boolean notifyAll(RemoteLockManager remote, ThreadID thread, Object waitObject) {
     return !wrappedLock.notify(thread, true).isNull();
   }
 
@@ -179,14 +177,22 @@ public class WrappedClientLock implements ClientLock {
     wrappedLock.unlock(thread);
   }
 
-  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread) throws InterruptedException {
-    wrappedLock.wait(thread, new TimerSpec(), lockId.waitNotifyObject(), listener);  }
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject) throws InterruptedException {
+    wrappedLock.wait(thread, new TimerSpec(), waitObject, listener);  }
 
-  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, long timeout) throws InterruptedException {
-    wrappedLock.wait(thread, new TimerSpec(timeout), lockId.waitNotifyObject(), listener);
+  public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject, long timeout) throws InterruptedException {
+    wrappedLock.wait(thread, new TimerSpec(timeout), waitObject, listener);
   }
 
   public boolean tryMarkAsGarbage(RemoteLockManager remote) {
     return false;
+  }
+
+  public void pinLock() {
+    wrappedLock.pin();
+  }
+
+  public void unpinLock() {
+    wrappedLock.unpin();
   }  
 }

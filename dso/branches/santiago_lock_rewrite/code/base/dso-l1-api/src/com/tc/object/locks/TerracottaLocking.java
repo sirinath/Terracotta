@@ -62,34 +62,38 @@ public interface TerracottaLocking {
    * Notify a single thread waiting on the given lock.
    *
    * @param lock lock to act upon
+   * @param waitObject local vm object on which threads are waiting
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
-  public Notify notify(LockID lock);
+  public Notify notify(LockID lock, Object waitObject);
   
   /**
    * Notify all threads waiting on the given lock.
    * 
    * @param lock lock to act upon
+   * @param waitObject local vm object on which threads are waiting
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
-  public Notify notifyAll(LockID lock);
+  public Notify notifyAll(LockID lock, Object waitObject);
 
   /**
    * Move the current thread to wait on the given lock.
    * 
    * @param lock lock to act upon
+   * @param waitObject local vm object to wait on
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
-  public void wait(LockID lock) throws InterruptedException;
+  public void wait(LockID lock, Object waitObject) throws InterruptedException;
   
   /**
    * Move the current thread to wait on the given lock with timeout.
    * 
    * @param lock lock to act upon
+   * @param waitObject local vm object to wait on
    * @param timeout maximum time to remain waiting
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */  
-  public void wait(LockID lock, long timeout) throws InterruptedException;
+  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException;
 
   /**
    * Return true if the given lock is held by any thread at the given lock level.
@@ -156,6 +160,10 @@ public interface TerracottaLocking {
    */
   public int globalWaitingCount(LockID lock);
 
+  public void pinLock(LockID lock);
+  
+  public void unpinLock(LockID lock);
+  
   public LockID generateLockIdentifier(String str);
   public LockID generateLockIdentifier(Object obj);
   public LockID generateLockIdentifier(Object obj, String field);

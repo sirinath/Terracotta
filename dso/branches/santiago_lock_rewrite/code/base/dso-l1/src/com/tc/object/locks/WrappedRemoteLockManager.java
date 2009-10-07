@@ -4,7 +4,6 @@
 package com.tc.object.locks;
 
 import com.tc.net.ClientID;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.lockmanager.api.LockRequest;
 import com.tc.object.lockmanager.api.RemoteLockManager;
 import com.tc.object.lockmanager.api.TryLockRequest;
@@ -20,9 +19,11 @@ import java.util.Iterator;
 public class WrappedRemoteLockManager implements RemoteLockManager {
 
   private final com.tc.object.locks.RemoteLockManager wrappedManager;
+  private final ClientID                              client;
   
   public WrappedRemoteLockManager(com.tc.object.locks.RemoteLockManager wrapped) {
     this.wrappedManager = wrapped;
+    this.client = wrapped.getClientID();
   }
   
   public void flush(LockID lockID) {
@@ -43,7 +44,6 @@ public class WrappedRemoteLockManager implements RemoteLockManager {
 
   public void recallCommit(LockID lockID, Collection lockContext, Collection waitContext, Collection pendingRequests, Collection pendingTryLockRequests) {
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>(); 
-    ClientID client = ManagerUtil.getClientIDObject();
     
     for (Iterator i = lockContext.iterator(); i.hasNext();) {
       LockRequest request = (LockRequest) i.next();

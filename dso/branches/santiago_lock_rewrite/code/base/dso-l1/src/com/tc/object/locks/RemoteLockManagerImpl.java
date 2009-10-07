@@ -3,7 +3,9 @@
  */
 package com.tc.object.locks;
 
+import com.tc.net.ClientID;
 import com.tc.net.GroupID;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.msg.LockRequestMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
@@ -15,11 +17,17 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   private final LockRequestMessageFactory      messageFactory;
   private final ClientGlobalTransactionManager globalTxManager;
   private final GroupID                        group;
+  private final ClientIDProvider               clientIdProvider;
   
-  public RemoteLockManagerImpl(GroupID group, LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager) {
+  public RemoteLockManagerImpl(ClientIDProvider clientIdProvider, GroupID group, LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager) {
     this.messageFactory = messageFactory;
     this.globalTxManager = globalTxManager;
     this.group = group;
+    this.clientIdProvider = clientIdProvider;
+  }
+  
+  public ClientID getClientID() {
+    return clientIdProvider.getClientID();
   }
   
   public void flush(LockID lock) {

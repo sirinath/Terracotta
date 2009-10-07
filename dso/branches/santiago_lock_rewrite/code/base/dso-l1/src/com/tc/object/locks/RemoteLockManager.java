@@ -4,9 +4,13 @@
 package com.tc.object.locks;
 
 
+import com.tc.net.ClientID;
+
 import java.util.Collection;
 
 public interface RemoteLockManager {
+  public ClientID getClientID();
+  
   public void lock(LockID lock, ThreadID thread, ServerLockLevel level);  
   public void tryLock(LockID lock, ThreadID thread, ServerLockLevel level, long timeout);
 

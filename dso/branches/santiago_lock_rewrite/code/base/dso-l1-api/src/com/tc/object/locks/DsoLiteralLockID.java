@@ -37,10 +37,6 @@ public class DsoLiteralLockID implements LockID {
   public LockIDType getLockType() {
     return LockIDType.DSO_LITERAL;
   }
-
-  public Object waitNotifyObject() {
-    return literal;
-  }
   
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     LiteralValues type = LiteralValues.values()[serialInput.readByte()];

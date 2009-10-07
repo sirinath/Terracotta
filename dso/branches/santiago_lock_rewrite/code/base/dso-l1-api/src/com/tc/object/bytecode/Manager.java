@@ -8,7 +8,6 @@ import com.tc.cluster.DsoCluster;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
@@ -262,8 +261,6 @@ public interface Manager extends TerracottaLocking {
    * @return Client identifier
    */
   public String getClientID();
-
-  public ClientID getClientIDObject();
 
   /**
    * Get the named logger

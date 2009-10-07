@@ -1244,15 +1244,15 @@ public class ClientLockManagerTest extends TCTestCase {
 
         if (clientLockManager != null) {
           if (timeout < 0) {
-            clientLockManager.wait(lid, this);
+            clientLockManager.wait(lid, this, null);
           } else {
-            clientLockManager.wait(lid, this, timeout);
+            clientLockManager.wait(lid, this, null, timeout);
           }
         } else {
           if (timeout < 0) {
-            lockManager.wait(lid, this);
+            lockManager.wait(lid, this, null);
           } else {
-            lockManager.wait(lid, this, timeout);
+            lockManager.wait(lid, this, null, timeout);
           }
         }
       } catch (Throwable t) {

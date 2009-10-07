@@ -157,8 +157,8 @@ public class LockResponseMessage extends DSOMessageBase {
     initialize(ResponseType.REFUSE, lid, sid, level, -1);
   }
 
-  public void initializeRecallWithTimeout(LockID lid, ThreadID sid, ServerLockLevel level, int leaseTimeInMills) {
-    initialize(ResponseType.RECALL_WITH_TIMEOUT, lid, sid, level, -1);
+  public void initializeRecallWithTimeout(LockID lid, ThreadID sid, ServerLockLevel level, int leaseTimeInMillis) {
+    initialize(ResponseType.RECALL_WITH_TIMEOUT, lid, sid, level, leaseTimeInMillis);
   }
 
   public void initializeRecall(LockID lid, ThreadID sid, ServerLockLevel level) {

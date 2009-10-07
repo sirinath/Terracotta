@@ -22,9 +22,9 @@ public class LockIdFactory {
     } else {
       TCObject tco = mgr.lookupExistingOrNull(obj);
       if ((tco == null) || tco.autoLockingDisabled()) {
-        return new UnclusteredLockID(obj);
+        return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
       } else {
-        return new DsoLockID(mgr, tco.getObjectID());
+        return new DsoLockID(tco.getObjectID());
       }
     }
   }
@@ -38,7 +38,7 @@ public class LockIdFactory {
     }
     
     if ((tco == null) || tco.autoLockingDisabled()) {
-      return new UnclusteredLockID(null);
+      return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
     } else {
       return new DsoVolatileLockID(tco.getObjectID(), fieldName);
     }
