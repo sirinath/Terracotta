@@ -4,6 +4,7 @@
 package com.tc.objectserver.locks;
 
 import com.tc.async.api.Sink;
+import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.L2LockStatsManager;
@@ -13,10 +14,10 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 import com.tc.objectserver.locks.LockStore.LockIterator;
 import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.objectserver.locks.factory.LockFactoryImpl;
+import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
@@ -26,22 +27,23 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class LockManagerImpl implements LockManager {
+public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintable, LockManagerMBean {
   private enum RequestType {
     LOCK, TRY_LOCK
   }
 
-  private final LockStore              lockStore;
-  private final DSOChannelManager      channelManager;
-  private final LockHelper             lockHelper;
-  private final ReentrantReadWriteLock statusLock       = new ReentrantReadWriteLock();
-  private boolean                      isStarted        = false;
-  private List<RequestLockContext>     lockRequestQueue = new ArrayList<RequestLockContext>();
+  private final LockStore                lockStore;
+  private final DSOChannelManager        channelManager;
+  private final LockHelper               lockHelper;
+  private final ReentrantReadWriteLock   statusLock       = new ReentrantReadWriteLock();
+  private boolean                        isStarted        = false;
+  private LinkedList<RequestLockContext> lockRequestQueue = new LinkedList<RequestLockContext>();
 
-  private static final TCLogger        logger           = TCLogging.getLogger(LockManagerImpl.class);
+  private static final TCLogger          logger           = TCLogging.getLogger(LockManagerImpl.class);
 
   public LockManagerImpl(Sink lockSink, L2LockStatsManager statsManager, DSOChannelManager channelManager) {
     this(lockSink, statsManager, channelManager, new LockFactoryImpl());
@@ -128,8 +130,6 @@ public class LockManagerImpl implements LockManager {
     ServerLock lock = lockStore.checkOut(lid);
     try {
       return lock.notify(cid, tid, action, addNotifiedWaitersTo, lockHelper);
-    } catch (TCIllegalMonitorStateException e) {
-      throw new RuntimeException(e);
     } finally {
       lockStore.checkIn(lock);
     }
@@ -141,8 +141,6 @@ public class LockManagerImpl implements LockManager {
     ServerLock lock = lockStore.checkOut(lid);
     try {
       lock.wait(cid, tid, timeout, lockHelper);
-    } catch (TCIllegalMonitorStateException e) {
-      throw new RuntimeException(e);
     } finally {
       lockStore.checkIn(lock);
     }
@@ -225,6 +223,7 @@ public class LockManagerImpl implements LockManager {
             tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
                 .getTimeout());
         }
+        i.remove();
       }
       this.lockRequestQueue = null;
     } finally {
@@ -235,7 +234,7 @@ public class LockManagerImpl implements LockManager {
   private void queueRequest(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
                             long timeout) {
     RequestLockContext context = new RequestLockContext(lid, cid, tid, level, type, timeout);
-    lockRequestQueue.add(context);
+    lockRequestQueue.addLast(context);
   }
 
   private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {

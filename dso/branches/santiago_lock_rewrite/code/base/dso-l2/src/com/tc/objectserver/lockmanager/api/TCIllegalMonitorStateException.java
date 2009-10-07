@@ -6,7 +6,7 @@ package com.tc.objectserver.lockmanager.api;
 /**
  * Thrown by server side locks when an illegal attempt to wait/notify is performed
  */
-public class TCIllegalMonitorStateException extends Exception {
+public class TCIllegalMonitorStateException extends IllegalStateException {
 
   public TCIllegalMonitorStateException() {
     super();

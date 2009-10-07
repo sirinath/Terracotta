@@ -37,6 +37,7 @@ import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackOnExitHandler;
 import com.tc.logging.CustomerLogging;
+import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.logging.ThreadDumpHandler;
@@ -378,7 +379,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
   public void dump() {
     if (this.lockManager != null) {
-      this.lockManager.dumpToLogger();
+      ((DumpHandler) this.lockManager).dumpToLogger();
     }
 
     if (this.objectManager != null) {
@@ -746,7 +747,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     Stage respondToLockStage = stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                                                         new RespondToRequestLockHandler(), 1, maxStageSize);
     this.lockManager = new LockManagerImpl(respondToLockStage.getSink(), lockStatsManager, channelManager);
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
+    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter((DumpHandler) this.lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
 
     TransactionFilter txnFilter = this.serverBuilder.getTransactionFilter(toInit, stageManager, maxStageSize);
