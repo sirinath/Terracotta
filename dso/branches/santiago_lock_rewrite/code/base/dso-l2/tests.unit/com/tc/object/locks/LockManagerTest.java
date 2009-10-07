@@ -12,22 +12,16 @@ import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.lockmanager.api.DeadlockChain;
-import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
-import com.tc.objectserver.locks.LockFactory;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
-import com.tc.objectserver.locks.NonGreedyServerLock;
-import com.tc.objectserver.locks.ServerLock;
+import com.tc.objectserver.locks.factory.NonGreedyLockPolicyFactory;
 import com.tc.text.Banner;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -58,7 +52,7 @@ public class LockManagerTest extends TestCase {
 
   private void resetLockManager(boolean start) {
     lockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager(),
-                                      new TestServerLockFactory());
+                                      new NonGreedyLockPolicyFactory());
     if (start) {
       lockManager.start();
     }
@@ -86,7 +80,7 @@ public class LockManagerTest extends TestCase {
         if (cid1.equals(nid)) { return "127.0.0.1:6969"; }
         return "no longer connected";
       }
-    }, new TestServerLockFactory());
+    }, new NonGreedyLockPolicyFactory());
 
     lockManager.start();
     lockStatsManager.start(new NullChannelManager(), null);
@@ -454,109 +448,6 @@ public class LockManagerTest extends TestCase {
     lockManager.unlock(l1, c4, s1);
   }
 
-  public void testDeadLock1() {
-    if (true) {
-      Banner.warnBanner("DEADLOCK tests DISABLED");
-      return;
-    }
-
-    // A simple deadlock. Thread 1 holds lock1, wants lock2. Thread2 holds
-    // lock2, wants lock1
-
-    LockID l1 = new StringLockID("1");
-    LockID l2 = new StringLockID("2");
-    ClientID c1 = new ClientID(1);
-
-    ThreadID s1 = new ThreadID(1);
-    ThreadID s2 = new ThreadID(2);
-
-    ServerThreadID thread1 = new ServerThreadID(c1, s1);
-    ServerThreadID thread2 = new ServerThreadID(c1, s2);
-
-    lockManager.start();
-    // thread1 gets lock1
-    lockManager.lock(l1, c1, s1, ServerLockLevel.WRITE);
-    // thread2 gets lock2
-    lockManager.lock(l2, c1, s2, ServerLockLevel.WRITE);
-    // thread1 trys to get lock2 (blocks)
-    lockManager.lock(l2, c1, s1, ServerLockLevel.WRITE);
-    // thread2 trys to get lock1 (blocks)
-    lockManager.lock(l1, c1, s2, ServerLockLevel.WRITE);
-
-    TestDeadlockResults deadlocks = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(deadlocks);
-
-    assertEquals(1, deadlocks.chains.size());
-    Map check = new HashMap();
-    check.put(thread1, l2);
-    check.put(thread2, l1);
-    assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
-
-    // test the mgmt interface too
-    DeadlockChain[] results = lockManager.scanForDeadlocks();
-    assertEquals(1, results.length);
-    check = new HashMap();
-    check.put(thread1, l2);
-    check.put(thread2, l1);
-    assertSpecificDeadlock(results[0], check);
-
-    lockManager.clearAllLocksFor(c1);
-  }
-
-  public void testDeadLock3() {
-    if (true) {
-      Banner.warnBanner("DEADLOCK tests DISABLED");
-      return;
-    }
-
-    // test that includes locks with more than 1 holder
-
-    // contended locks
-    LockID l1 = new StringLockID("1");
-    LockID l2 = new StringLockID("2");
-
-    // uncontended read locks
-    LockID l3 = new StringLockID("3");
-    LockID l4 = new StringLockID("4");
-    LockID l5 = new StringLockID("5");
-
-    ClientID c1 = new ClientID(1);
-    ThreadID s1 = new ThreadID(1);
-    ThreadID s2 = new ThreadID(2);
-
-    ServerThreadID thread1 = new ServerThreadID(c1, s1);
-    ServerThreadID thread2 = new ServerThreadID(c1, s2);
-
-    lockManager.start();
-
-    // thread1 holds all three read locks, thread2 has 2 of them
-    lockManager.lock(l3, c1, s1, ServerLockLevel.READ);
-    lockManager.lock(l4, c1, s1, ServerLockLevel.READ);
-    lockManager.lock(l5, c1, s1, ServerLockLevel.READ);
-    lockManager.lock(l3, c1, s2, ServerLockLevel.READ);
-    lockManager.lock(l4, c1, s2, ServerLockLevel.READ);
-
-    // thread1 gets lock1
-    lockManager.lock(l1, c1, s1, ServerLockLevel.WRITE);
-    // thread2 gets lock2
-    lockManager.lock(l2, c1, s2, ServerLockLevel.WRITE);
-    // thread1 trys to get lock2 (blocks)
-    lockManager.lock(l2, c1, s1, ServerLockLevel.WRITE);
-    // thread2 trys to get lock1 (blocks)
-    lockManager.lock(l1, c1, s2, ServerLockLevel.WRITE);
-
-    TestDeadlockResults deadlocks = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(deadlocks);
-
-    assertEquals(1, deadlocks.chains.size());
-    Map check = new HashMap();
-    check.put(thread1, l2);
-    check.put(thread2, l1);
-    assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
-
-    lockManager.clearAllLocksFor(c1);
-  }
-
   public void disableTestUpgradeDeadLock() {
     // Detect deadlock in competing upgrades
     LockID l1 = new StringLockID("L1");
@@ -564,9 +455,6 @@ public class LockManagerTest extends TestCase {
     ClientID c0 = new ClientID(0);
     ThreadID s1 = new ThreadID(1);
     ThreadID s2 = new ThreadID(2);
-
-    ServerThreadID thread1 = new ServerThreadID(c0, s1);
-    ServerThreadID thread2 = new ServerThreadID(c0, s2);
 
     lockManager.start();
 
@@ -579,16 +467,6 @@ public class LockManagerTest extends TestCase {
     lockManager.lock(l1, c0, s1, ServerLockLevel.WRITE);
     // thread2 requests upgrade
     lockManager.lock(l1, c0, s2, ServerLockLevel.WRITE);
-
-    TestDeadlockResults deadlocks = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(deadlocks);
-
-    assertEquals(1, deadlocks.chains.size());
-
-    Map check = new HashMap();
-    check.put(thread1, l1);
-    check.put(thread2, l1);
-    assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
 
     lockManager.clearAllLocksFor(c0);
   }
@@ -631,11 +509,6 @@ public class LockManagerTest extends TestCase {
         t.join();
       }
     }
-
-    TestDeadlockResults results = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(results);
-
-    assertEquals(0, results.chains.size());
 
     for (int i = 0; i < txns.length; i++) {
       lockManager.clearAllLocksFor((ClientID) txns[i].getNodeID());
@@ -680,83 +553,4 @@ public class LockManagerTest extends TestCase {
 
     return rv;
   }
-
-  private void assertSpecificDeadlock(DeadlockChain chain, Map check) {
-    DeadlockChain start = chain;
-    do {
-      LockID lock = (LockID) check.remove(chain.getWaiter());
-      assertEquals(lock, chain.getWaitingOn());
-      chain = chain.getNextLink();
-    } while (chain != start);
-
-    assertEquals(0, check.size());
-  }
-
-  public void testDeadLock2() {
-    if (true) {
-      Banner.warnBanner("DEADLOCK tests DISABLED");
-      return;
-    }
-
-    // A slightly more complicated deadlock:
-    // -- Thread1 holds lock1, wants lock2
-    // -- Thread2 holds lock2, wants lock3
-    // -- Thread3 holds lock3, wants lock1
-
-    LockID l1 = new StringLockID("L1");
-    LockID l2 = new StringLockID("L2");
-    LockID l3 = new StringLockID("L3");
-    ClientID c0 = new ClientID(0);
-    ThreadID s1 = new ThreadID(1);
-    ThreadID s2 = new ThreadID(2);
-    ThreadID s3 = new ThreadID(3);
-
-    ServerThreadID thread1 = new ServerThreadID(c0, s1);
-    ServerThreadID thread2 = new ServerThreadID(c0, s2);
-    ServerThreadID thread3 = new ServerThreadID(c0, s3);
-
-    lockManager.start();
-
-    // thread1 gets lock1
-    lockManager.lock(l1, c0, s1, ServerLockLevel.WRITE);
-    // thread2 gets lock2
-    lockManager.lock(l2, c0, s2, ServerLockLevel.WRITE);
-    // thread3 gets lock3
-    lockManager.lock(l3, c0, s3, ServerLockLevel.WRITE);
-
-    // thread1 trys to get lock2 (blocks)
-    lockManager.lock(l2, c0, s1, ServerLockLevel.WRITE);
-    // thread2 trys to get lock3 (blocks)
-    lockManager.lock(l3, c0, s2, ServerLockLevel.WRITE);
-    // thread3 trys to get lock1 (blocks)
-    lockManager.lock(l1, c0, s3, ServerLockLevel.WRITE);
-
-    TestDeadlockResults deadlocks = new TestDeadlockResults();
-    lockManager.scanForDeadlocks(deadlocks);
-
-    assertEquals(1, deadlocks.chains.size());
-
-    Map check = new HashMap();
-    check.put(thread1, l2);
-    check.put(thread2, l3);
-    check.put(thread3, l1);
-    assertSpecificDeadlock((DeadlockChain) deadlocks.chains.get(0), check);
-
-    lockManager.clearAllLocksFor(c0);
-  }
-
-  private static class TestDeadlockResults implements DeadlockResults {
-    final List chains = new ArrayList();
-
-    public void foundDeadlock(DeadlockChain chain) {
-      chains.add(chain);
-    }
-  }
-
-  public static class TestServerLockFactory implements LockFactory {
-    public ServerLock createLock(LockID lid) {
-      return new NonGreedyServerLock(lid);
-    }
-  }
-
 }
