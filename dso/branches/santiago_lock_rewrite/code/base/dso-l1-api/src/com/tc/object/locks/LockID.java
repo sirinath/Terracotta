@@ -30,17 +30,4 @@ public interface LockID extends TCSerializable, Serializable {
 
   @Deprecated
   public String asString();
-
-  /**
-   * Local JVM object representation of this lock.
-   * <p>
-   * In the case of LockIDs that have a representation as Java monitor locks this method must return the object for that
-   * monitor lock to ensure correct wait/notify semantics.
-   * <p>
-   * If an implementation returns null then the locking system will use an arbitrary internal object to perform
-   * wait/notify.
-   * 
-   * @return Java object to be used during wait/notify calls
-   */
-  public Object waitNotifyObject();
 }

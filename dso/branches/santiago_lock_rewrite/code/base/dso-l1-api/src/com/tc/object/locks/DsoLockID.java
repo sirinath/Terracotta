@@ -6,7 +6,6 @@ package com.tc.object.locks;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.ObjectID;
-import com.tc.object.bytecode.Manager;
 
 import java.io.IOException;
 
@@ -14,21 +13,13 @@ import java.io.IOException;
  * LockID implementation representing a lock on a non-literal DSO clustered object.
  */
 public class DsoLockID implements LockID {
-  private final Manager manager;
   private long          objectId;
-
   
   public DsoLockID() {
     // for tc serialization
-    this(null);
   }
   
-  public DsoLockID(Manager manager) {
-    this.manager = manager;
-  }
-  
-  public DsoLockID(Manager manager, ObjectID objectId) {
-    this(manager);
+  public DsoLockID(ObjectID objectId) {
     this.objectId = objectId.toLong();
   }
 
@@ -40,18 +31,6 @@ public class DsoLockID implements LockID {
     return LockIDType.DSO;
   }
 
-  public Object waitNotifyObject() {
-    if (manager == null) {
-      return null;
-    } else {
-      try {
-        return manager.lookupObject(new ObjectID(objectId));
-      } catch (ClassNotFoundException e) {
-        throw new AssertionError(e);
-      }
-    }
-  }
-  
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     objectId = serialInput.readLong();
     return this;

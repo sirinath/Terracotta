@@ -3,17 +3,20 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.locks.ClientLockImpl.LockHold;
-
 enum ClientGreediness {
   GARBAGE {
     @Override
-    ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
+    ClientGreediness requestLevel(ServerLockLevel level) throws GarbageLockException {
       throw GarbageLockException.GARBAGE_LOCK_EXCEPTION;
     }
   },
   
   FREE {
+    @Override
+    boolean isFree() {
+      return true;
+    }
+    
     @Override
     ClientGreediness award(ServerLockLevel level) {
       switch (level) {
@@ -27,66 +30,13 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) {
-      ServerLockLevel requestLevel;
-      switch (level) {
-        case READ:
-          requestLevel = ServerLockLevel.READ;
-          break;
-        case SYNCHRONOUS_WRITE:
-        case WRITE:
-          requestLevel = ServerLockLevel.WRITE;
-          break;
-        default:
-          throw new AssertionError();
-      }
-      
-      switch ((int) timeout) {
-        case ClientLockImpl.BLOCKING_LOCK:
-          remote.lock(lock, thread, requestLevel);
-          break;
-        default:
-          remote.tryLock(lock, thread, requestLevel, timeout);
-          break;
-      }
-      return this;
-    }
-
-    @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold unlock) {
-      //must do remote unlock if downgraded or free
-      //downgraded : hold is WRITE/SYNCWRITE and now holding just read
-      //free : no holds
-      for (State s : clientLock) {
-        if (s == unlock) continue;
-        
-        if (s instanceof LockHold && s.getOwner().equals(unlock.getOwner())) {
-          LockHold hold = (LockHold) s;
-          if (unlock.getLockLevel().isWrite()) {
-            if (hold.getLockLevel().isWrite()) return this;
-          } else {
-            return this;
-          }
-        }
-      }
-
-      if (unlock.getLockLevel().isWrite()) {
-        remote.unlock(lock, unlock.getOwner(), ServerLockLevel.WRITE);
-      } else {
-        remote.unlock(lock, unlock.getOwner(), ServerLockLevel.READ);
-      }
+    ClientGreediness requestLevel(ServerLockLevel level) {
       return this;
     }
 
     @Override
     ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       remote.wait(lock, thread, timeout);
-      return this;
-    }
-    
-    @Override
-    ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
-      remote.interrupt(lock, thread);
       return this;
     }    
   },
@@ -96,6 +46,10 @@ enum ClientGreediness {
     @Override
     public boolean canAward(LockLevel level) {
       return level.isRead();
+    }
+    
+    public boolean isGreedy() {
+      return true;
     }
     
     @Override
@@ -113,29 +67,22 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
-      return this;
+    ClientGreediness requestLevel(ServerLockLevel level) {
+      switch (level) {
+        case READ:
+          return this;
+        case WRITE:
+          return RECALLED_READ;
+        default:
+          throw new AssertionError();
+      }
     }
     
     @Override
-    ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) {
-      return RECALLED_READ;
-    }
-    
-    @Override
-    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
+    boolean flushOnUnlock() {
       return false;
     }
   },
-
-  // I believe that LEASED_GREEDY_READ cannot exist (or at least cannot be entered)
-//  LEASED_GREEDY_READ {
-//
-//    @Override
-//    public boolean canAward(LockLevel level) {
-//      return level.isRead();
-//    }
-//  }, 
 
   GREEDY_WRITE {
 
@@ -144,53 +91,34 @@ enum ClientGreediness {
       return true;
     }
     
+    public boolean isGreedy() {
+      return true;
+    }
+    
+    @Override
+    boolean flushOnUnlock() {
+      return false;
+    }
+    
     @Override
     ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
-        return LEASED_GREEDY_WRITE;
+        return GREEDY_WRITE;
       } else {
         return RECALLED_WRITE;
       }
     }
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
-      return this;
-    }
-    
-    @Override
     ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
       return this;
-    }
-    
-    @Override
-    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
-      return false;
-    }
-  },
-  
-  LEASED_GREEDY_WRITE {
-
-    @Override
-    public boolean canAward(LockLevel level) {
-      return true;
-    }
-    
-    @Override
-    boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
-      return false;
-    }
+    }    
   },
   
   RECALLED_READ {
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
-      return clientLock.doRecall(remote);
-    }
-    
-    @Override
-    ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) {
+    ClientGreediness requestLevel(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
     }
 
@@ -213,12 +141,7 @@ enum ClientGreediness {
   RECALLED_WRITE {
 
     @Override
-    ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
-      return clientLock.doRecall(remote);
-    }
-    
-    @Override
-    ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) {
+    ClientGreediness requestLevel(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
     }
 
@@ -250,61 +173,42 @@ enum ClientGreediness {
     return false;
   }
   
+  boolean isFree() {
+    return false;
+  }
   
+  boolean isRecalled() {
+    return false;
+  }
+  
+  public boolean isGreedy() {
+    return false;
+  }
+  
+  boolean flushOnUnlock() {
+    return true;
+  }
+
   /**
    * @throws GarbageLockException thrown if in a garbage state 
    */
-  ClientGreediness requestLevel(RemoteLockManager remote, LockID lock, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
-    System.err.println("request level while in unexpected state (" + this + ")");
-    throw new AssertionError();
-  }
-
-  ClientGreediness unlocked(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, LockHold hold) {
-    System.err.println("unlocked while in unexpected state (" + this + ")");
-    throw new AssertionError();
+  ClientGreediness requestLevel(ServerLockLevel level) throws GarbageLockException {
+    throw new AssertionError("request level while in unexpected state (" + this + ")");
   }
 
   ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-    System.err.println("waiting while in unexpected state (" + this + ")");
-    throw new AssertionError();
+    throw new AssertionError("waiting while in unexpected state (" + this + ")");
   }
   
   ClientGreediness award(ServerLockLevel level) {
-    System.err.println("award while in unexpected state (" + this + ")");
-    throw new AssertionError();
+    throw new AssertionError("award while in unexpected state (" + this + ")");
   }
 
   ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
     return this;
   }
 
-  ClientGreediness interrupt(RemoteLockManager remote, LockID lock, ThreadID thread) {
-    return this;
-  }
-
-  boolean flushOnUnlock(ClientLockImpl clientLock, LockHold unlock) {
-    if (unlock.getLockLevel().isRead()) {
-      return false;
-    }
-    
-    synchronized (clientLock) {
-      for (State s : clientLock) {
-        if (s == unlock) continue;
-
-        if (s instanceof LockHold && s.getOwner().equals(unlock.getOwner())) {
-          if (((LockHold) s).getLockLevel().isWrite()) return false;
-        }
-      }
-    }
-    return true;
-  }
-
   ClientGreediness recallInProgress() {
-    System.err.println("recall in progress while in unexpected state (" + this + ")");
-    throw new AssertionError();
-  }
-
-  boolean isRecalled() {
-    return false;
+    throw new AssertionError("recall in progress while in unexpected state (" + this + ")");
   }
 }

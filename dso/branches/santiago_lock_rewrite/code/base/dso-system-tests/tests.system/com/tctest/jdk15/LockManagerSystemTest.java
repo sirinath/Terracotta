@@ -22,8 +22,10 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.net.protocol.tcm.TestMessageChannel;
 import com.tc.object.BaseDSOTestCase;
+import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.TestClientGlobalTransactionManager;
 import com.tc.object.handler.LockResponseHandler;
@@ -452,7 +454,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     public TestRemoteLockManagerImpl(LockRequestMessageFactory lrmf, ClientGlobalTransactionManager gtxManager,
                                      BoundedLinkedQueue clientLockRequestQueue) {
-      super(GroupID.NULL_ID, lrmf, gtxManager);
+      super(new ClientIDProviderImpl(new TestChannelIDProvider()), GroupID.NULL_ID, lrmf, gtxManager);
       this.clientLockRequestQueue = clientLockRequestQueue;
     }
 

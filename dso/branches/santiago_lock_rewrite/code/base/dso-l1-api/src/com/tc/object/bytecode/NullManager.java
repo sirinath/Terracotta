@@ -8,7 +8,6 @@ import com.tc.cluster.DsoCluster;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
@@ -147,10 +146,6 @@ public final class NullManager implements Manager {
     // ManagerUtil (e.g. ConfigPropertiesTest), it was decided to return "" from this method.
     return "";
   }
-  
-  public final ClientID getClientIDObject() {
-    return ClientID.NULL_ID;
-  }
 
   public final TCLogger getLogger(final String loggerName) {
     return new NullTCLogger();
@@ -233,15 +228,15 @@ public final class NullManager implements Manager {
   }
 
   public LockID generateLockIdentifier(String str) {
-    return new UnclusteredLockID(null);
+    return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    return new UnclusteredLockID(obj);
+    return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    return new UnclusteredLockID(null);
+    return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
   public int globalHoldCount(LockID lock, LockLevel level) {
@@ -276,18 +271,16 @@ public final class NullManager implements Manager {
     //
   }
 
-  public Notify notify(LockID lock) {
-    Object jObject = lock.waitNotifyObject();
-    if (jObject != null) {
-      jObject.notify();
+  public Notify notify(LockID lock, Object waitObject) {
+    if (waitObject != null) {
+      waitObject.notify();
     }
     return null;
   }
 
-  public Notify notifyAll(LockID lock) {
-    Object jObject = lock.waitNotifyObject();
-    if (jObject != null) {
-      jObject.notifyAll();
+  public Notify notifyAll(LockID lock, Object waitObject) {
+    if (waitObject != null) {
+      waitObject.notifyAll();
     }
     return null;
   }
@@ -304,17 +297,23 @@ public final class NullManager implements Manager {
     //
   }
 
-  public void wait(LockID lock) throws InterruptedException {
-    Object jObject = lock.waitNotifyObject();
-    if (jObject != null) {
-      jObject.wait();
+  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+    if (waitObject != null) {
+      waitObject.wait();
     }
   }
 
-  public void wait(LockID lock, long timeout) throws InterruptedException {
-    Object jObject = lock.waitNotifyObject();
-    if (jObject != null) {
-      jObject.wait(timeout);
+  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+    if (waitObject != null) {
+      waitObject.wait(timeout);
     }
+  }
+
+  public void pinLock(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void unpinLock(LockID lock) {
+    throw new UnsupportedOperationException();
   }
 }

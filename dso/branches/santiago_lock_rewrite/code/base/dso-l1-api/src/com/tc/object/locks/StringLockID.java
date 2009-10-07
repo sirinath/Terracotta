@@ -28,10 +28,6 @@ public class StringLockID implements LockID {
     Assert.eval(id != null);
     this.id = id;
   }
-
-  public Object waitNotifyObject() {
-    return null;
-  }
   
   /**
    * @return String value of id value

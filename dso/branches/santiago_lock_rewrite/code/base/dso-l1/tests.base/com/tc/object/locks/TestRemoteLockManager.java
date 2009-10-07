@@ -5,6 +5,7 @@
 package com.tc.object.locks;
 
 import com.tc.exception.ImplementMe;
+import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.LockID;
@@ -203,5 +204,9 @@ public class TestRemoteLockManager implements RemoteLockManager {
 
   public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {
     //
+  }
+
+  public ClientID getClientID() {
+    return ClientID.NULL_ID;
   }
 }

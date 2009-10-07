@@ -115,11 +115,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public Notify notify(LockID lock) {
+    public Notify notify(LockID lock, Object waitObject) {
       throw new ImplementMe();
     }
 
-    public Notify notifyAll(LockID lock) {
+    public Notify notifyAll(LockID lock, Object waitObject) {
       throw new ImplementMe();
       
     }
@@ -136,11 +136,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new AssertionError();
     }
 
-    public void wait(LockID lock) {
+    public void wait(LockID lock, Object waitObject) {
       throw new ImplementMe();
     }
 
-    public void wait(LockID lock, long timeout) {
+    public void wait(LockID lock, Object waitObject, long timeout) {
       throw new ImplementMe();
     }
 
@@ -170,6 +170,16 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
     public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
       throw new ImplementMe();
+    }
+
+    public void pinLock(LockID lock) {
+      throw new ImplementMe();
+      
+    }
+
+    public void unpinLock(LockID lock) {
+      throw new ImplementMe();
+      
     }
   }
 

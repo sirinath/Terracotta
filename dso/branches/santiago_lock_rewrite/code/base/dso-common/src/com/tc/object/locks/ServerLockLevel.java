@@ -19,6 +19,18 @@ public enum ServerLockLevel {
     }
   }
 
+  public static ServerLockLevel fromClientLockLevel(LockLevel lockLevel) {
+    switch (lockLevel) {
+      case READ:
+        return ServerLockLevel.READ;
+      case SYNCHRONOUS_WRITE:
+      case WRITE:
+        return ServerLockLevel.WRITE;
+      default:
+        throw new AssertionError("Unknown State: " + lockLevel);
+    }
+  }
+  
   @Deprecated
   public static ServerLockLevel fromLegacyInt(int level) {
     switch (level) {

@@ -4,8 +4,8 @@
 package com.tc.object.locks;
 
 import com.tc.logging.TCLogger;
+import com.tc.net.ClientID;
 import com.tc.net.NodeID;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
@@ -50,8 +50,8 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     
     locks = new ConcurrentHashMap<LockID, ClientLock>(config.getStripedCount());
     gcTimer = new Timer("ClientLockManager LockGC", true);
-    long halfGcPeriod = Math.max(config.getTimeoutInterval() / 2, 50);
-    gcTimer.schedule(new LockGcTimerTask(), halfGcPeriod, halfGcPeriod);
+    long gcPeriod = Math.max(config.getTimeoutInterval(), 100);
+    gcTimer.schedule(new LockGcTimerTask(), gcPeriod, gcPeriod);
   }
   
   private ClientLock getOrCreateClientLockState(LockID lock) {
@@ -136,34 +136,34 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     lockState.unlock(remoteManager, threadManager.getThreadID(), level);
   }
 
-  public Notify notify(LockID lock) {
+  public Notify notify(LockID lock, Object waitObject) {
     waitUntilRunning();
     ClientLock lockState = getOrCreateClientLockState(lock);
     ThreadID thread = threadManager.getThreadID();
-    if (lockState.notify(remoteManager, thread)) {
+    if (lockState.notify(remoteManager, thread, null)) {
       return new Notify(lock, thread, false);
     } else {
       return null;
     }
   }
 
-  public Notify notifyAll(LockID lock) {
+  public Notify notifyAll(LockID lock, Object waitObject) {
     waitUntilRunning();
     ClientLock lockState = getOrCreateClientLockState(lock);
     ThreadID thread = threadManager.getThreadID();
-    if (lockState.notifyAll(remoteManager, thread)) {
+    if (lockState.notifyAll(remoteManager, thread, null)) {
       return new Notify(lock, thread, true);
     } else {
       return null;
     }
   }
 
-  public void wait(LockID lock) throws InterruptedException {
-    wait(lock, NULL_LISTENER);
+  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+    wait(lock, NULL_LISTENER, waitObject);
   }
 
-  public void wait(LockID lock, long timeout) throws InterruptedException {
-    wait(lock, NULL_LISTENER, timeout);
+  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+    wait(lock, NULL_LISTENER, waitObject, timeout);
   }
 
   public boolean isLocked(LockID lock, LockLevel level) {
@@ -176,7 +176,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   
     for (ClientServerExchangeLockContext cselc : queryLock(lock)) {
-      if (ManagerUtil.getClientIDObject().equals(cselc.getNodeID())) {
+      if (remoteManager.getClientID().equals(cselc.getNodeID())) {
         continue;
       }
       
@@ -230,7 +230,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
     
     for (ClientServerExchangeLockContext cselc : queryLock(lock)) {
-      if (ManagerUtil.getClientIDObject().equals(cselc.getNodeID())) {
+      if (remoteManager.getClientID().equals(cselc.getNodeID())) {
         continue;
       }
       
@@ -298,6 +298,16 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   }
 
+  public void pinLock(LockID lock) {
+    ClientLock lockState = getOrCreateClientLockState(lock);
+    lockState.pinLock();
+  }
+
+  public void unpinLock(LockID lock) {
+    ClientLock lockState = getOrCreateClientLockState(lock);
+    lockState.unpinLock();
+  }
+  
   public LockID generateLockIdentifier(String str) {
     throw new AssertionError();
   }
@@ -402,32 +412,16 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   /* BEGIN Stupid Wait Test METHODS  */
   /***********************************/
 
-  public void wait(LockID lock, WaitListener listener) throws InterruptedException {
+  public void wait(LockID lock, WaitListener listener, Object waitObject) throws InterruptedException {
     waitUntilRunning();
-    while (true) {
-      ClientLock lockState = getOrCreateClientLockState(lock);
-      try {
-        lockState.wait(remoteManager, listener, threadManager.getThreadID());
-        break;
-      } catch (GarbageLockException e) {
-        // ignorable - thrown when operating on a garbage collected lock
-        // gc thread should clear this object soon - spin and re-get...
-      }
-    }
+    ClientLock lockState = getOrCreateClientLockState(lock);
+    lockState.wait(remoteManager, listener, threadManager.getThreadID(), waitObject);
   }
 
-  public void wait(LockID lock, WaitListener listener, long timeout) throws InterruptedException {
+  public void wait(LockID lock, WaitListener listener, Object waitObject, long timeout) throws InterruptedException {
     waitUntilRunning();
-    while (true) {
-      ClientLock lockState = getOrCreateClientLockState(lock);
-      try {
-        lockState.wait(remoteManager, listener, threadManager.getThreadID(), timeout);
-        break;
-      } catch (GarbageLockException e) {
-        // ignorable - thrown when operating on a garbage collected lock
-        // gc thread should clear this object soon - spin and re-get...
-      }
-    }
+    ClientLock lockState = getOrCreateClientLockState(lock);
+    lockState.wait(remoteManager, listener, threadManager.getThreadID(), waitObject, timeout);
   }
 
   /***********************************/
@@ -444,7 +438,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       state = state.initialize();
       if (state == State.STARTING) {
         for (ClientLock cls : locks.values()) {
-          cls.initializeHandshake(handshakeMessage);
+          cls.initializeHandshake((ClientID) thisNode, handshakeMessage);
         }
       }
     } finally {
@@ -608,7 +602,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     StringBuilder sb = new StringBuilder("ClientLockManager [").append(locks.size()).append(" locks]:\n");
     for (Entry<LockID, ClientLock> entry : locks.entrySet()) {
       sb.append("\tLock : ").append(entry.getKey()).append('\n');
-      for (ClientServerExchangeLockContext c : entry.getValue().getStateSnapshot()) {
+      for (ClientServerExchangeLockContext c : entry.getValue().getStateSnapshot(remoteManager.getClientID())) {
         sb.append("\t\t").append(c).append('\n');
       }
     }
@@ -622,7 +616,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
     for (ClientLock lock : locks.values()) {
-      contexts.addAll(lock.getStateSnapshot());
+      contexts.addAll(lock.getStateSnapshot(remoteManager.getClientID()));
     }
     return contexts;
   }
@@ -674,4 +668,5 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     new LockGcTimerTask().run();
     return locks.size();
   }
+
 }

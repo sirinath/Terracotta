@@ -18,7 +18,6 @@ import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.net.ClientID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
@@ -174,10 +173,6 @@ public class ManagerImpl implements Manager {
 
   public String getClientID() {
     return Long.toString(this.dso.getChannel().getClientIDProvider().getClientID().toLong());
-  }
-  
-  public ClientID getClientIDObject() {
-    return this.dso.getChannel().getClientIDProvider().getClientID();
   }
 
   private void resolveClasses() {
@@ -718,42 +713,39 @@ public class ManagerImpl implements Manager {
   }
 
   public void lock(LockID lock, LockLevel level) {
-    if (!(lock instanceof UnclusteredLockID)) {
-      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
+    if (clusteredLockingEnabled(lock)) {
       lockManager.lock(lock, level);
       txManager.begin(lock, level);
     }
   }
 
   public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
-    if (!(lock instanceof UnclusteredLockID)) {
-      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
+    if (clusteredLockingEnabled(lock)) {
       lockManager.lockInterruptibly(lock, level);
       txManager.begin(lock, level);
     }
   }
 
-  public Notify notify(LockID lock) {
+  public Notify notify(LockID lock, Object waitObject) {
     if (!(lock instanceof UnclusteredLockID)) {
-      txManager.notify(lockManager.notify(lock));
+      txManager.notify(lockManager.notify(lock, waitObject));
     } else {
-      lock.waitNotifyObject().notify();
+      waitObject.notify();
     }
     return null;
   }
 
-  public Notify notifyAll(LockID lock) {
+  public Notify notifyAll(LockID lock, Object waitObject) {
     if (!(lock instanceof UnclusteredLockID)) {
-      txManager.notify(lockManager.notifyAll(lock));
+      txManager.notify(lockManager.notifyAll(lock, waitObject));
     } else {
-      lock.waitNotifyObject().notifyAll();
+      waitObject.notifyAll();
     }
     return null;
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {
-    if (!(lock instanceof UnclusteredLockID)) {
-      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return true; }      
+    if (clusteredLockingEnabled(lock)) {
       if (lockManager.tryLock(lock, level)) {
         txManager.begin(lock, level);
         return true;
@@ -766,8 +758,7 @@ public class ManagerImpl implements Manager {
   }
 
   public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
-    if (!(lock instanceof UnclusteredLockID)) {
-      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return true; }      
+    if (clusteredLockingEnabled(lock)) {
       if (lockManager.tryLock(lock, level, timeout)) {
         txManager.begin(lock, level);
         return true;
@@ -780,8 +771,7 @@ public class ManagerImpl implements Manager {
   }
 
   public void unlock(LockID lock, LockLevel level) {
-    if (!(lock instanceof UnclusteredLockID)) {
-      if (txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress()) { return; }      
+    if (clusteredLockingEnabled(lock)) {
       try {
         txManager.commit(lock, level);
       } finally {
@@ -790,7 +780,7 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void wait(LockID lock) throws InterruptedException {
+  public void wait(LockID lock, Object waitObject) throws InterruptedException {
     if (!(lock instanceof UnclusteredLockID)) {
       try {
         txManager.commit(lock, LockLevel.WRITE);
@@ -798,17 +788,17 @@ public class ManagerImpl implements Manager {
         throw new IllegalMonitorStateException();
       }
       try {
-        lockManager.wait(lock);
+        lockManager.wait(lock, waitObject);
       } finally {
         // XXX this is questionable
         txManager.begin(lock, LockLevel.WRITE);
       }
     } else {
-      lock.waitNotifyObject().wait();
+      waitObject.wait();
     }
   }
 
-  public void wait(LockID lock, long timeout) throws InterruptedException {
+  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
     if (!(lock instanceof UnclusteredLockID)) {
       try {
         txManager.commit(lock, LockLevel.WRITE);
@@ -816,14 +806,29 @@ public class ManagerImpl implements Manager {
         throw new IllegalMonitorStateException();
       }
       try {
-        lockManager.wait(lock, timeout);
+        lockManager.wait(lock, waitObject, timeout);
       } finally {
         // XXX this is questionable
         txManager.begin(lock, LockLevel.WRITE);
       }
     } else {
-      lock.waitNotifyObject().wait(timeout);
+      waitObject.wait(timeout);
     }
   }
 
+  public void pinLock(LockID lock) {
+    if (clusteredLockingEnabled(lock)) {
+      lockManager.pinLock(lock);
+    }
+  }
+
+  public void unpinLock(LockID lock) {
+    if (clusteredLockingEnabled(lock)) {
+      lockManager.unpinLock(lock);
+    }
+  }
+
+  private boolean clusteredLockingEnabled(LockID lock) {
+    return !((lock instanceof UnclusteredLockID) || txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress());
+  }
 }

@@ -105,7 +105,7 @@ public class ClientServerLockManagerTest extends TestCase {
                 throw new AssertionError(e);
               }
             }
-          });
+          }, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -131,7 +131,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -158,7 +158,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -197,7 +197,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -249,7 +249,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -288,7 +288,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }
@@ -341,7 +341,7 @@ public class ClientServerLockManagerTest extends TestCase {
       public void run() {
         try {
           threadManager.setThreadID(tx1);
-          clientLockManager.wait(lockID1);
+          clientLockManager.wait(lockID1, null);
         } catch (InterruptedException ie) {
           handleExceptionForTest(ie);
         }

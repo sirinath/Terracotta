@@ -35,10 +35,6 @@ public class DsoVolatileLockID implements LockID {
   public LockIDType getLockType() {
     return LockIDType.DSO_VOLATILE;
   }
-  
-  public Object waitNotifyObject() {
-    return null;
-  }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     objectId = serialInput.readLong();

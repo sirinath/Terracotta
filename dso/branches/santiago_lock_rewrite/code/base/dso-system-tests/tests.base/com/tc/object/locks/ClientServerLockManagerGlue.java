@@ -113,7 +113,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
     ClientHandshakeMessageImpl handshakeMessage = new ClientHandshakeMessageImpl(SessionID.NULL_ID, null,
                                                                                  new TCByteBufferOutputStream(), null,
                                                                                  TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
-    clientLockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, handshakeMessage);
+    clientLockManager.initializeHandshake(ClientID.NULL_ID, GroupID.ALL_GROUPS, handshakeMessage);
     serverLockManager.reestablishState(clientID, handshakeMessage.getLockContexts());
 
     this.serverLockManager.start();
@@ -147,5 +147,9 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
 
   public void tryLock(LockID lockID, ThreadID threadID, ServerLockLevel level, long timeout) {
     serverLockManager.tryLock(lockID, clientID, threadID, level, timeout);
+  }
+
+  public ClientID getClientID() {
+    return ClientID.NULL_ID;
   }
 }

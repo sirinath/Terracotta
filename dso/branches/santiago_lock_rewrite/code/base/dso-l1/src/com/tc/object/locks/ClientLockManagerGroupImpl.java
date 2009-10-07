@@ -7,6 +7,7 @@ import com.tc.logging.TCLogger;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
+import com.tc.object.ClientIDProvider;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.LockRequestMessageFactory;
@@ -23,7 +24,7 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   private final Map<GroupID, ClientLockManager> lockManagers;
   private final LockDistributionStrategy        distribution;
 
-  public ClientLockManagerGroupImpl(TCLogger logger, OrderedGroupIDs groups, LockDistributionStrategy lockDistribution,
+  public ClientLockManagerGroupImpl(TCLogger logger, ClientIDProvider clientIdProvider, OrderedGroupIDs groups, LockDistributionStrategy lockDistribution,
                                     SessionManager sessionManager, ThreadIDManager threadManager,
                                     LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager,
                                     ClientLockManagerConfig config) {
@@ -31,7 +32,7 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     lockManagers = new HashMap<GroupID, ClientLockManager>();
 
     for (GroupID g : groups.getGroupIDs()) {
-      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(g, messageFactory, globalTxManager), threadManager, config));
+      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(clientIdProvider, g, messageFactory, globalTxManager), threadManager, config));
     }
   }
   
@@ -63,20 +64,20 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).unlock(lock, level);
   }
 
-  public Notify notify(LockID lock) {
-    return getClientLockManagerFor(lock).notify(lock);
+  public Notify notify(LockID lock, Object waitObject) {
+    return getClientLockManagerFor(lock).notify(lock, null);
   }
   
-  public Notify notifyAll(LockID lock) {
-    return getClientLockManagerFor(lock).notifyAll(lock);
+  public Notify notifyAll(LockID lock, Object waitObject) {
+    return getClientLockManagerFor(lock).notifyAll(lock, null);
   }
   
-  public void wait(LockID lock) throws InterruptedException {
-    getClientLockManagerFor(lock).wait(lock);
+  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+    getClientLockManagerFor(lock).wait(lock, waitObject);
   }
   
-  public void wait(LockID lock, long timeout) throws InterruptedException {
-    getClientLockManagerFor(lock).wait(lock, timeout);
+  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+    getClientLockManagerFor(lock).wait(lock, waitObject, timeout);
   }
 
   public boolean isLocked(LockID lock, LockLevel level) {
@@ -121,6 +122,14 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   
   public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
     throw new AssertionError();
+  }
+  
+  public void pinLock(LockID lock) {
+    getClientLockManagerFor(lock).pinLock(lock);
+  }
+
+  public void unpinLock(LockID lock) {
+    getClientLockManagerFor(lock).unpinLock(lock);
   }
   
   public LockID generateLockIdentifier(String str) {

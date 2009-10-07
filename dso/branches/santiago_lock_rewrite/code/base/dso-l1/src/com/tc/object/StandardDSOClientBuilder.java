@@ -138,7 +138,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final ClientLockManagerConfig config) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
-    RemoteLockManager remoteManager = new RemoteLockManagerImpl(defaultGroups[0], lockRequestMessageFactory, gtxManager);
+    RemoteLockManager remoteManager = new RemoteLockManagerImpl(dsoChannel.getClientIDProvider(), defaultGroups[0], lockRequestMessageFactory, gtxManager);
     return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, config);
   }
 
