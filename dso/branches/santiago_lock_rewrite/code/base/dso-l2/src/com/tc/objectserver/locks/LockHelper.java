@@ -29,7 +29,8 @@ public class LockHelper {
   }
 
   public L2LockStatsManager getLockStatsManager() {
-    return lockStatsManager;
+    if (lockStatsManager.unsafeIsLockStatisticsEnabled()) { return lockStatsManager; }
+    return L2LockStatsManager.NULL_LOCK_STATS_MANAGER;
   }
 
   public Sink getLockSink() {

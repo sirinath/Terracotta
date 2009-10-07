@@ -69,7 +69,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
   private ClientLockManager     clientLockManager;
   private ManualThreadIDManager threadManager;
-  
+
   public void setUp() throws Exception {
     BoundedLinkedQueue clientLockRequestQueue = new BoundedLinkedQueue();
     BoundedLinkedQueue serverLockRespondQueue = new BoundedLinkedQueue();
@@ -79,8 +79,9 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
                                                                              clientLockRequestQueue);
 
     threadManager = new ManualThreadIDManager();
-    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager, new NullClientLockManagerConfig());
-    
+    clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager,
+                                                  new NullClientLockManagerConfig());
+
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 
     TestServerConfigurationContext serverLockUnlockContext = new TestServerConfigurationContext();
@@ -138,7 +139,6 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
     final List lockRequestOrder = new ArrayList(2);
     final List lockAwardOrder = new ArrayList(2);
 
-    
     threadManager.setThreadID(tid1);
     clientLockManager.lock(l1, LockLevel.READ);
     Thread t1 = new Thread() {
@@ -528,8 +528,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       //
     }
 
-    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType,
-                                    int numberOfPendingRequests) {
+    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, int numberOfPendingRequests) {
       //
     }
 
@@ -549,6 +548,9 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       return null;
     }
 
+    public boolean unsafeIsLockStatisticsEnabled() {
+      return false;
+    }
   }
 
   private static class TestRespondToRequestLockHandler extends RespondToRequestLockHandler {
@@ -596,5 +598,5 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       }
     }
 
-  }  
+  }
 }

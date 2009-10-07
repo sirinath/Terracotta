@@ -26,7 +26,7 @@ public interface L2LockStatsManager {
       // do nothing
     }
     
-    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType, int numberOfPendingRequests) {
+    public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, int numberOfPendingRequests) {
       // do nothing
     }
     
@@ -97,6 +97,10 @@ public interface L2LockStatsManager {
     public synchronized TimeStampedCounterValue[] getGlobalLockRecallHistory() {
       return null;
     }
+
+    public boolean unsafeIsLockStatisticsEnabled() {
+      return false;
+    }
     
   };
   
@@ -106,8 +110,8 @@ public interface L2LockStatsManager {
   
   public void recordLockHopRequested(LockID lockID);
   
-  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType, int numberOfPendingRequests);
-  
+  public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, int numberOfPendingRequests);
+    
   public void recordLockAwarded(LockID lockID, NodeID nodeID, ThreadID threadID, boolean isGreedy, long lockAwardTimestamp);
   
   public void recordLockReleased(LockID lockID, NodeID nodeID, ThreadID threadID);
@@ -139,4 +143,6 @@ public interface L2LockStatsManager {
   public void enableStatsForNodeIfNeeded(NodeID nodeID);
 
   public TimeStampedCounterValue[] getGlobalLockRecallHistory();
+
+  public boolean unsafeIsLockStatisticsEnabled();
 }

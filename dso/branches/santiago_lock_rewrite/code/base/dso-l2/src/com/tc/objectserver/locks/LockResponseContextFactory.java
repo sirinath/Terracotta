@@ -4,13 +4,14 @@
 package com.tc.objectserver.locks;
 
 import com.tc.net.NodeID;
+import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.SinglyLinkedList;
+
+import java.util.Collection;
 
 public class LockResponseContextFactory {
   private final static int     LOCK_LEASE_TIME   = TCPropertiesImpl
@@ -48,10 +49,14 @@ public class LockResponseContextFactory {
     return new LockResponseContext(lockID, nodeID, threadID, level, LockResponseContext.LOCK_WAIT_TIMEOUT);
   }
 
-  public static LockResponseContext createLockQueriedResponseContext(final LockID lockID, final NodeID nodeID,
+  public static LockResponseContext createLockQueriedResponseContext(
+                                                                     final LockID lockID,
+                                                                     final NodeID nodeID,
                                                                      final ThreadID threadID,
                                                                      final ServerLockLevel level,
-                                                                     SinglyLinkedList<ServerLockContext> contexts) {
-    return new LockResponseContext(lockID, nodeID, threadID, level, contexts, LockResponseContext.LOCK_INFO);
+                                                                     Collection<ClientServerExchangeLockContext> contexts,
+                                                                     int numberOfPendingRequests) {
+    return new LockResponseContext(lockID, nodeID, threadID, level, contexts, numberOfPendingRequests,
+                                   LockResponseContext.LOCK_INFO);
   }
 }

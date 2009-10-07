@@ -24,7 +24,7 @@ public abstract class LockStatisticsManager implements Serializable {
   protected final LockStatConfig    lockStatConfig = new LockStatConfig();
   protected final Map               nestedDepth    = new HashMap();          // map<ThreadID/NodeID, int>
 
-  protected boolean                 lockStatisticsEnabled;
+  protected volatile boolean        lockStatisticsEnabled;
 
   public void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, StackTraceElement[] stackTraces,
                                   String contextInfo, int numberOfPendingRequests) {
