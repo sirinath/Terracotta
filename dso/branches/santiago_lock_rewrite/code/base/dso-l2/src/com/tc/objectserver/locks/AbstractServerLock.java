@@ -82,7 +82,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     return addNotifiedWaitersTo;
   }
 
-  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException {
+  public void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) {
     moveFromHolderToWaiter(cid, tid, timeout, helper);
     processPendingRequests(helper);
   }
@@ -219,8 +219,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
         .getLockLevel(), helper), false);
   }
 
-  protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper)
-      throws TCIllegalMonitorStateException {
+  protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper) {
     ServerLockContext holder = remove(cid, tid);
     validateWaitState(cid, tid, holder, helper);
 
@@ -233,25 +232,23 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     addWaiter(waiter, helper);
   }
 
-  protected void validateNotifyState(ClientID cid, ThreadID tid, ServerLockContext holder, LockHelper helper)
-      throws TCIllegalMonitorStateException {
+  protected void validateNotifyState(ClientID cid, ThreadID tid, ServerLockContext holder, LockHelper helper) {
     validateWaitNotifyState(cid, tid, holder, helper, true);
   }
 
-  protected void validateWaitState(ClientID cid, ThreadID tid, ServerLockContext holder, LockHelper helper)
-      throws TCIllegalMonitorStateException {
+  protected void validateWaitState(ClientID cid, ThreadID tid, ServerLockContext holder, LockHelper helper) {
     validateWaitNotifyState(cid, tid, holder, helper, false);
   }
 
   private void validateWaitNotifyState(ClientID cid, ThreadID tid, ServerLockContext holder, LockHelper helper,
-                                       boolean isNotify) throws TCIllegalMonitorStateException {
+                                       boolean isNotify) {
     if (holder == null) {
-      throw new TCIllegalMonitorStateException("No holder present for " + cid + "," + tid);
+      throw new TCIllegalMonitorStateException("No holder present for when trying to wait/notify " + cid + "," + tid);
     } else if (holder.getState() != State.HOLDER_WRITE && holder.getState() != State.GREEDY_HOLDER_WRITE) {
       if (!isNotify) {
         add(holder, helper);
       }
-      String message = "Holder not in correct state " + lockID + " " + holder;
+      String message = "Holder not in correct state while wait/notify " + lockID + " " + holder;
       throw new TCIllegalMonitorStateException(message);
     }
   }

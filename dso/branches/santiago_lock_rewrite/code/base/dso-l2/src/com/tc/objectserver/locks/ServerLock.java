@@ -10,7 +10,6 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
 
 import java.util.Collection;
 
@@ -32,9 +31,9 @@ public interface ServerLock extends TimerCallback {
   void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts, LockHelper helper);
 
   NotifiedWaiters notify(ClientID cid, ThreadID tid, NotifyAction action, NotifiedWaiters addNotifiedWaitersTo,
-                         LockHelper helper) throws TCIllegalMonitorStateException;
+                         LockHelper helper);
 
-  void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper) throws TCIllegalMonitorStateException;
+  void wait(ClientID cid, ThreadID tid, long timeout, LockHelper helper);
 
   void reestablishState(ClientServerExchangeLockContext serverLockContext, LockHelper lockHelper);
 
