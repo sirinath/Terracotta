@@ -54,7 +54,7 @@ public final class ServerLockImpl extends AbstractServerLock {
       // add to pending until recall process is complete, those who hold the lock greedily will send the
       // pending state during recall commit.
       if (holder == null) {
-        if (timeout >= 0 || !type.equals(Type.TRY_PENDING)) {
+        if (timeout > 0 || !type.equals(Type.TRY_PENDING)) {
           queue(cid, tid, level, type, timeout, helper);
         } else {
           cannotAward(cid, tid, level, helper);
@@ -63,50 +63,14 @@ public final class ServerLockImpl extends AbstractServerLock {
       return;
     }
 
-    // Lock granting logic:
-    // 0. If no one is holding this lock, go ahead and award it
-    // 1. If only a read lock is held and no write locks are pending, and another read
-    // (and only read) lock is requested, award it. If Write locks are pending, we dont want to
-    // starve the WRITES by keeping on awarding READ Locks.
-    // 2. Else the request must be queued (i.e. added to pending list)
-
-    switch (level) {
-      case WRITE:
-        if (!hasHolders()) {
-          if (hasWaiters()) {
-            awardLock(helper, createPendingContext(cid, tid, level, helper));
-            return;
-          } else {
-            awardLockGreedily(helper, createPendingContext(cid, tid, level, helper));
-            return;
-          }
-        }
-        break;
-      case READ:
-        if (!hasHolders() || (hasOnlyReadHolders() && !hasPendingWrites())) {
-          awardLockGreedily(helper, createPendingContext(cid, tid, level, helper));
-          return;
-        }
-        break;
-      default:
-        throw new IllegalArgumentException("Nil lock level is not supported");
-    }
-
-    // Queue part
-    if (hasGreedyHolders()) {
-      recall(level, helper);
-    }
-
-    queue(cid, tid, level, type, timeout, helper);
+    super.requestLock(cid, tid, level, type, timeout, helper);
   }
 
-  protected void changeWaiterToPending(ClientID cid, ThreadID tid, LockHelper helper, ServerLockContext waiter) {
-    super.moveWaiterToPending(waiter, helper);
-
-    // recall greedy holders if present
-    if (hasGreedyHolders()) {
-      recall(waiter.getState().getLockLevel(), helper);
+  protected void queue(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout, LockHelper helper) {
+    if (!canAwardRequest(level) && hasGreedyHolders()) {
+      recall(level, helper);
     }
+    super.queue(cid, tid, level, type, timeout, helper);
   }
 
   public boolean clearStateForNode(ClientID cid, LockHelper helper) {
@@ -303,38 +267,40 @@ public final class ServerLockImpl extends AbstractServerLock {
     awardLock(helper, request, state, toRespond);
   }
 
-  private void removeNonGreedyHoldersAndPendingOfSameClient(ServerLockContext context, LockHelper helper) {
-    ClientID cid = context.getClientID();
-    SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
-    while (iterator.hasNext()) {
-      ServerLockContext next = iterator.next();
-      switch (next.getState().getType()) {
-        case GREEDY_HOLDER:
-          break;
-        case TRY_PENDING:
-          if (cid.equals(next.getClientID())) {
-            cancelTryLockOrWaitTimer(next, helper);
-            iterator.remove();
-          }
-          break;
-        case PENDING:
-        case HOLDER:
-          if (cid.equals(next.getClientID())) {
-            iterator.remove();
-          }
-          break;
-        case WAITER:
-          return;
-      }
-    }
-  }
-
-  protected ServerLockContext getPotentialNotifyHolders(ClientID cid, ThreadID tid) {
+  @Override
+  protected ServerLockContext getNotifyHolder(ClientID cid, ThreadID tid) {
     ServerLockContext context = get(cid, tid);
     if (context == null) {
       context = get(cid, ThreadID.VM_ID);
     }
     return context;
+  }
+  
+  @Override
+  protected ServerLockContext removeUnlockHolder(ClientID cid, ThreadID tid) {
+    ServerLockContext context = remove(cid, tid);
+    if (context == null) {
+      context = remove(cid, ThreadID.VM_ID);
+    }
+    return context;
+  }
+  
+  @Override
+  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
+    ServerLockContext temp = super.remove(cid, tid);
+    if (!hasGreedyHolders()) {
+      isRecalled = false;
+    }
+    return temp;
+  }
+
+  @Override
+  protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
+    request = super.changeStateToHolder(request, state, helper);
+    if (request.getState().getType() == Type.GREEDY_HOLDER) {
+      request.setThreadID(ThreadID.VM_ID);
+    }
+    return request;
   }
 
   private boolean hasGreedyHolders() {
@@ -373,30 +339,30 @@ public final class ServerLockImpl extends AbstractServerLock {
     }
     return null;
   }
-
-  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
-    ServerLockContext temp = super.remove(cid, tid);
-    if (!hasGreedyHolders()) {
-      isRecalled = false;
+  
+  private void removeNonGreedyHoldersAndPendingOfSameClient(ServerLockContext context, LockHelper helper) {
+    ClientID cid = context.getClientID();
+    SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
+    while (iterator.hasNext()) {
+      ServerLockContext next = iterator.next();
+      switch (next.getState().getType()) {
+        case GREEDY_HOLDER:
+          break;
+        case TRY_PENDING:
+          if (cid.equals(next.getClientID())) {
+            cancelTryLockOrWaitTimer(next, helper);
+            iterator.remove();
+          }
+          break;
+        case PENDING:
+        case HOLDER:
+          if (cid.equals(next.getClientID())) {
+            iterator.remove();
+          }
+          break;
+        case WAITER:
+          return;
+      }
     }
-    return temp;
-  }
-
-  @Override
-  protected ServerLockContext removeUnlockHolders(ClientID cid, ThreadID tid) {
-    ServerLockContext context = remove(cid, tid);
-    if (context == null) {
-      context = remove(cid, ThreadID.VM_ID);
-    }
-    return context;
-  }
-
-  @Override
-  protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
-    request = super.changeStateToHolder(request, state, helper);
-    if (request.getState().getType() == Type.GREEDY_HOLDER) {
-      request.setThreadID(ThreadID.VM_ID);
-    }
-    return request;
   }
 }
