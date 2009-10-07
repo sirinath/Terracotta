@@ -49,8 +49,32 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   }
 
   public void queryLock(ClientID cid, ThreadID tid, LockHelper helper) {
+    List<ClientServerExchangeLockContext> holdersAndWaiters = new ArrayList();
+    int pendingCount = 0;
+
+    for (ServerLockContext context : this) {
+      ClientServerExchangeLockContext cselc = null;
+      switch (context.getState().getType()) {
+        case GREEDY_HOLDER:
+        case HOLDER:
+          cselc = new ClientServerExchangeLockContext(lockID, context.getClientID(), context.getThreadID(), context
+              .getState());
+          holdersAndWaiters.add(cselc);
+          break;
+        case WAITER:
+          cselc = new ClientServerExchangeLockContext(lockID, context.getClientID(), context.getThreadID(), context
+              .getState(), ((WaitServerLockContext) context).getTimeout());
+          holdersAndWaiters.add(cselc);
+          break;
+        case PENDING:
+        case TRY_PENDING:
+          pendingCount++;
+          break;
+      }
+    }
+
     LockResponseContext lrc = LockResponseContextFactory.createLockQueriedResponseContext(this.lockID, cid, tid, this
-        .holderLevel(), this);
+        .holderLevel(), holdersAndWaiters, pendingCount);
     helper.getLockSink().add(lrc);
   }
 
@@ -61,7 +85,11 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
       logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
       return;
     }
-    Assert.assertTrue(waiter.getState() == State.WAITER);
+    if (waiter.getState() != State.WAITER) {
+      add(waiter, helper);
+      throw new AssertionError("The context was not in waiter state: " + waiter);
+    }
+
     moveWaiterToPending(waiter, helper);
   }
 
@@ -662,7 +690,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   protected void recordLockRequestStat(final ClientID cid, final ThreadID threadID, int noOfPendingRequests,
                                        LockHelper helper) {
     L2LockStatsManager l2LockStats = helper.getLockStatsManager();
-    l2LockStats.recordLockRequested(lockID, cid, threadID, "", noOfPendingRequests);
+    l2LockStats.recordLockRequested(lockID, cid, threadID, noOfPendingRequests);
   }
 
   protected void recordLockRejectStat(final ClientID cid, final ThreadID threadID, LockHelper helper) {

@@ -128,10 +128,12 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     }
   }
 
-  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID, String lockType,
+  public synchronized void recordLockRequested(LockID lockID, NodeID nodeID, ThreadID threadID,
                                                int numberOfPendingRequests) {
     if (!lockStatisticsEnabled) { return; }
 
+    // TODO: get it from Object Manager
+    String lockType = "";
     super.recordLockRequested(lockID, nodeID, threadID, null, lockType, numberOfPendingRequests);
   }
 
@@ -272,5 +274,9 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
         sendLockStatisticsEnableDisableMessage(channels[i], true, traceDepth, gatherInterval);
       }
     }
+  }
+
+  public boolean unsafeIsLockStatisticsEnabled() {
+    return lockStatisticsEnabled;
   }
 }

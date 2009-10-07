@@ -81,7 +81,6 @@ public class Lock {
   private static final ServerThreadContextFactory   threadContextFactory = ServerThreadContextFactory.DEFAULT_FACTORY;
 
   private final L2LockStatsManager                  lockStatsManager;
-  private final String                              lockType;
 
   private Map<TimerKey, TimerTask>                  timers               = EMPTY_MAP;
   private Map<ServerThreadContext, Request>         pendingLockRequests  = EMPTY_MAP;
@@ -114,7 +113,6 @@ public class Lock {
   private Lock(final LockID lockID, final int lockPolicy, final ServerThreadContextFactory threadContextFactory,
                final L2LockStatsManager lockStatsManager, String lockType) {
     this.lockID = lockID;
-    this.lockType = lockType;
     this.lockPolicy = lockPolicy;
     this.lockStatsManager = lockStatsManager;
   }
@@ -181,8 +179,8 @@ public class Lock {
       list.addLast(context);
     }
 
-    return LockResponseContextFactory.createLockQueriedResponseContext(lockID, threadID.getNodeID(), threadID
-        .getClientThreadID(), ServerLockLevel.fromLegacyInt(level), list);
+    // ERROR comes so returning null
+    return null;
   }
 
   private static State getState(Type type, int l) {
@@ -323,7 +321,7 @@ public class Lock {
     // request a lock you already hold
     if (holder != null) {
       if (LockLevel.NIL_LOCK_LEVEL != (holder.getLockLevel() & requestedLockLevel)) {
-//        throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
+        // throw new AssertionError("Client requesting already held lock! holder=" + holder + ", lock=" + this);
         return false;
       }
     }
@@ -1157,7 +1155,7 @@ public class Lock {
   }
 
   private void recordLockRequestStat(final NodeID nodeID, final ThreadID threadID) {
-    lockStatsManager.recordLockRequested(lockID, nodeID, threadID, lockType, pendingLockRequests.size());
+    lockStatsManager.recordLockRequested(lockID, nodeID, threadID, pendingLockRequests.size());
   }
 
   private void recordLockAwardStat(final NodeID nodeID, final ThreadID threadID, final boolean isGreedyRequest,

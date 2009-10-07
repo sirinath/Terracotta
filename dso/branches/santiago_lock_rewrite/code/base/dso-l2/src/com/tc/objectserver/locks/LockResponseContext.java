@@ -7,15 +7,10 @@ import com.tc.async.api.EventContext;
 import com.tc.net.NodeID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LockID;
-import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
-import com.tc.objectserver.locks.context.WaitServerLockContext;
 import com.tc.util.Assert;
-import com.tc.util.SinglyLinkedList;
-import com.tc.util.SinglyLinkedList.SinglyLinkedListIterator;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 public class LockResponseContext implements EventContext {
@@ -38,9 +33,8 @@ public class LockResponseContext implements EventContext {
   private int                                               leaseTimeInMs     = LOCK_NO_LEASE;
 
   public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID threadID, ServerLockLevel level,
-                             SinglyLinkedList<ServerLockContext> contexts, int type) {
-    this(lockID, nodeID, threadID, level, getGlobalLockHolderWaiterInfo(contexts, lockID),
-         getNumberOfPendingRequests(contexts), type, LOCK_NO_LEASE);
+                             Collection<ClientServerExchangeLockContext> contexts, int numberOfPending, int type) {
+    this(lockID, nodeID, threadID, level, contexts, numberOfPending, type, LOCK_NO_LEASE);
   }
 
   public LockResponseContext(LockID lockID, NodeID nodeID, ThreadID sourceID, ServerLockLevel level, int type) {
@@ -141,38 +135,5 @@ public class LockResponseContext implements EventContext {
       default:
         return "UNKNOWN";
     }
-  }
-
-  private static Collection<ClientServerExchangeLockContext> getGlobalLockHolderWaiterInfo(
-                                                                                           SinglyLinkedList<ServerLockContext> contexts,
-                                                                                           LockID lid) {
-    Collection<ClientServerExchangeLockContext> holdersAndWaiters = new ArrayList();
-    for (SinglyLinkedListIterator<ServerLockContext> i = contexts.iterator(); i.hasNext();) {
-      ServerLockContext context = i.next();
-      ClientServerExchangeLockContext cselc = null;
-      if (context.isHolder()) {
-        cselc = new ClientServerExchangeLockContext(lid, context.getClientID(), context.getThreadID(), context
-            .getState());
-        holdersAndWaiters.add(cselc);
-      } else if (context.isWaiter()) {
-        cselc = new ClientServerExchangeLockContext(lid, context.getClientID(), context.getThreadID(), context
-            .getState(), ((WaitServerLockContext) context).getTimeout());
-        holdersAndWaiters.add(cselc);
-      }
-    }
-
-    return holdersAndWaiters;
-  }
-
-  private static int getNumberOfPendingRequests(SinglyLinkedList<ServerLockContext> contexts) {
-    SinglyLinkedListIterator<ServerLockContext> iterator = contexts.iterator();
-    int count = 0;
-    while (iterator.hasNext()) {
-      ServerLockContext context = iterator.next();
-      if (context.isPending()) {
-        count++;
-      }
-    }
-    return count;
   }
 }
