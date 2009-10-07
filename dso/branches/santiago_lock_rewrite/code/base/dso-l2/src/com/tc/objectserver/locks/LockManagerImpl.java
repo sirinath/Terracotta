@@ -13,11 +13,9 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
-import com.tc.objectserver.lockmanager.api.DeadlockChain;
-import com.tc.objectserver.lockmanager.api.DeadlockResults;
 import com.tc.objectserver.lockmanager.api.TCIllegalMonitorStateException;
-import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.objectserver.locks.LockStore.LockIterator;
+import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.objectserver.locks.factory.LockFactoryImpl;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -32,10 +30,6 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockManagerImpl implements LockManager {
-  private enum Status {
-    STARTING, STARTED
-  }
-
   private enum RequestType {
     LOCK, TRY_LOCK
   }
@@ -44,8 +38,8 @@ public class LockManagerImpl implements LockManager {
   private final DSOChannelManager      channelManager;
   private final LockHelper             lockHelper;
   private final ReentrantReadWriteLock statusLock       = new ReentrantReadWriteLock();
+  private boolean                      isStarted        = false;
   private List<RequestLockContext>     lockRequestQueue = new ArrayList<RequestLockContext>();
-  private Status                       status           = Status.STARTING;
 
   private static final TCLogger        logger           = TCLogging.getLogger(LockManagerImpl.class);
 
@@ -61,7 +55,7 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void lock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level) {
-    if (!preChecksForLock(lid, cid, tid, level, RequestType.LOCK)) { return; }
+    if (!checkAndQueue(lid, cid, tid, level, RequestType.LOCK)) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -73,6 +67,7 @@ public class LockManagerImpl implements LockManager {
 
   public void tryLock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, long timeout) {
     if (!checkAndQueue(lid, cid, tid, level, RequestType.TRY_LOCK, timeout)) { return; }
+
     ServerLock lock = lockStore.checkOut(lid);
     try {
       lock.tryLock(cid, tid, level, timeout, lockHelper);
@@ -117,10 +112,6 @@ public class LockManagerImpl implements LockManager {
 
   public void recallCommit(LockID lid, ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts) {
     if (!preCheckLogAndContinue(lid, cid, ThreadID.VM_ID, "Recall Commit")) { return; }
-    if (!this.channelManager.isActiveID(cid)) {
-      logger.warn("Ignoring Recall Commit message from disconnected client : " + cid + " : Lock ID : " + lid);
-      return;
-    }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -132,15 +123,7 @@ public class LockManagerImpl implements LockManager {
 
   public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action,
                                 NotifiedWaiters addNotifiedWaitersTo) {
-    try {
-      lockStatusRead();
-      Assert.assertFalse("Notify was called before the LockManager was started.", isStarting());
-      if (!isStarted()) {
-        logger.warn("Notify was called after shutdown sequence commenced.");
-      }
-    } finally {
-      unlockStatusRead();
-    }
+    if (!preCheckLogAndContinue(lid, cid, tid, "Notify")) { return addNotifiedWaitersTo; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -153,12 +136,7 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void wait(LockID lid, ClientID cid, ThreadID tid, long timeout) {
-    try {
-      lockStatusRead();
-      Assert.assertTrue("Wait was called before the LockManager was started.", isStarted());
-    } finally {
-      unlockStatusRead();
-    }
+    if (!preCheckLogAndContinue(lid, cid, tid, "Wait")) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -171,12 +149,7 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void reestablishState(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts) {
-    lockStatusRead();
-    try {
-      Assert.assertTrue("Reestablish was called after the LockManager was started.", isStarting());
-    } finally {
-      unlockStatusRead();
-    }
+    assertStateIsStarting("Reestablish was called after the LockManager was started.");
 
     for (ClientServerExchangeLockContext cselc : serverLockContexts) {
       LockID lid = cselc.getLockID();
@@ -233,13 +206,10 @@ public class LockManagerImpl implements LockManager {
   }
 
   public void start() {
+    statusLock.writeLock().lock();
     try {
-      lockStatusWrite();
-      Assert.assertTrue(isStarting());
-      setStatus(Status.STARTED);
-      synchronized (this) {
-        notifyAll();
-      }
+      Assert.assertTrue(!isStarted);
+      isStarted = true;
 
       // Done to make sure that all wait/try timers are started
       lockHelper.getLockTimer().start();
@@ -258,12 +228,8 @@ public class LockManagerImpl implements LockManager {
       }
       this.lockRequestQueue = null;
     } finally {
-      unlockStatusWrite();
+      statusLock.writeLock().unlock();
     }
-  }
-
-  private void setStatus(Status status) {
-    this.status = status;
   }
 
   private void queueRequest(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
@@ -272,60 +238,87 @@ public class LockManagerImpl implements LockManager {
     lockRequestQueue.add(context);
   }
 
-  private boolean preChecksForLock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {
+  private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {
     return checkAndQueue(lid, cid, tid, level, type, -1);
   }
 
   private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
                                 long timeout) {
-    lockStatusRead();
+    statusLock.readLock().lock();
     try {
-      if (isStarting()) {
-        queueRequest(lid, cid, tid, level, type, timeout);
+      if (!isStarted) {
+        statusLock.readLock().unlock();
+        statusLock.writeLock().lock();
+        try {
+          if (isStarted) { return true; }
+          queueRequest(lid, cid, tid, level, type, timeout);
+          return false;
+        } finally {
+          statusLock.writeLock().unlock();
+          statusLock.readLock().lock();
+        }
+      } else if (!this.channelManager.isActiveID(cid)) {
+        logger.warn(type + " message received from dead client -- ignoring the message.\n"
+                    + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
         return false;
-      } else if (!isStarted()) { return false; }
-      return this.channelManager.isActiveID(cid);
+      }
+      return true;
     } finally {
-      unlockStatusRead();
+      statusLock.readLock().unlock();
     }
   }
 
   private boolean preCheckLogAndContinue(LockID lid, ClientID cid, ThreadID tid, String callType) {
-    lockStatusRead();
+    statusLock.readLock().lock();
     try {
-      if (isStarting()) {
-        logger.warn(callType + " message received during lock manager is starting -- ignoring the message.\n"
+      if (!isStarted) {
+        Assert.assertTrue(callType + " message received when lock manager was starting" + " Message Context: [LockID="
+                          + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]", isStarted);
+        return false;
+      } else if (!this.channelManager.isActiveID(cid)) {
+        logger.warn(callType + " message received from dead client -- ignoring the message.\n"
                     + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
         return false;
       }
-      return isStarted();
+      return true;
     } finally {
-      unlockStatusRead();
+      statusLock.readLock().unlock();
     }
   }
 
-  private boolean isStarted() {
-    return status == Status.STARTED;
+  public String dump() {
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
   }
 
-  private boolean isStarting() {
-    return status == Status.STARTING;
+  public void dumpToLogger() {
+    logger.info(dump());
   }
 
-  private void lockStatusRead() {
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println(getClass().getName());
+    int size = 0;
+    LockIterator iter = lockStore.iterator();
+    ServerLock lock = iter.getNextLock(null);
+    while (lock != null) {
+      out.println(lock);
+      size++;
+      lock = iter.getNextLock(lock);
+    }
+    out.indent().println("locks: " + size);
+    return out;
+  }
+
+  private void assertStateIsStarting(String message) {
     statusLock.readLock().lock();
-  }
-
-  private void unlockStatusRead() {
-    statusLock.readLock().unlock();
-  }
-
-  private void lockStatusWrite() {
-    statusLock.writeLock().lock();
-  }
-
-  private void unlockStatusWrite() {
-    statusLock.writeLock().unlock();
+    try {
+      Assert.assertTrue(message, !isStarted);
+    } finally {
+      statusLock.readLock().unlock();
+    }
   }
 
   private static class RequestLockContext {
@@ -375,49 +368,6 @@ public class LockManagerImpl implements LockManager {
       return "RequestLockContext [ " + this.lockID + "," + this.nodeID + "," + this.threadID + ","
              + this.requestedLockLevel + ", " + this.type + ", " + this.timeout + " ]";
     }
-  }
-
-  public String dump() {
-    StringWriter writer = new StringWriter();
-    PrintWriter pw = new PrintWriter(writer);
-    new PrettyPrinterImpl(pw).visit(this);
-    writer.flush();
-    return writer.toString();
-  }
-
-  public void dumpToLogger() {
-    logger.info(dump());
-  }
-
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
-    out.println(getClass().getName());
-    int size = 0;
-    LockIterator iter = lockStore.iterator();
-    ServerLock lock = iter.getNextLock(null);
-    while (lock != null) {
-      out.println(lock);
-      size++;
-      lock = iter.getNextLock(lock);
-    }
-    out.indent().println("locks: " + size);
-    return out;
-  }
-
-  public DeadlockChain[] scanForDeadlocks() {
-    final List chains = new ArrayList();
-    DeadlockResults results = new DeadlockResults() {
-      public void foundDeadlock(DeadlockChain chain) {
-        chains.add(chain);
-      }
-    };
-
-    scanForDeadlocks(results);
-
-    return (DeadlockChain[]) chains.toArray(new DeadlockChain[chains.size()]);
-  }
-
-  public void scanForDeadlocks(DeadlockResults output) {
-    throw new UnsupportedOperationException();
   }
 
   /**

@@ -4,15 +4,11 @@
  */
 package com.tc.objectserver.locks;
 
-import com.tc.objectserver.lockmanager.api.DeadlockChain;
-
 /**
  * LockManager's management interface
  */
 public interface LockManagerMBean {
 
   public LockMBean[] getAllLocks();
-
-  public DeadlockChain[] scanForDeadlocks();
 
 }
