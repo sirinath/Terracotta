@@ -316,4 +316,8 @@ public final class NullManager implements Manager {
   public void unpinLock(LockID lock) {
     throw new UnsupportedOperationException();
   }
+
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    throw new UnsupportedOperationException();
+  }
 }

@@ -13,6 +13,7 @@ import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.TestClientObjectManager;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.MockClientLockManager;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.logging.NullRuntimeLogger;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -32,7 +33,7 @@ public class ClientTransactionManagerTest extends TestCase {
     rmtTxnMgr = new TestRemoteTransactionManager();
     objMgr = new TestClientObjectManager();
     clientTxnMgr = new ClientTransactionManagerImpl(new ClientIDProviderImpl(new TestChannelIDProvider()), objMgr,
-                                                    clientTxnFactory, rmtTxnMgr,
+                                                    clientTxnFactory, new MockClientLockManager(), rmtTxnMgr,
                                                     new NullRuntimeLogger(), new MockClientTxMonitor(), SampledCounter.NULL_SAMPLED_COUNTER);
   }
 

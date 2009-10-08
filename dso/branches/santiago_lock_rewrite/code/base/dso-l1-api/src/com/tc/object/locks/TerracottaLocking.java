@@ -122,6 +122,16 @@ public interface TerracottaLocking {
   public boolean isLockedByCurrentThread(LockID lock, LockLevel level);
 
   /**
+   * Return true if any lock is held by the current thread at the given lock level.
+   * <p>
+   * It is also important to note that the current locking implementation <em>does not</em>
+   * track concurrent lock holds.
+   * 
+   * @param level level to query
+   */
+  public boolean isLockedByCurrentThread(LockLevel level);
+  
+  /**
    * Return the count of local (on this client VM) holders at the given lock level.
    * 
    * @param lock lock to query

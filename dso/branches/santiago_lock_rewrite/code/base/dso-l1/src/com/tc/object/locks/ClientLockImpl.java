@@ -260,7 +260,12 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
         if (!holdsWrite) { throw new IllegalMonitorStateException(); }
         
         // potentially (dependent on greediness state) communicate with the server here
-        greediness = greediness.waiting(remote, lock, this, thread, timeout);
+        if (greediness.isFree()) {
+          remote.wait(lock, thread, timeout);
+        } else if (greediness.isRecalled()) {
+          greediness = doRecall(remote);
+        }
+        
         // kick the queue to allow queued acquires to grab the lock
         unparkNextQueuedAcquire();
       }
@@ -548,7 +553,8 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
 
     public boolean shared() {
       // because of our loose queuing everything except a exclusive acquire is `shared'
-      return this != SUCCEEDED;
+//      return this != SUCCEEDED;
+      return this == SUCCEEDED_SHARED;
     }
 
     public boolean succeeded() {
@@ -671,49 +677,53 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   private boolean release(RemoteLockManager remote, ThreadID thread, LockLevel level) {
     // concurrent unlocks are implicitly okay - we don't monitor concurrent locks
     if (level == LockLevel.CONCURRENT) {
+      // concurrent unlocks do not change the state - no reason why queued acquires would succeed
       return false;
     }
     
-    boolean doFlush = false;
-    LockHold unlocked = null;
+    LockHold unlock = null;
     synchronized (this) {
       for (Iterator<LockStateNode> it = iterator(); it.hasNext();) {
         LockStateNode s = it.next();
         if (s instanceof LockHold) {
           LockHold hold = (LockHold) s;
           if (hold.getOwner().equals(thread) && hold.getLockLevel().equals(level)) {
-            unlocked = hold;
+            unlock = hold;
             break;
           }
         }
       }
       
-      if (unlocked == null) {
+      if (unlock == null) {
         throw new IllegalMonitorStateException();
       }
       
-      doFlush = flushOnUnlock(unlocked);
+      if (!flushOnUnlock(unlock)) {
+        return doRelease(remote, unlock);
+      }
     }
 
-    if (doFlush) {
-      remote.flush(lock);
-    }
+    remote.flush(lock);
     
     synchronized (this) {
-      if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " unlocking " + level);
-      remove(unlocked);
-      if (greediness.isFree()) {
-        remoteUnlock(remote, unlocked);
-      } else if (greediness.isRecalled()) {
-        greediness = doRecall(remote);
-      }
-      
-      if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " unlocked " + level);
-      // this is wrong - but shouldn't break anything
-      return true;
+      return doRelease(remote, unlock);
     }
   }
 
+  private synchronized boolean doRelease(RemoteLockManager remote, LockHold unlock) {
+    if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + unlock.getOwner() + " unlocking " + unlock.getLockLevel());
+    remove(unlock);
+    if (greediness.isFree()) {
+      remoteUnlock(remote, unlock);
+    } else if (greediness.isRecalled()) {
+      greediness = doRecall(remote);
+    }
+    
+    if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + unlock.getOwner() + " unlocked " + unlock.getLockLevel());
+    // this is wrong - but shouldn't break anything
+    return true;
+  }
+  
   private void remoteUnlock(RemoteLockManager remote, LockHold unlock) {
     for (LockStateNode s : this) {
       if (s == unlock) continue;
@@ -959,7 +969,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     return false;
   }
 
-  protected synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
+  private synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
     if (canRecallNow(recalledLevel)) {
       doFlush(remote);
       if (remote.isTransactionsForLockFlushed(lock, new LockFlushCallback() {
@@ -1025,7 +1035,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   }
 
   //bleagh this is horrible - actively looking at this
-  protected void doFlush(RemoteLockManager remote) {
+  private void doFlush(RemoteLockManager remote) {
     UnsafeUtil.monitorExit(this);
     try {
       remote.flush(lock);

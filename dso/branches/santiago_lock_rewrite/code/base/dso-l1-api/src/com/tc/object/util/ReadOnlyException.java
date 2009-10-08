@@ -29,8 +29,8 @@ public class ReadOnlyException extends RuntimeException {
    * @param threadName Thread name
    * @param vmId VM identifier
    */
-  public ReadOnlyException(String threadName, long vmId) {
-    this(ReadOnlyException.createDisplayableString(READ_ONLY_TEXT, threadName, vmId));
+  public ReadOnlyException(String message, String threadName, long vmId) {
+    this(ReadOnlyException.createDisplayableString(message, threadName, vmId));
   }
   
   /**
@@ -39,8 +39,8 @@ public class ReadOnlyException extends RuntimeException {
    * @param vmId VM identifier
    * @param details Additional details
    */
-  public ReadOnlyException(String threadName, long vmId, String details) {
-    this(ReadOnlyException.createDisplayableString(READ_ONLY_TEXT, threadName, vmId) + "\n    " + details);
+  public ReadOnlyException(String message, String threadName, long vmId, String details) {
+    this(ReadOnlyException.createDisplayableString(message, threadName, vmId) + "\n    " + details);
   }
   
   private static String createDisplayableString(String message, String threadName, long vmId) {
@@ -49,12 +49,4 @@ public class ReadOnlyException extends RuntimeException {
     }
     return message + "\n\n    Caused by Thread: " + threadName + "  in  VM(" + vmId + ")";
   }
-  
-  private static final String READ_ONLY_TEXT = "Attempt to write to a shared object inside the scope of a lock declared as a"
-    + "\nread lock. All writes to shared objects must be within the scope of one or"
-    + "\nmore shared locks with write access defined in your Terracotta configuration."
-    + "\n\nPlease alter the locks section of your Terracotta configuration so that this"
-    + "\naccess is auto-locked or protected by a named lock with write access."
-    + "\n\nFor more information on this issue, please visit our Troubleshooting Guide at:"
-    + "\nhttp://terracotta.org/kit/troubleshooting ";
 }

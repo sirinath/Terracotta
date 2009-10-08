@@ -831,4 +831,8 @@ public class ManagerImpl implements Manager {
   private boolean clusteredLockingEnabled(LockID lock) {
     return !((lock instanceof UnclusteredLockID) || txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress());
   }
+
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    return lockManager.isLockedByCurrentThread(level);
+  }
 }

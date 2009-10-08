@@ -180,4 +180,8 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
     
   }
+
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    throw new ImplementMe();
+  }
 }

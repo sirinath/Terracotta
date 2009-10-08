@@ -5,14 +5,13 @@ package com.tc.object.tx;
 
 import com.tc.exception.ExceptionWrapper;
 import com.tc.exception.ExceptionWrapperImpl;
-import com.tc.object.util.ReadOnlyException;
 
 /**
  * Thrown when there is an attempt to access a shared object outside the scope of
  * a shared lock.
  * @author steve
  */
-public class UnlockedSharedObjectException extends ReadOnlyException {
+public class UnlockedSharedObjectException extends RuntimeException {
 
   private static final ExceptionWrapper wrapper = new ExceptionWrapperImpl();
 
