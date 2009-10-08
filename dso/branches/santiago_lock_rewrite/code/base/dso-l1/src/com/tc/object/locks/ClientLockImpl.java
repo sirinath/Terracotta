@@ -26,6 +26,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLock {
+  private static final LockFlushCallback NULL_LOCK_FLUSH_CALLBACK = new LockFlushCallback() {
+    public void transactionsForLockFlushed(LockID id) {
+      //
+    }
+  };
+  
   private static final boolean DEBUG         = false;
   private static final Timer   LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
   protected static final int   BLOCKING_LOCK = Integer.MIN_VALUE;
@@ -159,7 +165,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   public synchronized boolean notify(RemoteLockManager remote, ThreadID thread, Object waitObject) {
     markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " notifying a single lock waiter");
-    if (greediness.equals(ClientGreediness.FREE)) {
+    if (greediness.isFree()) {
       //other L1s may be waiting (let server decide who to notify)
       return true;
     } else {
@@ -190,7 +196,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   public synchronized boolean notifyAll(RemoteLockManager remote, ThreadID thread, Object waitObject) {
     markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " notifying all lock waiters");
-    if (greediness.equals(ClientGreediness.FREE)) {
+    if (greediness.isFree()) {
       //other L1s may be waiting (let server decide who to notify)
       return true;
     } else {
@@ -467,10 +473,13 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
    */
   private synchronized void notify(LockWaiter waiter) {
     if (remove(waiter) != null) {
-      Stack<PendingLockHold> reacquires = waiter.getReacquires();
-      for (int i = reacquires.size() - 1; i >= 0; i--) {
-        addLast(reacquires.get(i));
+      for (PendingLockHold reacquire : waiter.getReacquires()) {
+        addLast(reacquire);
       }
+//      Stack<PendingLockHold> reacquires = waiter.getReacquires();
+//      for (int i = reacquires.size() - 1; i >= 0; i--) {
+//        addLast(reacquires.get(i));
+//      }
     }
   }
   
@@ -479,7 +488,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
    */
   public synchronized void recall(final RemoteLockManager remote, final ServerLockLevel interest, int lease) {
     // transition the greediness state
-    greediness = greediness.recall(this, interest, lease);
+    greediness = greediness.recalled(this, interest, lease);
     addRecalledLevel(interest);
 
     if (greediness.isRecalled()) {
@@ -515,7 +524,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   public synchronized void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level) {
     if (ThreadID.VM_ID.equals(thread)) {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server awarded greedy " + level);
-      greediness = greediness.award(level);
+      greediness = greediness.awarded(level);
       unparkNextQueuedAcquire();
     } else {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server awarded per-thread " + level + " to " + thread);
@@ -553,8 +562,8 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
 
     public boolean shared() {
       // because of our loose queuing everything except a exclusive acquire is `shared'
-//      return this != SUCCEEDED;
-      return this == SUCCEEDED_SHARED;
+      return this != SUCCEEDED;
+//      return this == SUCCEEDED_SHARED;
     }
 
     public boolean succeeded() {
@@ -650,7 +659,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
       if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " denied " + level + " - contacting server...");
       ServerLockLevel requestLevel = ServerLockLevel.fromClientLockLevel(level);
       
-      greediness = greediness.requestLevel(requestLevel);      
+      greediness = greediness.requested(requestLevel);      
       if (greediness.isFree()) {
         switch ((int) timeout) {
           case ClientLockImpl.BLOCKING_LOCK:
@@ -720,6 +729,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     }
     
     if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + unlock.getOwner() + " unlocked " + unlock.getLockLevel());
+
     // this is wrong - but shouldn't break anything
     return true;
   }
@@ -991,7 +1001,9 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   }
 
   private synchronized ClientGreediness recallCommit(RemoteLockManager remote) {
-    if (!ClientGreediness.FREE.equals(greediness)) {
+    if (greediness.isFree()) {
+      return greediness;
+    } else {
       Collection<ClientServerExchangeLockContext> contexts = getFilteredStateSnapshot(remote.getClientID(), false);
       if (DEBUG) {
         synchronized (System.err) {
@@ -1005,8 +1017,9 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : free'd greedy lock");
       
       recalledLevel = null;
+      
+      return greediness.recallCommitted();
     }
-    return ClientGreediness.FREE;
   }
   
   private synchronized void addRecalledLevel(ServerLockLevel level) {
@@ -1044,11 +1057,22 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     }
   }
   
-  public synchronized boolean tryMarkAsGarbage(RemoteLockManager remote) {
+  public synchronized boolean tryMarkAsGarbage(final RemoteLockManager remote) {
     if (!pinned && isEmpty() && gcCycleCount > 0) {
-      greediness = doRecall(remote);
-      greediness = ClientGreediness.GARBAGE;
-      return true;
+      if (greediness.isFree()) {
+        greediness = ClientGreediness.GARBAGE;
+        return true;
+      } else {
+        greediness = ClientGreediness.GARBAGE;
+        doFlush(remote);
+        if (remote.isTransactionsForLockFlushed(lock, NULL_LOCK_FLUSH_CALLBACK)) {
+          if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing lock gc recall commit " + greediness);
+          recallCommit(remote);
+          return true;
+        } else {
+          throw new AssertionError();
+        }
+      }
     } else {
       gcCycleCount = (byte) Math.max(Byte.MAX_VALUE, gcCycleCount++);
       return false;

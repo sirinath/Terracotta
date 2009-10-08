@@ -102,9 +102,8 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       return;
     }
     
-    ClientTransaction currentTransaction = getTransactionOrNull();
-
-    if (currentTransaction != null && currentTransaction.isConcurrent()) {
+    TransactionContext context = getThreadTransactionContext().peekContext(lock);
+    if ((context != null) && context.getLockType().isConcurrent()) {
       // NOTE: when removing this restriction, there are other places to clean up:
       // 1) ClientTransactionManagerImpl.apply()
       // 2) DNAFactory.flushDNAFor(LockID)
@@ -112,6 +111,9 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       // 4) ClientLock.removeCurrent()
       throw new AssertionError("Don't currently support nested concurrent write transactions");
     }
+    
+    ClientTransaction currentTransaction = getTransactionOrNull();
+
     
     pushTxContext(currentTransaction, lock, transactionType);
 
@@ -135,6 +137,10 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   }
 
   public void notify(Notify notify) throws UnlockedSharedObjectException {
+    if (notify == null) {
+      return;
+    }
+    
     final ClientTransaction currentTxn = getTransactionOrNull();
 
     if (currentTxn == null || currentTxn.getEffectiveType() != TxnType.NORMAL) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }

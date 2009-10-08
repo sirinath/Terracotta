@@ -9,9 +9,14 @@ import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
+import com.tc.text.PrettyPrintable;
+import com.tc.text.PrettyPrinter;
+import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Util;
 import com.tc.util.runtime.ThreadIDManager;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Timer;
@@ -22,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class ClientLockManagerImpl implements ClientLockManager, ClientLockManagerTestMethods {
+public class ClientLockManagerImpl implements ClientLockManager, ClientLockManagerTestMethods, PrettyPrintable {
   private static final WaitListener NULL_LISTENER = new WaitListener() {
     public void handleWaitEvent() {
       //
@@ -609,20 +614,25 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   }
 
   public String dump() {
-    StringBuilder sb = new StringBuilder("ClientLockManager [").append(locks.size()).append(" locks]:\n");
-    for (Entry<LockID, ClientLock> entry : locks.entrySet()) {
-      sb.append("\tLock : ").append(entry.getKey()).append('\n');
-      for (ClientServerExchangeLockContext c : entry.getValue().getStateSnapshot(remoteManager.getClientID())) {
-        sb.append("\t\t").append(c).append('\n');
-      }
-    }
-    return sb.toString();
+    StringWriter writer = new StringWriter();
+    PrintWriter pw = new PrintWriter(writer);
+    new PrettyPrinterImpl(pw).visit(this);
+    writer.flush();
+    return writer.toString();
   }
 
   public void dumpToLogger() {
     logger.info(dump());
   }
   
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.println("ClientLockManagerImpl [" + locks.size() + " locks]");
+    for (ClientLock lock : locks.values()) {
+      out.indent().println(lock);
+    }
+    return out;
+  }
+
   public Collection<ClientServerExchangeLockContext> getAllLockContexts() {
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
     for (ClientLock lock : locks.values()) {
