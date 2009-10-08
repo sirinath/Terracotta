@@ -88,6 +88,15 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     return getClientLockManagerFor(lock).isLockedByCurrentThread(lock, level);
   }
 
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    for (ClientLockManager clm : lockManagers.values()) {
+      if (clm.isLockedByCurrentThread(level)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   public int localHoldCount(LockID lock, LockLevel level) {
     return getClientLockManagerFor(lock).localHoldCount(lock, level);
   }

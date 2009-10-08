@@ -181,6 +181,10 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
       
     }
+
+    public boolean isLockedByCurrentThread(LockLevel level) {
+      throw new ImplementMe();
+    }
   }
 
   private static class ObjMgr implements ClientObjectManager {

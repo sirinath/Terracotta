@@ -16,6 +16,7 @@ import com.tc.handler.LockInfoDumpHandler;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.L1Info;
+import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.locks.ClientLockManagerImpl;
@@ -1207,7 +1208,7 @@ public class ClientLockManagerTest extends TCTestCase {
   }
 
   private void unpause() {
-    lockManager.initializeHandshake(GroupID.NULL_ID, GroupID.ALL_GROUPS, new TestClientHandshakeMessage());
+    lockManager.initializeHandshake(ClientID.NULL_ID, GroupID.ALL_GROUPS, new TestClientHandshakeMessage());
     lockManager.unpause(GroupID.ALL_GROUPS, 0);
   }
 

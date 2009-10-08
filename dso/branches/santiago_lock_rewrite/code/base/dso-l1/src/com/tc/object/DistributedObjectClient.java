@@ -510,14 +510,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         .getInstrumentationLogger(), this.config.rawConfigText(), this, this.config.getMBeanSpecs());
     this.l1Management.start(this.createDedicatedMBeanServer);
 
-    // Setup the transaction manager
-    this.txManager = new ClientTransactionManagerImpl(this.channel.getClientIDProvider(),
-                                                      this.objectManager,
-                                                      txFactory, this.rtxManager, this.runtimeLogger, this.l1Management
-                                                          .findClientTxMonitorMBean(), txnCounter);
-
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.txManager));
-
     //Setup the lock manager
     ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
     this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
@@ -525,6 +517,14 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                this.channel.getLockRequestMessageFactory(), threadIDManager, gtxManager,
                                                                new ClientLockManagerConfigImpl(this.l1Properties.getPropertiesFor("lockmanager")));
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
+
+    // Setup the transaction manager
+    this.txManager = new ClientTransactionManagerImpl(this.channel.getClientIDProvider(),
+                                                      this.objectManager, txFactory, lockManager,
+                                                      this.rtxManager, this.runtimeLogger, this.l1Management
+                                                          .findClientTxMonitorMBean(), txnCounter);
+
+    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.txManager));
 
     // Create the SEDA stages
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,

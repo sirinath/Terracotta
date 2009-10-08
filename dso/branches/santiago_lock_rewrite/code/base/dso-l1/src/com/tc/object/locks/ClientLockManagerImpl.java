@@ -210,6 +210,16 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   }
 
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    ThreadID thread = threadManager.getThreadID();
+    for (ClientLock lockState : locks.values()) {
+      if (lockState.isLockedBy(thread, level)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public int localHoldCount(LockID lock, LockLevel level) {
     waitUntilRunning();
     ClientLock lockState = getClientLockState(lock);

@@ -188,4 +188,8 @@ public class MockClientLockManager implements ClientLockManager {
     throw new ImplementMe();
     
   }
+
+  public boolean isLockedByCurrentThread(LockLevel level) {
+    return false;
+  }
 }

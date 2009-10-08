@@ -33,12 +33,6 @@ enum ClientGreediness {
     ClientGreediness requestLevel(ServerLockLevel level) {
       return this;
     }
-
-    @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-      remote.wait(lock, thread, timeout);
-      return this;
-    }    
   },
   
   GREEDY_READ {
@@ -62,7 +56,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
       return RECALLED_READ;
     }
 
@@ -101,18 +95,13 @@ enum ClientGreediness {
     }
     
     @Override
-    ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
         return GREEDY_WRITE;
       } else {
         return RECALLED_WRITE;
       }
     }
-
-    @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-      return this;
-    }    
   },
   
   RECALLED_READ {
@@ -122,11 +111,6 @@ enum ClientGreediness {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
     }
 
-    @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-      return clientLock.doRecall(remote);
-    }
-    
     @Override
     ClientGreediness recallInProgress() {
       return READ_RECALL_IN_PROGRESS;
@@ -143,11 +127,6 @@ enum ClientGreediness {
     @Override
     ClientGreediness requestLevel(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
-    }
-
-    @Override
-    ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-      return clientLock.doRecall(remote);
     }
 
     @Override
@@ -196,15 +175,11 @@ enum ClientGreediness {
     throw new AssertionError("request level while in unexpected state (" + this + ")");
   }
 
-  ClientGreediness waiting(RemoteLockManager remote, LockID lock, ClientLockImpl clientLock, ThreadID thread, long timeout) {
-    throw new AssertionError("waiting while in unexpected state (" + this + ")");
-  }
-  
   ClientGreediness award(ServerLockLevel level) {
     throw new AssertionError("award while in unexpected state (" + this + ")");
   }
 
-  ClientGreediness recall(ClientLockImpl clientLock, ServerLockLevel interest, int lease) {
+  ClientGreediness recall(ClientLock clientLock, ServerLockLevel interest, int lease) {
     return this;
   }
 
