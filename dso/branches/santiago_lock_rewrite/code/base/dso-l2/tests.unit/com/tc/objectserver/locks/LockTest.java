@@ -176,8 +176,8 @@ public class LockTest extends TestCase {
       }
     }
 
-    // make it so no one is holding
-    lock.unlock(goodcid, goodtid, helper);
+    // make it so no one is holding .. since this is a greedy holder
+    lock.unlock(goodcid, ThreadID.VM_ID, helper);
     assertEquals(0, getHoldersCount(lock));
 
     try {
