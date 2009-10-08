@@ -24,24 +24,6 @@ public final class ServerLockImpl extends AbstractServerLock {
     super(lockID);
   }
 
-  public void tryLock(ClientID cid, ThreadID tid, ServerLockLevel level, long timeout, LockHelper helper) {
-    int noOfPendingRequests = validateAndGetNumberOfPending(cid, tid, level);
-    recordLockRequestStat(cid, tid, noOfPendingRequests, helper);
-
-    if (timeout <= 0 && !canAwardRequest(level)) {
-      ServerLockContext holder = getGreedyHolder(cid);
-      if (hasGreedyHolders() && holder == null) {
-        recall(level, helper);
-      }
-      if (!canAwardGreedilyOnTheClient(level, holder)) {
-        cannotAward(cid, tid, level, helper);
-      }
-      return;
-    }
-
-    requestLock(cid, tid, level, Type.TRY_PENDING, timeout, helper);
-  }
-
   @Override
   protected void requestLock(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout,
                              LockHelper helper) {
@@ -94,6 +76,13 @@ public final class ServerLockImpl extends AbstractServerLock {
     }
   }
 
+  /**
+   * This method is responsible for processing pending requests. Awarding Write logic: If there are waiters present then
+   * we do not grant a greedy lock to avoid starving waiters on other clients. This is because if a notify is called on
+   * the client having greedy lock, then the local waiter will get notified and remote waiters will get starved.
+   * 
+   * @param helper
+   */
   @Override
   protected void processPendingRequests(LockHelper helper) {
     if (isRecalled) { return; }
@@ -103,7 +92,8 @@ public final class ServerLockImpl extends AbstractServerLock {
 
     switch (request.getState().getLockLevel()) {
       case READ:
-        awardAllReads(helper, request);
+        add(request, helper);
+        awardAllReadsGreedily(helper, request);
         break;
       case WRITE:
         if (hasWaiters()) {
@@ -148,8 +138,7 @@ public final class ServerLockImpl extends AbstractServerLock {
     }
   }
 
-  @Override
-  protected void awardAllReads(LockHelper helper, ServerLockContext request) {
+  private void awardAllReadsGreedily(LockHelper helper, ServerLockContext request) {
     // fetch all the read requests and check if has write pending requests as well
     List<ServerLockContext> contexts = new ArrayList<ServerLockContext>();
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
@@ -169,10 +158,6 @@ public final class ServerLockImpl extends AbstractServerLock {
         }
       }
     }
-
-    // Since this request was already removed from the list, so this is added to the
-    // list as well
-    contexts.add(request);
 
     ArrayList<ClientID> listOfClients = new ArrayList<ClientID>();
     for (ServerLockContext context : contexts) {
@@ -268,6 +253,17 @@ public final class ServerLockImpl extends AbstractServerLock {
   }
 
   @Override
+  protected void refuseTryRequestWithNoTimeout(ClientID cid, ThreadID tid, ServerLockLevel level, LockHelper helper) {
+    ServerLockContext holder = getGreedyHolder(cid);
+    if (hasGreedyHolders() && holder == null) {
+      recall(level, helper);
+    }
+    if (!canAwardGreedilyOnTheClient(level, holder)) {
+      cannotAward(cid, tid, level, helper);
+    }
+  }
+
+  @Override
   protected ServerLockContext getNotifyHolder(ClientID cid, ThreadID tid) {
     ServerLockContext context = get(cid, tid);
     if (context == null) {
@@ -275,16 +271,7 @@ public final class ServerLockImpl extends AbstractServerLock {
     }
     return context;
   }
-  
-  @Override
-  protected ServerLockContext removeUnlockHolder(ClientID cid, ThreadID tid) {
-    ServerLockContext context = remove(cid, tid);
-    if (context == null) {
-      context = remove(cid, ThreadID.VM_ID);
-    }
-    return context;
-  }
-  
+
   @Override
   protected ServerLockContext remove(ClientID cid, ThreadID tid) {
     ServerLockContext temp = super.remove(cid, tid);
@@ -339,7 +326,7 @@ public final class ServerLockImpl extends AbstractServerLock {
     }
     return null;
   }
-  
+
   private void removeNonGreedyHoldersAndPendingOfSameClient(ServerLockContext context, LockHelper helper) {
     ClientID cid = context.getClientID();
     SinglyLinkedListIterator<ServerLockContext> iterator = iterator();
