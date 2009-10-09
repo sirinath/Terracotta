@@ -6,6 +6,7 @@ package com.tc.objectserver.locks;
 import com.tc.object.locks.LockID;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class LockMBeanImpl implements LockMBean, Serializable {
   private final LockID                  lockID;
@@ -22,6 +23,11 @@ public class LockMBeanImpl implements LockMBean, Serializable {
 
   public LockID getLockID() {
     return lockID;
+  }
+
+  @Override
+  public String toString() {
+    return "LockMBeanImpl [contexts=" + Arrays.toString(contexts) + ", lockID=" + lockID + "]";
   }
 
 }

@@ -267,9 +267,14 @@ public class ClientServerLockManagerTest extends TestCase {
     sleep(1000l);
 
     threadManager.setThreadID(tx1);
-    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.READ));
-    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.WRITE));
+
     LockMBean[] lockBeans2 = serverLockManager.getAllLocks();
+    for (LockMBean lockBean : lockBeans2) {
+      System.out.println("Lock on the server " + lockBean);
+    }
+
+    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.WRITE));
+    Assert.assertTrue(clientLockManager.isLockedByCurrentThread(lockID1, LockLevel.READ));
     if (!equals(lockBeans1, lockBeans2)) { throw new AssertionError("The locks are not the same"); }
   }
 
