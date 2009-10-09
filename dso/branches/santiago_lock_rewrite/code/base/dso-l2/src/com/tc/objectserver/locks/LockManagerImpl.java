@@ -16,7 +16,7 @@ import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.locks.LockStore.LockIterator;
 import com.tc.objectserver.locks.ServerLock.NotifyAction;
-import com.tc.objectserver.locks.factory.LockFactoryImpl;
+import com.tc.objectserver.locks.factory.ServerLockFactoryImpl;
 import com.tc.objectserver.locks.timer.TimerCallback;
 import com.tc.objectserver.locks.timer.LockTimer.LockTimerContext;
 import com.tc.text.PrettyPrintable;
@@ -48,7 +48,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   private static final TCLogger                   logger           = TCLogging.getLogger(LockManagerImpl.class);
 
   public LockManagerImpl(Sink lockSink, DSOChannelManager channelManager) {
-    this(lockSink, channelManager, new LockFactoryImpl());
+    this(lockSink, channelManager, new ServerLockFactoryImpl());
   }
 
   public LockManagerImpl(Sink lockSink, DSOChannelManager channelManager, LockFactory factory) {

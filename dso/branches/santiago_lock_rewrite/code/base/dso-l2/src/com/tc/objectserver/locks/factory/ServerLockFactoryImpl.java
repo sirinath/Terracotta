@@ -9,15 +9,14 @@ import com.tc.objectserver.locks.LockFactory;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 
-public class LockFactoryImpl implements LockFactory {
-  private final static boolean LOCK_LEASE_ENABLE = TCPropertiesImpl
+public class ServerLockFactoryImpl implements LockFactory {
+  private final static boolean GREEDY_LOCKS_ENABLED = TCPropertiesImpl
                                                      .getProperties()
-                                                     .getBoolean(TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LEASE_ENABLED);
+                                                     .getBoolean(TCPropertiesConsts.L2_LOCKMANAGER_GREEDY_LOCKS_ENABLED);
   private final LockFactory    factory;
 
-  public LockFactoryImpl() {
-    // if (false) {
-    if (LOCK_LEASE_ENABLE) {
+  public ServerLockFactoryImpl() {
+    if (GREEDY_LOCKS_ENABLED) {
       factory = new GreedyPolicyFactory();
     } else {
       factory = new NonGreedyLockPolicyFactory();
