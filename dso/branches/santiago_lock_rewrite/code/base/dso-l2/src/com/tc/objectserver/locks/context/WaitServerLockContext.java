@@ -3,19 +3,34 @@
  */
 package com.tc.objectserver.locks.context;
 
-import com.tc.objectserver.locks.LockHelper;
+import com.tc.net.ClientID;
+import com.tc.object.locks.ThreadID;
 
 import java.util.TimerTask;
 
-/**
- * Instances of this interface will store the try pending and wait contexts
- */
-public interface WaitServerLockContext {
-  public long getTimeout();
+public class WaitServerLockContext extends LinkedServerLockContext {
+  private TimerTask  task;
+  private final long timeout;
 
-  public void setTimerTask(TimerTask task);
+  public WaitServerLockContext(ClientID clientID, ThreadID threadID, long timeout) {
+    this(clientID, threadID, timeout, null);
+  }
 
-  public TimerTask getTimerTask();
+  public WaitServerLockContext(ClientID clientID, ThreadID threadID, long timeout, TimerTask task) {
+    super(clientID, threadID);
+    this.timeout = timeout;
+    this.task = task;
+  }
 
-  public LockHelper getLockHelper();
+  public long getTimeout() {
+    return timeout;
+  }
+
+  public void setTimerTask(TimerTask task) {
+    this.task = task;
+  }
+
+  public TimerTask getTimerTask() {
+    return task;
+  }
 }

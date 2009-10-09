@@ -5,9 +5,9 @@ package com.tc.objectserver.locks;
 
 import com.tc.async.api.Sink;
 import com.tc.management.L2LockStatsManager;
-import com.tc.object.locks.LockTimer;
-import com.tc.object.locks.LockTimerImpl;
 import com.tc.object.locks.ServerLockContextStateMachine;
+import com.tc.objectserver.locks.timer.LockTimer;
+import com.tc.objectserver.locks.timer.TimerCallback;
 
 public class LockHelper {
   private final LockTimer                     lockTimer;
@@ -15,12 +15,14 @@ public class LockHelper {
   private final LockStore                     lockStore;
   private final ServerLockContextStateMachine contextStateMachine;
   private L2LockStatsManager                  lockStatsManager;
+  private final TimerCallback                 timerCallback;
 
-  public LockHelper(L2LockStatsManager lockStatsManager, Sink lockSink, LockStore lockStore) {
-    this.lockTimer = new LockTimerImpl();
+  public LockHelper(L2LockStatsManager lockStatsManager, Sink lockSink, LockStore lockStore, TimerCallback timerCallback) {
+    this.lockTimer = new LockTimer();
     this.lockStatsManager = lockStatsManager;
     this.lockSink = lockSink;
     this.lockStore = lockStore;
+    this.timerCallback = timerCallback;
     this.contextStateMachine = new ServerLockContextStateMachine();
   }
 
@@ -46,5 +48,9 @@ public class LockHelper {
 
   public ServerLockContextStateMachine getContextStateMachine() {
     return contextStateMachine;
+  }
+
+  public TimerCallback getTimerCallback() {
+    return timerCallback;
   }
 }
