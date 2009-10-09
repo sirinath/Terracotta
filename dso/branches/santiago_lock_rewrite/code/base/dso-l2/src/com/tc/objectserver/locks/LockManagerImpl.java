@@ -17,6 +17,8 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.locks.LockStore.LockIterator;
 import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.objectserver.locks.factory.LockFactoryImpl;
+import com.tc.objectserver.locks.timer.TimerCallback;
+import com.tc.objectserver.locks.timer.LockTimer.LockTimerContext;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -31,7 +33,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintable, LockManagerMBean,
-    L2LockStatisticsEnableDisableListener {
+    L2LockStatisticsEnableDisableListener, TimerCallback {
   private enum RequestType {
     LOCK, TRY_LOCK
   }
@@ -51,8 +53,8 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
 
   public LockManagerImpl(Sink lockSink, DSOChannelManager channelManager, LockFactory factory) {
     this.lockStore = new LockStore(factory);
-    this.lockHelper = new LockHelper(L2LockStatsManager.NULL_LOCK_STATS_MANAGER, lockSink, lockStore);
     this.channelManager = channelManager;
+    this.lockHelper = new LockHelper(L2LockStatsManager.NULL_LOCK_STATS_MANAGER, lockSink, lockStore, this);
   }
 
   public void lock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level) {
@@ -225,6 +227,17 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
       }
     } finally {
       statusLock.writeLock().unlock();
+    }
+  }
+
+  public void timerTimeout(LockTimerContext lockTimerContext) {
+    LockID lid = lockTimerContext.getLockID();
+    ServerLock lock = lockStore.checkOut(lid);
+    try {
+      // call timeout for the lock
+      lock.timerTimeout(lockTimerContext);
+    } finally {
+      lockStore.checkIn(lock);
     }
   }
 

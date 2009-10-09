@@ -37,7 +37,7 @@ import com.tc.objectserver.locks.LockResponseContext;
 import com.tc.objectserver.locks.LockResponseContextFactory;
 import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.objectserver.locks.context.LinkedServerLockContext;
-import com.tc.objectserver.locks.context.WaitLinkedServerLockContext;
+import com.tc.objectserver.locks.context.WaitServerLockContext;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
@@ -172,7 +172,7 @@ public class Lock {
 
     for (Iterator iter = waiters.iterator(); iter.hasNext();) {
       LockWaitContext waiter = (LockWaitContext) iter.next();
-      ServerLockContext context = new WaitLinkedServerLockContext((ClientID) waiter.getNodeID(), waiter.getThreadID(),
+      ServerLockContext context = new WaitServerLockContext((ClientID) waiter.getNodeID(), waiter.getThreadID(),
                                                                   waiter.getTimerSpec().getMillis(), null);
       context.setState(machine, getState(Type.HOLDER, waiter.lockLevel()));
       context.setState(machine, getState(Type.WAITER, waiter.lockLevel()));
