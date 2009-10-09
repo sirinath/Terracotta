@@ -46,7 +46,6 @@ import com.tc.management.L2Management;
 import com.tc.management.RemoteJMXProcessor;
 import com.tc.management.beans.L2State;
 import com.tc.management.beans.LockStatisticsMonitor;
-import com.tc.management.beans.LockStatisticsMonitorMBean;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ServerDBBackup;
@@ -324,7 +323,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
   private ConnectionIDFactoryImpl                connectionIdFactory;
 
-  private LockStatisticsMonitorMBean             lockStatisticsMBean;
+  private LockStatisticsMonitor                  lockStatisticsMBean;
 
   private StatisticsAgentSubSystemImpl           statisticsAgentSubSystem;
   private StatisticsGatewayMBeanImpl             statisticsGateway;
@@ -746,7 +745,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     // Creating a stage here so that the sink can be passed
     Stage respondToLockStage = stageManager.createStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE,
                                                         new RespondToRequestLockHandler(), 1, maxStageSize);
-    this.lockManager = new LockManagerImpl(respondToLockStage.getSink(), lockStatsManager, channelManager);
+    this.lockManager = new LockManagerImpl(respondToLockStage.getSink(), channelManager);
+    this.lockStatisticsMBean.addL2LockStatisticsEnableDisableListener((LockManagerImpl) this.lockManager);
+
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter((DumpHandler) this.lockManager));
     ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
 

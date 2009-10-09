@@ -10,12 +10,8 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
 import com.tc.net.groups.NodeIDSerializer;
-import com.tc.object.lockmanager.api.LockContext;
-import com.tc.object.lockmanager.api.TryLockContext;
-import com.tc.object.lockmanager.api.WaitContext;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
-import com.tc.object.tx.TimerSpec;
 
 import java.io.IOException;
 
@@ -107,23 +103,6 @@ public class ClientServerExchangeLockContext implements TCSerializable {
 
   public int hasCode() {
     return this.hashCode;
-  }
-
-  @Deprecated
-  public LockContext getLockContext() {
-    return new LockContext(lockID, nodeID, threadID, ServerLockLevel.toLegacyInt(state.getLockLevel()), "");
-  }
-
-  @Deprecated
-  public WaitContext getWaitContext() {
-    TimerSpec spec = timeout == -1 ? new TimerSpec() : new TimerSpec(timeout);
-    return new WaitContext(lockID, nodeID, threadID, ServerLockLevel.toLegacyInt(state.getLockLevel()), "", spec);
-  }
-
-  @Deprecated
-  public TryLockContext getTryWaitContext() {
-    TimerSpec spec = timeout == -1 ? new TimerSpec() : new TimerSpec(timeout);
-    return new TryLockContext(lockID, nodeID, threadID, ServerLockLevel.toLegacyInt(state.getLockLevel()), "", spec);
   }
 
   @Override

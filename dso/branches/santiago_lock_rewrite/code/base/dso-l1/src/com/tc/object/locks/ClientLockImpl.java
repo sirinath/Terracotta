@@ -1039,8 +1039,6 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
           case READ: //a write hold will block a read recall
             if (((LockHold) s).getLockLevel().isWrite()) return false;
             break;
-          case NONE:
-            throw new AssertionError();
         }
       }
     }

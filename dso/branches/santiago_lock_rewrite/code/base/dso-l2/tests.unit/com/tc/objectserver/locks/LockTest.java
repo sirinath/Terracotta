@@ -7,7 +7,6 @@ package com.tc.objectserver.locks;
 import com.tc.async.api.Sink;
 import com.tc.async.impl.MockSink;
 import com.tc.exception.TCLockUpgradeNotSupportedError;
-import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.object.locks.ServerLockContext;
 import com.tc.object.locks.ServerLockLevel;
@@ -34,7 +33,7 @@ public class LockTest extends TestCase {
     super.setUp();
     this.notifiedWaiters = new NotifiedWaiters();
     this.sink = new MockSink();
-    lockMgr = new LockManagerImpl(this.sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager());
+    lockMgr = new LockManagerImpl(this.sink, new NullChannelManager());
   }
 
   public void testLockClear() {

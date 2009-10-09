@@ -7,7 +7,6 @@ package com.tc.object.locks;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.logging.NullTCLogger;
-import com.tc.management.L2LockStatsManager;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
@@ -37,8 +36,7 @@ public class ClientServerLockManagerTest extends TestCase {
     clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, glue, threadManager,
                                                   new NullClientLockManagerConfig());
 
-    serverLockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager(),
-                                            new NonGreedyLockPolicyFactory());
+    serverLockManager = new LockManagerImpl(sink, new NullChannelManager(), new NonGreedyLockPolicyFactory());
     glue.set(clientLockManager, serverLockManager);
   }
 
@@ -362,7 +360,8 @@ public class ClientServerLockManagerTest extends TestCase {
     boolean found = false;
     for (ClientServerExchangeLockContext c : clientLockManager.getAllLockContexts()) {
       if (c.getState().getType() == Type.HOLDER && c.getLockID().equals(lockID1) && c.getThreadID().equals(tx2)) {
-        if (c.getState().getLockLevel() == ServerLockLevel.READ) { throw new AssertionError("Server Lock Level is not WRITE only on tx2 the client side"); }
+        if (c.getState().getLockLevel() == ServerLockLevel.READ) { throw new AssertionError(
+                                                                                            "Server Lock Level is not WRITE only on tx2 the client side"); }
         found = true;
         break;
       }

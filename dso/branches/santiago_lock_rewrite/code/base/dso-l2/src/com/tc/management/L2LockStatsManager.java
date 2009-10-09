@@ -97,11 +97,6 @@ public interface L2LockStatsManager {
     public synchronized TimeStampedCounterValue[] getGlobalLockRecallHistory() {
       return null;
     }
-
-    public boolean unsafeIsLockStatisticsEnabled() {
-      return false;
-    }
-    
   };
   
   public void start(DSOChannelManager channelManager, DSOGlobalServerStats serverStats);
@@ -143,6 +138,4 @@ public interface L2LockStatsManager {
   public void enableStatsForNodeIfNeeded(NodeID nodeID);
 
   public TimeStampedCounterValue[] getGlobalLockRecallHistory();
-
-  public boolean unsafeIsLockStatisticsEnabled();
 }

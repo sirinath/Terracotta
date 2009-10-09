@@ -88,8 +88,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     TestServerConfigurationContext serverLockUnlockContext = new TestServerConfigurationContext();
     MockStage serverStage = new MockStage("LockManagerSystemTest");
-    LockManager serverLockManager = new LockManagerImpl(serverStage.sink, new MockL2LockStatsManager(),
-                                                        new MockChannelManager());
+    LockManager serverLockManager = new LockManagerImpl(serverStage.sink, new MockChannelManager());
+    ((LockManagerImpl) serverLockManager).setLockStatisticsEnabled(true, new MockL2LockStatsManager());
 
     serverLockUnlockContext.addStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE, serverStage);
     serverLockUnlockContext.lockManager = serverLockManager;
@@ -548,10 +548,6 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     public synchronized TimeStampedCounterValue[] getGlobalLockRecallHistory() {
       return null;
-    }
-
-    public boolean unsafeIsLockStatisticsEnabled() {
-      return false;
     }
   }
 

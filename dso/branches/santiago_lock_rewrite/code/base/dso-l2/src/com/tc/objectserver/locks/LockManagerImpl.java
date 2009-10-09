@@ -26,33 +26,32 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintable, LockManagerMBean {
+public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintable, LockManagerMBean,
+    L2LockStatisticsEnableDisableListener {
   private enum RequestType {
     LOCK, TRY_LOCK
   }
 
-  private final LockStore                lockStore;
-  private final DSOChannelManager        channelManager;
-  private final LockHelper               lockHelper;
-  private final ReentrantReadWriteLock   statusLock       = new ReentrantReadWriteLock();
-  private boolean                        isStarted        = false;
-  private LinkedList<RequestLockContext> lockRequestQueue = new LinkedList<RequestLockContext>();
+  private final LockStore                         lockStore;
+  private final DSOChannelManager                 channelManager;
+  private final LockHelper                        lockHelper;
+  private final ReentrantReadWriteLock            statusLock       = new ReentrantReadWriteLock();
+  private boolean                                 isStarted        = false;
+  private LinkedBlockingQueue<RequestLockContext> lockRequestQueue = new LinkedBlockingQueue<RequestLockContext>();
 
-  private static final TCLogger          logger           = TCLogging.getLogger(LockManagerImpl.class);
+  private static final TCLogger                   logger           = TCLogging.getLogger(LockManagerImpl.class);
 
-  public LockManagerImpl(Sink lockSink, L2LockStatsManager statsManager, DSOChannelManager channelManager) {
-    this(lockSink, statsManager, channelManager, new LockFactoryImpl());
+  public LockManagerImpl(Sink lockSink, DSOChannelManager channelManager) {
+    this(lockSink, channelManager, new LockFactoryImpl());
   }
 
-  public LockManagerImpl(Sink lockSink, L2LockStatsManager statsManager, DSOChannelManager channelManager,
-                         LockFactory factory) {
+  public LockManagerImpl(Sink lockSink, DSOChannelManager channelManager, LockFactory factory) {
     this.lockStore = new LockStore(factory);
-    this.lockHelper = new LockHelper(statsManager, lockSink, lockStore);
+    this.lockHelper = new LockHelper(L2LockStatsManager.NULL_LOCK_STATS_MANAGER, lockSink, lockStore);
     this.channelManager = channelManager;
   }
 
@@ -79,7 +78,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void unlock(LockID lid, ClientID cid, ThreadID tid) {
-    if (!preCheckLogAndContinue(lid, cid, tid, "Unlock")) { return; }
+    if (!isValidStateFor(lid, cid, tid, "Unlock")) { return; }
 
     // Lock might be removed from the lock store in the call to the unlock
     ServerLock lock = lockStore.checkOut(lid);
@@ -91,7 +90,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void queryLock(LockID lid, ClientID cid, ThreadID tid) {
-    if (!preCheckLogAndContinue(lid, cid, tid, "QueryLock")) { return; }
+    if (!isValidStateFor(lid, cid, tid, "QueryLock")) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -102,7 +101,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void interrupt(LockID lid, ClientID cid, ThreadID tid) {
-    if (!preCheckLogAndContinue(lid, cid, tid, "Interrupt")) { return; }
+    if (!isValidStateFor(lid, cid, tid, "Interrupt")) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -113,7 +112,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void recallCommit(LockID lid, ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts) {
-    if (!preCheckLogAndContinue(lid, cid, ThreadID.VM_ID, "Recall Commit")) { return; }
+    if (!isValidStateFor(lid, cid, ThreadID.VM_ID, "Recall Commit")) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -125,7 +124,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
 
   public NotifiedWaiters notify(LockID lid, ClientID cid, ThreadID tid, NotifyAction action,
                                 NotifiedWaiters addNotifiedWaitersTo) {
-    if (!preCheckLogAndContinue(lid, cid, tid, "Notify")) { return addNotifiedWaitersTo; }
+    if (!isValidStateFor(lid, cid, tid, "Notify")) { return addNotifiedWaitersTo; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -136,7 +135,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void wait(LockID lid, ClientID cid, ThreadID tid, long timeout) {
-    if (!preCheckLogAndContinue(lid, cid, tid, "Wait")) { return; }
+    if (!isValidStateFor(lid, cid, tid, "Wait")) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -213,8 +212,8 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
       lockHelper.getLockTimer().start();
 
       // Go through the request queue and request locks
-      for (Iterator i = this.lockRequestQueue.iterator(); i.hasNext();) {
-        RequestLockContext ctxt = (RequestLockContext) i.next();
+      RequestLockContext ctxt = null;
+      while ((ctxt = lockRequestQueue.poll()) != null) {
         switch (ctxt.getType()) {
           case LOCK:
             lock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel());
@@ -223,18 +222,28 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
             tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
                 .getTimeout());
         }
-        i.remove();
       }
-      this.lockRequestQueue = null;
     } finally {
       statusLock.writeLock().unlock();
+    }
+  }
+
+  public void setLockStatisticsEnabled(boolean lockStatsEnabled, L2LockStatsManager manager) {
+    if (lockStatsEnabled) {
+      lockHelper.setLockStatsManager(manager);
+    } else {
+      lockHelper.setLockStatsManager(L2LockStatsManager.NULL_LOCK_STATS_MANAGER);
     }
   }
 
   private void queueRequest(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
                             long timeout) {
     RequestLockContext context = new RequestLockContext(lid, cid, tid, level, type, timeout);
-    lockRequestQueue.addLast(context);
+    try {
+      lockRequestQueue.put(context);
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
   }
 
   private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {
@@ -246,16 +255,8 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
     statusLock.readLock().lock();
     try {
       if (!isStarted) {
-        statusLock.readLock().unlock();
-        statusLock.writeLock().lock();
-        try {
-          if (isStarted) { return true; }
-          queueRequest(lid, cid, tid, level, type, timeout);
-          return false;
-        } finally {
-          statusLock.writeLock().unlock();
-          statusLock.readLock().lock();
-        }
+        queueRequest(lid, cid, tid, level, type, timeout);
+        return false;
       } else if (!this.channelManager.isActiveID(cid)) {
         logger.warn(type + " message received from dead client -- ignoring the message.\n"
                     + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
@@ -267,7 +268,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
     }
   }
 
-  private boolean preCheckLogAndContinue(LockID lid, ClientID cid, ThreadID tid, String callType) {
+  private boolean isValidStateFor(LockID lid, ClientID cid, ThreadID tid, String callType) {
     statusLock.readLock().lock();
     try {
       if (!isStarted) {
@@ -311,10 +312,10 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
     return out;
   }
 
-  private void assertStateIsStarting(String message) {
+  private void assertStateIsStarting(String errMessage) {
     statusLock.readLock().lock();
     try {
-      Assert.assertTrue(message, !isStarted);
+      Assert.assertTrue(errMessage, !isStarted);
     } finally {
       statusLock.readLock().unlock();
     }

@@ -26,8 +26,6 @@ public final class NonGreedyServerLock extends AbstractServerLock {
       case WRITE:
         awardLock(helper, request);
         break;
-      default:
-        throw new IllegalStateException("Nil lock level not supported here");
     }
   }
 

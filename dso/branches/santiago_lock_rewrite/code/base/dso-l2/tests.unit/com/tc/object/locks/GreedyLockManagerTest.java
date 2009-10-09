@@ -4,12 +4,10 @@
  */
 package com.tc.object.locks;
 
-import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.api.TestSink;
@@ -51,7 +49,7 @@ public class GreedyLockManagerTest extends TestCase {
   private void resetLockManager(boolean start) {
     sink.clear();
 
-    lockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager());
+    lockManager = new LockManagerImpl(sink, new NullChannelManager());
     if (start) {
       lockManager.start();
     }
@@ -188,7 +186,7 @@ public class GreedyLockManagerTest extends TestCase {
     assertTrue(ctxt.isLockAward());
     assertTrue(ctxt.getThreadID().equals(tx1));
     assertTrue(ctxt.getLockID().equals(lockID1));
-    assertTrue(!LockLevel.isGreedy(ServerLockLevel.toLegacyInt(ctxt.getLockLevel())));
+    assertTrue(ctxt.getThreadID() != ThreadID.VM_ID);
   }
 
   private void assertAwardGreedy(LockResponseContext ctxt, LockID lockID1) {

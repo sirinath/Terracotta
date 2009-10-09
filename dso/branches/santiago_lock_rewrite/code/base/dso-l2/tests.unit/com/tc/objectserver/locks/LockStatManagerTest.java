@@ -52,10 +52,12 @@ public class LockStatManagerTest extends TestCase {
   private void resetLockManager(LockFactory factory) {
     lockStatManager = new L2LockStatisticsManagerImpl();
     if (factory == null) {
-      lockManager = new LockManagerImpl(sink, lockStatManager, new NullChannelManager());
+      lockManager = new LockManagerImpl(sink, new NullChannelManager());
     } else {
-      lockManager = new LockManagerImpl(sink, lockStatManager, new NullChannelManager(), factory);
+      lockManager = new LockManagerImpl(sink, new NullChannelManager(), factory);
     }
+    lockManager.setLockStatisticsEnabled(true, lockStatManager);
+    
     lockManager.start();
     final CounterManager counterManager = new CounterManagerImpl();
     final SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
