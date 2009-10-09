@@ -15,10 +15,13 @@ import com.tc.util.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public final class ServerLockImpl extends AbstractServerLock {
-  private boolean isRecalled = false;
+  private final static EnumSet<Type> enumSetOfGreedyHolders = EnumSet.of(Type.GREEDY_HOLDER);
+
+  private boolean                    isRecalled             = false;
 
   public ServerLockImpl(LockID lockID) {
     super(lockID);
@@ -177,7 +180,7 @@ public final class ServerLockImpl extends AbstractServerLock {
 
   public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
                            LockHelper helper) {
-    ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID);
+    ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID, enumSetOfGreedyHolders);
     Assert.assertNotNull("No Greedy Holder Exists For " + cid + " on " + lockID, greedyHolder);
 
     recordLockReleaseStat(cid, ThreadID.VM_ID, helper);
@@ -270,8 +273,8 @@ public final class ServerLockImpl extends AbstractServerLock {
   }
 
   @Override
-  protected ServerLockContext remove(ClientID cid, ThreadID tid) {
-    ServerLockContext temp = super.remove(cid, tid);
+  protected ServerLockContext remove(ClientID cid, ThreadID tid, EnumSet<Type> set) {
+    ServerLockContext temp = super.remove(cid, tid, set);
     if (!hasGreedyHolders()) {
       isRecalled = false;
     }
