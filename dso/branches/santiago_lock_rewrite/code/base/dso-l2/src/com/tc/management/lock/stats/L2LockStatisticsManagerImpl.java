@@ -275,8 +275,4 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
       }
     }
   }
-
-  public boolean unsafeIsLockStatisticsEnabled() {
-    return lockStatisticsEnabled;
-  }
 }

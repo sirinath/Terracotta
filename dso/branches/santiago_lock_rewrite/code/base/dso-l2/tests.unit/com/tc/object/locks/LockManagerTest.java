@@ -51,8 +51,7 @@ public class LockManagerTest extends TestCase {
   }
 
   private void resetLockManager(boolean start) {
-    lockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER, new NullChannelManager(),
-                                      new NonGreedyLockPolicyFactory());
+    lockManager = new LockManagerImpl(sink, new NullChannelManager(), new NonGreedyLockPolicyFactory());
     if (start) {
       lockManager.start();
     }
@@ -74,13 +73,14 @@ public class LockManagerTest extends TestCase {
     ThreadID tid1 = new ThreadID(1);
     ThreadID tid2 = new ThreadID(2);
     L2LockStatsManager lockStatsManager = new L2LockStatisticsManagerImpl();
-    lockManager = new LockManagerImpl(sink, lockStatsManager, new NullChannelManager() {
+    lockManager = new LockManagerImpl(sink, new NullChannelManager() {
       @Override
       public String getChannelAddress(NodeID nid) {
         if (cid1.equals(nid)) { return "127.0.0.1:6969"; }
         return "no longer connected";
       }
     }, new NonGreedyLockPolicyFactory());
+    lockManager.setLockStatisticsEnabled(true, lockStatsManager);
 
     lockManager.start();
     lockStatsManager.start(new NullChannelManager(), null);

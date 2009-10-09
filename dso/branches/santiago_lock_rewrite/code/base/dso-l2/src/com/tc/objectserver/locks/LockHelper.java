@@ -11,10 +11,10 @@ import com.tc.object.locks.ServerLockContextStateMachine;
 
 public class LockHelper {
   private final LockTimer                     lockTimer;
-  private final L2LockStatsManager            lockStatsManager;
   private final Sink                          lockSink;
   private final LockStore                     lockStore;
   private final ServerLockContextStateMachine contextStateMachine;
+  private L2LockStatsManager                  lockStatsManager;
 
   public LockHelper(L2LockStatsManager lockStatsManager, Sink lockSink, LockStore lockStore) {
     this.lockTimer = new LockTimerImpl();
@@ -29,8 +29,11 @@ public class LockHelper {
   }
 
   public L2LockStatsManager getLockStatsManager() {
-    if (lockStatsManager.unsafeIsLockStatisticsEnabled()) { return lockStatsManager; }
-    return L2LockStatsManager.NULL_LOCK_STATS_MANAGER;
+    return lockStatsManager;
+  }
+
+  public void setLockStatsManager(L2LockStatsManager lockStatsManager) {
+    this.lockStatsManager = lockStatsManager;
   }
 
   public Sink getLockSink() {

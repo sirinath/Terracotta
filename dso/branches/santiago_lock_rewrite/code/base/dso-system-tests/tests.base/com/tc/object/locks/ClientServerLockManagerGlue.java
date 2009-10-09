@@ -6,7 +6,6 @@ package com.tc.object.locks;
 
 import com.tc.async.api.EventContext;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.management.L2LockStatsManager;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -107,8 +106,7 @@ public class ClientServerLockManagerGlue implements RemoteLockManager, Runnable 
   }
 
   public LockManagerImpl restartServer() {
-    this.serverLockManager = new LockManagerImpl(sink, L2LockStatsManager.NULL_LOCK_STATS_MANAGER,
-                                                 new NullChannelManager(), factory);
+    this.serverLockManager = new LockManagerImpl(sink, new NullChannelManager(), factory);
     clientLockManager.pause(GroupID.ALL_GROUPS, 1);
     ClientHandshakeMessageImpl handshakeMessage = new ClientHandshakeMessageImpl(SessionID.NULL_ID, null,
                                                                                  new TCByteBufferOutputStream(), null,

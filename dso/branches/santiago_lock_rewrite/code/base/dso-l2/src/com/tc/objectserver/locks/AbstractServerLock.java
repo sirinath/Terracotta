@@ -416,7 +416,6 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
       case WRITE:
         state = State.HOLDER_WRITE;
         break;
-      default:
     }
     awardLock(helper, request, state, toRespond);
   }
@@ -587,8 +586,6 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
         break;
       case WRITE:
         return !hasHolders();
-      default:
-        throw new IllegalStateException("Nil Lock level not supported for request");
     }
     return false;
   }
@@ -614,24 +611,6 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     return null;
   }
 
-  // Contexts methods
-  protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
-    Assert.assertTrue(state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER);
-    return changeStateToHolderOrPending(request, state, helper);
-  }
-
-  private ServerLockContext changeStateToHolderOrPending(ServerLockContext request, State state, LockHelper helper) {
-    switch (request.getState().getType()) {
-      case WAITER:
-      case TRY_PENDING:
-        request = createSingleOrLinkedServerLockContext(request, helper);
-        break;
-      default:
-    }
-    request.setState(helper.getContextStateMachine(), state);
-    return request;
-  }
-
   protected void cancelTryLockOrWaitTimer(ServerLockContext request, LockHelper helper) {
     if (request.getState().getType() == Type.TRY_PENDING || request.getState() == State.WAITER) {
       WaitServerLockContext waitRequest = (WaitServerLockContext) request;
@@ -641,15 +620,24 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     }
   }
 
-  private ServerLockContext createSingleOrLinkedServerLockContext(ServerLockContext request, LockHelper helper) {
-    ServerLockContext context = null;
-    if (isEmpty()) {
-      context = new SingleServerLockContext(request.getClientID(), request.getThreadID());
-    } else {
-      context = new LinkedServerLockContext(request.getClientID(), request.getThreadID());
+  // Contexts methods
+  protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
+    Assert.assertTrue(state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER);
+    request = changeFromWaitContextIfRequired(request, helper);
+    request.setState(helper.getContextStateMachine(), state);
+    return request;
+  }
+
+  private ServerLockContext changeFromWaitContextIfRequired(ServerLockContext request, LockHelper helper) {
+    switch (request.getState().getType()) {
+      case WAITER:
+      case TRY_PENDING:
+        request = createSingleOrLinkedServerLockContext(request.getClientID(), request.getThreadID(), request
+            .getState(), helper);
+        break;
+      default:
     }
-    context.setState(helper.getContextStateMachine(), request.getState());
-    return context;
+    return request;
   }
 
   protected ServerLockContext createTryPendingServerLockContext(ClientID cid, ThreadID tid, ServerLockLevel level,
@@ -662,13 +650,36 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
       case WRITE:
         state = State.TRY_PENDING_WRITE;
         break;
-      default:
-        throw new IllegalArgumentException("Nil lock level is not allowed ");
     }
 
     return createWaitOrTryPendingServerLockContext(cid, tid, state, timeout, helper);
   }
 
+  protected ServerLockContext createPendingContext(ClientID cid, ThreadID tid, ServerLockLevel level, LockHelper helper) {
+    State state = null;
+    switch (level) {
+      case READ:
+        state = State.PENDING_READ;
+        break;
+      case WRITE:
+        state = State.PENDING_WRITE;
+        break;
+    }
+    return createSingleOrLinkedServerLockContext(cid, tid, state, helper);
+  }
+
+  private ServerLockContext createSingleOrLinkedServerLockContext(ClientID cid, ThreadID tid, State state,
+                                                                  LockHelper helper) {
+    ServerLockContext context = null;
+    if (isEmpty()) {
+      context = new SingleServerLockContext(cid, tid);
+    } else {
+      context = new LinkedServerLockContext(cid, tid);
+    }
+    context.setState(helper.getContextStateMachine(), state);
+    return context;
+  }
+  
   protected ServerLockContext createWaitOrTryPendingServerLockContext(ClientID cid, ThreadID tid, State state,
                                                                       long timeout, LockHelper helper) {
     ServerLockContext context = null;
@@ -678,27 +689,6 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
       context = new WaitLinkedServerLockContext(cid, tid, timeout, helper);
     }
     context.setState(helper.getContextStateMachine(), state);
-
-    return context;
-  }
-
-  protected ServerLockContext createPendingContext(ClientID cid, ThreadID tid, ServerLockLevel level, LockHelper helper) {
-    ServerLockContext context = null;
-    if (isEmpty()) {
-      context = new SingleServerLockContext(cid, tid);
-    } else {
-      context = new LinkedServerLockContext(cid, tid);
-    }
-    switch (level) {
-      case READ:
-        context.setState(helper.getContextStateMachine(), State.PENDING_READ);
-        break;
-      case WRITE:
-        context.setState(helper.getContextStateMachine(), State.PENDING_WRITE);
-        break;
-      default:
-        throw new IllegalArgumentException("Nil Lock Level is not allowed here");
-    }
     return context;
   }
 
@@ -827,7 +817,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   }
 
   protected ServerLockLevel holderLevel() {
-    if (!hasHolders()) { return ServerLockLevel.NONE; }
+    if (!hasHolders()) { return null; }
     ServerLockContext holder = getFirst();
     return holder.getState().getLockLevel();
   }

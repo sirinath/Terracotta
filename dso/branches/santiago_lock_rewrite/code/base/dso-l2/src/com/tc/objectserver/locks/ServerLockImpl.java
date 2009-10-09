@@ -106,7 +106,6 @@ public final class ServerLockImpl extends AbstractServerLock {
           }
         }
         break;
-      default:
     }
   }
 
@@ -154,7 +153,6 @@ public final class ServerLockImpl extends AbstractServerLock {
           case WRITE:
             hasPendingWrite = true;
             break;
-          default:
         }
       }
     }
@@ -245,7 +243,6 @@ public final class ServerLockImpl extends AbstractServerLock {
       case WRITE:
         state = State.GREEDY_HOLDER_WRITE;
         break;
-      default:
     }
     // remove holders (from the same client) who have given the lock non greedily till now
     removeNonGreedyHoldersAndPendingOfSameClient(request, helper);
