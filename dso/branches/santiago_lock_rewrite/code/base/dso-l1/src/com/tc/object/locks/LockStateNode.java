@@ -4,14 +4,13 @@
 package com.tc.object.locks;
 
 import com.tc.object.locks.ClientLockImpl.AcquireResult;
+import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 
 import java.util.Stack;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.LockSupport;
-
-import junit.framework.Assert;
 
 abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNode> {
   private static final Timer STATE_NODE_TIMER = new Timer("ClientLockImpl Timer", true);
