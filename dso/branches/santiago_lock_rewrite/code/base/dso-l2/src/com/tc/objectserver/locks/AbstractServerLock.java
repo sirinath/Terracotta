@@ -36,11 +36,11 @@ import java.util.TimerTask;
  * greedy holders, pending requests, try lock requests and then waiters.
  */
 public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockContext> implements ServerLock {
-  private final static EnumSet<Type> enumSetOfTryPendingOrWaiter = EnumSet.of(Type.TRY_PENDING, Type.WAITER);
-  private final static EnumSet<Type> enumSetOfWaiter             = EnumSet.of(Type.WAITER);
-  private final static EnumSet<Type> enumSetOfHolders            = EnumSet.of(Type.HOLDER, Type.GREEDY_HOLDER);
+  private final static EnumSet<Type> SET_OF_TRY_PENDING_OR_WAITERS = EnumSet.of(Type.TRY_PENDING, Type.WAITER);
+  private final static EnumSet<Type> SET_OF_WAITERS                = EnumSet.of(Type.WAITER);
+  private final static EnumSet<Type> SET_OF_HOLDERS                = EnumSet.of(Type.HOLDER, Type.GREEDY_HOLDER);
 
-  protected final static TCLogger    logger                      = TCLogging.getLogger(AbstractServerLock.class);
+  protected final static TCLogger    logger                        = TCLogging.getLogger(AbstractServerLock.class);
   protected final LockID             lockID;
 
   public AbstractServerLock(LockID lockID) {
@@ -97,7 +97,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
 
   public void interrupt(ClientID cid, ThreadID tid, LockHelper helper) {
     // check if waiters are present
-    ServerLockContext context = remove(cid, tid, enumSetOfWaiter);
+    ServerLockContext context = remove(cid, tid, SET_OF_WAITERS);
     if (context == null) {
       logger.warn("Cannot interrupt: " + cid + "," + tid + " is not waiting.");
       return;
@@ -130,7 +130,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
 
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
     // remove current hold
-    ServerLockContext context = remove(cid, tid, enumSetOfHolders);
+    ServerLockContext context = remove(cid, tid, SET_OF_HOLDERS);
     recordLockReleaseStat(cid, tid, helper);
 
     String errorMsg = "An attempt was made to unlock:" + lockID + " for channelID:" + cid
@@ -205,7 +205,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     LockHelper helper = lockTimerContext.getHelper();
 
     // Ignore contexts for which time out could not be canceled
-    ServerLockContext context = remove(cid, tid, enumSetOfTryPendingOrWaiter);
+    ServerLockContext context = remove(cid, tid, SET_OF_TRY_PENDING_OR_WAITERS);
     if (context == null) { return; }
 
     if (context.isWaiter()) {
@@ -260,7 +260,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   }
 
   protected void moveFromHolderToWaiter(ClientID cid, ThreadID tid, long timeout, LockHelper helper) {
-    ServerLockContext holder = remove(cid, tid, enumSetOfHolders);
+    ServerLockContext holder = remove(cid, tid, SET_OF_HOLDERS);
     validateWaitNotifyState(cid, tid, holder, helper);
 
     recordLockReleaseStat(cid, tid, helper);
