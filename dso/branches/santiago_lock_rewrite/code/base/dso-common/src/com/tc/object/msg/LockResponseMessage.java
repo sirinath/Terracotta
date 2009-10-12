@@ -71,7 +71,9 @@ public class LockResponseMessage extends DSOMessageBase {
       case INFO:
         putNVPair(LOCK_ID, lockID);
         putNVPair(THREAD_ID, threadID.toLong());
-        putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        if (lockLevel != null) {
+          putNVPair(LOCK_LEVEL, (byte) lockLevel.ordinal());
+        }
         for (ClientServerExchangeLockContext cselc : contexts) {
           putNVPair(CONTEXT, cselc);
         }

@@ -668,7 +668,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
       remote.flush(lock);
 
       synchronized (this) {
-        if (greediness.isRecalled()) {
+        if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
           greediness = recallCommit(remote);
         }
         return AcquireResult.DELEGATED;
@@ -719,7 +719,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     remove(unlock);
     if (greediness.isFree()) {
       remoteUnlock(remote, unlock);
-    } else if (greediness.isRecalled()) {
+    } else if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
       greediness = recallCommit(remote);
     }
     
