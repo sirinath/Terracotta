@@ -5,20 +5,64 @@ package com.tc.object.locks;
 
 enum ClientGreediness {
   GARBAGE {
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return false;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
+
     @Override
     ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
       throw GarbageLockException.GARBAGE_LOCK_EXCEPTION;
     }
     
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return this;
+    }
+
     public ClientGreediness recallCommitted() {
       return GARBAGE;
     }
   },
   
   FREE {
-    @Override
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
     boolean isFree() {
       return true;
+    }
+    
+    boolean isRecalled() {
+      return false;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
+
+    @Override
+    ClientGreediness requested(ServerLockLevel level) {
+      return this;
     }
     
     @Override
@@ -34,34 +78,30 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness requested(ServerLockLevel level) {
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
       return this;
     }
   },
   
   GREEDY_READ {
-
-    @Override
-    public boolean canAward(LockLevel level) {
+    boolean canAward(LockLevel level) {
       return level.isRead();
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return false;
     }
     
     public boolean isGreedy() {
       return true;
     }
     
-    @Override
-    ClientGreediness awarded(ServerLockLevel level) {
-      switch (level) {
-        case READ: return GREEDY_READ;
-        case WRITE: return GREEDY_WRITE;
-        default: throw new AssertionError();
-      }
-    }
-
-    @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
-      return RECALLED_READ;
+    boolean flushOnUnlock() {
+      return false;
     }
 
     @Override
@@ -77,27 +117,41 @@ enum ClientGreediness {
     }
     
     @Override
-    boolean flushOnUnlock() {
-      return false;
+    ClientGreediness awarded(ServerLockLevel level) {
+      switch (level) {
+        case READ: return GREEDY_READ;
+        case WRITE: return GREEDY_WRITE;
+        default: throw new AssertionError();
+      }
+    }
+
+    @Override
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return RECALLED_READ;
     }
   },
 
   GREEDY_WRITE {
-
-    @Override
-    public boolean canAward(LockLevel level) {
+    boolean canAward(LockLevel level) {
       return true;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return false;
     }
     
     public boolean isGreedy() {
       return true;
     }
     
-    @Override
     boolean flushOnUnlock() {
       return false;
     }
-    
+
     @Override
     ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
@@ -109,12 +163,36 @@ enum ClientGreediness {
   },
   
   RECALLED_READ {
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return true;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
 
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
     }
 
+    @Override
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return this;
+    }
+    
     @Override
     ClientGreediness recallInProgress() {
       return READ_RECALL_IN_PROGRESS;
@@ -124,20 +202,39 @@ enum ClientGreediness {
     public ClientGreediness recallCommitted() {
       return FREE;
     }
-    
-    @Override
-    boolean isRecalled() {
-      return true;
-    }
   },
 
   RECALLED_WRITE {
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return true;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
 
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
     }
 
+    @Override
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return this;
+    }
+    
     @Override
     ClientGreediness recallInProgress() {
       return WRITE_RECALL_IN_PROGRESS;
@@ -147,14 +244,39 @@ enum ClientGreediness {
     public ClientGreediness recallCommitted() {
       return FREE;
     }
-    
-    @Override
-    boolean isRecalled() {
-      return true;
-    }
   },
   
   READ_RECALL_IN_PROGRESS {
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return false;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
+    
+    @Override
+    ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
+      return this;
+    }
+
+    @Override
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return this;
+    }
+    
     @Override
     public ClientGreediness recallCommitted() {
       return FREE;
@@ -162,31 +284,51 @@ enum ClientGreediness {
   },
   
   WRITE_RECALL_IN_PROGRESS {
+    boolean canAward(LockLevel level) {
+      return false;
+    }
+    
+    boolean isFree() {
+      return false;
+    }
+    
+    boolean isRecalled() {
+      return false;
+    }
+    
+    public boolean isGreedy() {
+      return false;
+    }
+    
+    boolean flushOnUnlock() {
+      return true;
+    }
+
+    @Override
+    ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
+      return this;
+    }
+
+    @Override
+    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+      return this;
+    }
+    
     @Override
     public ClientGreediness recallCommitted() {
       return FREE;
     }
   };
   
-  boolean canAward(LockLevel level) {
-    return false;
-  }
+  abstract boolean canAward(LockLevel level);
   
-  boolean isFree() {
-    return false;
-  }
+  abstract boolean isFree();
   
-  boolean isRecalled() {
-    return false;
-  }
+  abstract boolean isRecalled();
   
-  public boolean isGreedy() {
-    return false;
-  }
+  abstract public boolean isGreedy();
   
-  boolean flushOnUnlock() {
-    return true;
-  }
+  abstract boolean flushOnUnlock();
 
   /**
    * @throws GarbageLockException thrown if in a garbage state 
@@ -200,7 +342,7 @@ enum ClientGreediness {
   }
 
   ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
-    return this;
+    throw new AssertionError("recalled while in unexpected state (" + this + ")");
   }
 
   ClientGreediness recallInProgress() {
