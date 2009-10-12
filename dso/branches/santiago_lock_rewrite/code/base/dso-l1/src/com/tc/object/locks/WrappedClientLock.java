@@ -74,7 +74,7 @@ public class WrappedClientLock implements ClientLock {
     }
 
     for (LockRequest lr : wrappedLock.addAllPendingLockRequestsTo(new ArrayList<LockRequest>())) {
-      switch (LockLevel.fromLegacyInt(lr.lockLevel())) {
+      switch (com.tc.object.lockmanager.api.LockLevel.toEnumType(lr.lockLevel())) {
         case READ:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, lr.threadID(), State.PENDING_READ));
           break;
@@ -88,7 +88,7 @@ public class WrappedClientLock implements ClientLock {
     }
     
     for (TryLockRequest tlr : wrappedLock.addAllPendingTryLockRequestsTo(new ArrayList<TryLockRequest>())) {
-      switch (LockLevel.fromLegacyInt(tlr.lockLevel())) {
+      switch (com.tc.object.lockmanager.api.LockLevel.toEnumType(tlr.lockLevel())) {
         case READ:
           contexts.add(new ClientServerExchangeLockContext(lockId, client, tlr.threadID(), State.TRY_PENDING_READ));
           break;
@@ -123,19 +123,19 @@ public class WrappedClientLock implements ClientLock {
   }
 
   public boolean isLockedBy(ThreadID thread, LockLevel level) {
-    return wrappedLock.isHeldBy(thread, LockLevel.toLegacyInt(level));
+    return wrappedLock.isHeldBy(thread, com.tc.object.lockmanager.api.LockLevel.fromEnumType(level));
   }
 
   public int holdCount(LockLevel level) {
-    return wrappedLock.localHeldCount(LockLevel.toLegacyInt(level));
+    return wrappedLock.localHeldCount(com.tc.object.lockmanager.api.LockLevel.fromEnumType(level));
   }
 
   public void lock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
-    wrappedLock.lock(thread, LockLevel.toLegacyInt(level), EMPTY_LOCK_CONTEXT);
+    wrappedLock.lock(thread, com.tc.object.lockmanager.api.LockLevel.fromEnumType(level), EMPTY_LOCK_CONTEXT);
   }
 
   public void lockInterruptibly(RemoteLockManager remote, ThreadID thread, LockLevel level) throws InterruptedException {
-    wrappedLock.lockInterruptibly(thread, LockLevel.toLegacyInt(level), EMPTY_LOCK_CONTEXT);  }
+    wrappedLock.lockInterruptibly(thread, com.tc.object.lockmanager.api.LockLevel.fromEnumType(level), EMPTY_LOCK_CONTEXT);  }
 
   public void notified(ThreadID thread) {
     wrappedLock.notified(thread);
@@ -166,11 +166,11 @@ public class WrappedClientLock implements ClientLock {
   }
 
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level) {
-    return wrappedLock.tryLock(thread, new TimerSpec(), LockLevel.toLegacyInt(level));
+    return wrappedLock.tryLock(thread, new TimerSpec(), com.tc.object.lockmanager.api.LockLevel.fromEnumType(level));
   }
 
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) {
-    return wrappedLock.tryLock(thread, new TimerSpec(timeout), LockLevel.toLegacyInt(level));
+    return wrappedLock.tryLock(thread, new TimerSpec(timeout), com.tc.object.lockmanager.api.LockLevel.fromEnumType(level));
   }
 
   public void unlock(RemoteLockManager remote, ThreadID thread, LockLevel level) {

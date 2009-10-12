@@ -185,7 +185,7 @@ public class ManagerUtil {
   public static void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
-    mgr.lock(lock, LockLevel.fromLegacyInt(type));
+    mgr.lock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -215,7 +215,7 @@ public class ManagerUtil {
   public static void beginLock(final String lockID, final int type, final String contextInfo) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    mgr.lock(lock, LockLevel.fromLegacyInt(type));
+    mgr.lock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -228,7 +228,7 @@ public class ManagerUtil {
   public static boolean tryBeginLock(final String lockID, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type));
+    return mgr.tryLock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -242,7 +242,7 @@ public class ManagerUtil {
   public static boolean tryBeginLock(final String lockID, final int type, final long timeoutInNanos) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000000);
+    return mgr.tryLock(lock, LockLevel.fromInt(type), timeoutInNanos / 1000000);
   }
 
   /**
@@ -254,7 +254,7 @@ public class ManagerUtil {
   public static void commitVolatile(final TCObject tcObject, final String fieldName, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
-    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
+    mgr.unlock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -265,7 +265,7 @@ public class ManagerUtil {
   public static void commitLock(final String lockID, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
-    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
+    mgr.unlock(lock, LockLevel.fromInt(type));
   }
   
   public static void pinLock(final String lockID) {
@@ -552,7 +552,7 @@ public class ManagerUtil {
   public static void monitorEnter(final Object obj, final int type, final String contextInfo) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.lock(lock, LockLevel.fromLegacyInt(type));
+    mgr.lock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -563,7 +563,7 @@ public class ManagerUtil {
   public static void monitorExit(final Object obj, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.unlock(lock, LockLevel.fromLegacyInt(type));
+    mgr.unlock(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -592,13 +592,13 @@ public class ManagerUtil {
   public static boolean isLocked(final Object obj, final int lockLevel) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.isLocked(lock, LockLevel.fromLegacyInt(lockLevel));
+    return mgr.isLocked(lock, LockLevel.fromInt(lockLevel));
   }
 
   public static boolean tryMonitorEnter(final Object obj, final int type) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type));
+    return mgr.tryLock(lock, LockLevel.fromInt(type));
   }
   
   /**
@@ -613,7 +613,7 @@ public class ManagerUtil {
   public static boolean tryMonitorEnter(final Object obj, final int type, final long timeoutInNanos) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.tryLock(lock, LockLevel.fromLegacyInt(type), timeoutInNanos / 1000000);
+    return mgr.tryLock(lock, LockLevel.fromInt(type), timeoutInNanos / 1000000);
   }
 
   /**
@@ -627,7 +627,7 @@ public class ManagerUtil {
   public static void monitorEnterInterruptibly(final Object obj, final int type) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    mgr.lockInterruptibly(lock, LockLevel.fromLegacyInt(type));
+    mgr.lockInterruptibly(lock, LockLevel.fromInt(type));
   }
 
   /**
@@ -641,7 +641,7 @@ public class ManagerUtil {
   public static int localHeldCount(final Object obj, final int lockLevel) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.localHoldCount(lock, LockLevel.fromLegacyInt(lockLevel));
+    return mgr.localHoldCount(lock, LockLevel.fromInt(lockLevel));
   }
 
   /**
@@ -655,7 +655,7 @@ public class ManagerUtil {
   public static boolean isHeldByCurrentThread(final Object obj, final int lockLevel) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(obj);
-    return mgr.isLockedByCurrentThread(lock, LockLevel.fromLegacyInt(lockLevel));
+    return mgr.isLockedByCurrentThread(lock, LockLevel.fromInt(lockLevel));
   }
 
   /**
@@ -668,7 +668,7 @@ public class ManagerUtil {
   public static boolean isLockHeldByCurrentThread(final String lockId, final int lockLevel) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockId);
-    return mgr.isLockedByCurrentThread(lock, LockLevel.fromLegacyInt(lockLevel));
+    return mgr.isLockedByCurrentThread(lock, LockLevel.fromInt(lockLevel));
   }
 
   /**

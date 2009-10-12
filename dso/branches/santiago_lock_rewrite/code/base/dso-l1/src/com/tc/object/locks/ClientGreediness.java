@@ -268,7 +268,7 @@ enum ClientGreediness {
     }
     
     @Override
-    ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
+    ClientGreediness requested(ServerLockLevel level) {
       return this;
     }
 
@@ -305,7 +305,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
+    ClientGreediness requested(ServerLockLevel level) {
       return this;
     }
 

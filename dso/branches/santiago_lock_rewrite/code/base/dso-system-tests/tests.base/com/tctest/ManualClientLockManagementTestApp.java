@@ -3,11 +3,11 @@
  */
 package com.tctest;
 
+import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.concurrent.ThreadUtil;
@@ -39,35 +39,35 @@ public class ManualClientLockManagementTestApp extends AbstractErrorCatchingTran
   private void testServerRecallOfPinnedLock(int index) throws Throwable {
     System.err.println("testServerRecallOfPinnedLock(" + index + ")");
     if (index == 0) {
-      ManagerUtil.beginLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_WRITE);
       ManagerUtil.pinLock(LOCK);
-      ManagerUtil.commitLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_WRITE);
     }
     
     barrier.await();
     
     if (index == 1) {
-      ManagerUtil.beginLock(LOCK, LockLevel.READ);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_READ);
     }
     
     barrier.await();
     
     if (index == 0) {
-      ManagerUtil.beginLock(LOCK, LockLevel.READ);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_READ);
       ManagerUtil.unpinLock(LOCK);
     }
     
     barrier.await();
 
-    ManagerUtil.commitLock(LOCK, LockLevel.READ);   
+    ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_READ);   
   }
 
   private void testGarbageCollectionOfPinnedLock(int index) throws Throwable {
     System.err.println("testGarbageCollectionOfPinnedLock(" + index + ")");
     if (index == 0) {
-      ManagerUtil.beginLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_WRITE);
       ManagerUtil.pinLock(LOCK);
-      ManagerUtil.commitLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_WRITE);
     }
     
     barrier.await();
@@ -75,7 +75,7 @@ public class ManualClientLockManagementTestApp extends AbstractErrorCatchingTran
     ThreadUtil.reallySleep(2000);
     
     if (index == 1) {
-      ManagerUtil.beginLock(LOCK, LockLevel.READ);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_READ);
     }
     
     barrier.await();
@@ -83,12 +83,12 @@ public class ManualClientLockManagementTestApp extends AbstractErrorCatchingTran
     ThreadUtil.reallySleep(2000);
     
     if (index == 0) {
-      ManagerUtil.beginLock(LOCK, LockLevel.READ);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_READ);
     }
     
     barrier.await();
     
-    ManagerUtil.commitLock(LOCK, LockLevel.READ);   
+    ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_READ);   
     
     barrier.await();
     
@@ -115,9 +115,9 @@ public class ManualClientLockManagementTestApp extends AbstractErrorCatchingTran
 
   private void testGarbageCollectionOfUnpinnedLock(int index) throws Throwable {
     if (index == 0) {
-      ManagerUtil.beginLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_WRITE);
       ManagerUtil.pinLock(LOCK);
-      ManagerUtil.commitLock(LOCK, LockLevel.WRITE);
+      ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_WRITE);
       ManagerUtil.unpinLock(LOCK);
     }
     
@@ -128,8 +128,8 @@ public class ManualClientLockManagementTestApp extends AbstractErrorCatchingTran
     barrier.await();
     System.err.println("Client " + ManagerUtil.getClientID() + " Should Have Collected");
 
-    ManagerUtil.beginLock(LOCK, LockLevel.READ);    
-    ManagerUtil.commitLock(LOCK, LockLevel.READ);    
+    ManagerUtil.beginLock(LOCK, Manager.LOCK_TYPE_READ);    
+    ManagerUtil.commitLock(LOCK, Manager.LOCK_TYPE_READ);    
     
     barrier.await();
     

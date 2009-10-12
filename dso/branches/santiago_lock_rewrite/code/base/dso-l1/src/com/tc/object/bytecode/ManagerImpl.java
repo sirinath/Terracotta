@@ -716,6 +716,10 @@ public class ManagerImpl implements Manager {
     if (clusteredLockingEnabled(lock)) {
       lockManager.lock(lock, level);
       txManager.begin(lock, level);
+      
+      if (runtimeLogger.getLockDebug()) {
+        runtimeLogger.lockAcquired(lock, level);
+      }
     }
   }
 
@@ -723,6 +727,10 @@ public class ManagerImpl implements Manager {
     if (clusteredLockingEnabled(lock)) {
       lockManager.lockInterruptibly(lock, level);
       txManager.begin(lock, level);
+      
+      if (runtimeLogger.getLockDebug()) {
+        runtimeLogger.lockAcquired(lock, level);
+      }
     }
   }
 
@@ -748,6 +756,9 @@ public class ManagerImpl implements Manager {
     if (clusteredLockingEnabled(lock)) {
       if (lockManager.tryLock(lock, level)) {
         txManager.begin(lock, level);
+        if (runtimeLogger.getLockDebug()) {
+          runtimeLogger.lockAcquired(lock, level);
+        }
         return true;
       } else {
         return false;
@@ -761,6 +772,9 @@ public class ManagerImpl implements Manager {
     if (clusteredLockingEnabled(lock)) {
       if (lockManager.tryLock(lock, level, timeout)) {
         txManager.begin(lock, level);
+        if (runtimeLogger.getLockDebug()) {
+          runtimeLogger.lockAcquired(lock, level);
+        }
         return true;
       } else {
         return false;
