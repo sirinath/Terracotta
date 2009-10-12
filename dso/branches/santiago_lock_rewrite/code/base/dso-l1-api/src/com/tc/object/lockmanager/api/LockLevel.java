@@ -175,4 +175,28 @@ public class LockLevel {
   public static int makeNotSynchronous(int level) {
     return level & (~SYNCHRONOUS);
   }
+  
+  @Deprecated
+  public static com.tc.object.locks.LockLevel toEnumType(int level) {
+    switch (level) {
+      case com.tc.object.lockmanager.api.LockLevel.READ: return com.tc.object.locks.LockLevel.READ;
+      case com.tc.object.lockmanager.api.LockLevel.WRITE: return com.tc.object.locks.LockLevel.WRITE;
+  
+      case com.tc.object.lockmanager.api.LockLevel.SYNCHRONOUS_WRITE: return com.tc.object.locks.LockLevel.SYNCHRONOUS_WRITE;
+      case com.tc.object.lockmanager.api.LockLevel.CONCURRENT: return com.tc.object.locks.LockLevel.CONCURRENT;
+    }
+    throw new IllegalArgumentException();
+  }
+  
+  @Deprecated
+  public static int fromEnumType(com.tc.object.locks.LockLevel level) {
+    switch (level) {
+      case READ: return com.tc.object.lockmanager.api.LockLevel.READ;
+      case WRITE: return com.tc.object.lockmanager.api.LockLevel.WRITE;
+      
+      case SYNCHRONOUS_WRITE: return com.tc.object.lockmanager.api.LockLevel.SYNCHRONOUS_WRITE;
+      case CONCURRENT: return com.tc.object.lockmanager.api.LockLevel.CONCURRENT;
+    }
+    throw new IllegalArgumentException();
+  }
 }

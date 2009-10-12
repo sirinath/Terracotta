@@ -31,27 +31,15 @@ public enum LockLevel {
     return SYNCHRONOUS_WRITE.equals(this);
   }
   
-  @Deprecated
-  public static LockLevel fromLegacyInt(int level) {
-    switch (level) {
-      case com.tc.object.lockmanager.api.LockLevel.READ: return READ;
-      case com.tc.object.lockmanager.api.LockLevel.WRITE: return WRITE;
-
-      case com.tc.object.lockmanager.api.LockLevel.SYNCHRONOUS_WRITE: return SYNCHRONOUS_WRITE;
-      case com.tc.object.lockmanager.api.LockLevel.CONCURRENT: return CONCURRENT;
-    }
-    throw new IllegalArgumentException();
+  public int toInt() {
+    return this.ordinal();
   }
-  
-  @Deprecated
-  public static int toLegacyInt(LockLevel level) {
-    switch (level) {
-      case READ: return com.tc.object.lockmanager.api.LockLevel.READ;
-      case WRITE: return com.tc.object.lockmanager.api.LockLevel.WRITE;
-      
-      case SYNCHRONOUS_WRITE: return com.tc.object.lockmanager.api.LockLevel.SYNCHRONOUS_WRITE;
-      case CONCURRENT: return com.tc.object.lockmanager.api.LockLevel.CONCURRENT;
+
+  public static LockLevel fromInt(int integer) {
+    try {
+      return LockLevel.values()[integer];
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new IllegalArgumentException(e);
     }
-    throw new IllegalArgumentException();
   }  
 }

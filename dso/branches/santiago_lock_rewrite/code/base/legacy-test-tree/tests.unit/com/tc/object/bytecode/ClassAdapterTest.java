@@ -1655,7 +1655,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
       }
       if (rv) {
         // make sure that the lock type is the same
-        rv = checkLockType(lockdef, LockLevel.toLegacyInt(lock.level));
+        rv = checkLockType(lockdef, lock.level.toInt());
       }
     }
     return rv;
@@ -1686,7 +1686,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
   }
 
   private void assertNoAutolockLiteral() {
-    assertFalse(checkForLockName(LockDefinition.TC_AUTOLOCK_NAME, com.tc.object.lockmanager.api.LockLevel.WRITE));
+    assertFalse(checkForLockName(LockDefinition.TC_AUTOLOCK_NAME, LockLevel.WRITE.toInt()));
   }
 
   private void createNamedLockDefinition(String lockName) {

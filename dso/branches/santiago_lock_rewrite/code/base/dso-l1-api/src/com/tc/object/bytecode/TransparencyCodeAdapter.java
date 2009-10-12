@@ -17,7 +17,7 @@ import com.tc.exception.TCInternalError;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.config.TransparencyCodeSpec;
-import com.tc.object.lockmanager.api.LockLevel;
+import com.tc.object.locks.LockLevel;
 
 import java.util.AbstractMap;
 
@@ -367,7 +367,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       switch (opCode) {
         case MONITORENTER:
           if (this.isAutolock) {
-            if (autoLockType == LockLevel.READ) {
+            if (autoLockType == LockLevel.READ.toInt()) {
               visitInsnForReadLock(opCode);
               return;
             }
@@ -380,7 +380,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           return;
         case MONITOREXIT:
           if (this.isAutolock) {
-            if (autoLockType == LockLevel.READ) {
+            if (autoLockType == LockLevel.READ.toInt()) {
               visitInsnForReadLock(opCode);
               return;
             }
