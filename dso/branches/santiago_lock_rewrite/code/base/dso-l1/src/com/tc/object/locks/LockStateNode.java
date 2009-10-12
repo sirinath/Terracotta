@@ -46,6 +46,10 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     return owner;
   }
   
+  AcquireResult allowsHold(LockHold newHold) {
+    return AcquireResult.UNKNOWN;
+  }
+  
   public LockStateNode getNext() {
     return next;
   }
@@ -96,7 +100,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
         }
       }
       
-      return AcquireResult.DELEGATED;
+      return AcquireResult.UNKNOWN;
     }
     
     public boolean equals(Object o) {
@@ -157,11 +161,11 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       LockSupport.unpark(javaThread);
     }
 
-    boolean serverResponded() {
+    boolean isRefused() {
       return serverResponded;
     }
     
-    void acked() {
+    void refused() {
       serverResponded = true;
     }
     
@@ -313,24 +317,12 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     }
     
     AcquireResult allowsHold(LockHold newHold) {
-      if (getOwner().equals(newHold.getOwner())) {
-        switch (newHold.getLockLevel()) {
-          case READ:
-            if (level.equals(ServerLockLevel.READ)) {
-              return AcquireResult.SUCCEEDED_SHARED;
-            }
-            break;
-          case SYNCHRONOUS_WRITE:
-          case WRITE:
-            if (level.equals(ServerLockLevel.WRITE)) {
-              return AcquireResult.SUCCEEDED;
-            }
-            break;
-          default:
-            throw new AssertionError();
-        }
+      ServerLockLevel request = ServerLockLevel.fromClientLockLevel(newHold.getLockLevel());
+      if (getOwner().equals(newHold.getOwner()) && getLockLevel().equals(request)) {
+        return newHold.getLockLevel().isWrite() ? AcquireResult.SUCCEEDED : AcquireResult.SUCCEEDED_SHARED;
+      } else {
+        return AcquireResult.UNKNOWN;
       }
-      return AcquireResult.DELEGATED;
     }
     
     public boolean equals(Object o) {

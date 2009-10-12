@@ -231,7 +231,7 @@ public class ClientServerLockManagerTest extends TestCase {
     if (!equals(lockBeans1, lockBeans2)) { throw new AssertionError("The locks are not the same"); }
   }
 
-  public void testWaitNotifyWRClientServer() {
+  public void testWaitNotifyWRClientServer() throws Exception {
     final LockID lockID1 = new StringLockID("1");
     final ThreadID tx1 = new ThreadID(1);
     final ThreadID tx2 = new ThreadID(2);
@@ -254,7 +254,6 @@ public class ClientServerLockManagerTest extends TestCase {
       }
     };
     waitCallThread.start();
-    sleep(1000l);
 
     threadManager.setThreadID(tx2);
     clientLockManager.lock(lockID1, LockLevel.WRITE);
@@ -264,8 +263,9 @@ public class ClientServerLockManagerTest extends TestCase {
      */
     glue.notify(lockID1, tx2, true);
     clientLockManager.unlock(lockID1, LockLevel.WRITE);
-    sleep(1000l);
 
+    waitCallThread.join();
+    
     threadManager.setThreadID(tx1);
 
     LockMBean[] lockBeans2 = serverLockManager.getAllLocks();

@@ -76,6 +76,7 @@ public interface ClientLock {
    * @param remote remote lock manager for delegation
    * @param thread id of the locking (current) thread
    * @param waitObject TODO
+   * @return <code>true</code> is remote threads may need notifying
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */
   public boolean notify(RemoteLockManager remote, ThreadID thread, Object waitObject);
@@ -86,6 +87,7 @@ public interface ClientLock {
    * @param remote remote lock manager for delegation
    * @param thread id of the locking (current) thread
    * @param waitObject TODO
+   * @return <code>true</code> is remote threads may need notifying
    * @throws IllegalMonitorStateException if the current thread does not hold a write lock
    */  
   public boolean notifyAll(RemoteLockManager remote, ThreadID thread, Object waitObject);
