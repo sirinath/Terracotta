@@ -193,8 +193,13 @@ public final class ServerLockImpl extends AbstractServerLock {
           }
           break;
         case WAITER:
-          ServerLockContext waiter = createWaiterAndScheduleTask(cselc, helper);
-          addWaiter(waiter, helper);
+          ServerLockContext context = get((ClientID) cselc.getNodeID(), cselc.getThreadID());
+          if (context != null) {
+            Assert.assertTrue(context.isWaiter() || context.isPending());
+          } else {
+            ServerLockContext waiter = createWaiterAndScheduleTask(cselc, helper);
+            addWaiter(waiter, helper);
+          }
           break;
       }
     }
