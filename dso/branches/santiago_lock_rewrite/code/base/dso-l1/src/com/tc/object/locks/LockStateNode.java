@@ -244,14 +244,19 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     
     private boolean      notified;
     
-    LockWaiter(ThreadID owner, Object waitObject, Stack<PendingLockHold> reacquires, long timeout) {
+    LockWaiter(ThreadID owner, Object waitObject, Stack<LockHold> holds, long timeout) {
       super(owner);
       if (waitObject == null) {
         this.waitObject = this;
       } else {
         this.waitObject = waitObject;
       }
-      this.reacquires = reacquires;
+      
+      this.reacquires = new Stack<PendingLockHold>();
+      for (LockHold hold : holds) {
+        reacquires.add(new MonitorBasedPendingLockHold(owner, hold.getLockLevel(), waitObject, ClientLockImpl.BLOCKING_LOCK));
+      }
+      
       this.waitTime = timeout;
     }
     
