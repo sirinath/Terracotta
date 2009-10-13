@@ -113,7 +113,6 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
 
     List<ServerLockContext> waiters = removeWaiters(action);
     for (ServerLockContext waiter : waiters) {
-      Assert.assertTrue(waiter.getState() == State.WAITER);
       moveWaiterToPending(waiter, helper);
       ClientServerExchangeLockContext cselc = new ClientServerExchangeLockContext(lockID, waiter.getClientID(), waiter
           .getThreadID(), State.WAITER);
@@ -133,9 +132,14 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     ServerLockContext context = remove(cid, tid, SET_OF_HOLDERS);
     recordLockReleaseStat(cid, tid, helper);
 
-    String errorMsg = "An attempt was made to unlock:" + lockID + " for channelID:" + cid
-                      + " This lock was not held. This could be do to that node being down so it may not be an error.";
-    Assert.assertNotNull(errorMsg, context);
+    if (context == null) {
+      String errorMsg = "An attempt was made to unlock:"
+                        + this
+                        + " for channelID:"
+                        + cid
+                        + " This lock was not held. This could be do to that node being down so it may not be an error.";
+      throw new AssertionError(errorMsg);
+    }
     Assert.assertTrue(context.isHolder());
 
     if (clearLockIfRequired(helper)) { return; }
@@ -204,7 +208,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     ThreadID tid = lockTimerContext.getThreadID();
     LockHelper helper = lockTimerContext.getHelper();
 
-    // Ignore contexts for which time out could not be canceled
+    // Ignore contexts for which time out could not be canceled or which got removed
     ServerLockContext context = remove(cid, tid, SET_OF_TRY_PENDING_OR_WAITERS);
     if (context == null) { return; }
 
@@ -221,12 +225,12 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   }
 
   private void tryLockTimeout(ServerLockContext context, LockHelper helper) {
-    Assert.assertTrue(context.getState().getType() == Type.TRY_PENDING);
+    Assert.assertTrue(context.isTryPending());
     cannotAward(context.getClientID(), context.getThreadID(), context.getState().getLockLevel(), helper);
   }
 
   private void waitTimeout(ServerLockContext context, LockHelper helper) {
-    Assert.assertTrue(context.getState() == State.WAITER);
+    Assert.assertTrue(context.isWaiter());
     // Add a wait Timeout message
     LockResponseContext lrc = LockResponseContextFactory.createLockWaitTimeoutResponseContext(this.lockID, context
         .getClientID(), context.getThreadID(), context.getState().getLockLevel());
@@ -591,7 +595,7 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
   }
 
   protected void cancelTryLockOrWaitTimer(ServerLockContext request, LockHelper helper) {
-    if (request.getState().getType() == Type.TRY_PENDING || request.getState() == State.WAITER) {
+    if (request.isTryPending() || request.isWaiter()) {
       WaitServerLockContext waitRequest = (WaitServerLockContext) request;
       if (waitRequest.getTimerTask() != null) {
         waitRequest.getTimerTask().cancel();
@@ -601,9 +605,9 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
 
   // Contexts methods
   protected ServerLockContext changeStateToHolder(ServerLockContext request, State state, LockHelper helper) {
-    Assert.assertTrue(state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER);
     request = changeFromWaitContextIfRequired(request, helper);
     request.setState(helper.getContextStateMachine(), state);
+    Assert.assertTrue(request.isHolder());
     return request;
   }
 

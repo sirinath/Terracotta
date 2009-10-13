@@ -6,7 +6,7 @@ package com.tc.management.beans;
 
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockSpec;
-import com.tc.objectserver.locks.L2LockStatisticsEnableDisableListener;
+import com.tc.objectserver.locks.L2LockStatisticsChangeListener;
 import com.tc.stats.AbstractNotifyingMBean;
 
 import java.io.Serializable;
@@ -20,7 +20,7 @@ import javax.management.NotCompliantMBeanException;
 
 public class LockStatisticsMonitor extends AbstractNotifyingMBean implements LockStatisticsMonitorMBean, Serializable {
   private final L2LockStatsManager                                    lockStatsManager;
-  private final List<L2LockStatisticsEnableDisableListener> listeners = new ArrayList<L2LockStatisticsEnableDisableListener>();
+  private final List<L2LockStatisticsChangeListener> listeners = new ArrayList<L2LockStatisticsChangeListener>();
 
   public LockStatisticsMonitor(L2LockStatsManager lockStatsManager) throws NotCompliantMBeanException {
     super(LockStatisticsMonitorMBean.class);
@@ -38,14 +38,14 @@ public class LockStatisticsMonitor extends AbstractNotifyingMBean implements Loc
   }
 
   public void setLockStatisticsEnabled(boolean lockStatsEnabled) {
-    for (L2LockStatisticsEnableDisableListener listener : listeners) {
+    for (L2LockStatisticsChangeListener listener : listeners) {
       listener.setLockStatisticsEnabled(lockStatsEnabled, lockStatsManager);
     }
     this.lockStatsManager.setLockStatisticsEnabled(lockStatsEnabled);
     sendNotification(TRACES_ENABLED, this);
   }
 
-  public void addL2LockStatisticsEnableDisableListener(L2LockStatisticsEnableDisableListener listener) {
+  public void addL2LockStatisticsEnableDisableListener(L2LockStatisticsChangeListener listener) {
     listeners.add(listener);
   }
 

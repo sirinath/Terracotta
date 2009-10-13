@@ -30,25 +30,14 @@ public final class ServerLockImpl extends AbstractServerLock {
   @Override
   protected void requestLock(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout,
                              LockHelper helper) {
-    // Ignore if a client can fulfill request
-    // Or if Recalled and the client doesn't already hold the greedy lock => q request
-    ServerLockContext holder = getGreedyHolder(cid);
-    if (canAwardGreedilyOnTheClient(level, holder)) {
-      return;
-    } else if (isRecalled) {
-      // add to pending until recall process is complete, those who hold the lock greedily will send the
-      // pending state during recall commit.
-      if (holder == null) {
-        if (timeout > 0 || !type.equals(Type.TRY_PENDING)) {
-          queue(cid, tid, level, type, timeout, helper);
-        } else {
-          cannotAward(cid, tid, level, helper);
-        }
-      }
-      return;
+    ServerLockContext greedyHold = getGreedyHolder(cid);
+    if (canAwardGreedilyOnTheClient(level, greedyHold)) {
+      // Ignore if a client can fulfill request because it can
+    } else if (isRecalled && type.equals(Type.TRY_PENDING) && timeout <= 0) {
+      cannotAward(cid, tid, level, helper);
+    } else {
+      super.requestLock(cid, tid, level, type, timeout, helper);
     }
-
-    super.requestLock(cid, tid, level, type, timeout, helper);
   }
 
   protected void queue(ClientID cid, ThreadID tid, ServerLockLevel level, Type type, long timeout, LockHelper helper) {

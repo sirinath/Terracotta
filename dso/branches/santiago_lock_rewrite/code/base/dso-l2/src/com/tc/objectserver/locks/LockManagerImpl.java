@@ -33,7 +33,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintable, LockManagerMBean,
-    L2LockStatisticsEnableDisableListener, TimerCallback {
+    L2LockStatisticsChangeListener, TimerCallback {
   private enum RequestType {
     LOCK, TRY_LOCK
   }
@@ -58,7 +58,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void lock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level) {
-    if (!checkAndQueue(lid, cid, tid, level, RequestType.LOCK)) { return; }
+    if (!validateAndQueueIfNecessary(lid, cid, tid, level, RequestType.LOCK)) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -69,7 +69,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
   }
 
   public void tryLock(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, long timeout) {
-    if (!checkAndQueue(lid, cid, tid, level, RequestType.TRY_LOCK, timeout)) { return; }
+    if (!validateAndQueueIfNecessary(lid, cid, tid, level, RequestType.TRY_LOCK, timeout)) { return; }
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
@@ -213,20 +213,23 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
       // Done to make sure that all wait/try timers are started
       lockHelper.getLockTimer().start();
 
-      // Go through the request queue and request locks
-      RequestLockContext ctxt = null;
-      while ((ctxt = lockRequestQueue.poll()) != null) {
-        switch (ctxt.getType()) {
-          case LOCK:
-            lock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel());
-            break;
-          case TRY_LOCK:
-            tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
-                .getTimeout());
-        }
-      }
+      processPendingRequests();
     } finally {
       statusLock.writeLock().unlock();
+    }
+  }
+
+  private void processPendingRequests() {
+    RequestLockContext ctxt = null;
+    while ((ctxt = lockRequestQueue.poll()) != null) {
+      switch (ctxt.getType()) {
+        case LOCK:
+          lock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel());
+          break;
+        case TRY_LOCK:
+          tryLock(ctxt.getLockID(), ctxt.getClientID(), ctxt.getThreadID(), ctxt.getRequestedLockLevel(), ctxt
+              .getTimeout());
+      }
     }
   }
 
@@ -259,12 +262,13 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
     }
   }
 
-  private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type) {
-    return checkAndQueue(lid, cid, tid, level, type, -1);
+  private boolean validateAndQueueIfNecessary(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level,
+                                              RequestType type) {
+    return validateAndQueueIfNecessary(lid, cid, tid, level, type, -1);
   }
 
-  private boolean checkAndQueue(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level, RequestType type,
-                                long timeout) {
+  private boolean validateAndQueueIfNecessary(LockID lid, ClientID cid, ThreadID tid, ServerLockLevel level,
+                                              RequestType type, long timeout) {
     statusLock.readLock().lock();
     try {
       if (!isStarted) {
@@ -285,9 +289,8 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
     statusLock.readLock().lock();
     try {
       if (!isStarted) {
-        Assert.assertTrue(callType + " message received when lock manager was starting" + " Message Context: [LockID="
-                          + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]", isStarted);
-        return false;
+        throw new AssertionError(callType + " message received when lock manager was starting"
+                                 + " Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
       } else if (!this.channelManager.isActiveID(cid)) {
         logger.warn(callType + " message received from dead client -- ignoring the message.\n"
                     + "Message Context: [LockID=" + lid + ", NodeID=" + cid + ", ThreadID=" + tid + "]");
