@@ -79,6 +79,11 @@ public abstract class ServerLockContext implements LinkedNode<ServerLockContext>
     if (state.getType() == Type.PENDING || state.getType() == Type.TRY_PENDING) { return true; }
     return false;
   }
+  
+  public boolean isTryPending() {
+    if (state.getType() == Type.TRY_PENDING) { return true; }
+    return false;
+  }
 
   public boolean isHolder() {
     if (state.getType() == Type.GREEDY_HOLDER || state.getType() == Type.HOLDER) { return true; }
