@@ -3,6 +3,8 @@
  */
 package com.tc.object.locks;
 
+import com.tc.net.ClientID;
+
 enum ClientGreediness {
   GARBAGE {
     boolean canAward(LockLevel level) {
@@ -17,7 +19,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -34,8 +36,12 @@ enum ClientGreediness {
       return this;
     }
 
-    public ClientGreediness recallCommitted() {
+    ClientGreediness recallCommitted() {
       return GARBAGE;
+    }
+    
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      throw new AssertionError();
     }
   },
   
@@ -52,7 +58,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -81,6 +87,10 @@ enum ClientGreediness {
     ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
       return this;
     }
+    
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return null;
+    }
   },
   
   GREEDY_READ {
@@ -96,7 +106,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return true;
     }
     
@@ -129,6 +139,10 @@ enum ClientGreediness {
     ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
       return RECALLED_READ;
     }
+    
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_READ);
+    }
   },
 
   GREEDY_WRITE {
@@ -144,7 +158,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return true;
     }
     
@@ -159,6 +173,10 @@ enum ClientGreediness {
       } else {
         return RECALLED_WRITE;
       }
+    }
+    
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_WRITE);
     }
   },
   
@@ -175,7 +193,7 @@ enum ClientGreediness {
       return true;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -199,8 +217,12 @@ enum ClientGreediness {
     }
 
     @Override
-    public ClientGreediness recallCommitted() {
+    ClientGreediness recallCommitted() {
       return FREE;
+    }
+
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_READ);
     }
   },
 
@@ -217,7 +239,7 @@ enum ClientGreediness {
       return true;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -241,8 +263,12 @@ enum ClientGreediness {
     }
 
     @Override
-    public ClientGreediness recallCommitted() {
+    ClientGreediness recallCommitted() {
       return FREE;
+    }
+
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_WRITE);
     }
   },
   
@@ -259,7 +285,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -278,8 +304,12 @@ enum ClientGreediness {
     }
     
     @Override
-    public ClientGreediness recallCommitted() {
+    ClientGreediness recallCommitted() {
       return FREE;
+    }
+
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_READ);
     }
   },
   
@@ -296,7 +326,7 @@ enum ClientGreediness {
       return false;
     }
     
-    public boolean isGreedy() {
+    boolean isGreedy() {
       return false;
     }
     
@@ -315,8 +345,12 @@ enum ClientGreediness {
     }
     
     @Override
-    public ClientGreediness recallCommitted() {
+    ClientGreediness recallCommitted() {
       return FREE;
+    }
+    
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
+      return new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_WRITE);
     }
   };
   
@@ -326,7 +360,7 @@ enum ClientGreediness {
   
   abstract boolean isRecalled();
   
-  abstract public boolean isGreedy();
+  abstract boolean isGreedy();
   
   abstract boolean flushOnUnlock();
 
@@ -349,7 +383,9 @@ enum ClientGreediness {
     throw new AssertionError("recall in progress while in unexpected state (" + this + ")");
   }
 
-  public ClientGreediness recallCommitted() {
+  ClientGreediness recallCommitted() {
     throw new AssertionError("recall committed while in unexpected state (" + this + ")");
   }
+  
+  abstract ClientServerExchangeLockContext toContext(LockID lock, ClientID client);
 }

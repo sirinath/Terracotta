@@ -3,6 +3,7 @@
  */
 package com.tc.object.locks;
 
+import com.tc.net.ClientID;
 import com.tc.object.locks.ClientLockImpl.AcquireResult;
 import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
@@ -50,6 +51,8 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     return AcquireResult.UNKNOWN;
   }
   
+  abstract ClientServerExchangeLockContext toContext(LockID lock, ClientID node);
+  
   public LockStateNode getNext() {
     return next;
   }
@@ -86,6 +89,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       return level;
     }
     
+    @Override
     AcquireResult allowsHold(LockHold newHold) {
       if (getOwner().equals(newHold.getOwner())) {
         if (newHold.getLockLevel().isRead()) {
@@ -103,6 +107,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       return AcquireResult.UNKNOWN;
     }
     
+    @Override
     public boolean equals(Object o) {
       if (o == this) {
         return true;
@@ -113,12 +118,23 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       }
     }
     
+    @Override
     public int hashCode() {
       return (5 * super.hashCode()) ^ (7 * level.hashCode());
     }
-    
+
+    @Override
     public String toString() {
       return super.toString() + " : " + level;
+    }
+
+    @Override
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
+      switch (ServerLockLevel.fromClientLockLevel(getLockLevel())) {
+        case READ: return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.HOLDER_READ);
+        case WRITE: return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.HOLDER_WRITE);
+      }
+      throw new AssertionError();
     }
   }
   
@@ -185,6 +201,25 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
         
     public String toString() {
       return super.toString() + " : " + level;
+    }
+    
+    @Override
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
+      switch (ServerLockLevel.fromClientLockLevel(getLockLevel())) {
+        case READ:
+          if (getTimeout() < 0) {
+            return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.PENDING_READ);
+          } else {
+            return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.TRY_PENDING_READ, getTimeout());
+          }
+        case WRITE:
+          if (getTimeout() < 0) {
+            return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.PENDING_WRITE);
+          } else {
+            return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.TRY_PENDING_WRITE, getTimeout());
+          }
+      }
+      throw new AssertionError();
     }
   }
   
@@ -307,6 +342,11 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     public int hashCode() {
       return super.hashCode();
     }
+    
+    @Override
+    ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
+      return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.WAITER, getTimeout());
+    }
   }
   
   static class LockAward extends LockStateNode {
@@ -346,6 +386,10 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     
     public String toString() {
       return super.toString() + " : " + level;
+    }
+    
+    public ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
+      return null;
     }
   }  
 }
