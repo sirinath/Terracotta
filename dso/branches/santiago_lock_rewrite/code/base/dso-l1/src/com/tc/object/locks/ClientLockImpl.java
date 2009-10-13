@@ -10,10 +10,7 @@ import com.tc.object.locks.LockStateNode.LockAward;
 import com.tc.object.locks.LockStateNode.LockHold;
 import com.tc.object.locks.LockStateNode.LockWaiter;
 import com.tc.object.locks.LockStateNode.PendingLockHold;
-import com.tc.object.locks.LockStateNode.MonitorBasedPendingLockHold;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.util.SinglyLinkedList;
-import com.tc.util.UnsafeUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +22,7 @@ import java.util.Stack;
 import java.util.Timer;
 import java.util.TimerTask;
 
-class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLock {
+class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> implements ClientLock {
   private static final LockFlushCallback NULL_LOCK_FLUSH_CALLBACK = new LockFlushCallback() {
     public void transactionsForLockFlushed(LockID id) {
       //
@@ -151,8 +148,8 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
           }
           // move this waiters reacquire nodes into the queue - we must do this before returning to ensure transactional correctness on notifies.
           if (all) {
-            notify((LockWaiter) s);
-          } else if (notify((LockWaiter) s)) {
+            moveWaiterToPending((LockWaiter) s);
+          } else if (moveWaiterToPending((LockWaiter) s)) {
             return false;
           }
         }
@@ -178,132 +175,88 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
       throw new InterruptedException();
     }
 
-    LockWaiter node = null;
-    // stack of reacquires that should locked when leaving the wait...
-    Stack<PendingLockHold> reacquireNodes = new Stack<PendingLockHold>();
+    if (!(isLockedBy(thread, LockLevel.WRITE) || isLockedBy(thread, LockLevel.SYNCHRONOUS_WRITE))) {
+      throw new IllegalMonitorStateException();
+    }
+
+    LockWaiter waiter = null;
     try {
-      synchronized (this) {
-        boolean holdsWrite = false;
-        for (LockStateNode s : this) {
-          // find all this threads holds...
-          if ((s instanceof LockHold) && s.getOwner().equals(thread)) {
-            LockHold hold = (LockHold) s;
-            if (hold.getLockLevel().isWrite()) {
-              holdsWrite = true;
-            }
-            //if the unlocking of this hold triggers a flush requirement then do it now
-            if (flushOnUnlock(hold)) {
-              if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " flushing transactions on wait");
-              doFlush(remote);
-            }
-            //remove the hold from the state and push into the reacquire stack
-            remove(hold);
-            reacquireNodes.push(new MonitorBasedPendingLockHold(thread, hold.getLockLevel(), waitObject, -1));
-          }
-        }
-        // add the lock waiter node to the state (and attach the reacquire stack to it - the notifying thread will need the stack later)
-        node = new LockWaiter(thread, waitObject, reacquireNodes, timeout);        
-        addLast(node);
-        
-        // if no write locks were held then throw here
-        if (!holdsWrite) { throw new IllegalMonitorStateException(); }
-        
-        // potentially (dependent on greediness state) communicate with the server here
-        if (greediness.isFree()) {
-          remote.wait(lock, thread, timeout);
-        } else if (greediness.isRecalled()) {
-          greediness = doRecall(remote);
-        }
-        
-        // kick the queue to allow queued acquires to grab the lock
-        unparkNextQueuedAcquire();
-      }
-      
-      //horrible listener call used by the test code
-      listener.handleWaitEvent();
-      
-      try {
-        if (timeout < 0) {
-          node.park();
-        } else {
-          node.park(timeout);
-        }
-      } catch (InterruptedException e) {
+      while (true) {
         synchronized (this) {
-          // potentially tell the server that the wait was interrupted - otherwise we may end up waiting for the locks to awarded by the server 
-          if (greediness.isFree()) {
-            remote.interrupt(lock, thread);
+          if (!flushOnUnlockAll(thread)) {
+            waiter = unlockAndPushWaiter(remote, thread, waitObject, timeout);
+            break;
           }
         }
-        throw e;
-      }
+      
+        remote.flush(lock);
+        
+        waiter = unlockAndPushWaiter(remote, thread, waitObject, timeout);
+        break;
+      }    
+    
+      waitOnLockWaiter(remote, thread, waiter, listener);
     } finally {
-      // ensure that our reacquire nodes have been moved into the queue
-      if (node != null) {
-        notify(node);
-      }
-      //reacquire the locks in their original order using the already in place queue nodes
-      while (!reacquireNodes.isEmpty()) {
-        PendingLockHold qa = reacquireNodes.pop();
-        try {
-          acquireQueued(remote, thread, qa.getLockLevel(), qa, false);
-        } catch (GarbageLockException e) {
-          throw new AssertionError(e);
-        }
-      }
+      moveWaiterToPending(waiter);
+      acquireAll(remote, thread, waiter.getReacquires());
     }
   }
 
-//  public void newWait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject, long timeout) throws InterruptedException {
-//    markUsed();
-//    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " moving to wait with " + ((timeout < 0) ? "no timeout" : (timeout + " ms")));
-//    if (Thread.interrupted()) {
-//      throw new InterruptedException();
-//    }
-//
-//    unlockAllHolds;
-//    
-//    ? : flush;
-//    
-//    addWaiterNode
-//
-//    atomic {
-//      ? : remote.wait(lock, thread, timeout);
-//      greedinessTransition
-//    }
-//    
-//    try {
-//      node.park(timeout);
-//    } catch (InterruptedException e) {
-//      remote.interrupt(lock, thread);
-//    }
-//
-//    reacquire;
-//  }
+  private synchronized LockWaiter unlockAndPushWaiter(RemoteLockManager remote, ThreadID thread, Object waitObject, long timeout) {
+    Stack<LockHold> holds = releaseAll(remote, thread);
+    LockWaiter waiter = new LockWaiter(thread, waitObject, holds, timeout);
+    addLast(waiter);
+    
+    if (greediness.isFree()) {
+      remote.wait(lock, thread, timeout);
+    } else if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
+      greediness = recallCommit(remote);
+    }
+    unparkNextQueuedAcquire();
+    
+    return waiter;
+  }
   
-  private Stack<LockHold> unlockAllHolds(RemoteLockManager remote, ThreadID thread) {
-    boolean flush = false;
+  private synchronized Stack<LockHold> releaseAll(RemoteLockManager remote, ThreadID thread) {
     Stack<LockHold> holds = new Stack<LockHold>();
-
-    synchronized (this) {
-      for (LockStateNode s : this) {
-        // find all this threads holds...
-        if ((s instanceof LockHold) && s.getOwner().equals(thread)) {
-          LockHold hold = (LockHold) s;
-          remove(hold);
-          holds.push(hold);
-          flush |= flushOnUnlock(hold);
-        }
+    for (Iterator<LockStateNode> it = iterator(); it.hasNext(); ) {
+      LockStateNode node = it.next();
+      if ((node instanceof LockHold) && node.getOwner().equals(thread)) {
+        it.remove();
+        holds.push((LockHold) node);
       }
     }
-    
-    //if the unlocking of this hold triggers a flush requirement then do it now
-    if (flush) {
-      if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " flushing transactions on wait");
-      remote.flush(lock);
-    }
-    
     return holds;
+  }
+
+  private void waitOnLockWaiter(RemoteLockManager remote, ThreadID thread, LockWaiter waiter, WaitListener listener) throws InterruptedException {
+    listener.handleWaitEvent();
+    try {
+      if (waiter.getTimeout() < 0) {
+        waiter.park();
+      } else {
+        waiter.park(waiter.getTimeout());
+      }
+    } catch (InterruptedException e) {
+      synchronized (this) {
+        if (greediness.isFree()) {
+          remote.interrupt(lock, thread);
+        }
+        moveWaiterToPending(waiter);
+      }
+      throw e;
+    }    
+  }
+  
+  private void acquireAll(RemoteLockManager remote, ThreadID thread, Stack<PendingLockHold> acquires) {
+    while (!acquires.isEmpty()) {
+      PendingLockHold qa = acquires.pop();
+      try {
+        acquireQueued(remote, thread, qa.getLockLevel(), qa, false);
+      } catch (GarbageLockException e) {
+        throw new AssertionError(e);
+      }
+    }
   }
   
   public synchronized Collection<ClientServerExchangeLockContext> getStateSnapshot(ClientID client) {
@@ -450,8 +403,9 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server notifying " + thread);
     for (LockStateNode s : this) {
       if ((s instanceof LockWaiter) && s.getOwner().equals(thread)) {
-        notify((LockWaiter) s);
-        break;
+        // move the waiting nodes reacquires into the queue in this thread so we can be certain that the lock state has changed by the time the server gets the txn ack.
+        moveWaiterToPending((LockWaiter) s);
+        return;
       }
     }
   }
@@ -459,12 +413,15 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   /*
    * Move the given waiters reacquire nodes into the queue
    */
-  private synchronized boolean notify(LockWaiter waiter) {
+  private synchronized boolean moveWaiterToPending(LockWaiter waiter) {
+    if (waiter == null) {
+      return false;
+    }
+    
     if (remove(waiter) == null) {
       waiter.unpark();
       return false;
     } else {
-      // move the waiting nodes reacquires into the queue in this thread so we can be certain that the lock state has changed by the time the server gets the txn ack.
       for (PendingLockHold reacquire : waiter.getReacquires()) {
         addLast(reacquire);
       }
@@ -530,7 +487,8 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   /**
    * Our locks behave in a slightly bizarre way - we don't queue very strictly, if the head of the
    * acquire queue fails, we allow acquires further down to succeed.  This is different to the JDK
-   * RRWL - suspect this is a historical accident.
+   * RRWL - suspect this is a historical accident.  I'm currently experimenting with a more strict
+   * queueing policy to see if it can pass all our tests
    */
   static enum AcquireResult {
     /**
@@ -705,16 +663,16 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
       }
       
       if (!flushOnUnlock(unlock)) {
-        return doRelease(remote, unlock);
+        return release(remote, unlock);
       }
     }
 
     remote.flush(lock);
     
-    return doRelease(remote, unlock);
+    return release(remote, unlock);
   }
 
-  private synchronized boolean doRelease(RemoteLockManager remote, LockHold unlock) {
+  private synchronized boolean release(RemoteLockManager remote, LockHold unlock) {
     if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + unlock.getOwner() + " unlocking " + unlock.getLockLevel());
     remove(unlock);
     if (greediness.isFree()) {
@@ -769,6 +727,18 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     return true;
   }
   
+  private synchronized boolean flushOnUnlockAll(ThreadID thread) {
+    if (greediness.flushOnUnlock()) {
+      return true;
+    }
+    
+    for (LockStateNode s : this) {
+      if (s instanceof LockHold && s.getOwner().equals(thread)) {
+        if (((LockHold) s).getLockLevel().flushOnUnlock()) return true;
+      }
+    }
+    return true;
+  }
   /*
    * Conventional acquire queued - uses a LockSupport based queue object.
    */
@@ -927,7 +897,7 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   }
 
   /*
-   * Unpark the next queued acquire (after supplied node)
+   * Unpark the next queued acquire (starting with supplied node)
    */
   private synchronized void unparkNextQueuedAcquire(LockStateNode node) {
     while (node != null) {
@@ -964,18 +934,21 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
 
   private synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
     if (canRecallNow(recalledLevel)) {
-      if (remote.isTransactionsForLockFlushed(lock, new LockFlushCallback() {
+      LockFlushCallback callback = new LockFlushCallback() {
         public void transactionsForLockFlushed(LockID id) {
           synchronized (ClientLockImpl.this) {
             if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit (having flushed transactions)");
             greediness = recallCommit(remote);
           }
         }
-      })) {
+      };
+      
+      if (remote.isTransactionsForLockFlushed(lock, callback)) {
         if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit " + greediness);
         return recallCommit(remote);
+      } else {
+        return greediness.recallInProgress();
       }
-      return greediness.recallInProgress();
     } else {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : cannot recall right now");
       return this.greediness;
@@ -1027,16 +1000,6 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     return true;
   }
 
-  //bleagh this is horrible - actively looking at this
-  private void doFlush(RemoteLockManager remote) {
-    UnsafeUtil.monitorExit(this);
-    try {
-      remote.flush(lock);
-    } finally {
-      UnsafeUtil.monitorEnter(this);
-    }
-  }
-  
   public boolean tryMarkAsGarbage(final RemoteLockManager remote) {
     synchronized (this) {
       if (!pinned && isEmpty() && gcCycleCount > 0) {
@@ -1080,13 +1043,12 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
   }
   
   private synchronized Collection<ClientServerExchangeLockContext> getFilteredStateSnapshot(ClientID client, boolean greedy) {
-    Collection<ClientServerExchangeLockContext> fullState = getStateSnapshot(client);
     Collection<ClientServerExchangeLockContext> legacyState = new ArrayList();
     
     Map<ThreadID, ClientServerExchangeLockContext> holds = new HashMap<ThreadID, ClientServerExchangeLockContext>();
     Map<ThreadID, ClientServerExchangeLockContext> pends = new HashMap<ThreadID, ClientServerExchangeLockContext>();
     
-    for (ClientServerExchangeLockContext context : fullState) {
+    for (ClientServerExchangeLockContext context : getStateSnapshot(client)) {
       switch (context.getState()) {
         case HOLDER_READ:
           if (holds.get(context.getThreadID()) == null) {
@@ -1135,46 +1097,5 @@ class ClientLockImpl extends SinglyLinkedList<LockStateNode> implements ClientLo
     }
     
     return sb.toString();
-  }
-  
-  @Override
-  public synchronized boolean isEmpty() {
-    return super.isEmpty();
-  }
-
-  @Override
-  public synchronized void addFirst(LockStateNode first) {
-    super.addFirst(first);
-  }
-  
-  @Override
-  public synchronized LockStateNode removeFirst() {
-    return super.removeFirst();
-  }
-
-  @Override
-  public synchronized LockStateNode getFirst() {
-    return super.getFirst();
-  }
-
-  @Override
-  public synchronized void addLast(LockStateNode last) {
-    super.addLast(last);
-  }
-
-  @Override
-  public synchronized LockStateNode removeLast() {
-    return super.removeLast();
-  }
-
-  
-  @Override
-  public synchronized LockStateNode getLast() {
-    return super.getLast();
-  }
-
-  @Override
-  public synchronized LockStateNode remove(LockStateNode obj) {
-    return super.remove(obj);
-  } 
+  }  
 }
