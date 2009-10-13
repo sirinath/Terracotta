@@ -263,61 +263,16 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
     Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
 
     switch (greediness) {
-      case RECALLED_READ:
-      case READ_RECALL_IN_PROGRESS:
-      case GREEDY_READ:
-        contexts.add(new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_READ));
-        break;
-      case RECALLED_WRITE:        
-      case WRITE_RECALL_IN_PROGRESS:
-      case GREEDY_WRITE:
-        contexts.add(new ClientServerExchangeLockContext(lock, client, ThreadID.VM_ID, ServerLockContext.State.GREEDY_HOLDER_WRITE));
-        break;
       case GARBAGE:
         return Collections.emptyList();
-      case FREE:
-        break;
+      default:
+        ClientServerExchangeLockContext c = greediness.toContext(lock, client);
+        if (c != null) contexts.add(c);
     }
 
     for (LockStateNode s : this) {
-      if (s instanceof LockHold) {
-        switch (((LockHold) s).getLockLevel()) {
-          case READ:
-            contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.HOLDER_READ));
-            break;
-          case WRITE:
-          case SYNCHRONOUS_WRITE:
-            contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.HOLDER_WRITE));
-            break;
-          default:
-            throw new AssertionError();
-        }
-      } else if (s instanceof LockWaiter) {
-        LockWaiter lw = (LockWaiter) s;
-        contexts.add(new ClientServerExchangeLockContext(lock, client, lw.getOwner(), ServerLockContext.State.WAITER, lw.getTimeout()));
-      } else if (s instanceof PendingLockHold) {
-        switch (((PendingLockHold) s).getLockLevel()) {
-          case READ:
-            PendingLockHold qla = (PendingLockHold) s;
-            if (qla.getTimeout() < 0) {
-              contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.PENDING_READ));
-            } else {
-              contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.TRY_PENDING_READ, qla.getTimeout()));
-            }
-            break;
-          case WRITE:
-          case SYNCHRONOUS_WRITE:
-            qla = (PendingLockHold) s;
-            if (qla.getTimeout() < 0) {
-              contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.PENDING_WRITE));
-            } else {
-              contexts.add(new ClientServerExchangeLockContext(lock, client, s.getOwner(), ServerLockContext.State.TRY_PENDING_WRITE, qla.getTimeout()));
-            }
-            break;
-          default:
-            throw new AssertionError();
-        }
-      }
+      ClientServerExchangeLockContext c = s.toContext(lock, client);
+      if (c != null) contexts.add(c);
     }
     
     return contexts;
@@ -737,7 +692,7 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
         if (((LockHold) s).getLockLevel().flushOnUnlock()) return true;
       }
     }
-    return true;
+    return false;
   }
   /*
    * Conventional acquire queued - uses a LockSupport based queue object.
@@ -868,6 +823,7 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
         }
         long now = System.currentTimeMillis();
         timeout -= now - lastTime;
+        //possibility of changing node timeout here...
         lastTime = now;
       }
       remove(node);
@@ -897,7 +853,7 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
   }
 
   /*
-   * Unpark the next queued acquire (starting with supplied node)
+   * Unpark the next queued acquire (starting at supplied node)
    */
   private synchronized void unparkNextQueuedAcquire(LockStateNode node) {
     while (node != null) {
