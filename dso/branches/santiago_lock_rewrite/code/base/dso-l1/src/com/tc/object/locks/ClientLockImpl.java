@@ -184,14 +184,14 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
       while (true) {
         synchronized (this) {
           if (!flushOnUnlockAll(thread)) {
-            waiter = unlockAndPushWaiter(remote, thread, waitObject, timeout);
+            waiter = releaseAllAndPushWaiter(remote, thread, waitObject, timeout);
             break;
           }
         }
       
         remote.flush(lock);
         
-        waiter = unlockAndPushWaiter(remote, thread, waitObject, timeout);
+        waiter = releaseAllAndPushWaiter(remote, thread, waitObject, timeout);
         break;
       }    
     
@@ -202,7 +202,7 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
     }
   }
 
-  private synchronized LockWaiter unlockAndPushWaiter(RemoteLockManager remote, ThreadID thread, Object waitObject, long timeout) {
+  private synchronized LockWaiter releaseAllAndPushWaiter(RemoteLockManager remote, ThreadID thread, Object waitObject, long timeout) {
     Stack<LockHold> holds = releaseAll(remote, thread);
     LockWaiter waiter = new LockWaiter(thread, waitObject, holds, timeout);
     addLast(waiter);
@@ -721,7 +721,6 @@ class ClientLockImpl extends SynchronizedSinglyLinkedList<LockStateNode> impleme
             unparkNextQueuedAcquire(node.getNext());
           }
           if (result.succeeded()) {
-            // we succeeded return interrupted state
             remove(node);
             return;
           }
