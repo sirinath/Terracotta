@@ -93,7 +93,7 @@ public class TestLockManager implements ClientLockManager {
     throw new ImplementMe();
   }
 
-  public void info(final ThreadID threadID, final Collection<ClientServerExchangeLockContext> contexts) {
+  public void info(final LockID lock, final ThreadID threadID, final Collection<ClientServerExchangeLockContext> contexts) {
     throw new ImplementMe();
   }
 

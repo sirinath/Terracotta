@@ -740,7 +740,7 @@ public class ManagerImpl implements Manager {
     } else {
       waitObject.notify();
     }
-    return null;
+    return Notify.NULL;
   }
 
   public Notify notifyAll(LockID lock, Object waitObject) {
@@ -749,7 +749,7 @@ public class ManagerImpl implements Manager {
     } else {
       waitObject.notifyAll();
     }
-    return null;
+    return Notify.NULL;
   }
 
   public boolean tryLock(LockID lock, LockLevel level) {

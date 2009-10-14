@@ -51,7 +51,7 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();      
     }
 
-    public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
+    public void info(LockID lock, ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
       throw new ImplementMe();
       
     }

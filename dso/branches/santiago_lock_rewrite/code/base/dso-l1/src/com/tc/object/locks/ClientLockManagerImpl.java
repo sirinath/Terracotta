@@ -91,6 +91,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
+        logger.info("Hitting garbage lock state during lock on " + lock, e);
       }
     }
   }
@@ -104,6 +105,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
+        logger.info("Hitting garbage lock state during tryLock on " + lock, e);
       }
     }
   }
@@ -117,6 +119,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
+        logger.info("Hitting garbage lock state during tryLock with timeout on " + lock, e);
       }
     }
   }
@@ -131,6 +134,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
+        logger.info("Hitting garbage lock state during lockInterruptibly on " + lock, e);
       }
     }
   }
@@ -148,7 +152,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     if (lockState.notify(remoteManager, thread, null)) {
       return new Notify(lock, thread, false);
     } else {
-      return null;
+      return Notify.NULL;
     }
   }
 
@@ -159,7 +163,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     if (lockState.notifyAll(remoteManager, thread, null)) {
       return new Notify(lock, thread, true);
     } else {
-      return null;
+      return Notify.NULL;
     }
   }
 
@@ -324,15 +328,15 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   }
   
   public LockID generateLockIdentifier(String str) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
 
   public LockID generateLockIdentifier(Object obj) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
 
   public LockID generateLockIdentifier(Object obj, String field) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
 
   /***********************************/
@@ -377,7 +381,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     final ClientLock lockState = getClientLockState(lock);
     while (true) {
       if (lockState == null) {
-        throw new AssertionError(lock);
+        throw new AssertionError("Server attempting to notify on non-existent lock " + lock);
       } else {
         lockState.notified(thread);
         return;
@@ -412,7 +416,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   }
 
-  public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
+  public void info(LockID lock, ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
     Object old = inFlightLockQueries.put(requestor, contexts);
     synchronized (old) {
       old.notifyAll();
@@ -534,7 +538,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   static enum State {
     RUNNING {
       State unpause() {
-        throw new AssertionError();
+        throw new AssertionError("unpause is an invalid state transition for " + this);
       }
       
       State pause() {
@@ -542,7 +546,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       }
 
       State initialize() {
-        throw new AssertionError();
+        throw new AssertionError("initialize is an invalid state transition for " + this);
       }
       
       State shutdown() {
@@ -560,7 +564,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       }
       
       State initialize() {
-        throw new AssertionError();
+        throw new AssertionError("initialize is an invalid state transition for " + this);
       }
       
       State shutdown() {
@@ -570,11 +574,11 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     
     PAUSED {
       State unpause() {
-        throw new AssertionError();
+        throw new AssertionError("unpause is an invalid state transition for " + this);
       }
       
       State pause() {
-        throw new AssertionError();
+        throw new AssertionError("pause is an invalid state transition for " + this);
       }
       
       State initialize() {

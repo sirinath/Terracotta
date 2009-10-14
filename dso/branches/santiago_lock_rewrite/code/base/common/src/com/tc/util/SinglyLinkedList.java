@@ -145,13 +145,13 @@ public class SinglyLinkedList<E extends SinglyLinkedList.LinkedNode<E>> implemen
    * This implementation does not throw ConcurrentModification Exception as we don't want to store mod count to save
    * space.
    */
-  private class ListIterator implements SinglyLinkedListIterator<E> {
+  protected class ListIterator implements SinglyLinkedListIterator<E> {
 
     E prev;
     E current;
     E next;
 
-    ListIterator() {
+    protected ListIterator() {
       this.prev = this.current = null;
       this.next = SinglyLinkedList.this.head;
     }

@@ -51,7 +51,7 @@ public class LockResponseHandler extends AbstractEventHandler {
         lockManager.notified(msg.getLockID(), msg.getThreadID());
         return;
       case INFO:
-        lockManager.info(msg.getThreadID(), msg.getContexts());
+        lockManager.info(msg.getLockID(), msg.getThreadID(), msg.getContexts());
         return;
     }
     logger.error("Unknown lock response message: " + msg);

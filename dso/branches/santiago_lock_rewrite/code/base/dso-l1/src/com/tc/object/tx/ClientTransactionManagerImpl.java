@@ -109,7 +109,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
       // 2) DNAFactory.flushDNAFor(LockID)
       // 3) RemoteTransactionManagerImpl.commit()
       // 4) ClientLock.removeCurrent()
-      throw new AssertionError("Don't currently support nested concurrent write transactions");
+      throw new UnsupportedOperationException("Don't currently support nested concurrent write transactions");
     }
     
     ClientTransaction currentTransaction = getTransactionOrNull();
@@ -137,10 +137,6 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
   }
 
   public void notify(Notify notify) throws UnlockedSharedObjectException {
-    if (notify == null) {
-      return;
-    }
-    
     final ClientTransaction currentTxn = getTransactionOrNull();
 
     if (currentTxn == null || currentTxn.getEffectiveType() != TxnType.NORMAL) { throw new IllegalMonitorStateException(getIllegalMonitorStateExceptionMessage()); }

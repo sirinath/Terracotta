@@ -93,14 +93,14 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     AcquireResult allowsHold(LockHold newHold) {
       if (getOwner().equals(newHold.getOwner())) {
         if (newHold.getLockLevel().isRead()) {
-          return getLockLevel().isWrite() ? AcquireResult.SUCCEEDED : AcquireResult.SUCCEEDED_SHARED;
+          return getLockLevel().isWrite() ? AcquireResult.SUCCESS : AcquireResult.SHARED_SUCCESS;
         }
         if (level.isWrite()) {
-          return AcquireResult.SUCCEEDED;
+          return AcquireResult.SUCCESS;
         }
       } else {
         if (level.isWrite()) {
-          return AcquireResult.FAILED;
+          return AcquireResult.FAILURE;
         }
       }
       
@@ -364,7 +364,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     AcquireResult allowsHold(LockHold newHold) {
       ServerLockLevel request = ServerLockLevel.fromClientLockLevel(newHold.getLockLevel());
       if (getOwner().equals(newHold.getOwner()) && getLockLevel().equals(request)) {
-        return newHold.getLockLevel().isWrite() ? AcquireResult.SUCCEEDED : AcquireResult.SUCCEEDED_SHARED;
+        return newHold.getLockLevel().isWrite() ? AcquireResult.SUCCESS : AcquireResult.SHARED_SUCCESS;
       } else {
         return AcquireResult.UNKNOWN;
       }
