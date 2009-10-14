@@ -130,8 +130,8 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
     getClientLockManagerFor(lock).refuse(node, session, lock, thread, level);
   }
   
-  public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
-    throw new AssertionError();
+  public void info(LockID lock, ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts) {
+    getClientLockManagerFor(lock).info(lock, requestor, contexts);
   }
   
   public void pinLock(LockID lock) {
@@ -143,13 +143,13 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   }
   
   public LockID generateLockIdentifier(String str) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
   public LockID generateLockIdentifier(Object obj) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
   public LockID generateLockIdentifier(Object obj, String field) {
-    throw new AssertionError();
+    throw new AssertionError(getClass().getSimpleName() + " does not generate lock identifiers");
   }
 
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {

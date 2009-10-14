@@ -41,7 +41,7 @@ enum ClientGreediness {
     }
     
     ClientServerExchangeLockContext toContext(LockID lock, ClientID client) {
-      throw new AssertionError();
+      throw new AssertionError("Garbage locks have no exchange context representation.");
     }
   },
   
@@ -78,9 +78,8 @@ enum ClientGreediness {
           return GREEDY_READ;
         case WRITE:
           return GREEDY_WRITE;
-        default:
-          throw new AssertionError();
       }
+      throw new AssertionError("Trying to award unknown ServerLockLevel " + level);
     }
 
     @Override
@@ -121,9 +120,8 @@ enum ClientGreediness {
           return this;
         case WRITE:
           return RECALLED_READ;
-        default:
-          throw new AssertionError();
       }
+      throw new AssertionError("Trying to request unknown ServerLockLevel " + level);
     }
     
     @Override
@@ -131,8 +129,8 @@ enum ClientGreediness {
       switch (level) {
         case READ: return GREEDY_READ;
         case WRITE: return GREEDY_WRITE;
-        default: throw new AssertionError();
       }
+      throw new AssertionError("Trying to award unknown ServerLockLevel " + level);
     }
 
     @Override

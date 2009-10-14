@@ -36,7 +36,7 @@ public interface ClientLockManager extends TerracottaLocking, ClientHandshakeCal
   /**
    * Called by a Terracotta thread to return the result of a previous query operation on the RemoteLockManager.
    */
-  public void info(ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts);
+  public void info(LockID lock, ThreadID requestor, Collection<ClientServerExchangeLockContext> contexts);
   
   /**
    * Returns a complete dump (in pseudo-portable format) of the state of all locks.
