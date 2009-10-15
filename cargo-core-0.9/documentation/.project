@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>cargo-documentation</name>
+	<comment>Cargo Website Resources</comment>
+	<projects>
+		<project>cargo-core-container-weblogic</project>
+		<project>cargo-core-api-container</project>
+		<project>cargo-core-container-orion</project>
+		<project>cargo-core-api-util</project>
+		<project>cargo-core-container-jboss</project>
+		<project>cargo-core-container-jo</project>
+		<project>cargo-core-container-jetty</project>
+		<project>cargo-core-api-module</project>
+		<project>cargo-core-api-generic</project>
+		<project>cargo-core-container-tomcat</project>
+		<project>cargo-core-container-resin</project>
+		<project>cargo-core-container-geronimo</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.maven.ide.eclipse.maven2Builder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>org.maven.ide.eclipse.maven2Nature</nature>
+	</natures>
+</projectDescription>
