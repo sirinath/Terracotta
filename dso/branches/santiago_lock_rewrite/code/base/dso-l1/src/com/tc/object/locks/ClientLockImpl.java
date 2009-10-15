@@ -15,6 +15,7 @@ import com.tc.object.msg.ClientHandshakeMessage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,6 +31,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     }
   };
   
+  private static final Set<LockLevel> WRITE_LEVELS = EnumSet.of(LockLevel.WRITE, LockLevel.SYNCHRONOUS_WRITE);  
   private static final boolean DEBUG         = false;
   private static final Timer   LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
   protected static final int   BLOCKING_LOCK = Integer.MIN_VALUE;
@@ -176,7 +178,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       throw new InterruptedException();
     }
 
-    if (!isLockedBy(thread, LockLevel.WRITE_LEVELS)) {
+    if (!isLockedBy(thread, WRITE_LEVELS)) {
       throw new IllegalMonitorStateException();
     }
 
