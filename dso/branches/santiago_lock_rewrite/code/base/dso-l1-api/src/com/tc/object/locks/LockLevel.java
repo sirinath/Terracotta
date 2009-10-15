@@ -3,9 +3,6 @@
  */
 package com.tc.object.locks;
 
-import java.util.EnumSet;
-import java.util.Set;
-
 public enum LockLevel {
   READ, WRITE,
   SYNCHRONOUS_WRITE,
@@ -16,10 +13,6 @@ public enum LockLevel {
    */
   private static final LockLevel[]   VALUES = LockLevel.values();
 
-  public static final Set<LockLevel> ALL_LEVELS   = EnumSet.allOf(LockLevel.class);
-  public static final Set<LockLevel> WRITE_LEVELS = EnumSet.of(WRITE, SYNCHRONOUS_WRITE);
-  public static final Set<LockLevel> READ_LEVELS  = EnumSet.of(READ);
-  
   public boolean isWrite() {
     switch (this) {
       case WRITE:
