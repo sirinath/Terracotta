@@ -7,6 +7,7 @@ package com.tc.object.locks;
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.logging.NullTCLogger;
+import com.tc.management.ClientLockStatManager;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.session.TestSessionManager;
 import com.tc.objectserver.api.TestSink;
@@ -34,7 +35,7 @@ public class ClientServerLockManagerTest extends TestCase {
     glue = new ClientServerLockManagerGlue(sessionManager, sink, new NonGreedyLockPolicyFactory());
     threadManager = new ManualThreadIDManager();
     clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, glue, threadManager,
-                                                  new NullClientLockManagerConfig());
+                                                  new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
 
     serverLockManager = new LockManagerImpl(sink, new NullChannelManager(), new NonGreedyLockPolicyFactory());
     glue.set(clientLockManager, serverLockManager);

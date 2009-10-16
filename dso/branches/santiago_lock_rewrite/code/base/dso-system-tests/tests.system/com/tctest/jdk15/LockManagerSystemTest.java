@@ -15,6 +15,7 @@ import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
+import com.tc.management.ClientLockStatManager;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.management.lock.stats.TCStackTraceElement;
@@ -82,7 +83,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     threadManager = new ManualThreadIDManager();
     clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager,
-                                                  new NullClientLockManagerConfig());
+                                                  new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
 
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 
@@ -454,7 +455,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     public TestRemoteLockManagerImpl(LockRequestMessageFactory lrmf, ClientGlobalTransactionManager gtxManager,
                                      BoundedLinkedQueue clientLockRequestQueue) {
-      super(new ClientIDProviderImpl(new TestChannelIDProvider()), GroupID.NULL_ID, lrmf, gtxManager);
+      super(new ClientIDProviderImpl(new TestChannelIDProvider()), GroupID.NULL_ID, lrmf, gtxManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
       this.clientLockRequestQueue = clientLockRequestQueue;
     }
 

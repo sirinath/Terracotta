@@ -84,6 +84,9 @@ public interface DSOClientBuilder {
                                       final ThreadIDManager threadManager,
                                       final ClientGlobalTransactionManager clientGlobalTransactionManager,
                                       final ClientLockManagerConfig clientLockManagerConfig);
+
+  @Deprecated
+  ClientLockStatManager createLockStatsManager();
   
   RemoteTransactionManager createRemoteTransactionManager(final ClientIDProvider cidProvider,
                                                           final DNAEncoding encoding,
@@ -103,4 +106,5 @@ public interface DSOClientBuilder {
   ObjectIDProvider createObjectIdProvider(BatchSequence[] sequences, ClientIDProvider clientIDProvider);
 
   BatchSequenceReceiver getBatchReceiver(BatchSequence[] sequences);
+
 }

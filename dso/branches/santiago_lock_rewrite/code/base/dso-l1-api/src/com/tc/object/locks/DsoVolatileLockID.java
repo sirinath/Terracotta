@@ -15,6 +15,8 @@ import java.io.IOException;
  * Locking on these instances allows us to provide volatile read/write semantics across the cluster.
  */
 public class DsoVolatileLockID implements LockID {
+  private static final long serialVersionUID = 0xc62da86bc278450eL;
+  
   private long     objectId;
   private String   fieldName;
   

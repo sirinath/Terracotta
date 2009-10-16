@@ -244,6 +244,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
             waitObject.wait();
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            unparked = true;
           }
         }
         unparked = false;

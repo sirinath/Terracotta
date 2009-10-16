@@ -4,6 +4,7 @@
 package com.tc.object.locks;
 
 import com.tc.logging.TCLogger;
+import com.tc.management.ClientLockStatManager;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.OrderedGroupIDs;
@@ -28,12 +29,12 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
   public ClientLockManagerGroupImpl(TCLogger logger, ClientIDProvider clientIdProvider, OrderedGroupIDs groups, LockDistributionStrategy lockDistribution,
                                     SessionManager sessionManager, ThreadIDManager threadManager,
                                     LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager,
-                                    ClientLockManagerConfig config) {
+                                    ClientLockManagerConfig config, ClientLockStatManager statManager) {
     distribution = lockDistribution;
     lockManagers = new HashMap<GroupID, ClientLockManager>();
 
     for (GroupID g : groups.getGroupIDs()) {
-      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(clientIdProvider, g, messageFactory, globalTxManager), threadManager, config));
+      lockManagers.put(g, new ClientLockManagerImpl(logger, sessionManager, new RemoteLockManagerImpl(clientIdProvider, g, messageFactory, globalTxManager, statManager), threadManager, config, statManager));
     }
   }
   

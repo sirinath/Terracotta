@@ -27,7 +27,6 @@ import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Management;
 import com.tc.management.TCClient;
 import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
@@ -511,7 +510,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.l1Management.start(this.createDedicatedMBeanServer);
 
     //Setup the lock manager
-    ClientLockStatManager lockStatManager = new ClientLockStatisticsManagerImpl();
+    ClientLockStatManager lockStatManager = this.dsoClientBuilder.createLockStatsManager();
     this.lockManager = this.dsoClientBuilder.createLockManager(this.channel, new ClientIDLogger(this.channel
         .getClientIDProvider(), TCLogging.getLogger(ClientLockManager.class)), sessionManager, lockStatManager,
                                                                this.channel.getLockRequestMessageFactory(), threadIDManager, gtxManager,
@@ -567,7 +566,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                          new LockStatisticsResponseHandler(), 1, 1);
     final Stage lockStatisticsEnableDisableStage = stageManager
         .createStage(ClientConfigurationContext.LOCK_STATISTICS_ENABLE_DISABLE_STAGE,
-                     new LockStatisticsEnableDisableHandler(), 1, 1);
+                     new LockStatisticsEnableDisableHandler(lockStatManager), 1, 1);
     lockStatManager.start(this.channel, lockStatisticsStage.getSink());
 
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,

@@ -13,6 +13,8 @@ import java.io.IOException;
  * LockID implementation representing a lock on a non-literal DSO clustered object.
  */
 public class DsoLockID implements LockID {
+  private static final long serialVersionUID = 0x123456789abcdefL;
+  
   private long          objectId;
   
   public DsoLockID() {

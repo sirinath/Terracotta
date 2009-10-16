@@ -3,6 +3,7 @@
  */
 package com.tc.object.locks;
 
+import com.tc.management.ClientLockStatManager;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
 import com.tc.object.ClientIDProvider;
@@ -18,12 +19,17 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   private final ClientGlobalTransactionManager globalTxManager;
   private final GroupID                        group;
   private final ClientIDProvider               clientIdProvider;
+
+  @Deprecated
+  private final ClientLockStatManager          statManager;
   
-  public RemoteLockManagerImpl(ClientIDProvider clientIdProvider, GroupID group, LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager) {
+  public RemoteLockManagerImpl(ClientIDProvider clientIdProvider, GroupID group, LockRequestMessageFactory messageFactory, ClientGlobalTransactionManager globalTxManager, ClientLockStatManager statManager) {
     this.messageFactory = messageFactory;
     this.globalTxManager = globalTxManager;
     this.group = group;
     this.clientIdProvider = clientIdProvider;
+    
+    this.statManager = statManager;
   }
   
   public ClientID getClientID() {
@@ -45,6 +51,8 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   }
 
   public void lock(LockID lock, ThreadID thread, ServerLockLevel level) {
+    fireRemoteCall(lock, thread);
+    
     LockRequestMessage msg = createMessage();
     msg.initializeLock(lock, thread, level);
     sendMessage(msg);
@@ -57,6 +65,8 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   }
 
   public void tryLock(LockID lock, ThreadID thread, ServerLockLevel level, long timeout) {
+    fireRemoteCall(lock, thread);
+
     LockRequestMessage msg = createMessage();
     msg.initializeTryLock(lock, thread, timeout, level);
     sendMessage(msg);
@@ -89,5 +99,12 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
 
   protected void sendMessage(LockRequestMessage msg) {
     msg.send();
+  }
+  
+  @Deprecated
+  private void fireRemoteCall(LockID lock, ThreadID thread) {
+    if (statManager.isEnabled()) {
+      statManager.recordLockHopped(lock, thread);
+    }
   }
 }

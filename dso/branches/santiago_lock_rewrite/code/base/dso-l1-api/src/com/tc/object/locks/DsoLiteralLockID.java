@@ -19,6 +19,7 @@ import java.math.BigInteger;
  * cluster wide object identity.
  */
 public class DsoLiteralLockID implements LockID {
+  private static final long serialVersionUID = 0x173295fec628dca3L;
 
   private Object literal;
   
