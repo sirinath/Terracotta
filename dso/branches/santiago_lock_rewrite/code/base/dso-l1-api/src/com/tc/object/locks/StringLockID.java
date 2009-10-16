@@ -10,6 +10,8 @@ import com.tc.util.Assert;
 import java.io.IOException;
 
 public class StringLockID implements LockID {
+  private static final long serialVersionUID = 0x159578a476cef87dL;
+  
   @Deprecated
   public final static StringLockID NULL_ID = new StringLockID("null id");
 

@@ -32,11 +32,17 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   private final static NodeID              NULL_NODE_ID                = ServerID.NULL_ID;
   private final static Set                 IGNORE_STACK_TRACES_PACKAGE = new HashSet();
 
+  private final LockDistributionStrategy   lockDistributionStrategy;
+  
   private Sink                             sink;
   private DSOClientMessageChannel          channel;
 
   private static final StackTraceElement[] EMPTY_STACK_TRACE           = {};
 
+  public ClientLockStatisticsManagerImpl(LockDistributionStrategy lockDistributionStrategy) {
+    this.lockDistributionStrategy = lockDistributionStrategy;
+  }
+  
   static {
     IGNORE_STACK_TRACES_PACKAGE.add("com.tc.");
     IGNORE_STACK_TRACES_PACKAGE.add("com.tcclient.");
@@ -56,7 +62,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   }
 
   public void recordLockRequested(LockID lockID, ThreadID threadID, String contextInfo, int numberOfPendingLockRequests) {
-    if (!isClientStatEnabled()) { return; }
+    if (!isEnabled()) { return; }
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
     super.recordLockRequested(lockID, NULL_NODE_ID, threadID, stackTraceElements, contextInfo,
@@ -64,21 +70,21 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   }
 
   public synchronized void recordLockAwarded(LockID lockID, ThreadID threadID) {
-    if (!isClientStatEnabled()) { return; }
+    if (!isEnabled()) { return; }
 
     int depth = super.incrementNestedDepth(threadID);
     super.recordLockAwarded(lockID, NULL_NODE_ID, threadID, false, System.currentTimeMillis(), depth);
   }
 
   public synchronized void recordLockReleased(LockID lockID, ThreadID threadID) {
-    if (!isClientStatEnabled()) { return; }
+    if (!isEnabled()) { return; }
 
     super.decrementNestedDepth(threadID);
     super.recordLockReleased(lockID, NULL_NODE_ID, threadID);
   }
 
   public synchronized void recordLockHopped(LockID lockID, ThreadID threadID) {
-    if (!isClientStatEnabled()) { return; }
+    if (!isEnabled()) { return; }
 
     StackTraceElement[] stackTraceElements = getStackTraceElements(lockStatConfig.getTraceDepth());
 
@@ -89,7 +95,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
   }
 
   public synchronized void recordLockRejected(LockID lockID, ThreadID threadID) {
-    if (!isClientStatEnabled()) { return; }
+    if (!isEnabled()) { return; }
 
     super.recordLockRejected(lockID, NULL_NODE_ID, threadID);
   }
@@ -108,7 +114,7 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     super.clear();
   }
 
-  private boolean isClientStatEnabled() {
+  public boolean isEnabled() {
     return lockStatisticsEnabled;
   }
 
@@ -197,14 +203,14 @@ public class ClientLockStatisticsManagerImpl extends LockStatisticsManager imple
     return false;
   }
 
-  public void requestLockSpecs(NodeID nodeID, LockDistributionStrategy strategy) {
+  public void requestLockSpecs(NodeID nodeID) {
     Collection allTCLockStatElements = new ArrayList();
 
     synchronized (this) {
       Set allLockIDs = lockStats.keySet();
       for (Iterator i = allLockIDs.iterator(); i.hasNext();) {
         LockID lockID = (LockID) i.next();
-        if (strategy.getGroupIDFor(lockID).equals(nodeID) || GroupID.ALL_GROUPS.equals(nodeID)) {
+        if ((lockDistributionStrategy == null) || lockDistributionStrategy.getGroupIDFor(lockID).equals(nodeID) || GroupID.ALL_GROUPS.equals(nodeID)) {
           LockStatElement lockStatElement = getLockStatElement(lockID);
           allTCLockStatElements.add(new TCStackTraceElement(lockID, lockStatElement));
         }

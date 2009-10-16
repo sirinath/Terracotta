@@ -9,7 +9,9 @@ import com.tc.io.TCByteBufferOutput;
 import java.io.IOException;
 
 public class LongLockID implements LockID {
-  private long                   id;
+  private static final long serialVersionUID = 0x2845dcae50983bcdL;
+
+  private long id;
 
   public LongLockID() {
     // to make TCSerializable happy

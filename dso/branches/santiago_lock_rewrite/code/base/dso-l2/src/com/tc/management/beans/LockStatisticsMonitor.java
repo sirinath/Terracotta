@@ -47,6 +47,7 @@ public class LockStatisticsMonitor extends AbstractNotifyingMBean implements Loc
 
   public void addL2LockStatisticsEnableDisableListener(L2LockStatisticsChangeListener listener) {
     listeners.add(listener);
+    listener.setLockStatisticsEnabled(isLockStatisticsEnabled(), lockStatsManager);
   }
 
   public boolean isLockStatisticsEnabled() {

@@ -8,6 +8,7 @@ import com.tc.logging.ClientIDLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.ClientLockStatManager;
+import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.GroupID;
 import com.tc.net.core.ConnectionAddressProvider;
@@ -138,10 +139,15 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final ClientLockManagerConfig config) {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     assert defaultGroups != null && defaultGroups.length == 1;
-    RemoteLockManager remoteManager = new RemoteLockManagerImpl(dsoChannel.getClientIDProvider(), defaultGroups[0], lockRequestMessageFactory, gtxManager);
-    return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, config);
+    RemoteLockManager remoteManager = new RemoteLockManagerImpl(dsoChannel.getClientIDProvider(), defaultGroups[0], lockRequestMessageFactory, gtxManager, lockStatManager);
+    return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, config, lockStatManager);
   }
 
+  @Deprecated
+  public ClientLockStatManager createLockStatsManager() {
+    return new ClientLockStatisticsManagerImpl(null);
+  }
+  
   public RemoteTransactionManager createRemoteTransactionManager(final ClientIDProvider cidProvider,
                                                                  final DNAEncoding encoding,
                                                                  final FoldingConfig foldingConfig,

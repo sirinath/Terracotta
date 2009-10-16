@@ -15,6 +15,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.handler.LockInfoDumpHandler;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
+import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Info;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
@@ -67,7 +68,7 @@ public class ClientLockManagerTest extends TCTestCase {
     rmtLockManager = new TestRemoteLockManager(sessionManager);
     threadManager = new ManualThreadIDManager();
     
-    lockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager, threadManager, new NullClientLockManagerConfig());
+    lockManager = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager, threadManager, new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     rmtLockManager.setClientLockManager(lockManager);
   }
 
@@ -75,7 +76,7 @@ public class ClientLockManagerTest extends TCTestCase {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager, threadManager,                                                                                  
-                                                                                  testClientLockManagerConfig);
+                                                                                  testClientLockManagerConfig, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     rmtLockManager.setClientLockManager(clientLockManagerImpl);
 
     final LockID lockID1 = new StringLockID("1");
@@ -114,7 +115,7 @@ public class ClientLockManagerTest extends TCTestCase {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
     final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager, rmtLockManager,
-                                                                                  threadManager, testClientLockManagerConfig);
+                                                                                  threadManager, testClientLockManagerConfig, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     rmtLockManager.setClientLockManager(clientLockManagerImpl);
 
     final LockID lockID1 = new StringLockID("1");
@@ -347,7 +348,7 @@ public class ClientLockManagerTest extends TCTestCase {
       public TryLockClientLockManager(final TCLogger logger, final SessionManager sessionManager, 
                                       final RemoteLockManager remoteLockManager, final ThreadIDManager threadManager,
                                       final CyclicBarrier awardBarrier) {
-        super(logger, sessionManager, remoteLockManager, threadManager, new NullClientLockManagerConfig());
+        super(logger, sessionManager, remoteLockManager, threadManager, new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
         this.awardBarrier = awardBarrier;
       }
 
@@ -876,7 +877,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final ThreadIDMap threadIDMap = ThreadIDMapUtil.getInstance();
     final SessionManager session = new TestSessionManager();
     final TestRemoteLockManager remote = new TestRemoteLockManager(sessionManager);
-    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig());
+    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     remote.setClientLockManager(clientLockManager);
     
     final LockInfoDumpHandler lockInfoDumpHandler = new LockInfoDumpHandler() {
@@ -1022,7 +1023,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final ThreadIDMap threadIDMap = ThreadIDMapUtil.getInstance();
     final SessionManager session = new TestSessionManager();
     final TestRemoteLockManager remote = new TestRemoteLockManager(sessionManager);
-    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig());
+    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     remote.setClientLockManager(clientLockManager);
     
     final LockID lid0 = new StringLockID("Locky0");
@@ -1088,7 +1089,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final ThreadIDMapJdk15 threadIDMap = (ThreadIDMapJdk15)ThreadIDMapUtil.getInstance();
     final SessionManager session = new TestSessionManager();
     final TestRemoteLockManager remote = new TestRemoteLockManager(sessionManager);
-    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig());
+    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote, new ThreadIDManagerImpl(threadIDMap), new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
     remote.setClientLockManager(clientLockManager);
     
     final LockID lid0 = new StringLockID("Locky0");
