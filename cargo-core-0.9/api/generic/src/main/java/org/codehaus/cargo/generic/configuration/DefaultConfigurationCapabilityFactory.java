@@ -88,6 +88,28 @@ public class DefaultConfigurationCapabilityFactory extends AbstractIntrospection
             ConfigurationType.RUNTIME, "org.codehaus.cargo.container.jboss.internal."
                 + "JBossRuntimeConfigurationCapability");
 
+        // Terracotta
+        registerConfigurationCapability("jboss5x", ContainerType.INSTALLED,
+                ConfigurationType.STANDALONE, "org.codehaus.cargo.container.jboss.internal."
+                    + "JBossStandaloneLocalConfigurationCapability");
+        registerConfigurationCapability("jboss5x", ContainerType.INSTALLED,
+             ConfigurationType.EXISTING, "org.codehaus.cargo.container.jboss.internal."
+                + "JBossExistingLocalConfigurationCapability");
+        registerConfigurationCapability("jboss5x", ContainerType.REMOTE,
+                ConfigurationType.RUNTIME, "org.codehaus.cargo.container.jboss.internal."
+                    + "JBossRuntimeConfigurationCapability");
+
+        registerConfigurationCapability("jboss51x", ContainerType.INSTALLED,
+            ConfigurationType.STANDALONE, "org.codehaus.cargo.container.jboss.internal."
+                + "JBossStandaloneLocalConfigurationCapability");
+        registerConfigurationCapability("jboss51x", ContainerType.INSTALLED,
+             ConfigurationType.EXISTING, "org.codehaus.cargo.container.jboss.internal."
+                + "JBossExistingLocalConfigurationCapability");
+        registerConfigurationCapability("jboss51x", ContainerType.REMOTE,
+                ConfigurationType.RUNTIME, "org.codehaus.cargo.container.jboss.internal."
+                    + "JBossRuntimeConfigurationCapability");
+        // end
+        
         registerConfigurationCapability("jetty4x", ContainerType.EMBEDDED,
             ConfigurationType.STANDALONE, "org.codehaus.cargo.container.jetty.internal."
                 + "Jetty4xStandaloneLocalConfigurationCapability");

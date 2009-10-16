@@ -25,11 +25,15 @@ package org.codehaus.cargo.container.spi;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.tools.ant.taskdefs.Java;
+import org.apache.tools.ant.taskdefs.condition.Os;
 import org.apache.tools.ant.types.Path;
 import org.codehaus.cargo.container.ContainerException;
 import org.codehaus.cargo.container.ContainerType;
@@ -56,14 +60,19 @@ public abstract class AbstractInstalledLocalContainer
     /**
      * List of system properties to set in the container JVM. 
      */
-    private Map systemProperties;
+    private Map systemProperties; 
 
     /**
-     * Additional classpath entries for the classpath that will be used to 
-     * start the containers.
+     * Additional classpath entries for the classpath that will be used to start the containers.
      */
-    private String[] extraClasspath;    
-
+    private List extraClasspath;
+    
+    /**
+     * Additional classpath entries for the classpath that will be shared by the container
+     * applications.
+     */
+    private List sharedClasspath;
+    
     /**
      * The container home installation directory.
      */
@@ -108,6 +117,9 @@ public abstract class AbstractInstalledLocalContainer
         this.antUtils = new AntUtils();
         this.resourceUtils = new ResourceUtils();
         this.httpUtils = new HttpUtils();
+        extraClasspath = new ArrayList();
+        sharedClasspath = new ArrayList();
+        systemProperties = new HashMap();
     }
 
     /**
@@ -208,7 +220,8 @@ public abstract class AbstractInstalledLocalContainer
      */
     public void setExtraClasspath(String[] classpath)
     {
-        this.extraClasspath = classpath;
+        this.extraClasspath.clear();
+        this.extraClasspath.addAll(Arrays.asList(classpath));
     }
 
     /**
@@ -217,9 +230,30 @@ public abstract class AbstractInstalledLocalContainer
      */
     public String[] getExtraClasspath()
     {
-        return this.extraClasspath;
+    	return (String[]) this.extraClasspath.toArray(new String[0]);
     }   
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see InstalledLocalContainer#getHome()
+     */
+    public void setSharedClasspath(String[] classpath)
+    {
+        this.sharedClasspath.clear();
+        this.sharedClasspath.addAll(Arrays.asList(classpath));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see InstalledLocalContainer#getSharedClasspath()
+     */
+    public String[] getSharedClasspath()
+    {
+        return (String[]) this.sharedClasspath.toArray(new String[0]);
+    }
+    
     /**
      * {@inheritDoc}
      * @see InstalledLocalContainer#getHome()
@@ -298,11 +332,16 @@ public abstract class AbstractInstalledLocalContainer
         java.getProject().addBuildListener(
             new AntBuildListener(getLogger(), this.getClass().getName()));
         
+        setJvmToLaunchContainerIn(java);
+        
         // Add extra container classpath entries specified by the user.
         addExtraClasspath(java);
        
         // Add system properties for the container JVM
         addSystemProperties(java);
+        
+        // Add runtime arguments if present
+        addRuntimeArgs(java);
 
         // Add JVM args if defined
         String jvmargs = getConfiguration().getPropertyValue(GeneralPropertySet.JVMARGS); 
@@ -341,6 +380,26 @@ public abstract class AbstractInstalledLocalContainer
         }
         return java;
     }
+    
+    /**
+     * Determines which java virtual machine will run the container.
+     * 
+     * @param java the java command that will start the container
+     */
+    protected void setJvmToLaunchContainerIn(Java java)
+    {
+        String javaHome = getConfiguration().getPropertyValue(GeneralPropertySet.JAVA_HOME);
+        if (javaHome != null)
+        {
+            String binDir = getFileHandler().append(javaHome, "bin");
+            String javaPath = getFileHandler().append(binDir, "java");
+            if (Os.isFamily("windows"))
+            {
+                javaPath += ".exe";
+            }
+            java.setJvm(javaPath);
+        }
+    }
 
     /**
      * Add system properties to the Ant java command used to start the container.
@@ -349,16 +408,13 @@ public abstract class AbstractInstalledLocalContainer
      */
     private void addSystemProperties(Java java)
     {
-        if (getSystemProperties() != null)
+        Iterator keys = getSystemProperties().keySet().iterator();
+        while (keys.hasNext())
         {
-            Iterator keys = getSystemProperties().keySet().iterator();
-            while (keys.hasNext())
-            {
-                String key = (String) keys.next();
-    
-                java.addSysproperty(getAntUtils().createSysProperty(key, 
-                    (String) getSystemProperties().get(key)));
-            }
+            String key = (String) keys.next();
+
+            java.addSysproperty(getAntUtils().createSysProperty(key,
+                (String) getSystemProperties().get(key)));
         }
     }
     
@@ -388,23 +444,42 @@ public abstract class AbstractInstalledLocalContainer
     private void addExtraClasspath(Java javaCommand)
     {
         Path classpath = javaCommand.createClasspath();
-        if (getExtraClasspath() != null)
+        if (extraClasspath.size() > 0)
         {
             Path path = new Path(getAntUtils().createProject());
 
-            for (int i = 0; i < getExtraClasspath().length; i++)
+            Iterator entries = extraClasspath.iterator();
+            while (entries.hasNext())
             {
-                Path pathElement = new Path(getAntUtils().createProject(), getExtraClasspath()[i]);
+                Path pathElement =
+                    new Path(getAntUtils().createProject(), (String) entries.next());
                 path.addExisting(pathElement);
 
                 getLogger().debug("Adding [" + pathElement + "] to execution classpath",
                     this.getClass().getName());
             }
-            
-            classpath.addExisting(path);
-        }        
-    }    
 
+            classpath.addExisting(path);
+        }
+    }
+
+    /**
+     * Add command line arguments to the java command.
+     * @param javacommand The java command
+     */
+    private void addRuntimeArgs(Java javacommand)
+    {
+        String runtimeArgs = getConfiguration().getPropertyValue(GeneralPropertySet.RUNTIME_ARGS);
+        if (runtimeArgs != null)
+        {
+            String[] arguments = runtimeArgs.split(" ");
+            for (int i = 0; i < arguments.length; i++)
+            {
+                javacommand.createArg().setValue(arguments[i]);
+            }
+        }
+    }
+    
     /**
      * {@inheritDoc}
      * @see org.codehaus.cargo.container.spi.AbstractLocalContainer#verify()
@@ -439,5 +514,40 @@ public abstract class AbstractInstalledLocalContainer
     public ContainerType getType()
     {
         return ContainerType.INSTALLED;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.codehaus.cargo.container.SpawnedContainer#addExtraClasspath()
+     */
+    public void addExtraClasspath(String location)
+    {
+        ifPresentAddPathToList(location, extraClasspath);
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.codehaus.cargo.container.SpawnedContainer#addSharedClasspath()
+     */
+    public void addSharedClasspath(String location)
+    {
+        ifPresentAddPathToList(location, sharedClasspath);
+    }
+
+    /**
+     * adds the location to the list, if the file exists.
+     * 
+     * @param location path to add to the list
+     * @param list where to append this path
+     */
+    public void ifPresentAddPathToList(String location, List list)
+    {
+        if (location == null || !this.getFileHandler().exists(location))
+        {
+            throw new IllegalArgumentException("Invalid file path: " + location);
+        }
+        list.add(location);
     }
 }
