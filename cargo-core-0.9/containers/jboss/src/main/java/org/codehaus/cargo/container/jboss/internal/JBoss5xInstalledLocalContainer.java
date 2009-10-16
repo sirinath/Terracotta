@@ -1,7 +1,7 @@
 /*
  * ========================================================================
  *
- * Copyright 2006 Vincent Massol.
+ * Copyright 2008 Vincent Massol.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,32 +17,28 @@
  *
  * ========================================================================
  */
-package org.codehaus.cargo.container.jboss;
+package org.codehaus.cargo.container.jboss.internal;
 
 /**
- * JBoss-specific properties.
- *
+ * The JBoss5x container implementation must implement this interface which provides
+ * JBoss5x specifics elements.
+ * 
  * @version $Id$
  */
-public interface JBossPropertySet
+public interface JBoss5xInstalledLocalContainer extends JBossInstalledLocalContainer
 {
-    /**
-     * The JBoss configuration selected. Examples of valid values: "default", "all", "minimal".
+
+   /**
+     * @param configurationName the JBoss server configuration name for which to return the 
+     * deployer dir.
+     * @return The deployer directory located under the container's home installation directory
      */
-    String CONFIGURATION = "cargo.jboss.configuration";
+    String getDeployersDir(String configurationName);
     
     /**
-     * Whether the JBoss Configuration should be clustered.
+     * Return the location of the common lib directory.
+     * @return The common lib directory located under the container's home installation directory
      */
-    String CLUSTERED = "cargo.jboss.clustered";
-    
-    /**
-     * Jboss 51x only, default to 8443
-     */
-    String JBOSS51X_HTTP_CONNECTOR_PORT = "jboss51x.http.connector.port";
-    
-    /**
-     * Jboss 51x only, default to 8009
-     */
-    String JBOSS51X_AJP_CONNECTOR_PORT = "jboss51x.ajp.connector.port"; 
+    String getCommonLibDir();
+
 }

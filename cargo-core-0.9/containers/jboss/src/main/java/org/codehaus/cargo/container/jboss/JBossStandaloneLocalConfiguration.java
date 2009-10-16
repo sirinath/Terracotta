@@ -52,7 +52,7 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
     /**
      * JBoss container instance.
      */
-    private JBossInstalledLocalContainer jbossContainer;
+    protected JBossInstalledLocalContainer jbossContainer;
 
     /**
      * {@inheritDoc}
@@ -150,7 +150,7 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
      * @param cargoFiles list of cargo resources file that will excluded
      * @throws IOException If an error occurs during the copy.
      */
-    private void copyExternalResources(File sourceDir, File destDir, String[] cargoFiles)
+    protected void copyExternalResources(File sourceDir, File destDir, String[] cargoFiles)
         throws IOException
     {
         File[] sourceFiles = sourceDir.listFiles();

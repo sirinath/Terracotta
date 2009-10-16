@@ -87,4 +87,24 @@ public class InstalledLocalContainerStub
     {
         this.systemProperties = properties;
     }
+
+	public void addExtraClasspath(String location) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void addSharedClasspath(String location) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public String[] getSharedClasspath() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void setSharedClasspath(String[] classpath) {
+		// TODO Auto-generated method stub
+		
+	}
 }

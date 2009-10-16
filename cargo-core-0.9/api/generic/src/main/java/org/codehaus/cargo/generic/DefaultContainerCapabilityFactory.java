@@ -60,6 +60,10 @@ public class DefaultContainerCapabilityFactory extends AbstractIntrospectionGene
         // Terracotta
         registerContainerCapability("jboss42x",
             "org.codehaus.cargo.container.jboss.internal.JBossContainerCapability");
+        registerContainerCapability("jboss5x",
+        	"org.codehaus.cargo.container.jboss.internal.JBossContainerCapability");
+	    registerContainerCapability("jboss51x",
+	        "org.codehaus.cargo.container.jboss.internal.JBossContainerCapability");
 
         registerContainerCapability("jetty4x",
             "org.codehaus.cargo.container.internal.ServletContainerCapability");
