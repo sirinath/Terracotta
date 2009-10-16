@@ -27,7 +27,4 @@ public interface LockID extends TCSerializable, Serializable {
    * Used to determine the TCSerialization format that should be used when sending over the network.
    */
   public LockIDType getLockType();
-
-  @Deprecated
-  public String asString();
 }

@@ -72,7 +72,7 @@ public class RespondToRequestLockHandler extends AbstractEventHandler {
       send(responseMessage);
 
     } catch (NoSuchChannelException e) {
-      logger.info("Failed to send lock response message:" + lrc.getLockID().asString() + " to:" + cid
+      logger.info("Failed to send lock response message:" + lrc.getLockID() + " to:" + cid
                   + " because the session is dead.");
       return;
     }

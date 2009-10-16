@@ -61,4 +61,8 @@ public class DsoLockID implements LockID {
   public String toString() {
     return "DsoLockID(" + new ObjectID(objectId) + ")";
   }
+
+  public long getObjectID() {
+    return objectId;
+  }
 }

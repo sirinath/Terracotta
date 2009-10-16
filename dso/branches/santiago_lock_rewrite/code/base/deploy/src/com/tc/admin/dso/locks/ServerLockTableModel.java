@@ -66,7 +66,7 @@ public class ServerLockTableModel extends XObjectTableModel {
     LockSpecWrapper(LockSpec lockSpec) {
       fLockSpec = lockSpec;
 
-      fName = fLockSpec.getLockID().asString();
+      fName = fLockSpec.getLockID().toString();
       String objectType = fLockSpec.getObjectType();
       if (objectType != null && objectType.length() > 0) {
         fName += " (" + objectType + ")";

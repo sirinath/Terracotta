@@ -37,7 +37,6 @@ public class LockInfoByThreadIDImpl implements LockInfoByThreadID {
   }
 
   public void addLock(LockState lockState, ThreadID threadID, String value) {
-    System.err.println("Adding " + lockState + " " + threadID + " " + value);
     if (lockState == LockState.HOLDING) {
       addLockTo(heldLocks, threadID, value);
     } else if (lockState == LockState.WAITING_ON) {

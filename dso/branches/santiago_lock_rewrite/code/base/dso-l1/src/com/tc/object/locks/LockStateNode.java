@@ -4,7 +4,7 @@
 package com.tc.object.locks;
 
 import com.tc.net.ClientID;
-import com.tc.object.locks.ClientLockImpl.AcquireResult;
+import com.tc.object.locks.ClientLockImpl.LockAcquireResult;
 import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 
@@ -47,8 +47,8 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     return owner;
   }
   
-  AcquireResult allowsHold(LockHold newHold) {
-    return AcquireResult.UNKNOWN;
+  LockAcquireResult allowsHold(LockHold newHold) {
+    return LockAcquireResult.UNKNOWN;
   }
   
   abstract ClientServerExchangeLockContext toContext(LockID lock, ClientID node);
@@ -90,21 +90,21 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     }
     
     @Override
-    AcquireResult allowsHold(LockHold newHold) {
+    LockAcquireResult allowsHold(LockHold newHold) {
       if (getOwner().equals(newHold.getOwner())) {
         if (newHold.getLockLevel().isRead()) {
-          return getLockLevel().isWrite() ? AcquireResult.SUCCESS : AcquireResult.SHARED_SUCCESS;
+          return getLockLevel().isWrite() ? LockAcquireResult.SUCCESS : LockAcquireResult.SHARED_SUCCESS;
         }
         if (level.isWrite()) {
-          return AcquireResult.SUCCESS;
+          return LockAcquireResult.SUCCESS;
         }
       } else {
         if (level.isWrite()) {
-          return AcquireResult.FAILURE;
+          return LockAcquireResult.FAILURE;
         }
       }
       
-      return AcquireResult.UNKNOWN;
+      return LockAcquireResult.UNKNOWN;
     }
     
     @Override
@@ -362,12 +362,12 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       return level;
     }
     
-    AcquireResult allowsHold(LockHold newHold) {
+    LockAcquireResult allowsHold(LockHold newHold) {
       ServerLockLevel request = ServerLockLevel.fromClientLockLevel(newHold.getLockLevel());
       if (getOwner().equals(newHold.getOwner()) && getLockLevel().equals(request)) {
-        return newHold.getLockLevel().isWrite() ? AcquireResult.SUCCESS : AcquireResult.SHARED_SUCCESS;
+        return newHold.getLockLevel().isWrite() ? LockAcquireResult.SUCCESS : LockAcquireResult.SHARED_SUCCESS;
       } else {
-        return AcquireResult.UNKNOWN;
+        return LockAcquireResult.UNKNOWN;
       }
     }
     
