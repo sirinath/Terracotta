@@ -20,7 +20,7 @@ public class LockMBeanImpl implements LockMBean, Serializable {
   private final Waiter[]            waiters;
 
   public LockMBeanImpl(LockID lockID, LockHolder[] holders, ServerLockRequest[] requests, Waiter[] waiters) {
-    this.lockName = lockID.asString();
+    this.lockName = lockID.toString();
     this.holders = holders;
     this.pendingRequests = requests;
     this.waiters = waiters;

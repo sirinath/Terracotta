@@ -3,7 +3,6 @@
  */
 package com.tc.object.lockmanager.api;
 
-import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ThreadID;
 
@@ -20,7 +19,7 @@ public class LockRequestTest extends TestCase {
                                            LockLevel.WRITE);
     long[] samples = new long[instanceCount];
     for (int i = 0; i < instanceCount; i++) {
-      LockID lid = new StringLockID(random.nextInt(Integer.MAX_VALUE - 1) + "");
+      StringLockID lid = new StringLockID(random.nextInt(Integer.MAX_VALUE - 1) + "");
       ThreadID tid = new ThreadID(random.nextInt(Integer.MAX_VALUE - 1));
       int lockType = (i % 2 == 0) ? LockLevel.READ : LockLevel.WRITE;
 

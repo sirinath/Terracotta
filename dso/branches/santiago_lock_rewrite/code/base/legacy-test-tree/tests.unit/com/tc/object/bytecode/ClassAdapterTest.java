@@ -1611,7 +1611,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
       if ((b.lock instanceof DsoLockID) || (b.lock instanceof DsoLiteralLockID)) {
         rv++;
       }
-      if ((b.lock instanceof StringLockID) && (!b.lock.asString().startsWith("^"))) {
+      if ((b.lock instanceof StringLockID) && (!((StringLockID) b.lock).asString().startsWith("^"))) {
         rv++;
       }
     }

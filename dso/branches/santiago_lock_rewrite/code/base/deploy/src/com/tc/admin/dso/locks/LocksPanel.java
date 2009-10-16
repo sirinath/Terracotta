@@ -32,6 +32,7 @@ import com.tc.admin.model.IServer;
 import com.tc.admin.model.IServerGroup;
 import com.tc.management.lock.stats.LockSpec;
 import com.tc.object.ObjectID;
+import com.tc.object.locks.DsoLockID;
 import com.tc.object.locks.LockID;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 
@@ -349,16 +350,11 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
   }
 
   private static long getLockObjectID(LockID lockID) {
-    String s = lockID.asString();
-    if (s.charAt(0) == '@') {
-      s = s.substring(1);
-      try {
-        return Long.parseLong(s);
-      } catch (NumberFormatException nfe) {
-        /**/
-      }
+    if (lockID instanceof DsoLockID) {
+      return ((DsoLockID) lockID).getObjectID();
+    } else {
+      return -1;
     }
-    return -1;
   }
 
   private class FindNextHandler implements ActionListener {

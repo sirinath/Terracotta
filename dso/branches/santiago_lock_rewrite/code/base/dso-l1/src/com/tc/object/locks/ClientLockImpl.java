@@ -447,7 +447,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
    * RRWL - suspect this is a historical accident.  I'm currently experimenting with a more strict
    * queuing policy to see if it can pass all our tests
    */
-  static enum AcquireResult {
+  static enum LockAcquireResult {
     /**
      * Acquire succeeded - other threads may succeed now too.
      */
@@ -495,7 +495,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   /*
    * Try to acquire the lock (optionally with delegation to the server)
    */
-  private AcquireResult tryAcquire(boolean useServer, RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
+  private LockAcquireResult tryAcquire(boolean useServer, RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
     if (useServer) {
       return tryAcquireUsingServer(remote, thread, level, timeout);
     } else {
@@ -506,34 +506,34 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   /*
    * Attempt to acquire the lock at the given level locally
    */
-  private AcquireResult tryAcquireLocally(ThreadID thread, LockLevel level) {
+  private LockAcquireResult tryAcquireLocally(ThreadID thread, LockLevel level) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " attempting to acquire " + level);
     // if this is a concurrent acquire then just let it through.
     if (level == LockLevel.CONCURRENT) {
-      return AcquireResult.SHARED_SUCCESS;
+      return LockAcquireResult.SHARED_SUCCESS;
     }
     
     synchronized (this) {
-      AcquireResult result = tryAcquireUsingThreadState(thread, level);      
+      LockAcquireResult result = tryAcquireUsingThreadState(thread, level);      
       if (result.isKnownResult()) {
         return result;
       } else if (greediness.canAward(level)) {
         if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " awarded " + level + " due to client greedy hold");
         addFirst(new LockHold(thread, level));
-        return level.isWrite() ? AcquireResult.SUCCESS : AcquireResult.SHARED_SUCCESS;
+        return level.isWrite() ? LockAcquireResult.SUCCESS : LockAcquireResult.SHARED_SUCCESS;
       } else {
-        return AcquireResult.UNKNOWN;
+        return LockAcquireResult.UNKNOWN;
       }
     }
   }
   
-  private AcquireResult tryAcquireUsingThreadState(ThreadID thread, LockLevel level) {
+  private LockAcquireResult tryAcquireUsingThreadState(ThreadID thread, LockLevel level) {
     //What can we glean from local lock state
     LockHold newHold = new LockHold(thread, level);
     LockLevel firstHold = null;
     for (Iterator<LockStateNode> it = iterator(); it.hasNext();) {
       LockStateNode s = it.next();
-      AcquireResult result = s.allowsHold(newHold);
+      LockAcquireResult result = s.allowsHold(newHold);
       if (result.isKnownResult()) {
         if (s instanceof LockAward) it.remove();
         if (result.isSuccess()) addFirst(newHold);
@@ -550,15 +550,15 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       throw new TCLockUpgradeNotSupportedError();
     }
     
-    return AcquireResult.UNKNOWN;
+    return LockAcquireResult.UNKNOWN;
   }
   
   /*
    * Try to acquire the lock and delegate to the server if necessary
    */
-  private AcquireResult tryAcquireUsingServer(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
+  private LockAcquireResult tryAcquireUsingServer(RemoteLockManager remote, ThreadID thread, LockLevel level, long timeout) throws GarbageLockException {
     // try to do things locally first...
-    AcquireResult result = tryAcquireLocally(thread, level);
+    LockAcquireResult result = tryAcquireLocally(thread, level);
     if (result.isKnownResult()) {
       return result;
     } else {
@@ -577,12 +577,12 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
               remote.tryLock(lock, thread, requestLevel, timeout);
               break;
           }
-          return AcquireResult.USED_SERVER;
+          return LockAcquireResult.USED_SERVER;
         } else if (greediness.isRecalled()) {
           addRecalledLevel(requestLevel);
           if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : client initiated recall " + requestLevel);
         } else {
-          return AcquireResult.USED_SERVER;
+          return LockAcquireResult.USED_SERVER;
         }
       }
       
@@ -592,7 +592,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
         if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
           greediness = recallCommit(remote);
         }
-        return AcquireResult.USED_SERVER;
+        return LockAcquireResult.USED_SERVER;
       }
     }
     
@@ -720,7 +720,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       for (;;) {
         synchronized (this) {
           // try to acquire before sleeping
-          AcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
+          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
           if (result.usedServer()) {
             // we contacted server - disable delegation to prevent multiple messages
             delegate = false;
@@ -764,7 +764,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       boolean delegate = true;
       for (;;) {
         synchronized (this) {
-          AcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
+          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
           if (result.usedServer()) {
             delegate = false;
           }
@@ -806,7 +806,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       boolean delegate = true;
       while (!node.isRefused()) {
         synchronized (this) {
-          AcquireResult result = tryAcquire(delegate, remote, thread, level, timeout);
+          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, timeout);
           if (result.usedServer()) {
             delegate = false;
           }
@@ -834,7 +834,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
         lastTime = now;
       }
       remove(node);
-      AcquireResult result = tryAcquireLocally(thread, level);
+      LockAcquireResult result = tryAcquireLocally(thread, level);
       if (result.isShared()) {
         unparkNextQueuedAcquire(node.getNext());
       }
