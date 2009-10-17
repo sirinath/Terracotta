@@ -409,7 +409,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
   private void dumpServerControl() throws Exception {
     JMXConnector jmxConnector = null;
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(null, "localhost", getAdminPort());
+      jmxConnector = CommandLineBuilder.getJMXConnector("localhost", getAdminPort());
       MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       L2DumperMBean mbean = MBeanServerInvocationProxy.newMBeanProxy(mbs, L2MBeanNames.DUMPER, L2DumperMBean.class,
                                                                      false);
