@@ -714,7 +714,11 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     public void run() {
       int gcCount = 0;
       for (Entry<LockID, ClientLock> entry : locks.entrySet()) {
-        if (entry.getValue().tryMarkAsGarbage(remoteManager) && locks.remove(entry.getKey(), entry.getValue())) {
+        LockID lock = entry.getKey();
+        ClientLock lockState = entry.getValue();
+        if (lockState == null) continue;
+        
+        if (lockState.tryMarkAsGarbage(remoteManager) && locks.remove(lock, lockState)) {
           gcCount++;
         }
       }

@@ -783,6 +783,7 @@ public class ClientLockManagerTest extends TCTestCase {
     t.start();
     // wait until the lock responder finishes...
     System.out.println(flowControl.take());
+    t.join();
     assertEquals(1, requests.size());
     Object[] request = (Object[]) requests.get(0);
     assertNotNull(request);
