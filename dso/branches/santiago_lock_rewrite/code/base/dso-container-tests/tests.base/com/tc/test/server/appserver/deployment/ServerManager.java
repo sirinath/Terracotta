@@ -65,7 +65,8 @@ public class ServerManager {
   private static final TimGetUrls[]   TIM_GET_URLS   = {
       new TimGetUrls("http://forge-stage.terracotta.lan/api/2/index.xml.gz", "http://kong.terracotta.lan/maven2"),
       new TimGetUrls("http://forge-dev.terracotta.lan/api/2/index.xml.gz", "http://forge-dev.terracotta.lan/repo"),
-      new TimGetUrls("http://forge.terracotta.org/api/2/index.xml.gz", "http://www.terracotta.org/download/reflector/maven2") };
+      new TimGetUrls("http://forge.terracotta.org/api/2/index.xml.gz",
+                     "http://www.terracotta.org/download/reflector/maven2") };
 
   protected final static TCLogger     logger         = TCLogging.getLogger(ServerManager.class);
   private static int                  appServerIndex = 0;
@@ -271,7 +272,14 @@ public class ServerManager {
         AppServerInfo info = config.appServerInfo();
         String major = info.getMajor();
         String minor = info.getMinor();
-        if (major.equals("4")) {
+        if (major.equals("5")) {
+          if (minor.startsWith("1.")) {
+            aCopy.addModule(TIMUtil.JBOSS_5_1, resolveContainerTIM(TIMUtil.JBOSS_5_1));
+          } else {
+            throw new RuntimeException("unexpected version: " + info);
+          }
+        }
+        else if (major.equals("4")) {
           if (minor.startsWith("0.")) {
             aCopy.addModule(TIMUtil.JBOSS_4_0, resolveContainerTIM(TIMUtil.JBOSS_4_0));
           } else if (minor.startsWith("2.")) {
@@ -307,6 +315,21 @@ public class ServerManager {
             aCopy.addModule(TIMUtil.TOMCAT_6_0, resolveContainerTIM(TIMUtil.TOMCAT_6_0));
           } else {
             throw new RuntimeException("unexpected 6.x version: " + info);
+          }
+        } else {
+          throw new RuntimeException("unexpected major version: " + info);
+        }
+        break;
+      }
+      case AppServerInfo.RESIN: {
+        AppServerInfo info = config.appServerInfo();
+        String major = info.getMajor();
+        String minor = info.getMinor();
+        if (major.equals("3")) {
+          if (minor.startsWith("0.") || minor.startsWith("1.")) {
+            aCopy.addModule(TIMUtil.RESIN_3_1, resolveContainerTIM(TIMUtil.RESIN_3_1));
+          } else {
+            throw new RuntimeException("unexpected minor version: " + info);
           }
         } else {
           throw new RuntimeException("unexpected major version: " + info);
@@ -438,7 +461,8 @@ public class ServerManager {
                                                               + Arrays.asList(entries) + "] in " + src); }
         return entries[0];
       } catch (RemoteIndexIOException e) {
-        Banner.infoBanner("Repository location not available [" + urls.getUrl() + "] for tim-get, moving on to the next one");
+        Banner.infoBanner("Repository location not available [" + urls.getUrl()
+                          + "] for tim-get, moving on to the next one");
       } catch (Exception e) {
         Banner.errorBanner("Unexpected error using url [" + urls.getUrl() + "] for tim-get, trying the next one");
         e.printStackTrace();
