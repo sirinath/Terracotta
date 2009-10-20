@@ -19,13 +19,39 @@ import java.util.List;
 
 public class JBossHelper {
   public static void startupActions(File serverDir, Collection sars, AppServerInfo appServerInfo) throws IOException {
-    writePortsConfig(new PortChooser(), new File(serverDir, "conf/cargo-binding.xml"), appServerInfo);
+    if (appServerInfo.getMajor().equals("5") && appServerInfo.getMinor().startsWith("1")) {
+      writePortsConfigJBoss51x(new PortChooser(), serverDir, appServerInfo);
+    } else {
+      writePortsConfig(new PortChooser(), new File(serverDir, "conf/cargo-binding.xml"), appServerInfo);
+    }
 
     for (Iterator i = sars.iterator(); i.hasNext();) {
       File sarFile = (File) i.next();
       File deploy = new File(serverDir, "deploy");
       FileUtils.copyFileToDirectory(sarFile, deploy);
     }
+  }
+
+  private static void writePortsConfigJBoss51x(PortChooser pc, File serverDir, AppServerInfo appServerInfo)
+      throws IOException {
+    List<ReplaceLine.Token> tokens = new ArrayList<ReplaceLine.Token>();
+    File dest = new File(serverDir, "conf/bindingservice.beans/META-INF/bindings-jboss-beans.xml");
+
+    // line 110, 280, 451 contains ports which already handled by Cargo
+    int[] lines = new int[] { 117, 124, 131, 158, 165, 174, 181, 189, 212, 219, 227, 236, 243, 251, 306, 315, 322, 332,
+        340, 349 };
+    for (int line : lines) {
+      int port = pc.chooseRandomPort();
+      tokens.add(new ReplaceLine.Token(line, "\"port\">[0-9]+", "\"port\">" + port));
+    }
+
+    ReplaceLine.parseFile(tokens.toArray(new ReplaceLine.Token[] {}), dest);
+    
+    // handling another file
+    tokens.clear();
+    dest = new File(serverDir, "deploy/ejb3-connectors-jboss-beans.xml");
+    tokens.add(new ReplaceLine.Token(36, "3873", String.valueOf(pc.chooseRandomPort())));
+    ReplaceLine.parseFile(tokens.toArray(new ReplaceLine.Token[] {}), dest);
   }
 
   private static void writePortsConfig(PortChooser pc, File dest, AppServerInfo appServerInfo) throws IOException {

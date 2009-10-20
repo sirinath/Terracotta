@@ -6,7 +6,6 @@ package com.tc.object.tx;
 
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
-import com.tc.management.beans.tx.MockClientTxMonitor;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.ClientIDProviderImpl;
 import com.tc.object.MockTCObject;
@@ -34,7 +33,7 @@ public class ClientTransactionManagerTest extends TestCase {
     objMgr = new TestClientObjectManager();
     clientTxnMgr = new ClientTransactionManagerImpl(new ClientIDProviderImpl(new TestChannelIDProvider()), objMgr,
                                                     clientTxnFactory, new MockClientLockManager(), rmtTxnMgr,
-                                                    new NullRuntimeLogger(), new MockClientTxMonitor(), SampledCounter.NULL_SAMPLED_COUNTER);
+                                                    new NullRuntimeLogger(), SampledCounter.NULL_SAMPLED_COUNTER);
   }
 
   @Override
