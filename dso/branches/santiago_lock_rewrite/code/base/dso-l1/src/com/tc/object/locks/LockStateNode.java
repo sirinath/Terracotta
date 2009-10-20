@@ -278,7 +278,7 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     private final long   waitTime;
     private final Stack<PendingLockHold> reacquires;
     
-    private boolean      notified;
+    private volatile boolean notified;
     
     LockWaiter(ThreadID owner, Object waitObject, Stack<LockHold> holds, long timeout) {
       super(owner);
