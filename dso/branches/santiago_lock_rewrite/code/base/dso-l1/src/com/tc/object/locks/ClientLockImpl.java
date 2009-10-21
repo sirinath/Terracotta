@@ -78,19 +78,24 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
 
   /*
    * Try lock would normally just be:
-   *   <code>return tryAcquire(remote, thread, level, 0).succeeeded();</code>
+   *   <code>return tryAcquire(remote, thread, level, 0).isSuccess();</code>
    * <p>
    * However because the existing contract on tryLock requires us to wait for the server
-   * if the lock attempt is delegated things get significantly more complicated.
+   * if the lock attempt is delegated things get a little more complicated.
    */
   public boolean tryLock(RemoteLockManager remote, ThreadID thread, LockLevel level) throws GarbageLockException {
     markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " attempting to " + level + " try lock");
-    try {
-      return tryAcquireLocally(thread, level).isSuccess() || acquireQueuedTimeout(remote, thread, level, 0);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return false;
+    LockAcquireResult result = tryAcquireLocally(thread, level);
+    if (result.isKnownResult()) {
+      return result.isSuccess();
+    } else {
+      try {
+        return acquireQueuedTimeout(remote, thread, level, 0);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return false;
+      }
     }
   }
 
@@ -823,7 +828,11 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
             }
           }
         }
-        node.park(timeout);
+        if (!delegate) {
+          node.park();
+        } else {
+          node.park(timeout);
+        }
         if (Thread.interrupted()) {
           remove(node);
           throw new InterruptedException();
@@ -836,7 +845,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       remove(node);
       LockAcquireResult result = tryAcquireLocally(thread, level);
       if (result.isShared()) {
-        unparkNextQueuedAcquire(node.getNext());
+        unparkNextQueuedAcquire();
       }
       return result.isSuccess();
     } catch (RuntimeException ex) {
