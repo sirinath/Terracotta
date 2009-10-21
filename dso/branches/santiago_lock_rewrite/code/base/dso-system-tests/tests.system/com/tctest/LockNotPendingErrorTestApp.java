@@ -173,7 +173,7 @@ public class LockNotPendingErrorTestApp extends AbstractErrorCatchingTransparent
     }
 
     public void commitWriteLock() {
-      ManagerUtil.commitLock(lockId, Manager.LOCK_TYPE_WRITE);      
+      ManagerUtil.commitLock(lockId, lockType);      
     }
     
     public void commitReadLock() {
