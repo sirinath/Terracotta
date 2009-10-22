@@ -2,7 +2,7 @@
 
 REPOS="$1"
 REV="$2"
-HUDSON_MASTER_HOST=su10vmo3
+HUDSON_MASTER_HOST="su10vmo3:9000"
 
 UUID=`svnlook uuid $REPOS`
 /usr/bin/wget \
