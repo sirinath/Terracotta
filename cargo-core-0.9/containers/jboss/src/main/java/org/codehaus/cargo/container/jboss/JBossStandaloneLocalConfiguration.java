@@ -19,21 +19,25 @@
  */
 package org.codehaus.cargo.container.jboss;
 
-import org.apache.tools.ant.types.FilterChain;
-import org.codehaus.cargo.container.ContainerException;
-import org.codehaus.cargo.container.LocalContainer;
-import org.codehaus.cargo.container.configuration.ConfigurationCapability;
-import org.codehaus.cargo.container.jboss.internal.JBossStandaloneLocalConfigurationCapability;
-import org.codehaus.cargo.container.jboss.internal.JBossInstalledLocalContainer;
-import org.codehaus.cargo.container.property.GeneralPropertySet;
-import org.codehaus.cargo.container.property.ServletPropertySet;
-import org.codehaus.cargo.container.spi.configuration.AbstractStandaloneLocalConfiguration;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
+
+import org.apache.tools.ant.taskdefs.Ant;
+import org.apache.tools.ant.types.FilterChain;
+import org.codehaus.cargo.container.ContainerException;
+import org.codehaus.cargo.container.LocalContainer;
+import org.codehaus.cargo.container.configuration.ConfigurationCapability;
+import org.codehaus.cargo.container.jboss.internal.JBossInstalledLocalContainer;
+import org.codehaus.cargo.container.jboss.internal.JBossStandaloneLocalConfigurationCapability;
+import org.codehaus.cargo.container.property.GeneralPropertySet;
+import org.codehaus.cargo.container.property.ServletPropertySet;
+import org.codehaus.cargo.container.spi.configuration.AbstractStandaloneLocalConfiguration;
+import org.codehaus.cargo.util.AntUtils;
 
 /**
  * Implementation of a standalone {@link org.codehaus.cargo.container.configuration.Configuration}
@@ -169,8 +173,21 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
                     }
                     else
                     {
-                        getFileHandler().copy(new FileInputStream(sourceFiles[i]),
-                            new FileOutputStream(new File(destDir, sourceFiles[i].getName())));
+                    	InputStream in = null;
+                    	OutputStream out = null;
+                    	try {
+                    		in = new FileInputStream(sourceFiles[i]);
+                    		out = new FileOutputStream(new File(destDir, sourceFiles[i].getName()));
+                    		getFileHandler().copy(in, out);
+                    	} finally {
+                    		if (in != null) {
+                    			in.close();
+                    		}
+                    		if (out != null) {
+                    			out.close();
+                    		}
+                    	}
+                        
                     }
 
                 }
