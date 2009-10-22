@@ -48,6 +48,7 @@ public class JBossHelper {
     ReplaceLine.parseFile(tokens.toArray(new ReplaceLine.Token[] {}), dest);
 
     // fix up "caculated" AJP and https ports (since they can collide and drop below 1024)
+    tokens.clear();
     for (int line : new int[] { 440, 441 }) {
       int port = pc.chooseRandomPort();
       tokens.add(new ReplaceLine.Token(line, "select=\"\\$port . [0-9]+\"", "select=\"" + port + "\""));
