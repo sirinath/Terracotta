@@ -167,6 +167,11 @@ public final class ServerLockImpl extends AbstractServerLock {
            && (holder.getState().getLockLevel() == ServerLockLevel.WRITE || level == ServerLockLevel.READ);
   }
 
+  /**
+   * This method is called when a client gives up a greedy lock. A point to note is that we ignore wait contexts if
+   * already present. The reason being that a greedy read lock is even when waiters are present, hence a duplicate wait
+   * context can be present on the server.
+   */
   public void recallCommit(ClientID cid, Collection<ClientServerExchangeLockContext> serverLockContexts,
                            LockHelper helper) {
     ServerLockContext greedyHolder = remove(cid, ThreadID.VM_ID, SET_OF_GREEDY_HOLDERS);
