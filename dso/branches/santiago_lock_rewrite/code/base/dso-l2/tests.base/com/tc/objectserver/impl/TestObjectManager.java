@@ -239,5 +239,9 @@ public class TestObjectManager implements ObjectManager {
   public ObjectIDSet getObjectReferencesFrom(ObjectID id, boolean cacheOnly) {
     throw new ImplementMe();
   }
+  
+  public String getObjectTypeFromID(ObjectID id, boolean cacheOnly) {
+    return "";
+  }
 
 }

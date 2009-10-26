@@ -101,6 +101,15 @@ public interface ObjectManager extends ManagedObjectProvider {
   public Set<ObjectID> getObjectReferencesFrom(ObjectID id, boolean cacheOnly);
 
   /**
+   * This method will be used by lock stats manager when lock statistics is enabled and will return the type of the
+   * object
+   * 
+   * @param id - identifier of the object
+   * @param cacheOnly - return type if present only in cache.
+   */
+  public String getObjectTypeFromID(ObjectID id, boolean cacheOnly);
+
+  /**
    * Called by DGC thread (in object manager)
    */
   public void waitUntilReadyToGC();

@@ -11,10 +11,14 @@ import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.ObjectID;
+import com.tc.object.locks.DsoLockID;
+import com.tc.object.locks.DsoVolatileLockID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
+import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -27,14 +31,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 public class L2LockStatisticsManagerImpl extends LockStatisticsManager implements L2LockStatsManager, Serializable {
-  private static final TCLogger logger                   = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
+  private static final TCLogger       logger                   = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
 
-  private DSOChannelManager     channelManager;
-  protected final Set<NodeID>   lockSpecRequestedNodeIDs = new HashSet<NodeID>();
-  private SampledCounter        globalLockCounter;
-  private SampledCounter        globalLockRecallCounter;
+  private DSOChannelManager           channelManager;
+  private ObjectManager               objectManager;
+  protected final Set<NodeID>         lockSpecRequestedNodeIDs = new HashSet<NodeID>();
+  private SampledCounter              globalLockCounter;
+  private SampledCounter              globalLockRecallCounter;
+  private WeakHashMap<LockID, String> lockIdToType             = new WeakHashMap<LockID, String>();
 
   private final static void sendLockStatisticsEnableDisableMessage(MessageChannel channel, boolean statsEnable,
                                                                    int traceDepth, int gatherInterval) {
@@ -60,12 +67,14 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
         .getBoolean(TCPropertiesConsts.LOCK_STATISTICS_ENABLED, false);
   }
 
-  public synchronized void start(DSOChannelManager dsoChannelManager, DSOGlobalServerStats serverStats) {
+  public synchronized void start(DSOChannelManager dsoChannelManager, DSOGlobalServerStats serverStats,
+                                 ObjectManager objManager) {
     this.channelManager = dsoChannelManager;
     SampledCounter lockCounter = serverStats == null ? null : serverStats.getGlobalLockCounter();
     this.globalLockCounter = lockCounter == null ? SampledCounter.NULL_SAMPLED_COUNTER : lockCounter;
     SampledCounter lockRecallCounter = serverStats == null ? null : serverStats.getGlobalLockRecallCounter();
     this.globalLockRecallCounter = lockRecallCounter == null ? SampledCounter.NULL_SAMPLED_COUNTER : lockRecallCounter;
+    this.objectManager = objManager;
   }
 
   /**
@@ -132,8 +141,23 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
                                                int numberOfPendingRequests) {
     if (!lockStatisticsEnabled) { return; }
 
-    // TODO: get it from Object Manager
-    String lockType = "";
+    String lockType = lockIdToType.get(lockID);
+    if (lockType == null) {
+      ObjectID objectId = null;
+      if (lockID instanceof DsoLockID) {
+        objectId = new ObjectID(((DsoLockID) lockID).getObjectID());
+        lockType = this.objectManager.getObjectTypeFromID(objectId, false);
+      } else if (lockID instanceof DsoVolatileLockID) {
+        objectId = new ObjectID(((DsoVolatileLockID) lockID).getObjectID());
+        lockType = this.objectManager.getObjectTypeFromID(objectId, false);
+      }
+
+      if (lockType == null) {
+        lockType = "";
+      }
+      lockIdToType.put(lockID, lockType);
+    }
+
     super.recordLockRequested(lockID, nodeID, threadID, null, lockType, numberOfPendingRequests);
   }
 

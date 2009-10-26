@@ -12,6 +12,7 @@ import com.tc.net.NodeID;
 import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.api.TestSink;
+import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
@@ -83,7 +84,7 @@ public class LockManagerTest extends TestCase {
     lockManager.setLockStatisticsEnabled(true, lockStatsManager);
 
     lockManager.start();
-    lockStatsManager.start(new NullChannelManager(), null);
+    lockStatsManager.start(new NullChannelManager(), null, new TestObjectManager());
 
     lockManager.lock(lid1, cid1, tid1, ServerLockLevel.WRITE); // hold
     lockManager.lock(lid1, cid2, tid2, ServerLockLevel.WRITE); // pending

@@ -653,6 +653,30 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return references2Return;
   }
 
+  public String getObjectTypeFromID(ObjectID id, boolean cacheOnly) {
+    synchronized (this) {
+      ManagedObjectReference mor = getReference(id);
+      if ((mor == null && cacheOnly) || (mor != null && mor.isNew())) {
+        // Object either not in cache or is a new object, return emtpy set
+        return null;
+      }
+      if (mor != null) {
+        // the object is not checked out and in memory, short circuit checking out and checking it back in.
+        return mor.getObject().getManagedObjectState().getClassName();
+      }
+    }
+    // The object is either not in the cache or someone else has checked it out, do a regular look and wait for the
+    // object.
+    String className = null;
+    ManagedObject mor = lookup(id, true, true);
+    if (mor != null) {
+      // the object is not checked out and in memory, short circuit checking out and checking it back in.
+      className = mor.getManagedObjectState().getClassName();
+      releaseReadOnly(mor);
+    }
+    return className;
+  }
+
   private long request_count = 0;
 
   private void throttleIfNecessary() {

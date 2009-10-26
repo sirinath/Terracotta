@@ -996,7 +996,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
       startBeanShell(this.l2Properties.getInt("beanshell.port"));
     }
 
-    lockStatsManager.start(channelManager, serverStats);
+    lockStatsManager.start(channelManager, serverStats, objectManager);
 
     CallbackOnExitHandler handler = new CallbackGroupExceptionHandler(logger, consoleLogger);
     this.threadGroup.addCallbackOnExitExceptionHandler(GroupException.class, handler);

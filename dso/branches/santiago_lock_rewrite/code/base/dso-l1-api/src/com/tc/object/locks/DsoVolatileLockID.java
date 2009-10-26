@@ -48,6 +48,10 @@ public class DsoVolatileLockID implements LockID {
     serialOutput.writeLong(objectId);
     serialOutput.writeString(fieldName);
   }
+  
+  public long getObjectID() {
+    return objectId;
+  }
 
   public int hashCode() {
     return (5 * (((int)objectId) ^ ((int) (objectId >>> 32)))) ^ (7 * fieldName.hashCode());
