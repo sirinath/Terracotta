@@ -140,34 +140,48 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     return notify(thread, true);
   }
 
-  private synchronized boolean notify(ThreadID thread, boolean all) {
-    if (greediness.isFree()) {
-      //other L1s may be waiting (let server decide who to notify)
-      return true;
-    } else {
-      boolean lockHeld = false;
-      for (LockStateNode s : this) {
-        if ((s instanceof LockHold) && s.getOwner().equals(thread) && ((LockHold) s).getLockLevel().isWrite()) {
-          lockHeld = true;
-        }
-        if (s instanceof LockWaiter) {
-          if (!lockHeld) {
-            throw new IllegalMonitorStateException();
+  private boolean notify(ThreadID thread, boolean all) {
+    boolean result;
+    Collection<LockWaiter> waiters = new ArrayList<LockWaiter>();
+    
+    synchronized (this) {
+      if (greediness.isFree()) {
+        //other L1s may be waiting (let server decide who to notify)
+        result = true;
+      } else {
+        boolean lockHeld = false;
+        for (LockStateNode s : this) {
+          if ((s instanceof LockHold) && s.getOwner().equals(thread) && ((LockHold) s).getLockLevel().isWrite()) {
+            lockHeld = true;
           }
-          // move this waiters reacquire nodes into the queue - we must do this before returning to ensure transactional correctness on notifies.
-          if (all) {
-            moveWaiterToPending((LockWaiter) s);
-          } else if (moveWaiterToPending((LockWaiter) s)) {
-            return false;
+          if (s instanceof LockWaiter) {
+            if (!lockHeld) {
+              throw new IllegalMonitorStateException();
+            }
+            // move this waiters reacquire nodes into the queue - we must do this before returning to ensure transactional correctness on notifies.
+            LockWaiter waiter = (LockWaiter) s;
+            waiters.add(waiter);
+            if (all) {
+              moveWaiterToPending(waiter);
+            } else if (moveWaiterToPending(waiter)) {
+              result = false;
+              break;
+            }
           }
         }
+        result = true;
       }
-      return true;
     }
+    
+    for (LockWaiter waiter : waiters) {
+      waiter.unpark();
+    }
+    
+    return result;
   }
   
   public void wait(RemoteLockManager remote, WaitListener listener, ThreadID thread, Object waitObject) throws InterruptedException {
-    wait(remote, listener, thread, waitObject, -1);
+    wait(remote, listener, thread, waitObject, 0);
   }
 
   /*
@@ -239,7 +253,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   private void waitOnLockWaiter(RemoteLockManager remote, ThreadID thread, LockWaiter waiter, WaitListener listener) throws InterruptedException {
     listener.handleWaitEvent();
     try {
-      if (waiter.getTimeout() < 0) {
+      if (waiter.getTimeout() == 0) {
         waiter.park();
       } else {
         waiter.park(waiter.getTimeout());
@@ -363,14 +377,22 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   /*
    * Called by the stage thread (the transaction apply thread) when the server wishes to notify a thread waiting on this lock
    */
-  public synchronized void notified(ThreadID thread) {
+  public void notified(ThreadID thread) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server notifying " + thread);
-    for (LockStateNode s : this) {
-      if ((s instanceof LockWaiter) && s.getOwner().equals(thread)) {
-        // move the waiting nodes reacquires into the queue in this thread so we can be certain that the lock state has changed by the time the server gets the txn ack.
-        moveWaiterToPending((LockWaiter) s);
-        return;
+    LockWaiter waiter = null;
+    synchronized (this) {
+      for (LockStateNode s : this) {
+        if ((s instanceof LockWaiter) && s.getOwner().equals(thread)) {
+          // move the waiting nodes reacquires into the queue in this thread so we can be certain that the lock state has changed by the time the server gets the txn ack.
+          waiter = (LockWaiter) s;
+          moveWaiterToPending(waiter);
+          break;
+        }
       }
+    }
+
+    if (waiter != null) {
+      waiter.unpark();
     }
   }
 
@@ -383,13 +405,11 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     }
     
     if (remove(waiter) == null) {
-      waiter.unpark();
       return false;
     } else {
       for (PendingLockHold reacquire : waiter.getReacquires()) {
         addLast(reacquire);
       }
-      waiter.unpark();
       return true;
     }
   }
