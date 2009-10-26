@@ -33,6 +33,10 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
   }
 
   /**
+   * Parks for at most <code>timeout</code> milliseconds.
+   * <p>
+   * <code>LockStateNode.park(0);</code> does *not* sleep indefinitely.
+   * 
    * @throws InterruptedException can be thrown by certain subclasses
    */
   void park(long timeout) throws InterruptedException {
@@ -313,21 +317,21 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     }
 
     void park(long timeout) throws InterruptedException {
+      long lastTime = System.currentTimeMillis();
       synchronized (waitObject) {
-        waitObject.wait(timeout);
+        while (!notified && timeout > 0) {
+          waitObject.wait(timeout);
+          long now = System.currentTimeMillis();
+          timeout -= now - lastTime;
+        }
       }
     }
     
     void unpark() {
-      STATE_NODE_TIMER.schedule(new TimerTask() {
-        @Override
-        public void run() {
-          synchronized (waitObject) {
-            notified = true;
-            waitObject.notifyAll();
-          }
-        }
-      }, 0);
+      synchronized (waitObject) {
+        notified = true;
+        waitObject.notifyAll();
+      }
     }
     
     public boolean equals(Object o) {

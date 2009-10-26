@@ -459,7 +459,7 @@ public class ClientLockManagerTest extends TCTestCase {
     lockManager.lock(lockID2, LockLevel.WRITE);
     assertNotNull(rmtLockManager.lockRequestCalls.poll(1));
 
-    final LockWaiter waiterThread = new LockWaiter(barrier, lockID2, tx2, -1);
+    final LockWaiter waiterThread = new LockWaiter(barrier, lockID2, tx2, 0);
     waiterThread.start();
 
     barrier.take();
@@ -482,7 +482,7 @@ public class ClientLockManagerTest extends TCTestCase {
         case WAITER:
           Assert.assertEquals(lockID2, cselc.getLockID());
           Assert.assertEquals(tx2, cselc.getThreadID());
-          Assert.assertEquals(-1, cselc.timeout());
+          Assert.assertEquals(0, cselc.timeout());
           break;
         case PENDING_READ:
         case PENDING_WRITE:
@@ -1252,7 +1252,7 @@ public class ClientLockManagerTest extends TCTestCase {
             clientLockManager.wait(lid, this, null, timeout);
           }
         } else {
-          if (timeout < 0) {
+          if (timeout == 0) {
             lockManager.wait(lid, this, null);
           } else {
             lockManager.wait(lid, this, null, timeout);
