@@ -46,6 +46,7 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.MockChannelManager;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
+import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
@@ -83,7 +84,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     threadManager = new ManualThreadIDManager();
     clientLockManager = new ClientLockManagerImpl(logger, new NullSessionManager(), rmtLockManager, threadManager,
-                                                  new NullClientLockManagerConfig(), ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
+                                                  new NullClientLockManagerConfig(),
+                                                  ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
 
     AbstractEventHandler serverLockUnlockHandler = new RequestLockUnLockHandler();
 
@@ -455,7 +457,8 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
 
     public TestRemoteLockManagerImpl(LockRequestMessageFactory lrmf, ClientGlobalTransactionManager gtxManager,
                                      BoundedLinkedQueue clientLockRequestQueue) {
-      super(new ClientIDProviderImpl(new TestChannelIDProvider()), GroupID.NULL_ID, lrmf, gtxManager, ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
+      super(new ClientIDProviderImpl(new TestChannelIDProvider()), GroupID.NULL_ID, lrmf, gtxManager,
+            ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER);
       this.clientLockRequestQueue = clientLockRequestQueue;
     }
 
@@ -543,7 +546,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public void start(DSOChannelManager channelManager, DSOGlobalServerStats serverStats) {
+    public void start(DSOChannelManager channelManager, DSOGlobalServerStats serverStats, ObjectManager objectManager) {
       throw new ImplementMe();
     }
 

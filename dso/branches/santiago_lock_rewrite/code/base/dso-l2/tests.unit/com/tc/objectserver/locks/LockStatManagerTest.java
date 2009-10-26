@@ -15,6 +15,7 @@ import com.tc.object.locks.ThreadID;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
+import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.factory.GreedyPolicyFactory;
 import com.tc.objectserver.locks.factory.NonGreedyLockPolicyFactory;
@@ -66,7 +67,7 @@ public class LockStatManagerTest extends TestCase {
 
     this.serverStats = new DSOGlobalServerStatsImpl(null, null, null, null, null, null, null, null, lockRecallCounter,
                                                     null, null, lockCounter);
-    lockStatManager.start(new NullChannelManager(), serverStats);
+    lockStatManager.start(new NullChannelManager(), serverStats, new TestObjectManager());
   }
 
   @Override

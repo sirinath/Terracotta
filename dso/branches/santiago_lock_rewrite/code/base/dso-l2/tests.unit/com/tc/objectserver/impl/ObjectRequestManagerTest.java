@@ -947,6 +947,10 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new NotImplementedException(TestObjectManager.class);
     }
 
+    public String getObjectTypeFromID(ObjectID id, boolean cacheOnly) {
+      return null;
+    }
+
   }
 
   private static class TestMessageChannel implements MessageChannel {
