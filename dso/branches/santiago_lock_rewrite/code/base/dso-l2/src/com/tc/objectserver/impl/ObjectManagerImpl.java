@@ -19,6 +19,7 @@ import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
+import com.tc.objectserver.api.ObjectStatsHelper;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ManagedObjectFaultingContext;
@@ -65,7 +66,7 @@ import java.util.Set;
  * Manages access to all the Managed objects in the system.
  */
 public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable,
-    DumpHandler, PrettyPrintable {
+    DumpHandler, PrettyPrintable, ObjectStatsHelper {
 
   private static final TCLogger                       logger                = TCLogging.getLogger(ObjectManager.class);
 
