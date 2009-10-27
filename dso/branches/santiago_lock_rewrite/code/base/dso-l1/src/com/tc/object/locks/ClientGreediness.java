@@ -27,6 +27,10 @@ enum ClientGreediness {
       return true;
     }
 
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
     @Override
     ClientGreediness requested(ServerLockLevel level) throws GarbageLockException {
       throw GarbageLockException.GARBAGE_LOCK_EXCEPTION;
@@ -66,6 +70,10 @@ enum ClientGreediness {
       return true;
     }
 
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       return this;
@@ -113,6 +121,10 @@ enum ClientGreediness {
       return false;
     }
 
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       switch (level) {
@@ -164,6 +176,15 @@ enum ClientGreediness {
       return false;
     }
 
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
+    @Override
+    ClientGreediness requested(ServerLockLevel level) {
+      return this;
+    }
+    
     @Override
     ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
@@ -199,6 +220,10 @@ enum ClientGreediness {
       return true;
     }
 
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       return this; //lock is being recalled - we'll get the per thread awards from the server later
@@ -255,6 +280,10 @@ enum ClientGreediness {
       return this;
     }
     
+    boolean isRecallInProgress() {
+      return false;
+    }
+    
     @Override
     ClientGreediness recallInProgress() {
       return WRITE_RECALL_IN_PROGRESS;
@@ -288,6 +317,10 @@ enum ClientGreediness {
     }
     
     boolean flushOnUnlock() {
+      return true;
+    }
+    
+    boolean isRecallInProgress() {
       return true;
     }
     
@@ -332,6 +365,10 @@ enum ClientGreediness {
       return true;
     }
 
+    boolean isRecallInProgress() {
+      return true;
+    }
+    
     @Override
     ClientGreediness requested(ServerLockLevel level) {
       return this;
@@ -361,6 +398,8 @@ enum ClientGreediness {
   abstract boolean isGreedy();
   
   abstract boolean flushOnUnlock();
+
+  abstract boolean isRecallInProgress();
 
   /**
    * @throws GarbageLockException thrown if in a garbage state 
