@@ -18,7 +18,7 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
-import com.tc.objectserver.api.ObjectStatsHelper;
+import com.tc.objectserver.api.ObjectStatsManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -37,7 +37,7 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   private static final TCLogger       logger                   = TCLogging.getLogger(L2LockStatisticsManagerImpl.class);
 
   private DSOChannelManager           channelManager;
-  private ObjectStatsHelper           objectStatsHelper;
+  private ObjectStatsManager          objectStatsHelper;
   protected final Set<NodeID>         lockSpecRequestedNodeIDs = new HashSet<NodeID>();
   private SampledCounter              globalLockCounter;
   private SampledCounter              globalLockRecallCounter;
@@ -68,7 +68,7 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
   }
 
   public synchronized void start(DSOChannelManager dsoChannelManager, DSOGlobalServerStats serverStats,
-                                 ObjectStatsHelper objStatsHelper) {
+                                 ObjectStatsManager objStatsHelper) {
     this.channelManager = dsoChannelManager;
     SampledCounter lockCounter = serverStats == null ? null : serverStats.getGlobalLockCounter();
     this.globalLockCounter = lockCounter == null ? SampledCounter.NULL_SAMPLED_COUNTER : lockCounter;
@@ -145,11 +145,11 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
     if (lockType == null) {
       ObjectID objectId = null;
       if (lockID instanceof DsoLockID) {
-        objectId = new ObjectID(((DsoLockID) lockID).getObjectID());
-        lockType = this.objectStatsHelper.getObjectTypeFromID(objectId, false);
+        objectId = ((DsoLockID) lockID).getObjectID();
+        lockType = this.objectStatsHelper.getObjectTypeFromID(objectId);
       } else if (lockID instanceof DsoVolatileLockID) {
-        objectId = new ObjectID(((DsoVolatileLockID) lockID).getObjectID());
-        lockType = this.objectStatsHelper.getObjectTypeFromID(objectId, false);
+        objectId = ((DsoVolatileLockID) lockID).getObjectID();
+        lockType = this.objectStatsHelper.getObjectTypeFromID(objectId);
       }
 
       if (lockType == null) {

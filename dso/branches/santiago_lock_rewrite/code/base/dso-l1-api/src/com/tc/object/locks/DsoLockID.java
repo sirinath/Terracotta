@@ -14,13 +14,13 @@ import java.io.IOException;
  */
 public class DsoLockID implements LockID {
   private static final long serialVersionUID = 0x123456789abcdefL;
-  
-  private long          objectId;
-  
+
+  private long              objectId;
+
   public DsoLockID() {
     // for tc serialization
   }
-  
+
   public DsoLockID(ObjectID objectId) {
     this.objectId = objectId.toLong();
   }
@@ -57,12 +57,12 @@ public class DsoLockID implements LockID {
       return false;
     }
   }
-  
+
   public String toString() {
     return "DsoLockID(" + new ObjectID(objectId) + ")";
   }
 
-  public long getObjectID() {
-    return objectId;
+  public ObjectID getObjectID() {
+    return new ObjectID(objectId);
   }
 }

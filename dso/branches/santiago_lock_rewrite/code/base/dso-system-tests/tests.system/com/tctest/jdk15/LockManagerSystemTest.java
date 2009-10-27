@@ -46,7 +46,7 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.MockChannelManager;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
-import com.tc.objectserver.api.ObjectStatsHelper;
+import com.tc.objectserver.api.ObjectStatsManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
@@ -546,7 +546,7 @@ public class LockManagerSystemTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
-    public void start(DSOChannelManager channelManager, DSOGlobalServerStats serverStats, ObjectStatsHelper objectManager) {
+    public void start(DSOChannelManager channelManager, DSOGlobalServerStats serverStats, ObjectStatsManager objectManager) {
       throw new ImplementMe();
     }
 

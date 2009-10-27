@@ -5,7 +5,7 @@ package com.tc.objectserver.api;
 
 import com.tc.object.ObjectID;
 
-public interface ObjectStatsHelper {
+public interface ObjectStatsManager {
 
   /**
    * This method will be used by lock stats manager when lock statistics is enabled and will return the type of the
@@ -14,5 +14,5 @@ public interface ObjectStatsHelper {
    * @param id - identifier of the object
    * @param cacheOnly - return type if present only in cache.
    */
-  public String getObjectTypeFromID(ObjectID id, boolean cacheOnly);
+  public String getObjectTypeFromID(ObjectID id);
 }
