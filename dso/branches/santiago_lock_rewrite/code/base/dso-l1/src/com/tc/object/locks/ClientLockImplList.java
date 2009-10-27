@@ -3,7 +3,6 @@
  */
 package com.tc.object.locks;
 
-import com.tc.object.locks.LockStateNode.LockAward;
 import com.tc.object.locks.LockStateNode.LockHold;
 import com.tc.object.locks.LockStateNode.LockWaiter;
 import com.tc.object.locks.LockStateNode.PendingLockHold;
@@ -52,18 +51,6 @@ public class ClientLockImplList extends SynchronizedSinglyLinkedList<LockStateNo
     }
   };
   
-  private static final Filter<LockStateNode> HOLDS_AND_AWARDS = new Filter<LockStateNode>() {
-
-    public boolean accept(LockStateNode object) {
-      return object instanceof LockHold || object instanceof LockAward;
-    }
-
-    public boolean terminate(LockStateNode object) {
-      return object instanceof LockWaiter || object instanceof PendingLockHold;
-    }
-    
-  };
-  
   public FilteredIterator<LockHold> holds() {
     return new FilteredIterator(HOLDS);
   }
@@ -78,10 +65,6 @@ public class ClientLockImplList extends SynchronizedSinglyLinkedList<LockStateNo
   
   public FilteredIterator<LockStateNode> holdsAndWaiters() {
     return new FilteredIterator<LockStateNode>(HOLDS_AND_WAITERS);
-  }
-  
-  public FilteredIterator<LockStateNode> holdsAndAwards() {
-    return new FilteredIterator<LockStateNode>(HOLDS_AND_AWARDS);
   }
   
   class FilteredIterator<T extends LockStateNode> extends SinglyLinkedList<LockStateNode>.ListIterator {

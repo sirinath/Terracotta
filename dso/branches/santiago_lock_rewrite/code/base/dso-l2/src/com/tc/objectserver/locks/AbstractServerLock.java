@@ -133,12 +133,15 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     recordLockReleaseStat(cid, tid, helper);
 
     if (context == null) {
-      String errorMsg = "An attempt was made to unlock:"
-                        + this
-                        + " for channelID:"
-                        + cid
-                        + " This lock was not held. This could be do to that node being down so it may not be an error.";
-      throw new AssertionError(errorMsg);
+//      String errorMsg = "An attempt was made to unlock:"
+//                        + this
+//                        + " for channelID:"
+//                        + cid
+//                        + " threadID:"
+//                        + tid
+//                        + " This lock was not held. This could be do to that node being down so it may not be an error.";
+//      throw new AssertionError(errorMsg);
+      return;
     }
     Assert.assertTrue(context.isHolder());
 

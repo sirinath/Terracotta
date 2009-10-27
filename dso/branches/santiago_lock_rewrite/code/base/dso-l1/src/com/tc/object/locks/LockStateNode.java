@@ -9,16 +9,12 @@ import com.tc.util.Assert;
 import com.tc.util.SinglyLinkedList;
 
 import java.util.Stack;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.locks.LockSupport;
 
 abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNode> {
-  private static final Timer STATE_NODE_TIMER = new Timer("ClientLockImpl Timer", true);
-
-  private final ThreadID     owner;
+  private final ThreadID owner;
   
-  private LockStateNode      next;
+  private LockStateNode  next;
 
   LockStateNode(ThreadID owner) {
     this.owner = owner;
@@ -96,14 +92,14 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     @Override
     LockAcquireResult allowsHold(LockHold newHold) {
       if (getOwner().equals(newHold.getOwner())) {
-        if (newHold.getLockLevel().isRead()) {
-          return getLockLevel().isWrite() ? LockAcquireResult.SUCCESS : LockAcquireResult.SHARED_SUCCESS;
-        }
-        if (level.isWrite()) {
+        if (this.getLockLevel().isWrite()) {
           return LockAcquireResult.SUCCESS;
         }
+        if (newHold.getLockLevel().isRead()) {
+          return LockAcquireResult.SHARED_SUCCESS;
+        }
       } else {
-        if (level.isWrite()) {
+        if (this.getLockLevel().isWrite() || newHold.getLockLevel().isWrite()) {
           return LockAcquireResult.FAILURE;
         }
       }
@@ -146,7 +142,8 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     private final LockLevel  level;
     private final Thread     javaThread;
     private final long       waitTime;
-    private volatile boolean serverResponded = false;
+    private volatile boolean responded = false;
+    private volatile boolean awarded   = false;
     
     PendingLockHold(ThreadID owner, LockLevel level, long timeout) {
       super(owner);
@@ -181,12 +178,35 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
       LockSupport.unpark(javaThread);
     }
 
-    boolean isRefused() {
-      return serverResponded;
+    void refused() {
+      awarded = false;
+      responded = true;
+    }
+
+    void awarded() {
+      awarded = true;
+      responded = true;
     }
     
-    void refused() {
-      serverResponded = true;
+    boolean isRefused() {
+      return responded && !awarded;
+    }
+
+    boolean isAwarded() {
+      return responded && awarded;
+    }
+    
+    LockAcquireResult allowsHold(LockHold newHold) {
+      if (getOwner().equals(newHold.getOwner()) && getLockLevel().equals(newHold.getLockLevel())) {
+        if (responded) {
+          if (awarded) {
+            return LockAcquireResult.SUCCESS;
+          } else {
+            return LockAcquireResult.FAILURE;
+          }
+        }
+      }
+      return LockAcquireResult.UNKNOWN;
     }
     
     public boolean equals(Object o) {
@@ -264,25 +284,20 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     }
     
     void unpark() {
-      STATE_NODE_TIMER.schedule(new TimerTask() {
-        @Override
-        public void run() {
-          synchronized (waitObject) {
-            unparked = true;
-            waitObject.notifyAll();
-          }
-        }
-      }, 0);
+      synchronized (waitObject) {
+        unparked = true;
+        waitObject.notifyAll();
+      }
     }
   }
   
   static class LockWaiter extends LockStateNode {
     
-    private final Object waitObject;
-    private final long   waitTime;
+    private final Object                 waitObject;
+    private final long                   waitTime;
     private final Stack<PendingLockHold> reacquires;
     
-    private volatile boolean notified;
+    private volatile boolean             notified;
     
     LockWaiter(ThreadID owner, Object waitObject, Stack<LockHold> holds, long timeout) {
       super(owner);
@@ -351,50 +366,6 @@ abstract class LockStateNode implements SinglyLinkedList.LinkedNode<LockStateNod
     @Override
     ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
       return new ClientServerExchangeLockContext(lock, node, getOwner(), ServerLockContext.State.WAITER, getTimeout());
-    }
-  }
-  
-  static class LockAward extends LockStateNode {
-    private final ServerLockLevel level;
-    
-    LockAward(ThreadID target, ServerLockLevel level) {
-      super(target);
-      this.level = level;
-    }
-    
-    ServerLockLevel getLockLevel() {
-      return level;
-    }
-    
-    LockAcquireResult allowsHold(LockHold newHold) {
-      ServerLockLevel request = ServerLockLevel.fromClientLockLevel(newHold.getLockLevel());
-      if (getOwner().equals(newHold.getOwner()) && getLockLevel().equals(request)) {
-        return newHold.getLockLevel().isWrite() ? LockAcquireResult.SUCCESS : LockAcquireResult.SHARED_SUCCESS;
-      } else {
-        return LockAcquireResult.UNKNOWN;
-      }
-    }
-    
-    public boolean equals(Object o) {
-      if (o == this) {
-        return true;
-      } else if (o instanceof LockAward) {
-        return super.equals(o) && level.equals(((LockAward) o).level);
-      } else {
-        return false;
-      }
-    }
-    
-    public int hashCode() {
-      return (5 * super.hashCode()) ^ (7 * level.hashCode());
-    }
-    
-    public String toString() {
-      return super.toString() + " : " + level;
-    }
-    
-    public ClientServerExchangeLockContext toContext(LockID lock, ClientID node) {
-      return null;
     }
   }  
 }

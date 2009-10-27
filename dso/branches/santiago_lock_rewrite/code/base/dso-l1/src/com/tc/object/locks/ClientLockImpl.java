@@ -6,7 +6,6 @@ package com.tc.object.locks;
 import com.tc.exception.TCLockUpgradeNotSupportedError;
 import com.tc.net.ClientID;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.locks.LockStateNode.LockAward;
 import com.tc.object.locks.LockStateNode.LockHold;
 import com.tc.object.locks.LockStateNode.LockWaiter;
 import com.tc.object.locks.LockStateNode.PendingLockHold;
@@ -31,18 +30,20 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     }
   };
   
-  private static final Set<LockLevel> WRITE_LEVELS = EnumSet.of(LockLevel.WRITE, LockLevel.SYNCHRONOUS_WRITE);  
-  private static final boolean DEBUG         = false;
-  private static final Timer   LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
-  protected static final int   BLOCKING_LOCK = Integer.MIN_VALUE;
+  private static final Set<LockLevel> WRITE_LEVELS  = EnumSet.of(LockLevel.WRITE, LockLevel.SYNCHRONOUS_WRITE);  
+  private static final Set<LockLevel> READ_LEVELS   = EnumSet.of(LockLevel.READ);  
   
-  private final LockID         lock;
+  private static final boolean        DEBUG         = false;
+  private static final Timer          LOCK_TIMER    = new Timer("ClientLockImpl Timer", true);
+  protected static final int          BLOCKING_LOCK = Integer.MIN_VALUE;
   
-  private ClientGreediness     greediness    = ClientGreediness.FREE;
-  private ServerLockLevel      recalledLevel;
+  private final LockID                lock;
   
-  private volatile byte         gcCycleCount  = 0;
-  private volatile boolean      pinned;
+  private ClientGreediness            greediness    = ClientGreediness.FREE;
+  private ServerLockLevel             recalledLevel;
+  
+  private volatile byte               gcCycleCount  = 0;
+  private volatile boolean            pinned;
 
   public ClientLockImpl(LockID lock) {
     this.lock = lock;
@@ -118,7 +119,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     markUsed();
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + " attempting to " + level + " unlock");
     if (release(remote, thread, level)) {
-      unparkNextQueuedAcquire();
+      unparkFirstQueuedAcquire();
     }
   }
 
@@ -216,6 +217,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
         waiter = releaseAllAndPushWaiter(remote, thread, waitObject, timeout);
       }
     
+      unparkFirstQueuedAcquire();      
       waitOnLockWaiter(remote, thread, waiter, listener);
     } finally {
       moveWaiterToPending(waiter);
@@ -233,7 +235,6 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     } else if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
       greediness = recallCommit(remote);
     }
-    unparkNextQueuedAcquire();
     
     return waiter;
   }
@@ -443,25 +444,44 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
    */
   public void refuse(ThreadID thread, ServerLockLevel level) {
     if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server refusing lock request " + level);
-    // kick the locking thread
-    unparkQueuedAcquire(thread, level, true);
+    PendingLockHold acquire;
+    synchronized (this) {
+      acquire = getQueuedAcquire(thread, level);    
+      if (acquire != null) {
+        acquire.refused();
+      }
+    }
+    
+    if (acquire != null) {
+      acquire.unpark();
+    }
   }
 
   /*
    * Called by the stage thread when the server has awarded a lock (either greedy or per thread).
    */
-  public synchronized void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level) {
+  public void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level) {
     if (ThreadID.VM_ID.equals(thread)) {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server awarded greedy " + level);
-      greediness = greediness.awarded(level);
-      unparkNextQueuedAcquire();
+      synchronized (this) {
+        greediness = greediness.awarded(level);
+      }
+      unparkFirstQueuedAcquire();
     } else {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server awarded per-thread " + level + " to " + thread);
-      LockAward award = new LockAward(thread, level);
-      addFirst(award);
-      if (!unparkQueuedAcquire(thread, level, false)) {
-        remove(award);
-        remote.unlock(lock, thread, level);
+      PendingLockHold acquire;
+      synchronized (this) {
+        acquire = getQueuedAcquire(thread, level);
+        if (acquire == null) {
+          remote.unlock(lock, thread, level);
+        } else {
+          acquire.awarded();
+        }
+      }      
+
+      if (acquire != null) {
+        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + thread + " wanting " + acquire.getLockLevel());
+        acquire.unpark();
       }
     }
   }
@@ -555,23 +575,25 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   private LockAcquireResult tryAcquireUsingThreadState(ThreadID thread, LockLevel level) {
     //What can we glean from local lock state
     LockHold newHold = new LockHold(thread, level);
-    LockLevel firstHold = null;
     for (Iterator<LockStateNode> it = iterator(); it.hasNext();) {
       LockStateNode s = it.next();
       LockAcquireResult result = s.allowsHold(newHold);
       if (result.isKnownResult()) {
-        if (s instanceof LockAward) it.remove();
-        if (result.isSuccess()) addFirst(newHold);
+        if (result.isSuccess()) {
+          addFirst(newHold);
+        } else {
+          //Lock upgrade not supported check
+          if (level.isWrite() && isLockedBy(thread, READ_LEVELS)) {
+            throw new TCLockUpgradeNotSupportedError();
+          }
+        }
         if (DEBUG) System.err.println("\t" + ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : " + thread + (result.isSuccess() ? " awarded " : " failed ") + level + " due to " + s);
         return result;
-      }
-      if (s instanceof LockHold && s.getOwner().equals(thread)) {
-        firstHold = ((LockHold) s).getLockLevel();
       }
     }
 
     //Lock upgrade not supported check
-    if (level.isWrite() && (firstHold != null) && firstHold.isRead()) {
+    if (level.isWrite() && isLockedBy(thread, READ_LEVELS)) {
       throw new TCLockUpgradeNotSupportedError();
     }
     
@@ -701,10 +723,6 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       return false;
     }
     
-    if (unlock.getLockLevel().isRead()) {
-      return false;
-    }
-      
     for (LockStateNode s : this) {
       if (s == unlock) continue;
 
@@ -743,21 +761,20 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     boolean interrupted = false;
     try {
       for (;;) {
-        synchronized (this) {
-          // try to acquire before sleeping
-          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
-          if (result.usedServer()) {
-            // we contacted server - disable delegation to prevent multiple messages
-            delegate = false;
-          }
-          if (result.isShared()) {
-            unparkNextQueuedAcquire(node.getNext());
-          }
-          if (result.isSuccess()) {
-            remove(node);
-            return;
-          }
+        // try to acquire before sleeping
+        LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
+        if (result.usedServer()) {
+          // we contacted server - disable delegation to prevent multiple messages
+          delegate = false;
         }
+        if (result.isShared()) {
+          unparkNextQueuedAcquire(node);
+        }
+        if (result.isSuccess()) {
+          remove(node);
+          return;
+        }
+          
         // park the thread and wait for unpark
         node.park();
         if (Thread.interrupted()) {
@@ -765,12 +782,12 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
         }
       }
     } catch (RuntimeException ex) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw ex;
     } catch (TCLockUpgradeNotSupportedError e) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw e;
     } finally {
       if (interrupted) {
@@ -788,35 +805,34 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     try {
       boolean delegate = true;
       for (;;) {
-        synchronized (this) {
-          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
-          if (result.usedServer()) {
-            delegate = false;
-          }
-          if (result.isShared()) {
-            unparkNextQueuedAcquire(node.getNext());
-          }
-          if (result.isSuccess()) {
-            remove(node);
-            return;
-          }
+        LockAcquireResult result = tryAcquire(delegate, remote, thread, level, BLOCKING_LOCK);
+        if (result.usedServer()) {
+          delegate = false;
         }
+        if (result.isShared()) {
+          unparkNextQueuedAcquire(node);
+        }
+        if (result.isSuccess()) {
+          remove(node);
+          return;
+        }
+        
         node.park();
         if (Thread.interrupted()) {
           break;
         }
       }
     } catch (RuntimeException ex) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw ex;
     } catch (TCLockUpgradeNotSupportedError e) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw e;
     }
     // Arrive here only if interrupted
-    remove(node);
+    abortAndRemove(remote, node);
     throw new InterruptedException();
   }
 
@@ -830,31 +846,30 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     try {
       boolean delegate = true;
       while (!node.isRefused()) {
-        synchronized (this) {
-          LockAcquireResult result = tryAcquire(delegate, remote, thread, level, timeout);
-          if (result.usedServer()) {
-            delegate = false;
-          }
-          if (result.isShared()) {
-            unparkNextQueuedAcquire(node.getNext());
-          }
-          if (result.isSuccess()) {
-            remove(node);
-            return true;
-          } else {
-            if (delegate && timeout <= 0) {
-              remove(node);
-              return false;
-            }
+        LockAcquireResult result = tryAcquire(delegate, remote, thread, level, timeout);
+        if (result.usedServer()) {
+          delegate = false;
+        }
+        if (result.isShared()) {
+          unparkNextQueuedAcquire(node);
+        }
+        if (result.isSuccess()) {
+          remove(node);
+          return true;
+        } else {
+          if (delegate && timeout <= 0) {
+            abortAndRemove(remote, node);
+            return false;
           }
         }
+
         if (!delegate) {
           node.park();
         } else {
           node.park(timeout);
         }
         if (Thread.interrupted()) {
-          remove(node);
+          abortAndRemove(remote, node);
           throw new InterruptedException();
         }
         long now = System.currentTimeMillis();
@@ -865,72 +880,86 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       remove(node);
       LockAcquireResult result = tryAcquireLocally(thread, level);
       if (result.isShared()) {
-        unparkNextQueuedAcquire();
+        unparkFirstQueuedAcquire();
       }
       return result.isSuccess();
     } catch (RuntimeException ex) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw ex;
     } catch (TCLockUpgradeNotSupportedError e) {
-      remove(node);
-      unparkNextQueuedAcquire();
+      abortAndRemove(remote, node);
+      unparkFirstQueuedAcquire();
       throw e;
     }
   }
 
+  private synchronized void abortAndRemove(RemoteLockManager remote, PendingLockHold node) {
+    node = (PendingLockHold) remove(node);
+    if (node != null && node.isAwarded()) {
+      remote.unlock(lock, node.getOwner(), ServerLockLevel.fromClientLockLevel(node.getLockLevel()));
+    }
+  }
   /*
    * Unpark the first queued acquire
    */
-  private synchronized void unparkNextQueuedAcquire() {
-    if (!isEmpty()) {
-      unparkNextQueuedAcquire(getFirst());
+  private void unparkFirstQueuedAcquire() {
+    PendingLockHold firstAcquire = getFirstQueuedAcquire();
+    if (firstAcquire != null) {
+      if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + firstAcquire.getOwner() + " wanting " + firstAcquire.getLockLevel());      
+      firstAcquire.unpark();
     }
   }
 
   /*
-   * Unpark the next queued acquire (starting at supplied node)
+   * Unpark the next queued acquire (after supplied node)
    */
-  private synchronized void unparkNextQueuedAcquire(LockStateNode node) {
-    while (node != null) {
-      if (node instanceof PendingLockHold) {
-        ((PendingLockHold) node).unpark();
-        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + node.getOwner() + " wanting " + ((PendingLockHold) node).getLockLevel());
-        return;
+  private void unparkNextQueuedAcquire(LockStateNode node) {
+    PendingLockHold nextAcquire = getNextQueuedAcquire(node);
+    if (nextAcquire != null) {
+      if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + nextAcquire.getOwner() + " wanting " + nextAcquire.getLockLevel());
+      nextAcquire.unpark();
+    }
+  }
+  
+  private synchronized PendingLockHold getFirstQueuedAcquire() {
+    for (LockStateNode current : this) {
+      if (current instanceof PendingLockHold) {
+        return (PendingLockHold) current;
       }
-      node = node.getNext();
     }
+    return null;
   }
-
-  /*
-   * Unpark the queued acquire associated with the given thread - used by per-thread awards
-   */
-  private synchronized boolean unparkQueuedAcquire(ThreadID thread, ServerLockLevel level, boolean refused) {
+  
+  private synchronized PendingLockHold getNextQueuedAcquire(LockStateNode node) {
+    LockStateNode current = node.getNext();
+    while (current != null) {
+      if (current instanceof PendingLockHold) {
+        return (PendingLockHold) current;
+      }
+      current = current.getNext();
+    }
+    return null;
+  }
+  
+  private synchronized PendingLockHold getQueuedAcquire(ThreadID thread, ServerLockLevel level) {
     for (LockStateNode s : this) {
-      if ((s instanceof PendingLockHold) && s.getOwner().equals(thread)) {
-        PendingLockHold acquire = (PendingLockHold) s;
-        if (!level.equals(ServerLockLevel.fromClientLockLevel(acquire.getLockLevel()))) {
-          continue;
-        }
-        if (refused) {
-          acquire.refused();
-        }
-        acquire.unpark();
-        if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : unparked " + thread + " wanting " + ((PendingLockHold) s).getLockLevel());
-        return true;
+      if ((s instanceof PendingLockHold) && s.getOwner().equals(thread) && level.equals(ServerLockLevel.fromClientLockLevel(((PendingLockHold) s).getLockLevel()))) {
+        return (PendingLockHold) s;
       }
     }
-    if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : failed to unpark " + thread);
-    return false;
+    return null;
   }
-
+  
   private synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
     if (canRecallNow(recalledLevel)) {
       LockFlushCallback callback = new LockFlushCallback() {
         public void transactionsForLockFlushed(LockID id) {
           synchronized (ClientLockImpl.this) {
-            if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit (having flushed transactions)");
-            greediness = recallCommit(remote);
+            if (greediness.isRecallInProgress()) {
+              if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : doing recall commit (having flushed transactions)");
+              greediness = recallCommit(remote);
+            }
           }
         }
       };
