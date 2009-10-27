@@ -16,19 +16,19 @@ import java.io.IOException;
  */
 public class DsoVolatileLockID implements LockID {
   private static final long serialVersionUID = 0xc62da86bc278450eL;
-  
-  private long     objectId;
-  private String   fieldName;
-  
+
+  private long              objectId;
+  private String            fieldName;
+
   public DsoVolatileLockID() {
     //
   }
-  
+
   public DsoVolatileLockID(ObjectID oid, String fieldName) {
     this.objectId = oid.toLong();
     this.fieldName = fieldName;
   }
-  
+
   @Deprecated
   public String asString() {
     return null;
@@ -48,15 +48,15 @@ public class DsoVolatileLockID implements LockID {
     serialOutput.writeLong(objectId);
     serialOutput.writeString(fieldName);
   }
-  
-  public long getObjectID() {
-    return objectId;
+
+  public ObjectID getObjectID() {
+    return new ObjectID(objectId);
   }
 
   public int hashCode() {
-    return (5 * (((int)objectId) ^ ((int) (objectId >>> 32)))) ^ (7 * fieldName.hashCode());
+    return (5 * (((int) objectId) ^ ((int) (objectId >>> 32)))) ^ (7 * fieldName.hashCode());
   }
-  
+
   public boolean equals(Object o) {
     if (o == this) {
       return true;
@@ -66,7 +66,7 @@ public class DsoVolatileLockID implements LockID {
       return false;
     }
   }
-  
+
   public String toString() {
     return "DsoVolatileLockID(" + new ObjectID(objectId) + "." + fieldName + ")";
   }

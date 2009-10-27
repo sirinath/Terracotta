@@ -127,6 +127,8 @@ import com.tc.objectserver.DSOApplicationEvents;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectRequestManager;
+import com.tc.objectserver.api.ObjectStatsManager;
+import com.tc.objectserver.api.ObjectStatsManagerImpl;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManagerImpl;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
@@ -996,7 +998,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
       startBeanShell(this.l2Properties.getInt("beanshell.port"));
     }
 
-    lockStatsManager.start(channelManager, serverStats, objectManager);
+    ObjectStatsManager objStatsManager = new ObjectStatsManagerImpl(objectManager);
+    lockStatsManager.start(channelManager, serverStats, objStatsManager);
 
     CallbackOnExitHandler handler = new CallbackGroupExceptionHandler(logger, consoleLogger);
     this.threadGroup.addCallbackOnExitExceptionHandler(GroupException.class, handler);

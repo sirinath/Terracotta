@@ -351,7 +351,7 @@ public class LocksPanel extends XContainer implements PropertyChangeListener {
 
   private static long getLockObjectID(LockID lockID) {
     if (lockID instanceof DsoLockID) {
-      return ((DsoLockID) lockID).getObjectID();
+      return ((DsoLockID) lockID).getObjectID().toLong();
     } else {
       return -1;
     }

@@ -19,7 +19,6 @@ import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
-import com.tc.objectserver.api.ObjectStatsHelper;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.GCResultContext;
 import com.tc.objectserver.context.ManagedObjectFaultingContext;
@@ -66,7 +65,7 @@ import java.util.Set;
  * Manages access to all the Managed objects in the system.
  */
 public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable,
-    DumpHandler, PrettyPrintable, ObjectStatsHelper {
+    DumpHandler, PrettyPrintable {
 
   private static final TCLogger                       logger                = TCLogging.getLogger(ObjectManager.class);
 
@@ -652,30 +651,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     Set references2Return = mo.getObjectReferences();
     releaseReadOnly(mo);
     return references2Return;
-  }
-
-  public String getObjectTypeFromID(ObjectID id, boolean cacheOnly) {
-    synchronized (this) {
-      ManagedObjectReference mor = getReference(id);
-      if ((mor == null && cacheOnly) || (mor != null && mor.isNew())) {
-        // Object either not in cache or is a new object, return emtpy set
-        return null;
-      }
-      if (mor != null) {
-        // the object is not checked out and in memory, short circuit checking out and checking it back in.
-        return mor.getObject().getManagedObjectState().getClassName();
-      }
-    }
-    // The object is either not in the cache or someone else has checked it out, do a regular look and wait for the
-    // object.
-    String className = null;
-    ManagedObject mor = lookup(id, true, true);
-    if (mor != null) {
-      // the object is not checked out and in memory, short circuit checking out and checking it back in.
-      className = mor.getManagedObjectState().getClassName();
-      releaseReadOnly(mor);
-    }
-    return className;
   }
 
   private long request_count = 0;
