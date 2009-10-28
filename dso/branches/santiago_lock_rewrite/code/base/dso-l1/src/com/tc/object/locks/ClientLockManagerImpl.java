@@ -68,7 +68,6 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     ClientLock lockState = locks.get(lock);
     if (lockState == null) {
       lockState = new ClientLockImpl(lock);
-//      lockState = new WrappedClientLock(lock, remoteManager);
       ClientLock racer = locks.putIfAbsent(lock, lockState);
       if (racer != null) {
         return racer;
