@@ -127,22 +127,32 @@ public abstract class AbstractServerLock extends SinglyLinkedList<ServerLockCont
     processPendingRequests(helper);
   }
 
+  /**
+   * This method should be called to release a lock. One important thing to note is that this method should not be
+   * called while trying to release a greedy lock (recall commit is the way to go for that). We ignore requests for
+   * which context could not be found. The reason for that is avoid a race between a client and the server where a
+   * client might initiate an unlock while a greedy lock award is in flight to the client.
+   * <p>
+   * Scenario explained below: <br>
+   * Client 1 is holding greedy write and receives recall request for read lock. It only has read holders so it sends
+   * the following... <br>
+   * Recall Commit: Thread[1], HOLDER_READ; Thread[2], PENDING_READ; - this can happen when a write lock was held by
+   * Thread[1] but has just been unlocked (but before this thread grabbed the read lock) <br>
+   * The server receives this and notices that the Thread 2 request is pending, and therefore awards a greedy read to
+   * Client 1.<br>
+   * While the greedy award is in flight to Client 1, Thread[1] does an unlock, sees that the lock is free (no greedy
+   * hold) and therefore does a remote unlock on the server
+   * 
+   * @param cid - client id requesting
+   * @param tid - thread id requesting to be unlocked
+   * @param helper
+   */
   public void unlock(ClientID cid, ThreadID tid, LockHelper helper) {
     // remove current hold
     ServerLockContext context = remove(cid, tid, SET_OF_HOLDERS);
     recordLockReleaseStat(cid, tid, helper);
 
-    if (context == null) {
-//      String errorMsg = "An attempt was made to unlock:"
-//                        + this
-//                        + " for channelID:"
-//                        + cid
-//                        + " threadID:"
-//                        + tid
-//                        + " This lock was not held. This could be do to that node being down so it may not be an error.";
-//      throw new AssertionError(errorMsg);
-      return;
-    }
+    if (context == null) { return; }
     Assert.assertTrue(context.isHolder());
 
     if (clearLockIfRequired(helper)) { return; }
