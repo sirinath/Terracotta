@@ -1,4 +1,4 @@
-package com.tctest.object.lockmanager.impl;
+package com.tctest.object.locks;
 
 import org.apache.commons.io.IOUtils;
 
