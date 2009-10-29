@@ -12,8 +12,6 @@ import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.tx.TimerSpec;
 import com.tc.objectserver.lockmanager.api.DeadlockChain;
-import com.tc.objectserver.lockmanager.api.DeadlockResults;
-import com.tc.objectserver.lockmanager.api.LockWaitContext;
 import com.tc.objectserver.locks.LockMBean;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
@@ -51,19 +49,11 @@ public class TestLockManager implements LockManager {
     throw new ImplementMe();
   }
 
-  public void scanForDeadlocks(DeadlockResults output) {
-    throw new ImplementMe();
-  }
-
   public void start() {
     this.startCalls.add(new Object());
   }
 
   public void stop() {
-    throw new ImplementMe();
-  }
-
-  public void waitTimeout(LockWaitContext context) {
     throw new ImplementMe();
   }
 
