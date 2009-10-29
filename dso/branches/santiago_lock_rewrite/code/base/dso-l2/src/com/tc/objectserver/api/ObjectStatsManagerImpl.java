@@ -27,7 +27,7 @@ public class ObjectStatsManagerImpl implements ObjectStatsManager {
     try {
       objFacade = objectManager.lookupFacade(id, 0);
     } catch (Exception e) {
-      logger.debug("Ignoring exception while fetching lock type", e);
+      logger.info("Ignoring exception while fetching lock type", e);
       return "";
     }
     return objFacade.getClassName();
