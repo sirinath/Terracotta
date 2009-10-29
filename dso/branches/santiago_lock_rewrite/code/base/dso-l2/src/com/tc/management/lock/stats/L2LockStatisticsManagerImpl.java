@@ -152,10 +152,11 @@ public class L2LockStatisticsManagerImpl extends LockStatisticsManager implement
         lockType = this.objectStatsHelper.getObjectTypeFromID(objectId);
       }
 
-      if (lockType == null) {
+      if (lockType != null) {
+        lockIdToType.put(lockID, lockType);
+      } else {
         lockType = "";
       }
-      lockIdToType.put(lockID, lockType);
     }
 
     super.recordLockRequested(lockID, nodeID, threadID, null, lockType, numberOfPendingRequests);

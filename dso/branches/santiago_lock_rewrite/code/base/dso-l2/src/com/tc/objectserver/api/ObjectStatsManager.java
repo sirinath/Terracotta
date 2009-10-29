@@ -6,6 +6,11 @@ package com.tc.objectserver.api;
 import com.tc.object.ObjectID;
 
 public interface ObjectStatsManager {
+  public ObjectStatsManager NULL_OBJECT_STATS_MANAGER = new ObjectStatsManager() {
+                                                        public String getObjectTypeFromID(ObjectID id) {
+                                                          return "";
+                                                        }
+                                                      };
 
   /**
    * This method will be used by lock stats manager when lock statistics is enabled and will return the type of the
