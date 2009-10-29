@@ -16,7 +16,6 @@ import com.tc.objectserver.api.ObjectStatsManager;
 import com.tc.objectserver.api.TestSink;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
-import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.factory.GreedyPolicyFactory;
 import com.tc.objectserver.locks.factory.NonGreedyLockPolicyFactory;
 import com.tc.stats.counter.CounterManager;

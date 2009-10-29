@@ -13,11 +13,11 @@ import com.tc.object.msg.ClientHandshakeMessageImpl;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionProvider;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.LockFactory;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
 import com.tc.objectserver.locks.NotifiedWaiters;
+import com.tc.objectserver.locks.NullChannelManager;
 import com.tc.objectserver.locks.ServerLock.NotifyAction;
 
 import java.util.Collection;

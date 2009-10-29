@@ -11,7 +11,7 @@ import com.tc.net.NodeID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.tx.TimerSpec;
-import com.tc.objectserver.lockmanager.api.DeadlockChain;
+import com.tc.objectserver.locks.DeadlockChain;
 import com.tc.objectserver.locks.LockMBean;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;

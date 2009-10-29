@@ -12,13 +12,11 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestMessageChannel;
 import com.tc.net.protocol.tcm.TestTCMessage;
-import com.tc.object.lockmanager.api.TryLockContext;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -113,15 +111,6 @@ public class TestClientHandshakeMessage extends TestTCMessage implements ClientH
 
   public boolean isObjectIDsRequested() {
     return this.requestedObjectIDs;
-  }
-
-  public void addPendingTryLockContext(TryLockContext ctxt) {
-    throw new ImplementMe();
-
-  }
-
-  public Collection getPendingTryLockContexts() {
-    return Collections.EMPTY_LIST;
   }
 
   public String getClientVersion() {

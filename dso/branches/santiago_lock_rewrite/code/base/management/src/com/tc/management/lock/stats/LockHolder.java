@@ -2,9 +2,8 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.lockmanager.impl;
+package com.tc.management.lock.stats;
 
-import com.tc.object.lockmanager.api.LockLevel;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.ThreadID;
 
@@ -15,7 +14,6 @@ public class LockHolder implements Serializable {
 
   private final LockID      lockID;
   private final ThreadID    threadID;
-  private final String      lockLevel;
   private final String      channelAddr;
   private long              timeAcquired;
   private long              timeReleased;
@@ -23,30 +21,21 @@ public class LockHolder implements Serializable {
   private long              waitTimeInMillis;
   private long              heldTimeInMillis;
 
-  public LockHolder(LockID lockID, String channelAddr, ThreadID threadID, int level, long timeRequested) {
+  public LockHolder(LockID lockID, String channelAddr, ThreadID threadID, long timeRequested) {
     this.lockID = lockID;
     this.channelAddr = channelAddr;
     this.threadID = threadID;
     this.timeRequested = timeRequested;
     this.waitTimeInMillis = NON_SET_TIME_MILLIS;
     this.heldTimeInMillis = NON_SET_TIME_MILLIS;
-    this.lockLevel = LockLevel.toString(level);
-  }
-
-  public LockHolder(LockID lockID, String channelAddr, ThreadID threadID, int level) {
-    this(lockID, channelAddr, threadID, level, NON_SET_TIME_MILLIS);
   }
 
   public LockHolder(LockID lockID, ThreadID threadID, long timeRequested) {
-    this(lockID, null, threadID, LockLevel.NIL_LOCK_LEVEL, timeRequested);
+    this(lockID, null, threadID, timeRequested);
   }
 
   public LockID getLockID() {
     return this.lockID;
-  }
-
-  public String getLockLevel() {
-    return this.lockLevel;
   }
 
   public String getChannelAddr() {
@@ -126,8 +115,6 @@ public class LockHolder implements Serializable {
     sb.append(lockID);
     sb.append(", Thread ID: ");
     sb.append(threadID);
-    sb.append(", lock level: ");
-    sb.append(lockLevel);
     sb.append(", held time in millis: ");
     sb.append(getAndSetHeldTimeInMillis());
     sb.append(", wait time in millis: ");

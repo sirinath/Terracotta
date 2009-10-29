@@ -8,15 +8,13 @@ import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.object.lockmanager.api.ServerThreadID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.objectserver.api.TestSink;
-import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockResponseContext;
+import com.tc.objectserver.locks.NullChannelManager;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -33,7 +31,7 @@ public class GreedyLockManagerTest extends TestCase {
   final int                      numLocks   = 100;
   final int                      numThreads = 30;
   private final LockID[]         locks      = makeUniqueLocks(numLocks);
-  private final ServerThreadID[] txns       = makeUniqueTxns(numThreads);
+//  private final ServerThreadID[] txns       = makeUniqueTxns(numThreads);
 
   @Override
   protected void setUp() throws Exception {
@@ -476,43 +474,43 @@ public class GreedyLockManagerTest extends TestCase {
     // behavior changed ...
     if (true) return;
 
-    lockManager.start();
-    for (int i = 0; i < 50; i++) {
-      internalTestLackofDeadlock(false);
-      resetLockManager(true);
-      internalTestLackofDeadlock(true);
-      resetLockManager(true);
-    }
+//    lockManager.start();
+//    for (int i = 0; i < 50; i++) {
+//      internalTestLackofDeadlock(false);
+//      resetLockManager(true);
+//      internalTestLackofDeadlock(true);
+//      resetLockManager(true);
+//    }
   }
 
-  private void internalTestLackofDeadlock(boolean useRealThreads) throws InterruptedException {
-    List threads = new ArrayList();
-
-    for (int t = 0; t < numThreads; t++) {
-      NodeID cid = txns[t].getNodeID();
-      ThreadID tid = txns[t].getClientThreadID();
-
-      RandomRequest req = new RandomRequest(cid, tid);
-      if (useRealThreads) {
-        Thread thread = new Thread(req);
-        thread.start();
-        threads.add(thread);
-      } else {
-        req.run();
-      }
-    }
-
-    if (useRealThreads) {
-      for (Iterator iter = threads.iterator(); iter.hasNext();) {
-        Thread t = (Thread) iter.next();
-        t.join();
-      }
-    }
-
-    for (int i = 0; i < txns.length; i++) {
-      lockManager.clearAllLocksFor((ClientID) txns[i].getNodeID());
-    }
-  }
+//  private void internalTestLackofDeadlock(boolean useRealThreads) throws InterruptedException {
+//    List threads = new ArrayList();
+//
+//    for (int t = 0; t < numThreads; t++) {
+//      NodeID cid = txns[t].getNodeID();
+//      ThreadID tid = txns[t].getClientThreadID();
+//
+//      RandomRequest req = new RandomRequest(cid, tid);
+//      if (useRealThreads) {
+//        Thread thread = new Thread(req);
+//        thread.start();
+//        threads.add(thread);
+//      } else {
+//        req.run();
+//      }
+//    }
+//
+//    if (useRealThreads) {
+//      for (Iterator iter = threads.iterator(); iter.hasNext();) {
+//        Thread t = (Thread) iter.next();
+//        t.join();
+//      }
+//    }
+//
+//    for (int i = 0; i < txns.length; i++) {
+//      lockManager.clearAllLocksFor((ClientID) txns[i].getNodeID());
+//    }
+//  }
 
   private class RandomRequest implements Runnable {
     private final NodeID   cid;
@@ -536,13 +534,13 @@ public class GreedyLockManagerTest extends TestCase {
     }
   }
 
-  private ServerThreadID[] makeUniqueTxns(int num) {
-    ServerThreadID[] rv = new ServerThreadID[num];
-    for (int i = 0; i < num; i++) {
-      rv[i] = new ServerThreadID(new ClientID(i), new ThreadID(i));
-    }
-    return rv;
-  }
+//  private ServerThreadID[] makeUniqueTxns(int num) {
+//    ServerThreadID[] rv = new ServerThreadID[num];
+//    for (int i = 0; i < num; i++) {
+//      rv[i] = new ServerThreadID(new ClientID(i), new ThreadID(i));
+//    }
+//    return rv;
+//  }
 
   private LockID[] makeUniqueLocks(int num) {
     LockID[] rv = new LockID[num];

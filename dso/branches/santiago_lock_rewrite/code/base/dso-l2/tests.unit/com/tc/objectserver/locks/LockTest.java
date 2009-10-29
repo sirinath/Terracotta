@@ -13,7 +13,6 @@ import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.ThreadID;
 import com.tc.object.locks.ServerLockContext.State;
-import com.tc.objectserver.lockmanager.api.NullChannelManager;
 import com.tc.objectserver.locks.ServerLock.NotifyAction;
 import com.tc.objectserver.locks.factory.NonGreedyLockPolicyFactory;
 import com.tc.util.SinglyLinkedList.SinglyLinkedListIterator;

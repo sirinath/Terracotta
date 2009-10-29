@@ -13,7 +13,6 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.net.NodeID;
-import com.tc.object.lockmanager.impl.LockHolder;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.locks.ThreadID;

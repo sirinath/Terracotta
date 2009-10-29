@@ -29,30 +29,5 @@ public enum ServerLockLevel {
       default:
         throw new AssertionError("Unknown State: " + lockLevel);
     }
-  }
-  
-  @Deprecated
-  public static ServerLockLevel fromLegacyInt(int level) {
-    switch (level) {
-      case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.READ:
-      case com.tc.object.lockmanager.api.LockLevel.READ:
-        return READ;
-      case com.tc.object.lockmanager.api.LockLevel.GREEDY | com.tc.object.lockmanager.api.LockLevel.WRITE:
-      case com.tc.object.lockmanager.api.LockLevel.WRITE:
-        return WRITE;
-      default:
-        return null;
-    }
-  }
-
-  @Deprecated
-  public static int toLegacyInt(ServerLockLevel level) {
-    switch (level) {
-      case READ:
-        return com.tc.object.lockmanager.api.LockLevel.READ;
-      case WRITE:
-        return com.tc.object.lockmanager.api.LockLevel.WRITE;
-    }
-    throw new IllegalArgumentException();
-  }
+  }  
 }
