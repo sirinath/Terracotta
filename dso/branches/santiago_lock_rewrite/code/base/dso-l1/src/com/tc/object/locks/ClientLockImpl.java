@@ -392,8 +392,14 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       }
     }
 
+    //this is a slight hack to avoiding deadlocking the stage thread
     if (waiter != null) {
-      waiter.unpark();
+      final LockWaiter unpark = waiter;
+      LOCK_TIMER.schedule(new TimerTask() {
+        @Override public void run() {
+          unpark.unpark();
+        }
+      }, 0);
     }
   }
 
