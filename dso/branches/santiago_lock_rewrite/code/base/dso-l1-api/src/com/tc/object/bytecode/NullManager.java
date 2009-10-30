@@ -320,4 +320,12 @@ public final class NullManager implements Manager {
   public boolean isLockedByCurrentThread(LockLevel level) {
     throw new UnsupportedOperationException();
   }
+
+  public void monitorEnter(LockID lock, LockLevel level) {
+    //
+  }
+
+  public void monitorExit(LockID lock, LockLevel level) {
+    //
+  }
 }

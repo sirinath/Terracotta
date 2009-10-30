@@ -99,7 +99,7 @@ public class ConfigLockLevel {
    * @return Ordinal lock level value
    */
   public int getLockLevelAsInt() {
-    return level.ordinal();
+    return level.toInt();
   }
 
   public String toString() {
