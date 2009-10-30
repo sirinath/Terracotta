@@ -13,6 +13,7 @@ import com.tc.object.TCObject;
 import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
+import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.TerracottaLocking;
 import com.tc.object.logging.InstrumentationLogger;
@@ -33,10 +34,10 @@ public interface Manager extends TerracottaLocking {
   /** Bytecode type definition for this class */
   public static final String TYPE                        = "L" + CLASS + ";";
 
-  public final static int    LOCK_TYPE_READ              = LockLevel.READ.toInt();
-  public final static int    LOCK_TYPE_WRITE             = LockLevel.WRITE.toInt();
-  public final static int    LOCK_TYPE_CONCURRENT        = LockLevel.CONCURRENT.toInt();
-  public final static int    LOCK_TYPE_SYNCHRONOUS_WRITE = LockLevel.SYNCHRONOUS_WRITE.toInt();
+  public final static int    LOCK_TYPE_READ              = LockLevel.READ_LEVEL;
+  public final static int    LOCK_TYPE_WRITE             = LockLevel.WRITE_LEVEL;
+  public final static int    LOCK_TYPE_CONCURRENT        = LockLevel.CONCURRENT_LEVEL;
+  public final static int    LOCK_TYPE_SYNCHRONOUS_WRITE = LockLevel.SYNCHRONOUS_WRITE_LEVEL;
 
   /**
    * Determine whether this class is physically instrumented
@@ -334,4 +335,24 @@ public interface Manager extends TerracottaLocking {
 
   public StatisticRetrievalAction getStatisticRetrievalActionInstance(String name);
 
+  /**
+   * Used by instrumented code to perform a clustered <code>monitorenter</code>.
+   */
+  public void monitorEnter(LockID lock, LockLevel level);
+  
+  /**
+   * Used by instrumented code to perform a clustered <code>monitorexit</code>.
+   * <p>
+   * Implementations of this method should <em>prevent propagation of all
+   * <code>Throwable</code> instances</em>.  Instead <code>Throwable</code>
+   * instances are logged and the client VM is then terminated.  If you don't
+   * want this behavior then don't call this method.
+   * <p>
+   * This behavior is there to ensure that exceptions thrown during transaction
+   * commit or clustered unlocking do not cause the thread to enter an infinite
+   * loop.
+   * 
+   * @see <a href="http://jira.terracotta.org/jira/browse/DEV-113">DEV-113</a>
+   */
+  public void monitorExit(LockID lock, LockLevel level);
 }

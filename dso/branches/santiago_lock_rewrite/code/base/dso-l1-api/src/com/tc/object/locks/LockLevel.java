@@ -8,10 +8,10 @@ public enum LockLevel {
   SYNCHRONOUS_WRITE,
   CONCURRENT;
 
-  /**
-   * Static lookup array used to avoid clone call in LockLevel.values()
-   */
-  private static final LockLevel[]   VALUES = LockLevel.values();
+  public static final int READ_LEVEL              = 1;
+  public static final int WRITE_LEVEL             = 2;
+  public static final int SYNCHRONOUS_WRITE_LEVEL = 3;
+  public static final int CONCURRENT_LEVEL        = 4;
 
   public boolean isWrite() {
     switch (this) {
@@ -37,14 +37,31 @@ public enum LockLevel {
   }
   
   public int toInt() {
-    return this.ordinal();
+    switch (this) {
+      case READ:
+        return READ_LEVEL;
+      case WRITE:
+        return WRITE_LEVEL;
+      case SYNCHRONOUS_WRITE:
+        return SYNCHRONOUS_WRITE_LEVEL;
+      case CONCURRENT:
+        return CONCURRENT_LEVEL;
+    }
+    throw new AssertionError("Enum semantics broken in LockLevel?");
   }
 
   public static LockLevel fromInt(int integer) {
-    try {
-      return VALUES[integer];
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new IllegalArgumentException(e);
+    switch (integer) {
+      case READ_LEVEL:
+        return READ;
+      case WRITE_LEVEL:
+        return WRITE;
+      case SYNCHRONOUS_WRITE_LEVEL:
+        return SYNCHRONOUS_WRITE;
+      case CONCURRENT_LEVEL:
+        return CONCURRENT;
+      default:
+        throw new IllegalArgumentException("Invalid integer lock level " + integer);
     }
   }  
 }

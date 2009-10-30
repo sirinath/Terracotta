@@ -110,15 +110,13 @@ public class ReentrantReadWriteLockDowngraderTest extends TransparentTestBase {
 
       barrier.await();
 
-//      // ensure that the other nodes can't get the lock in write or read
-//      if (index != 0) {
-//        System.err.println("XXXX Client " + ManagerUtil.getClientID() + " : " + index + " try write locking");
-//        assertFalse(lock.writeLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
-//        System.err.println("XXXX Client " + ManagerUtil.getClientID() + " : " + index + " try read locking");
-//        assertFalse(lock.readLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
-//      }
-//
-//      barrier.await();
+      // ensure that the other nodes can't get the lock in write or read
+      if (index != 0) {
+        assertFalse(lock.writeLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
+        assertFalse(lock.readLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
+      }
+
+      barrier.await();
 
       // obtain the read lock on the first node
       if (0 == index) {
@@ -127,15 +125,13 @@ public class ReentrantReadWriteLockDowngraderTest extends TransparentTestBase {
 
       barrier.await();
 
-//      // the other nodes should still not be able to get the lock in write or read
-//      if (index != 0) {
-//        System.err.println("XXXX Client " + ManagerUtil.getClientID() + " : " + index + " try write locking");
-//        assertFalse(lock.writeLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
-//        System.err.println("XXXX Client " + ManagerUtil.getClientID() + " : " + index + " try read locking");
-//        assertFalse(lock.readLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
-//      }
-//
-//      barrier.await();
+      // the other nodes should still not be able to get the lock in write or read
+      if (index != 0) {
+        assertFalse(lock.writeLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
+        assertFalse(lock.readLock().tryLock(TRY_TIMEOUT, TimeUnit.SECONDS));
+      }
+
+      barrier.await();
 
       // downgrade the write lock to a read lock on the first node
       if (0 == index) {

@@ -40,7 +40,6 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   private final LockID                lock;
   
   private ClientGreediness            greediness    = ClientGreediness.FREE;
-  private ServerLockLevel             recalledLevel;
   
   private volatile byte               gcCycleCount  = 0;
   private volatile boolean            pinned;
@@ -232,7 +231,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     
     if (greediness.isFree()) {
       remote.wait(lock, thread, timeout);
-    } else if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
+    } else if (greediness.isRecalled() && canRecallNow()) {
       greediness = recallCommit(remote);
     }
     
@@ -421,13 +420,15 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     }
   }
   
-  /*
-   * Called by the locking stage thread to request a greedy recall.
+  /**
+   * ClientLockImpl ignores the interest level of the recall request.  Instead it will always recall the 
+   * lock as long as there are no held write locks locally (and assuming we don't decide to lease it).  This
+   * gives us the benefit of not blocking future read recalls if a write recall is pending.  This can be a
+   * problem when the write recall was triggered by a tryLock that no longer requires the lock.
    */
   public synchronized void recall(final RemoteLockManager remote, final ServerLockLevel interest, int lease) {
     // transition the greediness state
-    greediness = greediness.recalled(this, interest, lease);
-    addRecalledLevel(interest);
+    greediness = greediness.recalled(this, lease);
 
     if (greediness.isRecalled()) {
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : server requested recall " + interest);
@@ -632,7 +633,6 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
           }
           return LockAcquireResult.USED_SERVER;
         } else if (greediness.isRecalled()) {
-          addRecalledLevel(requestLevel);
           if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : client initiated recall " + requestLevel);
         } else {
           return LockAcquireResult.USED_SERVER;
@@ -642,7 +642,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       remote.flush(lock);
 
       synchronized (this) {
-        if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
+        if (greediness.isRecalled() && canRecallNow()) {
           greediness = recallCommit(remote);
         }
         return LockAcquireResult.USED_SERVER;
@@ -693,7 +693,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
     remove(unlock);
     if (greediness.isFree()) {
       remoteUnlock(remote, unlock);
-    } else if (greediness.isRecalled() && canRecallNow(recalledLevel)) {
+    } else if (greediness.isRecalled() && canRecallNow()) {
       greediness = recallCommit(remote);
     }
     
@@ -958,7 +958,7 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
   }
   
   private synchronized ClientGreediness doRecall(final RemoteLockManager remote) {
-    if (canRecallNow(recalledLevel)) {
+    if (canRecallNow()) {
       LockFlushCallback callback = new LockFlushCallback() {
         public void transactionsForLockFlushed(LockID id) {
           synchronized (ClientLockImpl.this) {
@@ -998,30 +998,14 @@ class ClientLockImpl extends ClientLockImplList implements ClientLock {
       remote.recallCommit(lock, contexts);
       if (DEBUG) System.err.println(ManagerUtil.getClientID() + " : " + lock + "[" + System.identityHashCode(this) + "] : free'd greedy lock");
       
-      recalledLevel = null;
-      
       return greediness.recallCommitted();
     }
   }
   
-  private synchronized void addRecalledLevel(ServerLockLevel level) {
-    if (recalledLevel == null) {
-      recalledLevel = level;
-    } else if (level == ServerLockLevel.WRITE) {
-      recalledLevel = level;
-    }
-  }
-  
-  private synchronized boolean canRecallNow(ServerLockLevel level) {
+  private synchronized boolean canRecallNow() {
     for (LockStateNode s : this) {
-      if (s instanceof LockHold) {
-        switch (level) {
-          case WRITE: //any hold will block a recall for write
-            return false;
-          case READ: //a write hold will block a read recall
-            if (((LockHold) s).getLockLevel().isWrite()) return false;
-            break;
-        }
+      if (s instanceof LockHold && ((LockHold) s).getLockLevel().isWrite()) {
+        return false;
       }
     }
     return true;

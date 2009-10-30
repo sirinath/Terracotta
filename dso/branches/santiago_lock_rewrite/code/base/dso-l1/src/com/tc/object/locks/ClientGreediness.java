@@ -36,7 +36,7 @@ enum ClientGreediness {
       throw GarbageLockException.GARBAGE_LOCK_EXCEPTION;
     }
     
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
 
@@ -91,7 +91,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
     
@@ -146,7 +146,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return RECALLED_READ;
     }
     
@@ -186,7 +186,7 @@ enum ClientGreediness {
     }
     
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       if ((lease > 0) && (clientLock.pendingCount() > 0)) {
         return GREEDY_WRITE;
       } else {
@@ -230,7 +230,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
     
@@ -276,7 +276,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
     
@@ -330,7 +330,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
     
@@ -375,7 +375,7 @@ enum ClientGreediness {
     }
 
     @Override
-    ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+    ClientGreediness recalled(ClientLock clientLock, int lease) {
       return this;
     }
     
@@ -412,7 +412,7 @@ enum ClientGreediness {
     throw new AssertionError("award while in unexpected state (" + this + ")");
   }
 
-  ClientGreediness recalled(ClientLock clientLock, ServerLockLevel interest, int lease) {
+  ClientGreediness recalled(ClientLock clientLock, int lease) {
     throw new AssertionError("recalled while in unexpected state (" + this + ")");
   }
 

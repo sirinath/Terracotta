@@ -566,6 +566,20 @@ public class ManagerUtil {
     mgr.unlock(lock, LockLevel.fromInt(type));
   }
 
+  @Deprecated
+  public static void instrumentationMonitorEnter(final Object obj, final int type) {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.monitorEnter(lock, LockLevel.fromInt(type));
+  }
+  
+  @Deprecated
+  public static void instrumentationMonitorExit(final Object obj, final int type) {
+    Manager mgr = getManager();
+    LockID lock = mgr.generateLockIdentifier(obj);
+    mgr.monitorExit(lock, LockLevel.fromInt(type));
+  }
+  
   /**
    * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type}, e.g., Class, Integer,
    *         etc.

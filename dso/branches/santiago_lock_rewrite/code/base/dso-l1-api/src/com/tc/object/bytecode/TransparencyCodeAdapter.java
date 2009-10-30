@@ -321,13 +321,13 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
 
   private void callMonitorEnterWithContextInfo() {
     super.visitLdcInsn(new Integer(autoLockType));
-    super.visitLdcInsn(autoLockContextInfo);
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "monitorEnter", "(Ljava/lang/Object;ILjava/lang/String;)V");
+    //super.visitLdcInsn(autoLockContextInfo);
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V");
   }
 
   private void callMonitorExit() {
     super.visitLdcInsn(new Integer(autoLockType));
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "monitorExit", "(Ljava/lang/Object;I)V");    
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V");    
   }
   
   private void visitInsnForReadLock(int opCode) {

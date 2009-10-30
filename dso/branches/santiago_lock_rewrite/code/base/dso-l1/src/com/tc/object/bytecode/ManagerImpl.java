@@ -11,6 +11,8 @@ import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.client.AbstractClientFactory;
 import com.tc.cluster.DsoCluster;
 import com.tc.cluster.DsoClusterImpl;
+import com.tc.exception.ExceptionWrapper;
+import com.tc.exception.ExceptionWrapperImpl;
 import com.tc.lang.StartupHelper;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
@@ -49,6 +51,8 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
+import com.tc.text.ConsoleParagraphFormatter;
+import com.tc.text.StringFormatter;
 import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tc.util.concurrent.SetOnceFlag;
@@ -849,4 +853,33 @@ public class ManagerImpl implements Manager {
   public boolean isLockedByCurrentThread(LockLevel level) {
     return lockManager.isLockedByCurrentThread(level);
   }
+
+  public void monitorEnter(LockID lock, LockLevel level) {
+    lock(lock, level);
+  }
+
+  public void monitorExit(LockID lock, LockLevel level) {
+    try {
+      unlock(lock, level);
+    } catch (IllegalMonitorStateException e) {
+      ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());      
+      ExceptionWrapper wrapper = new ExceptionWrapperImpl();
+      logger.fatal(wrapper.wrap(formatter.format(UNLOCK_SHARE_LOCK_ERROR)), e);
+      System.exit(-1);
+    } catch (Throwable t) {
+      ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());
+      ExceptionWrapper wrapper = new ExceptionWrapperImpl();
+      logger.fatal(wrapper.wrap(formatter.format(IMMINENT_INFINITE_LOOP_ERROR)), t);
+      System.exit(-1);
+    }
+  }
+  
+  private static final String UNLOCK_SHARE_LOCK_ERROR = "An attempt was just made to unlock a clustered lock that was not locked.  "
+    + "This was attempted on exit from a Java synchronized block.  This is highly likely to be due to the calling code locking on an "
+    + "object, adding it to the clustered heap, and then attempting to unlock it.  The client JVM will now be terminated to prevent "
+    + "the calling thread from entering an infinite loop.";
+  
+  private static final String IMMINENT_INFINITE_LOOP_ERROR = "An exception/error was just thrown from an application thread while attempting "
+    + "to commit a transaction and unlock the associated lock.  The unlock was called on exiting a Java synchronized block.  In order "
+    + "to prevent the calling thread from entering an infinite loop the client JVM will now be terminated.";
 }
