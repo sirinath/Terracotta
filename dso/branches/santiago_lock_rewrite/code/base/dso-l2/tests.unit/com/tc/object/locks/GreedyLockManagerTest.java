@@ -16,7 +16,6 @@ import com.tc.objectserver.locks.NullChannelManager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import junit.framework.TestCase;
 
@@ -24,14 +23,13 @@ import junit.framework.TestCase;
  * @author steve
  */
 public class GreedyLockManagerTest extends TestCase {
-  private TestSink               sink;
-  private LockManagerImpl        lockManager;
-  private final Random           random     = new Random();
+  private TestSink        sink;
+  private LockManagerImpl lockManager;
 
-  final int                      numLocks   = 100;
-  final int                      numThreads = 30;
-  private final LockID[]         locks      = makeUniqueLocks(numLocks);
-//  private final ServerThreadID[] txns       = makeUniqueTxns(numThreads);
+  final int               numLocks   = 100;
+  final int               numThreads = 30;
+
+  // private final ServerThreadID[] txns = makeUniqueTxns(numThreads);
 
   @Override
   protected void setUp() throws Exception {
@@ -468,86 +466,5 @@ public class GreedyLockManagerTest extends TestCase {
       lockManager = null;
       resetLockManager();
     }
-  }
-
-  public void testLackOfDeadlock() throws InterruptedException {
-    // behavior changed ...
-    if (true) return;
-
-//    lockManager.start();
-//    for (int i = 0; i < 50; i++) {
-//      internalTestLackofDeadlock(false);
-//      resetLockManager(true);
-//      internalTestLackofDeadlock(true);
-//      resetLockManager(true);
-//    }
-  }
-
-//  private void internalTestLackofDeadlock(boolean useRealThreads) throws InterruptedException {
-//    List threads = new ArrayList();
-//
-//    for (int t = 0; t < numThreads; t++) {
-//      NodeID cid = txns[t].getNodeID();
-//      ThreadID tid = txns[t].getClientThreadID();
-//
-//      RandomRequest req = new RandomRequest(cid, tid);
-//      if (useRealThreads) {
-//        Thread thread = new Thread(req);
-//        thread.start();
-//        threads.add(thread);
-//      } else {
-//        req.run();
-//      }
-//    }
-//
-//    if (useRealThreads) {
-//      for (Iterator iter = threads.iterator(); iter.hasNext();) {
-//        Thread t = (Thread) iter.next();
-//        t.join();
-//      }
-//    }
-//
-//    for (int i = 0; i < txns.length; i++) {
-//      lockManager.clearAllLocksFor((ClientID) txns[i].getNodeID());
-//    }
-//  }
-
-  private class RandomRequest implements Runnable {
-    private final NodeID   cid;
-    private final ThreadID tid;
-
-    public RandomRequest(NodeID cid, ThreadID tid) {
-      this.cid = cid;
-      this.tid = tid;
-    }
-
-    public void run() {
-      final int start = random.nextInt(numLocks);
-      final int howMany = random.nextInt(numLocks - start);
-
-      for (int i = 0; i < howMany; i++) {
-        LockID lock = locks[start + i];
-        boolean read = random.nextInt(10) < 8; // 80% reads
-        ServerLockLevel level = read ? ServerLockLevel.READ : ServerLockLevel.WRITE;
-        lockManager.lock(lock, (ClientID) cid, tid, level);
-      }
-    }
-  }
-
-//  private ServerThreadID[] makeUniqueTxns(int num) {
-//    ServerThreadID[] rv = new ServerThreadID[num];
-//    for (int i = 0; i < num; i++) {
-//      rv[i] = new ServerThreadID(new ClientID(i), new ThreadID(i));
-//    }
-//    return rv;
-//  }
-
-  private LockID[] makeUniqueLocks(int num) {
-    LockID[] rv = new LockID[num];
-    for (int i = 0; i < num; i++) {
-      rv[i] = new StringLockID("lock-" + i);
-    }
-
-    return rv;
   }
 }

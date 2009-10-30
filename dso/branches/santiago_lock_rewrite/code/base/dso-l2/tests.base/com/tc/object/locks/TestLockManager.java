@@ -11,7 +11,6 @@ import com.tc.net.NodeID;
 import com.tc.object.locks.ServerLockContext.State;
 import com.tc.object.locks.ServerLockContext.Type;
 import com.tc.object.tx.TimerSpec;
-import com.tc.objectserver.locks.DeadlockChain;
 import com.tc.objectserver.locks.LockMBean;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
@@ -160,9 +159,5 @@ public class TestLockManager implements LockManager {
   public void wait(LockID lid, ClientID cid, ThreadID tid, long timeout) {
     throw new ImplementMe();
 
-  }
-
-  public DeadlockChain[] scanForDeadlocks() {
-    throw new ImplementMe();
   }
 }
