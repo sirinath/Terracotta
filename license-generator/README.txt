@@ -7,7 +7,7 @@ tcbuild:
 
   a. check out an enterprise branch
   b. go to <branch>/community/code/base
-  c. run command "tcbuild dist license-generator enterprise"
+  c. run command "tcbuild dist licensegen enterprise"
   d. license-generator will be created under "build/dist"
   e. copy it over to lib folder of this project to replace the old one 
   
