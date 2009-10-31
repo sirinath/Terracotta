@@ -3,5 +3,5 @@
 cd `dirname $0`
 
 for i in lib/*.jar; do
-  jarsigner -keystore resources/tc.keys -storepass terracotta $i license-generator -keypass terracotta
+  jarsigner -keystore resources/keystore.jks -storepass terracotta $i terracotta -keypass terracotta
 done
