@@ -614,7 +614,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
     ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, this.persistor);
 
-    int numCommWorkers = L2CommUtils.getNumCommWorkerThreads();
+    final int numCommWorkers = L2CommUtils.getNumCommWorkerThreads();
 
     final NetworkStackHarnessFactory networkStackHarnessFactory;
     final boolean useOOOLayer = this.l1ReconnectConfig.getReconnectEnabled();
@@ -874,7 +874,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     Stage clientHandshake = stageManager.createStage(ServerConfigurationContext.CLIENT_HANDSHAKE_STAGE,
                                                      new ClientHandshakeHandler(), 1, maxStageSize);
     this.hydrateStage = stageManager.createStage(ServerConfigurationContext.HYDRATE_MESSAGE_SINK, new HydrateHandler(),
-                                                 1, maxStageSize);
+                                                 numCommWorkers, 1, maxStageSize);
     final Stage txnLwmStage = stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOWWATERMARK_STAGE,
                                                        new TransactionLowWaterMarkHandler(gtxm), 1, maxStageSize);
 

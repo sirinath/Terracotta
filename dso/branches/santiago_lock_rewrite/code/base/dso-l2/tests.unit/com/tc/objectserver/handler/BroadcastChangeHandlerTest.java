@@ -287,23 +287,11 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public String getName() {
-      throw new ImplementMe();
-    }
-
     public Sink getSink() {
       return sink;
     }
 
-    public void pause() {
-      throw new ImplementMe();
-    }
-
     public void start(ConfigurationContext context) {
-      throw new ImplementMe();
-    }
-
-    public void unpause() {
       throw new ImplementMe();
     }
 
@@ -331,19 +319,11 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void pause(List pauseEvents) {
-      throw new ImplementMe();
-    }
-
     public void setAddPredicate(AddPredicate predicate) {
       throw new ImplementMe();
     }
 
     public int size() {
-      throw new ImplementMe();
-    }
-
-    public void unpause() {
       throw new ImplementMe();
     }
 
