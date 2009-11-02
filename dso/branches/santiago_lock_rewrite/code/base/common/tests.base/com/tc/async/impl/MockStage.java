@@ -1,13 +1,12 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.async.impl;
-
 
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
-import com.tc.exception.ImplementMe;
 
 /**
  * @author orion
@@ -30,10 +29,6 @@ public class MockStage implements Stage {
     return sink;
   }
 
-  public String getName() {
-    return name;
-  }
-
   public void start(ConfigurationContext context) {
     //
   }
@@ -46,13 +41,9 @@ public class MockStage implements Stage {
     //
   }
 
-  public void pause() {
-    throw new ImplementMe();
-    
+  @Override
+  public String toString() {
+    return "MockStage(" + name + ")";
   }
 
-  public void unpause() {
-    throw new ImplementMe();
-    
-  }
 }

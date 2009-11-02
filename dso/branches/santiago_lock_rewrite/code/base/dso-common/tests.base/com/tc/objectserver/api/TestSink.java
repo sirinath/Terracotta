@@ -73,14 +73,6 @@ public class TestSink implements Sink {
     queue.clear();
   }
 
-  public void unpause() {
-    throw new ImplementMe();
-  }
-
-  public void pause(List pauseEvents) {
-    throw new ImplementMe();
-  }
-
   public void enableStatsCollection(boolean enable) {
     throw new ImplementMe();
   }

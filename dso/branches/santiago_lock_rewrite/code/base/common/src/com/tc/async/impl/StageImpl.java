@@ -15,35 +15,47 @@ import com.tc.async.api.Stage;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLoggerProvider;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.tc.util.concurrent.QueueFactory;
 
 /**
- * @author steve
+ * The SEDA Stage
  */
 public class StageImpl implements Stage {
-  private static final long         pollTime    = 3000; // This is the poor man's solution for stage
-  // shutdown
-  private static final EventContext PAUSE_TOKEN = new EventContext() {
-                                                  //
-                                                };
+  private static final long    pollTime = 3000; // This is the poor man's solution for stage
+  private final String         name;
+  private final EventHandler   handler;
+  private final StageQueueImpl stageQueue;
+  private final WorkerThread[] threads;
+  private final ThreadGroup    group;
+  private final TCLogger       logger;
 
-  private final String              name;
-  private final EventHandler        handler;
-  private final Sink                sink;
-  private final WorkerThread[]      threads;
-  private final ThreadGroup         group;
-  private final TCLogger            logger;
-  private boolean                   isPaused    = false;
-
-  public StageImpl(TCLoggerProvider loggerProvider, String name, EventHandler handler, Sink sink, int threadCount,
-                   ThreadGroup group) {
+  /**
+   * The Constructor.
+   * 
+   * @param loggerProvider : logger
+   * @param name : The stage name
+   * @param handler : Event handler for this stage
+   * @param threadCount : Number of threads working on this stage
+   * @param threadsToQueueRatio : The ratio determines the number of queues internally used and the number of threads
+   *        per each queue. Ideally you would want this to be same as threadCount, in which case there is only 1 queue
+   *        used internally and all thread are working on the same queue (which doesn't guarantee order in processing)
+   *        or set it to 1 where each thread gets its own queue but the (multithreaded) event contexts are distributed
+   *        based on the key they return. 
+   * @param group : The thread group to be used
+   * @param queueFactory : Factory used to create the queues
+   * @param queueSize : Max queue Size allowed
+   */
+  public StageImpl(TCLoggerProvider loggerProvider, String name, EventHandler handler, int threadCount,
+                   int threadsToQueueRatio, ThreadGroup group, QueueFactory queueFactory, int queueSize) {
     this.logger = loggerProvider.getLogger(Stage.class.getName() + ": " + name);
     this.name = name;
     this.handler = handler;
     this.threads = new WorkerThread[threadCount];
-    this.sink = sink;
+    if (threadsToQueueRatio > threadCount) {
+      logger.warn("Thread to Queue Ratio " + threadsToQueueRatio + " > Worker Threads " + threadCount);
+    }
+    this.stageQueue = new StageQueueImpl(threadCount, threadsToQueueRatio, queueFactory, loggerProvider, name,
+                                         queueSize);
     this.group = group;
   }
 
@@ -57,16 +69,18 @@ public class StageImpl implements Stage {
   }
 
   public Sink getSink() {
-    return sink;
-  }
-
-  public String getName() {
-    return name;
+    return stageQueue;
   }
 
   private synchronized void startThreads() {
     for (int i = 0; i < threads.length; i++) {
-      threads[i] = new WorkerThread("WorkerThread(" + name + "," + i + ")", (Source) sink, handler, group);
+      String threadName = "WorkerThread(" + name + ", " + i;
+      if (threads.length > 1) {
+        threadName = threadName + ", " + this.stageQueue.getSource(i).getSourceName() + ")";
+      } else {
+        threadName = threadName + ")";
+      }
+      threads[i] = new WorkerThread(threadName, this.stageQueue.getSource(i), handler, group);
       threads[i].start();
     }
   }
@@ -82,13 +96,9 @@ public class StageImpl implements Stage {
   }
 
   private static class WorkerThread extends Thread {
-    private static final com.tc.util.State RUNNING           = new com.tc.util.State("RUNNING");
-    private static final com.tc.util.State PAUSED            = new com.tc.util.State("PAUSED");
-
-    private com.tc.util.State              state;
-    private final Source                   source;
-    private final EventHandler             handler;
-    private boolean                        shutdownRequested = false;
+    private final Source       source;
+    private final EventHandler handler;
+    private volatile boolean   shutdownRequested = false;
 
     public WorkerThread(String name, Source source, EventHandler handler, ThreadGroup group) {
       super(group, name);
@@ -97,45 +107,20 @@ public class StageImpl implements Stage {
       this.handler = handler;
     }
 
-    public synchronized void shutdown() {
+    public void shutdown() {
       this.shutdownRequested = true;
     }
 
-    private synchronized boolean shutdownRequested() {
+    private boolean shutdownRequested() {
       return this.shutdownRequested;
     }
 
-    synchronized void pause() {
-      while (state != PAUSED) {
-        try {
-          wait();
-        } catch (InterruptedException e) {
-          throw new TCRuntimeException(e);
-        }
-      }
-    }
-
-    synchronized void unpause() {
-      if (state != PAUSED) throw new AssertionError("Attempt to unpause when not paused: " + state);
-      state = RUNNING;
-      notifyAll();
-    }
-
     public void run() {
-      state = RUNNING;
       while (!shutdownRequested()) {
         EventContext ctxt;
         try {
           ctxt = source.poll(pollTime);
-          if (ctxt == PAUSE_TOKEN) {
-            synchronized (this) {
-              state = PAUSED;
-              notifyAll();
-              while (state == PAUSED) {
-                wait();
-              }
-            }
-          } else if (ctxt != null) {
+          if (ctxt != null) {
             if (ctxt instanceof SpecializedEventContext) {
               ((SpecializedEventContext) ctxt).execute();
             } else {
@@ -158,37 +143,4 @@ public class StageImpl implements Stage {
     }
   }
 
-  public void pause() {
-    if (isPaused) throw new AssertionError("Attempt to pause while already paused.");
-
-    log("Pausing...");
-
-    List pauseTokens = new ArrayList(threads.length);
-    for (int i = 0; i < threads.length; i++) {
-      pauseTokens.add(PAUSE_TOKEN);
-    }
-    sink.pause(pauseTokens);
-    for (int i = 0; i < threads.length; i++) {
-      threads[i].pause();
-    }
-    isPaused = true;
-    log("Paused.");
-  }
-
-  public void unpause() {
-    if (!isPaused) throw new AssertionError("Attempt to unpause while not paused.");
-    log("Unpausing...");
-
-    sink.unpause();
-    for (int i = 0; i < threads.length; i++) {
-      threads[i].unpause();
-    }
-
-    isPaused = false;
-    log("Unpaused.");
-  }
-
-  private void log(Object msg) {
-    logger.info("Stage " + name + ": " + msg);
-  }
 }
