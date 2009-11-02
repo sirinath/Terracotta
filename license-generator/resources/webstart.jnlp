@@ -24,6 +24,8 @@
   <jar href="lib/commons-io-1.2.jar" />
   <jar href="lib/miglayout-3.6.3-swing.jar" />
   <jar href="lib/yamlbeans-0.9.2.jar" />      
+  <jar href="lib/ehcache-dx-1.0.0-SNAPSHOT.jar" />      
+  <jar href="lib/ehcache-license-generator-1.0.0-SNAPSHOT.jar" />      
 </resources>
 
 <application-desc main-class="com.tc.license.generator.gui.LicenseGeneratorFrame"/>

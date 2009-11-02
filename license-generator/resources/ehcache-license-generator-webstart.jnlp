@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<jnlp spec="1.0+" codebase="http://kong.terracotta.lan/resources/license-generator" href="resources/ehcache-license-generator-webstart.jnlp">
+
+<information>
+  <title>Ehcache License Generator</title>
+  <vendor>Terracotta</vendor>
+  <description>Ehcache License Generator</description>
+  <description kind="short">Ehcache License Generator</description>
+  <description kind="tooltip">Ehcache License Generator</description> 
+  <icon href="resources/ehcache.png" width="32" height="32"/>
+  <icon href="resources/ehcache.png" width="48" height="48"/>
+  <shortcut online="true">
+    <desktop/>
+    <menu submenu="Ehcache License Generator"/>
+  </shortcut>
+  <offline-allowed/>
+</information>
+    
+<resources>
+  <j2se version="1.5+"/>
+  <jar href="lib/commons-cli-1.1.jar" />
+  <jar href="lib/commons-io-1.2.jar" />
+  <jar href="lib/miglayout-3.6.3-swing.jar" />
+  <jar href="lib/ehcache-dx-1.0.0-SNAPSHOT.jar" />      
+  <jar href="lib/ehcache-license-generator-1.0.0-SNAPSHOT.jar" />      
+</resources>
+
+<application-desc main-class="org.terracotta.ehcachedx.license.generator.gui.LicenseGeneratorFrame"/>
+
+<security>
+  <all-permissions/>
+</security>
+
+</jnlp>

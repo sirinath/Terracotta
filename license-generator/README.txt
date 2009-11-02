@@ -1,4 +1,6 @@
 
+A. Terracotta License Generator:
+
 1. License generator is a GUI to generate Terracotta Enterprise license.
 
 The jar files in the lib folder are mostly unchanged. If there are changes to projects
@@ -24,3 +26,11 @@ http://kong.terracotta.lan/license-generator
 If you want to move it to another domain, modify resources/webstart.jnlp
 
 4. If you replace or add any jar files, please rerun signjars.sh to sign them
+
+B. Ehcache license generator:
+
+1. Code /export1/dev/hhuynh/ehcache-enterprise/ehcache-license-generator
+   The project depends on /export1/dev/hhuynh/ehcache-enterprise/ehcachedx
+
+2. Webstart file for this generator is in resources/ehcache-license-generator-webstart.jnlp
+
