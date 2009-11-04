@@ -22,7 +22,7 @@
   <jar href="lib/commons-cli-1.1.jar" />
   <jar href="lib/commons-io-1.2.jar" />
   <jar href="lib/miglayout-3.6.3-swing.jar" />
-  <jar href="lib/ehcache-dx-1.0.0-SNAPSHOT.jar" />      
+  <jar href="lib/ehcache-monitor-1.0.0-SNAPSHOT.jar" />      
   <jar href="lib/ehcache-license-generator-1.0.0-SNAPSHOT.jar" />      
 </resources>
 
