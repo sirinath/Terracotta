@@ -229,7 +229,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
 
         tx.commit();
         logger.debug("Checkpoint updated " + changes + " objectIDs");
-      } catch (DatabaseException e) {
+      } catch (TCDatabaseException e) {
         logger.error("Error ojectID checkpoint: " + e);
         abortOnError(tx);
       }
