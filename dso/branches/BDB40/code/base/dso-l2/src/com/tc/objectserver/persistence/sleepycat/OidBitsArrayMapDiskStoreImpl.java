@@ -68,7 +68,7 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
     return null;
   }
 
-  void writeDiskEntry(Transaction txn, OidLongArray bits) throws DatabaseException {
+  void writeDiskEntry(Transaction txn, OidLongArray bits) throws TCDatabaseException {
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
     key.setData(bits.keyToBytes(auxKey));
@@ -77,14 +77,14 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
       value.setData(bits.arrayToBytes());
       if (!OperationStatus.SUCCESS.equals(this.oidDB.put(txn, key, value))) {
         //
-        throw new DatabaseException("Failed to update oidDB at " + bits.getKey());
+        throw new TCDatabaseException("Failed to update oidDB at " + bits.getKey());
       }
     } else {
       OperationStatus status = this.oidDB.delete(txn, key);
       // OperationStatus.NOTFOUND happened if added and then deleted in the same batch
       if (!OperationStatus.SUCCESS.equals(status) && !OperationStatus.NOTFOUND.equals(status)) {
         //
-        throw new DatabaseException("Failed to delete oidDB at " + bits.getKey());
+        throw new TCDatabaseException("Failed to delete oidDB at " + bits.getKey());
       }
     }
   }
@@ -92,7 +92,7 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
   /*
    * flush in-memory entry to disk
    */
-  public void flushToDisk(Transaction tx) throws DatabaseException {
+  public void flushToDisk(Transaction tx) throws TCDatabaseException {
     Iterator<Map.Entry<Long, OidLongArray>> i = map.entrySet().iterator();
     while (i.hasNext()) {
       Map.Entry<Long, OidLongArray> entry = i.next();
