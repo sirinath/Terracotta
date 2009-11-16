@@ -4,8 +4,8 @@
  */
 package com.tc.object.bytecode.rwsync;
 
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 /**
  * A null "locking strategy" that leaves the method unaltered.

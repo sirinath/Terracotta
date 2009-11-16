@@ -12,8 +12,8 @@ import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_DESC;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_NAME;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_TYPE;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.object.bytecode.ByteCodeUtil;
 
 import java.lang.reflect.Modifier;

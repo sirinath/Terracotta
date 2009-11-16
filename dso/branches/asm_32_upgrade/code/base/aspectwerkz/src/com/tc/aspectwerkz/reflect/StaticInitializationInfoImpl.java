@@ -5,7 +5,7 @@ package com.tc.aspectwerkz.reflect;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.backport175.bytecode.AnnotationElement;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 
 
 /**

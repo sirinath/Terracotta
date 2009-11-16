@@ -239,7 +239,7 @@ public class AspectWerkzPreProcessor implements ClassPreProcessor {
     return (klass == null) || klass.endsWith("_AWFactory")// TODO AVF refactor
             || klass.endsWith(TransformationConstants.JOIN_POINT_CLASS_SUFFIX)
             || klass.startsWith("com.tc.aspectwerkz.")
-            || klass.startsWith("com.tc.asm.")
+            || klass.startsWith("org.objectweb.asm.")
             || klass.startsWith("com.tc.jrexx.")
             || klass.startsWith("com.bluecast.")
             || klass.startsWith("gnu.trove.")

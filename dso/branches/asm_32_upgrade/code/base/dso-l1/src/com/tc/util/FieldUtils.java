@@ -6,7 +6,7 @@ package com.tc.util;
 
 import sun.reflect.FieldAccessor;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.Manageable;

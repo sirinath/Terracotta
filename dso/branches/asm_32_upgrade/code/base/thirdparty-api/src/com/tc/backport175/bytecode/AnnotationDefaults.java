@@ -7,10 +7,11 @@
  *******************************************************************************************/
 package com.tc.backport175.bytecode;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.ClassReader;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.commons.EmptyVisitor;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.EmptyVisitor;
+
 import com.tc.backport175.ReaderException;
 import com.tc.backport175.bytecode.AnnotationElement.Annotation;
 

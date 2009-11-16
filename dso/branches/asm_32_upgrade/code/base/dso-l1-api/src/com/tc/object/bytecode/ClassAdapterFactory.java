@@ -4,8 +4,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * A factory for class adapters

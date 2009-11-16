@@ -3,11 +3,11 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
-import com.tc.asm.Type;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import com.tc.exception.TCRuntimeException;
 import com.tc.util.runtime.Vm;
 

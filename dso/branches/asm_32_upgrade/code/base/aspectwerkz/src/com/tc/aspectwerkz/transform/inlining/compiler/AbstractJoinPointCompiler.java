@@ -3,10 +3,10 @@
  */
 package com.tc.aspectwerkz.transform.inlining.compiler;
 
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.Type;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.DeploymentModel;
 import com.tc.aspectwerkz.reflect.ClassInfo;

@@ -4,7 +4,7 @@
  */
 package com.tc.object.config;
 
-import com.tc.asm.ClassVisitor;
+import org.objectweb.asm.ClassVisitor;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;

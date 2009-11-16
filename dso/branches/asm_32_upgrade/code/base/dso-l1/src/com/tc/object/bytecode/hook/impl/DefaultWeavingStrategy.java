@@ -4,10 +4,10 @@
  */
 package com.tc.object.bytecode.hook.impl;
 
-import com.tc.asm.ClassReader;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.ClassWriter;
-import com.tc.asm.commons.EmptyVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.commons.EmptyVisitor;
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.definition.deployer.StandardAspectModuleDeployer;
 import com.tc.aspectwerkz.exception.WrappedRuntimeException;

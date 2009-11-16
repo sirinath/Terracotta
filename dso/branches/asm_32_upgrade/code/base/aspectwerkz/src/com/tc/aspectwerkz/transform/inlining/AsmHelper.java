@@ -3,11 +3,11 @@
  */
 package com.tc.aspectwerkz.transform.inlining;
 
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
-import com.tc.asm.Label;
-import com.tc.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.ClassReader;
 
 import com.tc.aspectwerkz.exception.WrappedRuntimeException;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;

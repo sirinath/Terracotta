@@ -6,12 +6,12 @@ package com.tc.object.bytecode;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassReader;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.process.Exec;
 import com.tc.process.Exec.Result;
 import com.tc.test.TCTestCase;

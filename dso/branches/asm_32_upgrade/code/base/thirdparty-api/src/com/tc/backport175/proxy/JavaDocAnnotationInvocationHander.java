@@ -7,10 +7,10 @@
  *******************************************************************************************/
 package com.tc.backport175.proxy;
 
+import org.objectweb.asm.Type;
+
 import com.tc.backport175.bytecode.AnnotationElement;
 import com.tc.backport175.bytecode.AnnotationReader;
-
-import com.tc.asm.Type;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

@@ -7,7 +7,7 @@
  *******************************************************************************************/
 package com.tc.backport175.bytecode;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

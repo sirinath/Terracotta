@@ -3,8 +3,8 @@
  */
 package com.tc.aspectwerkz.transform.inlining.compiler;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
 

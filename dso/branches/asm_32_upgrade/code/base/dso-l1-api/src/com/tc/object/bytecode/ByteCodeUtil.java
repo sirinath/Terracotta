@@ -4,9 +4,9 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
-import com.tc.asm.Type;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import com.tc.object.ObjectID;
 import com.tc.util.Assert;
 
@@ -134,7 +134,7 @@ public class ByteCodeUtil implements Opcodes {
   /**
    * Map from primite type to wrapper class type
    *
-   * @param sort Kind of primitve type as in {@link com.tc.asm.Type#getSort()}
+   * @param sort Kind of primitve type as in {@link org.objectweb.asm.Type#getSort()}
    * @return Wrapper class name, like "java/lang/Boolean"
    */
   public static String sortToWrapperName(final int sort) {
@@ -521,7 +521,7 @@ public class ByteCodeUtil implements Opcodes {
   }
 
   /**
-   * Convert from {@link com.tc.asm.Type#getSort()} to a primitive method name like "booleanValue".
+   * Convert from {@link org.objectweb.asm.Type#getSort()} to a primitive method name like "booleanValue".
    *
    * @param Type kind
    * @return Primitive method name

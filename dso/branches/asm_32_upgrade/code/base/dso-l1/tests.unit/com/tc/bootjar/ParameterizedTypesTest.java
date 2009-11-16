@@ -3,9 +3,9 @@
  */
 package com.tc.bootjar;
 
-import com.tc.asm.ClassReader;
-import com.tc.asm.tree.ClassNode;
-import com.tc.asm.tree.MethodNode;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 import com.tc.object.tools.BootJar;
 import com.tc.test.TCTestCase;
 

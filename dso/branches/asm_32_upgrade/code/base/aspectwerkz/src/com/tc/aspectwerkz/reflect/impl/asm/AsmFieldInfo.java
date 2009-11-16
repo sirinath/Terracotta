@@ -5,7 +5,7 @@ package com.tc.aspectwerkz.reflect.impl.asm;
 
 import com.tc.backport175.bytecode.AnnotationElement.Annotation;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
 import com.tc.aspectwerkz.reflect.ClassInfo;

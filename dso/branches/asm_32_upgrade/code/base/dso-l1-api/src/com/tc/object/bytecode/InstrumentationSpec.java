@@ -4,7 +4,7 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.ConstructorInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;

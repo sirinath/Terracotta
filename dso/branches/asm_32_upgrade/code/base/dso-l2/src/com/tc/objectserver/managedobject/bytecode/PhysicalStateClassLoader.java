@@ -4,11 +4,11 @@
  */
 package com.tc.objectserver.managedobject.bytecode;
 
-import com.tc.asm.ClassWriter;
-import com.tc.asm.FieldVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.object.LiteralValues;
 import com.tc.objectserver.managedobject.HasParentIdStorage;
 import com.tc.util.AdaptedClassDumper;

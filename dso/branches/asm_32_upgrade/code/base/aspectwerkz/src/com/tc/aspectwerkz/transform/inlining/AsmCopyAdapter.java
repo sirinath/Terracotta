@@ -3,9 +3,9 @@
  */
 package com.tc.aspectwerkz.transform.inlining;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Attribute;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Attribute;
 
 /**
  * Adapters to handle annotation copy

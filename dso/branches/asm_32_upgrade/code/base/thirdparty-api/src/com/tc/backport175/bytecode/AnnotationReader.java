@@ -7,12 +7,12 @@
  *******************************************************************************************/
 package com.tc.backport175.bytecode;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.ClassReader;
-import com.tc.asm.FieldVisitor;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
-import com.tc.asm.commons.EmptyVisitor;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.EmptyVisitor;
 import com.tc.backport175.Annotation;
 import com.tc.backport175.bytecode.spi.BytecodeProvider;
 import com.tc.backport175.proxy.ProxyFactory;

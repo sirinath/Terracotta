@@ -5,8 +5,8 @@
 
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.commons.SerialVersionUIDAdder;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.commons.SerialVersionUIDAdder;
 
 
 /**

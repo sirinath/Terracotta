@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Collection;
 
-import com.tc.asm.*;
+import org.objectweb.asm.*;
 
 import com.tc.aspectwerkz.DeploymentModel;
 import com.tc.aspectwerkz.expression.PointcutType;
