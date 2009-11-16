@@ -2,11 +2,11 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.bytecode;
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter extends ClassAdapter implements Opcodes {
 

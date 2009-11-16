@@ -4,13 +4,13 @@
  */
 package org.terracotta.modules;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
-import com.tc.asm.Type;
-import com.tc.asm.commons.LocalVariablesSorter;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.LocalVariablesSorter;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Manager;

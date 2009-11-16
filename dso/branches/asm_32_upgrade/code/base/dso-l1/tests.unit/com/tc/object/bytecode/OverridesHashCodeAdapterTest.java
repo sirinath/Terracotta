@@ -4,8 +4,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassReader;
-import com.tc.asm.tree.ClassNode;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 import com.tc.util.runtime.Vm;
 
 import java.util.ArrayList;

@@ -3,9 +3,9 @@
  */
 package com.tc.aspectwerkz.aspect.container;
 
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.aspect.management.NoAspectBoundException;
 

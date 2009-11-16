@@ -3,13 +3,13 @@
  */
 package com.tc.aspectwerkz.proxy;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.Attribute;
-import com.tc.asm.ClassReader;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Type;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 import com.tc.aspectwerkz.exception.WrappedRuntimeException;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.AsmCopyAdapter;

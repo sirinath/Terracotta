@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.joinpoint.management;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.aspect.AdviceInfo;
 import com.tc.aspectwerkz.aspect.AdviceType;

@@ -5,7 +5,7 @@ package com.tc.object.bytecode;
 
 import org.apache.commons.lang.ArrayUtils;
 
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.MethodVisitor;
 import com.tc.logging.TCLogger;
 import com.tc.object.config.LockDefinition;
 

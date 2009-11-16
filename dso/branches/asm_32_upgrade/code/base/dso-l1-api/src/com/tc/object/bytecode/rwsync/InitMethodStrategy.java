@@ -17,9 +17,9 @@ import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_METHOD_DESC;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_METHOD_NAME;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_NAME;
 
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.commons.AdviceAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.AdviceAdapter;
 
 /**
  * A strategy to process constructors of classes containing locking fields. In general the class adapter of such a class

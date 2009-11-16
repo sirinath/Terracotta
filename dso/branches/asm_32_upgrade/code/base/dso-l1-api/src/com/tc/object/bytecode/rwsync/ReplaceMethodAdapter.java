@@ -5,10 +5,10 @@
 
 package com.tc.object.bytecode.rwsync;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.Attribute;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import com.tc.aspectwerkz.transform.inlining.AsmNullAdapter.NullMethodAdapter;
 
 /**

@@ -5,7 +5,7 @@ package com.tc.object.bytecode.aspectwerkz;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.backport175.bytecode.AnnotationElement;

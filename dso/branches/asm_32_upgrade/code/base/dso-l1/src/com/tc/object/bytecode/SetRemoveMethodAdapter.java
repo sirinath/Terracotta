@@ -4,10 +4,10 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.object.SerializationUtil;
 
 public class SetRemoveMethodAdapter extends AbstractMethodAdapter implements Opcodes {

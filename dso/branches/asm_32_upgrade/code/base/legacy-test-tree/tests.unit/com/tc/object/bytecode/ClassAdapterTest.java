@@ -4,10 +4,10 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.object.TestClientObjectManager;
 import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -1372,7 +1372,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
       }
     }
     
-    static class CustomMethodAdapter1 extends com.tc.asm.MethodAdapter implements Opcodes {
+    static class CustomMethodAdapter1 extends org.objectweb.asm.MethodAdapter implements Opcodes {
       public CustomMethodAdapter1(MethodVisitor mv) {
         super(mv);
       }
@@ -1407,7 +1407,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
       }
     }
     
-    static class CustomMethodAdapter2 extends com.tc.asm.MethodAdapter implements Opcodes {
+    static class CustomMethodAdapter2 extends org.objectweb.asm.MethodAdapter implements Opcodes {
       public CustomMethodAdapter2(MethodVisitor mv) {
         super(mv);
       }
@@ -1442,7 +1442,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
       }
     }
     
-    static class CustomMethodAdapter3 extends com.tc.asm.MethodAdapter implements Opcodes {
+    static class CustomMethodAdapter3 extends org.objectweb.asm.MethodAdapter implements Opcodes {
       public CustomMethodAdapter3(MethodVisitor mv) {
         super(mv);
       }

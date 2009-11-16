@@ -3,7 +3,7 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassVisitor;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * Interface for adding in a class level object with responsibilities for creating support methods

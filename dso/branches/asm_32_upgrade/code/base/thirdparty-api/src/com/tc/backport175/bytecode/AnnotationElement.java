@@ -183,7 +183,7 @@ public class AnnotationElement implements Serializable {
                 m_type = Type.DOUBLE;
             } else if (value instanceof String) {
                 m_type = Type.STRING;
-            } else if (value instanceof com.tc.asm.Type) {
+            } else if (value instanceof org.objectweb.asm.Type) {
                 m_type = Type.TYPE;
             } else if (value instanceof Array) {
                 m_type = Type.ARRAY;
@@ -228,7 +228,7 @@ public class AnnotationElement implements Serializable {
                 buf.append('=');
             }
             if (m_type.equals(Type.TYPE)) {
-                buf.append(((com.tc.asm.Type)m_value).getClassName()).append(".class");
+                buf.append(((org.objectweb.asm.Type)m_value).getClassName()).append(".class");
             } else {
                 buf.append(m_value);
             }

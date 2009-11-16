@@ -4,7 +4,7 @@
  */
 package com.tc.aspectwerkz.reflect.impl.asm;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;

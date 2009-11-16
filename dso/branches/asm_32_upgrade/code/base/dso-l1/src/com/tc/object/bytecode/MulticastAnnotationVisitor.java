@@ -3,7 +3,7 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.AnnotationVisitor;
+import org.objectweb.asm.AnnotationVisitor;
 
 /**
  * AnnotationVisitor that is able to delegate all the calls to an array of

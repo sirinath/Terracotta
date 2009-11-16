@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.transform;
 
-import com.tc.asm.Label;
+import org.objectweb.asm.Label;
 
 import com.tc.aspectwerkz.definition.SystemDefinitionContainer;
 import com.tc.aspectwerkz.proxy.ProxyDelegationStrategy;

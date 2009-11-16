@@ -4,9 +4,9 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class GeneratedMessageFactoryClassCreator implements Opcodes {
 

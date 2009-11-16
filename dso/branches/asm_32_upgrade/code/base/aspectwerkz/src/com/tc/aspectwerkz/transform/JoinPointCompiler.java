@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.transform;
 
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import com.tc.aspectwerkz.transform.inlining.spi.AspectModel;
 

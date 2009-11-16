@@ -5,11 +5,11 @@
 
 package org.terracotta.modules.surefire_2_3;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodAdapter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import com.tc.object.bytecode.ClassAdapterFactory;
 
 public class JUnitTestSuiteAdapter extends ClassAdapter implements

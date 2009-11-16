@@ -7,7 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.tc.asm.*;
+import org.objectweb.asm.*;
 
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.intercept.AdvisableImpl;

@@ -4,13 +4,13 @@
  */
 package com.tc.object.tools;
 
-import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.Attribute;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.FieldVisitor;
-import com.tc.asm.Label;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.Map;
 import java.util.Set;

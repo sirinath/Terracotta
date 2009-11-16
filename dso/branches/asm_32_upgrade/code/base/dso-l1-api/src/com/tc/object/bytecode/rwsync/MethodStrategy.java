@@ -5,8 +5,8 @@
 
 package com.tc.object.bytecode.rwsync;
 
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 /**
  * A strategy for modifying a method. The difference between this and a MethodAdapter is that a MethodStrategy has

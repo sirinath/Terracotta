@@ -4,9 +4,10 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.Label;
-import com.tc.asm.Opcodes;
-import com.tc.asm.tree.MethodNode;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.MethodNode;
+
 import com.tc.util.runtime.Vm;
 
 public class HashtableClassAdapter implements Opcodes {

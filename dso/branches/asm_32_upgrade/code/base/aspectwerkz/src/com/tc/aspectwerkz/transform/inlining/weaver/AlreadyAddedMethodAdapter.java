@@ -5,8 +5,8 @@ package com.tc.aspectwerkz.transform.inlining.weaver;
 
 import java.util.Set;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.AsmNullAdapter;

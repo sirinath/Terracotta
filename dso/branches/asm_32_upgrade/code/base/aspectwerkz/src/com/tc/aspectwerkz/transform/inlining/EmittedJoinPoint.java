@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.transform.inlining;
 
-import com.tc.asm.Label;
+import org.objectweb.asm.Label;
 
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.transform.InstrumentationContext;

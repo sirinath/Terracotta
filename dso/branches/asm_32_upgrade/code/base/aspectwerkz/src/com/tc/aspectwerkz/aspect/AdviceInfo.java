@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.aspect;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 
 import com.tc.aspectwerkz.DeploymentModel;
 import com.tc.aspectwerkz.expression.ExpressionInfo;

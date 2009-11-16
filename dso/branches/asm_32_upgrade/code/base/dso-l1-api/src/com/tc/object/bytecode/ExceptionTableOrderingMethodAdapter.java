@@ -3,9 +3,9 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.MethodVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodAdapter;
+import org.objectweb.asm.MethodVisitor;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Provides correct sorting of exception handlers based on their catch ranges.  This adapter breaks the visiting order
- * contract of {@link com.tc.asm.MethodVisitor}.
+ * contract of {@link org.objectweb.asm.MethodVisitor}.
  * <p>
  * This adapter allows for the simple nesting of exception handlers in ASM.  Without using this adapter an exception
  * handler nested within an existing handler via instrumentation can result in the outer handler having its entry before

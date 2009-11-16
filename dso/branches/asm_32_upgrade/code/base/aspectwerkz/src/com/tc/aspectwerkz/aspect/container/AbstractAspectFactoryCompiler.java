@@ -3,9 +3,9 @@
  */
 package com.tc.aspectwerkz.aspect.container;
 
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.aspectwerkz.reflect.ClassInfo;

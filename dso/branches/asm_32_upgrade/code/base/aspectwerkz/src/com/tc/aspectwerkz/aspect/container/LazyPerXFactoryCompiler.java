@@ -3,8 +3,8 @@
  */
 package com.tc.aspectwerkz.aspect.container;
 
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
 
 /**
  * Abstract class for lazy model that instantiate the aspect as soon as aspectOf is called

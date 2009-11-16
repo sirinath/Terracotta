@@ -3,7 +3,7 @@
  */
 package com.tc.aspectwerkz.transform;
 
-import com.tc.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;

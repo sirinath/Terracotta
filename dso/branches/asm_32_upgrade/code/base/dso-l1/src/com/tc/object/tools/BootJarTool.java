@@ -15,14 +15,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.osgi.framework.BundleException;
 
-import com.tc.asm.ClassReader;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.ClassWriter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.commons.SerialVersionUIDAdder;
-import com.tc.asm.tree.ClassNode;
-import com.tc.asm.tree.InnerClassNode;
-import com.tc.asm.tree.MethodNode;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.SerialVersionUIDAdder;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InnerClassNode;
+import org.objectweb.asm.tree.MethodNode;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
@@ -744,34 +744,34 @@ public class BootJarTool {
   }
 
   private final void addRuntimeClasses() {
-    loadTerracottaClass("com.tc.asm.AnnotationVisitor");
-    loadTerracottaClass("com.tc.asm.AnnotationWriter");
-    loadTerracottaClass("com.tc.asm.Attribute");
-    loadTerracottaClass("com.tc.asm.ByteVector");
-    loadTerracottaClass("com.tc.asm.ClassAdapter");
-    loadTerracottaClass("com.tc.asm.ClassReader");
-    loadTerracottaClass("com.tc.asm.ClassVisitor");
-    loadTerracottaClass("com.tc.asm.ClassWriter");
-    loadTerracottaClass("com.tc.asm.Edge");
-    loadTerracottaClass("com.tc.asm.FieldVisitor");
-    loadTerracottaClass("com.tc.asm.FieldWriter");
-    loadTerracottaClass("com.tc.asm.Frame");
-    loadTerracottaClass("com.tc.asm.Handler");
-    loadTerracottaClass("com.tc.asm.Item");
-    loadTerracottaClass("com.tc.asm.Label");
-    loadTerracottaClass("com.tc.asm.MethodAdapter");
-    loadTerracottaClass("com.tc.asm.MethodVisitor");
-    loadTerracottaClass("com.tc.asm.MethodWriter");
-    loadTerracottaClass("com.tc.asm.Opcodes");
-    loadTerracottaClass("com.tc.asm.Type");
+    loadTerracottaClass("org.objectweb.asm.AnnotationVisitor");
+    loadTerracottaClass("org.objectweb.asm.AnnotationWriter");
+    loadTerracottaClass("org.objectweb.asm.Attribute");
+    loadTerracottaClass("org.objectweb.asm.ByteVector");
+    loadTerracottaClass("org.objectweb.asm.ClassAdapter");
+    loadTerracottaClass("org.objectweb.asm.ClassReader");
+    loadTerracottaClass("org.objectweb.asm.ClassVisitor");
+    loadTerracottaClass("org.objectweb.asm.ClassWriter");
+    loadTerracottaClass("org.objectweb.asm.Edge");
+    loadTerracottaClass("org.objectweb.asm.FieldVisitor");
+    loadTerracottaClass("org.objectweb.asm.FieldWriter");
+    loadTerracottaClass("org.objectweb.asm.Frame");
+    loadTerracottaClass("org.objectweb.asm.Handler");
+    loadTerracottaClass("org.objectweb.asm.Item");
+    loadTerracottaClass("org.objectweb.asm.Label");
+    loadTerracottaClass("org.objectweb.asm.MethodAdapter");
+    loadTerracottaClass("org.objectweb.asm.MethodVisitor");
+    loadTerracottaClass("org.objectweb.asm.MethodWriter");
+    loadTerracottaClass("org.objectweb.asm.Opcodes");
+    loadTerracottaClass("org.objectweb.asm.Type");
 
-    loadTerracottaClass("com.tc.asm.signature.SignatureReader");
-    loadTerracottaClass("com.tc.asm.signature.SignatureVisitor");
-    loadTerracottaClass("com.tc.asm.signature.SignatureWriter");
+    loadTerracottaClass("org.objectweb.asm.signature.SignatureReader");
+    loadTerracottaClass("org.objectweb.asm.signature.SignatureVisitor");
+    loadTerracottaClass("org.objectweb.asm.signature.SignatureWriter");
 
-    loadTerracottaClass("com.tc.asm.commons.EmptyVisitor");
-    loadTerracottaClass("com.tc.asm.commons.SerialVersionUIDAdder");
-    loadTerracottaClass("com.tc.asm.commons.SerialVersionUIDAdder$Item");
+    loadTerracottaClass("org.objectweb.asm.commons.EmptyVisitor");
+    loadTerracottaClass("org.objectweb.asm.commons.SerialVersionUIDAdder");
+    loadTerracottaClass("org.objectweb.asm.commons.SerialVersionUIDAdder$Item");
 
     // FIXME extract AW runtime classes
     loadTerracottaClass("com.tc.aspectwerkz.AspectContext");

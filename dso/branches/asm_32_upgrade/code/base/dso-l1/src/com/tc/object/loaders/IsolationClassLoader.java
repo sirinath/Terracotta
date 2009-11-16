@@ -6,9 +6,9 @@ package com.tc.object.loaders;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassReader;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.ClassWriter;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;

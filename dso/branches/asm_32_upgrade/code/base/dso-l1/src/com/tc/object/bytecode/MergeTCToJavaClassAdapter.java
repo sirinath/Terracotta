@@ -4,17 +4,17 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.ClassVisitor;
-import com.tc.asm.FieldVisitor;
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.MethodVisitor;
-import com.tc.asm.Opcodes;
-import com.tc.asm.commons.AdviceAdapter;
-import com.tc.asm.tree.ClassNode;
-import com.tc.asm.tree.FieldNode;
-import com.tc.asm.tree.InnerClassNode;
-import com.tc.asm.tree.MethodNode;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodAdapter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.AdviceAdapter;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

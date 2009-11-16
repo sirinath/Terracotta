@@ -4,7 +4,7 @@
  */
 package com.tc.object.event;
 
-import com.tc.asm.Type;
+import org.objectweb.asm.Type;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientObjectManager;
