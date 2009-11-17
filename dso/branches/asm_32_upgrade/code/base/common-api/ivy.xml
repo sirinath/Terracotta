@@ -2,6 +2,7 @@
 <ivy-module version="2.0">
   <info organisation="org.terracotta" module="common-api"/>
   <dependencies defaultconf="default">
+    <dependency name="asm-all" rev="3.2" org="asm"/>
     <dependency name="commons-cli" rev="1.1" org="commons-cli"/>
     <dependency name="commons-lang" rev="2.0" org="commons-lang"/>    
     <dependency name="commons-io" rev="1.2" org="commons-io"/>    
