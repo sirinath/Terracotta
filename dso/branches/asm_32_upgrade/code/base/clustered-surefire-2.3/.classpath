@@ -8,5 +8,4 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/dso-l1-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/license-common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/modules-base"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty-api"/>
 </classpath>

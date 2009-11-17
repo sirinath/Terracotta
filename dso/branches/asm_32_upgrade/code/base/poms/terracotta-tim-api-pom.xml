@@ -96,6 +96,10 @@
       <groupId>trove</groupId>
       <artifactId>trove</artifactId>
     </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-all</artifactId>
+    </dependency>
   </dependencies>
 
   <repositories>

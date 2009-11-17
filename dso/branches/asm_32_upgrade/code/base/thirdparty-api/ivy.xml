@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<ivy-module version="2.0">
-  <info organisation="org.terracotta" module="thirdparty-api"/>
-  <dependencies defaultconf="default">
-    <dependency name="asm-all" rev="3.2" org="asm"/>
-  </dependencies>
-</ivy-module>
