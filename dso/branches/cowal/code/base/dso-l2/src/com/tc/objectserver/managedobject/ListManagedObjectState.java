@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,9 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.REMOVE:
         references.remove(params[0]);
         break;
+      case SerializationUtil.REMOVE_ALL:
+        references.removeAll(Arrays.asList(params));
+        break;        
       case SerializationUtil.REMOVE_AT:
         int index = ((Integer) params[0]).intValue();
         if (references.size() > index) {
