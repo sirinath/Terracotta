@@ -246,33 +246,33 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitCode();
       Label l0 = new Label();
       mv.visitLabel(l0);
-      mv.visitLineNumber(580, l0);
+
       mv.visitTypeInsn(NEW, "java/util/ArrayList");
       mv.visitInsn(DUP);
       mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
       mv.visitVarInsn(ASTORE, 2);
       Label l1 = new Label();
       mv.visitLabel(l1);
-      mv.visitLineNumber(581, l1);
+
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/CopyOnWriteArrayList", "array", "[Ljava/lang/Object;");
       mv.visitVarInsn(ASTORE, 3);
       Label l2 = new Label();
       mv.visitLabel(l2);
-      mv.visitLineNumber(582, l2);
+
       mv.visitVarInsn(ALOAD, 3);
       mv.visitInsn(ARRAYLENGTH);
       mv.visitVarInsn(ISTORE, 4);
       Label l3 = new Label();
       mv.visitLabel(l3);
-      mv.visitLineNumber(583, l3);
+
       mv.visitVarInsn(ILOAD, 4);
       Label l4 = new Label();
       mv.visitJumpInsn(IFNE, l4);
       mv.visitInsn(ICONST_0);
       mv.visitInsn(IRETURN);
       mv.visitLabel(l4);
-      mv.visitLineNumber(585, l4);
+
       mv.visitFrame(Opcodes.F_APPEND, 3, new Object[] { "java/util/List", "[Ljava/lang/Object;", Opcodes.INTEGER }, 0,
                     null);
       mv.visitVarInsn(ILOAD, 4);
@@ -280,12 +280,12 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ASTORE, 5);
       Label l5 = new Label();
       mv.visitLabel(l5);
-      mv.visitLineNumber(586, l5);
+
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ISTORE, 6);
       Label l6 = new Label();
       mv.visitLabel(l6);
-      mv.visitLineNumber(587, l6);
+
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ISTORE, 7);
       Label l7 = new Label();
@@ -294,7 +294,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitJumpInsn(GOTO, l8);
       Label l9 = new Label();
       mv.visitLabel(l9);
-      mv.visitLineNumber(588, l9);
+
       mv.visitFrame(Opcodes.F_APPEND, 3, new Object[] { "[Ljava/lang/Object;", Opcodes.INTEGER, Opcodes.INTEGER }, 0,
                     null);
       mv.visitVarInsn(ALOAD, 3);
@@ -303,7 +303,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ASTORE, 8);
       Label l10 = new Label();
       mv.visitLabel(l10);
-      mv.visitLineNumber(589, l10);
+
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 8);
       mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z");
@@ -311,7 +311,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitJumpInsn(IFEQ, l11);
       Label l12 = new Label();
       mv.visitLabel(l12);
-      mv.visitLineNumber(590, l12);
+
       mv.visitVarInsn(ALOAD, 5);
       mv.visitVarInsn(ILOAD, 6);
       mv.visitIincInsn(6, 1);
@@ -320,14 +320,14 @@ public class CopyOnWriteArrayListAdapter {
       Label l13 = new Label();
       mv.visitJumpInsn(GOTO, l13);
       mv.visitLabel(l11);
-      mv.visitLineNumber(592, l11);
+
       mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { "java/lang/Object" }, 0, null);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitVarInsn(ALOAD, 8);
       mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
       mv.visitInsn(POP);
       mv.visitLabel(l13);
-      mv.visitLineNumber(587, l13);
+
       mv.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
       mv.visitIincInsn(7, 1);
       mv.visitLabel(l8);
@@ -337,7 +337,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitJumpInsn(IF_ICMPLT, l9);
       Label l14 = new Label();
       mv.visitLabel(l14);
-      mv.visitLineNumber(596, l14);
+
       mv.visitVarInsn(ILOAD, 6);
       mv.visitVarInsn(ILOAD, 4);
       Label l15 = new Label();
@@ -345,14 +345,14 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitInsn(ICONST_0);
       mv.visitInsn(IRETURN);
       mv.visitLabel(l15);
-      mv.visitLineNumber(598, l15);
+
       mv.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
       mv.visitVarInsn(ILOAD, 6);
       mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
       mv.visitVarInsn(ASTORE, 7);
       Label l16 = new Label();
       mv.visitLabel(l16);
-      mv.visitLineNumber(599, l16);
+
       mv.visitVarInsn(ALOAD, 5);
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ALOAD, 7);
@@ -361,13 +361,13 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
       Label l17 = new Label();
       mv.visitLabel(l17);
-      mv.visitLineNumber(600, l17);
+
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 7);
       mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/CopyOnWriteArrayList", "array", "[Ljava/lang/Object;");
       Label l18 = new Label();
       mv.visitLabel(l18);
-      mv.visitLineNumber(601, l18);
+
       mv.visitVarInsn(ALOAD, 0);
       mv.visitLdcInsn("removeAll(Ljava/util/Collection;)Z");
       mv.visitVarInsn(ALOAD, 2);
@@ -376,7 +376,7 @@ public class CopyOnWriteArrayListAdapter {
                          "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
       Label l19 = new Label();
       mv.visitLabel(l19);
-      mv.visitLineNumber(602, l19);
+
       mv.visitInsn(ICONST_1);
       mv.visitInsn(IRETURN);
       Label l20 = new Label();
