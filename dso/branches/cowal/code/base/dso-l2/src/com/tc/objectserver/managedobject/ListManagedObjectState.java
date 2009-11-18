@@ -42,7 +42,7 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      applyOperation(method, objectID, includeIDs, params );
+      applyOperation(method, objectID, includeIDs, params);
     }
   }
 
@@ -73,7 +73,7 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
         break;
       case SerializationUtil.REMOVE_ALL:
         references.removeAll(Arrays.asList(params));
-        break;        
+        break;
       case SerializationUtil.REMOVE_AT:
         int index = ((Integer) params[0]).intValue();
         if (references.size() > index) {
