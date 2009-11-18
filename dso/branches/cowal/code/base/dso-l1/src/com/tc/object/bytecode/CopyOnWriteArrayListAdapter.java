@@ -12,6 +12,94 @@ import com.tc.asm.Opcodes;
 
 public class CopyOnWriteArrayListAdapter {
 
+  public static class AddIfAbsentAdaptor extends AbstractMethodAdapter {
+
+    public MethodVisitor adapt(ClassVisitor cv) {
+      MethodVisitor mv = visitOriginal(cv);
+      return new AddIfAbsentMethodAdapter(mv);
+    }
+
+    @Override
+    public boolean doesOriginalNeedAdapting() {
+      return false;
+    }
+  }
+
+  private static class AddIfAbsentMethodAdapter extends MethodAdapter implements Opcodes {
+
+    public AddIfAbsentMethodAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    @Override
+    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+      super.visitFieldInsn(opcode, owner, name, desc);
+      if (opcode == PUTFIELD && "array".equals(name)) {
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitLdcInsn("add(Ljava/lang/Object;)Z");
+        mv.visitInsn(ICONST_1);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+        mv.visitInsn(DUP);
+        mv.visitInsn(ICONST_0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitInsn(AASTORE);
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
+                           "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+      }
+    }
+  }
+
+  public static class AddAllAbsentAdaptor extends AbstractMethodAdapter {
+
+    public MethodVisitor adapt(ClassVisitor cv) {
+      MethodVisitor mv = visitOriginal(cv);
+      return new AddAllAbsentMethodAdapter(mv);
+    }
+
+    @Override
+    public boolean doesOriginalNeedAdapting() {
+      return false;
+    }
+  }
+
+  private static class AddAllAbsentMethodAdapter extends MethodAdapter implements Opcodes {
+
+    public AddAllAbsentMethodAdapter(MethodVisitor mv) {
+      super(mv);
+    }
+
+    @Override
+    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+      super.visitFieldInsn(opcode, owner, name, desc);
+      if (opcode == PUTFIELD && "array".equals(name)) {
+        mv.visitVarInsn(ILOAD, 6);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+        mv.visitVarInsn(ASTORE, 9);
+
+        mv.visitVarInsn(ALOAD, 5);
+        mv.visitInsn(ICONST_0);
+        mv.visitVarInsn(ALOAD, 9);
+        mv.visitInsn(ICONST_0);
+        mv.visitVarInsn(ILOAD, 6);
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitLdcInsn("addAll(Ljava/util/Collection;)Z");
+
+        mv.visitInsn(ICONST_1);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+        mv.visitInsn(DUP);
+        mv.visitInsn(ICONST_0);
+        mv.visitVarInsn(ALOAD, 9);
+        mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "asList", "([Ljava/lang/Object;)Ljava/util/List;");
+        mv.visitInsn(AASTORE);
+
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
+                           "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+      }
+    }
+  }
+
   public static class RemoveAdaptor extends AbstractMethodAdapter {
 
     public MethodVisitor adapt(ClassVisitor cv) {
@@ -381,7 +469,8 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitInsn(IRETURN);
       Label l20 = new Label();
       mv.visitLabel(l20);
-      mv.visitLocalVariable("this", "Ljava/util/concurrent/CopyOnWriteArrayList;", "Ljava/util/concurrent/CopyOnWriteArrayList<TE;>;", l0, l20, 0);
+      mv.visitLocalVariable("this", "Ljava/util/concurrent/CopyOnWriteArrayList;",
+                            "Ljava/util/concurrent/CopyOnWriteArrayList<TE;>;", l0, l20, 0);
       mv.visitLocalVariable("c", "Ljava/util/Collection;", "Ljava/util/Collection<*>;", l0, l20, 1);
       mv.visitLocalVariable("removeList", "Ljava/util/List;", null, l1, l20, 2);
       mv.visitLocalVariable("elementData", "[Ljava/lang/Object;", null, l2, l20, 3);

@@ -102,6 +102,46 @@ public class GenericListTestApp extends GenericTransparentApp {
       }
     }
   }
+  
+  void testAddIfAbsent(List list, boolean validate, int v) {
+    if (!(list instanceof CopyOnWriteArrayList)) return;
+    CopyOnWriteArrayList cowList = (CopyOnWriteArrayList)list;
+    if (validate) {
+      assertListsEqual(Arrays.asList(new Object[] { E("one", v), E("two", v), E("three", v) }), cowList);
+    } else {
+      synchronized (cowList) {
+        boolean added = cowList.addIfAbsent(E("one", v));
+        Assert.assertTrue(added);
+        added = cowList.addIfAbsent(E("two", v));
+        Assert.assertTrue(added);
+        added = cowList.addIfAbsent(E("three", v));
+        Assert.assertTrue(added);
+        added = cowList.addIfAbsent(E("two", v));
+        Assert.assertFalse(added);
+      }
+    }
+  }  
+  
+  void testAddAllIfAbsent(List list, boolean validate, int v) {
+    if (!(list instanceof CopyOnWriteArrayList)) return;
+    CopyOnWriteArrayList cowList = (CopyOnWriteArrayList)list;
+    if (validate) {
+      assertListsEqual(Arrays.asList(new Object[] { E("one", v), E("two", v), E("three", v), E("four", v), E("five", v) }), cowList);
+    } else {
+      List extra = new ArrayList();
+      extra.add(E("two", v));
+      extra.add(E("four", v));
+      extra.add(E("one", v));
+      extra.add(E("five", v));
+      synchronized (cowList) {
+        cowList.add(E("one", v));
+        cowList.add(E("two", v));
+        cowList.add(E("three", v));
+        int addCount = cowList.addAllAbsent(extra);
+        Assert.assertEquals(2, addCount);
+      }
+    }
+  }
 
   void testBasicRemove(List list, boolean validate, int v) {
     if (validate) {
