@@ -63,17 +63,17 @@ public class GenericListTestApp extends GenericTransparentApp {
   @Override
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
-    // lists.add(new LinkedList());
-    // lists.add(new ArrayList());
-    // lists.add(new Vector());
-    // lists.add(new Stack());
-    // lists.add(new MyArrayList());
-    // lists.add(new MyArrayList5());
-    // lists.add(new MyArrayList6());
-    // lists.add(new MyLinkedList());
-    // lists.add(new MyVector());
-    // lists.add(new MyStack());
-    // lists.add(new MyAbstractListSubclass());
+    lists.add(new LinkedList());
+    lists.add(new ArrayList());
+    lists.add(new Vector());
+    lists.add(new Stack());
+    lists.add(new MyArrayList());
+    lists.add(new MyArrayList5());
+    lists.add(new MyArrayList6());
+    lists.add(new MyLinkedList());
+    lists.add(new MyVector());
+    lists.add(new MyStack());
+    lists.add(new MyAbstractListSubclass());
     lists.add(new CopyOnWriteArrayList());
 
     sharedMap.put("lists", lists);
@@ -594,6 +594,25 @@ public class GenericListTestApp extends GenericTransparentApp {
         m.setAccessible(true); // suppressing java access checking since removeRange is
         // a protected method.
         m.invoke(list, new Object[] { new Integer(1), new Integer(3) });
+      }
+    }
+  }
+  
+  void testRetainAll(List list, boolean validate, int v) {
+    if (validate) {
+      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("third element", v) }), list);
+    } else {
+      synchronized (list) {
+        list.add(E("first element", v));
+        list.add(E("second element", v));
+        list.add(E("third element", v));
+        list.add(E("fourth element", v));
+      }
+      List retainList = new ArrayList(2);
+      retainList.add(E("first element", v));
+      retainList.add(E("third element", v));
+      synchronized (list) {
+        list.retainAll(retainList);
       }
     }
   }

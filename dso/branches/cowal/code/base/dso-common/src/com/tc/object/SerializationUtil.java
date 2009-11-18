@@ -68,6 +68,7 @@ public class SerializationUtil {
   public final static String      REMOVE_ELEMENT_AT_SIGNATURE      = "removeElementAt(I)V";
   public final static String      REMOVE_ALL_ELEMENTS_SIGNATURE    = "removeAllElements()V";
   public final static String      REMOVE_ALL_SIGNATURE             = "removeAll(Ljava/util/Collection;)Z";
+  public final static String      RETAIN_ALL_SIGNATURE             = "retainAll(Ljava/util/Collection;)Z";
   public final static String      ITERATOR_SIGNATURE               = "iterator()Ljava/util/Iterator;";
   public final static String      TROVE_REMOVE_AT_SIGNATURE        = "removeAt(I)V";
   public final static String      REMOVE_FIRST_SIGNATURE           = "removeFirst()Ljava/lang/Object;";

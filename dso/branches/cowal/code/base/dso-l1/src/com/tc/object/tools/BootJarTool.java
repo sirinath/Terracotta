@@ -2181,6 +2181,7 @@ public class BootJarTool {
     if (Vm.isJDK15()) {
       spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE, new CopyOnWriteArrayListAdapter.RemoveAdaptor());
       spec.addMethodAdapter(SerializationUtil.REMOVE_ALL_SIGNATURE, new CopyOnWriteArrayListAdapter.RemoveAllAdaptor());
+      spec.addMethodAdapter(SerializationUtil.RETAIN_ALL_SIGNATURE, new CopyOnWriteArrayListAdapter.RetainAllAdaptor());
     }
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_RANGE_SIGNATURE);
