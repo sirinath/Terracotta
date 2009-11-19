@@ -32,6 +32,7 @@ import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
+import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionInfo;
@@ -504,7 +505,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
             .getNodeMetaDataMessageFactory());
 
     // Set up the JMX management stuff
-    final TunnelingEventHandler teh = this.dsoClientBuilder.createTunnelingEventHandler(this.channel.channel());
+    final TunnelingEventHandler teh = this.dsoClientBuilder.createTunnelingEventHandler(this.channel.channel(), config
+        .getUUID());
     this.l1Management = new L1Management(teh, this.statisticsAgentSubSystem, this.runtimeLogger, this.manager
         .getInstrumentationLogger(), this.config.rawConfigText(), this, this.config.getMBeanSpecs());
     this.l1Management.start(this.createDedicatedMBeanServer);
@@ -528,7 +530,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     // Create the SEDA stages
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
-                                                  new LockResponseHandler(sessionManager), 1, maxSize);
+                                                  new LockResponseHandler(sessionManager),
+                                                  this.channel.getGroupIDs().length, 1, maxSize);
     Stage receiveRootID = stageManager.createStage(ClientConfigurationContext.RECEIVE_ROOT_ID_STAGE,
                                                    new ReceiveRootIDHandler(), 1, maxSize);
     Stage receiveObject = stageManager.createStage(ClientConfigurationContext.RECEIVE_OBJECT_STAGE,
@@ -683,8 +686,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         CONSOLE_LOGGER.warn("Connection refused from server: " + e);
         ThreadUtil.reallySleep(5000);
       } catch (MaxConnectionsExceededException e) {
+        DSO_LOGGER.fatal(e.getMessage());
         CONSOLE_LOGGER.fatal(e.getMessage());
         CONSOLE_LOGGER.fatal(LicenseCheck.EXIT_MESSAGE);
+        System.exit(1);
+      } catch (CommStackMismatchException e) {
+        DSO_LOGGER.fatal(e.getMessage());
+        CONSOLE_LOGGER.fatal(e.getMessage());
         System.exit(1);
       } catch (IOException ioe) {
         CONSOLE_LOGGER.warn("IOException connecting to server: " + serverHost + ":" + serverPort + ". "

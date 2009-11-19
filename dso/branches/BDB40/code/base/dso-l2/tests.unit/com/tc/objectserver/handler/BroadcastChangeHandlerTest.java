@@ -732,15 +732,15 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public String dump() {
-      throw new ImplementMe();
-    }
-
     public void dumpToLogger() {
       throw new ImplementMe();
     }
 
     public PrettyPrinter prettyPrint(PrettyPrinter out) {
+      throw new ImplementMe();
+    }
+
+    public long getTotalNumOfActiveTransactions() {
       throw new ImplementMe();
     }
   }

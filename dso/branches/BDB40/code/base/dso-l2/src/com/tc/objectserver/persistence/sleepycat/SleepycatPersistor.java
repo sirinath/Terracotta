@@ -6,6 +6,7 @@ package com.tc.objectserver.persistence.sleepycat;
 
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentStats;
 import com.sleepycat.je.StatsConfig;
 import com.sleepycat.je.Transaction;
@@ -233,7 +234,7 @@ public class SleepycatPersistor implements Persistor {
     protected void abortOnError(Transaction tx) {
       try {
         if (tx != null) tx.abort();
-      } catch (Exception e) {
+      } catch (DatabaseException e) {
         // This doesn't throw an exception as we don't want to create a Red herring.
         logger.error("Error on abortOnError", e);
       }
@@ -248,7 +249,7 @@ public class SleepycatPersistor implements Persistor {
       if (cursor != null) {
         try {
           cursor.close();
-        } catch (Exception e) {
+        } catch (DatabaseException e) {
           // This doesn't throw an exception as we don't want to create a Red herring.
           logger.error("Error on abortOnError", e);
         }

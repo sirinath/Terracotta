@@ -5,6 +5,7 @@
 package com.tc.objectserver.persistence.sleepycat;
 
 import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseException;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 
@@ -80,12 +81,12 @@ public class SleepycatPersistableSet extends AbstractSet implements PersistableC
   }
 
   public int commit(SleepycatCollectionsPersistor persistor, PersistenceTransaction tx, Database db)
-      throws IOException, TCDatabaseException {
+      throws IOException, DatabaseException {
     return map.commit(persistor, tx, db);
   }
 
   public void load(SleepycatCollectionsPersistor persistor, PersistenceTransaction tx, Database db) throws IOException,
-      ClassNotFoundException, TCDatabaseException {
+      ClassNotFoundException, DatabaseException {
     map.load(persistor, tx, db);
   }
 }

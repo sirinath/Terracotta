@@ -208,8 +208,8 @@ public class DBEnvironment {
         cinfo("Closing environment...");
         this.env.close();
       }
-    } catch (Exception de) {
-      throw new TCDatabaseException(de.getMessage());
+    } catch (DatabaseException de) {
+      throw new TCDatabaseException(de);
     }
     this.controlDB = null;
     this.env = null;
@@ -230,20 +230,20 @@ public class DBEnvironment {
       try {
         Database db = (Database) i.next();
         if (db != null) db.close();
-      } catch (Exception e) {
+      } catch (DatabaseException e) {
         e.printStackTrace();
       }
     }
 
     try {
       if (this.catalog != null) this.catalog.close();
-    } catch (Exception e) {
+    } catch (DatabaseException e) {
       e.printStackTrace();
     }
 
     try {
       if (env != null) env.close();
-    } catch (Exception e) {
+    } catch (DatabaseException e) {
       e.printStackTrace();
     }
   }
@@ -260,8 +260,8 @@ public class DBEnvironment {
   public EnvironmentStats getStats(StatsConfig config) throws TCDatabaseException {
     try {
       return env.getStats(config);
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
   }
 
@@ -355,8 +355,8 @@ public class DBEnvironment {
     try {
       stat = controlDB.get(tx, CLEAN_FLAG_KEY, value, LockMode.DEFAULT);
       tx.commit();
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
     return OperationStatus.NOTFOUND.equals(stat)
            || (OperationStatus.SUCCESS.equals(stat) && value.getData()[0] == IS_CLEAN);
@@ -369,15 +369,15 @@ public class DBEnvironment {
     OperationStatus stat;
     try {
       stat = controlDB.put(tx, CLEAN_FLAG_KEY, value);
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
     if (!OperationStatus.SUCCESS.equals(stat)) throw new TCDatabaseException("Unexpected operation status "
                                                                              + "trying to unset clean flag: " + stat);
     try {
       tx.commitSync();
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
   }
 
@@ -385,8 +385,8 @@ public class DBEnvironment {
     try {
       Transaction tx = env.beginTransaction(null, null);
       return tx;
-    } catch (Exception de) {
-      throw new TCDatabaseException(de.getMessage());
+    } catch (DatabaseException de) {
+      throw new TCDatabaseException(de);
     }
   }
 
@@ -397,15 +397,15 @@ public class DBEnvironment {
     OperationStatus stat;
     try {
       stat = controlDB.put(tx, CLEAN_FLAG_KEY, value);
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
     if (!OperationStatus.SUCCESS.equals(stat)) throw new TCDatabaseException("Unexpected operation status "
                                                                              + "trying to set clean flag: " + stat);
     try {
       tx.commitSync();
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } catch (DatabaseException e) {
+      throw new TCDatabaseException(e);
     }
   }
 
@@ -414,8 +414,8 @@ public class DBEnvironment {
       Database db = e.openDatabase(null, name, dbcfg);
       createdDatabases.add(db);
       databasesByName.put(name, db);
-    } catch (Exception de) {
-      throw new TCDatabaseException(de.getMessage());
+    } catch (DatabaseException de) {
+      throw new TCDatabaseException(de);
     }
   }
 
@@ -424,13 +424,13 @@ public class DBEnvironment {
     while (true) {
       try {
         return new Environment(envHome, ecfg);
-      } catch (Exception dbe) {
+      } catch (DatabaseException dbe) {
         if (++count <= STARTUP_RETRY_COUNT) {
           logger.warn("Unable to open DB environment. " + dbe.getMessage() + " Retrying after "
                       + SLEEP_TIME_ON_STARTUP_ERROR + " ms");
           ThreadUtil.reallySleep(SLEEP_TIME_ON_STARTUP_ERROR);
         } else {
-          throw new TCDatabaseException(dbe.getMessage());
+          throw new TCDatabaseException(dbe);
         }
       }
     }

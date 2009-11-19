@@ -9,6 +9,7 @@ import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.tc.exception.TCRuntimeException;
@@ -349,8 +350,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     if (PersistentCollectionsUtil.isPersistableCollectionType(state.getType())) {
       try {
         this.collectionsPersistor.loadCollectionsToManagedState(tx, mo.getID(), state);
-      } catch (Exception e) {
-        throw new TCDatabaseException(e.getMessage());
+      } catch (DatabaseException e) {
+        throw new TCDatabaseException(e);
       }
     }
   }
@@ -398,8 +399,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       if (this.objectStatsRecorder.getCommitDebug()) {
         updateStats(managedObject, length);
       }
-    } catch (Exception de) {
-      throw new TCDatabaseException(de.getMessage());
+    } catch (DatabaseException de) {
+      throw new TCDatabaseException(de);
     }
     return status;
   }
@@ -422,8 +423,8 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     if (PersistentCollectionsUtil.isPersistableCollectionType(state.getType())) {
       try {
         return this.collectionsPersistor.saveCollections(tx, state);
-      } catch (Exception e) {
-        throw new TCDatabaseException(e.getMessage());
+      } catch (DatabaseException e) {
+        throw new TCDatabaseException(e);
       }
     }
     return 0;
@@ -519,7 +520,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
               (System.nanoTime() - startTime) });
         }
       }
-    } catch (TCDatabaseException t) {
+    } catch (DatabaseException t) {
       throw new DBException(t);
     }
   }
