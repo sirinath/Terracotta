@@ -9,6 +9,7 @@ import com.tc.asm.Label;
 import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
+import com.tc.util.runtime.Vm;
 
 public class CopyOnWriteArrayListAdapter {
 
@@ -34,19 +35,36 @@ public class CopyOnWriteArrayListAdapter {
     @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       super.visitFieldInsn(opcode, owner, name, desc);
-      if (opcode == PUTFIELD && "array".equals(name)) {
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitLdcInsn("add(Ljava/lang/Object;)Z");
-        mv.visitInsn(ICONST_1);
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        mv.visitInsn(DUP);
-        mv.visitInsn(ICONST_0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(AASTORE);
-        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                           "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+      if (Vm.isJDK15()) {
+        if (opcode == PUTFIELD && "array".equals(name)) {
+          doVisit();
+        }
       }
     }
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      super.visitMethodInsn(opcode, owner, name, desc);
+      if (Vm.isJDK16Compliant()) {
+        if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
+          doVisit();
+        }
+      }
+    }
+
+    private void doVisit() {
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitLdcInsn("add(Ljava/lang/Object;)Z");
+      mv.visitInsn(ICONST_1);
+      mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+      mv.visitInsn(DUP);
+      mv.visitInsn(ICONST_0);
+      mv.visitVarInsn(ALOAD, 1);
+      mv.visitInsn(AASTORE);
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+    }
+
   }
 
   public static class AddAllAbsentAdaptor extends AbstractMethodAdapter {
