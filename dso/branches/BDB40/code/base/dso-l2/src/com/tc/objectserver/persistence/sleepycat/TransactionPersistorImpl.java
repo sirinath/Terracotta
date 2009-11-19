@@ -8,6 +8,7 @@ import com.sleepycat.je.Cursor;
 import com.sleepycat.je.CursorConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
@@ -53,7 +54,7 @@ class TransactionPersistorImpl extends SleepycatPersistorBase implements Transac
       cursor.close();
       tx.commit();
       return rv;
-    } catch (Exception e) {
+    } catch (DatabaseException e) {
       abortOnError(cursor, tx);
       throw new DBException(e);
     }
@@ -66,7 +67,7 @@ class TransactionPersistorImpl extends SleepycatPersistorBase implements Transac
     value.setData(globalTxnID2Bytes(gtx.getGlobalTransactionID()));
     try {
       this.db.put(pt2nt(tx), key, value);
-    } catch (Exception e) {
+    } catch (DatabaseException e) {
       throw new DBException(e);
     }
   }
@@ -95,7 +96,7 @@ class TransactionPersistorImpl extends SleepycatPersistorBase implements Transac
       key.setData(serverTxnID2Bytes(stxID));
       try {
         db.delete(txn, key);
-      } catch (Exception e) {
+      } catch (DatabaseException e) {
         throw new DBException(e);
       }
     }

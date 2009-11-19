@@ -4,6 +4,7 @@
  */
 package com.tc.objectserver.persistence.sleepycat;
 
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.OperationStatus;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -14,7 +15,7 @@ import java.util.Set;
 
 public interface ObjectIDManager {
 
-  public OperationStatus put(PersistenceTransaction tx, ManagedObject mo) throws TCDatabaseException;
+  public OperationStatus put(PersistenceTransaction tx, ManagedObject mo) throws DatabaseException;
 
   public void prePutAll(Set<ObjectID> oidSet, ManagedObject mo);
 

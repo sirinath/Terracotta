@@ -266,7 +266,7 @@ public class DBEnvironmentTest extends TCTestCase {
     try {
       db.get(null, key, new DatabaseEntry(), LockMode.DEFAULT);
       return true;
-    } catch (IllegalStateException e) {
+    } catch (DatabaseException e) {
       // XXX: This may not be a reliable test, but there doesn't seem to be
       // another way to tell.
       return false;

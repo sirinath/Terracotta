@@ -21,7 +21,7 @@ final class SleepycatPersistenceTransactionProvider implements PersistenceTransa
   public PersistenceTransaction newTransaction() {
     try {
       return new TransactionWrapper(newNativeTransaction());
-    } catch (Exception e) {
+    } catch (DatabaseException e) {
       throw new DBException(e);
     }
   }

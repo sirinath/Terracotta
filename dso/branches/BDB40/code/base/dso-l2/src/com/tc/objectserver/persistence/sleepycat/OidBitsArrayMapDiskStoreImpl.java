@@ -6,6 +6,7 @@ package com.tc.objectserver.persistence.sleepycat;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
@@ -50,56 +51,48 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
       if (oidDB != null) {
         longAry = readDiskEntry(null, oid);
       }
-    } catch (TCDatabaseException e) {
+    } catch (DatabaseException e) {
       logger.error("Reading object ID " + oid + ":" + e);
     }
     if (longAry == null) longAry = super.loadArray(oid, lPerDiskUnit, mapIndex);
     return longAry;
   }
 
-  OidLongArray readDiskEntry(Transaction txn, long oid) throws TCDatabaseException {
-    try {
-      DatabaseEntry key = new DatabaseEntry();
-      DatabaseEntry value = new DatabaseEntry();
-      long aryIndex = oidIndex(oid);
-      key.setData(Conversion.long2Bytes(aryIndex + auxKey));
-      OperationStatus status = oidDB.get(txn, key, value, LockMode.DEFAULT);
-      if (OperationStatus.SUCCESS.equals(status)) { return new OidLongArray(aryIndex, value.getData()); }
-      return null;
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
-    }
+  OidLongArray readDiskEntry(Transaction txn, long oid) throws DatabaseException {
+    DatabaseEntry key = new DatabaseEntry();
+    DatabaseEntry value = new DatabaseEntry();
+    long aryIndex = oidIndex(oid);
+    key.setData(Conversion.long2Bytes(aryIndex + auxKey));
+    OperationStatus status = oidDB.get(txn, key, value, LockMode.DEFAULT);
+    if (OperationStatus.SUCCESS.equals(status)) { return new OidLongArray(aryIndex, value.getData()); }
+    return null;
   }
 
-  void writeDiskEntry(Transaction txn, OidLongArray bits) throws TCDatabaseException {
+  void writeDiskEntry(Transaction txn, OidLongArray bits) throws DatabaseException {
     DatabaseEntry key = new DatabaseEntry();
     DatabaseEntry value = new DatabaseEntry();
     key.setData(bits.keyToBytes(auxKey));
 
-    try {
-      if (!bits.isZero()) {
-        value.setData(bits.arrayToBytes());
-        if (!OperationStatus.SUCCESS.equals(this.oidDB.put(txn, key, value))) {
-          //
-          throw new TCDatabaseException("Failed to update oidDB at " + bits.getKey());
-        }
-      } else {
-        OperationStatus status = this.oidDB.delete(txn, key);
-        // OperationStatus.NOTFOUND happened if added and then deleted in the same batch
-        if (!OperationStatus.SUCCESS.equals(status) && !OperationStatus.NOTFOUND.equals(status)) {
-          //
-          throw new TCDatabaseException("Failed to delete oidDB at " + bits.getKey());
-        }
+    if (!bits.isZero()) {
+      value.setData(bits.arrayToBytes());
+      if (!OperationStatus.SUCCESS.equals(this.oidDB.put(txn, key, value))) {
+        //
+        throw new DatabaseException("Failed to update oidDB at " + bits.getKey());
       }
-    } catch (Exception e) {
-      throw new TCDatabaseException(e.getMessage());
+    } else {
+      OperationStatus status = this.oidDB.delete(txn, key);
+      // OperationStatus.NOTFOUND happened if added and then deleted in the same batch
+      if (!OperationStatus.SUCCESS.equals(status) && !OperationStatus.NOTFOUND.equals(status)) {
+        //
+        throw new DatabaseException("Failed to delete oidDB at " + bits.getKey());
+      }
     }
   }
 
   /*
    * flush in-memory entry to disk
    */
-  public void flushToDisk(Transaction tx) throws TCDatabaseException {
+  public void flushToDisk(Transaction tx) throws DatabaseException {
     Iterator<Map.Entry<Long, OidLongArray>> i = map.entrySet().iterator();
     while (i.hasNext()) {
       Map.Entry<Long, OidLongArray> entry = i.next();

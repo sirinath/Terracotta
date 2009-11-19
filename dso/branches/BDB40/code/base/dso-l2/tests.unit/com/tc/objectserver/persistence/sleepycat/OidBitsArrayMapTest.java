@@ -77,8 +77,8 @@ public class OidBitsArrayMapTest extends TCTestCase {
       Assert.assertTrue("Not found index=" + oids.oidIndex(idList.get(i)), oids.contains(idList.get(i)));
     }
   }
-
-  private void saveAllToDisk(OidBitsArrayMapDiskStoreImpl oids) throws TCDatabaseException {
+  
+  private void saveAllToDisk(OidBitsArrayMapDiskStoreImpl oids) {
 
     // use another set to avoid ConcurrentModificationException
     Set dupKeySet = new HashSet();
@@ -93,7 +93,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
       }
     }
   }
-
+  
   private void loadAllFromDisk(OidBitsArrayMapDiskStoreImpl oids) {
     oids.getMap().clear();
     Cursor cursor = null;
@@ -124,7 +124,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
 
   }
 
-  public void testReadWriteDB() throws Exception {
+  public void testReadWriteDB() {
     List<ObjectID> idList = populateObjectIDList();
 
     OidBitsArrayMapDiskStoreImpl oids = new OidBitsArrayMapDiskStoreImpl(LongPerDiskUnit, oidDB);
@@ -162,7 +162,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     Assert.assertEquals(0, secOids.getMap().keySet().size());
   }
 
-  public void testReadWriteAuxDB() throws Exception {
+  public void testReadWriteAuxDB() {
     int auxDB = 1;
     List<ObjectID> idList = populateObjectIDList();
 
@@ -201,7 +201,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     Assert.assertEquals(0, secOids.getMap().keySet().size());
   }
 
-  public void testReadWriteDBandAuxDB() throws Exception {
+  public void testReadWriteDBandAuxDB() {
     int auxDB = 1;
     List<ObjectID> idList = populateObjectIDList();
     List<ObjectID> auxList = new ArrayList();
@@ -266,7 +266,7 @@ public class OidBitsArrayMapTest extends TCTestCase {
     Assert.assertEquals(0, secAux.getMap().keySet().size());
   }
 
-  public void baseTestReadDiskEntry(int auxDB) throws TCDatabaseException {
+  public void baseTestReadDiskEntry(int auxDB) {
     List<ObjectID> idList = populateObjectIDList();
     Set<Long> indexSet = new HashSet<Long>();
     Map<Long, OidLongArray> map = new HashMap<Long, OidLongArray>();
@@ -313,11 +313,11 @@ public class OidBitsArrayMapTest extends TCTestCase {
     }
   }
 
-  public void testReadDiskEntry() throws Exception {
+  public void testReadDiskEntry() {
     baseTestReadDiskEntry(0);
   }
 
-  public void testAuxReadDiskEntry() throws Exception {
+  public void testAuxReadDiskEntry() {
     baseTestReadDiskEntry(1);
   }
 
