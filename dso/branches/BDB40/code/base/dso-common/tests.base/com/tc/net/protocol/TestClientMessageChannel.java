@@ -11,6 +11,9 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
+import com.tc.net.protocol.NetworkStackID;
+import com.tc.net.protocol.TCNetworkMessage;
+import com.tc.net.protocol.clientgroup.ClientGroupMessageChannel;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ChannelIDProvider;
@@ -27,14 +30,15 @@ import com.tc.object.session.SessionProvider;
  */
 
 public class TestClientMessageChannel implements ClientMessageChannel {
-  private boolean initConnect = true;
+  private boolean                             initConnect      = true;
 
   public TestClientMessageChannel() {
-    this(null, null, null, null);
+    this(null, null, null, null, null);
   }
-
-  public TestClientMessageChannel(TCMessageFactory msgFactory, TCMessageRouter router, SessionProvider sessionProvider,
-                                  ConnectionAddressProvider addrProvider) {
+  
+  public TestClientMessageChannel(TCMessageFactory msgFactory, TCMessageRouter router,
+                                     SessionProvider sessionProvider, ConnectionAddressProvider addrProvider,
+                                     ClientGroupMessageChannel multiplex) {
 
     setLocalNodeID(ClientID.NULL_ID);
     setRemoteNodeID(GroupID.NULL_ID);
@@ -50,7 +54,7 @@ public class TestClientMessageChannel implements ClientMessageChannel {
 
   public void addClassMapping(TCMessageType type, Class msgClass) {
     throw new ImplementMe();
-
+    
   }
 
   public ChannelIDProvider getChannelIDProvider() {
@@ -67,32 +71,32 @@ public class TestClientMessageChannel implements ClientMessageChannel {
 
   public void routeMessageType(TCMessageType messageType, Sink destSink, Sink hydrateSink) {
     throw new ImplementMe();
-
+    
   }
 
   public void routeMessageType(TCMessageType type, TCMessageSink sink) {
     throw new ImplementMe();
-
+    
   }
 
   public void unrouteMessageType(TCMessageType type) {
     throw new ImplementMe();
-
+    
   }
 
   public void addAttachment(String key, Object value, boolean replace) {
     throw new ImplementMe();
-
+    
   }
 
   public void addListener(ChannelEventListener listener) {
     throw new ImplementMe();
-
+    
   }
 
   public void close() {
     throw new ImplementMe();
-
+    
   }
 
   public TCMessage createMessage(TCMessageType type) {
@@ -145,7 +149,7 @@ public class TestClientMessageChannel implements ClientMessageChannel {
 
   public void send(TCNetworkMessage message) {
     throw new ImplementMe();
-
+    
   }
 
   public void setRemoteNodeID(NodeID destination) {

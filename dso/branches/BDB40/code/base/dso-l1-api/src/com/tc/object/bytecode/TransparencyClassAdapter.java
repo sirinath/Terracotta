@@ -21,8 +21,6 @@ import com.tc.object.config.LockDefinition;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.logging.InstrumentationLogger;
-import com.tc.properties.TCPropertiesConsts;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.Banner;
 import com.tc.util.Assert;
 
@@ -34,9 +32,8 @@ import java.util.Set;
  * @author steve
  */
 public class TransparencyClassAdapter extends ClassAdapterBase {
-  private static final TCLogger            logger             = TCLogging.getLogger(TransparencyClassAdapter.class);
-  private static final boolean             useFastFinalFields = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.INSTRUMENTATION_FINAL_FIELD_FAST_READ);
-  
+  private static final TCLogger            logger          = TCLogging.getLogger(TransparencyClassAdapter.class);
+
   private final Set                        doNotInstrument = new HashSet();
   private final PhysicalClassAdapterLogger physicalClassLogger;
   private final InstrumentationLogger      instrumentationLogger;
@@ -746,87 +743,72 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
   }
 
   private void createInstrumentedGetter(final int methodAccess, final int fieldAccess, final String name, final String desc) {
-    Assert.eval(!getTransparencyClassSpec().isLogical());
-    MethodVisitor gv = this.visitMethod(methodAccess, ByteCodeUtil.fieldGetterMethod(name), "()" + desc, null, null);
-    if (useFastFinalFields && Modifier.isFinal(fieldAccess)) {
-      createInstrumentedFinalGetter(gv, fieldAccess, name, desc);
-    } else {
-      createInstrumentedNonFinalGetter(gv, fieldAccess, name, desc);
-    }
-  }
-  
-  private void createInstrumentedNonFinalGetter(final MethodVisitor gv, final int fieldAccess, final String name, final String desc) {
     try {
-      final int THIS_SLOT = 0;
-      final int RESOLVE_LOCK_SLOT = 2;
-      final int TC_OBJECT_SLOT = 3;
-      
+      Assert.eval(!getTransparencyClassSpec().isLogical());
       boolean isVolatile = isVolatile(fieldAccess, name);
 
-      Type fieldType = Type.getType(desc);
+      String gDesc = "()" + desc;
+      MethodVisitor gv = this.visitMethod(methodAccess, ByteCodeUtil.fieldGetterMethod(name), gDesc, null, null);
+      Type t = Type.getType(desc);
 
-      Label syncBegin = new Label();
-      Label syncEnd = new Label();
-      
-      Label notManaged = new Label();
-      Label resolved = new Label();
-
-      //Check if `this' is managed
       getManaged(gv);
       gv.visitInsn(DUP);
-      gv.visitVarInsn(ASTORE, TC_OBJECT_SLOT);
-      gv.visitJumpInsn(IFNULL, notManaged);
+      gv.visitVarInsn(ASTORE, 3);
 
-      //lock appropriate locks (the resolve lock and possibly the volatile lock)
+      Label l0 = new Label();
+      gv.visitJumpInsn(IFNULL, l0);
+
       if (isVolatile) {
         callVolatileBegin(spec.getClassNameDots() + '.' + name, LockLevel.READ.toInt(), gv);
       }
-      gv.visitVarInsn(ALOAD, TC_OBJECT_SLOT);
+
+      gv.visitVarInsn(ALOAD, 3);
       gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;");
       gv.visitInsn(DUP);
-      gv.visitVarInsn(ASTORE, RESOLVE_LOCK_SLOT);
+      gv.visitVarInsn(ASTORE, 2);
       gv.visitInsn(MONITORENTER);
-      gv.visitLabel(syncBegin);
 
-      //check if field is null under resolve lock (null means we must resolve)
-      gv.visitVarInsn(ALOAD, THIS_SLOT);
+      Label l1 = new Label();
+      gv.visitLabel(l1);
+
+      gv.visitVarInsn(ALOAD, 0);
       gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
-      gv.visitJumpInsn(IFNONNULL, resolved);
-
-      //resolve the reference (possibly talk to the server)
-      gv.visitVarInsn(ALOAD, TC_OBJECT_SLOT);
+      Label l5 = new Label();
+      gv.visitJumpInsn(IFNONNULL, l5);
+      gv.visitVarInsn(ALOAD, 3);
       gv.visitLdcInsn(spec.getClassNameDots() + '.' + name);
       gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "resolveReference", "(Ljava/lang/String;)V");
+      gv.visitLabel(l5);
 
-      //read the resolved field
-      gv.visitLabel(resolved);
-      gv.visitVarInsn(ALOAD, THIS_SLOT);
+      Label l2 = new Label();
+
+      gv.visitVarInsn(ALOAD, 0);
       gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
+      gv.visitVarInsn(ALOAD, 2);
 
-      //unlock appropriate locks and return
-      gv.visitVarInsn(ALOAD, RESOLVE_LOCK_SLOT);
       gv.visitInsn(MONITOREXIT);
       if (isVolatile) {
         callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.READ.toInt(), gv);
       }
-      gv.visitInsn(fieldType.getOpcode(IRETURN));
-      gv.visitLabel(syncEnd);
-      
-      //unlock appropriate locks and throw exception (exception handler)
-      gv.visitVarInsn(ALOAD, RESOLVE_LOCK_SLOT);
+      gv.visitInsn(ARETURN);
+      gv.visitJumpInsn(GOTO, l0);
+
+      gv.visitLabel(l2);
+      gv.visitVarInsn(ALOAD, 2);
+
       gv.visitInsn(MONITOREXIT);
       if (isVolatile) {
         callVolatileCommit(spec.getClassNameDots() + "." + name, LockLevel.READ.toInt(), gv);
       }
       gv.visitInsn(ATHROW);
 
-      //`this' instance is not managed - read the field normally
-      gv.visitLabel(notManaged);
-      gv.visitVarInsn(ALOAD, THIS_SLOT);
+      gv.visitLabel(l0);
+      gv.visitVarInsn(ALOAD, 0);
       gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
-      gv.visitInsn(fieldType.getOpcode(IRETURN));
+      gv.visitInsn(t.getOpcode(IRETURN));
 
-      gv.visitTryCatchBlock(syncBegin, syncEnd, syncEnd, null);
+      gv.visitTryCatchBlock(l1, l2, l2, null);
+
       gv.visitMaxs(0, 0);
       gv.visitEnd();
     } catch (RuntimeException e) {
@@ -837,31 +819,6 @@ public class TransparencyClassAdapter extends ClassAdapterBase {
     }
   }
 
-  private void createInstrumentedFinalGetter(final MethodVisitor gv, final int fieldAccess, final String name, final String desc) {
-    try {
-      final int THIS_SLOT = 0;
-
-      Type fieldType = Type.getType(desc);
-      Label regularGet = new Label();
-
-      //Do a dirty read of the variable
-      gv.visitVarInsn(ALOAD, THIS_SLOT);
-      gv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), name, desc);
-      gv.visitInsn(DUP);      
-      gv.visitJumpInsn(IFNULL, regularGet);
-      gv.visitInsn(fieldType.getOpcode(IRETURN));
-
-      gv.visitLabel(regularGet);
-      gv.visitInsn(POP);
-      createInstrumentedNonFinalGetter(gv, fieldAccess, name, desc);
-    } catch (RuntimeException e) {
-      handleInstrumentationException(e);
-    } catch (Error e) {
-      handleInstrumentationException(e);
-      throw e;
-    }
-  }
-  
   private void getManaged(final MethodVisitor mv) {
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKEVIRTUAL, spec.getClassNameSlashes(), MANAGED_METHOD, "()" + MANAGED_FIELD_TYPE);

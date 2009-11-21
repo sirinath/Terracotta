@@ -1,6 +1,5 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
- * notice. All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.text;
 
@@ -93,9 +92,7 @@ public class PrettyPrinterImpl implements PrettyPrinter {
   }
 
   private PrettyPrinterImpl duplicate() {
-    PrettyPrinterImpl prettyPrinterImpl = new PrettyPrinterImpl(prefix.toString(), out, this.visited);
-    prettyPrinterImpl.autoflush(autoflush);
-    return prettyPrinterImpl;
+    return new PrettyPrinterImpl(prefix.toString(), out, this.visited);
   }
 
   public PrettyPrinter visit(Object o) {
@@ -185,9 +182,5 @@ public class PrettyPrinterImpl implements PrettyPrinter {
       return true;
     }
 
-  }
-
-  public void flush() {
-    this.out.flush();
   }
 }

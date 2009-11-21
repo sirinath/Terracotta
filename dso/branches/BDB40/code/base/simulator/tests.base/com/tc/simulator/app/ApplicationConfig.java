@@ -10,7 +10,6 @@ import com.tc.objectserver.control.ServerControl;
 public interface ApplicationConfig {
 
   static final String ADAPTED_KEY = "Adapted";
-  static final String JMXPORT_KEY = "JMX_PORT";
 
   String getApplicationClassname();
 

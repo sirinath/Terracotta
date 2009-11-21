@@ -32,8 +32,8 @@ package com.tc.asm.tree;
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.Attribute;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodVisitor;
 import com.tc.asm.Label;
+import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 
@@ -90,7 +90,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
      * The runtime visible parameter annotations of this method. These lists are
      * lists of {@link AnnotationNode} objects. May be <tt>null</tt>.
      * 
-     * @associates com.tc.asm.tree.AnnotationNode
+     * @associates org.objectweb.asm.tree.AnnotationNode
      * @label invisible parameters
      */
     public List[] visibleParameterAnnotations;
@@ -99,7 +99,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
      * The runtime invisible parameter annotations of this method. These lists
      * are lists of {@link AnnotationNode} objects. May be <tt>null</tt>.
      * 
-     * @associates com.tc.asm.tree.AnnotationNode
+     * @associates org.objectweb.asm.tree.AnnotationNode
      * @label visible parameters
      */
     public List[] invisibleParameterAnnotations;
@@ -108,7 +108,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
      * The instructions of this method. This list is a list of
      * {@link AbstractInsnNode} objects.
      * 
-     * @associates com.tc.asm.tree.AbstractInsnNode
+     * @associates org.objectweb.asm.tree.AbstractInsnNode
      * @label instructions
      */
     public InsnList instructions;
@@ -117,7 +117,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
      * The try catch blocks of this method. This list is a list of
      * {@link TryCatchBlockNode} objects.
      * 
-     * @associates com.tc.asm.tree.TryCatchBlockNode
+     * @associates org.objectweb.asm.tree.TryCatchBlockNode
      */
     public List tryCatchBlocks;
 
@@ -135,7 +135,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
      * The local variables of this method. This list is a list of
      * {@link LocalVariableNode} objects. May be <tt>null</tt>
      * 
-     * @associates com.tc.asm.tree.LocalVariableNode
+     * @associates org.objectweb.asm.tree.LocalVariableNode
      */
     public List localVariables;
 
@@ -472,8 +472,7 @@ public class MethodNode extends MemberNode implements MethodVisitor {
         if (instructions.size() > 0) {
             mv.visitCode();
             // visits try catch blocks
-            n = tryCatchBlocks == null ? 0 : tryCatchBlocks.size();
-            for (i = 0; i < n; ++i) {
+            for (i = 0; i < tryCatchBlocks.size(); ++i) {
                 ((TryCatchBlockNode) tryCatchBlocks.get(i)).accept(mv);
             }
             // visits instructions

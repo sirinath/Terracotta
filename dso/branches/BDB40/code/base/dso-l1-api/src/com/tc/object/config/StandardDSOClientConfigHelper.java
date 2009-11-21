@@ -63,4 +63,5 @@ public interface StandardDSOClientConfigHelper {
   void addExcludePattern(String string);
 
   URL getBundleURL(Bundle bundle);
+
 }

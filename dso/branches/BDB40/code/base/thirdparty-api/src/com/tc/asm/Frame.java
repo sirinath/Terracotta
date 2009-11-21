@@ -42,7 +42,7 @@ final class Frame {
      * updated by simulating the action of the instruction on the previous state
      * of this so called "output frame". In visitMaxs, a fix point algorithm is
      * used to compute the "input frame" of each basic block, i.e. the stack map
-     * frame at the beginning of the basic block, starting from the input frame
+     * frame at the begining of the basic block, starting from the input frame
      * of the first basic block (which is computed from the method descriptor),
      * and by using the previously computed output frames to compute the input
      * state of the other blocks.
@@ -115,18 +115,9 @@ final class Frame {
     static final int KIND = 0xF000000;
 
     /**
-     * Flag used for LOCAL and STACK types. Indicates that if this type happens
-     * to be a long or double type (during the computations of input frames), 
-     * then it must be set to TOP because the second word of this value has
-     * been reused to store other data in the basic block. Hence the first word 
-     * no longer stores a valid long or double value.
-     */
-    static final int TOP_IF_LONG_OR_DOUBLE = 0x800000;
-
-    /**
      * Mask to get the value of a frame type.
      */
-    static final int VALUE = 0x7FFFFF;
+    static final int VALUE = 0xFFFFFF;
 
     /**
      * Mask to get the kind of base types.
@@ -437,7 +428,7 @@ final class Frame {
         // NA, //INVOKESPECIAL, // -
         // NA, //INVOKESTATIC, // -
         // NA, //INVOKEINTERFACE, // -
-        // NA, //INVOKEDYNAMIC, // -
+        // NA, //UNUSED, // NOT VISITED
         // 1, //NEW, // visitTypeInsn
         // 0, //NEWARRAY, // visitIntInsn
         // 0, //ANEWARRAY, // visitTypeInsn
@@ -719,7 +710,7 @@ final class Frame {
     private void pop(final String desc) {
         char c = desc.charAt(0);
         if (c == '(') {
-            pop((Type.getArgumentsAndReturnSizes(desc) >> 2) - 1);
+            pop((MethodWriter.getArgumentsAndReturnSizes(desc) >> 2) - 1);
         } else if (c == 'J' || c == 'D') {
             pop(2);
         } else {
@@ -945,8 +936,6 @@ final class Frame {
                     // if t2 is of kind STACK or LOCAL we cannot know its size!
                     if (t2 == LONG || t2 == DOUBLE) {
                         set(arg - 1, TOP);
-                    } else if ((t2 & KIND) != BASE) {
-                        set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
                     }
                 }
                 break;
@@ -961,8 +950,6 @@ final class Frame {
                     // if t2 is of kind STACK or LOCAL we cannot know its size!
                     if (t2 == LONG || t2 == DOUBLE) {
                         set(arg - 1, TOP);
-                    } else if ((t2 & KIND) != BASE) {
-                        set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
                     }
                 }
                 break;
@@ -1186,10 +1173,6 @@ final class Frame {
                 }
                 push(cw, item.strVal3);
                 break;
-            case Opcodes.INVOKEDYNAMIC:
-                pop(item.strVal2);
-                push(cw, item.strVal2);
-                break;
             case Opcodes.NEW:
                 push(UNINITIALIZED | cw.addUninitializedType(item.strVal1, arg));
                 break;
@@ -1280,17 +1263,12 @@ final class Frame {
                 } else {
                     dim = s & DIM;
                     kind = s & KIND;
-                    if (kind == BASE) {
-                        t = s;
+                    if (kind == LOCAL) {
+                        t = dim + inputLocals[s & VALUE];
+                    } else if (kind == STACK) {
+                        t = dim + inputStack[nStack - (s & VALUE)];
                     } else {
-                        if (kind == LOCAL) {
-                            t = dim + inputLocals[s & VALUE];
-                        } else {
-                            t = dim + inputStack[nStack - (s & VALUE)];
-                        }
-                        if ((s & TOP_IF_LONG_OR_DOUBLE) != 0 && (t == LONG || t == DOUBLE)) {
-                            t = TOP;
-                        }
+                        t = s;
                     }
                 }
             } else {
@@ -1332,17 +1310,12 @@ final class Frame {
             s = outputStack[i];
             dim = s & DIM;
             kind = s & KIND;
-            if (kind == BASE) {
-                t = s;
+            if (kind == LOCAL) {
+                t = dim + inputLocals[s & VALUE];
+            } else if (kind == STACK) {
+                t = dim + inputStack[nStack - (s & VALUE)];
             } else {
-                if (kind == LOCAL) {
-                    t = dim + inputLocals[s & VALUE];
-                } else {
-                    t = dim + inputStack[nStack - (s & VALUE)];
-                }
-                if ((s & TOP_IF_LONG_OR_DOUBLE) != 0 && (t == LONG || t == DOUBLE)) {
-                    t = TOP;
-                }
+                t = s;
             }
             if (initializations != null) {
                 t = init(cw, t);

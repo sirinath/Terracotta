@@ -68,36 +68,36 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public boolean isNull() {
-    return this.peerObject == null || getPeerObject() == null;
+    return peerObject == null || getPeerObject() == null;
   }
 
   public ObjectID getObjectID() {
-    return this.objectID;
+    return objectID;
   }
 
   protected ClientObjectManager getObjectManager() {
-    return this.tcClazz.getObjectManager();
+    return tcClazz.getObjectManager();
   }
 
   public Object getPeerObject() {
-    return this.peerObject == null ? null : this.peerObject.get();
+    return peerObject == null ? null : peerObject.get();
   }
 
   protected void setPeerObject(final WeakReference pojo) {
     this.peerObject = pojo;
     Object realPojo;
-    if ((realPojo = this.peerObject.get()) instanceof Manageable) {
+    if ((realPojo = peerObject.get()) instanceof Manageable) {
       Manageable m = (Manageable) realPojo;
       m.__tc_managed(this);
     }
   }
 
   public TCClass getTCClass() {
-    return this.tcClazz;
+    return tcClazz;
   }
 
   public void dehydrate(final DNAWriter writer) {
-    this.tcClazz.dehydrate(this, writer, getPeerObject());
+    tcClazz.dehydrate(this, writer, getPeerObject());
   }
 
   /**
@@ -113,12 +113,10 @@ public abstract class TCObjectImpl implements TCObject {
       createPeerObjectIfNecessary(from);
 
       Object po = getPeerObject();
-      if (po == null) { return; }
+      if (po == null) return;
       try {
-        this.tcClazz.hydrate(this, from, po, force);
-        if (isNewLoad) {
-          performOnLoadActionIfNecessary(po);
-        }
+        tcClazz.hydrate(this, from, po, force);
+        if (isNewLoad) performOnLoadActionIfNecessary(po);
       } catch (ClassNotFoundException e) {
         logger.warn("Re-throwing Exception: ", e);
         throw e;
@@ -151,9 +149,7 @@ public abstract class TCObjectImpl implements TCObject {
 
       if (adjustTCL) {
         ClassLoader newTCL = pojo.getClass().getClassLoader();
-        if (newTCL == null) {
-          newTCL = ClassLoader.getSystemClassLoader();
-        }
+        if (newTCL == null) newTCL = ClassLoader.getSystemClassLoader();
         Thread.currentThread().setContextClassLoader(newTCL);
       }
 
@@ -186,33 +182,23 @@ public abstract class TCObjectImpl implements TCObject {
           consoleLogger.error(errorMsg);
         }
       } finally {
-        if (adjustTCL) {
-          Thread.currentThread().setContextClassLoader(prevLoader);
-        }
+        if (adjustTCL) Thread.currentThread().setContextClassLoader(prevLoader);
       }
     }
   }
 
   private synchronized void setFlag(final int offset, final boolean value) {
-    this.flags = Conversion.setFlag(this.flags, offset, value);
+    flags = Conversion.setFlag(flags, offset, value);
   }
 
   private synchronized boolean getFlag(final int offset) {
-    return Conversion.getFlag(this.flags, offset);
-  }
-
-  private synchronized boolean compareAndSetFlag(final int offset, final boolean old, final boolean newValue) {
-    if (Conversion.getFlag(this.flags, offset) == old) {
-      this.flags = Conversion.setFlag(this.flags, offset, newValue);
-      return true;
-    }
-    return false;
+    return Conversion.getFlag(flags, offset);
   }
 
   private void createPeerObjectIfNecessary(final DNA from) {
     if (isNull()) {
       // TODO: set created and modified version id
-      setPeerObject(getObjectManager().createNewPeer(this.tcClazz, from));
+      setPeerObject(getObjectManager().createNewPeer(tcClazz, from));
     }
   }
 
@@ -251,7 +237,7 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public final int clearReferences(final int toClear) {
-    if (this.tcClazz.useResolveLockWhileClearing()) {
+    if (tcClazz.useResolveLockWhileClearing()) {
       synchronized (getResolveLock()) {
         return basicClearReferences(toClear);
       }
@@ -264,7 +250,7 @@ public abstract class TCObjectImpl implements TCObject {
     try {
       Object po = getPeerObject();
       Assert.assertFalse(isNew()); // Shouldn't clear new Objects
-      if (po == null) { return 0; }
+      if (po == null) return 0;
       return clearReferences(po, toClear);
     } finally {
       setEvictionInProgress(false);
@@ -274,7 +260,7 @@ public abstract class TCObjectImpl implements TCObject {
   protected abstract int clearReferences(Object pojo, int toClear);
 
   public final Object getResolveLock() {
-    return this.objectID; // Save a field by using this one as the lock
+    return objectID; // Save a field by using this one as the lock
   }
 
   public void resolveArrayReference(final int index) {
@@ -315,8 +301,8 @@ public abstract class TCObjectImpl implements TCObject {
 
   @Override
   public String toString() {
-    return getClass().getName() + "@" + System.identityHashCode(this) + "[objectID=" + this.objectID + ", TCClass="
-           + this.tcClazz + "]";
+    return getClass().getName() + "@" + System.identityHashCode(this) + "[objectID=" + objectID + ", TCClass="
+           + tcClazz + "]";
   }
 
   public void objectFieldChanged(final String classname, final String fieldname, final Object newValue, final int index) {
@@ -336,16 +322,16 @@ public abstract class TCObjectImpl implements TCObject {
 
   public void objectFieldChangedByOffset(final String classname, final long fieldOffset, final Object newValue,
                                          final int index) {
-    String fieldname = this.tcClazz.getFieldNameByOffset(fieldOffset);
+    String fieldname = tcClazz.getFieldNameByOffset(fieldOffset);
     objectFieldChanged(classname, fieldname, newValue, index);
   }
 
   public boolean isFieldPortableByOffset(final long fieldOffset) {
-    return this.tcClazz.isPortableField(fieldOffset);
+    return tcClazz.isPortableField(fieldOffset);
   }
 
   public String getFieldNameByOffset(final long fieldOffset) {
-    return this.tcClazz.getFieldNameByOffset(fieldOffset);
+    return tcClazz.getFieldNameByOffset(fieldOffset);
   }
 
   public void booleanFieldChanged(final String classname, final String fieldname, final boolean newValue,
@@ -434,7 +420,9 @@ public abstract class TCObjectImpl implements TCObject {
   public void setNotNew() {
     // Flipping the "new" flag must occur AFTER dehydrate -- otherwise the client
     // memory manager might start nulling field values! (see canEvict() dependency on isNew() condition)
-    if (!compareAndSetFlag(IS_NEW_OFFSET, true, false)) { throw new AssertionError(this + " : Already not new"); }
+
+    Assert.eval(isNew());
+    flags = Conversion.setFlag(flags, IS_NEW_OFFSET, false);
   }
 
   // These autlocking disable methods are checked in ManagerImpl. The one known use case
@@ -457,7 +445,7 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   public final synchronized boolean canEvict() {
-    boolean canEvict = isEvictable() && !this.tcClazz.isNotClearable() && !(isNew() || isEvictionInProgress());
+    boolean canEvict = isEvictable() && !tcClazz.isNotClearable() && !(isNew() || isEvictionInProgress());
     if (canEvict) {
       setEvictionInProgress(true);
     }
@@ -470,7 +458,7 @@ public abstract class TCObjectImpl implements TCObject {
     Object peer = getPeerObject();
     if (peer == null) { throw new AssertionError("cannot create a toggle reference if peer object is gone"); }
 
-    return getObjectManager().getOrCreateToggleRef(this.objectID, peer);
+    return getObjectManager().getOrCreateToggleRef(objectID, peer);
   }
 
 }

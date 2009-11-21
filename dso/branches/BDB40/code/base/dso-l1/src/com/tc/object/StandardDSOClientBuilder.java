@@ -56,7 +56,6 @@ import com.tc.stats.counter.Counter;
 import com.tc.stats.counter.sampled.derived.SampledRateCounter;
 import com.tc.util.Assert;
 import com.tc.util.ToggleableReferenceManager;
-import com.tc.util.UUID;
 import com.tc.util.runtime.ThreadIDManager;
 import com.tc.util.sequence.BatchSequence;
 import com.tc.util.sequence.BatchSequenceReceiver;
@@ -83,8 +82,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                          connectionPolicy, aConfig);
   }
 
-  public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, final UUID id) {
-    return new TunnelingEventHandler(ch, id);
+  public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch) {
+    return new TunnelingEventHandler(ch);
   }
 
   public ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr) {

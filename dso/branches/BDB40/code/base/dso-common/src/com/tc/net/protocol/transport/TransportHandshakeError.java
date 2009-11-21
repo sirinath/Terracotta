@@ -13,7 +13,6 @@ public interface TransportHandshakeError {
   public static final short ERROR_INVALID_CONNECTION_ID = 2;
   public static final short ERROR_STACK_MISMATCH        = 3;
   public static final short ERROR_GENERIC               = 4;
-  public static final short ERROR_MAX_CONNECTION_EXCEED = 5;
 
   public String getMessage();
 

@@ -14,18 +14,18 @@ public class ConnectionID {
   private static final String      NULL_SERVER_ID = "ffffffffffffffffffffffffffffffff";
   public static final ConnectionID NULL_ID        = new ConnectionID(ChannelID.NULL_ID.toLong(), NULL_SERVER_ID);
 
-  private static final char        SEP            = '.';
+  private static final String      SEP            = ".";
 
   public static ConnectionID parse(String compositeID) throws InvalidConnectionIDException {
     if (compositeID == null) { throw new InvalidConnectionIDException(compositeID, "null connectionID"); }
 
-    int idx = compositeID.indexOf(SEP);
-    if (idx <= 0 || idx >= compositeID.length() - 1) {
+    String[] parts = compositeID.split("\\" + SEP);
+    if (parts.length != 2) {
       // make formatter sane
-      throw new InvalidConnectionIDException(compositeID, "Invalid format. Separator (.) found at : " + idx);
+      throw new InvalidConnectionIDException(compositeID, "wrong number of components: " + parts.length);
     }
 
-    String channelID = compositeID.substring(0, idx);
+    String channelID = parts[0];
     final long channel;
     try {
       channel = Long.parseLong(channelID);
@@ -33,26 +33,15 @@ public class ConnectionID {
       throw new InvalidConnectionIDException(compositeID, "parse exception for channelID " + channelID, e);
     }
 
-    String server = compositeID.substring(idx + 1);
+    String server = parts[1];
     if (server.length() != 32) { throw new InvalidConnectionIDException(compositeID, "invalid serverID length: "
                                                                                      + server.length()); }
 
-    if (!validateCharsInServerID(server)) { throw new InvalidConnectionIDException(compositeID,
-                                                                                   "invalid chars in serverID: "
-                                                                                       + server); }
+    if (!server.matches("[A-Fa-f0-9]+")) { throw new InvalidConnectionIDException(compositeID,
+                                                                                  "invalid chars in serverID: "
+                                                                                      + server); }
 
     return new ConnectionID(channel, server);
-  }
-
-  /**
-   * This method does not use String.matches() for performance reason.
-   */
-  private static boolean validateCharsInServerID(String server) {
-    for (int i = 0; i < server.length(); i++) {
-      char c = server.charAt(i);
-      if (!(((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')))) { return false; }
-    }
-    return true;
   }
 
   public ConnectionID(long channelID, String serverID) {
@@ -64,7 +53,6 @@ public class ConnectionID {
     this(channelID, NULL_SERVER_ID);
   }
 
-  @Override
   public String toString() {
     return "ConnectionID(" + getID() + ")";
   }
@@ -74,25 +62,23 @@ public class ConnectionID {
   }
 
   public boolean isNewConnection() {
-    return (this.serverID.equals(NULL_SERVER_ID));
+    return (serverID.equals(NULL_SERVER_ID));
   }
 
   public String getServerID() {
     return this.serverID;
   }
 
-  @Override
   public int hashCode() {
     int hc = 17;
     hc = 37 * hc + (int) (this.channelID ^ (this.channelID >>> 32));
     if (this.serverID != null) {
-      hc = 37 * hc + this.serverID.hashCode();
+      hc = 37 * hc + serverID.hashCode();
     }
 
     return hc;
   }
 
-  @Override
   public boolean equals(Object obj) {
     if (obj instanceof ConnectionID) {
       ConnectionID other = (ConnectionID) obj;
@@ -102,13 +88,11 @@ public class ConnectionID {
   }
 
   public long getChannelID() {
-    return this.channelID;
+    return channelID;
   }
 
   public String getID() {
-    StringBuilder sb = new StringBuilder(64);
-    sb.append(this.channelID).append(SEP).append(this.serverID);
-    return sb.toString();
+    return channelID + SEP + serverID;
   }
 
 }

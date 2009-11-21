@@ -439,7 +439,6 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes
             }
             switch (opcode) {
                 // case INVOKESTATIC:
-                // case INVOKEDYNAMIC
                 // break;
 
                 case INVOKEINTERFACE:

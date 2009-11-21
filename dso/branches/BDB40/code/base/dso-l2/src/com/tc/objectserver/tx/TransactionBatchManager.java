@@ -4,7 +4,6 @@
  */
 package com.tc.objectserver.tx;
 
-import com.tc.l2.ha.TransactionBatchListener;
 import com.tc.net.NodeID;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.tx.TransactionID;
@@ -24,7 +23,5 @@ public interface TransactionBatchManager {
   public void processTransactions(TransactionBatchContext batchContext);
 
   public void notifyServerHighWaterMark(NodeID nodeID, long serverHighWaterMark);
-  
-  public void registerForBatchTransaction(TransactionBatchListener listener);
 
 }

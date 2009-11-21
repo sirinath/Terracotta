@@ -21,7 +21,6 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionID;
 import com.tc.test.TCTestCase;
-import com.tc.util.UUID;
 import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class TunnelingMsgConnectionTest extends TCTestCase {
     final ClientMessageChannelImpl mc = new MockClientMessageChannelForTMC();
     mc.addClassMapping(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE, JmxRemoteTunnelMessage.class);
 
-    MockTunnelingEventHandler teh = new MockTunnelingEventHandler(mc, UUID.getUUID());
+    MockTunnelingEventHandler teh = new MockTunnelingEventHandler(mc);
     mc.addListener(teh);
 
     /*
@@ -117,8 +116,8 @@ public class TunnelingMsgConnectionTest extends TCTestCase {
   }
 
   private class MockTunnelingEventHandler extends TunnelingEventHandler {
-    public MockTunnelingEventHandler(MessageChannel channel, UUID id) {
-      super(channel, id);
+    public MockTunnelingEventHandler(MessageChannel channel) {
+      super(channel);
     }
 
     @Override

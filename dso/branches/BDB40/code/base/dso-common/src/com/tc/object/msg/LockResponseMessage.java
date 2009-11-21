@@ -4,7 +4,6 @@
  */
 package com.tc.object.msg;
 
-import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -21,7 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class LockResponseMessage extends DSOMessageBase implements MultiThreadedEventContext {
+public class LockResponseMessage extends DSOMessageBase {
 
   private static final byte TYPE              = 1;
   private static final byte THREAD_ID         = 2;
@@ -35,12 +34,12 @@ public class LockResponseMessage extends DSOMessageBase implements MultiThreaded
   }
 
   private final Collection<ClientServerExchangeLockContext> contexts = new ArrayList<ClientServerExchangeLockContext>();
-
-  private ResponseType                                      responseType;
-  private ThreadID                                          threadID;
-  private LockID                                            lockID;
-  private ServerLockLevel                                   lockLevel;
-  private int                                               leaseTimeInMs;
+  
+  private ResponseType                                responseType;
+  private ThreadID                                    threadID;
+  private LockID                                      lockID;
+  private ServerLockLevel                             lockLevel;
+  private int                                         leaseTimeInMs;
 
   public LockResponseMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                              MessageChannel channel, TCMessageType type) {
@@ -176,17 +175,12 @@ public class LockResponseMessage extends DSOMessageBase implements MultiThreaded
     initialize(ResponseType.INFO, lid, sid, level, -1);
   }
 
-  private void initialize(ResponseType requestType, LockID lid, ThreadID sid, ServerLockLevel level,
-                          int leaseTimeInMills) {
+  private void initialize(ResponseType requestType, LockID lid, ThreadID sid, ServerLockLevel level, int leaseTimeInMills) {
     this.responseType = requestType;
     this.threadID = sid;
     this.lockID = lid;
     this.lockLevel = level;
     this.leaseTimeInMs = leaseTimeInMills;
-  }
-
-  public Object getKey() {
-    return this.getSourceNodeID();
   }
 
 }

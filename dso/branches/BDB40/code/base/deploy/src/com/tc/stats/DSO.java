@@ -54,7 +54,7 @@ import javax.management.ObjectName;
 
 /**
  * This is the top-level MBean for the DSO subsystem, off which to hang JSR-77 Stats and Config MBeans.
- * 
+ *
  * @see DSOMBean
  * @see DSOStatsImpl
  */
@@ -123,10 +123,6 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
 
   public long getCacheMissRate() {
     return getStats().getCacheMissRate();
-  }
-  
-  public long getFlushedRate() {
-    return getStats().getFlushedRate();
   }
 
   public long getTransactionRate() {
@@ -523,7 +519,7 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
             Iterator<Object> attrIter = sal.attributeList.iterator();
             Map<String, Object> onMap = new HashMap<String, Object>();
             while (attrIter.hasNext()) {
-              Attribute attr = (Attribute) attrIter.next();
+              Attribute attr = (Attribute)attrIter.next();
               onMap.put(attr.getName(), attr.getValue());
             }
             result.put(sal.objectName, onMap);
@@ -599,5 +595,4 @@ public class DSO extends AbstractNotifyingMBean implements DSOMBean {
     }
     return result;
   }
-
 }

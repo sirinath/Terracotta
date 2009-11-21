@@ -5,7 +5,6 @@
 package com.tc.net.protocol;
 
 import com.tc.bytes.TCByteBuffer;
-import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.util.TCTimeoutException;
 
@@ -63,7 +62,7 @@ public interface NetworkLayer {
   public boolean isConnected();
 
   public NetworkStackID open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException,
-      IOException, CommStackMismatchException;
+      IOException;
 
   public void close();
 }

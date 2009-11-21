@@ -103,7 +103,5 @@ public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
   public void goToActiveMode();
 
   public int getTotalPendingTransactionsCount();
-  
-  public long getTotalNumOfActiveTransactions();
 
 }

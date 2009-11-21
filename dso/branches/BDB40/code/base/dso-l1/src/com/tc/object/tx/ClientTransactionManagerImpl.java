@@ -30,7 +30,6 @@ import com.tc.object.session.SessionID;
 import com.tc.object.util.ReadOnlyException;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.text.Banner;
-import com.tc.text.LogWriter;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
@@ -39,6 +38,7 @@ import com.tc.util.StringUtil;
 import com.tc.util.Util;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -668,17 +668,23 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     getTransaction().addDmiDescritor(dd);
   }
 
-  public void dumpToLogger() {
-    LogWriter writer = new LogWriter();
+  public String dump() {
+    StringWriter writer = new StringWriter();
     PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.visit(this);
+    new PrettyPrinterImpl(pw).visit(this);
     writer.flush();
+    return writer.toString();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
   }
 
   public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
-    out.print(getClass().getName());
+
+    out.println(getClass().getName());
     return out;
+
   }
 
   private static final String READ_ONLY_TEXT = "Attempt to write to a shared object inside the scope of a lock declared as a"

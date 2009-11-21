@@ -90,8 +90,7 @@ public class ConnectionHealthCheckReverseCallbackTest extends TCTestCase {
 
     serverComms = new CommunicationsManagerImpl("TestCommsMgr-Server", new NullMessageMonitor(),
                                                 new PlainNetworkStackHarnessFactory(), serverConnMgr,
-                                                new NullConnectionPolicy(), 0, serverHC,
-                                                new TransportHandshakeErrorNullHandler());
+                                                new NullConnectionPolicy(), 0, serverHC);
     String host = "localhost";
 
     NetworkListener listener = serverComms
