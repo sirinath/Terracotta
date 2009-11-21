@@ -40,7 +40,6 @@ import com.tc.net.protocol.tcm.UnsupportedMessageTypeException;
 import com.tc.net.protocol.transport.DefaultConnectionIdFactory;
 import com.tc.net.protocol.transport.DisabledHealthCheckerConfigImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
-import com.tc.net.protocol.transport.TransportHandshakeErrorNullHandler;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
@@ -81,12 +80,10 @@ public class TCGroupMessageWrapperTest extends TestCase {
     super.setUp();
     clientComms = new CommunicationsManagerImpl("TestCommsMgr-Client", monitor, new PlainNetworkStackHarnessFactory(),
                                                 null, new NullConnectionPolicy(), 0,
-                                                new DisabledHealthCheckerConfigImpl(),
-                                                new TransportHandshakeErrorNullHandler());
+                                                new DisabledHealthCheckerConfigImpl());
     serverComms = new CommunicationsManagerImpl("TestCommsMgr-Server", monitor, new PlainNetworkStackHarnessFactory(),
                                                 null, new NullConnectionPolicy(), 0,
-                                                new DisabledHealthCheckerConfigImpl(),
-                                                new TransportHandshakeErrorNullHandler());
+                                                new DisabledHealthCheckerConfigImpl());
   }
 
   protected void tearDown() throws Exception {

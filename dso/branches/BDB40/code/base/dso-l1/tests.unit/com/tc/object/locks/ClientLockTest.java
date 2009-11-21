@@ -557,11 +557,7 @@ public class ClientLockTest extends TestCase {
           }
           lock.notified(new ThreadID(1));
           checkLockQueryMethods(lock, 1, 0);
-          try {
-            lock.award(new AssertingRemoteLockManager(lock), new ThreadID(1), ServerLockLevel.WRITE);
-          } catch (GarbageLockException e) {
-            Assert.failure("Unexpected Exception ", e);
-          }
+          lock.award(new AssertingRemoteLockManager(lock), new ThreadID(1), ServerLockLevel.WRITE);
         }
       }.start();
       
@@ -823,11 +819,7 @@ public class ClientLockTest extends TestCase {
     protected void awardLock(final ThreadID thread, final ServerLockLevel level) {
       executor.execute(new Runnable() {
         public void run() {
-          try {
-            target.award(AssertingGreedyRemoteLockManager.this, ThreadID.VM_ID, level);
-          } catch (GarbageLockException e) {
-            Assert.failure("Unexpected Exception ", e);
-          }
+          target.award(AssertingGreedyRemoteLockManager.this, ThreadID.VM_ID, level);
         }
       });
     }
@@ -887,11 +879,7 @@ public class ClientLockTest extends TestCase {
       Assert.assertTrue(legal.contains(RemoteOperation.TRY_LOCK));
       executor.execute(new Runnable() {
         public void run() {
-          try {
-            target.award(AssertingRemoteLockManager.this, thread, level);
-          } catch (GarbageLockException e) {
-            Assert.failure("Unexpected Exception ", e);
-          }
+          target.award(AssertingRemoteLockManager.this, thread, level);
         }
       });
     }
@@ -918,11 +906,7 @@ public class ClientLockTest extends TestCase {
     protected void awardLock(final ThreadID thread, final ServerLockLevel level) {
       executor.execute(new Runnable() {
         public void run() {
-          try {
-            target.award(AssertingRemoteLockManager.this, thread, level);
-          } catch (GarbageLockException e) {
-            Assert.failure("Unexpected Exception ", e);
-          }
+          target.award(AssertingRemoteLockManager.this, thread, level);
         }
       });
     }

@@ -5,5 +5,9 @@
 package com.tc.logging;
 
 public interface DumpHandler {
+
+  String dump();
+
   void dumpToLogger();
+
 }

@@ -7,7 +7,6 @@ package com.tc.net.protocol.tcm;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
-import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.NetworkStackID;
@@ -47,7 +46,7 @@ public class ClientMessageChannelImpl extends AbstractMessageChannel implements 
 
   @Override
   public NetworkStackID open() throws TCTimeoutException, UnknownHostException, IOException,
-      MaxConnectionsExceededException, CommStackMismatchException {
+      MaxConnectionsExceededException {
     final ChannelStatus status = getStatus();
 
     synchronized (status) {

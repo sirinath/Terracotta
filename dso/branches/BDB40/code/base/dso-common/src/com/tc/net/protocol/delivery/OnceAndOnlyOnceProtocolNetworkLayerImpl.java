@@ -11,7 +11,6 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.TCConnection;
@@ -212,7 +211,7 @@ public class OnceAndOnlyOnceProtocolNetworkLayerImpl extends AbstractMessageTran
   }
 
   public NetworkStackID open() throws TCTimeoutException, UnknownHostException, IOException,
-      MaxConnectionsExceededException, CommStackMismatchException {
+      MaxConnectionsExceededException {
     Assert.assertNotNull(sendLayer);
     return sendLayer.open();
   }

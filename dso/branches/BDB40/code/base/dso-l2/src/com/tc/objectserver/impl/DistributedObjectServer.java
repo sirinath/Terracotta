@@ -33,8 +33,6 @@ import com.tc.io.TCRandomFileAccessImpl;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.L2HADisabledCooridinator;
-import com.tc.l2.ha.WeightGeneratorFactory;
-import com.tc.l2.ha.ZapNodeProcessorWeightGeneratorFactory;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackOnExitHandler;
@@ -83,7 +81,6 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
-import com.tc.net.protocol.transport.TransportHandshakeErrorNullHandler;
 import com.tc.net.utils.L2CommUtils;
 import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
@@ -641,8 +638,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                                                numCommWorkers,
                                                                new HealthCheckerConfigImpl(this.l2Properties
                                                                    .getPropertiesFor("healthcheck.l1"), "DSO Server"),
-                                                               this.thisServerNodeID,
-                                                               new TransportHandshakeErrorNullHandler());
+                                                               this.thisServerNodeID);
 
     final DSOApplicationEvents appEvents;
     try {
@@ -666,8 +662,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
     SampledCounter objectCreationRate = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
     SampledCounter objectFaultRate = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
-    SampledCounter objectFlushedRate = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
-       ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate, objectFaultRate, objectFlushedRate);
+    ObjectManagerStatsImpl objMgrStats = new ObjectManagerStatsImpl(objectCreationRate, objectFaultRate);
     SampledCounter l2FaultFromDisk = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
     SampledCounter time2FaultFromDisk = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
     SampledCounter time2Add2ObjMgr = (SampledCounter) this.sampledCounterManager.createCounter(sampledCounterConfig);
@@ -965,14 +960,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     });
 
     if (networkedHA) {
-      WeightGeneratorFactory weightGeneratorFactory = new ZapNodeProcessorWeightGeneratorFactory(
-                                                                                                 channelManager,
-                                                                                                 transactionBatchManager,
-                                                                                                 this.transactionManager,
-                                                                                                 host, serverPort);
+
       logger.info("L2 Networked HA Enabled ");
       this.l2Coordinator = new L2HACoordinator(consoleLogger, this, stageManager, this.groupCommManager, this.persistor
-          .getClusterStateStore(), this.objectManager, this.transactionManager, gtxm, weightGeneratorFactory,
+          .getClusterStateStore(), this.objectManager, this.transactionManager, gtxm, channelManager,
                                                this.configSetupManager.haConfig(), recycler);
       this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2State);
     } else {

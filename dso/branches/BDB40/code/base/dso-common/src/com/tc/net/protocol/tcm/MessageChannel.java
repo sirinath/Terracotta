@@ -3,7 +3,6 @@
  */
 package com.tc.net.protocol.tcm;
 
-import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.NodeID;
 import com.tc.net.TCSocketAddress;
@@ -62,7 +61,7 @@ public interface MessageChannel {
   public void send(TCNetworkMessage message);
 
   public NetworkStackID open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException,
-      IOException, CommStackMismatchException;
+      IOException;
 
   public void close();
   

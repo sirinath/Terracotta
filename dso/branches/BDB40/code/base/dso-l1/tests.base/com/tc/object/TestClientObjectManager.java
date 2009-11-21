@@ -214,6 +214,10 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
+  public String dump() {
+    throw new ImplementMe();
+  }
+
   public void dumpToLogger() {
     throw new ImplementMe();
   }

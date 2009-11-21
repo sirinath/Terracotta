@@ -407,7 +407,7 @@ public class GeneratorAdapter extends LocalVariablesSorter {
                     break;
                 case Type.CHAR:
                     mv.visitFieldInsn(Opcodes.GETSTATIC,
-                            "java/lang/Character",
+                            "java/lang/Char",
                             "TYPE",
                             CLDESC);
                     break;
@@ -834,28 +834,6 @@ public class GeneratorAdapter extends LocalVariablesSorter {
     // Instructions to do boxing and unboxing operations
     // ------------------------------------------------------------------------
 
-    private static Type getBoxedType(final Type type) {
-        switch (type.getSort()) {
-            case Type.BYTE:
-                return BYTE_TYPE;
-            case Type.BOOLEAN:
-                return BOOLEAN_TYPE;
-            case Type.SHORT:
-                return SHORT_TYPE;
-            case Type.CHAR:
-                return CHARACTER_TYPE;
-            case Type.INT:
-                return INTEGER_TYPE;
-            case Type.FLOAT:
-                return FLOAT_TYPE;
-            case Type.LONG:
-                return LONG_TYPE;
-            case Type.DOUBLE:
-                return DOUBLE_TYPE;
-        }
-        return type;
-    }
-    
     /**
      * Generates the instructions to box the top stack value. This value is
      * replaced by its boxed equivalent on top of the stack.
@@ -869,7 +847,33 @@ public class GeneratorAdapter extends LocalVariablesSorter {
         if (type == Type.VOID_TYPE) {
             push((String) null);
         } else {
-            Type boxed = getBoxedType(type);
+            Type boxed = type;
+            switch (type.getSort()) {
+                case Type.BYTE:
+                    boxed = BYTE_TYPE;
+                    break;
+                case Type.BOOLEAN:
+                    boxed = BOOLEAN_TYPE;
+                    break;
+                case Type.SHORT:
+                    boxed = SHORT_TYPE;
+                    break;
+                case Type.CHAR:
+                    boxed = CHARACTER_TYPE;
+                    break;
+                case Type.INT:
+                    boxed = INTEGER_TYPE;
+                    break;
+                case Type.FLOAT:
+                    boxed = FLOAT_TYPE;
+                    break;
+                case Type.LONG:
+                    boxed = LONG_TYPE;
+                    break;
+                case Type.DOUBLE:
+                    boxed = DOUBLE_TYPE;
+                    break;
+            }
             newInstance(boxed);
             if (type.getSize() == 2) {
                 // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
@@ -887,28 +891,6 @@ public class GeneratorAdapter extends LocalVariablesSorter {
         }
     }
 
-    /**
-     * Generates the instructions to box the top stack value using Java 5's
-     * valueOf() method. This value is replaced by its boxed equivalent on top
-     * of the stack.
-     * 
-     * @param type the type of the top stack value.
-     * @author Prashant Deva
-     */
-    public void valueOf(final Type type) {
-        if (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
-            return;
-        }
-        if (type == Type.VOID_TYPE) {
-            push((String) null);
-        } else {
-            Type boxed = getBoxedType(type);
-            invokeStatic(boxed, new Method("valueOf",
-                    boxed,
-                    new Type[] { type }));
-        }
-    }
-    
     /**
      * Generates the instructions to unbox the top stack value. This value is
      * replaced by its unboxed equivalent on top of the stack.
@@ -994,15 +976,16 @@ public class GeneratorAdapter extends LocalVariablesSorter {
      * @param label where to jump if the comparison result is <tt>true</tt>.
      */
     public void ifCmp(final Type type, final int mode, final Label label) {
+        int intOp = -1;
         switch (type.getSort()) {
             case Type.LONG:
                 mv.visitInsn(Opcodes.LCMP);
                 break;
             case Type.DOUBLE:
-                mv.visitInsn(mode == GE || mode == GT ? Opcodes.DCMPG : Opcodes.DCMPL);
+                mv.visitInsn(Opcodes.DCMPG);
                 break;
             case Type.FLOAT:
-                mv.visitInsn(mode == GE || mode == GT ? Opcodes.FCMPG : Opcodes.FCMPL);
+                mv.visitInsn(Opcodes.FCMPG);
                 break;
             case Type.ARRAY:
             case Type.OBJECT:
@@ -1017,7 +1000,6 @@ public class GeneratorAdapter extends LocalVariablesSorter {
                 throw new IllegalArgumentException("Bad comparison for type "
                         + type);
             default:
-                int intOp = -1;
                 switch (mode) {
                     case EQ:
                         intOp = Opcodes.IF_ICMPEQ;
@@ -1041,7 +1023,16 @@ public class GeneratorAdapter extends LocalVariablesSorter {
                 mv.visitJumpInsn(intOp, label);
                 return;
         }
-        mv.visitJumpInsn(mode, label);
+        int jumpMode = mode;
+        switch (mode) {
+            case GE:
+                jumpMode = LT;
+                break;
+            case LE:
+                jumpMode = GT;
+                break;
+        }
+        mv.visitJumpInsn(jumpMode, label);
     }
 
     /**
@@ -1327,17 +1318,6 @@ public class GeneratorAdapter extends LocalVariablesSorter {
     public void invokeInterface(final Type owner, final Method method) {
         invokeInsn(Opcodes.INVOKEINTERFACE, owner, method);
     }
-    
-    /**
-     * Generates the instruction to invoke a dynamic method.
-     * 
-     * @param method the method to be invoked.
-     */
-    public void invokeDynamic(final Method method) {
-        invokeInsn(Opcodes.INVOKEDYNAMIC,
-                Type.getObjectType(Opcodes.INVOKEDYNAMIC_OWNER),
-                method);
-    }
 
     // ------------------------------------------------------------------------
     // Instructions to create objects and arrays
@@ -1497,10 +1477,6 @@ public class GeneratorAdapter extends LocalVariablesSorter {
         final Label end,
         final Type exception)
     {
-        if (exception == null) {
-            mv.visitTryCatchBlock(start, end, mark(), null);            
-        } else {
-            mv.visitTryCatchBlock(start, end, mark(), exception.getInternalName());
-        }
+        mv.visitTryCatchBlock(start, end, mark(), exception.getInternalName());
     }
 }

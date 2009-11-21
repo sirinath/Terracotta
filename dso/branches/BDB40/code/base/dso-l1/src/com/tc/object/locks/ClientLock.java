@@ -161,14 +161,12 @@ public interface ClientLock {
    * Called by a Terracotta thread to request the return of a greedy lock previously
    * awarded to the client.
    */
-  public boolean recall(RemoteLockManager remote, ServerLockLevel interest, int lease);
+  public void recall(RemoteLockManager remote, ServerLockLevel interest, int lease);
 
   /**
    * Called by a Terracotta thread to award a per-thread or greedy lock to the client.
-   * 
-   * @throws GarbageLockException if this state has been marked as garbage
    */
-  public void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level) throws GarbageLockException;
+  public void award(RemoteLockManager remote, ThreadID thread, ServerLockLevel level);
 
   /**
    * Called by a Terracotta thread to indicate that the specified non-blocking try lock attempt

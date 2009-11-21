@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class ClientLockManagerGroupImpl implements ClientLockManager {
   private final Map<GroupID, ClientLockManager> lockManagers;
@@ -187,7 +188,16 @@ public class ClientLockManagerGroupImpl implements ClientLockManager {
       clm.shutdown();
     }
   }
-  
+
+  public String dump() {
+    StringBuilder sb = new StringBuilder();
+    for (Entry<GroupID, ClientLockManager> entry : lockManagers.entrySet()) {
+      sb.append("ClientLockManager for ").append(entry.getKey()).append('\n');
+      sb.append(entry.getValue().dump());
+    }
+    return sb.toString();
+  }
+
   public void dumpToLogger() {
     for (ClientLockManager clm : lockManagers.values()) {
       clm.dumpToLogger();

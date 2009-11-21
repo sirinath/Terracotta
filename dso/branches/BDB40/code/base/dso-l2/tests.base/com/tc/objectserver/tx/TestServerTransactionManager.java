@@ -103,6 +103,10 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
+  public String dump() {
+    throw new ImplementMe();
+  }
+
   public void dumpToLogger() {
     throw new ImplementMe();
   }
@@ -122,9 +126,4 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
     throw new ImplementMe();
   }
-
-  public long getTotalNumOfActiveTransactions() {
-    throw new ImplementMe();
-  }
-
 }

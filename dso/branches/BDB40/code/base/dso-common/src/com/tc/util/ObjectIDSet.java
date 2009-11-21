@@ -198,7 +198,7 @@ public class ObjectIDSet extends AbstractSet implements SortedSet, PrettyPrintab
   }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
-    out.print(toShortString());
+    out.println(toShortString());
     return out;
   }
 

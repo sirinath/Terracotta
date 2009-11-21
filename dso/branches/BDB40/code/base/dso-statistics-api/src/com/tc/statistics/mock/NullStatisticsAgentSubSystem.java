@@ -11,7 +11,6 @@ import com.tc.statistics.StatisticsAgentSubSystemCallback;
 import com.tc.statistics.StatisticsSystemType;
 import com.tc.statistics.retrieval.NullStatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.util.UUID;
 
 import javax.management.MBeanServer;
 
@@ -35,10 +34,6 @@ public class NullStatisticsAgentSubSystem implements StatisticsAgentSubSystem {
 
   public void registerMBeans(final MBeanServer server) {
     // nothing to register
-  }
-
-  public void registerMBeans(MBeanServer server, UUID id) {
-    /**/
   }
 
   public void setDefaultAgentDifferentiator(final String defaultAgentDifferentiator) {

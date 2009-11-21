@@ -20,7 +20,6 @@ import com.tc.objectserver.control.ServerControl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.app.ApplicationConfigBuilder;
 import com.tc.simulator.app.ErrorContext;
 import com.tc.test.TestConfigObject;
@@ -110,7 +109,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_L1RECONNECT_ENABLED + "=true");
 
-    if (Os.isLinux() || Os.isSolaris()) {
+   if (Os.isLinux() || Os.isSolaris()) {
       // default 5000 ms seems to small occasionally in few linux machines
       tcProps.setProperty(TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS, "10000");
       System.setProperty("com.tc." + TCPropertiesConsts.L2_L1RECONNECT_TIMEOUT_MILLS, "10000");
@@ -212,8 +211,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
 
     this.doSetUp(this);
-    this.transparentAppConfig.setAttribute(ApplicationConfig.JMXPORT_KEY, String.valueOf(configFactory()
-        .createL2TVSConfigurationSetupManager(null).commonl2Config().jmxPort().getInt()));
 
     if (isCrashy() && canRunCrash()) {
       crashTestState = new TestState(false);
@@ -498,7 +495,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   public void initializeTestRunner(boolean isMutateValidateTest, TransparentAppConfig transparentAppCfg,
                                    DistributedTestRunnerConfig runnerCfg) throws Exception {
-
     runner = new DistributedTestRunner(runnerCfg, configFactory(), this, getApplicationClass(),
                                        getOptionalAttributes(), getApplicationConfigBuilder().newApplicationConfig(),
                                        getStartServer(), isMutateValidateTest, isMultipleServerTest(), null,
@@ -564,9 +560,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void duringRunningCluster() throws Exception {
-    // do not delete this method, it is used by tests that override it
+         // do not delete this method, it is used by tests that override it
   }
-
+  
   private Thread executeDuringRunningCluster() {
     Thread t = new Thread(new Runnable() {
       public void run() {
@@ -581,7 +577,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     t.start();
     return t;
   }
-
+  
   public void test() throws Exception {
     if (canRun()) {
       if (controlledCrashMode && serverControls != null) {

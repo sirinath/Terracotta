@@ -216,39 +216,41 @@ final class Item {
     }
 
     /**
-     * Indicates if the given item is equal to this one. <i>This method assumes
-     * that the two items have the same {@link #type}</i>. 
+     * Indicates if the given item is equal to this one.
      * 
-     * @param i the item to be compared to this one. Both items must have the
-     *       same {@link #type}.
+     * @param i the item to be compared to this one.
      * @return <tt>true</tt> if the given item if equal to this one,
      *         <tt>false</tt> otherwise.
      */
     boolean isEqualTo(final Item i) {
-        switch (type) {
-            case ClassWriter.UTF8:
-            case ClassWriter.STR:
-            case ClassWriter.CLASS:
-            case ClassWriter.TYPE_NORMAL:
-                return i.strVal1.equals(strVal1);
-            case ClassWriter.TYPE_MERGED:
-            case ClassWriter.LONG:
-            case ClassWriter.DOUBLE:
-                return i.longVal == longVal;
-            case ClassWriter.INT:
-            case ClassWriter.FLOAT:
-                return i.intVal == intVal;
-            case ClassWriter.TYPE_UNINIT:
-                return i.intVal == intVal && i.strVal1.equals(strVal1);
-            case ClassWriter.NAME_TYPE:
-                return i.strVal1.equals(strVal1) && i.strVal2.equals(strVal2);
-            // case ClassWriter.FIELD:
-            // case ClassWriter.METH:
-            // case ClassWriter.IMETH:
-            default:    
-                return i.strVal1.equals(strVal1) && i.strVal2.equals(strVal2)
-                        && i.strVal3.equals(strVal3);
+        if (i.type == type) {
+            switch (type) {
+                case ClassWriter.INT:
+                case ClassWriter.FLOAT:
+                    return i.intVal == intVal;
+                case ClassWriter.TYPE_MERGED:
+                case ClassWriter.LONG:
+                case ClassWriter.DOUBLE:
+                    return i.longVal == longVal;
+                case ClassWriter.UTF8:
+                case ClassWriter.STR:
+                case ClassWriter.CLASS:
+                case ClassWriter.TYPE_NORMAL:
+                    return i.strVal1.equals(strVal1);
+                case ClassWriter.TYPE_UNINIT:
+                    return i.intVal == intVal && i.strVal1.equals(strVal1);
+                case ClassWriter.NAME_TYPE:
+                    return i.strVal1.equals(strVal1)
+                            && i.strVal2.equals(strVal2);
+                    // ClassWriter.FIELD:
+                    // ClassWriter.METH:
+                    // ClassWriter.IMETH:
+                default:
+                    return i.strVal1.equals(strVal1)
+                            && i.strVal2.equals(strVal2)
+                            && i.strVal3.equals(strVal3);
+            }
         }
+        return false;
     }
-
 }

@@ -10,7 +10,6 @@ import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
-import com.tc.text.LogWriter;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
@@ -18,6 +17,7 @@ import com.tc.util.Util;
 import com.tc.util.runtime.ThreadIDManager;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Timer;
@@ -35,8 +35,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   };
 
-  private final Timer                             gcTimer = new Timer("ClientLockManager LockGC", true);
-  private final Timer                             lockLeaseTimer = new Timer("ClientLockManager Lock Lease Timer", true);
+  private final Timer                             gcTimer;  
   private final ConcurrentMap<LockID, ClientLock> locks;
   private final ReentrantReadWriteLock            stateGuard = new ReentrantReadWriteLock();
   private final Condition                         runningCondition = stateGuard.writeLock().newCondition();
@@ -60,6 +59,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     
     this.statManager = statManager;
     locks = new ConcurrentHashMap<LockID, ClientLock>(config.getStripedCount());
+    gcTimer = new Timer("ClientLockManager LockGC", true);
     long gcPeriod = Math.max(config.getTimeoutInterval(), 100);
     gcTimer.schedule(new LockGcTimerTask(), gcPeriod, gcPeriod);
   }
@@ -98,7 +98,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
-        logger.info("Hitting garbage lock state during lock on " + lock);
+        logger.info("Hitting garbage lock state during lock on " + lock, e);
       }
     }
     
@@ -122,7 +122,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
-        logger.info("Hitting garbage lock state during tryLock on " + lock);
+        logger.info("Hitting garbage lock state during tryLock on " + lock, e);
       }
     }
   }
@@ -144,7 +144,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
-        logger.info("Hitting garbage lock state during tryLock with timeout on " + lock);
+        logger.info("Hitting garbage lock state during tryLock with timeout on " + lock, e);
       }
     }
   }
@@ -162,7 +162,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
       } catch (GarbageLockException e) {
         // ignorable - thrown when operating on a garbage collected lock
         // gc thread should clear this object soon - spin and re-get...
-        logger.info("Hitting garbage lock state during lockInterruptibly on " + lock);
+        logger.info("Hitting garbage lock state during lockInterruptibly on " + lock, e);
       }
     }
 
@@ -380,105 +380,72 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   /***********************************/
 
   public void award(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
-    stateGuard.readLock().lock();
-    try {
-      if (paused() || !sessionManager.isCurrentSession(node, session)) {
-        logger.warn("Ignoring lock award from a dead server :" + session + ", " + sessionManager + " : "
-                         + lock + " " + thread + " " + level + " state = " + state);
-        return;
-      }
-      
-      if (ThreadID.VM_ID.equals(thread)) {
-        while (true) {
-          ClientLock lockState = getOrCreateClientLockState(lock);
-          try {
-            lockState.award(remoteManager, thread, level);
-            break;
-          } catch (GarbageLockException e) {
-            // ignorable - thrown when operating on a garbage collected lock
-            // gc thread should clear this object soon - spin and re-get...
-            logger.info("Hitting garbage lock state during award on " + lock);
-          }
-        }
-      } else {
+    if (paused() || !sessionManager.isCurrentSession(node, session)) {
+      logger.warn("Ignoring lock award from a dead server :" + session + ", " + sessionManager + " : "
+                       + lock + " " + thread + " " + level + " state = " + state);
+      return;
+    }
+    
+    if (ThreadID.VM_ID.equals(thread)) {
+      ClientLock lockState = getOrCreateClientLockState(lock);
+      lockState.award(remoteManager, thread, level);
+      return;
+    } else {
+      while (true) {
         ClientLock lockState = getClientLockState(lock);
         if (lockState == null) {
           remoteManager.unlock(lock, thread, level);
+          return;
         } else {
-          try {
-            lockState.award(remoteManager, thread, level);
-          } catch (GarbageLockException e) {
-            remoteManager.unlock(lock, thread, level);
-          }
+          lockState.award(remoteManager, thread, level);
+          return;
         }
       }
-    } finally {
-      stateGuard.readLock().unlock();
     }
   }
 
   public void notified(LockID lock, ThreadID thread) {
-    stateGuard.readLock().lock();
-    try {
-      if (paused()) {
-        logger.warn("Ignoring notified call from dead server : " + lock + ", " + thread);
-        return;
-      }
+    if (paused()) {
+      logger.warn("Ignoring notified call from dead server : " + lock + ", " + thread);
+      return;
+    }
 
-      final ClientLock lockState = getClientLockState(lock);
+    final ClientLock lockState = getClientLockState(lock);
+    while (true) {
       if (lockState == null) {
         throw new AssertionError("Server attempting to notify on non-existent lock " + lock);
       } else {
         lockState.notified(thread);
         return;
       }
-    } finally {
-      stateGuard.readLock().unlock();
     }
   }
 
-  public void recall(final LockID lock, final ServerLockLevel level, final int lease) {
-    stateGuard.readLock().lock();
-    try {
-      if (paused()) {
-        logger.warn("Ignoring recall request from dead server : " + lock + ", interestedLevel : " + level);
-        return;
-      }
-      
-      ClientLock lockState = getClientLockState(lock);
-      if (lockState != null) {
-        if (lockState.recall(remoteManager, level, lease)) {
-          // schedule the greedy lease
-          lockLeaseTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-              ClientLockManagerImpl.this.recall(lock, level, -1);
-            }
-          }, lease);
-        }
-      }
-    } finally {
-      stateGuard.readLock().unlock();
+  public void recall(LockID lock, ServerLockLevel level, int lease) {
+    if (paused()) {
+      logger.warn("Ignoring recall request from dead server : " + lock + ", interestedLevel : " + level);
+      return;
+    }
+    
+
+    ClientLock lockState = getClientLockState(lock);
+    if (lockState != null) {
+      lockState.recall(remoteManager, level, lease);
     }
   }
 
   public void refuse(NodeID node, SessionID session, LockID lock, ThreadID thread, ServerLockLevel level) {
-    stateGuard.readLock().lock();
-    try {
-      if (paused() || !sessionManager.isCurrentSession(node, session)) {
-        logger.warn("Ignoring lock refuse from a dead server :" + session + ", " + sessionManager + " : "
-                         + lock + " " + thread + " " + level + " state = " + state);
-        return;
-      }
-      fireRefused(lock);
-      
-      ClientLock lockState = getClientLockState(lock);
-      if (lockState != null) {
-        lockState.refuse(thread, level);
-        return;
-      }
-    } finally {
-      stateGuard.readLock().unlock();
+    if (paused() || !sessionManager.isCurrentSession(node, session)) {
+      logger.warn("Ignoring lock refuse from a dead server :" + session + ", " + sessionManager + " : "
+                       + lock + " " + thread + " " + level + " state = " + state);
+      return;
+    }
+    fireRefused(lock);
+    
+    ClientLock lockState = getClientLockState(lock);
+    if (lockState != null) {
+      lockState.refuse(thread, level);
+      return;
     }
   }
 
@@ -683,19 +650,22 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     abstract State shutdown();
   }
 
-  public void dumpToLogger() {
-    LogWriter writer = new LogWriter();
+  public String dump() {
+    StringWriter writer = new StringWriter();
     PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.autoflush(false);
-    prettyPrinter.visit(this);
+    new PrettyPrinterImpl(pw).visit(this);
     writer.flush();
+    return writer.toString();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
   }
   
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
-    out.print("ClientLockManagerImpl [" + locks.size() + " locks]").flush();
+    out.println("ClientLockManagerImpl [" + locks.size() + " locks]");
     for (ClientLock lock : locks.values()) {
-      out.indent().print(lock).flush();
+      out.indent().println(lock);
     }
     return out;
   }
@@ -743,21 +713,12 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     public void run() {
       int gcCount = 0;
       for (Entry<LockID, ClientLock> entry : locks.entrySet()) {
-        stateGuard.readLock().lock();
-        try {
-          if (state != State.RUNNING) {
-            return;
-          }
-
-          LockID lock = entry.getKey();
-          ClientLock lockState = entry.getValue();
-          if (lockState == null) continue;
-          
-          if (lockState.tryMarkAsGarbage(remoteManager) && locks.remove(lock, lockState)) {
-            gcCount++;
-          }
-        } finally {
-          stateGuard.readLock().unlock();
+        LockID lock = entry.getKey();
+        ClientLock lockState = entry.getValue();
+        if (lockState == null) continue;
+        
+        if (lockState.tryMarkAsGarbage(remoteManager) && locks.remove(lock, lockState)) {
+          gcCount++;
         }
       }
       logger.info("Lock GC collected " + gcCount + " garbage locks");

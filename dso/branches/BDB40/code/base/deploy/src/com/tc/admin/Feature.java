@@ -14,7 +14,6 @@ public class Feature {
   private final String             symbolicName;
   private final String             displayName;
   private final FeatureClassLoader loader;
-  private PresentationFactory      presentationFactory;
 
   public Feature(String symbolicName, String displayName) {
     this.symbolicName = symbolicName;
@@ -29,33 +28,29 @@ public class Feature {
   public String getDisplayName() {
     return displayName != null ? displayName : symbolicName;
   }
-
+  
   public FeatureClassLoader getFeatureClassLoader() {
     return loader;
   }
-
+  
   public String getManifestEntry(String key) {
     Iterator<TIMByteProviderMBean> iter = loader.byteProviders();
-    String value;
+    String presentationFactory;
     while (iter.hasNext()) {
       TIMByteProviderMBean byteProvider = iter.next();
-      if ((value = byteProvider.getManifestEntry(key)) != null) { return value; }
+      if ((presentationFactory = byteProvider.getManifestEntry(key)) != null) { return presentationFactory; }
     }
     return null;
   }
 
-  public synchronized PresentationFactory getPresentationFactory() throws ClassNotFoundException,
-      IllegalAccessException, InstantiationException {
-    if (presentationFactory == null) {
-      String factoryName = getManifestEntry("Presentation-Factory");
-      if (factoryName != null) {
-        Class c = loader.loadClass(factoryName);
-        if (c != null) {
-          presentationFactory = (PresentationFactory) c.newInstance();
-        }
-      }
+  public PresentationFactory getPresentationFactory() throws ClassNotFoundException, IllegalAccessException,
+      InstantiationException {
+    String factoryName = getManifestEntry("Presentation-Factory");
+    if (factoryName != null) {
+      Class c = loader.loadClass(factoryName);
+      if (c != null) { return (PresentationFactory) c.newInstance(); }
     }
-    return presentationFactory;
+    return null;
   }
 
   @Override

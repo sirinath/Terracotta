@@ -34,7 +34,6 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.stats.counter.Counter;
-import com.tc.text.LogWriter;
 import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
@@ -42,6 +41,7 @@ import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,27 +53,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerTransactionManagerImpl implements ServerTransactionManager, ServerTransactionManagerMBean,
     GlobalTransactionManager {
 
-  private static final TCLogger                         logger                       = TCLogging
-                                                                                         .getLogger(ServerTransactionManager.class);
+  private static final TCLogger                         logger                   = TCLogging
+                                                                                     .getLogger(ServerTransactionManager.class);
 
-  private static final State                            PASSIVE_MODE                 = new State("PASSIVE-MODE");
-  private static final State                            ACTIVE_MODE                  = new State("ACTIVE-MODE");
+  private static final State                            PASSIVE_MODE             = new State("PASSIVE-MODE");
+  private static final State                            ACTIVE_MODE              = new State("ACTIVE-MODE");
 
   // TODO::FIXME::Change this to concurrent HashMap
-  private final Map                                     transactionAccounts          = Collections
-                                                                                         .synchronizedMap(new HashMap());
+  private final Map                                     transactionAccounts      = Collections
+                                                                                     .synchronizedMap(new HashMap());
   private final ClientStateManager                      stateManager;
   private final ObjectManager                           objectManager;
   private final ResentTransactionSequencer              resentTxnSequencer;
   private final TransactionAcknowledgeAction            action;
   private final LockManager                             lockManager;
-  private final List                                    rootEventListeners           = new CopyOnWriteArrayList();
-  private final List                                    txnEventListeners            = new CopyOnWriteArrayList();
+  private final List                                    rootEventListeners       = new CopyOnWriteArrayList();
+  private final List                                    txnEventListeners        = new CopyOnWriteArrayList();
   private final GlobalTransactionIDLowWaterMarkProvider lwmProvider;
 
   private final Counter                                 transactionRateCounter;
@@ -84,17 +83,16 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private final ServerTransactionLogger                 txnLogger;
 
-  private volatile State                                state                        = PASSIVE_MODE;
-  private final AtomicInteger                           totalPendingTransactions     = new AtomicInteger(0);
-  private final AtomicInteger                           txnsCommitted                = new AtomicInteger(0);
-  private final AtomicInteger                           objectsCommitted             = new AtomicInteger(0);
-  private final AtomicInteger                           noOfCommits                  = new AtomicInteger(0);
-  private final AtomicLong                              totalNumOfActiveTransactions = new AtomicLong(0);
+  private volatile State                                state                    = PASSIVE_MODE;
+  private final AtomicInteger                           totalPendingTransactions = new AtomicInteger(0);
+  private final AtomicInteger                           txnsCommitted            = new AtomicInteger(0);
+  private final AtomicInteger                           objectsCommitted         = new AtomicInteger(0);
+  private final AtomicInteger                           noOfCommits              = new AtomicInteger(0);
   private final boolean                                 commitLoggingEnabled;
   private final boolean                                 broadcastStatsLoggingEnabled;
 
-  private volatile long                                 lastStatsTime                = 0;
-  private final Object                                  statsLock                    = new Object();
+  private volatile long                                 lastStatsTime            = 0;
+  private final Object                                  statsLock                = new Object();
 
   private final ObjectStatsRecorder                     objectStatsRecorder;
 
@@ -135,18 +133,21 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void dumpToLogger() {
-    LogWriter writer = new LogWriter();
+  public String dump() {
+    StringWriter writer = new StringWriter();
     PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.autoflush(false);
-    prettyPrinter.visit(this);
+    new PrettyPrinterImpl(pw).visit(this);
     writer.flush();
+    return writer.toString();
+  }
+
+  public void dumpToLogger() {
+    logger.info(dump());
   }
 
   public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
-    out.print(this.getClass().getName()).flush();
-    out.indent().print("transactionAccounts: ").visit(this.transactionAccounts).println().flush();
+    out.println(getClass().getName());
+    out.indent().print("transactionAccounts: ").visit(this.transactionAccounts).println();
     return out;
   }
 
@@ -419,9 +420,6 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     TransactionAccount ci = getOrCreateTransactionAccount(source);
     ci.incommingTransactions(txnIDs);
     this.totalPendingTransactions.addAndGet(txnIDs.size());
-    if (isActive()) {
-      this.totalNumOfActiveTransactions.addAndGet(txnIDs.size());
-    }
     for (Iterator i = txns.iterator(); i.hasNext();) {
       final ServerTransaction txn = (ServerTransaction) i.next();
       final ServerTransactionID stxnID = txn.getServerTransactionID();
@@ -434,10 +432,6 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
     fireIncomingTransactionsEvent(source, txnIDs);
     this.resentTxnSequencer.addTransactions(txns);
-  }
-
-  public long getTotalNumOfActiveTransactions() {
-    return this.totalNumOfActiveTransactions.get();
   }
 
   public int getTotalPendingTransactionsCount() {

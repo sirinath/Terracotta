@@ -6,7 +6,6 @@ package com.tc.object.net;
 
 import com.tc.async.api.Sink;
 import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
-import com.tc.net.CommStackMismatchException;
 import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.tcm.ChannelEventListener;
@@ -40,8 +39,7 @@ public interface DSOClientMessageChannel {
 
   public void routeMessageType(TCMessageType messageType, Sink destSink, Sink hydrateSink);
 
-  public void open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException, IOException,
-      CommStackMismatchException;
+  public void open() throws MaxConnectionsExceededException, TCTimeoutException, UnknownHostException, IOException;
 
   public boolean isConnected();
 
@@ -70,7 +68,7 @@ public interface DSOClientMessageChannel {
   public KeysForOrphanedValuesMessageFactory getKeysForOrphanedValuesMessageFactory();
 
   public NodeMetaDataMessageFactory getNodeMetaDataMessageFactory();
-
+  
   public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory();
 
   public JMXMessage getJMXMessage();
