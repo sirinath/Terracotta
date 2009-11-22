@@ -79,6 +79,8 @@ public class ManagedObjectStateFactory {
     // XXX: hack to support Hibernate cache entry type
     classNameToStateMap.put(TDCSerializedEntryManagedObjectState.SERIALIZED_ENTRY,
                             new Byte(ManagedObjectState.TDC_SERIALIZED_ENTRY));
+    classNameToStateMap.put(java.util.concurrent.CopyOnWriteArrayList.class.getName(),
+                            new Byte(ManagedObjectState.LIST_TYPE));
 
   }
 
@@ -181,7 +183,6 @@ public class ManagedObjectStateFactory {
             .createPersistentMap(oid));
       case ManagedObjectState.TDC_SERIALIZED_ENTRY:
         return new TDCSerializedEntryManagedObjectState(classID);
-
     }
     // Unreachable
     throw new AssertionError("Type : " + type + " is unknown !");
