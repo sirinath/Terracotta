@@ -113,15 +113,16 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager, Chann
                        + " as the current state is " + currentState + ". Disconnect count: " + getDisconnectedCount());
       changeToPaused(remoteNode);
       this.sessionManager.newSession(remoteNode);
-      this.logger.info("ClientHandshakeManager moves to " + this.sessionManager);
+      this.logger.info("ClientHandshakeManager moves to " + this.sessionManager.getSessionID(remoteNode));
+
     } else {
       this.logger.info("Disconnected: Pausing from " + currentState + " RemoteNode : " + remoteNode
                        + ". Disconnect count: " + getDisconnectedCount());
       changeToPaused(remoteNode);
       pauseCallbacks(remoteNode, getDisconnectedCount());
       // all the activities paused then can switch to new session
-      sessionManager.newSession(remoteNode);
-      logger.info("ClientHandshakeManager moves to " + sessionManager);
+      this.sessionManager.newSession(remoteNode);
+      this.logger.info("ClientHandshakeManager moves to " + this.sessionManager.getSessionID(remoteNode));
 
       // only send the operations disabled event when this was the first group to disconnect
       if (isOnlyOneGroupDisconnected()) {
