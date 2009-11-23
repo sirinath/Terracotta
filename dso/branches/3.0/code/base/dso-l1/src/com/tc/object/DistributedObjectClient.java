@@ -301,7 +301,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         return new SimpleSequence();
       }
     });
-    final SessionProvider sessionProvider = (SessionProvider) sessionManager;
+    final SessionProvider sessionProvider = sessionManager;
 
     this.threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));
     StageManager stageManager = getStageManager();
@@ -529,6 +529,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.rtxManager);
     clientHandshakeCallbacks.add(this.dsoClientBuilder.getObjectIDClientHandshakeRequester(batchSequenceReceiver));
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);
+    clientHandshakeCallbacks.add(teh);
     ProductInfo pInfo = ProductInfo.getInstance();
     this.clientHandshakeManager = createClientHandshakeManager(this.channel, pauseStage, sessionManager,
                                                                this.dsoCluster, pInfo, clientHandshakeCallbacks);
