@@ -8,12 +8,16 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelEventType;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.handshakemanager.ClientHandshakeCallback;
+import com.tc.object.msg.ClientHandshakeMessage;
+import com.tc.util.UUID;
 import com.tc.util.concurrent.SetOnceFlag;
 
 import java.io.IOException;
@@ -21,7 +25,8 @@ import java.io.IOException;
 import javax.management.remote.generic.MessageConnection;
 import javax.management.remote.message.Message;
 
-public final class TunnelingEventHandler extends AbstractEventHandler implements ChannelEventListener {
+public class TunnelingEventHandler extends AbstractEventHandler implements ChannelEventListener,
+    ClientHandshakeCallback {
 
   private static final TCLogger      logger = TCLogging.getLogger(TunnelingEventHandler.class);
 
@@ -108,7 +113,6 @@ public final class TunnelingEventHandler extends AbstractEventHandler implements
       synchronized (jmxReadyLock) {
         transportConnected = true;
       }
-      sendJmxReadyMessageIfNecessary();
     } else if (event.getType() == ChannelEventType.CHANNEL_CLOSED_EVENT
                || event.getType() == ChannelEventType.TRANSPORT_DISCONNECTED_EVENT) {
       reset();
@@ -149,5 +153,23 @@ public final class TunnelingEventHandler extends AbstractEventHandler implements
       readyMessage.send();
     }
 
+  }
+
+  public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
+    // Ignore
+  }
+
+  public void pause(NodeID remoteNode, int disconnected) {
+    // Ignore
+  }
+
+  public void unpause(NodeID remoteNode, int disconnected) {
+    if (remoteNode.equals(channel.getRemoteNodeID())) {
+      sendJmxReadyMessageIfNecessary();
+    }
+  }
+
+  public void shutdown() {
+    // Ignore
   }
 }
