@@ -264,8 +264,10 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager {
         // Send now if stop is requested
         sendBatches(true, "commit() : Stop initiated.");
       }
-      waitUntilRunning();
-      sendBatches(false);
+      else {
+        waitUntilRunning();
+        sendBatches(false);
+      }
     }
   }
 
