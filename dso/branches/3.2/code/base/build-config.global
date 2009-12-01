@@ -48,3 +48,4 @@ maven.snapshot=true
 #   - 2nd - breaking change in the API, coincident with change in 2nd or 3rd digit of maven.version
 #   - 3rd - major or minor Terracotta release without breaking change
 api.version=1.2.0-SNAPSHOT
+
