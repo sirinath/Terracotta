@@ -361,7 +361,7 @@ public class L2Management extends TerracottaManagement {
         MBeanServerRequestMessage msrm = (MBeanServerRequestMessage) request;
         Object params[] = msrm.getParams();
         if (params != null && params.length > 1 && "shutdown".equals(params[1])) {
-          StringBuffer buf = new StringBuffer();
+          StringBuilder buf = new StringBuilder();
           buf.append("JMX shutdown request connectionId:" + connectionId + " execute methodId: " + msrm.getMethodId()
                      + " params:");
           for (Object o : params) {
