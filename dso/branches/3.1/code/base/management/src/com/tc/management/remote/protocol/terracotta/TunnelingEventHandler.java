@@ -17,7 +17,6 @@ import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.util.UUID;
 import com.tc.util.concurrent.SetOnceFlag;
 
 import java.io.IOException;
