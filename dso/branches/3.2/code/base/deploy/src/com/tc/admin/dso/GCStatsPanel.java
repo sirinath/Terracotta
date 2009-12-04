@@ -52,7 +52,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
@@ -306,8 +305,6 @@ public class GCStatsPanel extends XContainer implements DGCListener {
     long upper = model.getFirstEndTime();
     if (lower < upper) {
       dateAxis.setRange(lower, upper);
-    } else {
-      System.err.println("upper=" + new Date(upper) + " lower=" + new Date(lower));
     }
   }
 
