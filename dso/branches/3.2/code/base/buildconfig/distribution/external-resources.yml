@@ -26,7 +26,7 @@ artifacts:
     classifier: sources
     version: 1.7.2-SNAPSHOT
     destination: distributed-cache
-
+    
   - maven_artifact: true
     groupId: org.slf4j
     artifactId: slf4j-api
@@ -37,22 +37,22 @@ artifacts:
     groupId: org.slf4j
     artifactId: slf4j-jdk14
     version: 1.5.8
-    destination: distributed-cache
-
+    destination: distributed-cache    
+    
   - maven_artifact: false
     name: RELEASE_NOTES.txt
     destination: distributed-cache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/RELEASE_NOTES.txt
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.2/ehcache-express-kit/src/assemble/RELEASE_NOTES.txt
     
   - maven_artifact: false
     name: EHCACHE_CORE_LICENSE.txt
     destination: distributed-cache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE_CORE_LICENSE.txt   
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.2/ehcache-express-kit/src/assemble/EHCACHE_CORE_LICENSE.txt  
 
   - maven_artifact: false
     name: ehcache.xml
     destination: distributed-cache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/src/main/config/ehcache.xml
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.2/src/main/config/ehcache.xml
     
   - maven_artifact: false
     name: ehcache.xsd
@@ -61,9 +61,9 @@ artifacts:
 # end EHCACHE
 
 # begin QUARTZ
-  - maven_artifact: true
-    groupId: org.quartz-scheduler
-    artifactId: quartz
-    version: 1.7.0-SNAPSHOT
-    destination: quartz
+  - maven_artifact: false
+    name: quartz-1.7.0-SNAPSHOT.tar.gz
+    destination: ./
+    explode: true
+    url: http://download.terracotta.org/nightly/quartz/quartz-1.7.0-SNAPSHOT.tar.gz
 # end QUARTZ
