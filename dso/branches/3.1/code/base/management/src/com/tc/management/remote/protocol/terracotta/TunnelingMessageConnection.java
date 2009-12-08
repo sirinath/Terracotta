@@ -15,13 +15,13 @@ import java.util.Map;
 import javax.management.remote.generic.MessageConnection;
 import javax.management.remote.message.Message;
 
-public final class TunnelingMessageConnection implements MessageConnection {
+public class TunnelingMessageConnection implements MessageConnection {
 
-  private final LinkedList      inbox;
-  private final MessageChannel  channel;
-  private final boolean         isJmxConnectionServer;
-  private final SetOnceFlag     connected = new SetOnceFlag();
-  private final SetOnceFlag     closed    = new SetOnceFlag();
+  private final LinkedList       inbox;
+  protected final MessageChannel channel;
+  private final boolean          isJmxConnectionServer;
+  private final SetOnceFlag      connected = new SetOnceFlag();
+  protected final SetOnceFlag    closed    = new SetOnceFlag();
 
   /**
    * @param channel outgoing network channel, calls to {@link #writeMessage(Message)} will drop messages here and send
