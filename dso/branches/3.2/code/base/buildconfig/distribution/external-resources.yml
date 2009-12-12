@@ -10,21 +10,21 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 1.7.2-SNAPSHOT
+    version: 1.7.2
     destination: distributed-cache
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 1.7.2-SNAPSHOT
+    version: 1.7.2
     destination: distributed-cache
     
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 1.7.2-SNAPSHOT
+    version: 1.7.2
     destination: distributed-cache
     
   - maven_artifact: true
@@ -62,8 +62,8 @@ artifacts:
 
 # begin QUARTZ
   - maven_artifact: false
-    name: quartz-1.7.0-SNAPSHOT.tar.gz
+    name: quartz-1.7.0.tar.gz
     destination: ./
     explode: true
-    url: http://download.terracotta.org/nightly/quartz/quartz-1.7.0-SNAPSHOT.tar.gz
+    url: http://kong/output/release-kits/quartz/quartz-1.7.0.zip
 # end QUARTZ
