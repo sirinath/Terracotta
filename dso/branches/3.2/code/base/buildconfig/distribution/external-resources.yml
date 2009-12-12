@@ -65,5 +65,5 @@ artifacts:
     name: quartz-1.7.0.tar.gz
     destination: ./
     explode: true
-    url: http://kong/output/release-kits/quartz/quartz-1.7.0.zip
+    url: http://kong/output/release-kits/quartz/quartz-1.7.0.tar.gz
 # end QUARTZ
