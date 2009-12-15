@@ -57,11 +57,11 @@ examples and information:
 Help and additional information is available on the web at the following URLs:
 
  - Product Documentation: 
- http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=ProductDocumentation 
+    http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=ProductDocumentation 
  - Forums:        http://forums.terracotta.org
  - Mailing Lists: http://lists.terracotta.org
  - Services:      
-http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=SupportServices
+    http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=SupportServices
 
      
 Java Virtual Machine
@@ -73,6 +73,6 @@ match the one used by the Terracotta Server. Control the JVM that the Terracotta
 uses by setting the JAVA_HOME environment variable.
 
 ----
-All content copyright Terracotta, Inc., unless otherwise indicated. All rights 
-reserved. 
+All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved. 
 http://www.terracotta.org
+

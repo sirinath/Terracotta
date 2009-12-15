@@ -71,9 +71,8 @@ Then start all clients with the following flag:
 Clients started this way obtain their configuration from the specified server 
 (see Starting Terracotta, below).
 
-See http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=
-AboutConfigurationFiles for more information on how 
-Terracotta configuration is propagated.
+See http://www.terracotta.org/kit/reflector?kitID=3.2&pageID=AboutConfigurationFiles 
+for more information on how Terracotta configuration is propagated.
 
 Using a License Key
 -------------------
@@ -120,8 +119,7 @@ Starting Terracotta
 -------------------
 The startup script for Terracotta servers is start-tc-server.sh (UNIX/Linux) or
 start-tc-server.bat (Microsoft Windows). If you have configured more than one
-Terracotta server, start a specific server by referring to its name with the -n
-flag.
+Terracotta server, start a specific server by referring to its name with the -n flag.
 
 For example, to start a server you named "myServer" from the Terracotta home
 directory and using a specific configuration file, enter the following:
@@ -140,6 +138,6 @@ You'll find a number of helpful guides in the documentation section
 
 
 ----
-All content copyright Terracotta, Inc., unless otherwise indicated. All rights 
-reserved. 
+All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved. 
 http://www.terracotta.org
+
