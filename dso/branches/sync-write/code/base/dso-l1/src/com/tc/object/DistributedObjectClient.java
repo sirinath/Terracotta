@@ -70,6 +70,7 @@ import com.tc.object.handler.LockStatisticsEnableDisableHandler;
 import com.tc.object.handler.LockStatisticsResponseHandler;
 import com.tc.object.handler.ReceiveObjectHandler;
 import com.tc.object.handler.ReceiveRootIDHandler;
+import com.tc.object.handler.ReceiveSyncWriteTransactionAckHandler;
 import com.tc.object.handler.ReceiveTransactionCompleteHandler;
 import com.tc.object.handler.ReceiveTransactionHandler;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
@@ -106,6 +107,7 @@ import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
+import com.tc.object.msg.SyncWriteTransactionRecvdMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionManagerImpl;
@@ -573,6 +575,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                      new LockStatisticsEnableDisableHandler(lockStatManager), 1, 1);
     lockStatManager.start(this.channel, lockStatisticsStage.getSink());
 
+    Stage syncWriteBatchRecvdHandler = stageManager
+        .createStage(ClientConfigurationContext.RECEIVED_SYNC_WRITE_TRANSACTION_ACK_STAGE,
+                     new ReceiveSyncWriteTransactionAckHandler(this.rtxManager), this.channel.getGroupIDs().length,
+                     maxSize);
+
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
                                                                 1, maxSize);
 
@@ -636,6 +643,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  KeysForOrphanedValuesResponseMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.NODE_META_DATA_MESSAGE, NodeMetaDataMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.NODE_META_DATA_RESPONSE_MESSAGE, NodeMetaDataResponseMessageImpl.class);
+    this.channel.addClassMapping(TCMessageType.SYNC_WRITE_TRANSACTION_RECVD_MESSAGE,
+                                 SyncWriteTransactionRecvdMessage.class);
 
     DSO_LOGGER.debug("Added class mappings.");
 
@@ -667,6 +676,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         .getSink(), hydrateSink);
     this.channel.routeMessageType(TCMessageType.NODE_META_DATA_RESPONSE_MESSAGE, clusterMetaDataStage.getSink(),
                                   hydrateSink);
+    this.channel.routeMessageType(TCMessageType.SYNC_WRITE_TRANSACTION_RECVD_MESSAGE, syncWriteBatchRecvdHandler
+        .getSink(), hydrateSink);
 
     int i = 0;
     while (maxConnectRetries <= 0 || i < maxConnectRetries) {
