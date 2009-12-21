@@ -48,6 +48,7 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
   private final ServerTransactionFactory               txnFactory;
   private final LinkedHashMap<TransactionID, MarkInfo> marks  = new LinkedHashMap<TransactionID, MarkInfo>();
   private final TCByteBuffer[]                         data;
+  private final boolean                                containsSyncWriteTransaction;
 
   public TransactionBatchReaderImpl(TCByteBuffer[] data, NodeID nodeID, ObjectStringSerializer serializer,
                                     ServerTransactionFactory txnFactory, DSOGlobalServerStats globalSeverStats)
@@ -60,12 +61,17 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.numTxns = this.in.readInt();
     this.txnToRead = this.numTxns;
     this.serializer = serializer;
+    this.containsSyncWriteTransaction = this.in.readBoolean();
     Assert.assertNotNull(globalSeverStats);
     Assert.assertNotNull(globalSeverStats.getTransactionSizeCounter());
     // transactionSize = Sum of Size of transactions / number of transactions
     globalSeverStats.getTransactionSizeCounter().increment(this.in.getTotalLength(), this.numTxns);
   }
 
+  public boolean containsSyncWriteTransaction(){
+    return containsSyncWriteTransaction;
+  }
+  
   private TCByteBuffer[] getHeaderBuffers(int txnsCount) {
     TCByteBufferOutputStream tos = new TCByteBufferOutputStream(12, false);
     tos.writeLong(this.batchID.toLong());
