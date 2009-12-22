@@ -21,6 +21,7 @@ public class LockAccounting {
 
   // for sync write
   private final Map syncLock2Txs = new HashMap();
+  private final Set syncTxns     = new HashSet();
 
   public synchronized Object dump() {
     return "LockAccounting:\ntx2Locks=" + tx2Locks + "\nlock2Txs=" + lock2Txs + "/LockAccounting";
@@ -37,6 +38,7 @@ public class LockAccounting {
       getOrCreateSetFor(lid, lock2Txs).add(txID);
       if (isSyncWrite) {
         getOrCreateSetFor(lid, syncLock2Txs).add(txID);
+        syncTxns.add(txID);
       }
     }
   }
@@ -74,12 +76,15 @@ public class LockAccounting {
         }
       }
     }
+    syncTxns.remove(txID);
   }
 
   // This method returns a set of lockIds that has no more transactions to wait for
   public synchronized Set acknowledge(TransactionID txID) {
     // added so that if we have still not received the ack for sync write
-    transactionRecvdByServer(txID);
+    if (syncTxns.contains(txID)) {
+      transactionRecvdByServer(txID);
+    }
 
     Set completedLockIDs = null;
     Set lockIDs = getSetFor(txID, tx2Locks);
