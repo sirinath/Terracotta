@@ -16,7 +16,7 @@ import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.context.SyncWriteTransactionRecvdContext;
 
 /**
- * This class is responsible for acking back to the clients when it receives a sycn write transaction
+ * This class is responsible for acking back to the clients when it receives a sync write transaction
  */
 public class SyncWriteTransactionRecvdHandler extends AbstractEventHandler {
   private DSOChannelManager     channelManager;

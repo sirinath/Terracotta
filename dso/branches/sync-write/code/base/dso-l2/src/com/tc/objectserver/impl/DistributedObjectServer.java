@@ -766,7 +766,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
 
     // create a stage which will send an ack to the clients that they have received a particular batch
     Stage syncWriteTxnRecvdAckStage = stageManager.createStage(ServerConfigurationContext.SYNC_WRITE_TXN_RECVD_STAGE,
-                                                               new SyncWriteTransactionRecvdHandler(channelManager), 1,
+                                                               new SyncWriteTransactionRecvdHandler(channelManager), 4,
                                                                maxStageSize);
     TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator, recycler,
                                                                                           txnFilter,

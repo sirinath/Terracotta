@@ -16,12 +16,12 @@ import java.util.Set;
 
 public class LockAccounting {
 
-  private final Map tx2Locks     = new HashMap();
-  private final Map lock2Txs     = new HashMap();
+  private final Map<TransactionID, Set<LockID>> tx2Locks       = new HashMap();
+  private final Map<LockID, Set<TransactionID>> lock2Txs       = new HashMap();
 
   // for sync write
-  private final Map syncLock2Txs = new HashMap();
-  private final Set syncTxns     = new HashSet();
+  private final Map<LockID, Set<TransactionID>> syncLock2Txs   = new HashMap();
+  private final Map<TransactionID, Set<LockID>> syncTxns2Locks = new HashMap();
 
   public synchronized Object dump() {
     return "LockAccounting:\ntx2Locks=" + tx2Locks + "\nlock2Txs=" + lock2Txs + "/LockAccounting";
@@ -37,52 +37,62 @@ public class LockAccounting {
       LockID lid = (LockID) i.next();
       getOrCreateSetFor(lid, lock2Txs).add(txID);
       if (isSyncWrite) {
-        getOrCreateSetFor(lid, syncLock2Txs).add(txID);
-        syncTxns.add(txID);
+        addSyncTxns(txID, lid);
       }
+    }
+  }
+
+  private void addSyncTxns(TransactionID txID, LockID lid) {
+    synchronized (syncTxns2Locks) {
+      getOrCreateSetFor(lid, syncLock2Txs).add(txID);
+      getOrCreateSetFor(txID, syncTxns2Locks).add(lid);
     }
   }
 
   public synchronized Collection getTransactionsFor(LockID lockID) {
-    Collection rv = new HashSet();
-    Collection toAdd = (Collection) lock2Txs.get(lockID);
+    Set rv = new HashSet();
+    Set toAdd = lock2Txs.get(lockID);
     if (toAdd != null) {
       rv.addAll(toAdd);
     }
     return rv;
   }
 
-  public synchronized Collection getSyncWriteTransactionsFor(LockID lockID) {
-    Collection rv = new HashSet();
-    Collection toAdd = (Collection) syncLock2Txs.get(lockID);
-    if (toAdd != null) {
-      rv.addAll(toAdd);
+  public Collection getSyncWriteTransactionsFor(LockID lockID) {
+    synchronized (syncTxns2Locks) {
+      Set rv = new HashSet();
+      Set toAdd = syncLock2Txs.get(lockID);
+      if (toAdd != null) {
+        rv.addAll(toAdd);
+      }
+      return rv;
     }
-    return rv;
   }
 
-  public synchronized void transactionRecvdByServer(TransactionID txID) {
-    Set lockIDs = getSetFor(txID, tx2Locks);
-    if (lockIDs != null) {
-      // this may be null if there are phantom acknowledgements caused by server restart.
-      for (Iterator i = lockIDs.iterator(); i.hasNext();) {
-        LockID lid = (LockID) i.next();
-        Set txIDs = getSetFor(lid, syncLock2Txs);
-        if (txIDs != null) {
-          txIDs.remove(txID);
-          if (txIDs.isEmpty()) {
-            syncLock2Txs.remove(lid);
+  public void transactionRecvdByServer(TransactionID txID) {
+    synchronized (syncTxns2Locks) {
+      Set lockIDs = getSetFor(txID, syncTxns2Locks);
+      if (lockIDs != null) {
+        // this may be null if there are phantom acknowledgements caused by server restart.
+        for (Iterator i = lockIDs.iterator(); i.hasNext();) {
+          LockID lid = (LockID) i.next();
+          Set txIDs = getSetFor(lid, syncLock2Txs);
+          if (txIDs != null) {
+            txIDs.remove(txID);
+            if (txIDs.isEmpty()) {
+              syncLock2Txs.remove(lid);
+            }
           }
         }
       }
+      syncTxns2Locks.remove(txID);
     }
-    syncTxns.remove(txID);
   }
 
   // This method returns a set of lockIds that has no more transactions to wait for
   public synchronized Set acknowledge(TransactionID txID) {
     // added so that if we have still not received the ack for sync write
-    if (syncTxns.contains(txID)) {
+    if (syncTxns2Locks.containsKey(txID)) {
       transactionRecvdByServer(txID);
     }
 

@@ -51,7 +51,7 @@ import java.util.Map.Entry;
 public class RemoteTransactionManagerImpl implements RemoteTransactionManager, PrettyPrintable {
 
   private static final long                       FLUSH_WAIT_INTERVAL         = 15 * 1000;
-  private static final long                       SYNC_WRITE_WAIT_INTERVAL    = 15 * 1000;
+  private static final long                       SYNC_WRITE_WAIT_INTERVAL    = 5 * 1000;
 
   private static final int                        MAX_OUTSTANDING_BATCHES     = TCPropertiesImpl
                                                                                   .getProperties()
@@ -69,6 +69,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
   private static final State                      STOPPED                     = new State("STOPPED");
 
   private final Object                            lock                        = new Object();
+  private final Object                            syncLock                    = new Object();
   private final Map                               incompleteBatches           = new HashMap();
   private final HashMap                           lockFlushCallbacks          = new HashMap();
 
@@ -134,6 +135,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       resendOutstanding();
       this.status = RUNNING;
       this.lock.notifyAll();
+      synchronized (syncLock) {
+        syncLock.notifyAll();
+      }
     }
   }
 
@@ -235,35 +239,43 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
     // wait for transactions to get acked here from the server
     final long start = System.currentTimeMillis();
     long lastPrinted = 0;
+    boolean isInterrupted = false;
     Collection c;
-    synchronized (this.lock) {
+    synchronized (this.syncLock) {
       while ((!(c = this.lockAccounting.getSyncWriteTransactionsFor(lockId)).isEmpty())) {
         try {
-          this.lock.wait(SYNC_WRITE_WAIT_INTERVAL);
+          this.syncLock.wait(SYNC_WRITE_WAIT_INTERVAL);
           long now = System.currentTimeMillis();
           if ((now - start) > SYNC_WRITE_WAIT_INTERVAL && (now - lastPrinted) > SYNC_WRITE_WAIT_INTERVAL / 3) {
             this.logger.info("Sync Write for " + lockId + " took longer than: " + (SYNC_WRITE_WAIT_INTERVAL / 1000)
-                             + " sec. Took : " + (now - start) + " ms. # Transactions not yet Acked = " + c + " " + this.lockAccounting.getTransactionsFor(lockId)
-                             + "\n");
+                             + " sec. Took : " + (now - start) + " ms. # Transactions not yet Acked = " + c + " "
+                             + this.lockAccounting.getTransactionsFor(lockId) + "\n");
             lastPrinted = now;
           }
         } catch (InterruptedException e) {
-          //
+          isInterrupted = true;
         }
       }
     }
+
+    Util.selfInterruptIfNeeded(isInterrupted);
   }
 
   public void batchReceived(TxnBatchID batchId) {
-    synchronized (this.lock) {
-      // This batch id was received by the server
-      // so notify the locks waiting for this transaction
-      Collection txns = batchAccounting.getTransactionIdsFor(batchId);
-      Iterator iter = txns.iterator();
-      while (iter.hasNext()) {
-        TransactionID txId = (TransactionID) iter.next();
-        lockAccounting.transactionRecvdByServer(txId);
-      }
+    // This batch id was received by the server
+    // so notify the locks waiting for this transaction
+    Collection txns = batchAccounting.getTransactionIdsFor(batchId);
+    if (txns.isEmpty()) {
+      logger.info("Batch id not found == " + batchId);
+    }
+    Iterator iter = txns.iterator();
+    while (iter.hasNext()) {
+      TransactionID txId = (TransactionID) iter.next();
+      lockAccounting.transactionRecvdByServer(txId);
+    }
+
+    synchronized (syncLock) {
+      syncLock.notifyAll();
     }
   }
 
@@ -415,6 +427,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       if (isStoppingOrStopped()) {
         this.logger.warn(this.status + " : Received ACK for batch = " + txnBatchID);
         this.lock.notifyAll();
+        synchronized (syncLock) {
+          this.syncLock.notifyAll();
+        }
         return;
       }
 
@@ -423,6 +438,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       this.outstandingBatchesCounter.decrement();
       sendBatches(false);
       this.lock.notifyAll();
+      synchronized (syncLock) {
+        this.syncLock.notifyAll();
+      }
     }
   }
 
@@ -457,6 +475,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
         throw new AssertionError("No batch found for acknowledgement: " + txID);
       }
       this.lock.notifyAll();
+      synchronized (syncLock) {
+        this.syncLock.notifyAll();
+      }
       callbacks = getLockFlushCallbacks(completedLocks);
     }
     fireLockFlushCallbacks(callbacks);
