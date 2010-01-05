@@ -51,7 +51,7 @@ public class TransactionBatchAccounting {
     Iterator iter = batches.iterator();
     while (iter.hasNext()) {
       BatchDescriptor bd = (BatchDescriptor) iter.next();
-      if (bd.getId().equals(batchID)) { return bd.getTransactions(); }
+      if (bd.getId().equals(batchID)) { return new HashSet(bd.getTransactions()); }
     }
     return Collections.EMPTY_SET;
   }
