@@ -17,12 +17,12 @@ import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
 import com.tc.exception.ImplementMe;
 import com.tc.object.Portability;
 import com.tc.object.bytecode.ClassAdapterFactory;
+import com.tc.object.bytecode.SessionConfiguration;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.config.ClassReplacementMapping;
 import com.tc.object.config.ClassReplacementTest;
 import com.tc.object.config.ConfigLockLevel;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.DSOSpringConfigHelper;
 import com.tc.object.config.DistributedMethodSpec;
 import com.tc.object.config.Lock;
 import com.tc.object.config.LockDefinition;
@@ -73,12 +73,12 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     /**/
   }
 
-  public void addClassReplacement(String originalClassName, String replacementClassName, URL url,
-                                  ClassReplacementTest test) {
+  public void addClassReplacement(final String originalClassName, final String replacementClassName, final URL url,
+                                  final ClassReplacementTest test) {
     /**/
   }
 
-  public void addClassResource(final String className, final URL resource, final boolean targetSystemLoader) {
+  public void addClassResource(final String className, final URL resource, final boolean targetSystemLoader, final boolean publicApi) {
     /**/
   }
 
@@ -131,15 +131,7 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return new TransparencyClassSpecImpl(className, this);
   }
 
-  public void addApplicationName(final String name) {
-    /**/
-  }
-
   public void addAspectModule(final String classNamePrefix, final String moduleName) {
-    /**/
-  }
-
-  public void addDSOSpringConfig(final DSOSpringConfigHelper config) {
     /**/
   }
 
@@ -181,10 +173,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     /**/
   }
 
-  public void addSynchronousWriteApplication(final String name) {
-    /**/
-  }
-
   public void addSynchronousWriteAutolock(final String methodPattern) {
     /**/
   }
@@ -222,10 +210,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public URL getClassResource(final String className, final ClassLoader loader, final boolean hideSystemResources) {
-    return null;
-  }
-
-  public Collection getDSOSpringConfigs() {
     return null;
   }
 
@@ -273,10 +257,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return null;
   }
 
-  public int getSessionLockType(final String appName) {
-    return 0;
-  }
-
   public TransparencyClassSpec getSpec(final String className) {
     return null;
   }
@@ -298,10 +278,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
   }
 
   public boolean isCallConstructorOnLoad(final ClassInfo classInfo) {
-    return false;
-  }
-
-  public boolean isDSOSessions(final String name) {
     return false;
   }
 
@@ -454,14 +430,6 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return true;
   }
 
-  public boolean isApplicationSessionLocked(final String appName) {
-    return true;
-  }
-
-  public void addSessionLockedApplication(final String name) {
-    throw new ImplementMe();
-  }
-
   public void validateGroupInfo() {
     //
   }
@@ -507,16 +475,24 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     return false;
   }
 
-  public void setBundleURLs(Map<Bundle, URL> bundleURLs) {
+  public void setBundleURLs(final Map<Bundle, URL> bundleURLs) {
     //
   }
 
-  public URL getBundleURL(Bundle bundle) {
+  public URL getBundleURL(final Bundle bundle) {
     return null;
   }
 
   public UUID getUUID() {
     return null;
+  }
+
+  public SessionConfiguration getSessionConfiguration(final String appName) {
+    return null;
+  }
+
+  public void addWebApplication(final String pattern, final SessionConfiguration config) {
+    //
   }
 
 }
