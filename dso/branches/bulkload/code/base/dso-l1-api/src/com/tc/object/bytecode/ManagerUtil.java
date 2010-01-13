@@ -1163,7 +1163,7 @@ public class ManagerUtil {
   // getManager().registerMBean(bean, name);
   // }
   
-  public void waitForAllCurrentTransactionsToComplete() {
+  public static void waitForAllCurrentTransactionsToComplete() {
     getManager().waitForAllCurrentTransactionsToComplete();
   }
 }
