@@ -1162,4 +1162,8 @@ public class ManagerUtil {
   // MBeanRegistrationException, NotCompliantMBeanException {
   // getManager().registerMBean(bean, name);
   // }
+  
+  public void waitForAllCurrentTransactionsToComplete() {
+    getManager().waitForAllCurrentTransactionsToComplete();
+  }
 }
