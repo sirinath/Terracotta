@@ -81,4 +81,8 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
   public void dumpToLogger() {
     //
   }
+  
+  public void waitForAllCurrentTransactionsToComplete() {
+    //
+  }
 }

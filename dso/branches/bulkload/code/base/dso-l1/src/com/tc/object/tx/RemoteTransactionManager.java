@@ -32,4 +32,7 @@ public interface RemoteTransactionManager extends ClientHandshakeCallback, DumpH
   public boolean isTransactionsForLockFlushed(LockID lockID, LockFlushCallback callback);
 
   public void stopProcessing();
+  
+  public void waitForAllCurrentTransactionsToComplete();
+  
 }
