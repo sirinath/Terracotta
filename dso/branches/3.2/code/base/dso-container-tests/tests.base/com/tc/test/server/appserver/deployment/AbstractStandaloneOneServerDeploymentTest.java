@@ -26,15 +26,17 @@ public abstract class AbstractStandaloneOneServerDeploymentTest extends Abstract
     this.server0 = server0;
   }
 
+  @Override
   protected boolean shouldKillAppServersEachRun() {
     return false;
   }
 
   public static abstract class StandaloneOneServerTestSetup extends ServerTestSetup {
-    private Log                    logger = LogFactory.getLog(getClass());
+    private final Log              logger = LogFactory.getLog(getClass());
 
     private final Class            testClass;
     private final String           context;
+    @SuppressWarnings("unused")
     private final TcConfigBuilder  tcConfigBuilder;
 
     private boolean                start  = true;
@@ -60,6 +62,7 @@ public abstract class AbstractStandaloneOneServerDeploymentTest extends Abstract
       this.start = start;
     }
 
+    @Override
     protected void setUp() throws Exception {
       if (shouldDisable()) return;
       super.setUp();
