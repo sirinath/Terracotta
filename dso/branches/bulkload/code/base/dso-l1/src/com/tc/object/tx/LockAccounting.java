@@ -104,7 +104,7 @@ public class LockAccounting {
     TxnRemovedListener listener;
     Latch latch = new Latch();
     synchronized (this) {
-      Set currentTxnSet = tx2Locks.keySet();
+      Set currentTxnSet = new HashSet(tx2Locks.keySet());
       listener = new TxnRemovedListener(currentTxnSet, latch);
       listeners.add(listener);
     }
