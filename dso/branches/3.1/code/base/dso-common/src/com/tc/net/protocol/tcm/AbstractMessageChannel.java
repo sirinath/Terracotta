@@ -6,7 +6,6 @@ package com.tc.net.protocol.tcm;
 
 import EDU.oswego.cs.dl.util.concurrent.ConcurrentReaderHashMap;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.async.api.Sink;
 import com.tc.bytes.TCByteBuffer;
@@ -33,20 +32,18 @@ import java.util.Set;
  */
 abstract class AbstractMessageChannel implements MessageChannel, MessageChannelInternal {
 
-  private final Map              attachments    = new ConcurrentReaderHashMap();
-  private final Object           attachmentLock = new Object();
-  private final Set              listeners      = new CopyOnWriteArraySet();
-  private final ChannelStatus    status         = new ChannelStatus();
-  private final SynchronizedRef  remoteAddr     = new SynchronizedRef(null);
-  private final SynchronizedRef  localAddr      = new SynchronizedRef(null);
-  private final TCMessageFactory msgFactory;
-  private final TCMessageRouter  router;
-  private final TCMessageParser  parser;
-  private final TCLogger         logger;
-  private final NodeID           remoteNodeID;
-  private volatile NodeID        localNodeID;
+  private final Map               attachments    = new ConcurrentReaderHashMap();
+  private final Object            attachmentLock = new Object();
+  private final Set               listeners      = new CopyOnWriteArraySet();
+  private final ChannelStatus     status         = new ChannelStatus();
+  private final TCMessageFactory  msgFactory;
+  private final TCMessageRouter   router;
+  private final TCMessageParser   parser;
+  private final TCLogger          logger;
+  private final NodeID            remoteNodeID;
+  private volatile NodeID         localNodeID;
 
-  protected NetworkLayer         sendLayer;
+  protected volatile NetworkLayer sendLayer;
 
   AbstractMessageChannel(TCMessageRouter router, TCLogger logger, TCMessageFactory msgFactory, NodeID remoteNodeID) {
     this.router = router;
@@ -133,12 +130,12 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   private void fireChannelClosedEvent() {
     fireEvent(new ChannelEventImpl(ChannelEventType.CHANNEL_CLOSED_EVENT, AbstractMessageChannel.this));
   }
-  
+
   void channelOpened() {
     status.open();
     fireChannelOpenedEvent();
   }
-  
+
   public void close() {
     if (!status.getAndSetIsClosed()) {
       Assert.assertNotNull(this.sendLayer);
@@ -206,8 +203,6 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   }
 
   public void notifyTransportDisconnected(MessageTransport transport) {
-    this.remoteAddr.set(null);
-    this.localAddr.set(null);
     fireTransportDisconnectedEvent();
   }
 
@@ -216,8 +211,6 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   }
 
   public void notifyTransportConnected(MessageTransport transport) {
-    this.remoteAddr.set(transport.getRemoteAddress());
-    this.localAddr.set(transport.getLocalAddress());
     fireEvent(new ChannelEventImpl(ChannelEventType.TRANSPORT_CONNECTED_EVENT, AbstractMessageChannel.this));
   }
 
@@ -231,11 +224,21 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
   }
 
   public TCSocketAddress getLocalAddress() {
-    return (TCSocketAddress) this.localAddr.get();
+    NetworkLayer sendLyr = this.sendLayer;
+    if (sendLyr != null) {
+      return sendLyr.getLocalAddress();
+    } else {
+      return null;
+    }
   }
 
   public TCSocketAddress getRemoteAddress() {
-    return (TCSocketAddress) this.remoteAddr.get();
+    NetworkLayer sendLyr = this.sendLayer;
+    if (sendLyr != null) {
+      return sendLyr.getRemoteAddress();
+    } else {
+      return null;
+    }
   }
 
   private void fireEvent(ChannelEventImpl event) {
@@ -282,7 +285,7 @@ abstract class AbstractMessageChannel implements MessageChannel, MessageChannelI
         return false;
       }
     }
-    
+
     synchronized boolean isOpen() {
       return ChannelState.OPEN.equals(state);
     }
