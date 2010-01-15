@@ -6,6 +6,7 @@ package com.tc.net.protocol;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.TCSocketAddress;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -21,10 +22,14 @@ public interface NetworkLayer {
    * about all the layers present depending on the config ADD ALL THE LAYERS TYPE HERE
    */
 
-  public static final short  TYPE_TRANSPORT_LAYER              = 1;                     // 0000000000000001
-  public static final short  TYPE_OOO_LAYER                    = 2;                     // 0000000000000010
-  public static final short  TYPE_CHANNEL_LAYER                = 4;                     // 0000000000000100
-  public static final short  TYPE_TEST_MESSAGE                 = -1;                    //This is for test messages
+  public static final short  TYPE_TRANSPORT_LAYER              = 1;                                                                         // 0000000000000001
+  public static final short  TYPE_OOO_LAYER                    = 2;                                                                         // 0000000000000010
+  public static final short  TYPE_CHANNEL_LAYER                = 4;                                                                         // 0000000000000100
+  public static final short  TYPE_TEST_MESSAGE                 = -1;                                                                        // This
+                                                                                                                                             // is
+                                                                                                                                             // for
+                                                                                                                                             // test
+                                                                                                                                             // messages
   /**
    * These are the name of the layers that are there in the communication stack IF ANY LAYER TYPE IS ADDED ABOVE THEN
    * ADD ITS CORRESPONDING NAME BELOW
@@ -65,4 +70,9 @@ public interface NetworkLayer {
       IOException;
 
   public void close();
+
+  public TCSocketAddress getRemoteAddress();
+
+  public TCSocketAddress getLocalAddress();
+
 }
