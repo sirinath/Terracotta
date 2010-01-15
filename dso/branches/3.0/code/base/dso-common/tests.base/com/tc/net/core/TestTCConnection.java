@@ -76,4 +76,12 @@ public class TestTCConnection implements TCConnection {
     throw new ImplementMe();
   }
 
+  public void setTransportEstablished() {
+    //
+  }
+
+  public boolean isTransportEstablished() {
+    return false;
+  }
+
 }

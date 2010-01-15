@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.net.core;
 
@@ -29,9 +30,9 @@ public interface TCConnection extends NetworkMessageSink {
    * received)
    */
   public long getIdleTime();
-  
+
   /**
-   * Returns a long representing the number of milliseconds since last data received on this connection. 
+   * Returns a long representing the number of milliseconds since last data received on this connection.
    */
   public long getIdleReceiveTime();
 
@@ -116,4 +117,8 @@ public interface TCConnection extends NetworkMessageSink {
    * @throws IllegalStateException if connection has never been connected
    */
   public TCSocketAddress getRemoteAddress();
+
+  public void setTransportEstablished();
+
+  public boolean isTransportEstablished();
 }

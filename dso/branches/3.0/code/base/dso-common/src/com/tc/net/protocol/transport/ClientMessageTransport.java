@@ -186,6 +186,8 @@ public class ClientMessageTransport extends MessageTransportBase {
         Assert.eval(!ConnectionID.NULL_ID.equals(this.connectionId));
         Assert.assertNotNull(this.waitForSynAckResult);
       }
+
+      getConnection().setTransportEstablished();
       this.waitForSynAckResult.set(synAck);
 
       setRemoteCallbackPort(synAck.getCallbackPort());
