@@ -35,4 +35,7 @@ public interface RemoteTransactionManager extends ClientHandshakeCallback, DumpH
   
   public void waitForAllCurrentTransactionsToComplete();
   
+  public void waitForServerToReceiveTxnsForThisLock(LockID lock);
+  
+  public void batchReceived(TxnBatchID batchId);
 }
