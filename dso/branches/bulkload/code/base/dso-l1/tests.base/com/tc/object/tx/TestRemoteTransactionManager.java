@@ -85,4 +85,13 @@ public class TestRemoteTransactionManager implements RemoteTransactionManager {
   public void waitForAllCurrentTransactionsToComplete() {
     //
   }
+
+  public void waitForServerToReceiveTxnsForThisLock(LockID lock) {
+    throw new ImplementMe();
+  }
+
+  public void batchReceived(TxnBatchID batchId) {
+    throw new ImplementMe();
+    
+  }
 }
