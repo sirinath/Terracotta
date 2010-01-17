@@ -25,8 +25,8 @@ public class LockAccounting {
   private final Map<LockID, Set<TransactionID>>          lock2Txs       = new HashMap();
 
   // for sync write
-  private final Map<LockID, Set<TransactionID>> syncLock2Txs   = new HashMap();
-  private final Map<TransactionID, Set<LockID>> syncTxns2Locks = new HashMap();
+  private final Map<LockID, Set<TransactionID>>          syncLock2Txs   = new HashMap();
+  private final Map<TransactionID, Set<LockID>>          syncTxns2Locks = new HashMap();
 
   public synchronized Object dump() {
     return "LockAccounting:\ntx2Locks=" + tx2Locks + "\nlock2Txs=" + lock2Txs + "/LockAccounting";
@@ -118,7 +118,7 @@ public class LockAccounting {
         }
       }
     }
-    tx2Locks.remove(txID);
+    removeTxn(txID);
     return (completedLockIDs == null ? Collections.EMPTY_SET : completedLockIDs);
   }
 
