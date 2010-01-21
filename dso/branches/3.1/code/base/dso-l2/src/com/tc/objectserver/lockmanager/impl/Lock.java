@@ -1055,10 +1055,19 @@ public class Lock {
     }
 
     for (Iterator i = timers.keySet().iterator(); i.hasNext();) {
-      LockWaitContext wc = (LockWaitContext) i.next();
-      if (wc.getNodeID().equals(nid)) {
+      NodeID nodeId = null;
+      TimerKey tk = (TimerKey) i.next();
+      if(tk instanceof LockWaitContext) {
+        LockWaitContext wc = (LockWaitContext) tk;
+        nodeId = wc.getNodeID();
+      } else if (tk instanceof ServerThreadContext) {
+        ServerThreadContext stc = (ServerThreadContext) tk;
+        nodeId = stc.getId().getNodeID();
+      }
+      
+      if (nodeId.equals(nid)) {
         try {
-          TimerTask task = timers.get(wc);
+          TimerTask task = timers.get(tk);
           task.cancel();
         } finally {
           i.remove();
