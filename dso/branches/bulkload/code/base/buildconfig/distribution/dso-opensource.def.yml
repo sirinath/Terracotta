@@ -4,7 +4,7 @@ kit_name_pattern: terracotta-version
 root_directory: terracotta-version
 bundled_demos:
   - pojo:
-      install_directory: samples/pojo
+      install_directory: platform/samples/pojo
       manifest:
         - chatter
         - coordination
@@ -13,11 +13,12 @@ bundled_demos:
         - sharededitor
         - sharedqueue
   - sessions:
-      install_directory: samples/sessions
+      install_directory: sessions/samples
       manifest:
         - cart
-        - tasklist
-        - townsend
+        # commented out until these two samples converted to express
+        #- tasklist
+        #- townsend
 bundled_vendors:
    - jetty-6.1.15:
        install_directory: vendors/jetty-6.1.15
@@ -115,7 +116,7 @@ bundled_components:
         - ui-configurator
 bundled_modules:
   - core:
-      install_directory: modules
+      install_directory: platform/modules
       manifest:
         - clustered-surefire-2.3
         - excludes-config
@@ -169,8 +170,8 @@ postscripts:
         - schema
   - make-srcdocs:
       args:
-        - samples/pojo
-        - samples/sessions
+        - platform/samples/pojo
+        - sessions/samples
   - maven-deploy:
       args:
         - artifact_count: 11
