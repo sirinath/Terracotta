@@ -16,9 +16,8 @@ bundled_demos:
       install_directory: sessions/samples
       manifest:
         - cart
-        # commented out until these two samples converted to express
-        #- tasklist
-        #- townsend
+        - tasklist
+        - townsend
 bundled_vendors:
    - jetty-6.1.15:
        install_directory: vendors/jetty-6.1.15
