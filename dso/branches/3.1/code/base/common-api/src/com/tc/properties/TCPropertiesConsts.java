@@ -506,6 +506,9 @@ public interface TCPropertiesConsts {
   public static final String   TC_BYTEBUFFER_COMMON_POOL_MAXCOUNT                            = "tc.bytebuffer.common.pool.maxcount";
   public static final String   TC_BYTEBUFFER_THREADLOCAL_POOL_MAXCOUNT                       = "tc.bytebuffer.threadlocal.pool.maxcount";
 
+  public static final String   TC_TRANSPORT_HANDSHAKE_TIMEOUT                                     = "tc.transport.handshake.timeout";
+  public static final String   TC_CONFIG_SOURCEGET_TIMEOUT                                        = "tc.config.getFromSource.timeout";
+
   /*********************************************************************************************************************
    * <code>
    * Section : Common property for TC Management MBean
