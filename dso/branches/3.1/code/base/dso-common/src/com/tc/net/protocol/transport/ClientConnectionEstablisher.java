@@ -54,7 +54,6 @@ public class ClientConnectionEstablisher {
       logger.warn("Forcing reconnect wait interval to " + MIN_RETRY_INTERVAL + " (configured value was " + value + ")");
       value = MIN_RETRY_INTERVAL;
     }
-
     CONNECT_RETRY_INTERVAL = value;
   }
 
@@ -79,16 +78,16 @@ public class ClientConnectionEstablisher {
    * @throws TCTimeoutException
    * @throws MaxConnectionsExceededException
    */
-  public TCConnection open(ClientMessageTransport cmt) throws TCTimeoutException, IOException {
+  public void open(ClientMessageTransport cmt) throws TCTimeoutException, IOException, MaxConnectionsExceededException {
     synchronized (asyncReconnecting) {
       Assert.eval("Can't call open() while asynch reconnect occurring", !asyncReconnecting.get());
-      TCConnection rv = connectTryAllOnce(cmt);
+      connectTryAllOnce(cmt);
       allowReconnects.set(true);
-      return rv;
     }
   }
 
-  private TCConnection connectTryAllOnce(ClientMessageTransport cmt) throws TCTimeoutException, IOException {
+  private void connectTryAllOnce(ClientMessageTransport cmt) throws TCTimeoutException, IOException,
+      MaxConnectionsExceededException {
     final ConnectionAddressIterator addresses = connAddressProvider.getIterator();
     TCConnection rv = null;
     while (addresses.hasNext()) {
@@ -96,6 +95,7 @@ public class ClientConnectionEstablisher {
       try {
         final TCSocketAddress csa = new TCSocketAddress(connInfo);
         rv = connect(csa, cmt);
+        cmt.openConnection(rv);
         break;
       } catch (TCTimeoutException e) {
         if (!addresses.hasNext()) { throw e; }
@@ -103,7 +103,6 @@ public class ClientConnectionEstablisher {
         if (!addresses.hasNext()) { throw e; }
       }
     }
-    return rv;
   }
 
   /**
