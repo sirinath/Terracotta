@@ -47,6 +47,9 @@ public class ClusterState {
     this.gidSequenceProvider = gidSequenceProvider;
     this.clusterID = clusterStateStore.get(CLUSTER_ID_KEY);
     validateStartupState(clusterStateStore.get(L2_STATE_KEY));
+    this.nextAvailObjectID = this.oidSequence.currentObjectIDValue();
+    this.nextAvailChannelID = this.connectionIdFactory.getCurrentConnectionID();
+    this.nextAvailGlobalTxnID = this.gidSequenceProvider.currentGID();
   }
 
   private void validateStartupState(String stateStr) {
