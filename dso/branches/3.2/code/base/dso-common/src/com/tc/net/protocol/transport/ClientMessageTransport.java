@@ -69,6 +69,7 @@ public class ClientMessageTransport extends MessageTransportBase {
    * @throws TCTimeoutException
    * @throws MaxConnectionsExceededException
    */
+  @Override
   public NetworkStackID open() throws TCTimeoutException, IOException, MaxConnectionsExceededException,
       CommStackMismatchException {
     // XXX: This extra boolean flag is dumb, but it's here because the close event can show up
@@ -127,11 +128,13 @@ public class ClientMessageTransport extends MessageTransportBase {
   }
 
   // TODO :: come back
+  @Override
   public void closeEvent(TCConnectionEvent event) {
     if (isNotOpen()) return;
     super.closeEvent(event);
   }
 
+  @Override
   protected void receiveTransportMessageImpl(WireProtocolMessage message) {
     synchronized (status) {
       if (status.isSynSent()) {
@@ -328,10 +331,6 @@ public class ClientMessageTransport extends MessageTransportBase {
 
     public int maxConnections() {
       return this.synAck.getMaxConnections();
-    }
-
-    public boolean isMaxConnectionsExceeded() {
-      return this.synAck.isMaxConnectionsExceeded();
     }
 
     public boolean hasErrorContext() {
