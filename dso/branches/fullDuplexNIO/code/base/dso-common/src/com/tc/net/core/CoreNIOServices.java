@@ -77,10 +77,8 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     writerComm.cleanupChannel(channel, callback);
   }
 
-  public void unregister(final SocketChannel channel) {
-    logger.info("XXX unregister");
-    // Thread.dumpStack();
-    if (Thread.currentThread() != readerComm) {
+  public void detach(final SocketChannel channel) {
+    if (!isReaderThread()) {
       readerComm.addSelectorTask(new Runnable() {
         public void run() {
           readerComm.unregister(channel);
@@ -90,15 +88,24 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
       readerComm.unregister(channel);
     }
 
-    if (Thread.currentThread() != writerComm) {
+    if (!isWriterThread()) {
       writerComm.addSelectorTask(new Runnable() {
         public void run() {
           writerComm.unregister(channel);
+          try {
+            channel.configureBlocking(true);
+          } catch (IOException e) {
+            logger.info("Cahnnel configure blocking IOException " + e);
+          }
         }
       });
     } else {
-      readerComm.unregister(channel);
+      writerComm.unregister(channel);
     }
+  }
+
+  public void addWriterSelectorTasks(Runnable runnable) {
+    writerComm.addSelectorTask(runnable);
   }
 
   public void closeEvent(TCListenerEvent event) {
@@ -198,16 +205,30 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
         return;
       }
 
-      // So far, we only have read interest set
+      Assert.eval("Add weight to Connection can only by done by a Reader Thread.", isReaderThread());
       removeReadInterest(connection, channel);
-      removeWriteInterest(connection, channel);
-      unregister(channel);
+      readerComm.unregister(channel);
 
-      final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
-      connection.setCommWorker(workerCommThread);
-      workerCommThread.addConnection(connection, addWeightBy);
-      workerCommThread.requestReadWriteInterest(connection, channel);
+      removeWriteInterest(connection, channel);
+      // since we are not writer thread
+      writerComm.addSelectorTask(new Runnable() {
+        public void run() {
+          writerComm.unregister(channel);
+          final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
+          connection.setCommWorker(workerCommThread);
+          workerCommThread.addConnection(connection, addWeightBy);
+          workerCommThread.requestReadWriteInterest(connection, channel);
+        }
+      });
     }
+  }
+
+  private boolean isReaderThread() {
+    return (Thread.currentThread() == this.readerComm);
+  }
+
+  private boolean isWriterThread() {
+    return (Thread.currentThread() == this.writerComm);
   }
 
   private synchronized void addConnection(TCConnectionJDK14 connection, int initialWeight) {
@@ -544,7 +565,6 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
           throw ioe;
         } catch (CancelledKeyException cke) {
           logger.warn("XXX Cencelled Key " + cke);
-          Thread.dumpStack();
           continue;
         }
 
@@ -634,10 +654,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
         sc = ssc.accept();
         sc.configureBlocking(false);
         final TCConnectionJDK14 conn = lsnr.createConnection(sc, CoreNIOServices.this, socketParams);
-        requestReadInterest(conn, sc);
-        // sc.register(this.selector, SelectionKey.OP_READ, conn);
-        // we are not registering for write because we are server and we are going to transfer the connection to a
-        // different thread before even the first write -- see addWeight()
+        requestReadWriteInterest(conn, sc);
       } catch (IOException ioe) {
         if (logger.isInfoEnabled()) {
           logger.info("IO Exception accepting new connection", ioe);
