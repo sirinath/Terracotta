@@ -77,7 +77,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     writerComm.cleanupChannel(channel, callback);
   }
 
-  public void detach(final SocketChannel channel) {
+  public void detach(final SocketChannel channel) throws IOException {
     if (!isReaderThread()) {
       readerComm.addSelectorTask(new Runnable() {
         public void run() {
@@ -95,17 +95,15 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
           try {
             channel.configureBlocking(true);
           } catch (IOException e) {
-            logger.info("Cahnnel configure blocking IOException " + e);
+            logger.info("Channel configure blocking IOException " + e);
+            Thread.dumpStack();
           }
         }
       });
     } else {
       writerComm.unregister(channel);
+      channel.configureBlocking(true);
     }
-  }
-
-  public void addWriterSelectorTasks(Runnable runnable) {
-    writerComm.addSelectorTask(runnable);
   }
 
   public void closeEvent(TCListenerEvent event) {
@@ -209,10 +207,11 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
       removeReadInterest(connection, channel);
       readerComm.unregister(channel);
 
-      removeWriteInterest(connection, channel);
-      // since we are not writer thread
+      // since we are not writer thread, executing the worker thread transfer as a selector task
       writerComm.addSelectorTask(new Runnable() {
         public void run() {
+          writerComm.handleRequest(InterestRequest.createRemoveInterestRequest(channel, connection,
+                                                                               SelectionKey.OP_WRITE, writerComm));
           writerComm.unregister(channel);
           final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
           connection.setCommWorker(workerCommThread);
@@ -564,7 +563,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
           }
           throw ioe;
         } catch (CancelledKeyException cke) {
-          logger.warn("XXX Cencelled Key " + cke);
+          logger.warn("Cencelled Key " + cke);
           continue;
         }
 

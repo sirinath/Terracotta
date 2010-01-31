@@ -53,7 +53,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   private static final long              WARN_THRESHOLD       = 0x400000L;                                       // 4MB
 
   private final LinkedList               writeContexts        = new LinkedList();
-  private CoreNIOServices                commNIOServiceThread;
+  private volatile CoreNIOServices       commWorker;
 
   private final TCConnectionManagerJDK14 parent;
   private final TCConnectionEventCaller  eventCaller          = new TCConnectionEventCaller(logger);
@@ -98,11 +98,11 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     }
 
     this.socketParams = socketParams;
-    this.commNIOServiceThread = nioServiceThread;
+    this.commWorker = nioServiceThread;
   }
 
-  public synchronized void setCommWorker(CoreNIOServices worker) {
-    this.commNIOServiceThread = worker;
+  public void setCommWorker(CoreNIOServices worker) {
+    this.commWorker = worker;
   }
 
   private void closeImpl(Runnable callback) {
@@ -110,7 +110,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     this.transportEstablished.set(false);
     try {
       if (channel != null) {
-        commNIOServiceThread.cleanupChannel(channel, callback);
+        commWorker.cleanupChannel(channel, callback);
       } else {
         callback.run();
       }
@@ -138,8 +138,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         newSocket.socket().connect(inetAddr, timeout);
         break;
       } catch (SocketTimeoutException ste) {
-        Assert.eval(commNIOServiceThread != null);
-        commNIOServiceThread.cleanupChannel(newSocket, null);
+        Assert.eval(commWorker != null);
+        commWorker.cleanupChannel(newSocket, null);
         throw new TCTimeoutException("Timeout of " + timeout + "ms occured connecting to " + addr, ste);
       } catch (ClosedSelectorException cse) {
         if (NIOWorkarounds.connectWorkaround(cse)) {
@@ -153,8 +153,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     channel = newSocket;
     newSocket.configureBlocking(false);
-    Assert.eval(commNIOServiceThread != null);
-    commNIOServiceThread.requestReadInterest(this, newSocket);
+    Assert.eval(commWorker != null);
+    commWorker.requestReadInterest(this, newSocket);
   }
 
   private SocketChannel createChannel() throws IOException, SocketException {
@@ -165,7 +165,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   }
 
   private Socket detachImpl() throws IOException {
-    commNIOServiceThread.detach(channel);
+    commWorker.detach(channel);
     return channel.socket();
   }
 
@@ -180,7 +180,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     channel = newSocket;
 
     if (!rv) {
-      commNIOServiceThread.requestConnectInterest(this, newSocket);
+      commWorker.requestConnectInterest(this, newSocket);
     }
 
     return rv;
@@ -325,7 +325,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       }
 
       if (writeContexts.isEmpty()) {
-        commNIOServiceThread.removeWriteInterest(this, channel);
+        commWorker.removeWriteInterest(this, channel);
       }
     }
     return totalBytesWritten;
@@ -394,8 +394,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       // for, as well as actually be selected for, write interest immediately
       // after finishConnect(). Only after this selection occurs it is always safe to try
       // to write.
-
-      commNIOServiceThread.requestWriteInterest(this, channel);
+      commWorker.requestWriteInterest(this, channel);
     }
   }
 
@@ -651,7 +650,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   }
 
   public void addWeight(int addWeightBy) {
-    this.commNIOServiceThread.addWeight(this, addWeightBy, channel);
+    this.commWorker.addWeight(this, addWeightBy, channel);
   }
 
   public void setTransportEstablished() {
