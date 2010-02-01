@@ -17,7 +17,7 @@ cd $root
 
 mkdir -p classes
 
-ehcache_core=`\ls -1   ../../../ehcache/ehcache-core-*.jar | tail -1`
+ehcache_core=`\ls -1 ../../../ehcache/ehcache-core-*.jar | grep -v "sources" | grep -v "javadoc" | head -1`
 if [ ! -f $ehcache_core ]; then
   echo "Couldn't find ehcache-core jar. Do you have a full kit?"
   exit 1
@@ -45,7 +45,7 @@ cp images/* dist
 mkdir -p dist/WEB-INF/lib
 
 #packaging echcache-core
-cp $tc_install_dir/ehcache/ehcache-core*.jar dist/WEB-INF/lib
+cp $ehcache_core dist/WEB-INF/lib
 if [ $? -ne 0 ]; then
   echo "Couldn't package ehcache-core. Do you have a complete kit?"
   exit 1
