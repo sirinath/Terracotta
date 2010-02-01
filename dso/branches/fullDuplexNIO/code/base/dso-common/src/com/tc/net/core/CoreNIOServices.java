@@ -78,17 +78,20 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   }
 
   public void detach(final SocketChannel channel) throws IOException {
-    if (!isReaderThread()) {
+    if (isReaderThread()) {
+      readerComm.unregister(channel);
+    } else {
       readerComm.addSelectorTask(new Runnable() {
         public void run() {
           readerComm.unregister(channel);
         }
       });
-    } else {
-      readerComm.unregister(channel);
     }
 
-    if (!isWriterThread()) {
+    if (isWriterThread()) {
+      writerComm.unregister(channel);
+      channel.configureBlocking(true);
+    } else {
       writerComm.addSelectorTask(new Runnable() {
         public void run() {
           writerComm.unregister(channel);
@@ -96,13 +99,9 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             channel.configureBlocking(true);
           } catch (IOException e) {
             logger.info("Channel configure blocking IOException " + e);
-            Thread.dumpStack();
           }
         }
       });
-    } else {
-      writerComm.unregister(channel);
-      channel.configureBlocking(true);
     }
   }
 
@@ -180,8 +179,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   }
 
   /**
-   * Change thread ownership of a connection or upgrade weight. Should be called only after reading a complete message
-   * from a connection
+   * Change thread ownership of a connection or upgrade weight.
    * 
    * @param connection : connection which has to be transfered from the main selector thread to a new worker comm thread
    *        that has the least weight. If the connection is already managed by a comm thread, then just update
@@ -198,27 +196,25 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
       this.managedConnectionsMap.put(connection, this.clientWeights);
     } else {
       // MainComm Thread
-      if (workerCommMgr == null) {
-        // no worker comms.
-        return;
+      if (workerCommMgr == null) { return; }
+
+      if (isReaderThread()) {
+        removeReadInterest(connection, channel);
+        readerComm.unregister(channel);
+      } else {
+        readerComm.addSelectorTask(new Runnable() {
+          public void run() {
+            readerComm.handleRequest(InterestRequest.createRemoveInterestRequest(channel, connection,
+                                                                                 SelectionKey.OP_READ, readerComm));
+            readerComm.unregister(channel);
+          }
+        });
       }
 
-      Assert.eval("Add weight to Connection can only by done by a Reader Thread.", isReaderThread());
-      removeReadInterest(connection, channel);
-      readerComm.unregister(channel);
-
-      // since we are not writer thread, executing the worker thread transfer as a selector task
-      writerComm.addSelectorTask(new Runnable() {
-        public void run() {
-          writerComm.handleRequest(InterestRequest.createRemoveInterestRequest(channel, connection,
-                                                                               SelectionKey.OP_WRITE, writerComm));
-          writerComm.unregister(channel);
-          final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
-          connection.setCommWorker(workerCommThread);
-          workerCommThread.addConnection(connection, addWeightBy);
-          workerCommThread.requestReadWriteInterest(connection, channel);
-        }
-      });
+      final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
+      connection.setCommWorker(workerCommThread);
+      workerCommThread.addConnection(connection, addWeightBy);
+      workerCommThread.requestReadWriteInterest(connection, channel);
     }
   }
 
@@ -653,7 +649,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
         sc = ssc.accept();
         sc.configureBlocking(false);
         final TCConnectionJDK14 conn = lsnr.createConnection(sc, CoreNIOServices.this, socketParams);
-        requestReadWriteInterest(conn, sc);
+        requestReadInterest(conn, sc);
       } catch (IOException ioe) {
         if (logger.isInfoEnabled()) {
           logger.info("IO Exception accepting new connection", ioe);
