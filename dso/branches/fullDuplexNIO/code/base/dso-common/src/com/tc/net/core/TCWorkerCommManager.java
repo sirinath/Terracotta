@@ -104,7 +104,7 @@ public class TCWorkerCommManager {
     return this.workerCommThreads[workerCommId];
   }
 
-  protected synchronized int getClientCountForWorkerComm(int workerCommId) {
+  protected synchronized int getWeightForWorkerComm(int workerCommId) {
     return this.workerCommThreads[workerCommId].getWeight();
   }
 

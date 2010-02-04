@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListener {
   private static final TCLogger                logger        = TCLogging.getLogger(CoreNIOServices.class);
@@ -51,13 +52,17 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   private final List                           listeners     = new ArrayList();
   private String                               listenerString;
 
+  private static enum COMM_THREAD_MODE {
+    NIO_READER, NIO_WRITER
+  }
+
   public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams) {
     this.commThreadName = commThreadName;
     this.workerCommMgr = workerCommManager;
     this.socketParams = socketParams;
     this.managedConnectionsMap = new HashMap<TCConnection, Integer>();
-    this.readerComm = new CommThread(CommThread.MODE_NIO_READER);
-    this.writerComm = new CommThread(CommThread.MODE_NIO_WRITER);
+    this.readerComm = new CommThread(COMM_THREAD_MODE.NIO_READER);
+    this.writerComm = new CommThread(COMM_THREAD_MODE.NIO_WRITER);
   }
 
   public void start() {
@@ -166,8 +171,10 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     return readerComm.getTotalBytesWritten() + writerComm.getTotalBytesWritten();
   }
 
-  public synchronized int getWeight() {
-    return this.clientWeights;
+  public int getWeight() {
+    synchronized (managedConnectionsMap) {
+      return this.clientWeights;
+    }
   }
 
   protected CommThread getReaderComm() {
@@ -187,34 +194,42 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
    * @param addWeightBy : upgrade weight of connection
    * @param channel : SocketChannel for the passed in connection
    */
-  public synchronized void addWeight(final TCConnectionJDK14 connection, final int addWeightBy,
-                                     final SocketChannel channel) {
+  public void addWeight(final TCConnectionJDK14 connection, final int addWeightBy, final SocketChannel channel) {
 
-    if (this.managedConnectionsMap.containsKey(connection)) {
+    synchronized (managedConnectionsMap) {
       // this connection is already handled by a WorkerComm
-      this.clientWeights += addWeightBy;
-      this.managedConnectionsMap.put(connection, this.clientWeights);
-    } else {
-      // MainComm Thread
-      if (workerCommMgr == null) { return; }
-
-      if (isReaderThread()) {
-        removeReadInterest(connection, channel);
-        readerComm.unregister(channel);
-      } else {
-        readerComm.addSelectorTask(new Runnable() {
-          public void run() {
-            readerComm.handleRequest(InterestRequest.createRemoveInterestRequest(channel, connection,
-                                                                                 SelectionKey.OP_READ, readerComm));
-            readerComm.unregister(channel);
-          }
-        });
+      if (this.managedConnectionsMap.containsKey(connection)) {
+        this.clientWeights += addWeightBy;
+        this.managedConnectionsMap.put(connection, this.managedConnectionsMap.get(connection) + addWeightBy);
+        return;
       }
+    }
 
-      final CoreNIOServices workerCommThread = workerCommMgr.getNextWorkerComm();
-      connection.setCommWorker(workerCommThread);
-      workerCommThread.addConnection(connection, addWeightBy);
-      workerCommThread.requestReadWriteInterest(connection, channel);
+    // MainComm Thread
+    if (workerCommMgr == null) { return; }
+
+    if (isReaderThread()) {
+      readerComm.unregister(channel);
+    } else {
+      final CountDownLatch latch = new CountDownLatch(1);
+      readerComm.addSelectorTask(new Runnable() {
+        public void run() {
+          readerComm.unregister(channel);
+          latch.countDown();
+        }
+      });
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    synchronized (managedConnectionsMap) {
+      final CoreNIOServices workerComm = workerCommMgr.getNextWorkerComm();
+      connection.setCommWorker(workerComm);
+      workerComm.addConnection(connection, addWeightBy);
+      workerComm.requestReadWriteInterest(connection, channel);
     }
   }
 
@@ -226,19 +241,23 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     return (Thread.currentThread() == this.writerComm);
   }
 
-  private synchronized void addConnection(TCConnectionJDK14 connection, int initialWeight) {
-    Assert.eval(!managedConnectionsMap.containsKey(connection));
-    managedConnectionsMap.put(connection, initialWeight);
-    this.clientWeights += initialWeight;
-    connection.addListener(this);
+  private void addConnection(TCConnectionJDK14 connection, int initialWeight) {
+    synchronized (managedConnectionsMap) {
+      Assert.eval(!managedConnectionsMap.containsKey(connection));
+      managedConnectionsMap.put(connection, initialWeight);
+      this.clientWeights += initialWeight;
+      connection.addListener(this);
+    }
   }
 
-  public synchronized void closeEvent(TCConnectionEvent event) {
-    Assert.eval(managedConnectionsMap.containsKey(event.getSource()));
-    int closedCientWeight = managedConnectionsMap.get(event.getSource());
-    this.clientWeights -= closedCientWeight;
-    managedConnectionsMap.remove(event.getSource());
-    event.getSource().removeListener(this);
+  public void closeEvent(TCConnectionEvent event) {
+    synchronized (managedConnectionsMap) {
+      Assert.eval(managedConnectionsMap.containsKey(event.getSource()));
+      int closedCientWeight = managedConnectionsMap.get(event.getSource());
+      this.clientWeights -= closedCientWeight;
+      managedConnectionsMap.remove(event.getSource());
+      event.getSource().removeListener(this);
+    }
   }
 
   public void connectEvent(TCConnectionEvent event) {
@@ -255,7 +274,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
 
   @Override
   public synchronized String toString() {
-    return "[" + this.commThreadName + ", FD, wt:" + this.clientWeights + "]";
+    return "[" + this.commThreadName + ", FD, wt:" + getWeight() + "]";
   }
 
   void requestConnectInterest(TCConnectionJDK14 conn, SocketChannel sc) {
@@ -291,26 +310,22 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     private final Selector         selector;
     private final LinkedQueue      selectorTasks;
     private final String           name;
-    private final SynchronizedLong bytesRead       = new SynchronizedLong(0);
-    private final SynchronizedLong bytesWritten    = new SynchronizedLong(0);
+    private final SynchronizedLong bytesRead    = new SynchronizedLong(0);
+    private final SynchronizedLong bytesWritten = new SynchronizedLong(0);
+    private COMM_THREAD_MODE       mode;
 
-    private static final short     MODE_NIO_READER = 1;
-    private static final short     MODE_NIO_WRITER = 2;
-    private final short            mode;
-
-    public CommThread(short commThreadMode) {
-      Assert.eval((commThreadMode == MODE_NIO_READER) || (commThreadMode == MODE_NIO_WRITER));
-      name = commThreadName + (commThreadMode == MODE_NIO_READER ? "_R" : "_W");
+    public CommThread(final COMM_THREAD_MODE mode) {
+      name = commThreadName + (mode == COMM_THREAD_MODE.NIO_READER ? "_R" : "_W");
       setDaemon(true);
       setName(name);
 
       this.selector = createSelector();
       this.selectorTasks = new LinkedQueue();
-      this.mode = commThreadMode;
+      this.mode = mode;
     }
 
     private boolean isReader() {
-      return (this.mode == MODE_NIO_READER);
+      return (this.mode == COMM_THREAD_MODE.NIO_READER);
     }
 
     public void run() {
