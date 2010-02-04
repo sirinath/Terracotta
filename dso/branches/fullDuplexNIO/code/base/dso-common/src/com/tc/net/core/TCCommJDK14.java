@@ -34,8 +34,8 @@ class TCCommJDK14 implements TCComm {
     this.commThread = new CoreNIOServices(name + ":" + commThreadName, workerCommMgr, socketParams);
   }
 
-  protected int getClientCountForWorkerComm(int workerCommId) {
-    if (workerCommMgr != null) { return workerCommMgr.getClientCountForWorkerComm(workerCommId); }
+  protected int getWeightForWorkerComm(int workerCommId) {
+    if (workerCommMgr != null) { return workerCommMgr.getWeightForWorkerComm(workerCommId); }
     return 0;
   }
 
