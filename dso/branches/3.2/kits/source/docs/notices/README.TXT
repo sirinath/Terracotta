@@ -42,7 +42,7 @@ The following directories under the Terracotta home directory contain useful
 examples and information:
 
 
-- ehcache: libraries and config files for distributed caching and hibernate 
+- ehcache: libraries, config files and samples for distributed caching and hibernate 
    second-level cache
 
 - quartz: libraries, config files and samples for clustered job scheduling
