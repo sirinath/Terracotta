@@ -75,6 +75,8 @@ The platform support page in the product documentation contains a list of suppor
 The JRE used by Terracotta Clients need not match the one used by the Terracotta Server. 
 Control the JVM that the Terracotta uses by setting the JAVA_HOME environment variable.
 
+Note: Some of the samples require a JDK rather than a JRE to compile and run.  
+
 ----
 All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved. 
 http://www.terracotta.org
