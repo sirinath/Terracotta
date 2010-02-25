@@ -51,7 +51,7 @@
     <dependency>
       <groupId>org.terracotta.session</groupId>
       <artifactId>terracotta-session</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
       <scope>runtime</scope>
     </dependency>      
   </dependencies>
