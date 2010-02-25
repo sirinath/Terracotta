@@ -96,6 +96,12 @@
           <stopKey>STOP</stopKey>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.terracotta.maven.plugins</groupId>
+        <artifactId>tc-maven-plugin</artifactId>
+        <version>1.5.1</version>
+      </plugin>
     </plugins>
   </build>
 
