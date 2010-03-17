@@ -6,6 +6,7 @@ package com.tc.object.bytecode.hook;
 
 import com.tc.object.bytecode.Manager;
 
+import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.net.URL;
 
@@ -32,4 +33,5 @@ public interface DSOContext extends ClassProcessor, ClassFileTransformer {
    */
   public URL getClassResource(String className, ClassLoader loader, boolean hideSystemResources);
 
+  public void loadConfiguration(URL source, InputStream is);
 }
