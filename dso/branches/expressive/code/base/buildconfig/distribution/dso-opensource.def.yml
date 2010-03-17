@@ -1,0 +1,233 @@
+name: Terracotta DSO
+internal_name: dso
+kit_name_pattern: terracotta-version
+root_directory: terracotta-version
+bundled_demos:
+  - pojo:
+      install_directory: platform/samples/pojo
+      manifest:
+        - chatter
+        - coordination
+        - inventory
+        - jtable
+        - sharededitor
+        - sharedqueue
+  - sessions:
+      install_directory: sessions/samples
+      manifest:
+        - cart
+        - tasklist
+        - townsend
+  - ehcache:
+      install_directory: ehcache/samples
+      manifest:
+        - colorcache
+        - hibernate
+bundled_vendors:
+   - jetty-6.1.15:
+       install_directory: vendors/jetty-6.1.15
+bundled_components:
+  - base:
+      documentations:
+        notices:
+          - README
+          - releasenotes
+          - thirdpartylicenses
+          - disclaimer
+          - license
+          - INSTALL
+        guides:
+          - TerracottaQuickStart
+  - express-base:
+      documentations:
+        install_directory: docs
+        references:
+          - tc-config-express-reference
+  - shared-base:
+      documentations:
+        install_directory: platform/docs
+        references:
+          - tc-config-reference
+  - common:
+      module_packages:
+        - terracotta-l1:
+            # install in 'api-jars' folder so it can be deleted later
+            install_directory: api-jars
+            add_dependencies: true
+            modules:
+              - dso-l1
+        - terracotta-jmx-api:
+            install_directory: lib
+            modules:
+              - common-api
+              - deploy-api
+              - dso-l1-api
+              - dso-l2-common
+              - dso-statistics-api
+              - management-api      
+        - tim-api-api.version:
+            # install in 'api-jars' folder so it can be deleted later
+            install_directory: api-jars
+            modules:
+              - common-api
+              - dso-l1-api
+              - license-common
+              - management-api
+              - modules-base
+              - thirdparty-api
+        - test-api-api.version:
+            # install in 'api-jars' folder so it can be deleted later
+            install_directory: api-jars
+            source: tests.base
+            filter: "**/*TestApp.class"
+            modules:
+              - common-api
+              - common
+              - dso-l1
+              - dso-system-tests
+              - legacy-test-tree
+              - license-common
+              - simulator
+        - terracotta-api-api.version:
+            javadoc: true   
+            install_directory: lib
+            modules:
+              - dso-cluster-api
+
+      # NOTE: this section also controls what goes into the 'tc.jar' file
+      modules:
+        - aspectwerkz:
+            exclude-runtime-libraries: true
+        - common
+        - common-api
+        - license-common
+        - deploy
+        - deploy-api
+        - dso-common
+        - dso-common-jdk16
+        - dso-l1
+        - dso-l1-api
+        - dso-cluster-api
+        - dso-l2
+        - dso-l2-common
+        - dso-statistics
+        - dso-statistics-api
+        - sigarstats
+        - management
+        - management-api
+        - modules-base
+        - thirdparty
+        - thirdparty-api
+        - tim-get-tool:
+            kit-resources:
+              - tim-get.properties
+bundled_modules:
+  - core:
+      install_directory: platform/modules
+      manifest:
+        - clustered-surefire-2.3
+        - excludes-config
+        - guimodels-config
+        - jdk15-preinst-config
+        - standard-config
+        - modules-base
+packaging:
+  - tar:
+      assert: '@build_environment.os_type !~ /^\s*windows\s*$/i'
+  - zip:
+      assert: '!@build_environment.os_type =~ /^\s*windows\s*$/i'
+  - izpack
+
+postscripts:
+  - fix-bin-perms
+  - inject-copyright
+  - make-build-data:
+      args:
+        - lib/resources
+  - modify-tim-get-properties:
+      args:
+        - location: lib/resources/tim-get.properties
+        - kit-type:
+            stable:
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/stable/version
+  - install-forge-tims:
+      args:
+        - tim-apache-struts-1.1
+        - tim-jetty-6.1
+        - ehcache-terracotta
+        - quartz-terracotta
+        - terracotta-session
+  - include-external-resources:
+      args:
+        - buildconfig/distribution/external-resources.yml
+  - delete-tim-get-index
+  - include-schemas:
+      args:
+        - schema
+  - make-srcdocs:
+      args:
+        - platform/samples/pojo
+        - sessions/samples
+  - maven-deploy:
+      args:
+        - artifact_count: 11
+        - groupId: org.terracotta
+          artifact: parent
+          srcfile: pom.xml
+          pom: pom.xml
+        - groupId: org.terracotta
+          artifact: terracotta-l1-parent
+          srcfile: poms/terracotta-l1-parent-pom.xml
+          pom: poms/terracotta-l1-parent-pom.xml        
+        - groupId: org.terracotta
+          artifact: terracotta
+          file: lib/tc.jar
+          pom: poms/terracotta-pom.xml
+          inject: 
+            - lib/resources/build-data.txt
+            - lib/resources/tim-get.properties
+        - groupId: org.terracotta
+          artifact: terracotta-l1
+          file: api-jars/terracotta-l1.jar
+          pom: poms/terracotta-l1-os-pom.xml
+          inject: 
+            - lib/resources/build-data.txt           
+        - groupId: org.terracotta
+          artifact: tcconfig
+          file: lib/tcconfig-xmlbeans-generated.jar
+          pom: poms/tcconfig-pom.xml
+        - groupId: org.terracotta
+          artifact: tc-l1-reconnect-properties
+          file: lib/tc-l1-reconnect-properties.jar
+          pom: poms/tc-l1-reconnect-properties-pom.xml
+        - groupId: org.terracotta
+          artifact: tcstats
+          file: lib/tcstats-xmlbeans-generated.jar
+          pom: poms/tcstats-pom.xml
+        - groupId: org.terracotta.api
+          artifact: tim-api
+          file: api-jars/tim-api-api.version.jar
+          pom: poms/terracotta-tim-api-pom.xml
+          version: api.version
+          inject: 
+            - lib/resources/build-data.txt
+        - groupId: org.terracotta
+          artifact: terracotta-jmx-api
+          file: lib/terracotta-jmx-api.jar
+          pom: poms/terracotta-jmx-api-pom.xml
+          inject: 
+            - lib/resources/build-data.txt
+        - groupId: org.terracotta.api
+          artifact: terracotta-api
+          file: lib/terracotta-api-api.version.jar
+          pom: poms/terracotta-api-pom.xml
+          version: api.version
+        - groupId: org.terracotta.api
+          artifact: test-api
+          file: api-jars/test-api-api.version.jar
+          pom: poms/terracotta-test-api-pom.xml
+          version: api.version
+          inject: 
+            - lib/resources/build-data.txt
+  - delete-api-jars
