@@ -48,7 +48,6 @@ import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Module;
 import com.terracottatech.config.Modules;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -396,8 +395,8 @@ public class ModulesLoader {
   private static void loadConfiguration(final DSOClientConfigHelper configHelper, Bundle bundle, final URL url)
       throws BundleException {
     // attempt to load all of the config fragments found in the config-bundle
-    final String[] paths = getConfigPath(bundle);
-    for (final String configPath : paths) {
+    for (String configPath : getConfigPath(bundle)) {
+
       final InputStream is;
       try {
         is = JarResourceLoader.getJarResource(url, configPath);
@@ -409,37 +408,49 @@ public class ModulesLoader {
         continue;
       }
 
-      // otherwise, merge it with the current configuration
+      // merge it with the current configuration
       try {
-        final DsoApplication application = DsoApplication.Factory.parse(is);
-        if (application != null) {
-          final ConfigLoader loader = new ConfigLoader(configHelper, logger);
-          logConfig(application, bundle, configPath);
-          validateBundleFragment(application);
-          loader.loadDsoConfig(application);
-        }
-        is.close();
-      } catch (IOException ioe) {
-        String msg = "Error reading configuration from bundle: " + bundle.getSymbolicName() + " located at "
-                     + bundle.getLocation();
-        consoleLogger.warn(msg, ioe);
-        logger.warn(msg, ioe);
-        throw new BundleException(msg, ioe);
-      } catch (XmlException xmle) {
-        String msg = "Error parsing configuration from bundle: " + bundle.getSymbolicName() + " located at "
-                     + bundle.getLocation();
-        consoleLogger.warn(msg, xmle);
-        logger.warn(msg, xmle);
-        throw new BundleException(msg, xmle);
-      } catch (ConfigurationSetupException cse) {
-        String msg = "Invalid configuration in bundle: " + bundle.getSymbolicName() + " located at "
-                     + bundle.getLocation() + ": " + cse.getMessage();
-        consoleLogger.warn(msg, cse);
-        logger.warn(msg, cse);
-        throw new BundleException(msg, cse);
-      } finally {
-        IOUtils.closeQuietly(is);
+        loadConfiguration(configHelper, url, is, bundle, configPath);
+      } catch (ConfigLoadException cle) {
+        throw new BundleException(cle.getMessage(), cle.getCause());
       }
+    }
+
+  }
+
+  private static void loadConfiguration(DSOClientConfigHelper configHelper, URL url, InputStream is, Bundle bundle,
+                                        String configPath) throws ConfigLoadException {
+    try {
+      final DsoApplication application = DsoApplication.Factory.parse(is);
+      if (application != null) {
+        final ConfigLoader loader = new ConfigLoader(configHelper, logger);
+        logConfig(application, url, bundle, configPath);
+        validateBundleFragment(application);
+        loader.loadDsoConfig(application);
+      }
+      is.close();
+    } catch (IOException ioe) {
+      String msg = "Error reading configuration from bundle located at " + url;
+      consoleLogger.warn(msg, ioe);
+      throw new ConfigLoadException(msg, ioe);
+    } catch (XmlException xmle) {
+      String msg = "Error parsing configuration from bundle located at " + url;
+      consoleLogger.warn(msg, xmle);
+      throw new ConfigLoadException(msg, xmle);
+    } catch (ConfigurationSetupException cse) {
+      String msg = "Invalid configuration in bundle located at " + url + ": " + cse.getMessage();
+      consoleLogger.warn(msg, cse);
+      throw new ConfigLoadException(msg, cse);
+    } finally {
+      IOUtils.closeQuietly(is);
+    }
+  }
+
+  public static void loadConfiguration(DSOClientConfigHelper configHelper, URL url, InputStream is) {
+    try {
+      loadConfiguration(configHelper, url, is, null, null);
+    } catch (ConfigLoadException e) {
+      throw new RuntimeException(e.getMessage(), e.getCause());
     }
   }
 
@@ -472,16 +483,27 @@ public class ModulesLoader {
 
   }
 
-  private static void logConfig(final DsoApplication application, final Bundle bundle, final String configPath) {
+  private static void logConfig(final DsoApplication application, URL url, final Bundle bundle, final String configPath) {
     ByteArrayOutputStream bas = new ByteArrayOutputStream();
-    BufferedOutputStream buf = new BufferedOutputStream(bas);
     try {
-      application.save(buf);
-      buf.close();
-      logger.info("Config loaded from module: " + bundle.getSymbolicName() + " (" + configPath + ")" + NEWLINE
-                  + bas.toString());
+      application.save(bas);
+      bas.close();
+
+      if (bundle != null) {
+        logger.info("Config loaded from module: " + bundle.getSymbolicName() + " (" + configPath + ")" + NEWLINE
+                    + bas.toString());
+      } else {
+        logger.info("Config loaded from url: " + url + NEWLINE + bas.toString());
+      }
     } catch (IOException e) {
       logger.warn("Unable to generate a log entry to for the module's config info.");
     }
   }
+
+  private static class ConfigLoadException extends Exception {
+    ConfigLoadException(String msg, Throwable cause) {
+      super(msg, cause);
+    }
+  }
+
 }

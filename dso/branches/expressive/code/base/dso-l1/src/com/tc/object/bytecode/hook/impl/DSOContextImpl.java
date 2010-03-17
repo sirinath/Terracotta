@@ -320,4 +320,7 @@ public class DSOContextImpl implements DSOContext {
     return preProcess(className, classfileBuffer, 0, classfileBuffer.length, loader);
   }
 
+  public void loadConfiguration(URL source, InputStream is) {
+    ModulesLoader.loadConfiguration(configHelper, source, is);
+  }
 }
