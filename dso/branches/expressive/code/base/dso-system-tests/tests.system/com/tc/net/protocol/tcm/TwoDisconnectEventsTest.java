@@ -17,6 +17,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.core.MockTCConnection;
 import com.tc.net.core.TCConnection;
 import com.tc.net.core.event.TCConnectionEvent;
+import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerImpl;
 import com.tc.net.protocol.tcm.msgs.PingMessage;
 import com.tc.net.protocol.transport.ClientMessageTransport;
 import com.tc.object.BaseDSOTestCase;
@@ -91,7 +92,12 @@ public class TwoDisconnectEventsTest extends BaseDSOTestCase {
 
         // two transport disconnect events to client.
         ClientMessageChannelImpl cmci = (ClientMessageChannelImpl) clientChannel;
-        ClientMessageTransport cmt = (ClientMessageTransport) cmci.getSendLayer();
+        ClientMessageTransport cmt;
+        if (cmci.getSendLayer() instanceof ClientMessageTransport) {
+          cmt = (ClientMessageTransport) cmci.getSendLayer();
+        } else {
+          cmt = (ClientMessageTransport) ((OnceAndOnlyOnceProtocolNetworkLayerImpl) cmci.getSendLayer()).getSendLayer();
+        }
         cmt.setAllowConnectionReplace(true);
 
         // send first event
