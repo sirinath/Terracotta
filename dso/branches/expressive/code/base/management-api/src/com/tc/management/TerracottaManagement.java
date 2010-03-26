@@ -4,6 +4,7 @@
  */
 package com.tc.management;
 
+import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.MBeanNames;
 import com.tc.net.TCSocketAddress;
 import com.tc.util.UUID;
@@ -92,7 +93,7 @@ public abstract class TerracottaManagement {
   public enum MBeanDomain {
     PUBLIC(MANAGEMENT_RESOURCES.getPublicMBeanDomain()), INTERNAL(MANAGEMENT_RESOURCES.getInternalMBeanDomain()), TIM(
         MANAGEMENT_RESOURCES.getTimMBeanDomain()), EHCACHE(MANAGEMENT_RESOURCES.getEhCacheMBeanDomain()), EHCACHE_HIBERNATE(
-        MANAGEMENT_RESOURCES.getEhCacheHibernateMBeanDomain());
+        MANAGEMENT_RESOURCES.getEhCacheHibernateMBeanDomain()), QUARTZ(MANAGEMENT_RESOURCES.getQuartzMBeanDomain());
 
     private final String value;
 
@@ -192,10 +193,11 @@ public abstract class TerracottaManagement {
 
   public static final QueryExp matchAllTerracottaMBeans(UUID id) {
     try {
-      return Query.or(Query.or(new ObjectName(MBeanDomain.PUBLIC + ":*,node=" + id),
-                               new ObjectName(MBeanDomain.INTERNAL + ":*,node=" + id)), Query
+      return Query.or(Query.or(Query.or(new ObjectName(MBeanDomain.PUBLIC + ":*,node=" + id),
+                                        new ObjectName(MBeanDomain.INTERNAL + ":*,node=" + id)), Query
           .or(new ObjectName(MBeanDomain.EHCACHE + ":*,node=" + id), new ObjectName(MBeanDomain.EHCACHE_HIBERNATE
-                                                                                    + ":*,node=" + id)));
+                                                                                    + ":*,node=" + id))),
+                      new ObjectName(MBeanDomain.QUARTZ + ":*,node=" + id));
     } catch (MalformedObjectNameException e) {
       throw new RuntimeException(e);
     }
@@ -217,5 +219,10 @@ public abstract class TerracottaManagement {
   public static final Set getAllL1DumperMBeans(final MBeanServerConnection mbs) throws MalformedObjectNameException,
       NullPointerException, IOException {
     return mbs.queryNames(new ObjectName(MBeanNames.L1DUMPER_INTERNAL.getCanonicalName() + ",*"), null);
+  }
+
+  public static final Set getAllL2DumperMBeans(final MBeanServerConnection mbs) throws MalformedObjectNameException,
+      NullPointerException, IOException {
+    return mbs.queryNames(new ObjectName(L2MBeanNames.DUMPER.getCanonicalName() + ",*"), null);
   }
 }
