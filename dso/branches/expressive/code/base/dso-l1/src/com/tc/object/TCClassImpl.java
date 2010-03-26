@@ -339,6 +339,7 @@ public class TCClassImpl implements TCClass {
   private TCField[] createPortableFields() {
     if (isLogical || !objectManager.isPortableClass(this.peer)) { return new TCField[0]; }
     LinkedList l = new LinkedList();
+ 
     for (Iterator i = declaredTCFieldsByName.values().iterator(); i.hasNext();) {
 
       TCField f = (TCField) i.next();
@@ -346,6 +347,7 @@ public class TCClassImpl implements TCClass {
         l.add(f);
       }
     }
+    
     return (TCField[]) l.toArray(new TCField[l.size()]);
   }
 
