@@ -25,6 +25,7 @@ import com.tc.object.appevent.NonPortableObjectEvent;
 import com.tc.object.appevent.NonPortableRootContext;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.cache.CacheStats;
 import com.tc.object.cache.Evictable;
 import com.tc.object.cache.EvictionPolicy;
@@ -220,7 +221,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     while (this.state != RUNNING) {
       try {
         wait();
-      } catch (InterruptedException e) {
+      } catch (final InterruptedException e) {
         isInterrupted = true;
       }
     }
@@ -245,7 +246,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   public TraversedReferences getPortableObjects(final Class clazz, final Object start, final TraversedReferences addTo) {
-    TCClass tcc = this.clazzFactory.getOrCreate(clazz, this);
+    final TCClass tcc = this.clazzFactory.getOrCreate(clazz, this);
     return tcc.getPortableObjects(start, addTo);
   }
 
@@ -266,16 +267,16 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private ObjectLatchState markLookupInProgress(final ObjectID id) {
-    ResetableLatch latch = getLocalLookupContext().getLatch();
-    ObjectLatchState ols = new ObjectLatchState(id, latch);
-    Object old = this.objectLatchStateMap.put(id, ols);
+    final ResetableLatch latch = getLocalLookupContext().getLatch();
+    final ObjectLatchState ols = new ObjectLatchState(id, latch);
+    final Object old = this.objectLatchStateMap.put(id, ols);
     Assert.assertNull(old);
     return ols;
   }
 
   private synchronized void markCreateInProgress(final ObjectLatchState ols, final TCObject object,
                                                  final LocalLookupContext lookupContext) {
-    ResetableLatch latch = lookupContext.getLatch();
+    final ResetableLatch latch = lookupContext.getLatch();
     // Make sure this thread owns this object lookup
     Assert.assertTrue(ols.getLatch() == latch);
     ols.setObject(object);
@@ -343,9 +344,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void executePreCreateMethods(final Object pojo) {
-    TCClass tcClass = this.clazzFactory.getOrCreate(pojo.getClass(), this);
+    final TCClass tcClass = this.clazzFactory.getOrCreate(pojo.getClass(), this);
 
-    for (Method m : tcClass.getPreCreateMethods()) {
+    for (final Method m : tcClass.getPreCreateMethods()) {
       executeMethod(pojo, m, "preCreate method (" + m.getName() + ") failed on object of " + pojo.getClass());
     }
   }
@@ -365,14 +366,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  private static void wrapIfNeededAndThrow(Throwable t) {
+  private static void wrapIfNeededAndThrow(final Throwable t) {
     if (t instanceof Error) { throw (Error) t; }
     if (t instanceof RuntimeException) { throw (RuntimeException) t; }
     throw new RuntimeException(t);
   }
 
   private TCObject lookupExistingLiteralRootOrNull(final String rootName) {
-    ObjectID rootID = (ObjectID) this.roots.get(rootName);
+    final ObjectID rootID = (ObjectID) this.roots.get(rootName);
     return basicLookupByID(rootID);
   }
 
@@ -381,7 +382,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   public synchronized ObjectID lookupExistingObjectID(final Object pojo) {
-    TCObject obj = basicLookup(pojo);
+    final TCObject obj = basicLookup(pojo);
     if (obj == null) { throw new AssertionError("Missing object ID for: Object of class " + pojo.getClass().getName()
                                                 + " [Identity Hashcode : 0x"
                                                 + Integer.toHexString(System.identityHashCode(pojo)) + "] "); }
@@ -394,7 +395,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
    * 
    * @param id Object identifier
    */
-  public void preFetchObject(ObjectID id) {
+  public void preFetchObject(final ObjectID id) {
     synchronized (this) {
       if (basicHasLocal(id) || getObjectLatchState(id) != null) { return; }
       // We are temporarily marking lookup in progress so that no other thread sneaks in under us and does a lookup
@@ -439,7 +440,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void reap(final ObjectID objectID) {
     synchronized (this) {
-      TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
+      final TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
       if (tcobj == null) {
         if (this.logger.isDebugEnabled()) {
           this.logger.debug(System.identityHashCode(this) + " Entry removed before reaper got the chance: " + objectID);
@@ -474,7 +475,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     boolean retrieveNeeded = false;
     boolean isInterrupted = false;
 
-    LocalLookupContext lookupContext = getLocalLookupContext();
+    final LocalLookupContext lookupContext = getLocalLookupContext();
 
     if (lookupContext.getCallStackCount().increment() == 1) {
       // first time
@@ -500,7 +501,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
             // the object is being looked up, wait.
             try {
               wait(CONCURRENT_LOOKUP_TIMED_WAIT); // using a timed out to avoid needing to catch all notify conditions
-            } catch (InterruptedException ie) {
+            } catch (final InterruptedException ie) {
               isInterrupted = true;
             }
           } else {
@@ -518,11 +519,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       if (retrieveNeeded) {
         boolean createInProgressSet = false;
         try {
-          DNA dna = noDepth ? this.remoteObjectManager.retrieve(id, NO_DEPTH)
+          final DNA dna = noDepth ? this.remoteObjectManager.retrieve(id, NO_DEPTH)
               : (parentContext == null ? this.remoteObjectManager.retrieve(id) : this.remoteObjectManager
                   .retrieveWithParentContext(id, parentContext));
           // TODO: make DNA.getDefiningLoaderDescription() return LoaderDescription
-          LoaderDescription desc = LoaderDescription.fromString(dna.getDefiningLoaderDescription());
+          final LoaderDescription desc = LoaderDescription.fromString(dna.getDefiningLoaderDescription());
           obj = this.factory.getNewInstance(id, this.classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna
               .getTypeName()), desc), false);
 
@@ -536,7 +537,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
           if (this.runtimeLogger.getFaultDebug()) {
             this.runtimeLogger.updateFaultStats(dna.getTypeName());
           }
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
           // remove the object creating in progress from the list.
           lookupDone(id, createInProgressSet);
           this.logger.warn("Exception: ", t);
@@ -550,7 +551,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       if (lookupContext.getCallStackCount().decrement() == 0) {
         // release your own local latch
         lookupContext.getLatch().release();
-        Set waitSet = lookupContext.getObjectLatchWaitSet();
+        final Set waitSet = lookupContext.getObjectLatchWaitSet();
         waitAndClearLatchSet(waitSet);
         // enabled transaction logging
         this.txManager.enableTransactionLogging();
@@ -563,13 +564,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private void waitAndClearLatchSet(final Set waitSet) {
     boolean isInterrupted = false;
     // now wait till all the other objects you are waiting for releases there latch.
-    for (Iterator iter = waitSet.iterator(); iter.hasNext();) {
-      ObjectLatchState ols = (ObjectLatchState) iter.next();
+    for (final Iterator iter = waitSet.iterator(); iter.hasNext();) {
+      final ObjectLatchState ols = (ObjectLatchState) iter.next();
       while (true) {
         try {
           ols.getLatch().acquire();
           break;
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           isInterrupted = true;
         }
       }
@@ -584,7 +585,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   synchronized Set addAllObjectIDs(final Set oids) {
-    for (Iterator i = this.idToManaged.keySet().iterator(); i.hasNext();) {
+    for (final Iterator i = this.idToManaged.keySet().iterator(); i.hasNext();) {
       oids.add(i.next());
     }
     return oids;
@@ -593,7 +594,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public Object lookupRoot(final String rootName) {
     try {
       return lookupRootOptionallyCreateOrReplace(rootName, null, false, true, false);
-    } catch (ClassNotFoundException e) {
+    } catch (final ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
   }
@@ -604,7 +605,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public Object lookupOrCreateRoot(final String rootName, final Object root) {
     try {
       return lookupOrCreateRoot(rootName, root, true, false);
-    } catch (ClassNotFoundException e) {
+    } catch (final ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
   }
@@ -614,11 +615,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
    * replaceable root.
    */
   public Object createOrReplaceRoot(final String rootName, final Object root) {
-    Object existingRoot = lookupRoot(rootName);
+    final Object existingRoot = lookupRoot(rootName);
     if (existingRoot == null) {
       return lookupOrCreateRoot(rootName, root, false);
     } else if (isLiteralPojo(root)) {
-      TCObject tcObject = lookupExistingLiteralRootOrNull(rootName);
+      final TCObject tcObject = lookupExistingLiteralRootOrNull(rootName);
       tcObject.literalValueChanged(root, existingRoot);
       return root;
     } else {
@@ -629,7 +630,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public Object lookupOrCreateRootNoDepth(final String rootName, final Object root) {
     try {
       return lookupOrCreateRoot(rootName, root, true, true);
-    } catch (ClassNotFoundException e) {
+    } catch (final ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
   }
@@ -637,7 +638,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public Object lookupOrCreateRoot(final String rootName, final Object root, final boolean dsoFinal) {
     try {
       return lookupOrCreateRoot(rootName, root, dsoFinal, false);
-    } catch (ClassNotFoundException e) {
+    } catch (final ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
   }
@@ -650,7 +651,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                     final boolean noDepth) throws ClassNotFoundException {
     if (root != null) {
       // this will throw an exception if root is not portable
-      this.checkPortabilityOfRoot(root, rootName, root.getClass());
+      checkPortabilityOfRoot(root, rootName, root.getClass());
     }
 
     return lookupRootOptionallyCreateOrReplace(rootName, root, true, dsoFinal, noDepth);
@@ -658,11 +659,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void checkPortabilityOfTraversedReference(final TraversedReference reference, final Class referringClass,
                                                     final NonPortableEventContext context) {
-    NonPortableReason reason = checkPortabilityOf(reference.getValue());
+    final NonPortableReason reason = checkPortabilityOf(reference.getValue());
     if (reason != null) {
       reason.addDetail("Referring class", referringClass.getName());
       if (!reference.isAnonymous()) {
-        String fullyQualifiedFieldname = reference.getFullyQualifiedReferenceName();
+        final String fullyQualifiedFieldname = reference.getFullyQualifiedReferenceName();
         reason.setUltimateNonPortableFieldName(fullyQualifiedFieldname);
         reason.addDetail(NonPortableFieldSetContext.FIELD_NAME_LABEL, fullyQualifiedFieldname);
       }
@@ -677,9 +678,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void checkPortabilityOfRoot(final Object root, final String rootName, final Class rootType)
       throws TCNonPortableObjectError {
-    NonPortableReason reason = checkPortabilityOf(root);
+    final NonPortableReason reason = checkPortabilityOf(root);
     if (reason != null) {
-      NonPortableRootContext context = this.appEventContextFactory.createNonPortableRootContext(rootName, root);
+      final NonPortableRootContext context = this.appEventContextFactory.createNonPortableRootContext(rootName, root);
       dumpObjectHierarchy(root, context);
       if (this.sendErrors) {
         storeObjectHierarchy(root, context);
@@ -691,11 +692,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public void checkPortabilityOfField(final Object fieldValue, final String fieldName, final Object pojo)
       throws TCNonPortableObjectError {
-    NonPortableReason reason = checkPortabilityOf(fieldValue);
+    final NonPortableReason reason = checkPortabilityOf(fieldValue);
     if (reason != null) {
-      NonPortableFieldSetContext context = this.appEventContextFactory.createNonPortableFieldSetContext(pojo,
-                                                                                                        fieldName,
-                                                                                                        fieldValue);
+      final NonPortableFieldSetContext context = this.appEventContextFactory
+          .createNonPortableFieldSetContext(pojo, fieldName, fieldValue);
       dumpObjectHierarchy(fieldValue, context);
       if (this.sendErrors) {
         storeObjectHierarchy(pojo, context);
@@ -711,17 +711,17 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
    */
   public Object cloneAndInvokeLogicalOperation(Object pojo, String methodName, final Object[] params) {
     try {
-      Class c = pojo.getClass();
-      Object o = c.newInstance();
+      final Class c = pojo.getClass();
+      final Object o = c.newInstance();
       if (o instanceof Map) {
         ((Map) o).putAll((Map) pojo);
       } else if (o instanceof Collection) {
         ((Collection) o).addAll((Collection) pojo);
       }
-      Method[] methods = c.getMethods();
+      final Method[] methods = c.getMethods();
       methodName = methodName.substring(0, methodName.indexOf('('));
       for (Method m : methods) {
-        Class[] paramTypes = m.getParameterTypes();
+        final Class[] paramTypes = m.getParameterTypes();
         if (m.getName().equals(methodName) && params.length == paramTypes.length) {
           for (int j = 0; j < paramTypes.length; j++) {
             if (!paramTypes[j].isAssignableFrom(params[j].getClass())) {
@@ -736,7 +736,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         }
       }
       pojo = o;
-    } catch (Exception e) {
+    } catch (final Exception e) {
       this.logger.error("Unable to clone logical object", e);
     }
     return pojo;
@@ -744,10 +744,10 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public void checkPortabilityOfLogicalAction(final Object[] params, final int index, final String methodName,
                                               final Object pojo) throws TCNonPortableObjectError {
-    Object param = params[index];
-    NonPortableReason reason = checkPortabilityOf(param);
+    final Object param = params[index];
+    final NonPortableReason reason = checkPortabilityOf(param);
     if (reason != null) {
-      NonPortableEventContext context = this.appEventContextFactory
+      final NonPortableEventContext context = this.appEventContextFactory
           .createNonPortableLogicalInvokeContext(pojo, methodName, params, index);
       dumpObjectHierarchy(params[index], context);
       if (this.sendErrors) {
@@ -767,16 +767,16 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     context.addDetailsTo(reason);
 
     // Send this event to L2
-    JMXMessage jmxMsg = this.channel.getJMXMessage();
+    final JMXMessage jmxMsg = this.channel.getJMXMessage();
     jmxMsg.setJMXObject(new NonPortableObjectEvent(context, reason));
     jmxMsg.send();
 
-    StringWriter formattedReason = new StringWriter();
-    PrintWriter out = new PrintWriter(formattedReason);
-    StringFormatter sf = new StringFormatter();
+    final StringWriter formattedReason = new StringWriter();
+    final PrintWriter out = new PrintWriter(formattedReason);
+    final StringFormatter sf = new StringFormatter();
 
-    ParagraphFormatter pf = new ConsoleParagraphFormatter(80, sf);
-    NonPortableReasonFormatter reasonFormatter = new ConsoleNonPortableReasonFormatter(out, ": ", sf, pf);
+    final ParagraphFormatter pf = new ConsoleParagraphFormatter(80, sf);
+    final NonPortableReasonFormatter reasonFormatter = new ConsoleNonPortableReasonFormatter(out, ": ", sf, pf);
     reason.accept(reasonFormatter);
     reasonFormatter.flush();
 
@@ -793,19 +793,19 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void markRootLookupInProgress(final String rootName) {
-    boolean wasAdded = this.rootLookupsInProgress.add(rootName);
+    final boolean wasAdded = this.rootLookupsInProgress.add(rootName);
     if (!wasAdded) { throw new AssertionError("Attempt to mark a root lookup that is already in progress."); }
   }
 
   private void markRootLookupNotInProgress(final String rootName) {
-    boolean removed = this.rootLookupsInProgress.remove(rootName);
+    final boolean removed = this.rootLookupsInProgress.remove(rootName);
     if (!removed) { throw new AssertionError("Attempt to unmark a root lookup that wasn't in progress."); }
   }
 
   public synchronized void replaceRootIDIfNecessary(final String rootName, final ObjectID newRootID) {
     waitUntilRunning();
 
-    ObjectID oldRootID = (ObjectID) this.roots.get(rootName);
+    final ObjectID oldRootID = (ObjectID) this.roots.get(rootName);
     if (oldRootID == null || oldRootID.equals(newRootID)) { return; }
 
     this.roots.put(rootName, newRootID);
@@ -814,7 +814,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private Object lookupRootOptionallyCreateOrReplace(final String rootName, final Object rootPojo,
                                                      final boolean create, final boolean dsoFinal, final boolean noDepth)
       throws ClassNotFoundException {
-    boolean replaceRootIfExistWhenCreate = !dsoFinal && create;
+    final boolean replaceRootIfExistWhenCreate = !dsoFinal && create;
 
     ObjectID rootID = null;
 
@@ -840,7 +840,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         } else {
           try {
             wait();
-          } catch (InterruptedException e) {
+          } catch (final InterruptedException e) {
             e.printStackTrace();
             isInterrupted = true;
           }
@@ -901,13 +901,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void basicAddLocal(final TCObject obj, final boolean fromLookup) {
     synchronized (this) {
-      ObjectID id = obj.getObjectID();
+      final ObjectID id = obj.getObjectID();
       if (basicHasLocal(id)) { throw Assert.failure("Attempt to add an object that already exists: Object of class "
                                                     + obj.getClass() + " [Identity Hashcode : 0x"
                                                     + Integer.toHexString(System.identityHashCode(obj)) + "] "); }
       this.idToManaged.put(id, obj);
 
-      Object pojo = obj.getPeerObject();
+      final Object pojo = obj.getPeerObject();
 
       if (pojo != null) {
         if (pojo.getClass().isArray()) {
@@ -915,7 +915,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         }
 
         if (pojo instanceof Manageable) {
-          Manageable m = (Manageable) pojo;
+          final Manageable m = (Manageable) pojo;
           if (m.__tc_managed() == null) {
             m.__tc_managed(obj);
           } else {
@@ -933,26 +933,26 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  private void traverse(Object root, NonPortableEventContext context, TraversalAction action) {
+  private void traverse(final Object root, final NonPortableEventContext context, final TraversalAction action) {
     // if set this will be final exception thrown
     Throwable exception = null;
 
-    PostCreateMethodGatherer postCreate = (PostCreateMethodGatherer) action;
+    final PostCreateMethodGatherer postCreate = (PostCreateMethodGatherer) action;
     try {
       this.traverser.traverse(root, this.traverseTest, context, action);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       exception = t;
     } finally {
       // even if we're throwing an exception from the traversal the postCreate methods for the objects that became
       // shared should still be called
-      for (Entry<Object, List<Method>> entry : postCreate.getPostCreateMethods().entrySet()) {
-        Object target = entry.getKey();
+      for (final Entry<Object, List<Method>> entry : postCreate.getPostCreateMethods().entrySet()) {
+        final Object target = entry.getKey();
 
-        for (Method method : entry.getValue()) {
+        for (final Method method : entry.getValue()) {
           try {
             executeMethod(target, method, "postCreate method (" + method.getName() + ") failed on object of "
                                           + target.getClass());
-          } catch (Throwable t) {
+          } catch (final Throwable t) {
             if (exception == null) {
               exception = t;
             } else {
@@ -973,22 +973,22 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     // actually working (as opposed to just throwing another OOME)
     try {
       dumpObjectHierarchy0(root, context);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       this.logger.error("error walking non-portable object instance of type " + root.getClass().getName(), t);
     }
   }
 
   private void dumpObjectHierarchy0(final Object root, final NonPortableEventContext context) {
     if (this.runtimeLogger.getNonPortableDump()) {
-      NonPortableWalkVisitor visitor = new NonPortableWalkVisitor(CustomerLogging.getDSORuntimeLogger(), this,
-                                                                  this.clientConfiguration, root);
-      ObjectGraphWalker walker = new ObjectGraphWalker(root, visitor, visitor);
+      final NonPortableWalkVisitor visitor = new NonPortableWalkVisitor(CustomerLogging.getDSORuntimeLogger(), this,
+                                                                        this.clientConfiguration, root);
+      final ObjectGraphWalker walker = new ObjectGraphWalker(root, visitor, visitor);
       walker.walk();
     }
   }
 
   public void sendApplicationEvent(final Object pojo, final ApplicationEvent event) {
-    JMXMessage jmxMsg = this.channel.getJMXMessage();
+    final JMXMessage jmxMsg = this.channel.getJMXMessage();
     storeObjectHierarchy(pojo, event.getApplicationEventContext());
     jmxMsg.setJMXObject(event);
     jmxMsg.send();
@@ -996,11 +996,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public void storeObjectHierarchy(final Object root, final ApplicationEventContext context) {
     try {
-      WalkVisitor wv = new WalkVisitor(this, this.clientConfiguration, context);
-      ObjectGraphWalker walker = new ObjectGraphWalker(root, wv, wv);
+      final WalkVisitor wv = new WalkVisitor(this, this.clientConfiguration, context);
+      final ObjectGraphWalker walker = new ObjectGraphWalker(root, wv, wv);
       walker.walk();
       context.setTreeModel(wv.getTreeModel());
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       t.printStackTrace();
     }
   }
@@ -1013,18 +1013,18 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private class AddManagedObjectAction implements TraversalAction, PostCreateMethodGatherer {
     private final Map<Object, List<Method>> toCall = new IdentityHashMap<Object, List<Method>>();
 
-    public final void visit(List objects) {
-      for (Object pojo : objects) {
-        List<Method> postCreateMethods = ClientObjectManagerImpl.this.clazzFactory
+    public final void visit(final List objects) {
+      for (final Object pojo : objects) {
+        final List<Method> postCreateMethods = ClientObjectManagerImpl.this.clazzFactory
             .getOrCreate(pojo.getClass(), ClientObjectManagerImpl.this).getPostCreateMethods();
         if (!postCreateMethods.isEmpty()) {
-          Object prev = this.toCall.put(pojo, postCreateMethods);
+          final Object prev = this.toCall.put(pojo, postCreateMethods);
           Assert.assertNull(prev);
         }
       }
 
-      List tcObjects = basicCreateIfNecessary(objects);
-      for (Iterator i = tcObjects.iterator(); i.hasNext();) {
+      final List tcObjects = basicCreateIfNecessary(objects);
+      for (final Iterator i = tcObjects.iterator(); i.hasNext();) {
         ClientObjectManagerImpl.this.txManager.createObject((TCObject) i.next());
       }
     }
@@ -1041,14 +1041,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       // collection, etc) of newly shared instances would get TCObjects and ObjectIDs assigned to them.
       if (LiteralValues.isLiteralInstance(object)) { return false; }
 
-      TCObject tco = basicLookup(object);
+      final TCObject tco = basicLookup(object);
       if (tco == null) { return true; }
       return tco.isNew();
     }
 
     public void checkPortability(final TraversedReference reference, final Class referringClass,
                                  final NonPortableEventContext context) throws TCNonPortableObjectError {
-      ClientObjectManagerImpl.this.checkPortabilityOfTraversedReference(reference, referringClass, context);
+      checkPortabilityOfTraversedReference(reference, referringClass, context);
     }
   }
 
@@ -1069,8 +1069,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private synchronized List basicCreateIfNecessary(final List pojos) {
     waitUntilRunning();
-    List tcObjects = new ArrayList(pojos.size());
-    for (Iterator i = pojos.iterator(); i.hasNext();) {
+    final List tcObjects = new ArrayList(pojos.size());
+    for (final Iterator i = pojos.iterator(); i.hasNext();) {
       tcObjects.add(basicCreateIfNecessary(i.next()));
     }
     return tcObjects;
@@ -1084,7 +1084,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     if (clazz.isUseNonDefaultConstructor()) {
       try {
         return newWeakObjectReference(dna.getObjectID(), this.factory.getNewPeerObject(clazz, dna));
-      } catch (Exception e) {
+      } catch (final Exception e) {
         throw new TCRuntimeException(e);
       }
     } else {
@@ -1095,14 +1095,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public WeakReference createNewPeer(final TCClass clazz, final int size, final ObjectID id, final ObjectID parentID) {
     try {
       if (clazz.isIndexed()) {
-        Object array = this.factory.getNewArrayInstance(clazz, size);
+        final Object array = this.factory.getNewArrayInstance(clazz, size);
         return newWeakObjectReference(id, array);
       } else if (parentID.isNull()) {
         return newWeakObjectReference(id, this.factory.getNewPeerObject(clazz));
       } else {
         return newWeakObjectReference(id, this.factory.getNewPeerObject(clazz, lookupObject(parentID)));
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       throw new TCRuntimeException(e);
     }
   }
@@ -1127,6 +1127,41 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return this.portability.isPortableInstance(obj);
   }
 
+  /**
+   * Returns the value for a particular Key in a ServerTCMap.
+   * 
+   * @param pojo Object
+   * @param key Key Object : Note currently only literal keys or shared keys are supported. Even if the key is portable,
+   *        but not shared, it is not supported.
+   * @return value Object in the mapping, null if no mapping present.
+   */
+  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) throws ClassNotFoundException {
+
+    final TCObject tcObject = map.__tc_managed();
+    if (tcObject == null) { throw new TCRuntimeException(
+                                                         "getValueForKeyInMap is not supported in a non-shared ServerTCMap"); }
+    final ObjectID mapID = tcObject.getObjectID();
+    Object portableKey = key;
+    if (key instanceof Manageable) {
+      final TCObject keyObject = ((Manageable) key).__tc_managed();
+      if (keyObject == null) { throw new TCRuntimeException(
+                                                            "Key is portable, but not shared. This is currently not supported with ServerTCMap. Map ID = "
+                                                                + mapID + " key = " + key); }
+      portableKey = keyObject.getObjectID();
+    }
+
+    if (!LiteralValues.isLiteralInstance(portableKey)) {
+      // formatter
+      throw new TCRuntimeException(
+                                   "Key is not portable. It needs to be a liternal or portable and shared for ServerTCMap. Key = "
+                                       + portableKey + " map id = " + mapID);
+    }
+
+    final ObjectID valueID = this.remoteObjectManager.getMappingForKey(mapID, portableKey);
+
+    return lookupObject(valueID);
+  }
+
   private void startReaper() {
     this.reaper = new StoppableThread("Reaper") {
       @Override
@@ -1135,17 +1170,17 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
           try {
             if (isStopRequested()) { return; }
 
-            WeakObjectReference wor = (WeakObjectReference) ClientObjectManagerImpl.this.referenceQueue
+            final WeakObjectReference wor = (WeakObjectReference) ClientObjectManagerImpl.this.referenceQueue
                 .remove(POLL_TIME);
 
             if (wor != null) {
-              ObjectID objectID = wor.getObjectID();
+              final ObjectID objectID = wor.getObjectID();
               reap(objectID);
               if (ClientObjectManagerImpl.this.runtimeLogger.getFlushDebug()) {
                 updateFlushStats(wor);
               }
             }
-          } catch (InterruptedException e) {
+          } catch (final InterruptedException e) {
             return;
           }
         }
@@ -1165,23 +1200,23 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   // XXX::: Cache eviction doesnt clear it from the cache. it happens in reap().
   public void evictCache(final CacheStats stat) {
-    int size = idToManaged_size();
+    final int size = idToManaged_size();
     int toEvict = stat.getObjectCountToEvict(size);
     if (toEvict <= 0) { return; }
     // Cache is full
-    boolean debug = this.logger.isDebugEnabled();
+    final boolean debug = this.logger.isDebugEnabled();
     int totalReferencesCleared = 0;
     int toClear = toEvict;
     while (toEvict > 0 && toClear > 0) {
-      int maxCount = Math.min(COMMIT_SIZE, toClear);
-      Collection removalCandidates = this.cache.getRemovalCandidates(maxCount);
+      final int maxCount = Math.min(COMMIT_SIZE, toClear);
+      final Collection removalCandidates = this.cache.getRemovalCandidates(maxCount);
       if (removalCandidates.isEmpty()) {
         break; // couldnt find any more
       }
-      for (Iterator i = removalCandidates.iterator(); i.hasNext() && toClear > 0;) {
-        TCObject removed = (TCObject) i.next();
+      for (final Iterator i = removalCandidates.iterator(); i.hasNext() && toClear > 0;) {
+        final TCObject removed = (TCObject) i.next();
         if (removed != null) {
-          Object pr = removed.getPeerObject();
+          final Object pr = removed.getPeerObject();
           if (pr != null) {
             // We don't want to take dso locks while clearing since it will happen inside the scope of the resolve lock
             // (see CDV-596)
@@ -1214,9 +1249,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   public void dumpToLogger() {
-    DumpLoggerWriter writer = new DumpLoggerWriter();
-    PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
+    final DumpLoggerWriter writer = new DumpLoggerWriter();
+    final PrintWriter pw = new PrintWriter(writer);
+    final PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
     prettyPrinter.autoflush(false);
     prettyPrinter.visit(this);
     writer.flush();
@@ -1314,32 +1349,32 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     private final int                    indexMask;
     private final ReferenceIdentityMap[] stripes;
 
-    public StripedReferenceIdentityMap(int numberOfStripes) {
+    public StripedReferenceIdentityMap(final int numberOfStripes) {
 
       if (Integer.bitCount(numberOfStripes) != 1) { throw new RuntimeException("numberOfStripes must be power of 2 "
                                                                                + numberOfStripes); }
 
       this.indexMask = numberOfStripes - 1;
-      stripes = new ReferenceIdentityMap[numberOfStripes];
+      this.stripes = new ReferenceIdentityMap[numberOfStripes];
       for (int i = 0; i < numberOfStripes; ++i) {
-        stripes[i] = new ReferenceIdentityMap(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+        this.stripes[i] = new ReferenceIdentityMap(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
       }
     }
 
-    private ReferenceIdentityMap getStripe(Object key) {
-      int index = hash(key) & this.indexMask;
-      return stripes[index];
+    private ReferenceIdentityMap getStripe(final Object key) {
+      final int index = hash(key) & this.indexMask;
+      return this.stripes[index];
     }
 
-    public TCObject get(Object key) {
-      ReferenceIdentityMap stripe = getStripe(key);
+    public TCObject get(final Object key) {
+      final ReferenceIdentityMap stripe = getStripe(key);
       synchronized (stripe) {
         return (TCObject) stripe.get(key);
       }
     }
 
-    public TCObject put(Object key, TCObject tco) {
-      ReferenceIdentityMap stripe = getStripe(key);
+    public TCObject put(final Object key, final TCObject tco) {
+      final ReferenceIdentityMap stripe = getStripe(key);
       synchronized (stripe) {
         return (TCObject) stripe.put(key, tco);
       }
@@ -1347,8 +1382,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
     public int size() {
       int s = 0;
-      for (int i = 0; i <= indexMask; ++i) {
-        ReferenceIdentityMap stripe = stripes[i];
+      for (int i = 0; i <= this.indexMask; ++i) {
+        final ReferenceIdentityMap stripe = this.stripes[i];
         synchronized (stripe) {
           s += stripe.size();
         }
@@ -1359,7 +1394,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     // this is an identity map - we must use the identityHashCode.
     // Object.hashCode() <==> Object.equals()
     // System.identityHashCode() <==> ==
-    private int hash(Object key) {
+    private int hash(final Object key) {
       int h = System.identityHashCode(key);
       h += ~(h << 9);
       h ^= (h >>> 14);

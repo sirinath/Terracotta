@@ -9,6 +9,7 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.tx.ClientTransactionManager;
@@ -76,7 +77,7 @@ public class TestClientObjectManager implements ClientObjectManager {
   }
 
   private synchronized TCObject lookup(final Object obj) {
-    TCObject rv = (TCObject) this.object2TCObject.get(obj);
+    final TCObject rv = (TCObject) this.object2TCObject.get(obj);
     return rv;
   }
 
@@ -218,7 +219,11 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
-  public void preFetchObject(ObjectID id) {
+  public void preFetchObject(final ObjectID id) {
+    throw new ImplementMe();
+  }
+
+  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) {
     throw new ImplementMe();
   }
 }

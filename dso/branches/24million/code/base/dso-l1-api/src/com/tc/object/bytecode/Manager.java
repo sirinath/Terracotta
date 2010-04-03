@@ -361,16 +361,25 @@ public interface Manager extends TerracottaLocking {
    * @return null if the given app is not configured for clustering
    */
   public SessionConfiguration getSessionConfiguration(String appName);
-  
+
   /**
-   * Used by BulkLoad to wait for all current transactions completed 
-   * 
+   * Used by BulkLoad to wait for all current transactions completed
    */
   public void waitForAllCurrentTransactionsToComplete();
-  
+
   /**
    * Registers a hook that will be called before shutting down this client
    */
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook);
-  
+
+  /**
+   * Returns the value for a particular Key in a ServerMap.
+   * 
+   * @param pojo Object
+   * @param key Key Object, Key needs to a literal or a shared pojo object. Unshared portable keys implementing equals
+   *        wont work as of now.
+   * @return value Object in the mapping, null if no mapping present.
+   */
+  public Object getValueForKeyInMap(ServerTCMap map, Object key) throws ClassNotFoundException;
+
 }
