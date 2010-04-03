@@ -345,4 +345,8 @@ public final class NullManager implements Manager {
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
     throw new UnsupportedOperationException();
   }
+
+  public Object getValueForKeyInMap(ServerTCMap map, Object key) {
+    throw new UnsupportedOperationException();
+  }
 }

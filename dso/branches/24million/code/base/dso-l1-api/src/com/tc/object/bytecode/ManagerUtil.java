@@ -1157,13 +1157,26 @@ public class ManagerUtil {
   public static void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     getManager().registerNamedLoader(loader, webAppName);
   }
-  //
-  // public static void registerMBean(Object bean, ObjectName name) throws InstanceAlreadyExistsException,
-  // MBeanRegistrationException, NotCompliantMBeanException {
-  // getManager().registerMBean(bean, name);
-  // }
   
+  /**
+   * Wait for all currently committed transaction to be complete. It doesnt guarantee about any ongoing or future transactions.
+   */
   public static void waitForAllCurrentTransactionsToComplete() {
     getManager().waitForAllCurrentTransactionsToComplete();
+  }
+  
+  /**
+   * Returns the value for a particular Key in a Partial Key Map.
+   * 
+   * @param pojo Object
+   * @param key Key Object, Note: This key needs to a literal or an already shared pojo object
+   * @return value Object in the mapping, null if no mapping present.
+   */
+  public static Object getValueForKeyInMap(final ServerTCMap map, final Object key) {
+    try {
+      return getManager().getValueForKeyInMap(map, key);
+    } catch (ClassNotFoundException e) {
+      throw new TCClassNotFoundException(e);
+    }
   }
 }

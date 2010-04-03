@@ -92,7 +92,7 @@ public class ManagerImpl implements Manager {
   private DmiManager                               methodCallManager;
 
   private final SerializationUtil                  serializer    = new SerializationUtil();
-  private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
+  private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(this.serializer);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(true, null, null, null, config, connectionComponents, true, null, null);
@@ -120,11 +120,11 @@ public class ManagerImpl implements Manager {
     this.dsoCluster = new DsoClusterImpl();
     this.statisticsAgentSubSystem = new StatisticsAgentSubSystemImpl();
     if (shutdownActionRequired) {
-      shutdownAction = new Thread(new ShutdownAction());
+      this.shutdownAction = new Thread(new ShutdownAction());
       // Register a shutdown hook for the DSO client
-      Runtime.getRuntime().addShutdownHook(shutdownAction);
+      Runtime.getRuntime().addShutdownHook(this.shutdownAction);
     } else {
-      shutdownAction = null;
+      this.shutdownAction = null;
     }
     this.runtimeLogger = runtimeLogger == null ? new RuntimeLoggerImpl(config) : runtimeLogger;
     this.classProvider = classProvider == null ? new StandardClassProvider(this.runtimeLogger) : classProvider;
@@ -135,9 +135,9 @@ public class ManagerImpl implements Manager {
   }
 
   private void registerStandardLoaders() {
-    ClassLoader loader1 = ClassLoader.getSystemClassLoader();
-    ClassLoader loader2 = loader1.getParent();
-    ClassLoader loader3 = loader2.getParent();
+    final ClassLoader loader1 = ClassLoader.getSystemClassLoader();
+    final ClassLoader loader2 = loader1.getParent();
+    final ClassLoader loader3 = loader2.getParent();
 
     final ClassLoader sunSystemLoader;
     final ClassLoader extSystemLoader;
@@ -155,7 +155,7 @@ public class ManagerImpl implements Manager {
   }
 
   public SessionMonitor getHttpSessionMonitor() {
-    return dso.getHttpSessionMonitor();
+    return this.dso.getHttpSessionMonitor();
   }
 
   public void init() {
@@ -169,8 +169,8 @@ public class ManagerImpl implements Manager {
   private void init(final boolean forTests) {
     resolveClasses(); // call this before starting any threads (SEDA, DistributedMethod call stuff, etc)
 
-    if (startClient) {
-      if (clientStarted.attemptSet()) {
+    if (this.startClient) {
+      if (this.clientStarted.attemptSet()) {
         startClient(forTests);
       }
     }
@@ -181,7 +181,7 @@ public class ManagerImpl implements Manager {
   }
 
   public String getUUID() {
-    return config.getUUID().toString();
+    return this.config.getUUID().toString();
   }
 
   private void resolveClasses() {
@@ -191,7 +191,7 @@ public class ManagerImpl implements Manager {
     //
     // NOTE: it is entirely possible more signatures might need to added here
 
-    Object o = new Manageable() {
+    final Object o = new Manageable() {
       public void __tc_managed(final TCObject t) {
         throw new AssertionError();
       }
@@ -214,37 +214,47 @@ public class ManagerImpl implements Manager {
     final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(TCLogging
         .getLogger(DistributedObjectClient.class)));
 
-    StartupAction action = new StartupHelper.StartupAction() {
+    final StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
-        AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
-        dso = clientFactory.createClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
-                                         statisticsAgentSubSystem, dsoCluster, runtimeLogger);
+        final AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
+        ManagerImpl.this.dso = clientFactory.createClient(ManagerImpl.this.config, group,
+                                                          ManagerImpl.this.classProvider,
+                                                          ManagerImpl.this.connectionComponents, ManagerImpl.this,
+                                                          ManagerImpl.this.statisticsAgentSubSystem,
+                                                          ManagerImpl.this.dsoCluster, ManagerImpl.this.runtimeLogger);
 
         if (forTests) {
-          dso.setCreateDedicatedMBeanServer(true);
+          ManagerImpl.this.dso.setCreateDedicatedMBeanServer(true);
         }
-        dso.start();
-        objectManager = dso.getObjectManager();
-        txManager = dso.getTransactionManager();
-        lockManager = dso.getLockManager();
-        methodCallManager = dso.getDmiManager();
+        ManagerImpl.this.dso.start();
+        ManagerImpl.this.objectManager = ManagerImpl.this.dso.getObjectManager();
+        ManagerImpl.this.txManager = ManagerImpl.this.dso.getTransactionManager();
+        ManagerImpl.this.lockManager = ManagerImpl.this.dso.getLockManager();
+        ManagerImpl.this.methodCallManager = ManagerImpl.this.dso.getDmiManager();
 
-        shutdownManager = new ClientShutdownManager(objectManager, dso.getRemoteTransactionManager(), dso
-            .getStageManager(), dso.getCommunicationsManager(), dso.getChannel(), dso.getClientHandshakeManager(), dso
-            .getStatisticsAgentSubSystem(), connectionComponents);
+        ManagerImpl.this.shutdownManager = new ClientShutdownManager(
+                                                                     ManagerImpl.this.objectManager,
+                                                                     ManagerImpl.this.dso.getRemoteTransactionManager(),
+                                                                     ManagerImpl.this.dso.getStageManager(),
+                                                                     ManagerImpl.this.dso.getCommunicationsManager(),
+                                                                     ManagerImpl.this.dso.getChannel(),
+                                                                     ManagerImpl.this.dso.getClientHandshakeManager(),
+                                                                     ManagerImpl.this.dso.getStatisticsAgentSubSystem(),
+                                                                     ManagerImpl.this.connectionComponents);
 
-        dsoCluster.init(dso.getClusterMetaDataManager(), objectManager);
+        ManagerImpl.this.dsoCluster.init(ManagerImpl.this.dso.getClusterMetaDataManager(),
+                                         ManagerImpl.this.objectManager);
       }
 
     };
 
-    StartupHelper startupHelper = new StartupHelper(group, action);
+    final StartupHelper startupHelper = new StartupHelper(group, action);
     startupHelper.startUp();
   }
-  
-  public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
-    if (shutdownManager != null) {
-      shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
+
+  public void registerBeforeShutdownHook(final Runnable beforeShutdownHook) {
+    if (this.shutdownManager != null) {
+      this.shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
     }
   }
 
@@ -253,17 +263,17 @@ public class ManagerImpl implements Manager {
   }
 
   private void shutdown(final boolean fromShutdownHook) {
-    if (shutdownManager != null) {
+    if (this.shutdownManager != null) {
       try {
         // XXX: This "fromShutdownHook" flag should be removed. It's only here temporarily to make shutdown behave
         // before I started futzing with it
-        shutdownManager.execute(fromShutdownHook);
+        this.shutdownManager.execute(fromShutdownHook);
       } finally {
         // If we're not being called as a result of the shutdown hook, de-register the hook
-        if (Thread.currentThread() != shutdownAction) {
+        if (Thread.currentThread() != this.shutdownAction) {
           try {
-            Runtime.getRuntime().removeShutdownHook(shutdownAction);
-          } catch (Exception e) {
+            Runtime.getRuntime().removeShutdownHook(this.shutdownAction);
+          } catch (final Exception e) {
             // ignore
           }
         }
@@ -272,25 +282,26 @@ public class ManagerImpl implements Manager {
   }
 
   public void logicalInvoke(final Object object, final String methodSignature, final Object[] params) {
-    Manageable m = (Manageable) object;
+    final Manageable m = (Manageable) object;
     if (m.__tc_managed() != null) {
-      TCObject tco = lookupExistingOrNull(object);
+      final TCObject tco = lookupExistingOrNull(object);
 
       try {
         if (tco != null) {
 
           if (SerializationUtil.ADD_ALL_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllInvoke(serializer.methodToID(methodSignature), methodSignature, (Collection) params[0], tco);
+            logicalAddAllInvoke(this.serializer.methodToID(methodSignature), methodSignature, (Collection) params[0],
+                                tco);
           } else if (SerializationUtil.ADD_ALL_AT_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllAtInvoke(serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
+            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
                 .intValue(), (Collection) params[1], tco);
           } else {
             adjustForJava1ParametersIfNecessary(methodSignature, params);
-            tco.logicalInvoke(serializer.methodToID(methodSignature), methodDisplay
+            tco.logicalInvoke(this.serializer.methodToID(methodSignature), this.methodDisplay
                 .getDisplayForSignature(methodSignature), params);
           }
         }
-      } catch (Throwable t) {
+      } catch (final Throwable t) {
         Util.printLogAndRethrowError(t, logger);
       }
     }
@@ -298,7 +309,7 @@ public class ManagerImpl implements Manager {
 
   public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
                                            final Object[] params) {
-    LockID lock = generateLockIdentifier(lockObject);
+    final LockID lock = generateLockIdentifier(lockObject);
     lock(lock, LockLevel.WRITE);
     try {
       logicalInvoke(object, methodName, params);
@@ -312,7 +323,7 @@ public class ManagerImpl implements Manager {
       if (SerializationUtil.SET_ELEMENT_SIGNATURE.equals(methodName)
           || SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE.equals(methodName)) {
         // special case for reversing parameters
-        Object tmp = params[0];
+        final Object tmp = params[0];
         params[0] = params[1];
         params[1] = tmp;
       }
@@ -321,16 +332,17 @@ public class ManagerImpl implements Manager {
 
   private void logicalAddAllInvoke(final int method, final String methodSignature, final Collection collection,
                                    final TCObject tcobj) {
-    for (Iterator i = collection.iterator(); i.hasNext();) {
-      tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] { i.next() });
+    for (final Iterator i = collection.iterator(); i.hasNext();) {
+      tcobj
+          .logicalInvoke(method, this.methodDisplay.getDisplayForSignature(methodSignature), new Object[] { i.next() });
     }
   }
 
   private void logicalAddAllAtInvoke(final int method, final String methodSignature, int index,
                                      final Collection collection, final TCObject tcobj) {
 
-    for (Iterator i = collection.iterator(); i.hasNext();) {
-      tcobj.logicalInvoke(method, methodDisplay.getDisplayForSignature(methodSignature), new Object[] {
+    for (final Iterator i = collection.iterator(); i.hasNext();) {
+      tcobj.logicalInvoke(method, this.methodDisplay.getDisplayForSignature(methodSignature), new Object[] {
           new Integer(index++), i.next() });
     }
   }
@@ -346,7 +358,7 @@ public class ManagerImpl implements Manager {
   public Object createOrReplaceRoot(final String name, final Object object) {
     try {
       return this.objectManager.createOrReplaceRoot(name, object);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       Util.printLogAndRethrowError(t, logger);
 
       // shouldn't get here
@@ -358,7 +370,7 @@ public class ManagerImpl implements Manager {
     try {
       if (noDepth) { return this.objectManager.lookupOrCreateRootNoDepth(rootName, object); }
       return this.objectManager.lookupOrCreateRoot(rootName, object, true);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       Util.printLogAndRethrowError(t, logger);
 
       // shouldn't get here
@@ -374,8 +386,9 @@ public class ManagerImpl implements Manager {
   public boolean isDsoMonitorEntered(final Object o) {
     if (this.objectManager.isCreationInProgress()) { return false; }
 
-    LockID lock = generateLockIdentifier(o);
-    boolean dsoMonitorEntered = lockManager.isLockedByCurrentThread(lock, null) || txManager.isLockOnTopStack(lock);
+    final LockID lock = generateLockIdentifier(o);
+    final boolean dsoMonitorEntered = this.lockManager.isLockedByCurrentThread(lock, null)
+                                      || this.txManager.isLockOnTopStack(lock);
 
     if (isManaged(o) && !dsoMonitorEntered) {
       logger
@@ -396,13 +409,13 @@ public class ManagerImpl implements Manager {
   }
 
   public TCObject lookupExistingOrNull(final Object pojo) {
-    if (pojo == null) return null;
+    if (pojo == null) { return null; }
 
     if (pojo instanceof Manageable) { return ((Manageable) pojo).__tc_managed(); }
 
     try {
       return this.objectManager.lookupExistingOrNull(pojo);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       Util.printLogAndRethrowError(t, logger);
 
       // shouldn't get here
@@ -424,37 +437,37 @@ public class ManagerImpl implements Manager {
 
   public boolean distributedMethodCall(final Object receiver, final String method, final Object[] params,
                                        final boolean runOnAllNodes) {
-    TCObject tco = lookupExistingOrNull(receiver);
+    final TCObject tco = lookupExistingOrNull(receiver);
 
     try {
       if (tco != null) {
-        return methodCallManager.distributedInvoke(receiver, method, params, runOnAllNodes);
+        return this.methodCallManager.distributedInvoke(receiver, method, params, runOnAllNodes);
       } else {
         return false;
       }
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       Util.printLogAndRethrowError(t, logger);
       return false;
     }
   }
 
   public void distributedMethodCallCommit() {
-    methodCallManager.distributedInvokeCommit();
+    this.methodCallManager.distributedInvokeCommit();
   }
 
   public void checkWriteAccess(final Object context) {
     // XXX: make sure that "context" is the ALWAYS the right object to check here, and then rename it
     if (isManaged(context)) {
       try {
-        txManager.checkWriteAccess(context);
-      } catch (Throwable t) {
+        this.txManager.checkWriteAccess(context);
+      } catch (final Throwable t) {
         Util.printLogAndRethrowError(t, logger);
       }
     }
   }
 
   public int calculateDsoHashCode(final Object obj) {
-    if (obj == null) throw new NullPointerException();
+    if (obj == null) { throw new NullPointerException(); }
 
     if (LiteralValues.isLiteralInstance(obj)) {
       // isLiteralInstance() returns false for array types, so we don't need recursion here.
@@ -463,7 +476,7 @@ public class ManagerImpl implements Manager {
     if (overridesHashCode(obj)) { return obj.hashCode(); }
 
     // obj does not have a stable hashCode(); only if it is already a shared object will we use it's OID as the hashCode
-    TCObject tcobject = lookupExistingOrNull(obj);
+    final TCObject tcobject = lookupExistingOrNull(obj);
     if (tcobject != null) { return tcobject.getObjectID().hashCode(); }
 
     throw new IllegalArgumentException(
@@ -478,7 +491,7 @@ public class ManagerImpl implements Manager {
 
   public boolean isManaged(final Object obj) {
     if (obj instanceof Manageable) {
-      TCObject tcobj = ((Manageable) obj).__tc_managed();
+      final TCObject tcobj = ((Manageable) obj).__tc_managed();
 
       return tcobj != null && tcobj.isShared();
     }
@@ -488,7 +501,7 @@ public class ManagerImpl implements Manager {
   public boolean isDsoMonitored(final Object obj) {
     if (this.objectManager.isCreationInProgress() || this.txManager.isTransactionLoggingDisabled()) { return false; }
 
-    TCObject tcobj = lookupExistingOrNull(obj);
+    final TCObject tcobj = lookupExistingOrNull(obj);
     if (tcobj != null) {
       return tcobj.isShared();
     } else {
@@ -499,7 +512,7 @@ public class ManagerImpl implements Manager {
   public Object lookupRoot(final String name) {
     try {
       return this.objectManager.lookupRoot(name);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       Util.printLogAndRethrowError(t, logger);
 
       // shouldn't get here
@@ -516,8 +529,8 @@ public class ManagerImpl implements Manager {
   }
 
   public boolean isRoot(final Field field) {
-    String fName = field.getName();
-    Class c = field.getDeclaringClass();
+    final String fName = field.getName();
+    final Class c = field.getDeclaringClass();
 
     if (Vm.isIBM() && c.getName().startsWith("java.lang.reflect.")) {
       // This avoids a StackOverFlow on ibm jdk -- it does mean that roots defined in classes in java.lang.reflect.*
@@ -525,10 +538,10 @@ public class ManagerImpl implements Manager {
       return false;
     }
 
-    ClassInfo classInfo = JavaClassInfo.getClassInfo(c);
+    final ClassInfo classInfo = JavaClassInfo.getClassInfo(c);
 
-    FieldInfo[] fields = classInfo.getFields();
-    for (FieldInfo fieldInfo : fields) {
+    final FieldInfo[] fields = classInfo.getFields();
+    for (final FieldInfo fieldInfo : fields) {
       if (fieldInfo.getName().equals(fName)) { return this.config.isRoot(fieldInfo); }
     }
 
@@ -557,7 +570,7 @@ public class ManagerImpl implements Manager {
   }
 
   public InstrumentationLogger getInstrumentationLogger() {
-    return instrumentationLogger;
+    return this.instrumentationLogger;
   }
 
   private static class MethodDisplayNames {
@@ -565,27 +578,27 @@ public class ManagerImpl implements Manager {
     private final Map display = new HashMap();
 
     public MethodDisplayNames(final SerializationUtil serializer) {
-      String[] sigs = serializer.getSignatures();
-      for (String sig : sigs) {
-        display.put(sig, getDisplayStringFor(sig));
+      final String[] sigs = serializer.getSignatures();
+      for (final String sig : sigs) {
+        this.display.put(sig, getDisplayStringFor(sig));
       }
     }
 
     private String getDisplayStringFor(final String signature) {
-      String methodName = signature.substring(0, signature.indexOf('('));
-      StringBuffer rv = new StringBuffer(methodName);
+      final String methodName = signature.substring(0, signature.indexOf('('));
+      final StringBuffer rv = new StringBuffer(methodName);
       rv.append('(');
 
-      Type[] args = Type.getArgumentTypes(signature.substring(signature.indexOf('(')));
+      final Type[] args = Type.getArgumentTypes(signature.substring(signature.indexOf('(')));
       for (int i = 0; i < args.length; i++) {
         if (i > 0) {
           rv.append(',');
         }
-        Type t = args[i];
-        int sort = t.getSort();
+        final Type t = args[i];
+        final int sort = t.getSort();
         switch (sort) {
           case Type.ARRAY:
-            Type elemType = t.getElementType();
+            final Type elemType = t.getElementType();
             if (elemType.getSort() == Type.OBJECT) {
               rv.append(getShortName(elemType));
             } else {
@@ -618,14 +631,14 @@ public class ManagerImpl implements Manager {
     }
 
     private String getShortName(final Type t) {
-      String fqName = t.getClassName();
-      int lastDot = fqName.lastIndexOf('.');
+      final String fqName = t.getClassName();
+      final int lastDot = fqName.lastIndexOf('.');
       if (lastDot > -1) { return fqName.substring(lastDot + 1); }
       return fqName;
     }
 
     String getDisplayForSignature(final String methodSignature) {
-      String rv = (String) display.get(methodSignature);
+      final String rv = (String) this.display.get(methodSignature);
       if (rv == null) { throw new AssertionError("missing display string for signature: " + methodSignature); }
       return rv;
     }
@@ -636,7 +649,7 @@ public class ManagerImpl implements Manager {
   }
 
   public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
-    TCObject tcObj = lookupExistingOrNull(pojo);
+    final TCObject tcObj = lookupExistingOrNull(pojo);
     return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
   }
 
@@ -645,8 +658,8 @@ public class ManagerImpl implements Manager {
   }
 
   public void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
-    String loaderName = loader.__tc_getClassLoaderName();
-    String appGroup = config.getAppGroup(loaderName, webAppName);
+    final String loaderName = loader.__tc_getClassLoaderName();
+    final String appGroup = this.config.getAppGroup(loaderName, webAppName);
     this.classProvider.registerNamedLoader(loader, appGroup);
   }
 
@@ -668,8 +681,8 @@ public class ManagerImpl implements Manager {
     return this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().getActionInstance(name);
   }
 
-  public SessionConfiguration getSessionConfiguration(String appName) {
-    return config.getSessionConfiguration(appName);
+  public SessionConfiguration getSessionConfiguration(final String appName) {
+    return this.config.getSessionConfiguration(appName);
   }
 
   private static class FakeManageableObject implements Manageable {
@@ -687,88 +700,88 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public LockID generateLockIdentifier(String str) {
-    return lockIdFactory.generateLockIdentifier(str);
+  public LockID generateLockIdentifier(final String str) {
+    return this.lockIdFactory.generateLockIdentifier(str);
   }
 
-  public LockID generateLockIdentifier(Object obj) {
-    return lockIdFactory.generateLockIdentifier(obj);
+  public LockID generateLockIdentifier(final Object obj) {
+    return this.lockIdFactory.generateLockIdentifier(obj);
   }
 
-  public LockID generateLockIdentifier(Object obj, String fieldName) {
-    return lockIdFactory.generateLockIdentifier(obj, fieldName);
+  public LockID generateLockIdentifier(final Object obj, final String fieldName) {
+    return this.lockIdFactory.generateLockIdentifier(obj, fieldName);
   }
 
-  public int globalHoldCount(LockID lock, LockLevel level) {
-    return lockManager.globalHoldCount(lock, level);
+  public int globalHoldCount(final LockID lock, final LockLevel level) {
+    return this.lockManager.globalHoldCount(lock, level);
   }
 
-  public int globalPendingCount(LockID lock) {
-    return lockManager.globalPendingCount(lock);
+  public int globalPendingCount(final LockID lock) {
+    return this.lockManager.globalPendingCount(lock);
   }
 
-  public int globalWaitingCount(LockID lock) {
-    return lockManager.globalWaitingCount(lock);
+  public int globalWaitingCount(final LockID lock) {
+    return this.lockManager.globalWaitingCount(lock);
   }
 
-  public boolean isLocked(LockID lock, LockLevel level) {
-    return lockManager.isLocked(lock, level);
+  public boolean isLocked(final LockID lock, final LockLevel level) {
+    return this.lockManager.isLocked(lock, level);
   }
 
-  public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
-    return lockManager.isLockedByCurrentThread(lock, level);
+  public boolean isLockedByCurrentThread(final LockID lock, final LockLevel level) {
+    return this.lockManager.isLockedByCurrentThread(lock, level);
   }
 
-  public int localHoldCount(LockID lock, LockLevel level) {
-    return lockManager.localHoldCount(lock, level);
+  public int localHoldCount(final LockID lock, final LockLevel level) {
+    return this.lockManager.localHoldCount(lock, level);
   }
 
-  public void lock(LockID lock, LockLevel level) {
+  public void lock(final LockID lock, final LockLevel level) {
     if (clusteredLockingEnabled(lock)) {
-      lockManager.lock(lock, level);
-      txManager.begin(lock, level);
+      this.lockManager.lock(lock, level);
+      this.txManager.begin(lock, level);
 
-      if (runtimeLogger.getLockDebug()) {
-        runtimeLogger.lockAcquired(lock, level);
+      if (this.runtimeLogger.getLockDebug()) {
+        this.runtimeLogger.lockAcquired(lock, level);
       }
     }
   }
 
-  public void lockInterruptibly(LockID lock, LockLevel level) throws InterruptedException {
+  public void lockInterruptibly(final LockID lock, final LockLevel level) throws InterruptedException {
     if (clusteredLockingEnabled(lock)) {
-      lockManager.lockInterruptibly(lock, level);
-      txManager.begin(lock, level);
+      this.lockManager.lockInterruptibly(lock, level);
+      this.txManager.begin(lock, level);
 
-      if (runtimeLogger.getLockDebug()) {
-        runtimeLogger.lockAcquired(lock, level);
+      if (this.runtimeLogger.getLockDebug()) {
+        this.runtimeLogger.lockAcquired(lock, level);
       }
     }
   }
 
-  public Notify notify(LockID lock, Object waitObject) {
+  public Notify notify(final LockID lock, final Object waitObject) {
     if (clusteredLockingEnabled(lock) && (lock instanceof DsoLockID)) {
-      txManager.notify(lockManager.notify(lock, waitObject));
+      this.txManager.notify(this.lockManager.notify(lock, waitObject));
     } else {
       waitObject.notify();
     }
     return NotifyImpl.NULL;
   }
 
-  public Notify notifyAll(LockID lock, Object waitObject) {
+  public Notify notifyAll(final LockID lock, final Object waitObject) {
     if (clusteredLockingEnabled(lock) && (lock instanceof DsoLockID)) {
-      txManager.notify(lockManager.notifyAll(lock, waitObject));
+      this.txManager.notify(this.lockManager.notifyAll(lock, waitObject));
     } else {
       waitObject.notifyAll();
     }
     return NotifyImpl.NULL;
   }
 
-  public boolean tryLock(LockID lock, LockLevel level) {
+  public boolean tryLock(final LockID lock, final LockLevel level) {
     if (clusteredLockingEnabled(lock)) {
-      if (lockManager.tryLock(lock, level)) {
-        txManager.begin(lock, level);
-        if (runtimeLogger.getLockDebug()) {
-          runtimeLogger.lockAcquired(lock, level);
+      if (this.lockManager.tryLock(lock, level)) {
+        this.txManager.begin(lock, level);
+        if (this.runtimeLogger.getLockDebug()) {
+          this.runtimeLogger.lockAcquired(lock, level);
         }
         return true;
       } else {
@@ -779,12 +792,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean tryLock(LockID lock, LockLevel level, long timeout) throws InterruptedException {
+  public boolean tryLock(final LockID lock, final LockLevel level, final long timeout) throws InterruptedException {
     if (clusteredLockingEnabled(lock)) {
-      if (lockManager.tryLock(lock, level, timeout)) {
-        txManager.begin(lock, level);
-        if (runtimeLogger.getLockDebug()) {
-          runtimeLogger.lockAcquired(lock, level);
+      if (this.lockManager.tryLock(lock, level, timeout)) {
+        this.txManager.begin(lock, level);
+        if (this.runtimeLogger.getLockDebug()) {
+          this.runtimeLogger.lockAcquired(lock, level);
         }
         return true;
       } else {
@@ -795,88 +808,88 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public void unlock(LockID lock, LockLevel level) {
+  public void unlock(final LockID lock, final LockLevel level) {
     if (clusteredLockingEnabled(lock)) {
       try {
-        txManager.commit(lock, level);
+        this.txManager.commit(lock, level);
       } finally {
-        lockManager.unlock(lock, level);
+        this.lockManager.unlock(lock, level);
       }
     }
   }
 
-  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+  public void wait(final LockID lock, final Object waitObject) throws InterruptedException {
     if (clusteredLockingEnabled(lock) && (lock instanceof DsoLockID)) {
       try {
-        txManager.commit(lock, LockLevel.WRITE);
-      } catch (UnlockedSharedObjectException e) {
+        this.txManager.commit(lock, LockLevel.WRITE);
+      } catch (final UnlockedSharedObjectException e) {
         throw new IllegalMonitorStateException();
       }
       try {
-        lockManager.wait(lock, waitObject);
+        this.lockManager.wait(lock, waitObject);
       } finally {
         // XXX this is questionable
-        txManager.begin(lock, LockLevel.WRITE);
+        this.txManager.begin(lock, LockLevel.WRITE);
       }
     } else {
       waitObject.wait();
     }
   }
 
-  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+  public void wait(final LockID lock, final Object waitObject, final long timeout) throws InterruptedException {
     if (clusteredLockingEnabled(lock) && (lock instanceof DsoLockID)) {
       try {
-        txManager.commit(lock, LockLevel.WRITE);
-      } catch (UnlockedSharedObjectException e) {
+        this.txManager.commit(lock, LockLevel.WRITE);
+      } catch (final UnlockedSharedObjectException e) {
         throw new IllegalMonitorStateException();
       }
       try {
-        lockManager.wait(lock, waitObject, timeout);
+        this.lockManager.wait(lock, waitObject, timeout);
       } finally {
         // XXX this is questionable
-        txManager.begin(lock, LockLevel.WRITE);
+        this.txManager.begin(lock, LockLevel.WRITE);
       }
     } else {
       waitObject.wait(timeout);
     }
   }
 
-  public void pinLock(LockID lock) {
+  public void pinLock(final LockID lock) {
     if (clusteredLockingEnabled(lock)) {
-      lockManager.pinLock(lock);
+      this.lockManager.pinLock(lock);
     }
   }
 
-  public void unpinLock(LockID lock) {
+  public void unpinLock(final LockID lock) {
     if (clusteredLockingEnabled(lock)) {
-      lockManager.unpinLock(lock);
+      this.lockManager.unpinLock(lock);
     }
   }
 
-  private boolean clusteredLockingEnabled(LockID lock) {
-    return !((lock instanceof UnclusteredLockID) ||
-        txManager.isTransactionLoggingDisabled() || txManager.isObjectCreationInProgress());
+  private boolean clusteredLockingEnabled(final LockID lock) {
+    return !((lock instanceof UnclusteredLockID) || this.txManager.isTransactionLoggingDisabled() || this.txManager
+        .isObjectCreationInProgress());
   }
 
-  public boolean isLockedByCurrentThread(LockLevel level) {
-    return lockManager.isLockedByCurrentThread(level);
+  public boolean isLockedByCurrentThread(final LockLevel level) {
+    return this.lockManager.isLockedByCurrentThread(level);
   }
 
-  public void monitorEnter(LockID lock, LockLevel level) {
+  public void monitorEnter(final LockID lock, final LockLevel level) {
     lock(lock, level);
   }
 
-  public void monitorExit(LockID lock, LockLevel level) {
+  public void monitorExit(final LockID lock, final LockLevel level) {
     try {
       unlock(lock, level);
-    } catch (IllegalMonitorStateException e) {
-      ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());
-      ExceptionWrapper wrapper = new ExceptionWrapperImpl();
+    } catch (final IllegalMonitorStateException e) {
+      final ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());
+      final ExceptionWrapper wrapper = new ExceptionWrapperImpl();
       logger.fatal(wrapper.wrap(formatter.format(UNLOCK_SHARE_LOCK_ERROR)), e);
       System.exit(-1);
-    } catch (Throwable t) {
-      ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());
-      ExceptionWrapper wrapper = new ExceptionWrapperImpl();
+    } catch (final Throwable t) {
+      final ConsoleParagraphFormatter formatter = new ConsoleParagraphFormatter(60, new StringFormatter());
+      final ExceptionWrapper wrapper = new ExceptionWrapperImpl();
       logger.fatal(wrapper.wrap(formatter.format(IMMINENT_INFINITE_LOOP_ERROR)), t);
       System.exit(-1);
     }
@@ -892,7 +905,11 @@ public class ManagerImpl implements Manager {
                                                              + "to prevent the calling thread from entering an infinite loop the client JVM will now be terminated.";
 
   public void waitForAllCurrentTransactionsToComplete() {
-    txManager.waitForAllCurrentTransactionsToComplete();
+    this.txManager.waitForAllCurrentTransactionsToComplete();
+  }
+
+  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) throws ClassNotFoundException {
+    return this.objectManager.getValueForKeyInMap(map, key);
   }
 
 }
