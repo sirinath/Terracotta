@@ -23,6 +23,7 @@ import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.KeyValueMappingRequestMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessage;
@@ -106,6 +107,11 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(final NodeID nodeID) {
     return (RequestManagedObjectMessage) this.channel.createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE);
+  }
+
+  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(GroupID groupID) {
+   // throw new ImplementMe();
+    return null;
   }
 
   public RequestManagedObjectMessageFactory getRequestManagedObjectMessageFactory() {
