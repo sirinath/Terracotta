@@ -23,6 +23,7 @@ import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.ServerMapMessageFactory;
 import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
@@ -47,7 +48,7 @@ import java.net.UnknownHostException;
 public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, LockRequestMessageFactory,
     RequestRootMessageFactory, RequestManagedObjectMessageFactory, ClientHandshakeMessageFactory,
     ObjectIDBatchRequestMessageFactory, CommitTransactionMessageFactory, AcknowledgeTransactionMessageFactory,
-    CompletedTransactionLowWaterMarkMessageFactory, NodesWithObjectsMessageFactory,
+    CompletedTransactionLowWaterMarkMessageFactory, NodesWithObjectsMessageFactory, ServerMapMessageFactory,
     KeysForOrphanedValuesMessageFactory, NodeMetaDataMessageFactory, LockStatisticsReponseMessageFactory {
 
   private final ClientMessageChannel channel;
@@ -110,6 +111,10 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
   }
 
   public RequestManagedObjectMessageFactory getRequestManagedObjectMessageFactory() {
+    return this;
+  }
+  
+  public ServerMapMessageFactory getServerMapMessageFactory() {
     return this;
   }
 

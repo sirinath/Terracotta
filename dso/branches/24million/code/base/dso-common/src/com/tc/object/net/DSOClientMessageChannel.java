@@ -26,6 +26,7 @@ import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.ServerMapMessageFactory;
 import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.util.TCTimeoutException;
 
@@ -58,6 +59,8 @@ public interface DSOClientMessageChannel {
   public RequestRootMessageFactory getRequestRootMessageFactory();
 
   public RequestManagedObjectMessageFactory getRequestManagedObjectMessageFactory();
+  
+  public ServerMapMessageFactory getServerMapMessageFactory();
 
   public ObjectIDBatchRequestMessageFactory getObjectIDBatchRequestMessageFactory();
 
