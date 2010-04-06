@@ -39,8 +39,4 @@ public interface RemoteObjectManager extends ClientHandshakeCallback {
 
   public void preFetchObject(ObjectID id);
 
-  public ObjectID getMappingForKey(ObjectID oid, Object portableKey);
-
-  public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID, Object portableKey,
-                                            Object portableValue, NodeID nodeID);
 }

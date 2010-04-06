@@ -470,8 +470,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     RemoteObjectManager remoteObjectManager = this.dsoClientBuilder
         .createRemoteObjectManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, faultCount, sessionManager);
+    
+    RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
+    .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
+        .getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
 
-    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, this.config, idProvider,
+    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, remoteServerMapManager, this.config, idProvider,
                                                                    new ClockEvictionPolicy(-1), this.runtimeLogger,
                                                                    this.channel.getClientIDProvider(),
                                                                    this.classProvider, classFactory, objectFactory,
@@ -592,6 +596,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.lockManager);
     clientHandshakeCallbacks.add(this.objectManager);
     clientHandshakeCallbacks.add(remoteObjectManager);
+    clientHandshakeCallbacks.add(remoteServerMapManager);
     clientHandshakeCallbacks.add(this.rtxManager);
     clientHandshakeCallbacks.add(this.dsoClientBuilder.getObjectIDClientHandshakeRequester(batchSequenceReceiver));
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);

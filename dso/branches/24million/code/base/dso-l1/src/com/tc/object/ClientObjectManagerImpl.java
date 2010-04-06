@@ -108,6 +108,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                                                               REFERENCE_MAP_SEGS);
   private final ClassProvider                  classProvider;
   private final RemoteObjectManager            remoteObjectManager;
+  private final RemoteServerMapManager         remoteServerMapManager;
   private final EvictionPolicy                 cache;
   private final Traverser                      traverser;
   private final TraverseTest                   traverseTest;
@@ -142,6 +143,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                             };
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager,
+                                 final RemoteServerMapManager remoteServerMapManager,
                                  final DSOClientConfigHelper clientConfiguration, final ObjectIDProvider idProvider,
                                  final EvictionPolicy cache, final RuntimeLogger runtimeLogger,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
@@ -149,6 +151,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                  final Portability portability, final DSOClientMessageChannel channel,
                                  final ToggleableReferenceManager referenceManager) {
     this.remoteObjectManager = remoteObjectManager;
+    this.remoteServerMapManager = remoteServerMapManager;
     this.cache = cache;
     this.clientConfiguration = clientConfiguration;
     this.idProvider = idProvider;
@@ -1157,7 +1160,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                        + portableKey + " map id = " + mapID);
     }
 
-    final ObjectID valueID = this.remoteObjectManager.getMappingForKey(mapID, portableKey);
+    final ObjectID valueID = this.remoteServerMapManager.getMappingForKey(mapID, portableKey);
 
     return lookupObject(valueID);
   }

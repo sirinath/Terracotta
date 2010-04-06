@@ -109,6 +109,15 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
         .getRequestManagedObjectMessageFactory(), faultCount, sessionManager);
   }
 
+  public RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger,
+                                                           final DSOClientMessageChannel dsoChannel,
+                                                           final SessionManager sessionManager) {
+    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    Assert.assertNotNull(defaultGroups);
+    Assert.assertEquals(1, defaultGroups.length);
+    return new RemoteServerMapManagerImpl(defaultGroups[0], logger, dsoChannel
+        .getRequestManagedObjectMessageFactory(), sessionManager);
+  }
   public ClusterMetaDataManager createClusterMetaDataManager(final DSOClientMessageChannel dsoChannel,
                                                              final DNAEncoding encoding,
                                                              final ThreadIDManager threadIDManager,
@@ -124,6 +133,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   }
 
   public ClientObjectManagerImpl createObjectManager(final RemoteObjectManager remoteObjectManager,
+                                                     final RemoteServerMapManager remoteServerMapManager,
                                                      final DSOClientConfigHelper dsoConfig,
                                                      final ObjectIDProvider idProvider,
                                                      final ClockEvictionPolicy clockEvictionPolicy,
@@ -135,8 +145,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                      final Portability portability,
                                                      final DSOClientMessageChannel dsoChannel,
                                                      final ToggleableReferenceManager toggleRefMgr) {
-    return new ClientObjectManagerImpl(remoteObjectManager, dsoConfig, idProvider, clockEvictionPolicy, rtLogger,
-                                       clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
+    return new ClientObjectManagerImpl(remoteObjectManager, remoteServerMapManager, dsoConfig, idProvider, clockEvictionPolicy,
+                                       rtLogger, clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
                                        dsoChannel, toggleRefMgr);
   }
 
