@@ -82,10 +82,6 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return 0;
   }
 
-  public synchronized void clear() {
-    this.valueMappingRequests.clear();
-  }
-
   synchronized void requestOutstanding() {
 
     for (final Iterator i = this.valueMappingRequests.entrySet().iterator(); i.hasNext();) {
@@ -151,10 +147,6 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     if (isStopped()) { return; }
     assertNotPaused("Attempt to pause while PAUSED");
     this.state = State.PAUSED;
-    // XXX:: We are clearing unmaterialized DNAs and removed objects here because on connect we are going to send
-    // the list of objects present in this L1 from Client Object Manager anyways. We can't be clearing the removed
-    // object IDs in unpause(), then you get MNK-835
-    clear();
     notifyAll();
   }
 
