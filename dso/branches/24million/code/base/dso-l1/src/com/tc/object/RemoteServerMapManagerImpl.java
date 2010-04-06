@@ -8,7 +8,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.object.msg.RequestManagedObjectMessageFactory;
+import com.tc.object.msg.ServerMapMessageFactory;
 import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
@@ -22,28 +22,29 @@ import java.util.Map;
 
 public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
-  private final GroupID                            groupID;
-  private final RequestManagedObjectMessageFactory rmomFactory;
-  private final TCLogger                           logger;
-  private final SessionManager                     sessionManager;
-  private final Map                                valueMappingRequests = new HashMap();
+  private final GroupID                 groupID;
+  private final ServerMapMessageFactory smmFactory;
+  private final TCLogger                logger;
+  private final SessionManager          sessionManager;
+  private final Map                     valueMappingRequests = new HashMap();
 
-  private final static boolean                     ENABLE_LOGGING       = TCPropertiesImpl
-  .getProperties()
-  .getBoolean(
-              TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_LOGGING_ENABLED);
+  private final static boolean          ENABLE_LOGGING       = TCPropertiesImpl
+                                                                 .getProperties()
+                                                                 .getBoolean(
+                                                                             TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_LOGGING_ENABLED);
 
-  private State                                    state                = State.RUNNING;
+  private State                         state                = State.RUNNING;
 
   private static enum State {
     PAUSED, RUNNING, STARTING, STOPPED
   }
 
   public RemoteServerMapManagerImpl(final GroupID groupID, final TCLogger logger,
-                                    final RequestManagedObjectMessageFactory rmomFactory, final SessionManager sessionManager) {
+                                    final ServerMapMessageFactory smmFactory,
+                                    final SessionManager sessionManager) {
     this.groupID = groupID;
     this.logger = logger;
-    this.rmomFactory = rmomFactory;
+    this.smmFactory = smmFactory;
     this.sessionManager = sessionManager;
   }
 
@@ -60,7 +61,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     ObjectID valueID;
     while (true) {
       waitUntilRunning();
-      context.sendRequestIfNecessary(this.rmomFactory);
+      context.sendRequestIfNecessary(this.smmFactory);
       valueID = context.getValueMappingObjectID();
       if (valueID != null) {
         context.decrementLookupCount();
@@ -86,7 +87,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     for (final Iterator i = this.valueMappingRequests.entrySet().iterator(); i.hasNext();) {
       final ServerTCMapRequestContext context = (ServerTCMapRequestContext) i.next();
-      context.sendRequest(this.rmomFactory);
+      context.sendRequest(this.smmFactory);
     }
   }
 
@@ -95,7 +96,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       this.valueMappingRequests.remove(context.getCompositeKey());
     }
   }
-  
+
   private ServerTCMapRequestContext getOrCreateRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
     final String comboKey = oid.toString() + "::" + portableKey.toString();
     ServerTCMapRequestContext context = (ServerTCMapRequestContext) this.valueMappingRequests.get(comboKey);
@@ -105,7 +106,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
     return context;
   }
-  
+
   public synchronized void addResponseForKeyValueMapping(final SessionID sessionID, final ObjectID mapID,
                                                          final Object portableKey, final Object portableValue,
                                                          final NodeID nodeID) {
@@ -124,12 +125,11 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
     notifyAll();
   }
-  
+
   private ServerTCMapRequestContext getRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
     final String comboKey = oid.toString() + "::" + portableKey.toString();
     return (ServerTCMapRequestContext) this.valueMappingRequests.get(comboKey);
   }
-
 
   private void waitUntilRunning() {
     boolean isInterrupted = false;
@@ -185,7 +185,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     if (this.state == State.RUNNING) { throw new AssertionError(message + ": " + this.state); }
   }
 
-//TODO::FIXME::This will go when we do batching
+  // TODO::FIXME::This will go when we do batching
   private static class ServerTCMapRequestContext {
 
     private final static TCLogger logger      = TCLogging.getLogger(ServerTCMapRequestContext.class);
@@ -240,7 +240,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
 
     // TODO::Change / Batch
-    public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
+    public void sendRequestIfNecessary(final ServerMapMessageFactory factory) {
       if (!this.requestSent) {
         this.requestSent = true;
         if (ENABLE_LOGGING) {
@@ -251,12 +251,11 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
 
     // TODO::Change / Batch
-    public void sendRequest(final RequestManagedObjectMessageFactory factory) {
+    public void sendRequest(final ServerMapMessageFactory factory) {
       final ServerTCMapRequestMessage mappingMessage = factory.newServerTCMapRequestMessage(this.groupID);
       mappingMessage.initialize(this.oid, this.portableKey);
       mappingMessage.send();
     }
   }
-
 
 }

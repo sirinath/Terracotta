@@ -116,7 +116,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
     return new RemoteServerMapManagerImpl(defaultGroups[0], logger, dsoChannel
-        .getRequestManagedObjectMessageFactory(), sessionManager);
+        .getServerMapMessageFactory(), sessionManager);
   }
   public ClusterMetaDataManager createClusterMetaDataManager(final DSOClientMessageChannel dsoChannel,
                                                              final DNAEncoding encoding,

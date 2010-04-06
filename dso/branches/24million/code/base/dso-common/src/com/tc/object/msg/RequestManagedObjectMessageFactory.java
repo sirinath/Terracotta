@@ -10,5 +10,4 @@ public interface RequestManagedObjectMessageFactory {
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID);
 
-  public ServerTCMapRequestMessage newServerTCMapRequestMessage(NodeID nodeID);
 }
