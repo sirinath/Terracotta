@@ -6,12 +6,10 @@ package com.tc.object;
 
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
@@ -79,7 +77,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
   private final RequestRootMessageFactory          rrmFactory;
   private final RequestManagedObjectMessageFactory rmomFactory;
   private final LRUCache                           lru                      = new LRUCache();
-  private final Map                                valueMappingRequests     = new HashMap();
   private final GroupID                            groupID;
   private final int                                defaultDepth;
   private final SessionManager                     sessionManager;
@@ -182,11 +179,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
         final RequestRootMessage rrm = createRootMessage(rootName);
         rrm.send();
       }
-    }
-
-    for (final Iterator i = this.valueMappingRequests.entrySet().iterator(); i.hasNext();) {
-      final ServerTCMapRequestContext context = (ServerTCMapRequestContext) i.next();
-      context.sendRequest(this.rmomFactory);
     }
   }
 
@@ -447,77 +439,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     notifyAll();
   }
 
-  // TODO::FIXME:: This needs to be batched like all other request if we want any sort of performance from this thing.
-  public synchronized ObjectID getMappingForKey(final ObjectID oid, final Object portableKey) {
-    boolean isInterrupted = false;
-    if (oid.getGroupID() != this.groupID.toInt()) {
-      //
-      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " id : " + oid
-                               + " portableKey : " + portableKey);
-    }
-
-    final ServerTCMapRequestContext context = getOrCreateRequestValueMappingContext(oid, portableKey);
-    context.incrementLookupCount();
-    ObjectID valueID;
-    while (true) {
-      waitUntilRunning();
-      context.sendRequestIfNecessary(this.rmomFactory);
-      valueID = context.getValueMappingObjectID();
-      if (valueID != null) {
-        context.decrementLookupCount();
-        cleanupRequestValueMappingContextIfNecessary(context);
-        break;
-      }
-      try {
-        wait();
-      } catch (final InterruptedException e) {
-        isInterrupted = true;
-      }
-    }
-    Util.selfInterruptIfNeeded(isInterrupted);
-    return valueID;
-  }
-
-  public synchronized void addResponseForKeyValueMapping(final SessionID sessionID, final ObjectID mapID,
-                                                         final Object portableKey, final Object portableValue,
-                                                         final NodeID nodeID) {
-    waitUntilRunning();
-    if (!this.sessionManager.isCurrentSession(nodeID, sessionID)) {
-      this.logger.warn("Ignoring addResponseForKeyValueMapping " + mapID + " , " + portableKey + " , " + portableValue
-                       + " : from a different session: " + sessionID + ", " + this.sessionManager);
-      return;
-    }
-    final ServerTCMapRequestContext context = getRequestValueMappingContext(mapID, portableKey);
-    if (context != null) {
-      context.setValueForKey(mapID, portableKey, portableValue);
-    } else {
-      this.logger.warn("Key Value Mapping Context is null for " + mapID + " key : " + portableKey + " value : "
-                       + portableValue);
-    }
-    notifyAll();
-  }
-
-  private ServerTCMapRequestContext getOrCreateRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
-    final String comboKey = oid.toString() + "::" + portableKey.toString();
-    ServerTCMapRequestContext context = (ServerTCMapRequestContext) this.valueMappingRequests.get(comboKey);
-    if (context == null) {
-      context = new ServerTCMapRequestContext(oid, portableKey, this.groupID, comboKey);
-      this.valueMappingRequests.put(comboKey, context);
-    }
-    return context;
-  }
-
-  private ServerTCMapRequestContext getRequestValueMappingContext(final ObjectID oid, final Object portableKey) {
-    final String comboKey = oid.toString() + "::" + portableKey.toString();
-    return (ServerTCMapRequestContext) this.valueMappingRequests.get(comboKey);
-  }
-
-  private void cleanupRequestValueMappingContextIfNecessary(final ServerTCMapRequestContext context) {
-    if (context.lookupComplete()) {
-      this.valueMappingRequests.remove(context.getCompositeKey());
-    }
-  }
-
   // Used only for testing
   synchronized void addObject(final DNA dna) {
     if (!this.removeObjects.contains(dna.getObjectID())) {
@@ -576,79 +497,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     @Override
     public void run() {
       sendRemovedObjects();
-    }
-  }
-
-  // TODO::FIXME::This will go when we do batching
-  private static class ServerTCMapRequestContext {
-
-    private final static TCLogger logger      = TCLogging.getLogger(ServerTCMapRequestContext.class);
-
-    private final ObjectID        oid;
-    private final Object          portableKey;
-    private final GroupID         groupID;
-    private final String          comboKey;
-
-    private boolean               requestSent = false;
-    private int                   count;
-    private ObjectID              valueID;
-
-    public ServerTCMapRequestContext(final ObjectID oid, final Object portableKey, final GroupID groupID,
-                                     final String comboKey) {
-      this.oid = oid;
-      this.portableKey = portableKey;
-      this.groupID = groupID;
-      this.comboKey = comboKey;
-    }
-
-    public void setValueForKey(final ObjectID mapID, final Object pKey, final Object pValue) {
-
-      if (ENABLE_LOGGING) {
-        logger.info("Received response for Map : " + this.oid + " key : " + this.portableKey + " value : " + pValue);
-      }
-      if (pValue instanceof ObjectID) {
-        this.valueID = (ObjectID) pValue;
-      } else {
-        throw new AssertionError("Unsupported now");
-      }
-    }
-
-    public Object getCompositeKey() {
-      return this.comboKey;
-    }
-
-    public boolean lookupComplete() {
-      return (this.count == 0);
-    }
-
-    public void decrementLookupCount() {
-      this.count--;
-    }
-
-    public ObjectID getValueMappingObjectID() {
-      return this.valueID;
-    }
-
-    public void incrementLookupCount() {
-      this.count++;
-    }
-
-    // TODO::Change / Batch
-    public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
-      if (!this.requestSent) {
-        this.requestSent = true;
-        if (ENABLE_LOGGING) {
-          logger.info("Sending request for Map : " + this.oid + " key : " + this.portableKey);
-        }
-        sendRequest(factory);
-      }
-    }
-
-    // TODO::Change / Batch
-    public void sendRequest(final RequestManagedObjectMessageFactory factory) {
-      final ServerTCMapRequestMessage mappingMessage = factory.newServerTCMapRequestMessage(this.groupID);
-      mappingMessage.initialize(this.oid, this.portableKey);
-      mappingMessage.send();
     }
   }
 

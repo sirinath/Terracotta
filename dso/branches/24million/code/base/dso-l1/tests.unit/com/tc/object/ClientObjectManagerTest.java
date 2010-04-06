@@ -40,24 +40,26 @@ import java.util.Map;
 import java.util.Random;
 
 public class ClientObjectManagerTest extends BaseDSOTestCase {
-  private ClientObjectManager     mgr;
-  private TestRemoteObjectManager remoteObjectManager;
-  private DSOClientConfigHelper   clientConfiguration;
-  private ObjectIDProvider        idProvider;
-  private EvictionPolicy          cache;
-  private RuntimeLogger           runtimeLogger;
-  private ClassProvider           classProvider;
-  private TCClassFactory          classFactory;
-  private TestObjectFactory       objectFactory;
-  private String                  rootName;
-  private Object                  object;
-  private ObjectID                objectID;
-  private MockTCObject            tcObject;
-  private CyclicBarrier           mutualRefBarrier;
+  private ClientObjectManager        mgr;
+  private TestRemoteObjectManager    remoteObjectManager;
+  private TestRemoteServerMapManager remoteServerMapManager;
+  private DSOClientConfigHelper      clientConfiguration;
+  private ObjectIDProvider           idProvider;
+  private EvictionPolicy             cache;
+  private RuntimeLogger              runtimeLogger;
+  private ClassProvider              classProvider;
+  private TCClassFactory             classFactory;
+  private TestObjectFactory          objectFactory;
+  private String                     rootName;
+  private Object                     object;
+  private ObjectID                   objectID;
+  private MockTCObject               tcObject;
+  private CyclicBarrier              mutualRefBarrier;
 
   @Override
   public void setUp() throws Exception {
     this.remoteObjectManager = new TestRemoteObjectManager();
+    this.remoteServerMapManager = new TestRemoteServerMapManager();
     this.classProvider = new MockClassProvider();
     this.clientConfiguration = configHelper();
     this.classFactory = new TestClassFactory();
@@ -72,7 +74,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     this.objectFactory.peerObject = this.object;
     this.objectFactory.tcObject = this.tcObject;
 
-    this.mgr = new ClientObjectManagerImpl(this.remoteObjectManager, this.clientConfiguration, this.idProvider,
+    this.mgr = new ClientObjectManagerImpl(this.remoteObjectManager, this.remoteServerMapManager, this.clientConfiguration, this.idProvider,
                                            this.cache, this.runtimeLogger,
                                            new ClientIDProviderImpl(new TestChannelIDProvider()), this.classProvider,
                                            this.classFactory, this.objectFactory,
@@ -136,6 +138,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     TestMutualReferenceObjectFactory testMutualReferenceObjectFactory = new TestMutualReferenceObjectFactory();
     ClientObjectManagerImpl clientObjectManager = new ClientObjectManagerImpl(
                                                                               this.remoteObjectManager,
+                                                                              this.remoteServerMapManager,
                                                                               this.clientConfiguration,
                                                                               this.idProvider,
                                                                               this.cache,

@@ -14,12 +14,14 @@ import com.tc.object.MockTCObject;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
 import com.tc.object.RemoteObjectManager;
+import com.tc.object.RemoteServerMapManager;
 import com.tc.object.TCClassFactory;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectFactory;
 import com.tc.object.TestClassFactory;
 import com.tc.object.TestObjectFactory;
 import com.tc.object.TestRemoteObjectManager;
+import com.tc.object.TestRemoteServerMapManager;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.cache.EvictionPolicy;
 import com.tc.object.cache.NullCache;
@@ -52,7 +54,7 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
     TestObjectFactory objectFactory = new TestObjectFactory();
     objectFactory.peerObject = rootObject;
     objectFactory.tcObject = tcObject;
-    objectManager = new MockClientObjectManagerImpl(new MockRemoteObjectManagerImpl(), configHelper(),
+    objectManager = new MockClientObjectManagerImpl(new MockRemoteObjectManagerImpl(), new MockRemoteServerMapManagerImpl(), configHelper(),
                                                     new ObjectIDProviderImpl(new SimpleSequence()), new NullCache(),
                                                     new NullRuntimeLogger(),
                                                     new ClientIDProviderImpl(new TestChannelIDProvider()),
@@ -90,11 +92,12 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
 
   private static class MockClientObjectManagerImpl extends ClientObjectManagerImpl {
     public MockClientObjectManagerImpl(RemoteObjectManager remoteObjectManager,
+                                       RemoteServerMapManager remoteServerMapManager,
                                        DSOClientConfigHelper clientConfiguration, ObjectIDProvider idProvider,
                                        EvictionPolicy cache, RuntimeLogger runtimeLogger, ClientIDProvider provider,
                                        ClassProvider classProvider, TCClassFactory classFactory,
                                        TCObjectFactory objectFactory) {
-      super(remoteObjectManager, clientConfiguration, idProvider, cache, runtimeLogger, provider, classProvider,
+      super(remoteObjectManager, remoteServerMapManager, clientConfiguration, idProvider, cache, runtimeLogger, provider, classProvider,
             classFactory, objectFactory, new TestPortability(), null, null);
     }
 
@@ -110,6 +113,10 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
     public ObjectID retrieveRootID(String name) {
       throw new AssertionError("retrieveRootID should not be called.");
     }
+  }
+  
+  private static class MockRemoteServerMapManagerImpl extends TestRemoteServerMapManager {
+    //
   }
 
   private static class MockTransactionManagerImpl extends MockTransactionManager {
