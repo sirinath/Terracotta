@@ -21,7 +21,7 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class KeyValueMappingRequestMessageImpl extends DSOMessageBase implements KeyValueMappingRequestMessage,
+public class KeyValueMappingRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage,
     EventContext {
 
   private final static byte        MAP_OBJECT_ID = 1;

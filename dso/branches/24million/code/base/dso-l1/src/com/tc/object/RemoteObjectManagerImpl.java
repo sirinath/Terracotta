@@ -11,7 +11,7 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.object.msg.KeyValueMappingRequestMessage;
+import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
@@ -633,6 +633,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
       this.count++;
     }
 
+    // TODO::Change / Batch
     public void sendRequestIfNecessary(final RequestManagedObjectMessageFactory factory) {
       if (!this.requestSent) {
         this.requestSent = true;
@@ -643,8 +644,9 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
       }
     }
 
+    // TODO::Change / Batch
     public void sendRequest(final RequestManagedObjectMessageFactory factory) {
-      final KeyValueMappingRequestMessage mappingMessage = factory.newRequestValueMappingForKeyMessage(this.groupID);
+      final ServerTCMapRequestMessage mappingMessage = factory.newServerTCMapRequestMessage(this.groupID);
       mappingMessage.initialize(this.oid, this.portableKey);
       mappingMessage.send();
     }

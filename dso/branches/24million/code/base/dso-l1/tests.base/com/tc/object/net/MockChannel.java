@@ -29,6 +29,7 @@ import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.session.SessionID;
 
 public class MockChannel implements DSOClientMessageChannel {
@@ -113,7 +114,7 @@ public class MockChannel implements DSOClientMessageChannel {
   public GroupID[]                               groups      = new GroupID[] { new GroupID(0) };
 
   public CompletedTransactionLowWaterMarkMessageFactory getCompletedTransactionLowWaterMarkMessageFactory() {
-    return nullFactory;
+    return this.nullFactory;
   }
 
   private class NullCompletedTransactionLowWaterMarkMessageFactory implements
@@ -128,10 +129,14 @@ public class MockChannel implements DSOClientMessageChannel {
   }
 
   public GroupID[] getGroupIDs() {
-    return groups;
+    return this.groups;
   }
 
   public LockStatisticsReponseMessageFactory getLockStatisticsReponseMessageFactory() {
+    throw new ImplementMe();
+  }
+
+  public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
     throw new ImplementMe();
   }
 }

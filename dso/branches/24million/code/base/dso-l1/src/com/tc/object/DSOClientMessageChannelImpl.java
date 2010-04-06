@@ -23,7 +23,7 @@ import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
-import com.tc.object.msg.KeyValueMappingRequestMessage;
+import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessage;
@@ -109,11 +109,6 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return (RequestManagedObjectMessage) this.channel.createMessage(TCMessageType.REQUEST_MANAGED_OBJECT_MESSAGE);
   }
 
-  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(GroupID groupID) {
-   // throw new ImplementMe();
-    return null;
-  }
-
   public RequestManagedObjectMessageFactory getRequestManagedObjectMessageFactory() {
     return this;
   }
@@ -127,7 +122,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
   }
 
   public ClientHandshakeMessage newClientHandshakeMessage(final NodeID remoteNode) {
-    ClientHandshakeMessage rv = (ClientHandshakeMessage) this.channel
+    final ClientHandshakeMessage rv = (ClientHandshakeMessage) this.channel
         .createMessage(TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
     return rv;
   }
@@ -179,6 +174,10 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
 
   public KeysForOrphanedValuesMessage newKeysForOrphanedValuesMessage(final NodeID nodeID) {
     return (KeysForOrphanedValuesMessage) this.channel.createMessage(TCMessageType.KEYS_FOR_ORPHANED_VALUES_MESSAGE);
+  }
+
+  public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
+    return (ServerTCMapRequestMessage) this.channel.createMessage(TCMessageType.SERVER_TC_MAP_REQUEST_MESSAGE);
   }
 
   public NodeMetaDataMessage newNodeMetaDataMessage() {
