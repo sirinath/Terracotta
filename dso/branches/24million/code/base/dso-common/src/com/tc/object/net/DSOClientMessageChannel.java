@@ -9,6 +9,7 @@ import com.tc.management.lock.stats.LockStatisticsReponseMessageFactory;
 import com.tc.net.CommStackMismatchException;
 import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -25,6 +26,7 @@ import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.util.TCTimeoutException;
 
 import java.io.IOException;
@@ -68,6 +70,8 @@ public interface DSOClientMessageChannel {
   public NodesWithObjectsMessageFactory getNodesWithObjectsMessageFactory();
 
   public KeysForOrphanedValuesMessageFactory getKeysForOrphanedValuesMessageFactory();
+
+  public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID);
 
   public NodeMetaDataMessageFactory getNodeMetaDataMessageFactory();
 

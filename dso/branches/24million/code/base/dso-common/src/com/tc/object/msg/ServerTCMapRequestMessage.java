@@ -6,7 +6,7 @@ package com.tc.object.msg;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 
-public interface KeyValueMappingRequestMessage {
+public interface ServerTCMapRequestMessage {
 
   public void initialize(ObjectID mapID, Object portableKey);
 
