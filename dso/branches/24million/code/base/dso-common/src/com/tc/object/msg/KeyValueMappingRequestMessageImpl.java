@@ -17,10 +17,9 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.SerializerDNAEncodingImpl;
 import com.tc.object.dna.impl.StorageDNAEncodingImpl;
 import com.tc.object.session.SessionID;
+import com.tc.util.Assert;
 
 import java.io.IOException;
-
-import junit.framework.Assert;
 
 public class KeyValueMappingRequestMessageImpl extends DSOMessageBase implements KeyValueMappingRequestMessage,
     EventContext {

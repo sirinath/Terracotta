@@ -4,10 +4,13 @@
  */
 package com.tc.object.msg;
 
+import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 
 public interface RequestManagedObjectMessageFactory {
 
   public RequestManagedObjectMessage newRequestManagedObjectMessage(NodeID nodeID);
+
+  public KeyValueMappingRequestMessage newRequestValueMappingForKeyMessage(GroupID groupID);
 
 }
