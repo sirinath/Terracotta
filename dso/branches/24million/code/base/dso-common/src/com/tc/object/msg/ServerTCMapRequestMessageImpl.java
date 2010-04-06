@@ -21,7 +21,7 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class KeyValueMappingRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage,
+public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage,
     EventContext {
 
   private final static byte        MAP_OBJECT_ID = 1;
@@ -33,13 +33,13 @@ public class KeyValueMappingRequestMessageImpl extends DSOMessageBase implements
   private Object                   portableKey;
   private ObjectID                 mapID;
 
-  public KeyValueMappingRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+  public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                            final MessageChannel channel, final TCMessageHeader header,
                                            final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public KeyValueMappingRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+  public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                            final TCByteBufferOutputStream out, final MessageChannel channel,
                                            final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
