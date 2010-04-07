@@ -10,6 +10,7 @@ import com.tc.net.protocol.TestClientMessageChannel;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
+import com.tc.net.protocol.tcm.GeneratedMessageFactory;
 import com.tc.net.protocol.tcm.MockMessageChannel;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageType;
@@ -138,6 +139,10 @@ public class MockChannel implements DSOClientMessageChannel {
   }
 
   public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
+    throw new ImplementMe();
+  }
+
+  public void addClassMapping(final TCMessageType messageType, final GeneratedMessageFactory generatedMessageFactory) {
     throw new ImplementMe();
   }
 

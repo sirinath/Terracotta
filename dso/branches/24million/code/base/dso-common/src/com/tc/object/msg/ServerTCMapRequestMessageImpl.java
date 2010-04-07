@@ -3,7 +3,6 @@
  */
 package com.tc.object.msg;
 
-import com.tc.async.api.EventContext;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.ClientID;
@@ -21,9 +20,9 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage,
-    EventContext {
+public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage {
 
+  // TODO:: Comback for other types of requests.
   private final static byte        MAP_OBJECT_ID = 1;
 
   // TODO::Comeback and verify
@@ -34,14 +33,14 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   private ObjectID                 mapID;
 
   public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                           final MessageChannel channel, final TCMessageHeader header,
-                                           final TCByteBuffer[] data) {
+                                       final MessageChannel channel, final TCMessageHeader header,
+                                       final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
   public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                           final TCByteBufferOutputStream out, final MessageChannel channel,
-                                           final TCMessageType type) {
+                                       final TCByteBufferOutputStream out, final MessageChannel channel,
+                                       final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
@@ -56,7 +55,6 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
     putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
 
     // Directly encode the key
-    // putNVPair(PORTABLE_KEY, this.portableKey.toString());
     encoder.encode(this.portableKey, getOutputStream());
   }
 
@@ -65,7 +63,7 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
     switch (name) {
       case MAP_OBJECT_ID:
         this.mapID = new ObjectID(getLongValue());
-        // Directly encode the key
+        // Directly decode the key
         try {
           this.portableKey = decoder.decode(getInputStream());
         } catch (final ClassNotFoundException e) {

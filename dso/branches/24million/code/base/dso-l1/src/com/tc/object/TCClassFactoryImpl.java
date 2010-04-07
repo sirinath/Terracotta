@@ -53,26 +53,28 @@ public class TCClassFactoryImpl implements TCClassFactory {
   }
 
   public TCClass getOrCreate(final Class clazz, final ClientObjectManager objectManager) {
-    TCClass rv = classes.get(clazz);
-    if (rv != null) return rv;
+    TCClass rv = this.classes.get(clazz);
+    if (rv != null) { return rv; }
 
-    LoaderDescription loaderDesc = classProvider.getLoaderDescriptionFor(clazz);
-    String className = clazz.getName();
-    ClassInfo classInfo = JavaClassInfo.getClassInfo(clazz);
-    rv = new TCClassImpl(fieldFactory, this, objectManager, config.getTCPeerClass(clazz),
-                         getLogicalSuperClassWithDefaultConstructor(clazz), loaderDesc, config
-                             .getLogicalExtendingClassName(className), config.isLogical(className), config
-                             .isCallConstructorOnLoad(classInfo), config.hasOnLoadInjection(classInfo), config
-                             .getOnLoadScriptIfDefined(classInfo), config.getOnLoadMethodIfDefined(classInfo), config
-                             .isUseNonDefaultConstructor(clazz), config.useResolveLockWhenClearing(clazz), config
-                             .getPostCreateMethodIfDefined(className), config.getPreCreateMethodIfDefined(className));
+    final LoaderDescription loaderDesc = this.classProvider.getLoaderDescriptionFor(clazz);
+    final String className = clazz.getName();
+    final ClassInfo classInfo = JavaClassInfo.getClassInfo(clazz);
+    rv = new TCClassImpl(this.fieldFactory, this, objectManager, this.config.getTCPeerClass(clazz),
+                         getLogicalSuperClassWithDefaultConstructor(clazz), loaderDesc, this.config
+                             .getLogicalExtendingClassName(className), this.config.isLogical(className), this.config
+                             .isCallConstructorOnLoad(classInfo), this.config.hasOnLoadInjection(classInfo),
+                         this.config.getOnLoadScriptIfDefined(classInfo), this.config
+                             .getOnLoadMethodIfDefined(classInfo), this.config.isUseNonDefaultConstructor(clazz),
+                         this.config.useResolveLockWhenClearing(clazz), this.config
+                             .getPostCreateMethodIfDefined(className), this.config
+                             .getPreCreateMethodIfDefined(className));
 
-    TCClass existing = classes.putIfAbsent(clazz, rv);
+    final TCClass existing = this.classes.putIfAbsent(clazz, rv);
     return existing == null ? rv : existing;
   }
 
   public Class getLogicalSuperClassWithDefaultConstructor(Class clazz) {
-    TransparencyClassSpec spec = config.getSpec(clazz.getName());
+    TransparencyClassSpec spec = this.config.getSpec(clazz.getName());
     if (spec == null) { return null; }
 
     while (clazz != null) {
@@ -81,16 +83,16 @@ public class TCClassFactoryImpl implements TCClassFactory {
         Constructor c = null;
         try {
           c = clazz.getDeclaredConstructor(new Class[0]);
-        } catch (SecurityException e) {
+        } catch (final SecurityException e) {
           throw new TCRuntimeException(e);
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
           // c is already null
         }
         if (c != null) { return clazz; }
       }
       clazz = clazz.getSuperclass();
       if (clazz != null) {
-        spec = config.getSpec(clazz.getName());
+        spec = this.config.getSpec(clazz.getName());
       } else {
         spec = null;
       }
@@ -99,47 +101,47 @@ public class TCClassFactoryImpl implements TCClassFactory {
   }
 
   public ChangeApplicator createApplicatorFor(final TCClass clazz, final boolean indexed) {
-    if (indexed) { return new ArrayApplicator(encoding); }
-    String name = clazz.getName();
-    Class applicatorClazz = config.getChangeApplicator(clazz.getPeerClass());
+    if (indexed) { return new ArrayApplicator(this.encoding); }
+    final String name = clazz.getName();
+    final Class applicatorClazz = this.config.getChangeApplicator(clazz.getPeerClass());
 
     if (applicatorClazz == null) {
       if (LiteralValues.isLiteral(name)) {
-        return new LiteralTypesApplicator(clazz, encoding);
+        return new LiteralTypesApplicator(clazz, this.encoding);
       } else if (clazz.isProxyClass()) {
-        return new ProxyApplicator(encoding);
+        return new ProxyApplicator(this.encoding);
       } else if (ClassUtils.isPortableReflectionClass(clazz.getPeerClass())) {
-        return new AccessibleObjectApplicator(encoding);
+        return new AccessibleObjectApplicator(this.encoding);
       } else if (File.class.isAssignableFrom(clazz.getPeerClass())) {
-        return new FileApplicator(clazz, encoding);
+        return new FileApplicator(clazz, this.encoding);
       } else if (Calendar.class.isAssignableFrom(clazz.getPeerClass())) {
-        return new CalendarApplicator(clazz, encoding);
+        return new CalendarApplicator(clazz, this.encoding);
       } else if (IS_IBM && "java.util.concurrent.atomic.AtomicInteger".equals(name)) {
         try {
-          Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
-          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding });
-        } catch (Exception e) {
+          final Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
+          final Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
+          return (ChangeApplicator) constructor.newInstance(new Object[] { this.encoding });
+        } catch (final Exception e) {
           throw new AssertionError(e);
         }
       } else if (IS_IBM && "java.util.concurrent.atomic.AtomicLong".equals(name)) {
         try {
-          Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
-          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding });
-        } catch (Exception e) {
+          final Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
+          final Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
+          return (ChangeApplicator) constructor.newInstance(new Object[] { this.encoding });
+        } catch (final Exception e) {
           throw new AssertionError(e);
         }
       } else {
-        return new PhysicalApplicator(clazz, encoding);
+        return new PhysicalApplicator(clazz, this.encoding);
       }
     }
 
     try {
-      Constructor cstr = applicatorClazz.getConstructor(APPLICATOR_CSTR_SIGNATURE);
-      Object[] params = new Object[] { encoding };
+      final Constructor cstr = applicatorClazz.getConstructor(APPLICATOR_CSTR_SIGNATURE);
+      final Object[] params = new Object[] { this.encoding };
       return (ChangeApplicator) cstr.newInstance(params);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       throw new AssertionError(e);
     }
   }

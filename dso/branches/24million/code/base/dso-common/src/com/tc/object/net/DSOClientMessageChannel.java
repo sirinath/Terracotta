@@ -12,6 +12,7 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
+import com.tc.net.protocol.tcm.GeneratedMessageFactory;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
@@ -36,6 +37,8 @@ import java.net.UnknownHostException;
 public interface DSOClientMessageChannel {
 
   public void addClassMapping(TCMessageType messageType, Class messageClass);
+
+  public void addClassMapping(TCMessageType messageType, GeneratedMessageFactory generatedMessageFactory);
 
   public ClientIDProvider getClientIDProvider();
 
