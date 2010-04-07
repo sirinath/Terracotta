@@ -1141,23 +1141,23 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public Object getValueForKeyInMap(final ServerTCMap map, final Object key) throws ClassNotFoundException {
 
     final TCObject tcObject = map.__tc_managed();
-    if (tcObject == null) { throw new TCRuntimeException(
-                                                         "getValueForKeyInMap is not supported in a non-shared ServerTCMap"); }
+    if (tcObject == null) { throw new UnsupportedOperationException(
+                                                                    "getValueForKeyInMap is not supported in a non-shared ServerTCMap"); }
     final ObjectID mapID = tcObject.getObjectID();
     Object portableKey = key;
     if (key instanceof Manageable) {
       final TCObject keyObject = ((Manageable) key).__tc_managed();
-      if (keyObject == null) { throw new TCRuntimeException(
-                                                            "Key is portable, but not shared. This is currently not supported with ServerTCMap. Map ID = "
-                                                                + mapID + " key = " + key); }
+      if (keyObject == null) { throw new UnsupportedOperationException(
+                                                                       "Key is portable, but not shared. This is currently not supported with ServerTCMap. Map ID = "
+                                                                           + mapID + " key = " + key); }
       portableKey = keyObject.getObjectID();
     }
 
     if (!LiteralValues.isLiteralInstance(portableKey)) {
       // formatter
-      throw new TCRuntimeException(
-                                   "Key is not portable. It needs to be a liternal or portable and shared for ServerTCMap. Key = "
-                                       + portableKey + " map id = " + mapID);
+      throw new UnsupportedOperationException(
+                                              "Key is not portable. It needs to be a liternal or portable and shared for ServerTCMap. Key = "
+                                                  + portableKey + " map id = " + mapID);
     }
 
     final Object value = this.remoteServerMapManager.getMappingForKey(mapID, portableKey);
