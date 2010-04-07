@@ -1160,9 +1160,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                        + portableKey + " map id = " + mapID);
     }
 
-    final ObjectID valueID = this.remoteServerMapManager.getMappingForKey(mapID, portableKey);
+    final Object value = this.remoteServerMapManager.getMappingForKey(mapID, portableKey);
 
-    return lookupObject(valueID);
+    if (value instanceof ObjectID) {
+      return lookupObject((ObjectID) value);
+    } else {
+      return value;
+    }
   }
 
   private void startReaper() {
