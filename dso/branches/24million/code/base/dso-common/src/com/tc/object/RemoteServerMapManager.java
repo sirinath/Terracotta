@@ -9,10 +9,10 @@ import com.tc.object.session.SessionID;
 
 public interface RemoteServerMapManager extends ClientHandshakeCallback {
 
-  public ObjectID getMappingForKey(ObjectID oid, Object portableKey);
-  
+  public Object getMappingForKey(ObjectID oid, Object portableKey);
+
   public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID, Object portableKey,
                                             Object portableValue, NodeID nodeID);
-  
+
   public long size(ObjectID oid);
 }

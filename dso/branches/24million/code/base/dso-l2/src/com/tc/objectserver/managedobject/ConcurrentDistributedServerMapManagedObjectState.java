@@ -3,6 +3,9 @@
  */
 package com.tc.objectserver.managedobject;
 
+import com.tc.object.ObjectID;
+import com.tc.object.dna.api.DNACursor;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.util.Map;
@@ -20,6 +23,13 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   @Override
   public byte getType() {
     return CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE;
+  }
+
+  @Override
+  public void apply(final ObjectID objectID, final DNACursor cursor, final BackReferences includeIDs)
+      throws IOException {
+    super.apply(objectID, cursor, includeIDs);
+    includeIDs.ignoreBroadcastFor(objectID);
   }
 
   public Object getValueForKey(final Object portableKey) {

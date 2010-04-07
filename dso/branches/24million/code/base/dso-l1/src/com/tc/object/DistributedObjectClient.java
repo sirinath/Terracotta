@@ -77,6 +77,7 @@ import com.tc.object.handler.LockStatisticsEnableDisableHandler;
 import com.tc.object.handler.LockStatisticsResponseHandler;
 import com.tc.object.handler.ReceiveObjectHandler;
 import com.tc.object.handler.ReceiveRootIDHandler;
+import com.tc.object.handler.ReceiveServerMapResponseHandler;
 import com.tc.object.handler.ReceiveSyncWriteTransactionAckHandler;
 import com.tc.object.handler.ReceiveTransactionCompleteHandler;
 import com.tc.object.handler.ReceiveTransactionHandler;
@@ -479,12 +480,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final RemoteObjectManager remoteObjectManager = this.dsoClientBuilder
         .createRemoteObjectManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, faultCount, sessionManager);
-    
-    RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
-    .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
-        .getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
 
-    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, remoteServerMapManager, this.config, idProvider,
+    final RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
+        .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
+            .getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
+
+    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, remoteServerMapManager,
+                                                                   this.config, idProvider,
                                                                    new ClockEvictionPolicy(-1), this.runtimeLogger,
                                                                    this.channel.getClientIDProvider(),
                                                                    this.classProvider, classFactory, objectFactory,
@@ -574,6 +576,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                         maxSize);
     final Stage batchTxnAckStage = stageManager.createStage(ClientConfigurationContext.BATCH_TXN_ACK_STAGE,
                                                             new BatchTransactionAckHandler(), 1, maxSize);
+    final Stage receiveServerMapStage = stageManager
+        .createStage(ClientConfigurationContext.RECEIVE_SERVER_MAP_RESPONSE_STAGE,
+                     new ReceiveServerMapResponseHandler(remoteServerMapManager), 1, maxSize);
 
     // By design this stage needs to be single threaded. If it wasn't then cluster membership messages could get
     // processed before the client handshake ack, and this client would get a faulty view of the cluster at best, or
@@ -725,6 +730,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                   hydrateSink);
     this.channel.routeMessageType(TCMessageType.SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE, syncWriteBatchRecvdHandler
         .getSink(), hydrateSink);
+    this.channel.routeMessageType(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
+                                  hydrateSink);
 
     int i = 0;
     while (maxConnectRetries <= 0 || i < maxConnectRetries) {

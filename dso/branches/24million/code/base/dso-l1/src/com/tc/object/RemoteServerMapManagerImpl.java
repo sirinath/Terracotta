@@ -40,15 +40,14 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   public RemoteServerMapManagerImpl(final GroupID groupID, final TCLogger logger,
-                                    final ServerMapMessageFactory smmFactory,
-                                    final SessionManager sessionManager) {
+                                    final ServerMapMessageFactory smmFactory, final SessionManager sessionManager) {
     this.groupID = groupID;
     this.logger = logger;
     this.smmFactory = smmFactory;
     this.sessionManager = sessionManager;
   }
 
-  public ObjectID getMappingForKey(ObjectID oid, Object portableKey) {
+  public Object getMappingForKey(final ObjectID oid, final Object portableKey) {
     boolean isInterrupted = false;
     if (oid.getGroupID() != this.groupID.toInt()) {
       //
@@ -58,12 +57,12 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     final ServerTCMapRequestContext context = getOrCreateRequestValueMappingContext(oid, portableKey);
     context.incrementLookupCount();
-    ObjectID valueID;
+    Object value;
     while (true) {
       waitUntilRunning();
       context.sendRequestIfNecessary(this.smmFactory);
-      valueID = context.getValueMappingObjectID();
-      if (valueID != null) {
+      value = context.getValueMappingObjectID();
+      if (value != null) {
         context.decrementLookupCount();
         cleanupRequestValueMappingContextIfNecessary(context);
         break;
@@ -75,10 +74,10 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       }
     }
     Util.selfInterruptIfNeeded(isInterrupted);
-    return valueID;
+    return value;
   }
 
-  public long size(ObjectID oid) {
+  public long size(final ObjectID oid) {
 
     return 0;
   }
@@ -197,7 +196,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     private boolean               requestSent = false;
     private int                   count;
-    private ObjectID              valueID;
+    private Object                value;
 
     public ServerTCMapRequestContext(final ObjectID oid, final Object portableKey, final GroupID groupID,
                                      final String comboKey) {
@@ -212,11 +211,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       if (ENABLE_LOGGING) {
         logger.info("Received response for Map : " + this.oid + " key : " + this.portableKey + " value : " + pValue);
       }
-      if (pValue instanceof ObjectID) {
-        this.valueID = (ObjectID) pValue;
-      } else {
-        throw new AssertionError("Unsupported now");
-      }
+      this.value = pValue;
     }
 
     public Object getCompositeKey() {
@@ -231,8 +226,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       this.count--;
     }
 
-    public ObjectID getValueMappingObjectID() {
-      return this.valueID;
+    public Object getValueMappingObjectID() {
+      return this.value;
     }
 
     public void incrementLookupCount() {
