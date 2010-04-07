@@ -112,6 +112,7 @@ import com.tc.object.bytecode.NullTCObject;
 import com.tc.object.bytecode.OverridesHashCode;
 import com.tc.object.bytecode.ReentrantLockClassAdapter;
 import com.tc.object.bytecode.ReentrantReadWriteLockClassAdapter;
+import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.bytecode.SessionConfiguration;
 import com.tc.object.bytecode.SetRemoveMethodAdapter;
 import com.tc.object.bytecode.StringBufferAdapter;
@@ -490,6 +491,7 @@ public class BootJarTool {
       loadTerracottaClass(AAFairDistributionPolicyMarker.class.getName());
       loadTerracottaClass(Clearable.class.getName());
       loadTerracottaClass(NotClearable.class.getName());
+      loadTerracottaClass(ServerTCMap.class.getName());
       loadTerracottaClass(OverridesHashCode.class.getName());
       loadTerracottaClass(Manager.class.getName());
       loadTerracottaClass(InstrumentationLogger.class.getName());
