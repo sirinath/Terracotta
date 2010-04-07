@@ -8,6 +8,11 @@
 # to a module-group as below (spring, dso, container, etc...)
 
 modules:
+  - client-api:
+      options:
+        jdk: J2SE-1.5
+      # THERE CAN BE NO DEPENDENCIES HERE!!
+
   - junit-formatter:
       options:
         jdk: J2SE-1.5
