@@ -3,10 +3,11 @@
  */
 package com.tc.object.msg;
 
+import com.tc.async.api.EventContext;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 
-public interface ServerTCMapRequestMessage {
+public interface ServerTCMapRequestMessage extends EventContext {
 
   public void initialize(ObjectID mapID, Object portableKey);
 

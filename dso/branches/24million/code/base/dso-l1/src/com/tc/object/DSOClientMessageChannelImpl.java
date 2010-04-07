@@ -13,6 +13,7 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
+import com.tc.net.protocol.tcm.GeneratedMessageFactory;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
@@ -23,8 +24,6 @@ import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
 import com.tc.object.msg.CompletedTransactionLowWaterMarkMessageFactory;
 import com.tc.object.msg.JMXMessage;
-import com.tc.object.msg.ServerMapMessageFactory;
-import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessage;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessage;
@@ -39,6 +38,8 @@ import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
+import com.tc.object.msg.ServerMapMessageFactory;
+import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.util.TCTimeoutException;
 
@@ -63,6 +64,11 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
 
   public void addClassMapping(final TCMessageType messageType, final Class messageClass) {
     this.channel.addClassMapping(messageType, messageClass);
+  }
+
+  public void addClassMapping(final TCMessageType type, final GeneratedMessageFactory messageFactory) {
+    this.channel.addClassMapping(type, messageFactory);
+
   }
 
   public ClientIDProvider getClientIDProvider() {
@@ -113,7 +119,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
   public RequestManagedObjectMessageFactory getRequestManagedObjectMessageFactory() {
     return this;
   }
-  
+
   public ServerMapMessageFactory getServerMapMessageFactory() {
     return this;
   }
