@@ -47,7 +47,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     this.sessionManager = sessionManager;
   }
 
-  public Object getMappingForKey(final ObjectID oid, final Object portableKey) {
+  public synchronized Object getMappingForKey(final ObjectID oid, final Object portableKey) {
     boolean isInterrupted = false;
     if (oid.getGroupID() != this.groupID.toInt()) {
       //
@@ -78,12 +78,10 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   public long size(final ObjectID oid) {
-
     return 0;
   }
 
   synchronized void requestOutstanding() {
-
     for (final Iterator i = this.valueMappingRequests.entrySet().iterator(); i.hasNext();) {
       final ServerTCMapRequestContext context = (ServerTCMapRequestContext) i.next();
       context.sendRequest(this.smmFactory);
@@ -149,8 +147,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
-  public void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
-                                  final ClientHandshakeMessage handshakeMessage) {
+  public synchronized void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
+                                               final ClientHandshakeMessage handshakeMessage) {
     if (isStopped()) { return; }
     assertPaused("Attempt to init handshake while not PAUSED");
     this.state = State.STARTING;
