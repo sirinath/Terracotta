@@ -23,7 +23,7 @@ public class ServerTCMapRequestHandler extends AbstractEventHandler implements E
     final ServerTCMapRequestMessage kvmContext = (ServerTCMapRequestMessage) context;
     final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(kvmContext,
                                                                                    this.respondToPartialKeysStage);
-    this.objectManager.lookupObjectsAndSubObjectsFor(kvmContext.getClientID(), requestContext, -1);
+    this.objectManager.lookupObjectsFor(kvmContext.getClientID(), requestContext);
   }
 
   @Override

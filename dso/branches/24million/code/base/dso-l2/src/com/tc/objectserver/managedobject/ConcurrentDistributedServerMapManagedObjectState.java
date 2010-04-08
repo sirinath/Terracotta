@@ -26,6 +26,11 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   }
 
   @Override
+  public void addObjectReferencesTo(final ManagedObjectTraverser traverser) {
+    // Nothing to add since nothing is required to be faulted in the L1
+  }
+
+  @Override
   public void apply(final ObjectID objectID, final DNACursor cursor, final BackReferences includeIDs)
       throws IOException {
     super.apply(objectID, cursor, includeIDs);
