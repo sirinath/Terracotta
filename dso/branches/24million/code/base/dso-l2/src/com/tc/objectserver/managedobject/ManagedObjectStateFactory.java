@@ -77,7 +77,7 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("org.terracotta.collections.ConcurrentDistributedMapDso", Byte
         .valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE));
     // XXX: hack to support CDMServerMap in tim-concurrent-collections.
-    classNameToStateMap.put("org.terracotta.collections.ConcurrentDistributedMapDsoServerMap", Byte
+    classNameToStateMap.put("org.terracotta.collections.ConcurrentDistributedServerMapDso", Byte
         .valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE));
     // XXX: hack to support Hibernate cache entry type
     classNameToStateMap.put(TDCSerializedEntryManagedObjectState.SERIALIZED_ENTRY,
