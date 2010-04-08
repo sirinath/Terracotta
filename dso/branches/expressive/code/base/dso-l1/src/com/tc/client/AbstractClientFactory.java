@@ -7,6 +7,7 @@ package com.tc.client;
 import com.tc.lang.TCThreadGroup;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.Manager;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
@@ -28,5 +29,6 @@ public abstract class AbstractClientFactory extends AbstractFactory {
                                                        PreparedComponentsFromL2Connection connectionComponents,
                                                        Manager manager,
                                                        StatisticsAgentSubSystem statisticsAgentSubSystem,
-                                                       DsoClusterInternal dsoCluster, RuntimeLogger runtimeLogger);
+                                                       DsoClusterInternal dsoCluster, RuntimeLogger runtimeLogger,
+                                                       ArrayManager arrayManager);
 }

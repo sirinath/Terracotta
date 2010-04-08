@@ -5,9 +5,9 @@
 package com.tc.exception;
 
 /**
- * Terracotta equivalent of ClassNotFoundException - class is not available on this VM. 
+ * Terracotta equivalent of ClassNotFoundException - class is not available on this VM.
  */
-public class TCClassNotFoundException extends TCRuntimeException {
+public class TCClassNotFoundException extends RuntimeException {
 
   public TCClassNotFoundException() {
     super();

@@ -7,6 +7,7 @@ package com.tc.client;
 import com.tc.lang.TCThreadGroup;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.Manager;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.loaders.ClassProvider;
@@ -22,8 +23,9 @@ public class StandardClientFactory extends AbstractClientFactory {
                                               final PreparedComponentsFromL2Connection connectionComponents,
                                               final Manager manager,
                                               final StatisticsAgentSubSystem statisticsAgentSubSystem,
-                                              final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger) {
+                                              final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
+                                              final ArrayManager arrayManager) {
     return new DistributedObjectClient(config, threadGroup, classProvider, connectionComponents, manager,
-                                       statisticsAgentSubSystem, dsoCluster, runtimeLogger);
+                                       statisticsAgentSubSystem, dsoCluster, runtimeLogger, arrayManager);
   }
 }

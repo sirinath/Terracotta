@@ -9,8 +9,6 @@ import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.LockID;
@@ -25,12 +23,11 @@ import com.tc.statistics.StatisticRetrievalAction;
 import java.lang.reflect.Field;
 
 import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 /**
  * Null implementation of the manager.
  */
-public final class NullManager implements Manager {
+public class NullManager implements Manager {
 
   public static final String                 CLASS                 = "com/tc/object/bytecode/NullManager";
   public static final String                 TYPE                  = "L" + CLASS + ";";
@@ -48,7 +45,7 @@ public final class NullManager implements Manager {
     return INSTANCE;
   }
 
-  private NullManager() {
+  NullManager() {
     //
   }
 
@@ -76,10 +73,6 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject lookupExistingOrNull(final Object obj) {
-    return null;
-  }
-
   public final void logicalInvoke(final Object object, final String methodName, final Object[] params) {
     //
   }
@@ -105,10 +98,6 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public boolean isLiteralAutolock(Object o) {
-    return false;
-  }
-
   public final int calculateDsoHashCode(final Object object) {
     return 0;
   }
@@ -123,10 +112,6 @@ public final class NullManager implements Manager {
 
   public final Object lookupRoot(final String name) {
     throw new UnsupportedOperationException();
-  }
-
-  public final boolean isLockHeldByCurrentThread(final String lockId, final int lockLevel) {
-    return false;
   }
 
   public final void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
@@ -152,15 +137,11 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject lookupOrCreate(final Object obj) {
-    throw new UnsupportedOperationException();
-  }
-
   public final Object lookupObject(final ObjectID id) {
     throw new UnsupportedOperationException();
   }
 
-  public Object lookupObject(final ObjectID id, final ObjectID parentContext) {
+  public final Object lookupObject(final ObjectID id, final ObjectID parentContext) {
     throw new UnsupportedOperationException();
   }
 
@@ -168,181 +149,244 @@ public final class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
-  public final DmiManager getDmiManager() {
-    throw new UnsupportedOperationException();
-  }
-
-  public final int localHeldCount(final Object obj, final int lockLevel) {
-    throw new UnsupportedOperationException();
-  }
-
-  public boolean isDsoMonitored(final Object obj) {
+  public final boolean isDsoMonitored(final Object obj) {
     return false;
   }
 
-  public boolean isDsoMonitorEntered(final Object obj) {
+  public final boolean isDsoMonitorEntered(final Object obj) {
     return false;
   }
 
-  public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
+  public final boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
     throw new UnsupportedOperationException();
   }
 
-  public InstrumentationLogger getInstrumentationLogger() {
+  public final InstrumentationLogger getInstrumentationLogger() {
     return instrumentationLogger;
   }
 
-  public boolean overridesHashCode(final Object obj) {
+  public final boolean overridesHashCode(final Object obj) {
     throw new UnsupportedOperationException();
   }
 
-  public void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
+  public final void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     throw new UnsupportedOperationException();
   }
 
-  public ClassProvider getClassProvider() {
+  public final ClassProvider getClassProvider() {
     throw new UnsupportedOperationException();
   }
 
-  public DsoCluster getDsoCluster() {
+  public final DsoCluster getDsoCluster() {
     throw new UnsupportedOperationException();
   }
 
-  public MBeanServer getMBeanServer() {
+  public final MBeanServer getMBeanServer() {
     return null;
   }
 
-  public void preFetchObject(final ObjectID id) {
+  public final void preFetchObject(final ObjectID id) {
     return;
   }
 
-  public StatisticRetrievalAction getStatisticRetrievalActionInstance(final String name) {
+  public final StatisticRetrievalAction getStatisticRetrievalActionInstance(final String name) {
     return null;
   }
 
-  public Object getChangeApplicator(final Class clazz) {
+  public final Object getChangeApplicator(final Class clazz) {
     return null;
   }
 
-  public LockID generateLockIdentifier(String str) {
+  public final LockID generateLockIdentifier(String str) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public LockID generateLockIdentifier(Object obj) {
+  public final LockID generateLockIdentifier(Object obj) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public LockID generateLockIdentifier(Object obj, String field) {
+  public final LockID generateLockIdentifier(Object obj, String field) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public int globalHoldCount(LockID lock, LockLevel level) {
+  public final int globalHoldCount(LockID lock, LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public int globalPendingCount(LockID lock) {
+  public final int globalPendingCount(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public int globalWaitingCount(LockID lock) {
+  public final int globalWaitingCount(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLocked(LockID lock, LockLevel level) {
+  public final boolean isLocked(LockID lock, LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
+  public final boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public int localHoldCount(LockID lock, LockLevel level) {
+  public final int localHoldCount(LockID lock, LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public void lock(LockID lock, LockLevel level) {
+  public final void lock(LockID lock, LockLevel level) {
     //
   }
 
-  public void lockInterruptibly(LockID lock, LockLevel level) {
+  public final void lockInterruptibly(LockID lock, LockLevel level) {
     //
   }
 
-  public Notify notify(LockID lock, Object waitObject) {
+  public final Notify notify(LockID lock, Object waitObject) {
     if (waitObject != null) {
       waitObject.notify();
     }
     return null;
   }
 
-  public Notify notifyAll(LockID lock, Object waitObject) {
+  public final Notify notifyAll(LockID lock, Object waitObject) {
     if (waitObject != null) {
       waitObject.notifyAll();
     }
     return null;
   }
 
-  public boolean tryLock(LockID lock, LockLevel level) {
+  public final boolean tryLock(LockID lock, LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean tryLock(LockID lock, LockLevel level, long timeout) {
+  public final boolean tryLock(LockID lock, LockLevel level, long timeout) {
     throw new UnsupportedOperationException();
   }
 
-  public void unlock(LockID lock, LockLevel level) {
+  public final void unlock(LockID lock, LockLevel level) {
     //
   }
 
-  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+  public final void wait(LockID lock, Object waitObject) throws InterruptedException {
     if (waitObject != null) {
       waitObject.wait();
     }
   }
 
-  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+  public final void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
     if (waitObject != null) {
       waitObject.wait(timeout);
     }
   }
 
-  public void pinLock(LockID lock) {
+  public final void pinLock(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public void unpinLock(LockID lock) {
+  public final void unpinLock(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLockedByCurrentThread(LockLevel level) {
+  public final boolean isLockedByCurrentThread(LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public void monitorEnter(LockID lock, LockLevel level) {
+  public final void monitorEnter(LockID lock, LockLevel level) {
     //
   }
 
-  public void monitorExit(LockID lock, LockLevel level) {
+  public final void monitorExit(LockID lock, LockLevel level) {
     //
   }
 
-  public void registerMBean(Object bean, ObjectName name) {
-    /**/
-  }
-
-  public String getUUID() {
+  public final String getUUID() {
     return null;
   }
 
-  public SessionConfiguration getSessionConfiguration(String appName) {
+  public final SessionConfiguration getSessionConfiguration(String appName) {
     throw new UnsupportedOperationException();
   }
 
-  public void waitForAllCurrentTransactionsToComplete() {
+  public final void waitForAllCurrentTransactionsToComplete() {
     throw new UnsupportedOperationException();
   }
-  
-  public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
+
+  public final void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
     throw new UnsupportedOperationException();
+  }
+
+  public final void objectFieldChangedByOffset(Object obj, long fieldOffset, Object update) {
+    //
+  }
+
+  public final ObjectID lookupObjectIdFor(Object obj) {
+    throw new UnsupportedOperationException();
+  }
+
+  public final Object arrayGet(Object array, int index) {
+    if (array == null) throw new NullPointerException("array is null");
+
+    if (array instanceof boolean[]) return ((boolean[]) array)[index] ? Boolean.TRUE : Boolean.FALSE;
+    if (array instanceof byte[]) return new Byte(((byte[]) array)[index]);
+    if (array instanceof char[]) return new Character(((char[]) array)[index]);
+    if (array instanceof short[]) return new Short(((short[]) array)[index]);
+    if (array instanceof int[]) return new Integer(((int[]) array)[index]);
+    if (array instanceof long[]) return new Long(((long[]) array)[index]);
+    if (array instanceof float[]) return new Float(((float[]) array)[index]);
+    if (array instanceof double[]) return new Double(((double[]) array)[index]);
+
+    if (array instanceof Object[]) { return ((Object[]) array)[index]; }
+
+    throw new IllegalArgumentException("Not an array type: " + array.getClass().getName());
+  }
+
+  public final void arraycopy(Object src, int srcPos, Object dest, int destPos, int length) {
+    System.arraycopy(src, srcPos, dest, destPos, length);
+  }
+
+  public final void byteOrBooleanArrayChanged(Object array, int index, byte b) {
+    if (array == null) throw new NullPointerException("array is null");
+
+    char type = array.getClass().getName().charAt(1);
+
+    if (type == 'Z') {
+      ((boolean[]) array)[index] = (b == 1);
+    } else if (type == 'B') {
+      ((byte[]) array)[index] = b;
+    } else {
+      throw new AssertionError(array.getClass().getName());
+    }
+  }
+
+  public final void charArrayChanged(char[] array, int index, char c) {
+    array[index] = c;
+  }
+
+  public final void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length) {
+    System.arraycopy(src, srcPos, dest, destPos, length);
+  }
+
+  public final void doubleArrayChanged(double[] array, int index, double d) {
+    array[index] = d;
+  }
+
+  public final void floatArrayChanged(float[] array, int index, float f) {
+    array[index] = f;
+  }
+
+  public final void intArrayChanged(int[] array, int index, int i) {
+    array[index] = i;
+  }
+
+  public final void longArrayChanged(long[] array, int index, long l) {
+    array[index] = l;
+  }
+
+  public final void objectArrayChanged(Object[] array, int index, Object value) {
+    array[index] = value;
+  }
+
+  public final void shortArrayChanged(short[] array, int index, short s) {
+    array[index] = s;
   }
 }

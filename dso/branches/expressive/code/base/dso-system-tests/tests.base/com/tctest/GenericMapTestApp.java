@@ -6,7 +6,7 @@ package com.tctest;
 
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.object.bytecode.Clearable;
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.ManagerInternalUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -1911,7 +1911,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
       // clear it out and verify
       clearable.setEvictionEnabled(true);
-      ManagerUtil.lookupExistingOrNull(array).clearAccessed();
+      ManagerInternalUtil.lookupExistingOrNull(array).clearAccessed();
       int cleared = clearable.__tc_clearReferences(1);
       Assert.assertEquals(map.getClass().getName(), 1, cleared);
       Assert.assertEquals(map.getClass().getName(), 0, tcMap.__tc_getAllLocalEntriesSnapshot().size());
@@ -1944,7 +1944,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     Clearable clearableMap = (Clearable) map;
     TCMap tcMap = (TCMap) map;
-    
+
     if (validate) {
       // turn off clearing temporarily to make sure we can observe the value being locally present
       clearableMap.setEvictionEnabled(false);
@@ -1953,7 +1953,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
       // clear it out and verify
       clearableMap.setEvictionEnabled(true);
-      ManagerUtil.lookupExistingOrNull(array).clearAccessed();
+      ManagerInternalUtil.lookupExistingOrNull(array).clearAccessed();
       int cleared = clearableMap.__tc_clearReferences(1);
       Assert.assertEquals(map.getClass().getName(), 1, cleared);
       Assert.assertEquals(map.getClass().getName(), 0, tcMap.__tc_getAllLocalEntriesSnapshot().size());
@@ -1969,7 +1969,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
       }
     }
   }
-  
+
   void testValuesIteratorFaults(Map map, boolean validate, int v) {
     boolean clearable = false;
     for (Class iface : map.getClass().getInterfaces()) {
@@ -1991,7 +1991,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     Clearable clearableMap = (Clearable) map;
     TCMap tcMap = (TCMap) map;
-    
+
     if (validate) {
       // turn off clearing temporarily to make sure we can observe the value being locally present
       clearableMap.setEvictionEnabled(false);
@@ -2000,7 +2000,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
       // clear it out and verify
       clearableMap.setEvictionEnabled(true);
-      ManagerUtil.lookupExistingOrNull(array).clearAccessed();
+      ManagerInternalUtil.lookupExistingOrNull(array).clearAccessed();
       int cleared = clearableMap.__tc_clearReferences(1);
       Assert.assertEquals(map.getClass().getName(), 1, cleared);
       Assert.assertEquals(map.getClass().getName(), 0, tcMap.__tc_getAllLocalEntriesSnapshot().size());
@@ -2016,7 +2016,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
       }
     }
   }
-  
+
   private boolean canTestSharedArray(Map map) {
     return !(map instanceof HashMap) && !(map instanceof LinkedHashMap) && !(map instanceof Hashtable);
   }

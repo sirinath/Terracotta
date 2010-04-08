@@ -49,6 +49,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.HealthCheckerConfigClientImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.object.bytecode.Manager;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
@@ -199,6 +200,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private final StatisticsAgentSubSystem             statisticsAgentSubSystem;
   private final RuntimeLogger                        runtimeLogger;
   private final ThreadIDMap                          threadIDMap;
+  private final ArrayManager                         arrayManager;
 
   protected final PreparedComponentsFromL2Connection connectionComponents;
 
@@ -222,11 +224,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final ClassProvider classProvider,
                                  final PreparedComponentsFromL2Connection connectionComponents, final Manager manager,
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
-                                 final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger) {
+                                 final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
+                                 final ArrayManager arrayManager) {
     super(threadGroup, BoundedLinkedQueue.class.getName());
     Assert.assertNotNull(config);
     this.config = config;
     this.classProvider = classProvider;
+    this.arrayManager = arrayManager;
     this.connectionComponents = connectionComponents;
     this.manager = manager;
     this.dsoCluster = dsoCluster;
@@ -476,7 +480,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                    this.channel.getClientIDProvider(),
                                                                    this.classProvider, classFactory, objectFactory,
                                                                    this.config.getPortability(), this.channel,
-                                                                   toggleRefMgr);
+                                                                   toggleRefMgr, arrayManager);
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.objectManager));
     TCProperties cacheManagerProperties = this.l1Properties.getPropertiesFor("cachemanager");
     CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
@@ -564,7 +568,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // more likely an AssertionError
     Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
                                                 new ClientCoordinationHandler(), 1, maxSize);
-    
+
     Stage clusterMembershipEventStage = stageManager
         .createStage(ClientConfigurationContext.CLUSTER_MEMBERSHIP_EVENT_STAGE,
                      new ClusterMemberShipEventsHandler(this.dsoCluster), 1, maxSize);

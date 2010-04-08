@@ -9,8 +9,6 @@ import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.event.DmiManager;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.LockID;
@@ -117,22 +115,6 @@ public interface Manager extends TerracottaLocking {
   public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException;
 
   /**
-   * Find managed object, which may be null
-   * 
-   * @param obj The object instance
-   * @return The TCObject
-   */
-  public TCObject lookupExistingOrNull(Object obj);
-
-  /**
-   * Find or create new TCObject
-   * 
-   * @param obj The object instance
-   * @return The TCObject
-   */
-  public TCObject lookupOrCreate(Object obj);
-
-  /**
    * Perform invoke on logical managed object
    * 
    * @param object The object
@@ -203,12 +185,6 @@ public interface Manager extends TerracottaLocking {
    * @return True if managed
    */
   public boolean isManaged(Object object);
-
-  /**
-   * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type} and is suitable for
-   *         cluster-wide locking,
-   */
-  public boolean isLiteralAutolock(final Object o);
 
   /**
    * Check whether an object is shared
@@ -288,11 +264,6 @@ public interface Manager extends TerracottaLocking {
   public TCProperties getTCProperties();
 
   /**
-   * @return DMI manager
-   */
-  public DmiManager getDmiManager();
-
-  /**
    * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
    * 
    * @param pojo Object
@@ -361,16 +332,39 @@ public interface Manager extends TerracottaLocking {
    * @return null if the given app is not configured for clustering
    */
   public SessionConfiguration getSessionConfiguration(String appName);
-  
+
   /**
-   * Used by BulkLoad to wait for all current transactions completed 
-   * 
+   * Used by BulkLoad to wait for all current transactions completed
    */
   public void waitForAllCurrentTransactionsToComplete();
-  
+
   /**
    * Registers a hook that will be called before shutting down this client
    */
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook);
-  
+
+  public void objectFieldChangedByOffset(Object obj, long fieldOffset, Object update);
+
+  public ObjectID lookupObjectIdFor(Object obj);
+
+  public Object arrayGet(Object array, int index);
+
+  public void objectArrayChanged(Object[] array, int index, Object value);
+
+  public void byteOrBooleanArrayChanged(Object array, int index, byte b);
+
+  public void charArrayChanged(char[] array, int index, char c);
+
+  public void shortArrayChanged(short[] array, int index, short s);
+
+  public void intArrayChanged(int[] array, int index, int i);
+
+  public void longArrayChanged(long[] array, int index, long l);
+
+  public void floatArrayChanged(float[] array, int index, float f);
+
+  public void doubleArrayChanged(double[] array, int index, double d);
+
+  public void arraycopy(Object src, int srcPos, Object dest, int destPos, int length);
+
 }

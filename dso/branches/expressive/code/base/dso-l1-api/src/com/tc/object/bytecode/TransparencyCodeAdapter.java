@@ -146,7 +146,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   private void rewriteArraycopy() {
-    callArrayManagerMethod("arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+    callManagerUtilMethod("arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
   }
 
   private void handleJavaLangObjectMethodCall(int opcode, String classname, String theMethodName, String desc) {
@@ -168,7 +168,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
    * <pre>
    * Object refToBeCloned;
    * Object rv;
-   * TCObject tco = ManagerUtil.lookupExistingOrNull(refToBeCloned)
+   * TCObject tco = ManagerInternalUtil.lookupExistingOrNull(refToBeCloned)
    * if (tco != null) {
    *   synchronized (tco.getResolveLock()) {
    *     tco.resolveAllReferences();
@@ -183,7 +183,8 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
    * @see AbstractMap and HashMap
    */
   private boolean handleCloneCall(int opcode, String classname, String theMethodName, String desc) {
-    if ("clone".equals(theMethodName) && "()Ljava/lang/Object;".equals(desc) && (classname.startsWith("[") || classname.equals("java/lang/Object"))) {
+    if ("clone".equals(theMethodName) && "()Ljava/lang/Object;".equals(desc)
+        && (classname.startsWith("[") || classname.equals("java/lang/Object"))) {
       Type objectType = Type.getObjectType("java/lang/Object");
 
       int refToBeCloned = newLocal(objectType);
@@ -199,7 +200,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       Label l3 = new Label();
       super.visitTryCatchBlock(l2, l3, l2, null);
       super.visitVarInsn(ALOAD, refToBeCloned);
-      super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupExistingOrNull",
+      super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "lookupExistingOrNull",
                             "(Ljava/lang/Object;)Lcom/tc/object/TCObject;");
       super.visitVarInsn(ASTORE, ref2);
       super.visitVarInsn(ALOAD, ref2);
@@ -317,15 +318,15 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
 
   private void callMonitorEnterWithContextInfo() {
     super.visitLdcInsn(new Integer(autoLockType));
-    //super.visitLdcInsn(autoLockContextInfo);
+    // super.visitLdcInsn(autoLockContextInfo);
     visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V");
   }
 
   private void callMonitorExit() {
     super.visitLdcInsn(new Integer(autoLockType));
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V");    
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V");
   }
-  
+
   private void visitInsnForReadLock(int opCode) {
     switch (opCode) {
       case MONITORENTER:
@@ -402,7 +403,9 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           // ..., array, index
           super.visitInsn(DUP2); // ..., array, index, array, index
           super.visitInsn(POP); // ..., array, index, array
-          callArrayManagerMethod("getObject", "(Ljava/lang/Object;)Lcom/tc/object/TCObject;"); // ..., array, index,
+          callManagerUtilMethod("lookupArrayTCObjectOrNull", "(Ljava/lang/Object;)Lcom/tc/object/TCObject;", true); // ...,
+          // array,
+          // index,
           // tcobj
           super.visitInsn(DUP); // ..., array, index, tcobj, tcobj
           super.visitJumpInsn(IFNULL, notManaged); // ..., array, index, tcobj
@@ -442,28 +445,28 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           super.visitLabel(end); // ..., reslt
           return;
         case AASTORE:
-          callArrayManagerMethod("objectArrayChanged", "([Ljava/lang/Object;ILjava/lang/Object;)V");
+          callManagerUtilMethod("objectArrayChanged", "([Ljava/lang/Object;ILjava/lang/Object;)V");
           return;
         case LASTORE:
-          callArrayManagerMethod("longArrayChanged", "([JIJ)V");
+          callManagerUtilMethod("longArrayChanged", "([JIJ)V");
           return;
         case SASTORE:
-          callArrayManagerMethod("shortArrayChanged", "([SIS)V");
+          callManagerUtilMethod("shortArrayChanged", "([SIS)V");
           return;
         case IASTORE:
-          callArrayManagerMethod("intArrayChanged", "([III)V");
+          callManagerUtilMethod("intArrayChanged", "([III)V");
           return;
         case DASTORE:
-          callArrayManagerMethod("doubleArrayChanged", "([DID)V");
+          callManagerUtilMethod("doubleArrayChanged", "([DID)V");
           return;
         case FASTORE:
-          callArrayManagerMethod("floatArrayChanged", "([FIF)V");
+          callManagerUtilMethod("floatArrayChanged", "([FIF)V");
           return;
         case BASTORE:
-          callArrayManagerMethod("byteOrBooleanArrayChanged", "(Ljava/lang/Object;IB)V");
+          callManagerUtilMethod("byteOrBooleanArrayChanged", "(Ljava/lang/Object;IB)V");
           return;
         case CASTORE:
-          callArrayManagerMethod("charArrayChanged", "([CIC)V");
+          callManagerUtilMethod("charArrayChanged", "([CIC)V");
           return;
       }
     }
@@ -480,8 +483,13 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     return ((opCode == MONITORENTER || opCode == MONITOREXIT) && codeSpec.isMonitorInstrumentationReq());
   }
 
-  private void callArrayManagerMethod(String name, String desc) {
-    super.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, name, desc);
+  private void callManagerUtilMethod(String name, String desc) {
+    callManagerUtilMethod(name, desc, false);
+  }
+
+  private void callManagerUtilMethod(String name, String desc, boolean internalManagerCall) {
+    String type = internalManagerCall ? ManagerInternalUtil.CLASS : ManagerUtil.CLASS;
+    super.visitMethodInsn(INVOKESTATIC, type, name, desc);
   }
 
   @Override

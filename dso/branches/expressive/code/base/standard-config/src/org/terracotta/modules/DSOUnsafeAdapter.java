@@ -29,11 +29,13 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     return new DSOUnsafeAdapter(visitor, loader);
   }
 
+  @Override
   public final void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     superName = "sun/misc/Unsafe";
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -50,6 +52,7 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     return mv;
   }
 
+  @Override
   public void visitEnd() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "compareAndSwapInt", "(Ljava/lang/Object;JII)Z", null, null);
     addUnsafeWrapperMethodCode(mv, ACC_PUBLIC, "compareAndSwapInt", "(Ljava/lang/Object;JII)Z");
@@ -71,7 +74,7 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     pos += params[0].getSize();
     mv.visitVarInsn(params[1].getOpcode(ILOAD), pos + 1);
     mv.visitIntInsn(BIPUSH, Manager.LOCK_TYPE_WRITE);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "beginVolatile",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "beginVolatile",
                        "(Ljava/lang/Object;JI)V");
   }
 
@@ -81,13 +84,13 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     pos += params[0].getSize();
     mv.visitVarInsn(params[1].getOpcode(ILOAD), pos + 1);
     mv.visitIntInsn(BIPUSH, Manager.LOCK_TYPE_WRITE);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "commitVolatile",
                        "(Ljava/lang/Object;JI)V");
   }
 
-  private void addCheckedManagedConditionCode(MethodVisitor mv, Type[] params, int objParamIndex, int offsetParamIndex, Label nonSharedLabel,
-                                              Label sharedLabel) {
-	Label checkPortableFieldLabel = new Label();
+  private void addCheckedManagedConditionCode(MethodVisitor mv, Type[] params, int objParamIndex, int offsetParamIndex,
+                                              Label nonSharedLabel, Label sharedLabel) {
+    Label checkPortableFieldLabel = new Label();
     mv.visitVarInsn(params[objParamIndex].getOpcode(ILOAD), objParamIndex + 1);
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
     mv.visitJumpInsn(IFEQ, nonSharedLabel);
@@ -95,7 +98,8 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     mv.visitLabel(checkPortableFieldLabel);
     mv.visitVarInsn(params[objParamIndex].getOpcode(ILOAD), objParamIndex + 1);
     mv.visitVarInsn(params[offsetParamIndex].getOpcode(ILOAD), offsetParamIndex + 1);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isFieldPortableByOffset", "(Ljava/lang/Object;J)Z");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isFieldPortableByOffset",
+                       "(Ljava/lang/Object;J)Z");
     mv.visitJumpInsn(IFEQ, nonSharedLabel);
     mv.visitJumpInsn(GOTO, sharedLabel);
   }
@@ -198,9 +202,9 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
   private void invokeSuperMethod(MethodVisitor mv, String methodName, String description, Type[] params) {
     ByteCodeUtil.pushThis(mv);
     int pos = 0;
-    for (int i = 0; i < params.length; i++) {
-      mv.visitVarInsn(params[i].getOpcode(ILOAD), pos + 1);
-      pos += params[i].getSize();
+    for (Type param : params) {
+      mv.visitVarInsn(param.getOpcode(ILOAD), pos + 1);
+      pos += param.getSize();
     }
     mv.visitMethodInsn(INVOKESPECIAL, "sun/misc/Unsafe", methodName, description);
   }

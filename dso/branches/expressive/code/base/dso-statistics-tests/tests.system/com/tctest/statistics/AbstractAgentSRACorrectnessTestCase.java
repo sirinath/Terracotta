@@ -18,6 +18,7 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.bytecode.NullManager;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.object.logging.NullRuntimeLogger;
@@ -61,7 +62,8 @@ abstract public class AbstractAgentSRACorrectnessTestCase extends BaseDSOTestCas
                                                                  new PreparedComponentsFromL2Connection(manager),
                                                                  NullManager.getInstance(),
                                                                  new StatisticsAgentSubSystemImpl(),
-                                                                 new DsoClusterImpl(), new NullRuntimeLogger());
+                                                                 new DsoClusterImpl(), new NullRuntimeLogger(),
+                                                                 new ArrayManager());
     client.start();
     return client;
   }

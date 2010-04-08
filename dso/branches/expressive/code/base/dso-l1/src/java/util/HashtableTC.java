@@ -10,6 +10,7 @@ import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerInternalUtil;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.hook.impl.Util;
@@ -449,7 +450,7 @@ public class HashtableTC extends Hashtable implements TCMap, Manageable, Clearab
       for (Iterator i = super.entrySet().iterator(); i.hasNext() && toClear > cleared;) {
         Map.Entry e = (Map.Entry) i.next();
 
-        TCObject tcObject = ManagerUtil.lookupExistingOrNull(e.getValue());
+        TCObject tcObject = ManagerInternalUtil.lookupExistingOrNull(e.getValue());
         if (tcObject != null && !tcObject.recentlyAccessed()) {
           ObjectID oid = tcObject.getObjectID();
           e.setValue(wrapValueIfNecessary(oid));

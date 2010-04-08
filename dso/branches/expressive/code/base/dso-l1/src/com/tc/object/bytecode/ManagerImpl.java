@@ -28,6 +28,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.Portability;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.event.DmiManager;
@@ -68,7 +69,7 @@ import java.util.Map;
 
 import javax.management.MBeanServer;
 
-public class ManagerImpl implements Manager {
+public class ManagerImpl implements Manager, ManagerInternal {
   private static final TCLogger                    logger        = TCLogging.getLogger(Manager.class);
   private final SetOnceFlag                        clientStarted = new SetOnceFlag();
   private final DSOClientConfigHelper              config;
@@ -80,8 +81,6 @@ public class ManagerImpl implements Manager {
   private final StatisticsAgentSubSystem           statisticsAgentSubSystem;
   private final DsoClusterInternal                 dsoCluster;
   private final RuntimeLogger                      runtimeLogger;
-  private final LockIdFactory                      lockIdFactory;
-
   private final InstrumentationLogger              instrumentationLogger;
 
   private ClientObjectManager                      objectManager;
@@ -90,9 +89,12 @@ public class ManagerImpl implements Manager {
   private ClientLockManager                        lockManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
+  private final LockIdFactory                      lockIdFactory;
 
   private final SerializationUtil                  serializer    = new SerializationUtil();
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(serializer);
+
+  private final ArrayManager                       arrayManager  = new ArrayManager();
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(true, null, null, null, config, connectionComponents, true, null, null);
@@ -218,7 +220,7 @@ public class ManagerImpl implements Manager {
       public void execute() throws Throwable {
         AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
         dso = clientFactory.createClient(config, group, classProvider, connectionComponents, ManagerImpl.this,
-                                         statisticsAgentSubSystem, dsoCluster, runtimeLogger);
+                                         statisticsAgentSubSystem, dsoCluster, runtimeLogger, arrayManager);
 
         if (forTests) {
           dso.setCreateDedicatedMBeanServer(true);
@@ -366,11 +368,6 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public boolean isLiteralAutolock(final Object o) {
-    if (o instanceof Manageable) { return false; }
-    return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && LiteralValues.isLiteralInstance(o);
-  }
-
   public boolean isDsoMonitorEntered(final Object o) {
     if (this.objectManager.isCreationInProgress()) { return false; }
 
@@ -388,11 +385,6 @@ public class ManagerImpl implements Manager {
     }
 
     return dsoMonitorEntered;
-  }
-
-  public TCObject lookupOrCreate(final Object obj) {
-    if (obj instanceof Manageable) { return ((Manageable) obj).__tc_managed(); }
-    return this.objectManager.lookupOrCreate(obj);
   }
 
   public TCObject lookupExistingOrNull(final Object pojo) {
@@ -492,7 +484,7 @@ public class ManagerImpl implements Manager {
     if (tcobj != null) {
       return tcobj.isShared();
     } else {
-      return isLiteralAutolock(obj);
+      return LiteralAutoLocks.isLiteralAutolock(obj);
     }
   }
 
@@ -878,6 +870,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
+  public void objectFieldChangedByOffset(Object obj, long fieldOffset, Object update) {
+    TCObject tcObject = lookupExistingOrNull(obj);
+    if (tcObject == null) { throw new NullPointerException("Object is not a DSO shared object."); }
+    tcObject.objectFieldChangedByOffset(obj.getClass().getName(), fieldOffset, update, -1);
+  }
+
   private static final String UNLOCK_SHARE_LOCK_ERROR      = "An attempt was just made to unlock a clustered lock that was not locked.  "
                                                              + "This was attempted on exit from a Java synchronized block.  This is highly likely to be due to the calling code locking on an "
                                                              + "object, adding it to the clustered heap, and then attempting to unlock it.  The client JVM will now be terminated to prevent "
@@ -889,6 +887,59 @@ public class ManagerImpl implements Manager {
 
   public void waitForAllCurrentTransactionsToComplete() {
     txManager.waitForAllCurrentTransactionsToComplete();
+  }
+
+  public ObjectID lookupObjectIdFor(Object obj) {
+    TCObject tco = lookupExistingOrNull(obj);
+    return tco == null ? null : tco.getObjectID();
+  }
+
+  public Object arrayGet(Object array, int index) {
+    return arrayManager.get(array, index);
+  }
+
+  public void arraycopy(Object src, int srcPos, Object dest, int destPos, int length) {
+    arrayManager.arraycopy(src, srcPos, dest, destPos, length);
+  }
+
+  public void byteOrBooleanArrayChanged(Object array, int index, byte b) {
+    arrayManager.byteOrBooleanArrayChanged(array, index, b);
+  }
+
+  public void charArrayChanged(char[] array, int index, char c) {
+    arrayManager.charArrayChanged(array, index, c);
+  }
+
+  public void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length, TCObject tcDest) {
+    arrayManager.charArrayCopy(src, srcPos, dest, destPos, length, tcDest);
+  }
+
+  public void doubleArrayChanged(double[] array, int index, double d) {
+    arrayManager.doubleArrayChanged(array, index, d);
+  }
+
+  public void floatArrayChanged(float[] array, int index, float f) {
+    arrayManager.floatArrayChanged(array, index, f);
+  }
+
+  public void intArrayChanged(int[] array, int index, int i) {
+    arrayManager.intArrayChanged(array, index, i);
+  }
+
+  public void longArrayChanged(long[] array, int index, long l) {
+    arrayManager.longArrayChanged(array, index, l);
+  }
+
+  public void objectArrayChanged(Object[] array, int index, Object value) {
+    arrayManager.objectArrayChanged(array, index, value);
+  }
+
+  public void shortArrayChanged(short[] array, int index, short s) {
+    arrayManager.shortArrayChanged(array, index, s);
+  }
+
+  public TCObject lookupArrayTCObjectOrNull(Object array) {
+    return arrayManager.getObject(array);
   }
 
 }

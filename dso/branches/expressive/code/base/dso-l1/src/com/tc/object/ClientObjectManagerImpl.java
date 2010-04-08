@@ -24,7 +24,7 @@ import com.tc.object.appevent.NonPortableFieldSetContext;
 import com.tc.object.appevent.NonPortableObjectEvent;
 import com.tc.object.appevent.NonPortableRootContext;
 import com.tc.object.bytecode.Manageable;
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.cache.CacheStats;
 import com.tc.object.cache.Evictable;
 import com.tc.object.cache.EvictionPolicy;
@@ -139,6 +139,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                               }
 
                                                                             };
+  private final ArrayManager                   arrayManager;
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager,
                                  final DSOClientConfigHelper clientConfiguration, final ObjectIDProvider idProvider,
@@ -146,7 +147,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                  final ClientIDProvider provider, final ClassProvider classProvider,
                                  final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                  final Portability portability, final DSOClientMessageChannel channel,
-                                 final ToggleableReferenceManager referenceManager) {
+                                 final ToggleableReferenceManager referenceManager, final ArrayManager arrayManager) {
     this.remoteObjectManager = remoteObjectManager;
     this.cache = cache;
     this.clientConfiguration = clientConfiguration;
@@ -155,6 +156,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     this.portability = portability;
     this.channel = channel;
     this.referenceManager = referenceManager;
+    this.arrayManager = arrayManager;
     this.logger = new ClientIDLogger(provider, TCLogging.getLogger(ClientObjectManager.class));
     this.classProvider = classProvider;
     this.traverseTest = new NewObjectTraverseTest();
@@ -911,7 +913,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
       if (pojo != null) {
         if (pojo.getClass().isArray()) {
-          ManagerUtil.register(pojo, obj);
+          arrayManager.register(pojo, obj);
         }
 
         if (pojo instanceof Manageable) {
