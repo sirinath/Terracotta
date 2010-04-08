@@ -252,9 +252,10 @@ public class ManagerImpl implements Manager {
     startupHelper.startUp();
   }
 
-  public void registerBeforeShutdownHook(final Runnable beforeShutdownHook) {
-    if (this.shutdownManager != null) {
-      this.shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
+
+  public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
+    if (shutdownManager != null) {
+      shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
     }
   }
 
@@ -855,19 +856,15 @@ public class ManagerImpl implements Manager {
   }
 
   public void pinLock(final LockID lock) {
-    if (clusteredLockingEnabled(lock)) {
-      this.lockManager.pinLock(lock);
-    }
+    lockManager.pinLock(lock);
   }
 
   public void unpinLock(final LockID lock) {
-    if (clusteredLockingEnabled(lock)) {
-      this.lockManager.unpinLock(lock);
-    }
+    lockManager.unpinLock(lock);
   }
 
-  private boolean clusteredLockingEnabled(final LockID lock) {
-    return !((lock instanceof UnclusteredLockID) || this.txManager.isTransactionLoggingDisabled() || this.txManager
+  private boolean clusteredLockingEnabled(LockID lock) {
+    return !((lock instanceof UnclusteredLockID) || txManager.isTransactionLoggingDisabled() || txManager
         .isObjectCreationInProgress());
   }
 

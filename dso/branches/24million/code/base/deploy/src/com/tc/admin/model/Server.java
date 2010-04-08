@@ -605,6 +605,12 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     scm.setCredentials(creds);
   }
 
+  public synchronized void clearConnectionCredentials() {
+    ServerConnectionManager scm = getConnectionManager();
+    if (scm == null) throw new IllegalStateException("ServerConnectionManager is null");
+    scm.clearCredentials();
+  }
+
   public JMXConnector getJMXConnector() {
     ServerConnectionManager scm = getConnectionManager();
     return scm != null ? scm.getJmxConnector() : null;
@@ -1386,14 +1392,19 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     boolean haveLimit = false;
     for (String fieldName : mapFacade.getFields()) {
       ManagedObjectFacade field = (ManagedObjectFacade) safeGetFieldValue(mapFacade, fieldName);
-      String[] fields = field.getFields();
-      if (fields.length > 0) {
-        trueSize += fields.length;
-        if (!haveLimit) {
-          for (int i = 0; i < fields.length; i++) {
-            list.add((MapEntryFacade) safeGetFieldValue(field, fields[i]));
-            if (list.size() >= limit) {
-              haveLimit = true;
+      if (field != null) {
+        String[] fields = field.getFields();
+        if (fields != null && fields.length > 0) {
+          trueSize += fields.length;
+          if (!haveLimit) {
+            for (int i = 0; i < fields.length; i++) {
+              MapEntryFacade mapEntryFacade = (MapEntryFacade) safeGetFieldValue(field, fields[i]);
+              if (mapEntryFacade != null) {
+                list.add(mapEntryFacade);
+                if (list.size() >= limit) {
+                  haveLimit = true;
+                }
+              }
             }
           }
         }
@@ -1413,9 +1424,12 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     String[] fields = mapFacade.getFields();
     int trueSize = mapFacade.getTrueObjectSize();
     for (String fieldName : fields) {
-      list.add((MapEntryFacade) safeGetFieldValue(mapFacade, fieldName));
-      if (list.size() >= limit) {
-        break;
+      MapEntryFacade mapEntryFacade = (MapEntryFacade) safeGetFieldValue(mapFacade, fieldName);
+      if (mapEntryFacade != null) {
+        list.add(mapEntryFacade);
+        if (list.size() >= limit) {
+          break;
+        }
       }
     }
     MapEntryFacade[] mefa = list.toArray(new MapEntryFacade[0]);
@@ -1429,7 +1443,9 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
     List<Object> list = new ArrayList<Object>();
     for (String fieldName : mapFacade.getFields()) {
       MapEntryFacade field = (MapEntryFacade) safeGetFieldValue(mapFacade, fieldName);
-      list.add(field.getKey());
+      if (field != null) {
+        list.add(field.getKey());
+      }
     }
     Object[] mofa = list.toArray(new Object[0]);
     return LogicalManagedObjectFacade.createSetInstance(mof.getObjectId(), mof.getClassName(), mofa, trueSize);
