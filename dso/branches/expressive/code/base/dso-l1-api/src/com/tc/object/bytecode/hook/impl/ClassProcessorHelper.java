@@ -6,6 +6,7 @@ package com.tc.object.bytecode.hook.impl;
 
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.net.NIOWorkarounds;
+import com.tc.object.bytecode.ContextHelper;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
@@ -28,8 +29,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.logging.LogManager;
 
 /**
@@ -38,35 +37,25 @@ import java.util.logging.LogManager;
 public class ClassProcessorHelper {
 
   /** Name reserved for apps running as root web app in a container */
-  private static final String      ROOT_WEB_APP_NAME         = "ROOT";
+  private static final String      ROOT_WEB_APP_NAME       = "ROOT";
 
   // Directory where Terracotta jars (and dependencies) can be found
-  private static final String      TC_INSTALL_ROOT_SYSPROP   = "tc.install-root";
+  private static final String      TC_INSTALL_ROOT_SYSPROP = "tc.install-root";
 
   // Property to indicate whether the Terracotta classloader is active
-  private static final String      TC_ACTIVE_SYSPROP         = "tc.active";
+  private static final String      TC_ACTIVE_SYSPROP       = "tc.active";
 
   // NOTE: This is not intended to be a public/documented system property,
   // it is for dev use only. It is NOT for QA or customer use
-  private static final String      TC_CLASSPATH_SYSPROP      = "tc.classpath";
-
-  private static final String      TC_DSO_GLOBALMODE_SYSPROP = "tc.dso.globalmode";
+  private static final String      TC_CLASSPATH_SYSPROP    = "tc.classpath";
 
   // Used for converting resource names into class names
-  private static final String      CLASS_SUFFIX              = ".class";
-  private static final int         CLASS_SUFFIX_LENGTH       = CLASS_SUFFIX.length();
+  private static final String      CLASS_SUFFIX            = ".class";
+  private static final int         CLASS_SUFFIX_LENGTH     = CLASS_SUFFIX.length();
 
-  private static final boolean     GLOBAL_MODE_DEFAULT       = true;
+  private static final State       initState               = new State();
 
-  public static final boolean      USE_GLOBAL_CONTEXT;
-
-  private static final State       initState                 = new State();
-
-  private static final String      tcInstallRootSysProp      = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
-
-  // This map should only hold a weak reference to the loader (key).
-  // If we didn't we'd prevent loaders from being GC'd
-  private static final Map         contextMap                = new WeakHashMap();
+  private static final String      tcInstallRootSysProp    = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
 
   private static URLClassLoader    tcLoader;
   private static DSOContext        globalContext;
@@ -74,7 +63,7 @@ public class ClassProcessorHelper {
   private static final boolean     TRACE;
   private static final PrintStream TRACE_STREAM;
 
-  private static volatile boolean  systemLoaderInitialized   = false;
+  private static volatile boolean  systemLoaderInitialized = false;
 
   static {
 
@@ -84,13 +73,6 @@ public class ClassProcessorHelper {
       // TC functionalities. This is needed for the IBM JDK when Hashtable is
       // instrumented for auto-locking in the bootjar.
       Class.forName(DSOContext.class.getName());
-
-      String global = System.getProperty(TC_DSO_GLOBALMODE_SYSPROP, null);
-      if (global != null) {
-        USE_GLOBAL_CONTEXT = Boolean.valueOf(global).booleanValue();
-      } else {
-        USE_GLOBAL_CONTEXT = GLOBAL_MODE_DEFAULT;
-      }
 
       // See if we should trace or not -- if so grab System.[out|err] and keep a local reference to it. Applications
       // like WebSphere like to intercept this later and we can get caught in a loop and get a stack overflow
@@ -345,8 +327,9 @@ public class ClassProcessorHelper {
         // do this before doing anything with the TC loader
         initTCLogging();
 
-        if (USE_GLOBAL_CONTEXT) {
+        if (ContextHelper.USE_GLOBAL_CONTEXT) {
           globalContext = createGlobalContext();
+          ContextHelper.setGlobalContext(globalContext);
         }
         initState.initialized();
 
@@ -381,7 +364,7 @@ public class ClassProcessorHelper {
    *        application classloader.
    */
   public static void registerGlobalLoader(NamedClassLoader loader, String webAppName) {
-    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
+    if (!ContextHelper.USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
     if (TRACE) traceNamedLoader(loader);
     ManagerUtil.registerNamedLoader(loader, webAppName);
   }
@@ -390,7 +373,7 @@ public class ClassProcessorHelper {
    * Shut down the ClassProcessorHelper
    */
   public static void shutdown() {
-    if (!USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
+    if (!ContextHelper.USE_GLOBAL_CONTEXT) { throw new IllegalStateException("Not global DSO mode"); }
     try {
       if (globalContext != null) {
         globalContext.getManager().stop();
@@ -429,30 +412,14 @@ public class ClassProcessorHelper {
    * @param context DSOContext
    */
   public static void setContext(ClassLoader loader, DSOContext context) {
-    if (USE_GLOBAL_CONTEXT) { throw new IllegalStateException("DSO Context is global in this VM"); }
-
-    if ((loader == null) || (context == null)) {
-      // bad dog
-      throw new IllegalArgumentException("Loader and/or context may not be null");
-    }
-
-    synchronized (contextMap) {
-      contextMap.put(loader, context);
-    }
+    ContextHelper.setContext(loader, context);
   }
 
   /**
    * WARNING: used by test framework only
    */
   public static Manager getManager(ClassLoader caller) {
-    if (USE_GLOBAL_CONTEXT) { return globalContext.getManager(); }
-
-    DSOContext context;
-    synchronized (contextMap) {
-      context = (DSOContext) contextMap.get(caller);
-    }
-    if (context == null) { return null; }
-    return context.getManager();
+    return ContextHelper.getManager(caller);
   }
 
   /**
@@ -462,11 +429,7 @@ public class ClassProcessorHelper {
    * @return Context
    */
   public static DSOContext getContext(ClassLoader cl) {
-    if (USE_GLOBAL_CONTEXT) return globalContext;
-
-    synchronized (contextMap) {
-      return (DSOContext) contextMap.get(cl);
-    }
+    return ContextHelper.getContext(cl);
   }
 
   private static DSOContext createGlobalContext() {
@@ -544,26 +507,12 @@ public class ClassProcessorHelper {
     postProcessor.postProcess(clazz, caller);
   }
 
-  /**
-   * @return Global Manager
-   */
-  public static Manager getGlobalManager() {
-    return globalContext.getManager();
-  }
-
   private static ClassPreProcessor getPreProcessor(ClassLoader caller) {
-    if (USE_GLOBAL_CONTEXT) { return globalContext; }
-    synchronized (contextMap) {
-      return (ClassPreProcessor) contextMap.get(caller);
-    }
+    return ContextHelper.getPreProcessor(caller);
   }
 
   private static ClassPostProcessor getPostProcessor(ClassLoader caller) {
-    if (USE_GLOBAL_CONTEXT) { return globalContext; }
-
-    synchronized (contextMap) {
-      return (ClassPostProcessor) contextMap.get(caller);
-    }
+    return ContextHelper.getPostProcessor(caller);
   }
 
   /**
@@ -579,8 +528,10 @@ public class ClassProcessorHelper {
            || className.startsWith("com.tc.aspectwerkz.") || className.startsWith("com.tc.asm.")
            || className.startsWith("com.tc.backport175.") || className.startsWith("com.tc.jrexx.")
            || className.startsWith("org.dom4j.") || className.startsWith("org.xml.sax.")
-           || className.startsWith("javax.xml.parsers.")
-           || className.startsWith("sun.reflect.Generated"); // issue on J2SE 5 reflection - AW-245
+           || className.startsWith("javax.xml.parsers.") || className.startsWith("sun.reflect.Generated"); // issue on
+    // J2SE 5
+    // reflection
+    // - AW-245
   }
 
   private static void traceNamedLoader(final NamedClassLoader ncl) {

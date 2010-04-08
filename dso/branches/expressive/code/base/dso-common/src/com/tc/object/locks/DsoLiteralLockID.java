@@ -6,11 +6,11 @@ package com.tc.object.locks;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.LiteralValues;
-import com.tc.object.bytecode.Manager;
 import com.tc.object.dna.impl.ClassInstance;
 import com.tc.object.dna.impl.ClassLoaderInstance;
 import com.tc.object.dna.impl.EnumInstance;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
+import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.LoaderDescription;
 
 import java.io.IOException;
@@ -21,23 +21,22 @@ import java.util.Currency;
 /**
  * Represents the a lock on a clustered literal object.
  * <p>
- * Literal locks in Terracotta are special as they locks on the value of the
- * literal object and not on its object identity - as literal objects have no
- * cluster wide object identity.
+ * Literal locks in Terracotta are special as they locks on the value of the literal object and not on its object
+ * identity - as literal objects have no cluster wide object identity.
  */
 public class DsoLiteralLockID implements LockID {
   private static final long serialVersionUID = 0x173295fec628dca3L;
 
-  private Object literal;
-  
+  private Object            literal;
+
   public DsoLiteralLockID() {
     // please tc serialization
   }
-  
-  public DsoLiteralLockID(Manager mgr, Object literal) throws IllegalArgumentException {
-    this.literal = translateLiteral(mgr, literal);
+
+  public DsoLiteralLockID(ClassProvider classProvider, Object literal) throws IllegalArgumentException {
+    this.literal = translateLiteral(classProvider, literal);
   }
-  
+
   public String asString() {
     return null;
   }
@@ -45,7 +44,7 @@ public class DsoLiteralLockID implements LockID {
   public LockIDType getLockType() {
     return LockIDType.DSO_LITERAL;
   }
-  
+
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     LiteralValues type = LiteralValues.values()[serialInput.readByte()];
     switch (type) {
@@ -88,7 +87,8 @@ public class DsoLiteralLockID implements LockID {
       case ENUM_HOLDER:
         String loaderDefinition = serialInput.readString();
         String className = serialInput.readString();
-        ClassInstance classInstance = new ClassInstance(new UTF8ByteDataHolder(className), new UTF8ByteDataHolder(loaderDefinition));
+        ClassInstance classInstance = new ClassInstance(new UTF8ByteDataHolder(className),
+                                                        new UTF8ByteDataHolder(loaderDefinition));
         String enumName = serialInput.readString();
         literal = new EnumInstance(classInstance, new UTF8ByteDataHolder(enumName));
         return this;
@@ -148,7 +148,7 @@ public class DsoLiteralLockID implements LockID {
       case SHORT:
         serialOutput.writeShort(((Short) literal).shortValue());
         break;
-        
+
       case STRING:
         throw new AssertionError("String literal types should be handled by StringLockID");
       case STACK_TRACE_ELEMENT:
@@ -179,7 +179,7 @@ public class DsoLiteralLockID implements LockID {
       case BIG_DECIMAL:
         serialOutput.writeString(((BigDecimal) literal).toString());
         break;
-        
+
       case STRING_BYTES:
       case JAVA_LANG_CLASS_HOLDER:
       case STRING_BYTES_COMPRESSED:
@@ -193,11 +193,13 @@ public class DsoLiteralLockID implements LockID {
         throw new AssertionError("Illegal type passed to DsoLiteralLockID constructor " + type);
     }
   }
-  
+
+  @Override
   public int hashCode() {
     return LiteralValues.calculateDsoHashCode(literal);
   }
-  
+
+  @Override
   public boolean equals(Object o) {
     if (o == this) {
       return true;
@@ -207,13 +209,13 @@ public class DsoLiteralLockID implements LockID {
       return false;
     }
   }
-  
-  private static Object translateLiteral(Manager mgr, Object literal) throws IllegalArgumentException {
+
+  private static Object translateLiteral(ClassProvider classProvider, Object literal) throws IllegalArgumentException {
     LiteralValues type = LiteralValues.valueFor(literal);
     switch (type) {
       case ENUM:
         Class clazz = literal.getClass();
-        LoaderDescription classLoader = getLoaderDescription(mgr, clazz.getClassLoader());
+        LoaderDescription classLoader = getLoaderDescription(classProvider, clazz.getClassLoader());
         if (classLoader == null) {
           throw new IllegalArgumentException();
         } else {
@@ -223,7 +225,7 @@ public class DsoLiteralLockID implements LockID {
           return new EnumInstance(classInstance, new UTF8ByteDataHolder(((Enum) literal).name()));
         }
       case JAVA_LANG_CLASSLOADER:
-        LoaderDescription loaderDesc = getLoaderDescription(mgr, (ClassLoader) literal);
+        LoaderDescription loaderDesc = getLoaderDescription(classProvider, (ClassLoader) literal);
         if (loaderDesc == null) {
           throw new IllegalArgumentException();
         } else {
@@ -233,11 +235,12 @@ public class DsoLiteralLockID implements LockID {
       default:
         return literal;
     }
-  }  
-  
-  private static LoaderDescription getLoaderDescription(Manager mgr, ClassLoader loader) throws IllegalArgumentException {
+  }
+
+  private static LoaderDescription getLoaderDescription(ClassProvider classProvider, ClassLoader loader)
+      throws IllegalArgumentException {
     try {
-      return mgr.getClassProvider().getLoaderDescriptionFor(loader);
+      return classProvider.getLoaderDescriptionFor(loader);
     } catch (RuntimeException e) {
       throw new IllegalArgumentException(e);
     }

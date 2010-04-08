@@ -7,6 +7,7 @@ package java.util.concurrent;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.Manageable;
+import com.tc.object.bytecode.ManagerInternalUtil;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.TCMapEntry;
@@ -90,7 +91,7 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
   boolean __tc_isPossibleKey(Object obj) {
     if (!__tc_isManaged()) { return true; }
     if (ManagerUtil.isLiteralInstance(obj)) { return true; }
-    if (ManagerUtil.lookupExistingOrNull(obj) != null) { return true; }
+    if (ManagerInternalUtil.lookupExistingOrNull(obj) != null) { return true; }
     if (ManagerUtil.overridesHashCode(obj)) { return true; }
     return false;
   }
@@ -188,7 +189,7 @@ public abstract class ConcurrentHashMapTC extends ConcurrentHashMap implements T
       for (Iterator i = __tc_delegateEntrySet().iterator(); i.hasNext() && toClear > cleared;) {
         Map.Entry e = (Map.Entry) i.next();
         if (((TCMapEntry) e).__tc_isValueFaultedIn()) {
-          TCObject tcObject = ManagerUtil.lookupExistingOrNull(e.getValue());
+          TCObject tcObject = ManagerInternalUtil.lookupExistingOrNull(e.getValue());
           if (tcObject != null && !tcObject.recentlyAccessed()) {
             ((TCMapEntry) e).__tc_rawSetValue(tcObject.getObjectID());
             cleared++;

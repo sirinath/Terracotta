@@ -4,7 +4,6 @@
  */
 package com.tc.properties;
 
-import com.tc.config.TcProperty;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.properties.TCPropertyStore;
@@ -101,8 +100,7 @@ public class TCPropertiesImpl implements TCProperties {
   }
 
   private void trimWhiteSpace() {
-    for (Iterator i = props.entrySet().iterator(); i.hasNext();) {
-      Map.Entry entry = (Entry) i.next();
+    for (Map.Entry entry : props.entrySet()) {
       entry.setValue(((String) entry.getValue()).trim());
     }
   }
@@ -110,8 +108,7 @@ public class TCPropertiesImpl implements TCProperties {
   private void processSystemProperties() {
     // find and record all tc properties set via system properties
 
-    for (Iterator i = System.getProperties().entrySet().iterator(); i.hasNext();) {
-      Map.Entry entry = (Entry) i.next();
+    for (Map.Entry entry : System.getProperties().entrySet()) {
       String key = (String) entry.getKey();
       if (key.startsWith(SYSTEM_PROP_PREFIX)) {
         localTcProperties.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), (String) entry.getValue());
@@ -124,7 +121,7 @@ public class TCPropertiesImpl implements TCProperties {
     return addAllPropertiesTo(properties, null);
   }
 
-  public synchronized void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties) {
+  public synchronized void overwriteTcPropertiesFromConfig(Map<String, String> tcProperties) {
     applyConfigOverrides(tcProperties);
 
     if (!initialized) {
@@ -143,8 +140,8 @@ public class TCPropertiesImpl implements TCProperties {
     logger.info("Loaded TCProperties : " + toString());
   }
 
-  private void applyConfigOverrides(TcProperty[] tcProperties) {
-    int noOfProperties = tcProperties.length;
+  private void applyConfigOverrides(Map<String, String> tcProperties) {
+    int noOfProperties = tcProperties.size();
 
     if (noOfProperties == 0) {
       logger.info("tc-config doesn't have any tc-property. No tc-property will be overridden");
@@ -153,9 +150,9 @@ public class TCPropertiesImpl implements TCProperties {
 
     String propertyName, propertyValue;
 
-    for (int i = 0; i < noOfProperties; i++) {
-      propertyName = tcProperties[i].getPropertyName();
-      propertyValue = tcProperties[i].getPropertyValue();
+    for (Entry<String, String> entry : tcProperties.entrySet()) {
+      propertyName = entry.getKey();
+      propertyValue = entry.getValue();
       if (!this.localTcProperties.containsKey(propertyName)) {
         logger.info("The property \"" + propertyName + "\" was overridden to " + propertyValue + " from "
                     + props.getProperty(propertyName) + " by the tc-config file");
@@ -173,8 +170,7 @@ public class TCPropertiesImpl implements TCProperties {
       properties.putAll(props);
       return properties;
     }
-    for (Iterator i = props.entrySet().iterator(); i.hasNext();) {
-      Map.Entry e = (Entry) i.next();
+    for (Map.Entry e : props.entrySet()) {
       String key = (String) e.getKey();
       if (key.startsWith(filter)) {
         properties.put(key.substring(filter.length()), e.getValue());

@@ -5,7 +5,7 @@
 package com.tc.object.bytecode.hook.impl;
 
 import com.tc.object.TCObject;
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.ManagerInternalUtil;
 
 public class JavaLangArrayHelpers {
   public static final String CLASS = "com/tc/object/bytecode/hook/impl/JavaLangArrayHelpers";
@@ -14,9 +14,9 @@ public class JavaLangArrayHelpers {
    * Optimization used by String.getChars(int, int, char[], int)
    */
   public static void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length) {
-    TCObject tco = ManagerUtil.getObject(dest);
+    TCObject tco = ManagerInternalUtil.lookupArrayTCObjectOrNull(dest);
     if (tco != null) {
-      ManagerUtil.charArrayCopy(src, srcPos, dest, destPos, length, tco);
+      ManagerInternalUtil.charArrayCopy(src, srcPos, dest, destPos, length, tco);
     } else {
       System.arraycopy(src, srcPos, dest, destPos, length);
     }
@@ -39,7 +39,7 @@ public class JavaLangArrayHelpers {
     int i = offset + srcBegin;
     char[] val = value;
 
-    TCObject tco = ManagerUtil.getObject(dst);
+    TCObject tco = ManagerInternalUtil.lookupArrayTCObjectOrNull(dst);
     if (tco != null) {
       while (i < n) {
         dst[j] = (byte) val[i++];
@@ -56,7 +56,7 @@ public class JavaLangArrayHelpers {
    * Called by the 1.5 implementation of java/lang/AbstractStringBuilder.append(int|long)
    */
   public static void javaLangAbstractStringBuilderAppend(char[] value, int appendLength, int bufferLength) {
-    TCObject tco = ManagerUtil.getObject(value);
+    TCObject tco = ManagerInternalUtil.lookupArrayTCObjectOrNull(value);
 
     if (tco != null) {
       int index = bufferLength - appendLength;

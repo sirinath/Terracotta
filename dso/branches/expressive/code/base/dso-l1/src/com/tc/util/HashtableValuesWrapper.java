@@ -1,11 +1,13 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
 
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Manager;
+import com.tc.object.bytecode.ManagerInternalUtil;
 import com.tc.object.bytecode.ManagerUtil;
 
 import java.util.Collection;
@@ -43,10 +45,12 @@ public class HashtableValuesWrapper implements Collection {
     return realValues.containsAll(c);
   }
 
+  @Override
   public final boolean equals(Object o) {
     return realValues.equals(o);
   }
 
+  @Override
   public final int hashCode() {
     return realValues.hashCode();
   }
@@ -142,7 +146,7 @@ public class HashtableValuesWrapper implements Collection {
       ManagerUtil.monitorEnter(hashtable, Manager.LOCK_TYPE_WRITE);
 
       try {
-        TCObject tco = ManagerUtil.lookupExistingOrNull(hashtable);
+        TCObject tco = ManagerInternalUtil.lookupExistingOrNull(hashtable);
         Object key = null;
         if (tco != null) {
           // find the key object iff this is a managed hashtable

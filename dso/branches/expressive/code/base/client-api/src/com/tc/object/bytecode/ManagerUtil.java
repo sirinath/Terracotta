@@ -10,9 +10,6 @@ import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.bytecode.hook.impl.ArrayManager;
-import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
@@ -48,7 +45,7 @@ public class ManagerUtil {
   }
 
   public static void enableSingleton(final Manager singleton) {
-    if (ClassProcessorHelper.USE_GLOBAL_CONTEXT) { throw new AssertionError("global mode"); }
+    if (ContextHelper.USE_GLOBAL_CONTEXT) { throw new AssertionError("global mode"); }
     if (singleton == null) { throw new NullPointerException("null singleton"); }
 
     synchronized (ManagerUtil.class) {
@@ -76,14 +73,15 @@ public class ManagerUtil {
 
   public static Manager getManager() {
     if (!ENABLED) { return NULL_MANAGER; }
-    if (ClassProcessorHelper.USE_GLOBAL_CONTEXT) {
+    if (ContextHelper.USE_GLOBAL_CONTEXT) {
       return GlobalManagerHolder.instance;
     } else {
       Manager rv = SINGLETON;
       if (rv != null) return rv;
 
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      rv = ClassProcessorHelper.getManager(loader);
+      rv = ContextHelper.getManager(loader);
+
       if (rv == null) { return NULL_MANAGER; }
       return rv;
     }
@@ -161,42 +159,6 @@ public class ManagerUtil {
   }
 
   /**
-   * Begin volatile lock by field offset in the class
-   * 
-   * @param pojo Instance containing field
-   * @param fieldOffset Field offset in pojo
-   * @param type Lock level
-   */
-  public static void beginVolatile(final Object pojo, final long fieldOffset, final int type) {
-    TCObject tcObject = lookupExistingOrNull(pojo);
-    beginVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset), type);
-  }
-
-  /**
-   * Commit volatile lock by field offset in the class
-   * 
-   * @param pojo Instance containing field
-   * @param fieldOffset Field offset in pojo
-   */
-  public static void commitVolatile(final Object pojo, final long fieldOffset, final int type) {
-    TCObject tcObject = lookupExistingOrNull(pojo);
-    commitVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset), type);
-  }
-
-  /**
-   * Begin volatile lock
-   * 
-   * @param tcObject TCObject to lock
-   * @param fieldName Field name holding volatile object
-   * @param type Lock type
-   */
-  public static void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
-    Manager mgr = getManager();
-    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
-    mgr.lock(lock, LockLevel.fromInt(type));
-  }
-
-  /**
    * Begin lock
    * 
    * @param lockID Lock identifier
@@ -257,18 +219,6 @@ public class ManagerUtil {
   }
 
   /**
-   * Commit volatile lock
-   * 
-   * @param tcObject Volatile object TCObject
-   * @param fieldName Field holding the volatile object
-   */
-  public static void commitVolatile(final TCObject tcObject, final String fieldName, final int type) {
-    Manager mgr = getManager();
-    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
-    mgr.unlock(lock, LockLevel.fromInt(type));
-  }
-
-  /**
    * Commit lock
    * 
    * @param lockID Lock name
@@ -289,16 +239,6 @@ public class ManagerUtil {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
     mgr.unpinLock(lock);
-  }
-
-  /**
-   * Find managed object, which may be null
-   * 
-   * @param pojo The object instance
-   * @return The TCObject
-   */
-  public static TCObject lookupExistingOrNull(final Object pojo) {
-    return getManager().lookupExistingOrNull(pojo);
   }
 
   /**
@@ -380,6 +320,16 @@ public class ManagerUtil {
   }
 
   /**
+   * Look up the ObjectID for a given object
+   * 
+   * @param obj the object
+   * @return The objectID or null (if the given object is not shared)
+   */
+  public static ObjectID lookupObjectIdFor(final Object obj) {
+    return getManager().lookupObjectIdFor(obj);
+  }
+
+  /**
    * Prefetch object by ID, faulting into the JVM if necessary, Async lookup and will not cause ObjectNotFoundException
    * like lookupObject. Non-existent objects are ignored by the server.
    * 
@@ -404,16 +354,6 @@ public class ManagerUtil {
     } catch (ClassNotFoundException e) {
       throw new TCClassNotFoundException(e);
     }
-  }
-
-  /**
-   * Find or create new TCObject
-   * 
-   * @param obj The object instance
-   * @return The TCObject
-   */
-  public static TCObject lookupOrCreate(final Object obj) {
-    return getManager().lookupOrCreate(obj);
   }
 
   /**
@@ -723,7 +663,7 @@ public class ManagerUtil {
   private static class GlobalManagerHolder {
     static final Manager instance;
     static {
-      instance = ClassProcessorHelper.getGlobalManager();
+      instance = ContextHelper.getGlobalManager();
     }
   }
 
@@ -738,7 +678,7 @@ public class ManagerUtil {
    */
   public static Object get(final Object array, final int index) throws IllegalArgumentException,
       ArrayIndexOutOfBoundsException {
-    return ArrayManager.get(array, index);
+    return getManager().arrayGet(array, index);
   }
 
   /**
@@ -779,7 +719,7 @@ public class ManagerUtil {
         throw new IllegalArgumentException("Cannot assign an instance of type " + value.getClass().getName()
                                            + " to array with component type " + componentType.getName());
       }
-      ArrayManager.objectArrayChanged((Object[]) array, index, value);
+      getManager().objectArrayChanged((Object[]) array, index, value);
     } else if (value instanceof Byte) {
       setByte(array, index, ((Byte) value).byteValue());
     } else if (value instanceof Short) {
@@ -818,7 +758,7 @@ public class ManagerUtil {
     if (array instanceof boolean[]) {
       byte b = z ? (byte) 1 : (byte) 0;
 
-      ArrayManager.byteOrBooleanArrayChanged(array, index, b);
+      getManager().byteOrBooleanArrayChanged(array, index, b);
     } else {
       throw new IllegalArgumentException();
     }
@@ -839,7 +779,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof byte[]) {
-      ArrayManager.byteOrBooleanArrayChanged(array, index, b);
+      getManager().byteOrBooleanArrayChanged(array, index, b);
     } else {
       setShort(array, index, b);
     }
@@ -860,7 +800,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof char[]) {
-      ArrayManager.charArrayChanged((char[]) array, index, c);
+      getManager().charArrayChanged((char[]) array, index, c);
     } else {
       setInt(array, index, c);
     }
@@ -881,7 +821,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof short[]) {
-      ArrayManager.shortArrayChanged((short[]) array, index, s);
+      getManager().shortArrayChanged((short[]) array, index, s);
     } else {
       setInt(array, index, s);
     }
@@ -902,7 +842,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof int[]) {
-      ArrayManager.intArrayChanged((int[]) array, index, i);
+      getManager().intArrayChanged((int[]) array, index, i);
     } else {
       setLong(array, index, i);
     }
@@ -923,7 +863,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof long[]) {
-      ArrayManager.longArrayChanged((long[]) array, index, l);
+      getManager().longArrayChanged((long[]) array, index, l);
     } else {
       setFloat(array, index, l);
     }
@@ -944,7 +884,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof float[]) {
-      ArrayManager.floatArrayChanged((float[]) array, index, f);
+      getManager().floatArrayChanged((float[]) array, index, f);
     } else {
       setDouble(array, index, f);
     }
@@ -965,7 +905,7 @@ public class ManagerUtil {
     if (array == null) { throw new NullPointerException(); }
 
     if (array instanceof double[]) {
-      ArrayManager.doubleArrayChanged((double[]) array, index, d);
+      getManager().doubleArrayChanged((double[]) array, index, d);
     } else {
       throw new IllegalArgumentException();
     }
@@ -979,7 +919,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void objectArrayChanged(final Object[] array, final int index, final Object value) {
-    ArrayManager.objectArrayChanged(array, index, value);
+    getManager().objectArrayChanged(array, index, value);
   }
 
   /**
@@ -990,7 +930,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void shortArrayChanged(final short[] array, final int index, final short value) {
-    ArrayManager.shortArrayChanged(array, index, value);
+    getManager().shortArrayChanged(array, index, value);
   }
 
   /**
@@ -1001,7 +941,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void longArrayChanged(final long[] array, final int index, final long value) {
-    ArrayManager.longArrayChanged(array, index, value);
+    getManager().longArrayChanged(array, index, value);
   }
 
   /**
@@ -1012,7 +952,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void intArrayChanged(final int[] array, final int index, final int value) {
-    ArrayManager.intArrayChanged(array, index, value);
+    getManager().intArrayChanged(array, index, value);
   }
 
   /**
@@ -1023,7 +963,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void floatArrayChanged(final float[] array, final int index, final float value) {
-    ArrayManager.floatArrayChanged(array, index, value);
+    getManager().floatArrayChanged(array, index, value);
   }
 
   /**
@@ -1034,7 +974,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void doubleArrayChanged(final double[] array, final int index, final double value) {
-    ArrayManager.doubleArrayChanged(array, index, value);
+    getManager().doubleArrayChanged(array, index, value);
   }
 
   /**
@@ -1045,7 +985,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void charArrayChanged(final char[] array, final int index, final char value) {
-    ArrayManager.charArrayChanged(array, index, value);
+    getManager().charArrayChanged(array, index, value);
   }
 
   /**
@@ -1056,7 +996,7 @@ public class ManagerUtil {
    * @param value The new value
    */
   public static void byteOrBooleanArrayChanged(final Object array, final int index, final byte value) {
-    ArrayManager.byteOrBooleanArrayChanged(array, index, value);
+    getManager().byteOrBooleanArrayChanged(array, index, value);
   }
 
   /**
@@ -1071,43 +1011,7 @@ public class ManagerUtil {
    */
   public static void arraycopy(final Object src, final int srcPos, final Object dest, final int destPos,
                                final int length) {
-    ArrayManager.arraycopy(src, srcPos, dest, destPos, length);
-  }
-
-  /**
-   * Get the TCO for an array
-   * 
-   * @param array The array instance
-   * @return The TCObject
-   */
-  public static TCObject getObject(final Object array) {
-    return ArrayManager.getObject(array);
-  }
-
-  /**
-   * Copy char[]
-   * 
-   * @param src Source array
-   * @param srcPos Start in src
-   * @param dest Destination array
-   * @param destPos Start in dest
-   * @param length Number of items to copy
-   * @param tco TCObject for dest array
-   */
-  public static void charArrayCopy(final char[] src, final int srcPos, final char[] dest, final int destPos,
-                                   final int length, final TCObject tco) {
-    ArrayManager.charArrayCopy(src, srcPos, dest, destPos, length, tco);
-  }
-
-  /**
-   * Register an array with its TCO. It is an error to register an array that has already been registered.
-   * 
-   * @param array Array
-   * @param obj TCObject
-   * @throws NullPointerException if array or tco are null
-   */
-  public static void register(final Object array, final TCObject obj) {
-    ArrayManager.register(array, obj);
+    getManager().arraycopy(src, srcPos, dest, destPos, length);
   }
 
   /**
@@ -1157,13 +1061,13 @@ public class ManagerUtil {
   public static void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     getManager().registerNamedLoader(loader, webAppName);
   }
-  //
-  // public static void registerMBean(Object bean, ObjectName name) throws InstanceAlreadyExistsException,
-  // MBeanRegistrationException, NotCompliantMBeanException {
-  // getManager().registerMBean(bean, name);
-  // }
-  
+
   public static void waitForAllCurrentTransactionsToComplete() {
     getManager().waitForAllCurrentTransactionsToComplete();
   }
+
+  public static void objectFieldChangedByOffset(Object obj, long fieldOffset, Object update) {
+    getManager().objectFieldChangedByOffset(obj, fieldOffset, update);
+  }
+
 }

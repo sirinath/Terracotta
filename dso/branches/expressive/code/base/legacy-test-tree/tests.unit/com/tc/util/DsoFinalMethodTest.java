@@ -21,6 +21,7 @@ import com.tc.object.TestClassFactory;
 import com.tc.object.TestObjectFactory;
 import com.tc.object.TestRemoteObjectManager;
 import com.tc.object.bytecode.MockClassProvider;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.cache.EvictionPolicy;
 import com.tc.object.cache.NullCache;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -95,7 +96,7 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
                                        ClassProvider classProvider, TCClassFactory classFactory,
                                        TCObjectFactory objectFactory) {
       super(remoteObjectManager, clientConfiguration, idProvider, cache, runtimeLogger, provider, classProvider,
-            classFactory, objectFactory, new TestPortability(), null, null);
+            classFactory, objectFactory, new TestPortability(), null, null, new ArrayManager());
     }
 
     @Override

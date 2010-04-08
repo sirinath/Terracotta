@@ -10,6 +10,7 @@ import org.apache.xmlbeans.XmlInteger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 
+import com.tc.config.TcProperty;
 import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
@@ -578,7 +579,13 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
 
   private void overwriteTcPropertiesFromConfig() {
     TCProperties tcProps = TCPropertiesImpl.getProperties();
-    tcProps.overwriteTcPropertiesFromConfig(this.configTCProperties.getTcPropertiesArray());
+
+    Map<String, String> props = new HashMap<String, String>();
+    for (TcProperty tcProp : this.configTCProperties.getTcPropertiesArray()) {
+      props.put(tcProp.getPropertyName(), tcProp.getPropertyValue());
+    }
+
+    tcProps.overwriteTcPropertiesFromConfig(props);
   }
 
   public ActiveServerGroupConfig getActiveServerGroupForThisL2() {

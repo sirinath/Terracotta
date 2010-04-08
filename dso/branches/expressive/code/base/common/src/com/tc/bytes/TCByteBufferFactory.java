@@ -9,8 +9,8 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 
 /**
@@ -38,6 +38,7 @@ public class TCByteBufferFactory {
   private static final BoundedLinkedQueue nonDirectCommonFreePool = new BoundedLinkedQueue(commonPoolMaxBufCount);
 
   private static final ThreadLocal        directFreePool          = new ThreadLocal() {
+                                                                    @Override
                                                                     protected Object initialValue() {
                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
                                                                         return new BoundedLinkedQueue(poolMaxBufCount);
@@ -50,6 +51,7 @@ public class TCByteBufferFactory {
                                                                     }
                                                                   };
   private static final ThreadLocal        nonDirectFreePool       = new ThreadLocal() {
+                                                                    @Override
                                                                     protected Object initialValue() {
                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
                                                                         return new BoundedLinkedQueue(poolMaxBufCount);
@@ -212,7 +214,10 @@ public class TCByteBufferFactory {
     if (disablePooling) { return; }
 
     if (buf.capacity() == fixedBufferSize) {
-      BoundedLinkedQueue bufferPool = buf.getBufferPool();
+
+      // XXX: cast!
+      BoundedLinkedQueue bufferPool = (BoundedLinkedQueue) buf.getBufferPool();
+
       buf.commit();
 
       if (bufferPool != null) {

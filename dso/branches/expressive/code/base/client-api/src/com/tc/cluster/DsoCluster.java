@@ -5,7 +5,6 @@
 package com.tc.cluster;
 
 import com.tc.cluster.exceptions.UnclusteredObjectException;
-import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tcclient.cluster.DsoNode;
 
 import java.util.Collection;
@@ -21,14 +20,14 @@ import java.util.Set;
  * were already assigned to those fields and prevent any other assignments from replacing the value. The injection
  * happens before any constructor logic.
  * <p>
- * To allow cluster events and meta data to be tested without Terracotta DSO being active, the
- * SimulatedDsoCluster class can be used.
+ * To allow cluster events and meta data to be tested without Terracotta DSO being active, the SimulatedDsoCluster class
+ * can be used.
  * <p>
  * Note that only DSO client nodes are taken into account for the cluster events and meta data, information about DSO
  * server nodes is not available.
  * <p>
  * See {@link DsoClusterListener} for more information about the events themselves.
- *
+ * 
  * @since 3.0.0
  */
 public interface DsoCluster {
@@ -39,7 +38,7 @@ public interface DsoCluster {
    * <p>
    * When the cluster is already joined or the operations have already been enabled, those events will be immediately
    * triggered on the listener when it's registered.
-   *
+   * 
    * @param listener the cluster listener instance that will be registered
    */
   public void addClusterListener(DsoClusterListener listener);
@@ -48,7 +47,7 @@ public interface DsoCluster {
    * Removes a cluster events listener.
    * <p>
    * If the cluster events listener instance was not registered before, this method will have no effect.
-   *
+   * 
    * @param listener the cluster listener instance that will be unregistered
    */
   public void removeClusterListener(DsoClusterListener listener);
@@ -59,35 +58,35 @@ public interface DsoCluster {
    * Note that the returned topology instance will be updated internally as nodes joined and leave the cluster. If you
    * want a snapshot of the current nodes in the cluster, you should use the {@link DsoClusterTopology#getNodes()}
    * method.
-   *
+   * 
    * @return an instance of the cluster topology as seen from the current node
    */
   public DsoClusterTopology getClusterTopology();
 
   /**
    * Retrieves the {@code DsoNode} instance that corresponds to the current node.
-   *
+   * 
    * @return the {@code DsoNode} instance that corresponds to the current node
    */
   public DsoNode getCurrentNode();
 
   /**
    * Indicates whether the current node has joined the cluster.
-   *
+   * 
    * @return {@code true} if the current node has joined the cluster; {@code false} otherwise
    */
   public boolean isNodeJoined();
 
   /**
    * Indicates whether operations are enabled on the current node.
-   *
+   * 
    * @return {@code true} if operations are enabled on the current node; {@code false} otherwise
    */
   public boolean areOperationsEnabled();
 
   /**
    * Determine on which nodes a particular object is faulted.
-   *
+   * 
    * @param object the object that will be checked
    * @throws UnclusteredObjectException when the object isn't clustered
    * @return the set of nodes where the object is faulted;
@@ -101,7 +100,7 @@ public interface DsoCluster {
    * <p>
    * Each object will be a key in the map that is returned, with sets of nodes as values that indicate where the objects
    * are faulted.
-   *
+   * 
    * @param objects the objects that will be checked
    * @throws UnclusteredObjectException when any of the objects isn't clustered
    * @return the map of nodes where the objects are faulted;
@@ -115,7 +114,7 @@ public interface DsoCluster {
    * <p>
    * Each object will be a key in the map that is returned, with sets of nodes as values that indicate where the objects
    * are faulted.
-   *
+   * 
    * @param objects the objects that will be checked
    * @throws UnclusteredObjectException when any of the objects isn't clustered
    * @return the map of nodes where the objects are faulted;
@@ -127,7 +126,7 @@ public interface DsoCluster {
   /**
    * Retrieve a set of keys for map values that are not faulted anywhere out of a clustered map for which partialness is
    * supported.
-   *
+   * 
    * @param map the map with the values that will be checked
    * @throws UnclusteredObjectException when the map isn't clustered
    * @return the set of keys for the values that are faulted nowhere;
@@ -141,7 +140,7 @@ public interface DsoCluster {
   /**
    * Retrieve a set of keys for map values that are faulted on the current node out of a clustered map for which
    * partialness is supported.
-   *
+   * 
    * @param map the map with the values that will be checked
    * @throws UnclusteredObjectException when the map isn't clustered
    * @return the set of keys for the values that are faulted on the current node;

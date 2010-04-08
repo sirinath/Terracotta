@@ -21,6 +21,7 @@ import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -118,7 +119,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
-    
+
     return new ClusterMetaDataManagerImpl(defaultGroups[0], encoding, threadIDManager, nwoFactory, kfovFactory,
                                           nmdmFactory);
   }
@@ -134,10 +135,11 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                      final TCObjectFactory objectFactory,
                                                      final Portability portability,
                                                      final DSOClientMessageChannel dsoChannel,
-                                                     final ToggleableReferenceManager toggleRefMgr) {
+                                                     final ToggleableReferenceManager toggleRefMgr,
+                                                     final ArrayManager arrayManager) {
     return new ClientObjectManagerImpl(remoteObjectManager, dsoConfig, idProvider, clockEvictionPolicy, rtLogger,
                                        clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
-                                       dsoChannel, toggleRefMgr);
+                                       dsoChannel, toggleRefMgr, arrayManager);
   }
 
   public ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel,

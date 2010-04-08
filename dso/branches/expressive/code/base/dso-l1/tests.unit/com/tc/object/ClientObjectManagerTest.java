@@ -16,6 +16,7 @@ import com.tc.object.TestClassFactory.MockTCField;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.bytecode.TransparentAccess;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.cache.EvictionPolicy;
 import com.tc.object.cache.NullCache;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -76,7 +77,8 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
                                            this.cache, this.runtimeLogger,
                                            new ClientIDProviderImpl(new TestChannelIDProvider()), this.classProvider,
                                            this.classFactory, this.objectFactory,
-                                           new PortabilityImpl(this.clientConfiguration), null, null);
+                                           new PortabilityImpl(this.clientConfiguration), null, null,
+                                           new ArrayManager());
     this.mgr.setTransactionManager(new MockTransactionManager());
   }
 
@@ -147,7 +149,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
                                                                               testMutualReferenceObjectFactory,
                                                                               new PortabilityImpl(
                                                                                                   this.clientConfiguration),
-                                                                              null, null);
+                                                                              null, null, new ArrayManager());
     this.mgr = clientObjectManager;
     MockTransactionManager mockTransactionManager = new MockTransactionManager();
     this.mgr.setTransactionManager(mockTransactionManager);

@@ -15,6 +15,7 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.bytecode.NullManager;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
@@ -83,7 +84,8 @@ public class DeadClientCrashedServerReconnectTest extends BaseDSOTestCase {
                                                                  new MockClassProvider(), components, NullManager
                                                                      .getInstance(),
                                                                  new StatisticsAgentSubSystemImpl(),
-                                                                 new DsoClusterImpl(), new NullRuntimeLogger());
+                                                                 new DsoClusterImpl(), new NullRuntimeLogger(),
+                                                                 new ArrayManager());
     client.setCreateDedicatedMBeanServer(true);
     client.start();
 

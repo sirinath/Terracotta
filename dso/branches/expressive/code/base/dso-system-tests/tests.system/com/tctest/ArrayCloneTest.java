@@ -4,7 +4,7 @@
  */
 package com.tctest;
 
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.ManagerInternalUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -42,7 +42,7 @@ public class ArrayCloneTest extends TransparentTestBase {
       Object[] rootRef = root;
 
       // make sure the root is shared -- if not the test will pass but won't really be testing anything :-)
-      Assert.assertNotNull(ManagerUtil.getObject(rootRef));
+      Assert.assertNotNull(ManagerInternalUtil.lookupExistingOrNull(rootRef));
 
       // NOTE: depending on which javac you use, this clone() call might look like it is being made to java/lang/Object
       // or perhaps [Ljava/lang/Object; (CDV-1234)

@@ -5,12 +5,13 @@
 package java.io;
 
 import com.tc.object.TCObject;
-import com.tc.object.bytecode.ManagerUtil;
+import com.tc.object.bytecode.ManagerInternalUtil;
 
 public class ObjectStreamClassTC extends ObjectStreamClass {
+  @Override
   void getObjFieldValues(Object obj, Object[] vals) {
 
-    TCObject tco = ManagerUtil.lookupExistingOrNull(obj);
+    TCObject tco = ManagerInternalUtil.lookupExistingOrNull(obj);
     if (tco != null) {
       synchronized (tco.getResolveLock()) {
         tco.resolveAllReferences();

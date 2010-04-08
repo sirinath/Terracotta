@@ -26,9 +26,10 @@ import junit.framework.TestCase;
 
 public class ArrayManagerTest extends TestCase {
 
-  private final Map         registerdPairs = new IdentityHashMap();
-  private static final List errors         = new ArrayList();
-  private Object[]          arrays;
+  private final Map          registerdPairs = new IdentityHashMap();
+  private static final List  errors         = new ArrayList();
+  private Object[]           arrays;
+  private final ArrayManager manager        = new ArrayManager();
 
   @Override
   protected void setUp() throws Exception {
@@ -36,7 +37,7 @@ public class ArrayManagerTest extends TestCase {
       TCObject tco = new FakeTCObject();
       Object array = new Object[] {};
       registerdPairs.put(array, tco); // do this before register to always have strong ref
-      ArrayManager.register(array, tco);
+      manager.register(array, tco);
     }
 
     arrays = registerdPairs.keySet().toArray();
@@ -66,7 +67,7 @@ public class ArrayManagerTest extends TestCase {
     for (int i = 0; i < 100000; i++) {
       Object array = arrays[r.nextInt(arrays.length)];
       TCObject expected = (TCObject) registerdPairs.get(array);
-      assertEquals(expected, ArrayManager.getObject(array));
+      assertEquals(expected, manager.getObject(array));
     }
   }
 
@@ -75,11 +76,11 @@ public class ArrayManagerTest extends TestCase {
     for (int i = 0; i < 50000; i++) {
       Object array = new Object[] {};
       refs.add(array);
-      assertNull(ArrayManager.getObject(array));
+      assertNull(manager.getObject(array));
       TCObject tco = new FakeTCObject();
-      ArrayManager.register(array, tco);
-      assertEquals(tco, ArrayManager.getObject(array));
-      assertEquals(tco, ArrayManager.getObject(array)); // do it twice
+      manager.register(array, tco);
+      assertEquals(tco, manager.getObject(array));
+      assertEquals(tco, manager.getObject(array)); // do it twice
     }
   }
 
@@ -97,7 +98,7 @@ public class ArrayManagerTest extends TestCase {
 
     Query[] query = new Query[2];
     for (int i = 0; i < query.length; i++) {
-      query[i] = new Query(arrays, registerdPairs, withGC);
+      query[i] = new Query(manager, arrays, registerdPairs, withGC);
     }
     Thread[] queries = new Thread[query.length];
     for (int i = 0; i < queries.length; i++) {
@@ -116,8 +117,8 @@ public class ArrayManagerTest extends TestCase {
     for (int i = 0; i < queries.length; i++) {
       query[i].stop();
     }
-    for (int i = 0; i < queries.length; i++) {
-      queries[i].join();
+    for (Thread querie : queries) {
+      querie.join();
     }
 
   }
@@ -147,12 +148,14 @@ public class ArrayManagerTest extends TestCase {
   }
 
   private static class Query extends Base {
-    private final Random   r = new Random();
-    private final Map      pairs;
-    private final Object[] arrays;
-    private final boolean  withGC;
+    private final Random       r = new Random();
+    private final Map          pairs;
+    private final Object[]     arrays;
+    private final boolean      withGC;
+    private final ArrayManager manager;
 
-    Query(Object[] arrays, Map pairs, boolean withGC) {
+    Query(ArrayManager manager, Object[] arrays, Map pairs, boolean withGC) {
+      this.manager = manager;
       this.arrays = arrays;
       this.pairs = pairs;
       this.withGC = withGC;
@@ -163,14 +166,13 @@ public class ArrayManagerTest extends TestCase {
       if (r.nextBoolean()) {
         Object array = arrays[r.nextInt(arrays.length)];
         TCObject expect = (TCObject) pairs.get(array);
-        if (expect != ArrayManager.getObject(array)) { throw new AssertionError("wrong mapping returned"); }
+        if (expect != manager.getObject(array)) { throw new AssertionError("wrong mapping returned"); }
       } else {
-        if (ArrayManager.getObject(new Object[] {}) != null) { throw new AssertionError(
-                                                                                        "found object for brand new array"); }
+        if (manager.getObject(new Object[] {}) != null) { throw new AssertionError("found object for brand new array"); }
       }
 
       if (withGC && (System.currentTimeMillis() % 255) == 0) {
-        System.out.println(Thread.currentThread().getName() + " doing DGC");
+        System.out.println(Thread.currentThread().getName() + " doing GC");
         System.gc();
       }
 
@@ -181,8 +183,8 @@ public class ArrayManagerTest extends TestCase {
     @Override
     void work() {
       Object newArray = new Object[] {};
-      ArrayManager.getObject(newArray);
-      ArrayManager.register(newArray, new FakeTCObject());
+      manager.getObject(newArray);
+      manager.register(newArray, new FakeTCObject());
 
       for (int i = 0; i < 10; i++) {
         // this strange test should make it impossible for the runtime to eliminate this code
@@ -391,6 +393,7 @@ public class ArrayManagerTest extends TestCase {
     public void unresolveReference(String fieldName) {
       throw new ImplementMe();
     }
+
   }
 
 }

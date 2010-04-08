@@ -25,7 +25,7 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
 
     // look up the TCObject from the TC manager that corresponds
     // to the current object instance
-    mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(ManagerUtil.class), "lookupExistingOrNull",
+    mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(ManagerInternalUtil.class), "lookupExistingOrNull",
                        "(Ljava/lang/Object;)Lcom/tc/object/TCObject;");
 
     // store the TCObject in the appropriate local variable slot
@@ -52,7 +52,7 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
     mv.visitVarInsn(ALOAD, tcobject_var_store);
     mv.visitLdcInsn(fieldName);
     mv.visitInsn(LockLevel.WRITE.toInt());
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "beginVolatile",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "beginVolatile",
                        "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
 
     modifyVolatileValue(tcobject_var_store, label_commit_volatile);
@@ -65,7 +65,7 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
     mv.visitVarInsn(ALOAD, tcobject_var_store);
     mv.visitLdcInsn(fieldName);
     mv.visitInsn(LockLevel.WRITE.toInt());
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "commitVolatile",
                        "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
     mv.visitVarInsn(ALOAD, exception_var_store);
     mv.visitInsn(ATHROW);
@@ -75,7 +75,7 @@ public abstract class AbstractVolatileFieldMethodVisitor extends MaxLocalVarStor
     mv.visitVarInsn(ALOAD, tcobject_var_store);
     mv.visitLdcInsn(fieldName);
     mv.visitInsn(LockLevel.WRITE.toInt());
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "commitVolatile",
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerInternalUtil", "commitVolatile",
                        "(Lcom/tc/object/TCObject;Ljava/lang/String;I)V");
 
     mv.visitLabel(label_tcobject_null);

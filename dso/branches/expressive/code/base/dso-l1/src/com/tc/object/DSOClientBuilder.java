@@ -14,6 +14,7 @@ import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
+import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -83,7 +84,8 @@ public interface DSOClientBuilder {
                                               final ClassProvider classProviderLocal,
                                               final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                               final Portability portability, final DSOClientMessageChannel dsoChannel,
-                                              final ToggleableReferenceManager toggleRefMgr);
+                                              final ToggleableReferenceManager toggleRefMgr,
+                                              final ArrayManager arrayManager);
 
   ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel, final ClientIDLogger clientIDLogger,
                                       final SessionManager sessionManager, final ClientLockStatManager lockStatManager,
