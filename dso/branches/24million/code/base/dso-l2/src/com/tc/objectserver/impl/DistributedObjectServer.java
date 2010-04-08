@@ -899,9 +899,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                      this.l2Properties.getInt("seda.managedobjectresponsestage.threads"), maxStageSize);
 
     final Stage serverMapRequestStage = stageManager.createStage(ServerConfigurationContext.SERVER_MAP_REQUEST_STAGE,
-                                                                 new ServerTCMapRequestHandler(), 1, maxStageSize);
+                                                                 new ServerTCMapRequestHandler(), 8, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.SERVER_MAP_RESPOND_STAGE,
-                             new RespondToServerMapRequestHandler(), 1, maxStageSize);
+                             new RespondToServerMapRequestHandler(), 8, maxStageSize);
 
     this.objectRequestManager = this.serverBuilder.createObjectRequestManager(this.objectManager, channelManager,
                                                                               this.clientStateManager,
