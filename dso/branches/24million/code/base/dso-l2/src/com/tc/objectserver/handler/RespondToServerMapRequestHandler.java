@@ -47,7 +47,7 @@ public class RespondToServerMapRequestHandler extends AbstractEventHandler imple
     if (!(state instanceof ConcurrentDistributedServerMapManagedObjectState)) { throw new AssertionError(
                                                                                                          "Server Map "
                                                                                                              + mapID
-                                                                                                             + " is not a ConcurrentDistributedServerMapManagedObjectState."); }
+                                                                                                             + " is not a ConcurrentDistributedServerMapManagedObjectState, state is of class type: " + state.getClassName()); }
 
     final ConcurrentDistributedServerMapManagedObjectState csmState = (ConcurrentDistributedServerMapManagedObjectState) state;
 
