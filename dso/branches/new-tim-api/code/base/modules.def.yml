@@ -137,7 +137,9 @@ modules:
   - tim-api:
       options:
         jdk: J2SE-1.5
-      # NO dependencies!
+      # XXX: Should be NO deps here!!!
+      dependencies:
+        - thirdparty-api
   - modules-base:
       options:
         jdk: J2SE-1.5
