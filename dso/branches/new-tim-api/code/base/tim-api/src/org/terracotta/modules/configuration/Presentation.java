@@ -4,12 +4,12 @@
 package org.terracotta.modules.configuration;
 
 import com.tc.admin.common.ApplicationContext;
-import com.tc.admin.model.IClusterModel;
+import com.tc.admin.model.TIMClusterModel;
 
 import javax.swing.JPanel;
 
 public abstract class Presentation extends JPanel {
-  public abstract void setup(ApplicationContext appContext, IClusterModel clusterModel);
+  public abstract void setup(ApplicationContext appContext, TIMClusterModel clusterModel);
 
   public abstract void tearDown();
 }
