@@ -133,6 +133,23 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
     addExportedBundleClass(bundle, classname, false);
   }
 
+  /**
+   * Export the given class that normally resides in tc.jar to all classloaders that might try to load it. This is sort
+   * of like creating a jar containing the one given class and appending into the lookup path of every classloader NOTE:
+   * The export will only work for class loads that pass through java.lang.ClassLoader.loadClassInternal(). Specifically
+   * if the loadClass() method is directly being invoked from code someplace, the class export will not function. Code
+   * that does a "new <exported class name>", or that uses java.lang.Class.forName(..) will work though
+   * 
+   * @param classname the tc.jar class name to export
+   */
+  protected final void addExportedTcJarClass(final String classname) {
+    URL resource = TerracottaConfiguratorModule.class.getClassLoader().getResource(classNameToFileName(classname));
+
+    if (resource == null) { throw new RuntimeException("Exported TC jar class " + classname + " does not exist."); }
+
+    configHelper.addClassResource(classname, resource, false, false);
+  }
+
   protected TransparencyClassSpec getOrCreateSpec(final String expr, final boolean markAsPreInstrumented) {
     final TransparencyClassSpec spec = configHelper.getOrCreateSpec(expr);
     if (markAsPreInstrumented) spec.markPreInstrumented();
