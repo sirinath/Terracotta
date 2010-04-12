@@ -69,11 +69,7 @@ bundled_components:
             # install in 'api-jars' folder so it can be deleted later
             install_directory: api-jars
             modules:
-              - common-api
-              - dso-l1-api
-              - license-common
-              - management-api
-              - modules-base
+              - tim-api
               - thirdparty-api
         - test-api-api.version:
             # install in 'api-jars' folder so it can be deleted later
