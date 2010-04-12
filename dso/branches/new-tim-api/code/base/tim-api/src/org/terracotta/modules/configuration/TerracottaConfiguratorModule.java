@@ -10,13 +10,11 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
 
-import com.tc.bundles.BundleSpec;
-import com.tc.object.bytecode.ByteCodeUtil;
+import com.tc.bundles.BundleSpecUtil;
 import com.tc.object.config.ClassReplacementTest;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.util.Assert;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,7 +36,7 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
     thisBundle = context.getBundle();
     final ServiceReference configHelperRef = getConfigHelperReference(context);
     configHelper = (StandardDSOClientConfigHelper) context.getService(configHelperRef);
-    Assert.assertNotNull(configHelper);
+    if (configHelper == null) { throw new AssertionError("configHelper is null"); }
     addInstrumentation(context);
     context.ungetService(configHelperRef);
     registerModuleSpec(context);
@@ -79,7 +77,7 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected final void addClassReplacement(final Bundle bundle, final String originalClassName,
                                            final String replacementClassName, final ClassReplacementTest test) {
-    URL resource = getBundleResourceURL(bundle, ByteCodeUtil.classNameToFileName(replacementClassName));
+    URL resource = getBundleResourceURL(bundle, classNameToFileName(replacementClassName));
     configHelper.addClassReplacement(originalClassName, replacementClassName, resource, test);
   }
 
@@ -111,14 +109,14 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
    * java.lang.ClassLoader.loadClassInternal(). Specifically if the loadClass() method is directly being invoked from
    * code someplace, the class export will not function. Code that does a "new <exported class name>", or that uses
    * java.lang.Class.forName(..) will work though
-   *
+   * 
    * @param classname the bundle class name to export
    * @param targetSystemLoaderOnly True if only the system classloader should have visibility to this exported class
    * @param publicApi True if the exported class is public API that is intended to be used by user code
    */
   protected final void addExportedBundleClass(final Bundle bundle, final String classname,
                                               final boolean targetSystemLoaderOnly, final boolean publicApi) {
-    URL url = getBundleResourceURL(bundle, ByteCodeUtil.classNameToFileName(classname));
+    URL url = getBundleResourceURL(bundle, classNameToFileName(classname));
     configHelper.addClassResource(classname, url, targetSystemLoaderOnly, publicApi);
   }
 
@@ -133,25 +131,6 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected final void addExportedBundleClass(final Bundle bundle, final String classname) {
     addExportedBundleClass(bundle, classname, false);
-  }
-
-  /**
-   * Export the given class that normally resides in tc.jar to all classloaders that might try to load it. This is sort
-   * of like creating a jar containing the one given class and appending into the lookup path of every classloader NOTE:
-   * The export will only work for class loads that pass through java.lang.ClassLoader.loadClassInternal(). Specifically
-   * if the loadClass() method is directly being invoked from code someplace, the class export will not function. Code
-   * that does a "new <exported class name>", or that uses java.lang.Class.forName(..) will work though
-   *
-   * @param classname the tc.jar class name to export
-   */
-  protected final void addExportedTcJarClass(final String classname) {
-    URL resource = TerracottaConfiguratorModule.class.getClassLoader().getResource(
-                                                                                   ByteCodeUtil
-                                                                                       .classNameToFileName(classname));
-
-    if (resource == null) { throw new RuntimeException("Exported TC jar class " + classname + " does not exist."); }
-
-    configHelper.addClassResource(classname, resource, false, false);
   }
 
   protected TransparencyClassSpec getOrCreateSpec(final String expr, final boolean markAsPreInstrumented) {
@@ -171,12 +150,16 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
   protected Bundle getExportedBundle(final BundleContext context, final String targetBundleName) {
     // find the bundle that contains the replacement classes
     for (Bundle bundle : context.getBundles()) {
-      if (BundleSpec.isMatchingSymbolicName(targetBundleName, bundle.getSymbolicName())) {
+      if (BundleSpecUtil.isMatchingSymbolicName(targetBundleName, bundle.getSymbolicName())) {
         //
         return bundle;
       }
     }
     return null;
+  }
+
+  private static final String classNameToFileName(final String className) {
+    return className.replace('.', '/') + ".class";
   }
 
 }
