@@ -6,10 +6,11 @@ package com.tc.object.msg;
 import com.tc.async.api.EventContext;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapRequestID;
 
 public interface ServerTCMapRequestMessage extends EventContext {
 
-  public void initialize(ObjectID mapID, Object portableKey);
+  public void initialize(ServerMapRequestID requestID, ObjectID mapID, Object portableKey);
 
   public void send();
 
@@ -18,5 +19,7 @@ public interface ServerTCMapRequestMessage extends EventContext {
   public ObjectID getMapID();
 
   public ClientID getClientID();
+  
+  public ServerMapRequestID getRequestID();
 
 }

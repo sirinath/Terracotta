@@ -12,6 +12,7 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapRequestID;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.SerializerDNAEncodingImpl;
 import com.tc.object.dna.impl.StorageDNAEncodingImpl;
@@ -24,11 +25,13 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
 
   // TODO:: Comback for other types of requests.
   private final static byte        MAP_OBJECT_ID = 1;
+  private final static byte        REQUEST_ID    = 2;
 
   // TODO::Comeback and verify
   private static final DNAEncoding encoder       = new SerializerDNAEncodingImpl();
   private static final DNAEncoding decoder       = new StorageDNAEncodingImpl();
 
+  private ServerMapRequestID       requestID;
   private Object                   portableKey;
   private ObjectID                 mapID;
 
@@ -44,8 +47,9 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
     super(sessionID, monitor, out, channel, type);
   }
 
-  public void initialize(final ObjectID id, final Object key) {
+  public void initialize(final ServerMapRequestID serverMapRequestID, final ObjectID id, final Object key) {
     Assert.assertTrue(LiteralValues.isLiteralInstance(key));
+    this.requestID = serverMapRequestID;
     this.mapID = id;
     this.portableKey = key;
   }
@@ -53,6 +57,7 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   @Override
   protected void dehydrateValues() {
     putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
+    putNVPair(REQUEST_ID, requestID.toLong());
 
     // Directly encode the key
     encoder.encode(this.portableKey, getOutputStream());
@@ -63,6 +68,10 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
     switch (name) {
       case MAP_OBJECT_ID:
         this.mapID = new ObjectID(getLongValue());
+        return true;
+        
+      case REQUEST_ID:
+        this.requestID = new ServerMapRequestID(getLongValue());
         // Directly decode the key
         try {
           this.portableKey = decoder.decode(getInputStream());
@@ -86,4 +95,9 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   public ClientID getClientID() {
     return (ClientID) getSourceNodeID();
   }
+
+  public ServerMapRequestID getRequestID() {
+    return requestID;
+  }
+  
 }

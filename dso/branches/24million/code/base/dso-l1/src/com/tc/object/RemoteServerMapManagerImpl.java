@@ -26,14 +26,16 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   private final ServerMapMessageFactory smmFactory;
   private final TCLogger                logger;
   private final SessionManager          sessionManager;
-  private final Map                     valueMappingRequests = new HashMap();
+  private final Map                     valueMappingRequests      = new HashMap();
 
-  private final static boolean          ENABLE_LOGGING       = TCPropertiesImpl
-                                                                 .getProperties()
-                                                                 .getBoolean(
-                                                                             TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_LOGGING_ENABLED);
+  private final static boolean          ENABLE_LOGGING            = TCPropertiesImpl
+                                                                      .getProperties()
+                                                                      .getBoolean(
+                                                                                  TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_LOGGING_ENABLED);
 
-  private State                         state                = State.RUNNING;
+  private State                         state                     = State.RUNNING;
+
+  private long                          serverMapRequestIDCounter = 0;
 
   private static enum State {
     PAUSED, RUNNING, STARTING, STOPPED
@@ -98,7 +100,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     final String comboKey = oid.toString() + "::" + portableKey.toString();
     ServerTCMapRequestContext context = (ServerTCMapRequestContext) this.valueMappingRequests.get(comboKey);
     if (context == null) {
-      context = new ServerTCMapRequestContext(oid, portableKey, this.groupID, comboKey);
+      context = new ServerTCMapRequestContext(getNextRequestID(), oid, portableKey, this.groupID, comboKey);
       this.valueMappingRequests.put(comboKey, context);
     }
     return context;
@@ -182,22 +184,28 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     if (this.state == State.RUNNING) { throw new AssertionError(message + ": " + this.state); }
   }
 
+  private ServerMapRequestID getNextRequestID() {
+    return new ServerMapRequestID(this.serverMapRequestIDCounter++);
+  }
+
   // TODO::FIXME::This will go when we do batching
   private static class ServerTCMapRequestContext {
 
-    private final static TCLogger logger      = TCLogging.getLogger(ServerTCMapRequestContext.class);
+    private final static TCLogger    logger      = TCLogging.getLogger(ServerTCMapRequestContext.class);
 
-    private final ObjectID        oid;
-    private final Object          portableKey;
-    private final GroupID         groupID;
-    private final String          comboKey;
+    private final ObjectID           oid;
+    private final Object             portableKey;
+    private final GroupID            groupID;
+    private final ServerMapRequestID requestID;
+    private final String             comboKey;
 
-    private boolean               requestSent = false;
-    private int                   count;
-    private Object                value;
+    private boolean                  requestSent = false;
+    private int                      count;
+    private Object                   value;
 
-    public ServerTCMapRequestContext(final ObjectID oid, final Object portableKey, final GroupID groupID,
-                                     final String comboKey) {
+    public ServerTCMapRequestContext(final ServerMapRequestID requestID, final ObjectID oid, final Object portableKey,
+                                     final GroupID groupID, final String comboKey) {
+      this.requestID = requestID;
       this.oid = oid;
       this.portableKey = portableKey;
       this.groupID = groupID;
@@ -246,7 +254,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     // TODO::Change / Batch
     public void sendRequest(final ServerMapMessageFactory factory) {
       final ServerTCMapRequestMessage mappingMessage = factory.newServerTCMapRequestMessage(this.groupID);
-      mappingMessage.initialize(this.oid, this.portableKey);
+      mappingMessage.initialize(this.requestID, this.oid, this.portableKey);
       mappingMessage.send();
     }
   }
