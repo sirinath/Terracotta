@@ -25,15 +25,16 @@ public final class RequestEntryForKeyContext implements ObjectManagerResultsCont
   private final Object          portableKey;
   private final ClientID        clientID;
   private final Sink            destinationSink;
-  
-  public RequestEntryForKeyContext(final ClientID clientID, final ObjectID mapID, final Object portableKey, final Sink destinationSink) {
+
+  public RequestEntryForKeyContext(final ClientID clientID, final ObjectID mapID, final Object portableKey,
+                                   final Sink destinationSink) {
     this.clientID = clientID;
     this.mapID = mapID;
     this.portableKey = portableKey;
     this.destinationSink = destinationSink;
     this.lookupIDs.add(mapID);
   }
-  
+
   public ClientID getClientID() {
     return this.clientID;
   }
@@ -87,5 +88,15 @@ public final class RequestEntryForKeyContext implements ObjectManagerResultsCont
 
   public boolean updateStats() {
     return true;
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof RequestEntryForKeyContext) {
+      RequestEntryForKeyContext compareTo = (RequestEntryForKeyContext) obj;
+      return clientID.equals(compareTo.getClientID()) && mapID.equals(compareTo.getServerTCMapID())
+             && portableKey.equals(compareTo.getPortableKey());
+    }
+    return false;
   }
 }
