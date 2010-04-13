@@ -13,6 +13,7 @@ import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapRequestID;
 import com.tc.object.msg.ServerTCMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
@@ -29,6 +30,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
   public void tests() {
     ObjectManager objManager = mock(ObjectManager.class);
     ClientID clientID = new ClientID(0);
+    ServerMapRequestID requestID = new ServerMapRequestID(0);
     ObjectID mapID = new ObjectID(1);
     Object portableKey = "key1";
     Object portableValue ="value1";
@@ -36,7 +38,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     Sink managedObjectRequestSink = mock(Sink.class);
     DSOChannelManager channelManager = mock(DSOChannelManager.class);
     ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(objManager, channelManager, respondToServerTCMapSink, managedObjectRequestSink);
-    serverTCMapRequestManager.requestValues(clientID, mapID, portableKey);
+    serverTCMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
     
     RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(clientID, mapID, portableKey,
                                                                                    respondToServerTCMapSink);

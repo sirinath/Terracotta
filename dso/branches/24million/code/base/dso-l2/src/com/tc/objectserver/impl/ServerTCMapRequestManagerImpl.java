@@ -11,6 +11,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
+import com.tc.object.ServerMapRequestID;
 import com.tc.object.msg.ServerTCMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
@@ -39,7 +40,7 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     this.managedObjectRequestSink = managedObjectRequestSink;
   }
 
-  public void requestValues(ClientID clientID, ObjectID mapID, Object portableKey) {
+  public void requestValues(ServerMapRequestID requestID, ClientID clientID, ObjectID mapID, Object portableKey) {
 
     final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(clientID, mapID, portableKey,
                                                                                    this.respondToServerTCMapSink);
