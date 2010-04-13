@@ -8,7 +8,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
-import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.util.ObjectIDSet;
@@ -26,15 +25,15 @@ public final class RequestEntryForKeyContext implements ObjectManagerResultsCont
   private final Object          portableKey;
   private final ClientID        clientID;
   private final Sink            destinationSink;
-
-  public RequestEntryForKeyContext(final ServerTCMapRequestMessage mesg, final Sink destinationSink) {
+  
+  public RequestEntryForKeyContext(final ClientID clientID, final ObjectID mapID, final Object portableKey, final Sink destinationSink) {
+    this.clientID = clientID;
+    this.mapID = mapID;
+    this.portableKey = portableKey;
     this.destinationSink = destinationSink;
-    this.mapID = mesg.getMapID();
-    this.portableKey = mesg.getPortableKey();
-    this.clientID = mesg.getClientID();
-    this.lookupIDs.add(this.mapID);
+    this.lookupIDs.add(mapID);
   }
-
+  
   public ClientID getClientID() {
     return this.clientID;
   }
