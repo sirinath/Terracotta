@@ -23,6 +23,7 @@ import com.tc.object.net.DSOChannelManager;
 import com.tc.object.persistence.api.PersistentMapStore;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
+import com.tc.objectserver.api.ServerTCMapRequestManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -47,6 +48,9 @@ import java.util.List;
 public interface DSOServerBuilder extends TCDumper, PostInit {
 
   TransactionFilter getTransactionFilter(List<PostInit> toInit, StageManager stageManager, int maxStageSize);
+  
+  ServerTCMapRequestManager createServerTCMapRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
+                                                            Sink respondToServerTCMapSink, Sink managedObjectRequestSink);
 
   ObjectRequestManager createObjectRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
                                                   ClientStateManager clientStateMgr,
@@ -69,6 +73,7 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
 
   ServerConfigurationContext createServerConfigurationContext(StageManager stageManager, ObjectManager objMgr,
                                                               ObjectRequestManager objRequestMgr,
+                                                              ServerTCMapRequestManager serverTCMapRequestManager,
                                                               ManagedObjectStore objStore, LockManager lockMgr,
                                                               DSOChannelManager channelManager,
                                                               ClientStateManager clientStateMgr,
