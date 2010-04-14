@@ -12,6 +12,6 @@ public interface ServerTCMapRequestManager {
 
   public void requestValues(ServerMapRequestID serverMapRequestID, ClientID clientID, ObjectID mapID, Object portableKey);
   
-  public void sendValues(ClientID clientID, ObjectID mapID, ManagedObject managedObject, Object portableKey);
+  public void sendValues(ObjectID mapID, ManagedObject managedObject);
   
 }

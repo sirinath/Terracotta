@@ -18,7 +18,6 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.net.protocol.tcm.TestTCMessage;
 import com.tc.object.dna.api.DNA;
-import com.tc.object.msg.ServerTCMapRequestMessage;
 import com.tc.object.msg.RequestManagedObjectMessage;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
@@ -533,10 +532,6 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
     public RequestManagedObjectMessage newRequestManagedObjectMessage(final NodeID nodeID) {
       this.newMessageQueue.put(this.message);
       return this.message;
-    }
-
-    public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
-      throw new ImplementMe();
     }
   }
 
