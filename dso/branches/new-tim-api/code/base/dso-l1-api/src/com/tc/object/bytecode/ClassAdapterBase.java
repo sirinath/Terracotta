@@ -94,13 +94,14 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
     return getTransparencyClassSpec().isRootInThisClass(fieldInfo);
   }
 
-  public ClassAdapterBase(ClassInfo classInfo, TransparencyClassSpec spec2, ClassVisitor delegate,
-                          ClassLoader caller, Portability p) {
+  public ClassAdapterBase(ClassInfo classInfo, TransparencyClassSpec spec2, ClassVisitor delegate, ClassLoader caller,
+                          Portability p) {
     super(delegate);
     this.portability = p;
     this.spec = new InstrumentationSpec(classInfo, spec2, caller);
   }
 
+  @Override
   public final void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     spec.initialize(version, access, name, signature, superName, interfaces, portability);
 
@@ -139,6 +140,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
     return (String[]) ifaces.toArray(interfaces);
   }
 
+  @Override
   public final FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     spec.handleSubclassOfLogicalClassWithFieldsIfNecessary(access, name);
     if (spec.needDelegateField()) {
@@ -158,6 +160,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
     return basicVisitField(access, name, desc, signature, value);
   }
 
+  @Override
   public final MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     spec.shouldProceedInstrumentation(access, name, desc);
 
@@ -193,6 +196,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
                spec.getSuperClassNameSlashes(), interfaces);
   }
 
+  @Override
   public final void visitEnd() {
     if (spec.isClassNotAdaptable()) {
       super.visitEnd();
@@ -342,7 +346,8 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
    */
   private void addRetrieveValuesMethod() {
     if (spec.isValuesGetterMethodNeeded()) {
-      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, VALUES_GETTER, VALUES_GETTER_DESCRIPTION, null, null);
+      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, VALUES_GETTER, VALUES_GETTER_DESCRIPTION, null,
+                                           null);
       if (!portability.isInstrumentationNotNeeded(spec.getSuperClassNameDots())
           && getTransparencyClassSpec().hasPhysicallyPortableSpecs(
                                                                    AsmClassInfo.getClassInfo(spec
@@ -373,7 +378,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
   private void addRetrieveManagedValueMethod() {
     if (spec.isManagedValuesGetterMethodNeeded()) {
       MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, MANAGED_VALUES_GETTER,
-                                     MANAGED_VALUES_GETTER_DESCRIPTION, null, null);
+                                           MANAGED_VALUES_GETTER_DESCRIPTION, null, null);
 
       for (Iterator i = fields.keySet().iterator(); i.hasNext();) {
         String fieldName = (String) i.next();
@@ -416,7 +421,8 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
    */
   private void addSetValueMethod() {
     if (spec.isValuesSetterMethodNeeded()) {
-      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, VALUES_SETTER, VALUES_SETTER_DESCRIPTION, null, null);
+      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, VALUES_SETTER, VALUES_SETTER_DESCRIPTION, null,
+                                           null);
       Label l1 = new Label();
       for (Iterator i = fields.keySet().iterator(); i.hasNext();) {
         String fieldName = (String) i.next();
@@ -464,8 +470,8 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
 
   private void addSetManagedValueMethod() {
     if (spec.isManagedValuesSetterMethodNeeded()) {
-      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, MANAGED_VALUES_SETTER, VALUES_SETTER_DESCRIPTION,
-                                     null, null);
+      MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, MANAGED_VALUES_SETTER,
+                                           VALUES_SETTER_DESCRIPTION, null, null);
 
       Label l1 = new Label();
       for (Iterator i = fields.keySet().iterator(); i.hasNext();) {
@@ -581,8 +587,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
   private static Collection getInterfaceMethodDescriptions(Class iface) {
     Set rv = new HashSet();
     Method[] methods = iface.getMethods();
-    for (int i = 0; i < methods.length; i++) {
-      Method method = methods[i];
+    for (Method method : methods) {
       rv.add(method.getName() + Type.getMethodDescriptor(method));
     }
 

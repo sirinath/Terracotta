@@ -30,5 +30,6 @@
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/slf4j-nop-1.5.8.jar"/>
 	<classpathentry exported="true" kind="lib" path="/dependencies/lib/trove-1.1-beta-5.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/tim-api"/>
 	<classpathentry exported="true" kind="lib" path="lib.tests.unit/tctest-xmlbeans-generated.jar"/>
 </classpath>

@@ -11,12 +11,17 @@ modules:
   - thirdparty-api:
       options:
         jdk: J2SE-1.5
+  - dso-cluster-api:
+      options:
+        jdk: J2SE-1.5
+        javadoc: true
   - tim-api:
       options:
         jdk: J2SE-1.5
       # XXX: Should be NO deps here!!!
       dependencies:
         - thirdparty-api
+        - dso-cluster-api
   - junit-formatter:
       options:
         jdk: J2SE-1.5
@@ -40,6 +45,7 @@ modules:
         jdk: J2SE-1.5
       dependencies:
         - common-api
+        - tim-api
   - aspectwerkz:
       options:
         jdk: J2SE-1.5
@@ -58,10 +64,7 @@ modules:
         - common
         - common-api
         - license-common
-  - dso-cluster-api:
-      options:
-        jdk: J2SE-1.5
-        javadoc: true
+        - tim-api
   - dso-l1-api:
       options:
         jdk: J2SE-1.5
@@ -97,6 +100,7 @@ modules:
         - license-common
         - dso-common
         - dso-statistics-api
+        - tim-api
   - management-api:
       options:
         jdk: J2SE-1.5
@@ -108,6 +112,7 @@ modules:
         - dso-common
         - dso-l1-api
         - dso-statistics-api
+        - tim-api
   - management:
       options:
         jdk: J2SE-1.5
@@ -133,6 +138,7 @@ modules:
         - dso-statistics-api
         - management-api
         - thirdparty-api
+        - tim-api
   - deploy-api:
       options:
         jdk: J2SE-1.5
@@ -151,6 +157,7 @@ modules:
         jdk: J2SE-1.5
         module: true
       dependencies:
+        - deploy-api
         - tim-api
   - excludes-config:
       options:
@@ -201,6 +208,7 @@ modules:
         - common-api
         - license-common 
         - dso-statistics-api
+        - tim-api
   - dso-statistics:
       options:
         jdk: J2SE-1.5
@@ -215,6 +223,7 @@ modules:
         - dso-statistics-api
         - management
         - management-api
+        - tim-api
   - dso-l1:
       options:
         jdk: J2SE-1.5
@@ -245,6 +254,7 @@ modules:
         - dso-common
         - dso-l1-api
         - thirdparty-api
+        - tim-api
   - dso-l2:
       options:
         jdk: J2SE-1.5
@@ -263,6 +273,7 @@ modules:
         - management-api
         - thirdparty
         - thirdparty-api
+        - tim-api
   - deploy:
       options:
         jdk: J2SE-1.5
@@ -343,6 +354,7 @@ modules:
         - common
         - common-api
         - license-common
+        - tim-api
   - legacy-test-tree:
       options:
         jdk: J2SE-1.5

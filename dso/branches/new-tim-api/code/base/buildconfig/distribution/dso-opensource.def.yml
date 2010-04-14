@@ -71,6 +71,7 @@ bundled_components:
             modules:
               - tim-api
               - thirdparty-api
+              - dso-cluster-api
         - test-api-api.version:
             # install in 'api-jars' folder so it can be deleted later
             install_directory: api-jars

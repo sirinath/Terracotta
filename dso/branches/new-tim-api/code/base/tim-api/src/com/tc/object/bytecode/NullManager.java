@@ -9,8 +9,7 @@ import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.event.DmiManager;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.LockID;
@@ -25,19 +24,17 @@ import com.tc.statistics.StatisticRetrievalAction;
 import java.lang.reflect.Field;
 
 import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 /**
  * Null implementation of the manager.
  */
-public final class NullManager implements Manager {
+public class NullManager implements Manager {
 
   public static final String                 CLASS                 = "com/tc/object/bytecode/NullManager";
   public static final String                 TYPE                  = "L" + CLASS + ";";
 
-  private static final Manager               INSTANCE              = new NullManager();
-
   private static final InstrumentationLogger instrumentationLogger = new NullInstrumentationLogger();
+  private static final Manager               INSTANCE              = new NullManager();
 
   /**
    * Get instance of the null manager
@@ -52,56 +49,55 @@ public final class NullManager implements Manager {
     //
   }
 
-  public final void init() {
+  public void init() {
     //
   }
 
-  public final void initForTests() {
+  public void initForTests() {
     //
   }
 
-  public final void stop() {
+  public void stop() {
     //
   }
 
-  public final Object lookupOrCreateRoot(final String name, final Object object) {
+  public Object lookupOrCreateRoot(String name, Object object) {
     throw new UnsupportedOperationException();
   }
 
-  public final Object lookupOrCreateRootNoDepth(final String name, final Object obj) {
+  public Object lookupOrCreateRootNoDepth(String name, Object obj) {
     throw new UnsupportedOperationException();
   }
 
-  public final Object createOrReplaceRoot(final String name, final Object object) {
+  public Object createOrReplaceRoot(String name, Object object) {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject lookupExistingOrNull(final Object obj) {
+  public TCObjectExternal lookupExistingOrNull(Object obj) {
     return null;
   }
 
-  public final void logicalInvoke(final Object object, final String methodName, final Object[] params) {
+  public void logicalInvoke(Object object, String methodName, Object[] params) {
     //
   }
 
-  public final boolean distributedMethodCall(final Object receiver, final String method, final Object[] params,
-                                             final boolean runOnAllNodes) {
+  public boolean distributedMethodCall(Object receiver, String method, Object[] params, boolean runOnAllNodes) {
     return true;
   }
 
-  public final void distributedMethodCallCommit() {
+  public void distributedMethodCallCommit() {
     //
   }
 
-  public final void checkWriteAccess(final Object context) {
+  public void checkWriteAccess(Object context) {
     //
   }
 
-  public final boolean isManaged(final Object object) {
+  public boolean isManaged(Object object) {
     return false;
   }
 
-  public final boolean isLiteralInstance(final Object object) {
+  public boolean isLiteralInstance(Object object) {
     return false;
   }
 
@@ -109,82 +105,77 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public final int calculateDsoHashCode(final Object object) {
+  public int calculateDsoHashCode(Object object) {
     return 0;
   }
 
-  public final boolean isLogical(final Object object) {
+  public boolean isLogical(Object object) {
     throw new UnsupportedOperationException();
   }
 
-  public final boolean isRoot(final Field field) {
+  public boolean isRoot(Field field) {
     return false;
   }
 
-  public final Object lookupRoot(final String name) {
+  public Object lookupRoot(String name) {
     throw new UnsupportedOperationException();
   }
 
-  public final boolean isLockHeldByCurrentThread(final String lockId, final int lockLevel) {
+  public boolean isLockHeldByCurrentThread(String lockId, int lockLevel) {
     return false;
   }
 
-  public final void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
-                                                 final Object[] params) {
+  public void logicalInvokeWithTransaction(Object object, Object lockObject, String methodName, Object[] params) {
     throw new UnsupportedOperationException();
   }
 
-  public final boolean isPhysicallyInstrumented(final Class clazz) {
+  public boolean isPhysicallyInstrumented(Class clazz) {
     return false;
   }
 
-  public final String getClientID() {
+  public String getClientID() {
     // XXX: even though this should *probably* throw UnsupportedOperationException, because some innocent tests use
     // ManagerUtil (e.g. ConfigPropertiesTest), it was decided to return "" from this method.
     return "";
   }
 
-  public final TCLogger getLogger(final String loggerName) {
+  public TCLogger getLogger(String loggerName) {
     return new NullTCLogger();
   }
 
-  public final SessionMonitor getHttpSessionMonitor() {
+  public SessionMonitor getHttpSessionMonitor() {
     throw new UnsupportedOperationException();
   }
 
-  public final TCObject lookupOrCreate(final Object obj) {
+  public TCObjectExternal lookupOrCreate(Object obj) {
     throw new UnsupportedOperationException();
   }
 
-  public final Object lookupObject(final ObjectID id) {
+  public Object lookupObject(ObjectID id) {
     throw new UnsupportedOperationException();
   }
 
-  public Object lookupObject(final ObjectID id, final ObjectID parentContext) {
+  public Object lookupObject(ObjectID id, ObjectID parentContext) {
     throw new UnsupportedOperationException();
   }
 
-  public final TCProperties getTCProperties() {
+  public TCProperties getTCProperties() {
     throw new UnsupportedOperationException();
   }
 
-  public final DmiManager getDmiManager() {
+  public int localHeldCount(Object obj, int lockLevel) {
     throw new UnsupportedOperationException();
   }
 
-  public final int localHeldCount(final Object obj, final int lockLevel) {
-    throw new UnsupportedOperationException();
-  }
-
-  public boolean isDsoMonitored(final Object obj) {
+  public boolean isDsoMonitored(Object obj) {
     return false;
   }
 
-  public boolean isDsoMonitorEntered(final Object obj) {
+  public boolean isDsoMonitorEntered(Object obj) {
     return false;
   }
 
-  public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
+  public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
     throw new UnsupportedOperationException();
   }
 
@@ -192,11 +183,11 @@ public final class NullManager implements Manager {
     return instrumentationLogger;
   }
 
-  public boolean overridesHashCode(final Object obj) {
+  public boolean overridesHashCode(Object obj) {
     throw new UnsupportedOperationException();
   }
 
-  public void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
+  public void registerNamedLoader(NamedClassLoader loader, String webAppName) {
     throw new UnsupportedOperationException();
   }
 
@@ -212,15 +203,15 @@ public final class NullManager implements Manager {
     return null;
   }
 
-  public void preFetchObject(final ObjectID id) {
+  public void preFetchObject(ObjectID id) {
     return;
   }
 
-  public StatisticRetrievalAction getStatisticRetrievalActionInstance(final String name) {
+  public StatisticRetrievalAction getStatisticRetrievalActionInstance(String name) {
     return null;
   }
 
-  public Object getChangeApplicator(final Class clazz) {
+  public Object getChangeApplicator(Class clazz) {
     return null;
   }
 
@@ -326,10 +317,6 @@ public final class NullManager implements Manager {
     //
   }
 
-  public void registerMBean(Object bean, ObjectName name) {
-    /**/
-  }
-
   public String getUUID() {
     return null;
   }
@@ -341,7 +328,7 @@ public final class NullManager implements Manager {
   public void waitForAllCurrentTransactionsToComplete() {
     throw new UnsupportedOperationException();
   }
-  
+
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
     throw new UnsupportedOperationException();
   }

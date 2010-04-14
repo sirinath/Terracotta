@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.bytecode;
 
@@ -58,6 +59,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
       this.classNameSlashes = classNameSlashes;
     }
 
+    @Override
     public void visitCode() {
       super.visitCode();
 
@@ -86,6 +88,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
       this.delegateFieldName = delegateFieldName;
     }
 
+    @Override
     public void visitCode() {
       super.visitCode();
       if (WRITE_OBJECT_SIGNATURE.equals(methodSignature)) {
@@ -101,9 +104,11 @@ public class LogicalClassSerializationAdapter implements Opcodes {
 
     public LogicalClassSerializationClassAdapter(ClassVisitor cv, String className) {
       super(cv);
-      this.classNameSlashes = className.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER, ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
+      this.classNameSlashes = className.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
+                                                ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       String methodDesc = name + desc;
       if (WRITE_OBJECT_SIGNATURE.equals(methodDesc) || READ_OBJECT_SIGNATURE.equals(methodDesc)) { //
@@ -114,6 +119,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
       return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
+    @Override
     public void visitEnd() {
       addCheckSerializationOverrideMethod(cv, false);
       super.visitEnd();

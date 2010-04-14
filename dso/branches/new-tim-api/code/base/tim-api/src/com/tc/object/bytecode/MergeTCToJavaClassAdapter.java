@@ -25,20 +25,20 @@ import java.util.Map;
 import java.util.Set;
 
 public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter implements Opcodes {
-  private static final String            TC_INIT          = ByteCodeUtil.TC_METHOD_PREFIX + "$$_init_$$";
+  private static final String                TC_INIT          = ByteCodeUtil.TC_METHOD_PREFIX + "$$_init_$$";
 
-  private final List                     jInnerClassNames = new ArrayList();
-  private final ClassNode                tcClassNode;
-  private final String                   jFullClassSlashes;
-  private final String                   tcFullClassSlashes;
-  private final Map                      instrumentedContext;
-  private final Set                      visitedMethods;
-  private final String                   methodPrefix;
-  private final boolean                  insertTCinit;
-  private String                         superName;
-  private final TransparencyClassAdapter dsoAdapter;
+  private final List                         jInnerClassNames = new ArrayList();
+  private final ClassNode                    tcClassNode;
+  private final String                       jFullClassSlashes;
+  private final String                       tcFullClassSlashes;
+  private final Map                          instrumentedContext;
+  private final Set                          visitedMethods;
+  private final String                       methodPrefix;
+  private final boolean                      insertTCinit;
+  private String                             superName;
+  private final TransparencyClassAdapterHack dsoAdapter;
 
-  public MergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapter dsoAdapter, String jFullClassDots,
+  public MergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapterHack dsoAdapter, String jFullClassDots,
                                    String tcFullClassDots, ClassNode tcClassNode, Map instrumentedContext,
                                    String methodPrefix, boolean insertTCinit) {
     super(cv);
@@ -103,12 +103,13 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     cstr.name = TC_INIT;
   }
 
-  public MergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapter dsoAdapter, String jFullClassDots,
+  public MergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapterHack dsoAdapter, String jFullClassDots,
                                    String tcFullClassDots, ClassNode tcClassNode, Map instrumentedContext) {
     this(cv, dsoAdapter, jFullClassDots, tcFullClassDots, tcClassNode, instrumentedContext,
          ByteCodeUtil.TC_METHOD_PREFIX, true);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superClassName, String[] interfaces) {
     this.superName = superClassName;
 
@@ -138,6 +139,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     return this.methodPrefix + methodName;
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     String methodDesc = name + desc;
     this.visitedMethods.add(methodDesc);
@@ -148,7 +150,8 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
           final String remappedName = getNewName(name);
           boolean remappedIsDefined = false;
           for (MethodNode remapped : (List<MethodNode>) tcClassNode.methods) {
-            if (0 == (remapped.access & ACC_ABSTRACT) && remapped.name.equals(remappedName) && remapped.desc.equals(desc)) {
+            if (0 == (remapped.access & ACC_ABSTRACT) && remapped.name.equals(remappedName)
+                && remapped.desc.equals(desc)) {
               remappedIsDefined = true;
               break;
             }
@@ -176,6 +179,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     return mv;
   }
 
+  @Override
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     List tcFields = tcClassNode.fields;
     for (Iterator i = tcFields.iterator(); i.hasNext();) {
@@ -198,6 +202,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     return super.visitField(access, name, desc, signature, value);
   }
 
+  @Override
   public void visitEnd() {
     addTCFields();
     addTCMethods();
@@ -249,19 +254,21 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
       super(cv);
     }
 
+    @Override
     public void visit(int version, int access, String name, String signature, String superClassName, String[] interfaces) {
       name = replaceClassName(name);
       superClassName = replaceClassName(superClassName);
       super.visit(version, access & ~ACC_ABSTRACT, name, signature, superClassName, interfaces);
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       desc = replaceClassName(desc);
       signature = replaceClassName(signature);
       if (dsoAdapter == null) {
         return new TCSuperMethodAdapter(super.visitMethod(access, name, desc, signature, exceptions));
       } else {
-        return new TCSuperMethodAdapter(dsoAdapter.basicVisitMethod(access, name, desc, signature, exceptions));
+        return new TCSuperMethodAdapter(dsoAdapter.basicVisitMethodHack(access, name, desc, signature, exceptions));
       }
     }
 
@@ -297,6 +304,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
         super(mv);
       }
 
+      @Override
       public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         int index = owner.indexOf(tcFullClassSlashes);
         if (opcode == INVOKESPECIAL && index == -1) {
@@ -317,12 +325,14 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
         }
       }
 
+      @Override
       public void visitFieldInsn(int opcode, String owner, String name, String desc) {
         owner = replaceClassName(owner);
         desc = replaceClassName(desc);
         super.visitFieldInsn(opcode, owner, name, desc);
       }
 
+      @Override
       public void visitTypeInsn(int opcode, String desc) {
         ChangeContext context = (ChangeContext) instrumentedContext.get(desc);
         if (context != null) {
@@ -344,10 +354,12 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
       this.target = mv;
     }
 
+    @Override
     protected void onMethodEnter() {
       target.instructions.clear();
     }
 
+    @Override
     protected void onMethodExit(int opcode) {
       //
     }
@@ -362,10 +374,12 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
       this.owner = owner;
     }
 
+    @Override
     protected void onMethodEnter() {
       //
     }
 
+    @Override
     protected void onMethodExit(int opcode) {
       if (RETURN == opcode) {
         super.visitVarInsn(ALOAD, 0);

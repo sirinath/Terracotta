@@ -1,10 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.properties;
 
-import com.tc.config.TcProperty;
-
+import java.util.Map;
 import java.util.Properties;
 
 public interface TCProperties {
@@ -14,7 +14,7 @@ public interface TCProperties {
   int getInt(String key, int defaultValue);
 
   long getLong(String key);
-  
+
   long getLong(String key, long defaultValue);
 
   boolean getBoolean(String key);
@@ -31,7 +31,7 @@ public interface TCProperties {
 
   Properties addAllPropertiesTo(Properties properties);
 
-  public void overwriteTcPropertiesFromConfig(TcProperty[] tcProperties);
-  
+  public void overwriteTcPropertiesFromConfig(Map<String, String> props);
+
   public void setProperty(String key, String value);
 }

@@ -4,11 +4,9 @@
  */
 package com.tc.object.bytecode.hook.impl;
 
-import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.net.NIOWorkarounds;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
@@ -575,11 +573,10 @@ public class ClassProcessorHelper {
   public static boolean isAWDependency(final String className) {
     return (className == null)
            || className.endsWith("_AWFactory")// TODO AVF refactor
-           || className.endsWith(TransformationConstants.JOIN_POINT_CLASS_SUFFIX)
-           || className.startsWith("com.tc.aspectwerkz.") || className.startsWith("com.tc.asm.")
-           || className.startsWith("com.tc.backport175.") || className.startsWith("com.tc.jrexx.")
-           || className.startsWith("org.dom4j.") || className.startsWith("org.xml.sax.")
-           || className.startsWith("javax.xml.parsers.")
+           || className.endsWith("___AW_JoinPoint") || className.startsWith("com.tc.aspectwerkz.")
+           || className.startsWith("com.tc.asm.") || className.startsWith("com.tc.backport175.")
+           || className.startsWith("com.tc.jrexx.") || className.startsWith("org.dom4j.")
+           || className.startsWith("org.xml.sax.") || className.startsWith("javax.xml.parsers.")
            || className.startsWith("sun.reflect.Generated"); // issue on J2SE 5 reflection - AW-245
   }
 
