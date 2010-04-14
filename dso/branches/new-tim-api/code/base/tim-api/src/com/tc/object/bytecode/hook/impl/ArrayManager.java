@@ -4,8 +4,7 @@
  */
 package com.tc.object.bytecode.hook.impl;
 
-import com.tc.object.TCObject;
-import com.tc.util.Assert;
+import com.tc.object.TCObjectExternal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,20 +12,20 @@ import java.util.WeakHashMap;
 
 /**
  * Global array manager. The basic purpose of this class to maintain the relationship to DSO managed arrays to their
- * respective TCObject
+ * respective TCObjectExternal
  */
 public class ArrayManager {
 
   // some day we might want to make this stuff externally configurable
-  private final static int        CACHE_DEPTH      = 2;
-  private final static int        NUM_MAPS         = 128;
-  private final static int        INITIAL_CAPACITY = 500;
-  private final static float      LOAD_FACTOR      = 0.75F;
+  private final static int                CACHE_DEPTH      = 2;
+  private final static int                NUM_MAPS         = 128;
+  private final static int                INITIAL_CAPACITY = 500;
+  private final static float              LOAD_FACTOR      = 0.75F;
 
-  private static final Map[]      maps             = new Map[NUM_MAPS];
-  private static final Map        primClasses      = new HashMap();
-  private static final Object[]   keys             = new Object[NUM_MAPS * CACHE_DEPTH];
-  private static final TCObject[] values           = new TCObject[NUM_MAPS * CACHE_DEPTH];
+  private static final Map[]              maps             = new Map[NUM_MAPS];
+  private static final Map                primClasses      = new HashMap();
+  private static final Object[]           keys             = new Object[NUM_MAPS * CACHE_DEPTH];
+  private static final TCObjectExternal[] values           = new TCObjectExternal[NUM_MAPS * CACHE_DEPTH];
 
   static {
     for (int i = 0; i < maps.length; i++) {
@@ -42,10 +41,10 @@ public class ArrayManager {
    * Register an array with its TCO. It is an error to register an array that has already been registered.
    * 
    * @param array Array
-   * @param tco TCObject
+   * @param tco TCObjectExternal
    * @throws NullPointerException if array or tco are null
    */
-  public static void register(Object array, TCObject tco) {
+  public static void register(Object array, TCObjectExternal tco) {
     if ((array == null) || (tco == null)) { throw new NullPointerException(); }
 
     final int index = hash(array) % NUM_MAPS;
@@ -71,9 +70,9 @@ public class ArrayManager {
    * Get the TCO for an array
    * 
    * @param array The array instance
-   * @return The TCObject
+   * @return The TCObjectExternal
    */
-  public static TCObject getObject(Object array) {
+  public static TCObjectExternal getObject(Object array) {
     if (array == null) { throw new NullPointerException(); }
 
     final int hash = hash(array);
@@ -88,7 +87,7 @@ public class ArrayManager {
       }
 
       int evict = start + (hash % CACHE_DEPTH);
-      TCObject rv = (TCObject) map.get(array);
+      TCObjectExternal rv = (TCObjectExternal) map.get(array);
       keys[evict] = array;
       values[evict] = rv;
       return rv;
@@ -96,12 +95,12 @@ public class ArrayManager {
   }
 
   /**
-   * Get TCObject for a cloned array
+   * Get TCObjectExternal for a cloned array
    * 
    * @param array Array
-   * @return TCObject
+   * @return TCObjectExternal
    */
-  public static TCObject getCloneObject(Object array) {
+  public static TCObjectExternal getCloneObject(Object array) {
     return getObject(array);
   }
 
@@ -127,7 +126,7 @@ public class ArrayManager {
     if (array instanceof double[]) return new Double(((double[]) array)[index]);
 
     if (array instanceof Object[]) {
-      TCObject tco = getObject(array);
+      TCObjectExternal tco = getObject(array);
       if (tco != null) {
         synchronized (tco.getResolveLock()) {
           tco.resolveArrayReference(index);
@@ -152,7 +151,7 @@ public class ArrayManager {
   public static void objectArrayChanged(Object[] array, int index, Object value) {
     readObjectArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.objectFieldChanged(array.getClass().getName(), null, value, index);
     }
@@ -173,7 +172,7 @@ public class ArrayManager {
   public static void shortArrayChanged(short[] array, int index, short value) {
     readShortArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.shortFieldChanged(null, null, value, index);
     }
@@ -194,7 +193,7 @@ public class ArrayManager {
   public static void longArrayChanged(long[] array, int index, long value) {
     readLongArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.longFieldChanged(null, null, value, index);
     }
@@ -215,7 +214,7 @@ public class ArrayManager {
   public static void intArrayChanged(int[] array, int index, int value) {
     readIntArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.intFieldChanged(null, null, value, index);
     }
@@ -236,7 +235,7 @@ public class ArrayManager {
   public static void floatArrayChanged(float[] array, int index, float value) {
     readFloatArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.floatFieldChanged(null, null, value, index);
     }
@@ -257,7 +256,7 @@ public class ArrayManager {
   public static void doubleArrayChanged(double[] array, int index, double value) {
     readDoubleArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.doubleFieldChanged(null, null, value, index);
     }
@@ -278,7 +277,7 @@ public class ArrayManager {
   public static void charArrayChanged(char[] array, int index, char value) {
     readCharArray(array, index); // do array operation first (fail fast, NPE and array index out of bounds)
 
-    TCObject tco = getObject(array);
+    TCObjectExternal tco = getObject(array);
     if (tco != null) {
       tco.charFieldChanged(null, null, value, index);
     }
@@ -309,7 +308,7 @@ public class ArrayManager {
 
       boolean booleanValue = value == 1;
 
-      TCObject tco = getObject(array);
+      TCObjectExternal tco = getObject(array);
       if (tco != null) {
         tco.booleanFieldChanged(null, null, booleanValue, index);
       }
@@ -320,7 +319,7 @@ public class ArrayManager {
       // do array operation first (fail fast, NPE and array index out of bounds)
       readByteArray(index, byteArray);
 
-      TCObject tco = getObject(array);
+      TCObjectExternal tco = getObject(array);
       if (tco != null) {
         tco.byteFieldChanged(null, null, value, index);
       }
@@ -351,7 +350,7 @@ public class ArrayManager {
     // preserve behavior of System.arraycopy()
     if ((src == null) || (dest == null)) { throw new NullPointerException(); }
 
-    TCObject tcDest = getObject(dest);
+    TCObjectExternal tcDest = getObject(dest);
     Class destType = dest.getClass().getComponentType();
     if (destType == null) { throw new ArrayStoreException(); }
 
@@ -365,7 +364,7 @@ public class ArrayManager {
     }
 
     // avoid this lookup if we returned above
-    TCObject tcSrc = getObject(src);
+    TCObjectExternal tcSrc = getObject(src);
 
     if ((tcDest != null) || (tcSrc != null)) {
 
@@ -410,7 +409,7 @@ public class ArrayManager {
             shortArrayCopy((short[]) src, srcPos, (short[]) dest, destPos, length, tcDest);
             break;
           default:
-            throw Assert.failure("unexpected type code: " + destCode);
+            throw new AssertionError("unexpected type code: " + destCode);
         }
       } else {
         if (isSrcPrimitive) { throw new ArrayStoreException(); }
@@ -476,7 +475,7 @@ public class ArrayManager {
   }
 
   private static void booleanArrayCopy(boolean[] src, int srcPos, boolean[] dest, int destPos, int length,
-                                       TCObject tcDest) {
+                                       TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -488,7 +487,8 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void byteArrayCopy(byte[] src, int srcPos, byte[] dest, int destPos, int length, TCObject tcDest) {
+  private static void byteArrayCopy(byte[] src, int srcPos, byte[] dest, int destPos, int length,
+                                    TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -508,9 +508,9 @@ public class ArrayManager {
    * @param dest Destination array
    * @param destPos Start in dest
    * @param length Number of items to copy
-   * @param tcDest TCObject for dest array
+   * @param tcDest TCObjectExternal for dest array
    */
-  public static void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length, TCObject tcDest) {
+  public static void charArrayCopy(char[] src, int srcPos, char[] dest, int destPos, int length, TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -522,7 +522,8 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void doubleArrayCopy(double[] src, int srcPos, double[] dest, int destPos, int length, TCObject tcDest) {
+  private static void doubleArrayCopy(double[] src, int srcPos, double[] dest, int destPos, int length,
+                                      TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -534,7 +535,8 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void floatArrayCopy(float[] src, int srcPos, float[] dest, int destPos, int length, TCObject tcDest) {
+  private static void floatArrayCopy(float[] src, int srcPos, float[] dest, int destPos, int length,
+                                     TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -546,7 +548,7 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void intArrayCopy(int[] src, int srcPos, int[] dest, int destPos, int length, TCObject tcDest) {
+  private static void intArrayCopy(int[] src, int srcPos, int[] dest, int destPos, int length, TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -558,7 +560,8 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void longArrayCopy(long[] src, int srcPos, long[] dest, int destPos, int length, TCObject tcDest) {
+  private static void longArrayCopy(long[] src, int srcPos, long[] dest, int destPos, int length,
+                                    TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 
@@ -570,7 +573,8 @@ public class ArrayManager {
     System.arraycopy(l2subset, 0, dest, destPos, length);
   }
 
-  private static void shortArrayCopy(short[] src, int srcPos, short[] dest, int destPos, int length, TCObject tcDest) {
+  private static void shortArrayCopy(short[] src, int srcPos, short[] dest, int destPos, int length,
+                                     TCObjectExternal tcDest) {
     if ((srcPos < 0) || (destPos < 0) || (length < 0) || (srcPos + length > src.length)
         || (destPos + length > dest.length)) throw new ArrayIndexOutOfBoundsException();
 

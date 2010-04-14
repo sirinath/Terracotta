@@ -10,7 +10,7 @@ import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.loaders.NamedClassLoader;
@@ -168,8 +168,8 @@ public class ManagerUtil {
    * @param type Lock level
    */
   public static void beginVolatile(final Object pojo, final long fieldOffset, final int type) {
-    TCObject tcObject = lookupExistingOrNull(pojo);
-    beginVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset), type);
+    TCObjectExternal TCObjectExternal = lookupExistingOrNull(pojo);
+    beginVolatile(TCObjectExternal, TCObjectExternal.getFieldNameByOffset(fieldOffset), type);
   }
 
   /**
@@ -179,20 +179,20 @@ public class ManagerUtil {
    * @param fieldOffset Field offset in pojo
    */
   public static void commitVolatile(final Object pojo, final long fieldOffset, final int type) {
-    TCObject tcObject = lookupExistingOrNull(pojo);
-    commitVolatile(tcObject, tcObject.getFieldNameByOffset(fieldOffset), type);
+    TCObjectExternal TCObjectExternal = lookupExistingOrNull(pojo);
+    commitVolatile(TCObjectExternal, TCObjectExternal.getFieldNameByOffset(fieldOffset), type);
   }
 
   /**
    * Begin volatile lock
    * 
-   * @param tcObject TCObject to lock
+   * @param TCObjectExternal TCObjectExternal to lock
    * @param fieldName Field name holding volatile object
    * @param type Lock type
    */
-  public static void beginVolatile(final TCObject tcObject, final String fieldName, final int type) {
+  public static void beginVolatile(final TCObjectExternal TCObjectExternal, final String fieldName, final int type) {
     Manager mgr = getManager();
-    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
+    LockID lock = mgr.generateLockIdentifier(TCObjectExternal, fieldName);
     mgr.lock(lock, LockLevel.fromInt(type));
   }
 
@@ -259,12 +259,12 @@ public class ManagerUtil {
   /**
    * Commit volatile lock
    * 
-   * @param tcObject Volatile object TCObject
+   * @param TCObjectExternal Volatile object TCObjectExternal
    * @param fieldName Field holding the volatile object
    */
-  public static void commitVolatile(final TCObject tcObject, final String fieldName, final int type) {
+  public static void commitVolatile(final TCObjectExternal TCObjectExternal, final String fieldName, final int type) {
     Manager mgr = getManager();
-    LockID lock = mgr.generateLockIdentifier(tcObject, fieldName);
+    LockID lock = mgr.generateLockIdentifier(TCObjectExternal, fieldName);
     mgr.unlock(lock, LockLevel.fromInt(type));
   }
 
@@ -295,9 +295,9 @@ public class ManagerUtil {
    * Find managed object, which may be null
    * 
    * @param pojo The object instance
-   * @return The TCObject
+   * @return The TCObjectExternal
    */
-  public static TCObject lookupExistingOrNull(final Object pojo) {
+  public static TCObjectExternal lookupExistingOrNull(final Object pojo) {
     return getManager().lookupExistingOrNull(pojo);
   }
 
@@ -407,12 +407,12 @@ public class ManagerUtil {
   }
 
   /**
-   * Find or create new TCObject
+   * Find or create new TCObjectExternal
    * 
    * @param obj The object instance
-   * @return The TCObject
+   * @return The TCObjectExternal
    */
-  public static TCObject lookupOrCreate(final Object obj) {
+  public static TCObjectExternal lookupOrCreate(final Object obj) {
     return getManager().lookupOrCreate(obj);
   }
 
@@ -1078,9 +1078,9 @@ public class ManagerUtil {
    * Get the TCO for an array
    * 
    * @param array The array instance
-   * @return The TCObject
+   * @return The TCObjectExternal
    */
-  public static TCObject getObject(final Object array) {
+  public static TCObjectExternal getObject(final Object array) {
     return ArrayManager.getObject(array);
   }
 
@@ -1092,10 +1092,10 @@ public class ManagerUtil {
    * @param dest Destination array
    * @param destPos Start in dest
    * @param length Number of items to copy
-   * @param tco TCObject for dest array
+   * @param tco TCObjectExternal for dest array
    */
   public static void charArrayCopy(final char[] src, final int srcPos, final char[] dest, final int destPos,
-                                   final int length, final TCObject tco) {
+                                   final int length, final TCObjectExternal tco) {
     ArrayManager.charArrayCopy(src, srcPos, dest, destPos, length, tco);
   }
 
@@ -1103,10 +1103,10 @@ public class ManagerUtil {
    * Register an array with its TCO. It is an error to register an array that has already been registered.
    * 
    * @param array Array
-   * @param obj TCObject
+   * @param obj TCObjectExternal
    * @throws NullPointerException if array or tco are null
    */
-  public static void register(final Object array, final TCObject obj) {
+  public static void register(final Object array, final TCObjectExternal obj) {
     ArrayManager.register(array, obj);
   }
 
@@ -1157,12 +1157,13 @@ public class ManagerUtil {
   public static void registerNamedLoader(final NamedClassLoader loader, final String webAppName) {
     getManager().registerNamedLoader(loader, webAppName);
   }
+
   //
   // public static void registerMBean(Object bean, ObjectName name) throws InstanceAlreadyExistsException,
   // MBeanRegistrationException, NotCompliantMBeanException {
   // getManager().registerMBean(bean, name);
   // }
-  
+
   public static void waitForAllCurrentTransactionsToComplete() {
     getManager().waitForAllCurrentTransactionsToComplete();
   }

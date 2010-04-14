@@ -63,6 +63,7 @@ import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
 import com.tc.object.bytecode.AccessibleObjectAdapter;
@@ -76,6 +77,7 @@ import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Clearable;
+import com.tc.object.bytecode.CloneUtil;
 import com.tc.object.bytecode.CopyOnWriteArrayListAdapter;
 import com.tc.object.bytecode.DataOutputStreamAdapter;
 import com.tc.object.bytecode.DuplicateMethodAdapter;
@@ -500,6 +502,8 @@ public class BootJarTool {
       loadTerracottaClass(SessionConfiguration.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
+      loadTerracottaClass(TCObjectExternal.class.getName());
+      loadTerracottaClass(CloneUtil.class.getName());
       loadTerracottaClass(ToggleableStrongReference.class.getName());
       loadTerracottaClass(TCClass.class.getName());
       loadTerracottaClass(TCField.class.getName());
@@ -599,6 +603,7 @@ public class BootJarTool {
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
     } catch (Throwable e) {
+      e.printStackTrace();
       exit(this.bootJarHandler.getCreationErrorMessage(), e);
     }
 

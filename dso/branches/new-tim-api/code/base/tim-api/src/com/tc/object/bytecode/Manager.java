@@ -5,12 +5,10 @@
 package com.tc.object.bytecode;
 
 import com.tc.cluster.DsoCluster;
-import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.event.DmiManager;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.locks.LockID;
@@ -122,15 +120,15 @@ public interface Manager extends TerracottaLocking {
    * @param obj The object instance
    * @return The TCObject
    */
-  public TCObject lookupExistingOrNull(Object obj);
+  public TCObjectExternal lookupExistingOrNull(Object obj);
 
   /**
-   * Find or create new TCObject
+   * Find or create new TCObjectExternal
    * 
    * @param obj The object instance
-   * @return The TCObject
+   * @return The TCObjectExternal
    */
-  public TCObject lookupOrCreate(Object obj);
+  public TCObjectExternal lookupOrCreate(Object obj);
 
   /**
    * Perform invoke on logical managed object
@@ -288,11 +286,6 @@ public interface Manager extends TerracottaLocking {
   public TCProperties getTCProperties();
 
   /**
-   * @return DMI manager
-   */
-  public DmiManager getDmiManager();
-
-  /**
    * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
    * 
    * @param pojo Object
@@ -361,16 +354,15 @@ public interface Manager extends TerracottaLocking {
    * @return null if the given app is not configured for clustering
    */
   public SessionConfiguration getSessionConfiguration(String appName);
-  
+
   /**
-   * Used by BulkLoad to wait for all current transactions completed 
-   * 
+   * Used by BulkLoad to wait for all current transactions completed
    */
   public void waitForAllCurrentTransactionsToComplete();
-  
+
   /**
    * Registers a hook that will be called before shutting down this client
    */
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook);
-  
+
 }
