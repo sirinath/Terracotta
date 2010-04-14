@@ -25,7 +25,6 @@ import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedOb
 import com.tc.util.ObjectIDSet;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,32 +68,34 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
                                                                                                                  .getClassName()); }
 
     final ConcurrentDistributedServerMapManagedObjectState csmState = (ConcurrentDistributedServerMapManagedObjectState) state;
-
-    List<RequestEntryForKeyContext> requestList = requestCache.remove(mapID);
     try {
-      for (RequestEntryForKeyContext request : requestList) {
+      List<RequestEntryForKeyContext> requestList = requestCache.remove(mapID);
 
-        Object portableKey = request.getPortableKey();
-        ClientID clientID = request.getClientID();
-        final Object portableValue = csmState.getValueForKey(portableKey);
-        // System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
-        // + portableValue);
+      if (requestList != null) {
+        for (RequestEntryForKeyContext request : requestList) {
 
-        preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
+          Object portableKey = request.getPortableKey();
+          ClientID clientID = request.getClientID();
+          final Object portableValue = csmState.getValueForKey(portableKey);
+          // System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
+          // + portableValue);
 
-        MessageChannel channel;
-        try {
-          channel = this.channelManager.getActiveChannel(clientID);
-        } catch (final NoSuchChannelException e) {
-          logger.warn("Client " + clientID + " disconnect before sending Entry for mapID : " + mapID + " key : "
-                      + portableKey);
-          return;
+          preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
+
+          MessageChannel channel;
+          try {
+            channel = this.channelManager.getActiveChannel(clientID);
+          } catch (final NoSuchChannelException e) {
+            logger.warn("Client " + clientID + " disconnect before sending Entry for mapID : " + mapID + " key : "
+                        + portableKey);
+            continue;
+          }
+
+          final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
+              .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+          responseMessage.initialize(mapID, portableKey, portableValue);
+          responseMessage.send();
         }
-
-        final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
-            .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
-        responseMessage.initialize(mapID, portableKey, portableValue);
-        responseMessage.send();
       }
     } finally {
       this.objectManager.releaseReadOnly(managedObject);
@@ -135,7 +136,7 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     }
 
     public synchronized List<RequestEntryForKeyContext> remove(ObjectID mapID) {
-      return Collections.unmodifiableList(serverMapRequestMap.remove(mapID));
+      return serverMapRequestMap.remove(mapID);
     }
   }
 
