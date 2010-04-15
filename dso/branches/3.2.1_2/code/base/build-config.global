@@ -49,5 +49,5 @@ maven.snapshot=true
 #   - 3rd - major or minor Terracotta release without breaking change
 api.version=1.2.1
 
-kit.version=1
+kit.version=2
 
