@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -88,6 +89,11 @@ final class KnopflerfishOSGi extends AbstractEmbeddedOSGiRuntime {
     if (logger.isDebugEnabled()) {
       info(Message.STARTING_BUNDLE, new Object[] { bundle.getSymbolicName() });
     }
+
+    // create a logger for this Bundle
+    registerService(bundle.getSymbolicName() + ".logger", TCLogging.getLogger("com.tc.bundles."
+                                                                              + bundle.getSymbolicName()),
+                    new Hashtable());
 
     framework.startBundle(bundle.getBundleId());
     if ((bundle.getState() & Bundle.ACTIVE) != bundle.getState()) {

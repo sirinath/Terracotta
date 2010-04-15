@@ -9,7 +9,7 @@ import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.Attribute;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
-import com.tc.aspectwerkz.transform.inlining.AsmNullAdapter.NullMethodAdapter;
+import com.tc.asm.commons.EmptyVisitor;
 
 /**
  * A method adapter that replaces the contents of the method. When visitCode() is called, it executes visitNewBody(),
@@ -72,7 +72,7 @@ public abstract class ReplaceMethodAdapter implements MethodVisitor {
 
   public void visitEnd() {
     mv.visitEnd();
-    mv = NullMethodAdapter.NULL_METHOD_ADAPTER;
+    mv = new EmptyVisitor();
   }
 
   public void visitFieldInsn(int opcode, String owner, String name, String desc) {

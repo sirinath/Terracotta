@@ -48,4 +48,6 @@ public interface TCObjectExternal {
 
   int clearReferences(int size);
 
+  void disableAutoLocking();
+
 }
