@@ -17,7 +17,7 @@ import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
+import com.tc.object.bytecode.ManagerUtil;
 
 import java.util.Map;
 
@@ -85,7 +85,7 @@ public abstract class LockingClassAdapter extends ClassAdapter implements Opcode
                    + getOwnerTypeDots()
                    + ": resulting code may not be threadsafe. "
                    + "Check that the version of the library that contains this class matches the version expected by the TIM.";
-      TCLogger log = TCLogging.getLogger("com.tc.object.bytecode.rwsync.LockingClassAdapter");
+      TCLogger log = ManagerUtil.getLogger("com.tc.object.bytecode.rwsync.LockingClassAdapter");
       log.warn(msg);
       strategy = NOLOCK_STRATEGY;
     }

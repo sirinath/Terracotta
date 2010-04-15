@@ -11,6 +11,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
 
 import com.tc.bundles.BundleSpecUtil;
+import com.tc.logging.TCLogger;
 import com.tc.object.config.ClassReplacementTest;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.StandardDSOClientConfigHelper;
@@ -22,10 +23,11 @@ import java.net.URL;
 public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected StandardDSOClientConfigHelper configHelper;
+  private TCLogger                        logger;
   private Bundle                          thisBundle;
 
   protected ServiceReference getConfigHelperReference(final BundleContext context) throws Exception {
-    final String CONFIGHELPER_CLASS_NAME = "com.tc.object.config.StandardDSOClientConfigHelper";
+    final String CONFIGHELPER_CLASS_NAME = StandardDSOClientConfigHelper.class.getName();
     final ServiceReference configHelperRef = context.getServiceReference(CONFIGHELPER_CLASS_NAME);
     if (configHelperRef == null) { throw new BundleException("Expected the " + CONFIGHELPER_CLASS_NAME
                                                              + " service to be registered, was unable to find it"); }
@@ -34,6 +36,10 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   public final void start(final BundleContext context) throws Exception {
     thisBundle = context.getBundle();
+
+    logger = (TCLogger) context.getService(context.getServiceReference(thisBundle.getSymbolicName() + ".logger"));
+    if (logger == null) { throw new BundleException("missing logger reference for " + thisBundle.getSymbolicName()); }
+
     final ServiceReference configHelperRef = getConfigHelperReference(context);
     configHelper = (StandardDSOClientConfigHelper) context.getService(configHelperRef);
     if (configHelper == null) { throw new AssertionError("configHelper is null"); }
@@ -48,6 +54,10 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected Bundle getThisBundle() {
     return thisBundle;
+  }
+
+  protected TCLogger getLogger() {
+    return logger;
   }
 
   public void stop(final BundleContext context) throws Exception {
