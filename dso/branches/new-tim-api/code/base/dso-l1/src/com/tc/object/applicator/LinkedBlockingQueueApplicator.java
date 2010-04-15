@@ -7,10 +7,9 @@ package com.tc.object.applicator;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.dna.api.DNA;
@@ -105,7 +104,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
     LinkedBlockingQueue queue = (LinkedBlockingQueue) po;
     DNACursor cursor = dna.getCursor();
@@ -139,9 +138,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         Object value = physicalAction.getObject();
 
         if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + TAKE_LOCK_FIELD_NAME)) {
-          takeLock = objectManager.lookupObject((ObjectID) value);
+          takeLock = objectLookup.lookupObject((ObjectID) value);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + PUT_LOCK_FIELD_NAME)) {
-          putLock = objectManager.lookupObject((ObjectID) value);
+          putLock = objectLookup.lookupObject((ObjectID) value);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + CAPACITY_FIELD_NAME)) {
           capacity = value;
         }
@@ -230,39 +229,39 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-    dehydrateFields(objectManager, tcObject, writer, pojo);
-    dehydrateMembers(objectManager, tcObject, writer, pojo);
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    dehydrateFields(objectLookup, tcObject, writer, pojo);
+    dehydrateMembers(objectLookup, tcObject, writer, pojo);
   }
 
-  private void dehydrateFields(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  private void dehydrateFields(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     try {
       Object takeLock = TAKE_LOCK_FIELD.get(pojo);
-      takeLock = getDehydratableObject(takeLock, objectManager);
+      takeLock = getDehydratableObject(takeLock, objectLookup);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + TAKE_LOCK_FIELD_NAME, takeLock);
 
       Object putLock = PUT_LOCK_FIELD.get(pojo);
-      putLock = getDehydratableObject(putLock, objectManager);
+      putLock = getDehydratableObject(putLock, objectLookup);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + PUT_LOCK_FIELD_NAME, putLock);
 
       Object capacity = CAPACITY_FIELD.get(pojo);
-      capacity = getDehydratableObject(capacity, objectManager);
+      capacity = getDehydratableObject(capacity, objectLookup);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + CAPACITY_FIELD_NAME, capacity);
     } catch (IllegalAccessException e) {
       throw new TCRuntimeException(e);
     }
   }
 
-  private void dehydrateMembers(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  private void dehydrateMembers(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     Queue queue = (Queue) pojo;
 
     for (Iterator i = queue.iterator(); i.hasNext();) {
       Object value = i.next();
       if (!(value instanceof ObjectID)) {
-        if (!objectManager.isPortableInstance(value)) {
+        if (!objectLookup.isPortableInstance(value)) {
           continue;
         }
-        value = getDehydratableObject(value, objectManager);
+        value = getDehydratableObject(value, objectLookup);
       }
       if (value == null) {
         continue;
@@ -271,7 +270,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

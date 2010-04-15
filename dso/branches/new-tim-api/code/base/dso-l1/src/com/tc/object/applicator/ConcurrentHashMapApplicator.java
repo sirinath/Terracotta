@@ -5,9 +5,8 @@
 package com.tc.object.applicator;
 
 import com.tc.exception.TCRuntimeException;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -81,7 +80,7 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
     Object[] segments = null;
     DNACursor cursor = dna.getCursor();
@@ -92,7 +91,7 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
         LogicalAction logicalAction = cursor.getLogicalAction();
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
-        apply(objectManager, po, method, params);
+        apply(objectLookup, po, method, params);
       } else if (action instanceof PhysicalAction) {
         // Physical fields are shared only when the DNA is not a delta.
         Assert.assertFalse(dna.isDelta());
@@ -100,7 +99,7 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
         PhysicalAction physicalAction = cursor.getPhysicalAction();
         if (physicalAction.isEntireArray()) {
           segments = (Object[]) physicalAction.getObject();
-          segments = resolveReferences(objectManager, segments);
+          segments = resolveReferences(objectLookup, segments);
           setSegmentField(segments, po);
         } else {
           Assert.assertTrue(physicalAction.isTruePhysical());
@@ -122,12 +121,12 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
     }
   }
 
-  private Object[] resolveReferences(ClientObjectManager objectManager, Object[] sids) throws ClassNotFoundException {
-    Object segment = objectManager.lookupObject((ObjectID) sids[0]);
+  private Object[] resolveReferences(ObjectLookup objectLookup, Object[] sids) throws ClassNotFoundException {
+    Object segment = objectLookup.lookupObject((ObjectID) sids[0]);
     Object[] segments = (Object[]) Array.newInstance(segment.getClass(), sids.length);
     segments[0] = segment;
     for (int i = 1; i < sids.length; i++) {
-      segments[i] = objectManager.lookupObject((ObjectID) sids[i]);
+      segments[i] = objectLookup.lookupObject((ObjectID) sids[i]);
     }
     return segments;
   }
@@ -141,26 +140,26 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-    dehydrateFields(objectManager, tcObject, writer, pojo);
-    super.dehydrate(objectManager, tcObject, writer, pojo);
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    dehydrateFields(objectLookup, tcObject, writer, pojo);
+    super.dehydrate(objectLookup, tcObject, writer, pojo);
   }
 
-  private void dehydrateFields(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  private void dehydrateFields(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     try {
       Object segmentMask = SEGMENT_MASK_FIELD.get(pojo);
-      segmentMask = getDehydratableObject(segmentMask, objectManager);
+      segmentMask = getDehydratableObject(segmentMask, objectLookup);
       writer.addPhysicalAction(SEGMENT_MASK_FIELD_NAME, segmentMask);
 
       Object segmentShift = SEGMENT_SHIFT_FIELD.get(pojo);
-      segmentShift = getDehydratableObject(segmentShift, objectManager);
+      segmentShift = getDehydratableObject(segmentShift, objectLookup);
       writer.addPhysicalAction(SEGMENT_SHIFT_FIELD_NAME, segmentShift);
 
       // XXX::FIXME It is weird that we dont just make this array physically shared, historical reasons
       Object[] segments = (Object[]) SEGMENT_FIELD.get(pojo);
       Object[] segmentIDs = new Object[segments.length];
       for (int i = 0; i < segments.length; i++) {
-        segmentIDs[i] = getDehydratableObject(segments[i], objectManager);
+        segmentIDs[i] = getDehydratableObject(segments[i], objectLookup);
       }
       writer.addEntireArray(segmentIDs);
     } catch (IllegalAccessException e) {

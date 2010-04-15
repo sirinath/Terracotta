@@ -1,11 +1,11 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.applicator;
 
-import com.tc.object.ClientObjectManager;
 import com.tc.object.SerializationUtil;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
@@ -40,7 +40,7 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object pojo) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
       ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     while (cursor.next(encoding)) {
@@ -53,7 +53,7 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
         LogicalAction logicalAction = (LogicalAction) action;
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
-        apply(objectManager, pojo, method, params);
+        apply(objectLookup, pojo, method, params);
       }
     }
   }
@@ -67,13 +67,14 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  protected void apply(ClientObjectManager objectManager, Object pojo, int method, Object[] params) throws ClassNotFoundException {
+  protected void apply(ObjectLookup objectLookup, Object pojo, int method, Object[] params)
+      throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.GET:
         ((LinkedHashMap) pojo).get(params[0]);
         break;
       default:
-        super.apply(objectManager, pojo, method, params);
+        super.apply(objectLookup, pojo, method, params);
     }
   }
 
@@ -86,13 +87,13 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     writer.addPhysicalAction(ACCESS_ORDER_FIELDNAME, Boolean.valueOf(getAccessOrder(pojo)));
-    super.dehydrate(objectManager, tcObject, writer, pojo);
+    super.dehydrate(objectLookup, tcObject, writer, pojo);
   }
 
   @Override
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     if (!cursor.next(encoding)) { throw new AssertionError(
                                                            "Cursor is empty in LinkedHashMapApplicator.getNewInstance()"); }

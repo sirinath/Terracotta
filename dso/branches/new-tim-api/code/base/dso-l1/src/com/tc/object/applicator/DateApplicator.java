@@ -4,9 +4,8 @@
  */
 package com.tc.object.applicator;
 
-import com.tc.object.ClientObjectManager;
 import com.tc.object.SerializationUtil;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -28,8 +27,8 @@ public class DateApplicator extends BaseApplicator {
     super(encoding);
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal TCObjectExternal, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException {
     Date date = (Date) pojo;
     DNACursor cursor = dna.getCursor();
 
@@ -54,7 +53,7 @@ public class DateApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     Date date = (Date) pojo;
     writer.addLogicalAction(SerializationUtil.SET_TIME, new Object[] { new Long(date.getTime()) });
   }
@@ -64,7 +63,7 @@ public class DateApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

@@ -6,10 +6,9 @@ package com.tc.object.applicator;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -39,7 +38,7 @@ public class ListApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
     List list = (List) po;
     DNACursor cursor = dna.getCursor();
@@ -52,7 +51,7 @@ public class ListApplicator extends BaseApplicator {
       for (int i = 0, n = params.length; i < n; i++) {
         Object param = params[i];
         if (param instanceof ObjectID) {
-          params[i] = objectManager.lookupObject((ObjectID) param);
+          params[i] = objectLookup.lookupObject((ObjectID) param);
         }
       }
 
@@ -149,16 +148,16 @@ public class ListApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     List list = (List) pojo;
 
     for (int i = 0; i < list.size(); i++) {
       Object value = list.get(i);
-      if (!objectManager.isPortableInstance(value)) {
+      if (!objectLookup.isPortableInstance(value)) {
         continue;
       }
 
-      final Object addValue = getDehydratableObject(value, objectManager);
+      final Object addValue = getDehydratableObject(value, objectLookup);
       if (addValue == null) {
         continue;
       }
@@ -166,7 +165,7 @@ public class ListApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

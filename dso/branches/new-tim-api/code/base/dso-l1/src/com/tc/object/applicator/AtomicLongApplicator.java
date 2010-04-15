@@ -4,8 +4,7 @@
  */
 package com.tc.object.applicator;
 
-import com.tc.object.ClientObjectManager;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.AtomicLongAdapter;
 import com.tc.object.dna.api.DNA;
@@ -33,7 +32,7 @@ public class AtomicLongApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
       IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
@@ -47,14 +46,14 @@ public class AtomicLongApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     AtomicLong ai = (AtomicLong) pojo;
     long value = ai.get();
 
     writer.addPhysicalAction(AtomicLongAdapter.VALUE_FIELD_NAME, Long.valueOf(value));
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
     throw new UnsupportedOperationException();
   }
 
