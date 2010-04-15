@@ -50,4 +50,12 @@ public interface TCObjectExternal {
 
   void disableAutoLocking();
 
+  void setArrayReference(int index, ObjectID value);
+
+  void clearReference(String fieldName);
+
+  void setValue(String fieldName, Object fieldValue);
+
+  void setLiteralValue(Object value);
+
 }

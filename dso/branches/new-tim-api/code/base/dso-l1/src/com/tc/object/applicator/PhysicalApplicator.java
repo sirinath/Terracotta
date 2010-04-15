@@ -4,10 +4,9 @@
  */
 package com.tc.object.applicator;
 
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.dna.api.DNA;
@@ -51,17 +50,17 @@ public class PhysicalApplicator extends BaseApplicator {
 
       addTo.addNamedReference(clazz.getName(), fName, map.get(qualifiedParentFieldName));
     }
-    for (int i = 0; i < fields.length; i++) {
-      Object o = map.get(fields[i].getName());
+    for (TCField field : fields) {
+      Object o = map.get(field.getName());
 
       if (o != null && isPortableReference(o.getClass())) {
-        addTo.addNamedReference(fields[i].getName(), o);
+        addTo.addNamedReference(field.getName(), o);
       }
     }
     return addTo;
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
       ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     String fieldName;
@@ -76,8 +75,8 @@ public class PhysicalApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-    if (!objectManager.isPortableInstance(pojo)) { return; }
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    if (!objectLookup.isPortableInstance(pojo)) { return; }
 
     TCClass tcc = clazz;
     TCField[] fields;
@@ -97,7 +96,7 @@ public class PhysicalApplicator extends BaseApplicator {
           if (clazz.isNonStaticInner()) {
             Object parentObject = fieldValues.get(clazz.getParentFieldName());
             Assert.assertNotNull("parentObject", parentObject);
-            Object parentObjectID = getDehydratableObject(parentObject, objectManager);
+            Object parentObjectID = getDehydratableObject(parentObject, objectLookup);
             if (parentObjectID != null) {
               writer.setParentObjectID((ObjectID) parentObjectID);
             }
@@ -107,8 +106,8 @@ public class PhysicalApplicator extends BaseApplicator {
         }
       }
 
-      for (int i = 0; i < fields.length; i++) {
-        String fieldName = fields[i].getName();
+      for (TCField field : fields) {
+        String fieldName = field.getName();
         Object fieldValue = fieldValues.get(fieldName);
 
         if (fieldValue == null) {
@@ -119,25 +118,25 @@ public class PhysicalApplicator extends BaseApplicator {
                                                                                   + fieldValues); }
         }
 
-        if (!objectManager.isPortableInstance(fieldValue)) {
+        if (!objectLookup.isPortableInstance(fieldValue)) {
           continue;
         }
 
-        Object value = getDehydratableObject(fieldValue, objectManager);
+        Object value = getDehydratableObject(fieldValue, objectLookup);
         if (value == null) {
           // instead of ignoring non-portable objects we send ObjectID.NULL_ID so that the state can
           // be created at the server correctly if needed. Another reason is to null the reference across the cluster if
           // such an attempt was made.
           value = ObjectID.NULL_ID;
         }
-        writer.addPhysicalAction(fieldName, value, fields[i].canBeReference());
+        writer.addPhysicalAction(fieldName, value, field.canBeReference());
       }
       tcc = tcc.getSuperclass();
     }
 
   }
 
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) {
+  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

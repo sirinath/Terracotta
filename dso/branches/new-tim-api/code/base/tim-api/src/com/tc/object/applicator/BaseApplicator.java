@@ -4,12 +4,9 @@
  */
 package com.tc.object.applicator;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.dna.api.DNAEncoding;
 
 /**
@@ -17,12 +14,12 @@ import com.tc.object.dna.api.DNAEncoding;
  */
 public abstract class BaseApplicator implements ChangeApplicator {
 
-  private static final TCLogger      logger   = TCLogging.getLogger(BaseApplicator.class);
+  // private static final TCLogger logger = TCLogging.getLogger(BaseApplicator.class);
 
   /**
    * The encoding to use when reading/writing DNA
    */
-  protected final DNAEncoding        encoding;
+  protected final DNAEncoding encoding;
 
   /**
    * Construct a BaseApplicator with an encoding to use when reading/writing DNA
@@ -37,21 +34,26 @@ public abstract class BaseApplicator implements ChangeApplicator {
    * Get an ObjectID or literal value for the given pojo
    * 
    * @param pojo Object instance
-   * @param objectManager Client-side object manager
+   * @param objectManager Client-side object lookup
    * @return ObjectID representing pojo, or the pojo itself if its a literal, or null if it's a non-portable object
    */
-  protected final Object getDehydratableObject(Object pojo, ClientObjectManager objectManager) {
+  protected final Object getDehydratableObject(Object pojo, ObjectLookup objectLookup) {
+    // XXX: fix logger below!!!
+    if (true) { throw new AssertionError(); }
+
     if (pojo == null) {
       return ObjectID.NULL_ID;
     } else if (LiteralValues.isLiteralInstance(pojo)) {
       return pojo;
     } else {
-      TCObject tcObject = objectManager.lookupExistingOrNull(pojo);
+      TCObjectExternal tcObject = objectLookup.lookupExistingOrNull(pojo);
       if (tcObject == null) {
         // When we dehydrate complex objects, traverser bails out on the first non portable
         // object. We dont want to dehydrate things that are not added in the ClientObjectManager.
-        logger
-            .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
+
+        // XXX: uncomment this!!!
+        // logger
+        // .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
         return null;
       }
       return tcObject.getObjectID();
