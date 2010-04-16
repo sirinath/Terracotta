@@ -6,6 +6,8 @@ package com.tc.test.server.appserver.deployment;
 
 import com.tc.test.AppServerInfo;
 import com.tc.test.TestConfigObject;
+import com.tc.test.server.appserver.load.LowMemWorkaround;
+import com.tc.text.Banner;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,12 +35,14 @@ public class ServerTestSetup extends TestSetup {
     this.extraJvmArgs = extraJvmArgs;
   }
 
+  @Override
   protected void setUp() throws Exception {
     if (shouldDisable()) return;
     super.setUp();
     getServerManager();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (sm != null) {
       ServerManagerUtil.stopAndRelease(sm);
@@ -73,6 +77,11 @@ public class ServerTestSetup extends TestSetup {
   }
 
   public boolean shouldDisable() {
+    if (LowMemWorkaround.lessThan2Gb()) {
+      Banner.warnBanner("NOT RUNNNING TEST SINCE THIS MACHINE DOES NOT HAVE AT LEAST 2GB MEMORY");
+      return true;
+    }
+
     for (Enumeration e = ((TestSuite) fTest).tests(); e.hasMoreElements();) {
       Object o = e.nextElement();
       if (o instanceof AbstractDeploymentTest && ((AbstractDeploymentTest) o).shouldDisable()) { return true; }
