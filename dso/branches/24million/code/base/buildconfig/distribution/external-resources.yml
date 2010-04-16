@@ -1,8 +1,10 @@
 
 default_repos:
-  - http://kong/maven2
-  - http://forge-dev/repo
-  - http://www.terracotta.org/download/reflector/maven2
+  - http://kong/repo/snapshots
+  - http://kong/repo/staging
+  - http://kong/repo/releases
+  - http://www.terracotta.org/download/reflector/snapshots
+  - http://www.terracotta.org/download/reflector/releases
   - http://repo1.maven.org/maven2
 
 artifacts:
@@ -10,21 +12,21 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.0.0
+    version: 2.1.0-SNAPSHOT
     destination: ehcache
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 2.0.0
+    version: 2.1.0-SNAPSHOT
     destination: ehcache
     
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 2.0.0
+    version: 2.1.0-SNAPSHOT
     destination: ehcache
     
   - maven_artifact: true
@@ -40,9 +42,9 @@ artifacts:
     destination: ehcache    
     
   - maven_artifact: false
-    name: README.txt
+    name: README.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.txt
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html
     
   - maven_artifact: false
     name: CHANGELOG.txt
