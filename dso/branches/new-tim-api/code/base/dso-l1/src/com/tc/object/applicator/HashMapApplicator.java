@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
@@ -26,8 +27,8 @@ import java.util.Map.Entry;
  */
 public class HashMapApplicator extends BaseApplicator {
 
-  public HashMapApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public HashMapApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

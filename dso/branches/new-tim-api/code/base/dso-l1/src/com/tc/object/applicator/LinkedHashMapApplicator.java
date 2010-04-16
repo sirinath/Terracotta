@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.dna.api.DNA;
@@ -35,8 +36,8 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
     }
   }
 
-  public LinkedHashMapApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public LinkedHashMapApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   @Override

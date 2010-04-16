@@ -1,15 +1,17 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.dna.api.DNAEncoding;
 
 public class PartialHashMapApplicator extends HashMapApplicator {
 
-  public PartialHashMapApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public PartialHashMapApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   /*

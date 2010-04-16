@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
@@ -25,8 +26,8 @@ import java.util.Set;
  */
 public class HashSetApplicator extends BaseApplicator {
 
-  public HashSetApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public HashSetApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,

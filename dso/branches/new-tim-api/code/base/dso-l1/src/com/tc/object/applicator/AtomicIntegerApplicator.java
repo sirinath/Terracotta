@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.bytecode.AtomicIntegerAdapter;
@@ -22,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * NOTE: This applicator is only used for IBM JDK
  */
 public class AtomicIntegerApplicator extends BaseApplicator {
-  public AtomicIntegerApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public AtomicIntegerApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
     Vm.assertIsIbm();
   }
 

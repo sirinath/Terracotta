@@ -16,6 +16,7 @@ import com.tc.object.config.ClassReplacementTest;
 import com.tc.object.config.LockDefinition;
 import com.tc.object.config.StandardDSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
+import com.tc.properties.TCProperties;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,6 +26,7 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
   protected StandardDSOClientConfigHelper configHelper;
   private TCLogger                        logger;
   private Bundle                          thisBundle;
+  private TCProperties                    tcProps;
 
   protected ServiceReference getConfigHelperReference(final BundleContext context) throws Exception {
     final String CONFIGHELPER_CLASS_NAME = StandardDSOClientConfigHelper.class.getName();
@@ -37,8 +39,12 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
   public final void start(final BundleContext context) throws Exception {
     thisBundle = context.getBundle();
 
-    logger = (TCLogger) context.getService(context.getServiceReference(thisBundle.getSymbolicName() + ".logger"));
+    logger = (TCLogger) context.getService(context.getServiceReference(TCLogger.class.getName()));
     if (logger == null) { throw new BundleException("missing logger reference for " + thisBundle.getSymbolicName()); }
+
+    tcProps = (TCProperties) context.getService(context.getServiceReference(TCProperties.class.getName()));
+    if (tcProps == null) { throw new BundleException("missing tc-properties reference for "
+                                                     + thisBundle.getSymbolicName()); }
 
     final ServiceReference configHelperRef = getConfigHelperReference(context);
     configHelper = (StandardDSOClientConfigHelper) context.getService(configHelperRef);
@@ -54,6 +60,10 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
   protected Bundle getThisBundle() {
     return thisBundle;
+  }
+
+  protected TCProperties getTcProps() {
+    return tcProps;
   }
 
   protected TCLogger getLogger() {

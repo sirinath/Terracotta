@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogging;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
@@ -29,7 +30,7 @@ public class AccessibleObjectApplicator extends BaseApplicator {
   private static final String FIELD_CLASS_NAME                  = Field.class.getName();
 
   public AccessibleObjectApplicator(DNAEncoding encoding) {
-    super(encoding);
+    super(encoding, TCLogging.getLogger(AccessibleObjectApplicator.class));
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
