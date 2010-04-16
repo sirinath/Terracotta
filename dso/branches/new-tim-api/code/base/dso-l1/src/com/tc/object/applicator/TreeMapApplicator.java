@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
@@ -41,8 +42,8 @@ public class TreeMapApplicator extends BaseApplicator {
     }
   }
 
-  public TreeMapApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public TreeMapApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObjectExternal;
@@ -28,7 +29,7 @@ public class PhysicalApplicator extends BaseApplicator {
   private final TCClass clazz;
 
   public PhysicalApplicator(TCClass clazz, DNAEncoding encoding) {
-    super(encoding);
+    super(encoding, TCLogging.getLogger(PhysicalApplicator.class));
     this.clazz = clazz;
   }
 

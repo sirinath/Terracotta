@@ -24,8 +24,8 @@ import java.util.Vector;
 public class ListApplicator extends BaseApplicator {
   private static final TCLogger logger = TCLogging.getLogger(ListApplicator.class);
 
-  public ListApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public ListApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

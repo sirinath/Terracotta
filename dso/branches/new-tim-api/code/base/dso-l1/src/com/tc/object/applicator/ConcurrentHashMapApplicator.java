@@ -5,6 +5,7 @@
 package com.tc.object.applicator;
 
 import com.tc.exception.TCRuntimeException;
+import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
@@ -49,8 +50,8 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
     }
   }
 
-  public ConcurrentHashMapApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public ConcurrentHashMapApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   @Override

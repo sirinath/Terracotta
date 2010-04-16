@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
@@ -23,8 +24,8 @@ import java.net.URL;
  */
 public class URLApplicator extends BaseApplicator {
 
-  public URLApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public URLApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,

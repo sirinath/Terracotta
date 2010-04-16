@@ -71,8 +71,8 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public LinkedBlockingQueueApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public LinkedBlockingQueueApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

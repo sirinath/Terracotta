@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogging;
 import com.tc.object.TCClass;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
@@ -19,7 +20,7 @@ import java.io.IOException;
 public class LiteralTypesApplicator extends BaseApplicator {
 
   public LiteralTypesApplicator(TCClass clazz, DNAEncoding encoding) {
-    super(encoding);
+    super(encoding, TCLogging.getLogger(LiteralTypesApplicator.class));
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

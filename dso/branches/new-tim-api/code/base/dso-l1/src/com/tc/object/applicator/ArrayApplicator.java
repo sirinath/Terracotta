@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
@@ -21,7 +22,7 @@ import java.lang.reflect.Array;
 public class ArrayApplicator extends BaseApplicator {
 
   public ArrayApplicator(DNAEncoding encoding) {
-    super(encoding);
+    super(encoding, TCLogging.getLogger(ArrayApplicator.class));
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

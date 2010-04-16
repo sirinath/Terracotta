@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
@@ -25,7 +26,7 @@ public class ProxyApplicator extends BaseApplicator {
   private static final String INVOCATION_HANDLER_FIELD_NAME = "java.lang.reflect.Proxy.h";
 
   public ProxyApplicator(DNAEncoding encoding) {
-    super(encoding);
+    super(encoding, TCLogging.getLogger(ProxyApplicator.class));
   }
 
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {

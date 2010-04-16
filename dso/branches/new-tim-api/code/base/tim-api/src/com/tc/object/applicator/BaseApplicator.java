@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
@@ -14,20 +15,25 @@ import com.tc.object.dna.api.DNAEncoding;
  */
 public abstract class BaseApplicator implements ChangeApplicator {
 
-  // private static final TCLogger logger = TCLogging.getLogger(BaseApplicator.class);
-
   /**
    * The encoding to use when reading/writing DNA
    */
   protected final DNAEncoding encoding;
+
+  private final TCLogger      logger;
 
   /**
    * Construct a BaseApplicator with an encoding to use when reading/writing DNA
    * 
    * @param encoding DNA encoding to use
    */
-  protected BaseApplicator(DNAEncoding encoding) {
+  protected BaseApplicator(DNAEncoding encoding, TCLogger logger) {
     this.encoding = encoding;
+    this.logger = logger;
+  }
+
+  protected TCLogger getLogger() {
+    return logger;
   }
 
   /**
@@ -38,8 +44,6 @@ public abstract class BaseApplicator implements ChangeApplicator {
    * @return ObjectID representing pojo, or the pojo itself if its a literal, or null if it's a non-portable object
    */
   protected final Object getDehydratableObject(Object pojo, ObjectLookup objectLookup) {
-    // XXX: fix logger below!!!
-    if (true) { throw new AssertionError(); }
 
     if (pojo == null) {
       return ObjectID.NULL_ID;
@@ -51,9 +55,8 @@ public abstract class BaseApplicator implements ChangeApplicator {
         // When we dehydrate complex objects, traverser bails out on the first non portable
         // object. We dont want to dehydrate things that are not added in the ClientObjectManager.
 
-        // XXX: uncomment this!!!
-        // logger
-        // .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
+        logger
+            .warn("Not dehydrating object of type " + pojo.getClass().getName() + "@" + System.identityHashCode(pojo));
         return null;
       }
       return tcObject.getObjectID();

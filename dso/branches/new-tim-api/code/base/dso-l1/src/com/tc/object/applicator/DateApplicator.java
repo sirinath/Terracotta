@@ -4,6 +4,7 @@
  */
 package com.tc.object.applicator;
 
+import com.tc.logging.TCLogger;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
@@ -23,8 +24,8 @@ import java.util.Date;
  */
 public class DateApplicator extends BaseApplicator {
 
-  public DateApplicator(DNAEncoding encoding) {
-    super(encoding);
+  public DateApplicator(DNAEncoding encoding, TCLogger logger) {
+    super(encoding, logger);
   }
 
   public void hydrate(ObjectLookup objectLookup, TCObjectExternal TCObjectExternal, DNA dna, Object pojo)
