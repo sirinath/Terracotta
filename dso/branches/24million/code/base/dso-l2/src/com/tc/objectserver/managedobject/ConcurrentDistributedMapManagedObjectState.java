@@ -1,6 +1,7 @@
 package com.tc.objectserver.managedobject;
 
 import com.tc.object.ObjectID;
+import com.tc.object.bytecode.NotClearable;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.
-public class ConcurrentDistributedMapManagedObjectState extends PartialMapManagedObjectState {
+public class ConcurrentDistributedMapManagedObjectState extends PartialMapManagedObjectState implements NotClearable {
   public static final String DSO_LOCK_TYPE_FIELDNAME = "dsoLockType";
   public static final String LOCK_STRATEGY_FIELDNAME = "lockStrategy";
 
