@@ -26,7 +26,6 @@ public class ServerMapTCClassImpl extends TCClassImpl implements TCClass {
 
   @Override
   public TCObject createTCObject(final ObjectID id, final Object pojo, final boolean isNew) {
-    //System.out.println("POJO:!!!" + pojo);
     if (pojo != null && !pojo.getClass().getName().equals(TCClassFactory.CDSM_DSO_CLASSNAME)) {
       // bad formatter
       throw new AssertionError("This class should be used only for " + TCClassFactory.CDSM_DSO_CLASSNAME
