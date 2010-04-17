@@ -335,11 +335,5 @@ public class ManagerImplTest extends BaseDSOTestCase {
     public void preFetchObject(final ObjectID id) {
       throw new ImplementMe();
     }
-
-    public Object getValueForKeyInMap(final ServerTCMap map, final Object key) {
-      throw new ImplementMe();
-    }
-
   }
-
 }

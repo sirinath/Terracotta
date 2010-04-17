@@ -69,8 +69,8 @@ public interface DSOClientBuilder {
   RemoteObjectManager createRemoteObjectManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
                                                 final int faultCount, final SessionManager sessionManager);
 
-  RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel, 
-                                                final SessionManager sessionManager);
+  RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
+                                                      final SessionManager sessionManager);
 
   ClusterMetaDataManager createClusterMetaDataManager(final DSOClientMessageChannel dsoChannel,
                                                       final DNAEncoding encoding,
@@ -80,7 +80,6 @@ public interface DSOClientBuilder {
                                                       final NodeMetaDataMessageFactory nmdmFactory);
 
   ClientObjectManagerImpl createObjectManager(final RemoteObjectManager remoteObjectManager,
-                                              final RemoteServerMapManager remoteServerMapManager,
                                               final DSOClientConfigHelper dsoConfig, final ObjectIDProvider idProvider,
                                               final ClockEvictionPolicy clockEvictionPolicy,
                                               final RuntimeLogger rtLogger, final ClientIDProvider clientIDProvider,

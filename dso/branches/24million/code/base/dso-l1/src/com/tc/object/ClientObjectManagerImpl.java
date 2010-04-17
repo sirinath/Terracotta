@@ -25,7 +25,6 @@ import com.tc.object.appevent.NonPortableObjectEvent;
 import com.tc.object.appevent.NonPortableRootContext;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.ManagerUtil;
-import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.cache.CacheStats;
 import com.tc.object.cache.Evictable;
 import com.tc.object.cache.EvictionPolicy;
@@ -108,7 +107,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                                                               REFERENCE_MAP_SEGS);
   private final ClassProvider                  classProvider;
   private final RemoteObjectManager            remoteObjectManager;
-  private final RemoteServerMapManager         remoteServerMapManager;
   private final EvictionPolicy                 cache;
   private final Traverser                      traverser;
   private final TraverseTest                   traverseTest;
@@ -143,7 +141,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                             };
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager,
-                                 final RemoteServerMapManager remoteServerMapManager,
                                  final DSOClientConfigHelper clientConfiguration, final ObjectIDProvider idProvider,
                                  final EvictionPolicy cache, final RuntimeLogger runtimeLogger,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
@@ -151,7 +148,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                  final Portability portability, final DSOClientMessageChannel channel,
                                  final ToggleableReferenceManager referenceManager) {
     this.remoteObjectManager = remoteObjectManager;
-    this.remoteServerMapManager = remoteServerMapManager;
     this.cache = cache;
     this.clientConfiguration = clientConfiguration;
     this.idProvider = idProvider;
@@ -1128,45 +1124,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public boolean isPortableInstance(final Object obj) {
     return this.portability.isPortableInstance(obj);
-  }
-
-  /**
-   * Returns the value for a particular Key in a ServerTCMap.
-   * 
-   * @param pojo Object
-   * @param key Key Object : Note currently only literal keys or shared keys are supported. Even if the key is portable,
-   *        but not shared, it is not supported.
-   * @return value Object in the mapping, null if no mapping present.
-   */
-  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) throws ClassNotFoundException {
-
-    final TCObject tcObject = map.__tc_managed();
-    if (tcObject == null) { throw new UnsupportedOperationException(
-                                                                    "getValueForKeyInMap is not supported in a non-shared ServerTCMap"); }
-    final ObjectID mapID = tcObject.getObjectID();
-    Object portableKey = key;
-    if (key instanceof Manageable) {
-      final TCObject keyObject = ((Manageable) key).__tc_managed();
-      if (keyObject == null) { throw new UnsupportedOperationException(
-                                                                       "Key is portable, but not shared. This is currently not supported with ServerTCMap. Map ID = "
-                                                                           + mapID + " key = " + key); }
-      portableKey = keyObject.getObjectID();
-    }
-
-    if (!LiteralValues.isLiteralInstance(portableKey)) {
-      // formatter
-      throw new UnsupportedOperationException(
-                                              "Key is not portable. It needs to be a liternal or portable and shared for ServerTCMap. Key = "
-                                                  + portableKey + " map id = " + mapID);
-    }
-
-    final Object value = this.remoteServerMapManager.getMappingForKey(mapID, portableKey);
-
-    if (value instanceof ObjectID) {
-      return lookupObject((ObjectID) value);
-    } else {
-      return value;
-    }
   }
 
   private void startReaper() {

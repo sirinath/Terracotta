@@ -30,9 +30,6 @@ import java.util.Calendar;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author steve
- */
 public class TCClassFactoryImpl implements TCClassFactory {
   private static final boolean                   IS_IBM                    = Vm.isIBM();
 
@@ -44,12 +41,16 @@ public class TCClassFactoryImpl implements TCClassFactory {
   private final ClassProvider                    classProvider;
   private final DNAEncoding                      encoding;
 
+  private final RemoteServerMapManager           remoteServerMapManager;
+
   public TCClassFactoryImpl(final TCFieldFactory fieldFactory, final DSOClientConfigHelper config,
-                            final ClassProvider classProvider, final DNAEncoding dnaEncoding) {
+                            final ClassProvider classProvider, final DNAEncoding dnaEncoding,
+                            final RemoteServerMapManager remoteServerMapManager) {
     this.fieldFactory = fieldFactory;
     this.config = config;
     this.classProvider = classProvider;
     this.encoding = dnaEncoding;
+    this.remoteServerMapManager = remoteServerMapManager;
   }
 
   public TCClass getOrCreate(final Class clazz, final ClientObjectManager objectManager) {
@@ -59,15 +60,25 @@ public class TCClassFactoryImpl implements TCClassFactory {
     final LoaderDescription loaderDesc = this.classProvider.getLoaderDescriptionFor(clazz);
     final String className = clazz.getName();
     final ClassInfo classInfo = JavaClassInfo.getClassInfo(clazz);
-    rv = new TCClassImpl(this.fieldFactory, this, objectManager, this.config.getTCPeerClass(clazz),
-                         getLogicalSuperClassWithDefaultConstructor(clazz), loaderDesc, this.config
-                             .getLogicalExtendingClassName(className), this.config.isLogical(className), this.config
-                             .isCallConstructorOnLoad(classInfo), this.config.hasOnLoadInjection(classInfo),
-                         this.config.getOnLoadScriptIfDefined(classInfo), this.config
-                             .getOnLoadMethodIfDefined(classInfo), this.config.isUseNonDefaultConstructor(clazz),
-                         this.config.useResolveLockWhenClearing(clazz), this.config
-                             .getPostCreateMethodIfDefined(className), this.config
-                             .getPreCreateMethodIfDefined(className));
+    if (className.equals(CDSM_DSO_CLASSNAME)) {
+      rv = new ServerMapTCClassImpl(this.remoteServerMapManager, this.fieldFactory, this, objectManager, this.config
+          .getTCPeerClass(clazz), getLogicalSuperClassWithDefaultConstructor(clazz), loaderDesc, this.config
+          .getLogicalExtendingClassName(className), this.config.isLogical(className), this.config
+          .isCallConstructorOnLoad(classInfo), this.config.hasOnLoadInjection(classInfo), this.config
+          .getOnLoadScriptIfDefined(classInfo), this.config.getOnLoadMethodIfDefined(classInfo), this.config
+          .isUseNonDefaultConstructor(clazz), this.config.useResolveLockWhenClearing(clazz), this.config
+          .getPostCreateMethodIfDefined(className), this.config.getPreCreateMethodIfDefined(className));
+    } else {
+      rv = new TCClassImpl(this.fieldFactory, this, objectManager, this.config.getTCPeerClass(clazz),
+                           getLogicalSuperClassWithDefaultConstructor(clazz), loaderDesc, this.config
+                               .getLogicalExtendingClassName(className), this.config.isLogical(className), this.config
+                               .isCallConstructorOnLoad(classInfo), this.config.hasOnLoadInjection(classInfo),
+                           this.config.getOnLoadScriptIfDefined(classInfo), this.config
+                               .getOnLoadMethodIfDefined(classInfo), this.config.isUseNonDefaultConstructor(clazz),
+                           this.config.useResolveLockWhenClearing(clazz), this.config
+                               .getPostCreateMethodIfDefined(className), this.config
+                               .getPreCreateMethodIfDefined(className));
+    }
 
     final TCClass existing = this.classes.putIfAbsent(clazz, rv);
     return existing == null ? rv : existing;

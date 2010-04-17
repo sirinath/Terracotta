@@ -461,10 +461,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         .getClientIDProvider());
     remoteIDProvider.setBatchSequenceReceiver(batchSequenceReceiver);
 
-    final TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(this.config), this.config,
-                                                               this.classProvider, encoding);
-    final TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
-
     final ToggleableReferenceManager toggleRefMgr = new ToggleableReferenceManager();
 
     // for SRA L1 Tx count
@@ -485,8 +481,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
 
-    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, remoteServerMapManager,
-                                                                   this.config, idProvider,
+    final TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(this.config), this.config,
+                                                               this.classProvider, encoding, remoteServerMapManager);
+    final TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
+
+    this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, this.config, idProvider,
                                                                    new ClockEvictionPolicy(-1), this.runtimeLogger,
                                                                    this.channel.getClientIDProvider(),
                                                                    this.classProvider, classFactory, objectFactory,

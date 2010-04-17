@@ -105,7 +105,7 @@ public final class NullManager implements Manager {
     return false;
   }
 
-  public boolean isLiteralAutolock(Object o) {
+  public boolean isLiteralAutolock(final Object o) {
     return false;
   }
 
@@ -224,109 +224,109 @@ public final class NullManager implements Manager {
     return null;
   }
 
-  public LockID generateLockIdentifier(String str) {
+  public LockID generateLockIdentifier(final String str) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public LockID generateLockIdentifier(Object obj) {
+  public LockID generateLockIdentifier(final Object obj) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public LockID generateLockIdentifier(Object obj, String field) {
+  public LockID generateLockIdentifier(final Object obj, final String field) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
   }
 
-  public int globalHoldCount(LockID lock, LockLevel level) {
+  public int globalHoldCount(final LockID lock, final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public int globalPendingCount(LockID lock) {
+  public int globalPendingCount(final LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public int globalWaitingCount(LockID lock) {
+  public int globalWaitingCount(final LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLocked(LockID lock, LockLevel level) {
+  public boolean isLocked(final LockID lock, final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLockedByCurrentThread(LockID lock, LockLevel level) {
+  public boolean isLockedByCurrentThread(final LockID lock, final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public int localHoldCount(LockID lock, LockLevel level) {
+  public int localHoldCount(final LockID lock, final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public void lock(LockID lock, LockLevel level) {
+  public void lock(final LockID lock, final LockLevel level) {
     //
   }
 
-  public void lockInterruptibly(LockID lock, LockLevel level) {
+  public void lockInterruptibly(final LockID lock, final LockLevel level) {
     //
   }
 
-  public Notify notify(LockID lock, Object waitObject) {
+  public Notify notify(final LockID lock, final Object waitObject) {
     if (waitObject != null) {
       waitObject.notify();
     }
     return null;
   }
 
-  public Notify notifyAll(LockID lock, Object waitObject) {
+  public Notify notifyAll(final LockID lock, final Object waitObject) {
     if (waitObject != null) {
       waitObject.notifyAll();
     }
     return null;
   }
 
-  public boolean tryLock(LockID lock, LockLevel level) {
+  public boolean tryLock(final LockID lock, final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean tryLock(LockID lock, LockLevel level, long timeout) {
+  public boolean tryLock(final LockID lock, final LockLevel level, final long timeout) {
     throw new UnsupportedOperationException();
   }
 
-  public void unlock(LockID lock, LockLevel level) {
+  public void unlock(final LockID lock, final LockLevel level) {
     //
   }
 
-  public void wait(LockID lock, Object waitObject) throws InterruptedException {
+  public void wait(final LockID lock, final Object waitObject) throws InterruptedException {
     if (waitObject != null) {
       waitObject.wait();
     }
   }
 
-  public void wait(LockID lock, Object waitObject, long timeout) throws InterruptedException {
+  public void wait(final LockID lock, final Object waitObject, final long timeout) throws InterruptedException {
     if (waitObject != null) {
       waitObject.wait(timeout);
     }
   }
 
-  public void pinLock(LockID lock) {
+  public void pinLock(final LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public void unpinLock(LockID lock) {
+  public void unpinLock(final LockID lock) {
     throw new UnsupportedOperationException();
   }
 
-  public boolean isLockedByCurrentThread(LockLevel level) {
+  public boolean isLockedByCurrentThread(final LockLevel level) {
     throw new UnsupportedOperationException();
   }
 
-  public void monitorEnter(LockID lock, LockLevel level) {
+  public void monitorEnter(final LockID lock, final LockLevel level) {
     //
   }
 
-  public void monitorExit(LockID lock, LockLevel level) {
+  public void monitorExit(final LockID lock, final LockLevel level) {
     //
   }
 
-  public void registerMBean(Object bean, ObjectName name) {
+  public void registerMBean(final Object bean, final ObjectName name) {
     /**/
   }
 
@@ -334,19 +334,15 @@ public final class NullManager implements Manager {
     return null;
   }
 
-  public SessionConfiguration getSessionConfiguration(String appName) {
+  public SessionConfiguration getSessionConfiguration(final String appName) {
     throw new UnsupportedOperationException();
   }
 
   public void waitForAllCurrentTransactionsToComplete() {
     throw new UnsupportedOperationException();
   }
-  
-  public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
-    throw new UnsupportedOperationException();
-  }
 
-  public Object getValueForKeyInMap(ServerTCMap map, Object key) {
+  public void registerBeforeShutdownHook(final Runnable beforeShutdownHook) {
     throw new UnsupportedOperationException();
   }
 }
