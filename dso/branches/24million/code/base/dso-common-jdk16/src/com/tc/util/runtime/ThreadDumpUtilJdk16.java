@@ -15,9 +15,9 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     return getThreadDump(new NullLockInfoByThreadIDImpl(), new NullThreadIDMapImpl());
   }
 
-  public static String getThreadDump(LockInfoByThreadID lockInfo, ThreadIDMap threadIDMap) {
-    MonitorInfo[] emptyMI = new MonitorInfo[0];
-    StringBuilder sb = new StringBuilder();
+  public static String getThreadDump(final LockInfoByThreadID lockInfo, final ThreadIDMap threadIDMap) {
+    final MonitorInfo[] emptyMI = new MonitorInfo[0];
+    final StringBuilder sb = new StringBuilder();
     sb.append(new Date().toString());
     sb.append('\n');
     sb.append("Full thread dump ");
@@ -28,23 +28,23 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     sb.append(System.getProperty("java.vm.info"));
     sb.append("):\n\n");
     try {
-      Thread[] threads = ThreadDumpUtil.getAllThreads();
+      final Thread[] threads = ThreadDumpUtil.getAllThreads();
 
-      for (Thread thread : threads) {
-        long id = thread.getId();
-        ThreadInfo threadInfo = threadMXBean.getThreadInfo(new long[] { id }, true, true)[0];
+      for (final Thread thread : threads) {
+        final long id = thread.getId();
+        final ThreadInfo threadInfo = threadMXBean.getThreadInfo(new long[] { id }, true, true)[0];
         sb.append(threadHeader(thread, threadInfo));
         sb.append('\n');
 
-        StackTraceElement[] stea = thread.getStackTrace();
-        MonitorInfo[] monitorInfos = threadInfo != null ? threadInfo.getLockedMonitors() : emptyMI;
-        for (int j = 0; j < stea.length; j++) {
+        final StackTraceElement[] stea = thread.getStackTrace();
+        final MonitorInfo[] monitorInfos = threadInfo != null ? threadInfo.getLockedMonitors() : emptyMI;
+        for (final StackTraceElement element : stea) {
           sb.append("\tat ");
-          sb.append(stea[j].toString());
+          sb.append(element.toString());
           sb.append('\n');
-          for (MonitorInfo monitorInfo : monitorInfos) {
-            StackTraceElement lockedFrame = monitorInfo.getLockedStackFrame();
-            if (lockedFrame != null && lockedFrame.equals(stea[j])) {
+          for (final MonitorInfo monitorInfo : monitorInfos) {
+            final StackTraceElement lockedFrame = monitorInfo.getLockedStackFrame();
+            if (lockedFrame != null && lockedFrame.equals(element)) {
               sb.append("\t- locked <0x");
               sb.append(Integer.toHexString(monitorInfo.getIdentityHashCode()));
               sb.append("> (a ");
@@ -60,16 +60,16 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
         }
         sb.append('\n');
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       e.printStackTrace();
       sb.append(e.toString());
     }
     return sb.toString();
   }
 
-  private static String threadHeader(Thread thread, ThreadInfo threadInfo) {
-    String threadName = thread.getName();
-    StringBuffer sb = new StringBuffer();
+  private static String threadHeader(final Thread thread, final ThreadInfo threadInfo) {
+    final String threadName = thread.getName();
+    final StringBuffer sb = new StringBuffer();
     sb.append("\"");
     sb.append(threadName);
     sb.append("\" ");
@@ -78,12 +78,12 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
 
     if (threadInfo != null) {
       try {
-        Thread.State threadState = threadInfo.getThreadState();
-        String lockName = threadInfo.getLockName();
-        String lockOwnerName = threadInfo.getLockOwnerName();
-        Long lockOwnerId = threadInfo.getLockOwnerId();
-        Boolean isSuspended = threadInfo.isSuspended();
-        Boolean isInNative = threadInfo.isInNative();
+        final Thread.State threadState = threadInfo.getThreadState();
+        final String lockName = threadInfo.getLockName();
+        final String lockOwnerName = threadInfo.getLockOwnerName();
+        final Long lockOwnerId = threadInfo.getLockOwnerId();
+        final Boolean isSuspended = threadInfo.isSuspended();
+        final Boolean isInNative = threadInfo.isInNative();
 
         sb.append(" ");
         sb.append(threadState);
@@ -103,7 +103,7 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
         if (isInNative) {
           sb.append(" (in native)");
         }
-      } catch (Exception e) {
+      } catch (final Exception e) {
         return threadInfo.toString();
       }
     } else {
@@ -113,16 +113,15 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     return sb.toString();
   }
 
-  private static String threadLockedSynchronizers(ThreadInfo threadInfo) {
+  private static String threadLockedSynchronizers(final ThreadInfo threadInfo) {
     final String NO_SYNCH_INFO = "no locked synchronizers information available\n";
     if (null == threadInfo) { return NO_SYNCH_INFO; }
     try {
-      LockInfo[] lockInfos = threadInfo.getLockedSynchronizers();
+      final LockInfo[] lockInfos = threadInfo.getLockedSynchronizers();
       if (lockInfos.length > 0) {
-        StringBuffer lockedSynchBuff = new StringBuffer();
+        final StringBuffer lockedSynchBuff = new StringBuffer();
         lockedSynchBuff.append("\nLocked Synchronizers: \n");
-        for (int i = 0; i < lockInfos.length; i++) {
-          LockInfo lockInfo = lockInfos[i];
+        for (final LockInfo lockInfo : lockInfos) {
           lockedSynchBuff.append(lockInfo.getClassName()).append(" <").append(lockInfo.getIdentityHashCode())
               .append("> \n");
         }
@@ -130,12 +129,12 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
       } else {
         return "";
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       return NO_SYNCH_INFO;
     }
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     System.out.println(getThreadDump());
   }
 

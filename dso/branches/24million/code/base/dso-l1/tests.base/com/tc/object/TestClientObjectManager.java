@@ -9,7 +9,6 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.bytecode.Manageable;
-import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.tx.ClientTransactionManager;
@@ -220,10 +219,6 @@ public class TestClientObjectManager implements ClientObjectManager {
   }
 
   public void preFetchObject(final ObjectID id) {
-    throw new ImplementMe();
-  }
-
-  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) {
     throw new ImplementMe();
   }
 }

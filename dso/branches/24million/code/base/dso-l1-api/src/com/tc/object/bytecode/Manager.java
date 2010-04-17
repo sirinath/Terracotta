@@ -371,15 +371,4 @@ public interface Manager extends TerracottaLocking {
    * Registers a hook that will be called before shutting down this client
    */
   public void registerBeforeShutdownHook(Runnable beforeShutdownHook);
-
-  /**
-   * Returns the value for a particular Key in a ServerMap.
-   * 
-   * @param pojo Object
-   * @param key Key Object, Key needs to a literal or a shared pojo object. Unshared portable keys implementing equals
-   *        wont work as of now.
-   * @return value Object in the mapping, null if no mapping present.
-   */
-  public Object getValueForKeyInMap(ServerTCMap map, Object key) throws ClassNotFoundException;
-
 }

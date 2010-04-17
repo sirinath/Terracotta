@@ -9,7 +9,6 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.logging.DumpHandler;
 import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
-import com.tc.object.bytecode.ServerTCMap;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.tx.ClientTransactionManager;
@@ -326,13 +325,4 @@ public interface ClientObjectManager extends DumpHandler, PrettyPrintable {
    * @return the weak reference
    */
   WeakReference newWeakObjectReference(ObjectID objectID, Object peer);
-
-  /**
-   * Returns the value for a particular Key in a ServerTCMap.
-   * 
-   * @param pojo Object
-   * @param key Key Object
-   * @return value Object in the mapping, null if no mapping present.
-   */
-  public Object getValueForKeyInMap(ServerTCMap map, Object key) throws ClassNotFoundException;
 }

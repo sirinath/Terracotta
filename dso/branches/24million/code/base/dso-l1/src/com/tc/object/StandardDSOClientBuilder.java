@@ -74,19 +74,20 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   public DSOClientMessageChannel createDSOClientMessageChannel(final CommunicationsManager commMgr,
                                                                final PreparedComponentsFromL2Connection connComp,
                                                                final SessionProvider sessionProvider,
-                                                               int maxReconnectTries, int socketConnectTimeout) {
+                                                               final int maxReconnectTries,
+                                                               final int socketConnectTimeout) {
     ClientMessageChannel cmc;
-    ConfigItem connectionInfoItem = connComp.createConnectionInfoConfigItem();
-    ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItem.getObject();
-    ConnectionAddressProvider cap = new ConnectionAddressProvider(connectionInfo);
+    final ConfigItem connectionInfoItem = connComp.createConnectionInfoConfigItem();
+    final ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItem.getObject();
+    final ConnectionAddressProvider cap = new ConnectionAddressProvider(connectionInfo);
     cmc = commMgr.createClientChannel(sessionProvider, maxReconnectTries, null, 0, socketConnectTimeout, cap);
     return new DSOClientMessageChannelImpl(cmc, new GroupID[] { new GroupID(cap.getGroupId()) });
   }
 
   public CommunicationsManager createCommunicationsManager(final MessageMonitor monitor,
                                                            final NetworkStackHarnessFactory stackHarnessFactory,
-                                                           final ConnectionPolicy connectionPolicy, int commThread,
-                                                           final HealthCheckerConfig aConfig) {
+                                                           final ConnectionPolicy connectionPolicy,
+                                                           final int commThread, final HealthCheckerConfig aConfig) {
     return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, stackHarnessFactory,
                                          connectionPolicy, aConfig);
   }
@@ -102,7 +103,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   public RemoteObjectManagerImpl createRemoteObjectManager(final TCLogger logger,
                                                            final DSOClientMessageChannel dsoChannel,
                                                            final int faultCount, final SessionManager sessionManager) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
     return new RemoteObjectManagerImpl(defaultGroups[0], logger, dsoChannel.getRequestRootMessageFactory(), dsoChannel
@@ -110,30 +111,30 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   }
 
   public RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger,
-                                                           final DSOClientMessageChannel dsoChannel,
-                                                           final SessionManager sessionManager) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+                                                             final DSOClientMessageChannel dsoChannel,
+                                                             final SessionManager sessionManager) {
+    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
-    return new RemoteServerMapManagerImpl(defaultGroups[0], logger, dsoChannel
-        .getServerMapMessageFactory(), sessionManager);
+    return new RemoteServerMapManagerImpl(defaultGroups[0], logger, dsoChannel.getServerMapMessageFactory(),
+                                          sessionManager);
   }
+
   public ClusterMetaDataManager createClusterMetaDataManager(final DSOClientMessageChannel dsoChannel,
                                                              final DNAEncoding encoding,
                                                              final ThreadIDManager threadIDManager,
                                                              final NodesWithObjectsMessageFactory nwoFactory,
                                                              final KeysForOrphanedValuesMessageFactory kfovFactory,
                                                              final NodeMetaDataMessageFactory nmdmFactory) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
-    
+
     return new ClusterMetaDataManagerImpl(defaultGroups[0], encoding, threadIDManager, nwoFactory, kfovFactory,
                                           nmdmFactory);
   }
 
   public ClientObjectManagerImpl createObjectManager(final RemoteObjectManager remoteObjectManager,
-                                                     final RemoteServerMapManager remoteServerMapManager,
                                                      final DSOClientConfigHelper dsoConfig,
                                                      final ObjectIDProvider idProvider,
                                                      final ClockEvictionPolicy clockEvictionPolicy,
@@ -145,8 +146,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                      final Portability portability,
                                                      final DSOClientMessageChannel dsoChannel,
                                                      final ToggleableReferenceManager toggleRefMgr) {
-    return new ClientObjectManagerImpl(remoteObjectManager, remoteServerMapManager, dsoConfig, idProvider, clockEvictionPolicy,
-                                       rtLogger, clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
+    return new ClientObjectManagerImpl(remoteObjectManager, dsoConfig, idProvider, clockEvictionPolicy, rtLogger,
+                                       clientIDProvider, classProviderLocal, classFactory, objectFactory, portability,
                                        dsoChannel, toggleRefMgr);
   }
 
@@ -157,11 +158,12 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final ThreadIDManager threadManager,
                                              final ClientGlobalTransactionManager gtxManager,
                                              final ClientLockManagerConfig config) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
-    RemoteLockManager remoteManager = new RemoteLockManagerImpl(dsoChannel.getClientIDProvider(), defaultGroups[0],
-                                                                lockRequestMessageFactory, gtxManager, lockStatManager);
+    final RemoteLockManager remoteManager = new RemoteLockManagerImpl(dsoChannel.getClientIDProvider(),
+                                                                      defaultGroups[0], lockRequestMessageFactory,
+                                                                      gtxManager, lockStatManager);
     return new ClientLockManagerImpl(clientIDLogger, sessionManager, remoteManager, threadManager, config,
                                      lockStatManager);
   }
@@ -181,10 +183,10 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                                  final Counter pendingBatchesSize,
                                                                  final SampledRateCounter transactionSizeCounter,
                                                                  final SampledRateCounter transactionsPerBatchCounter) {
-    GroupID defaultGroups[] = dsoChannel.getGroupIDs();
+    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
     Assert.assertNotNull(defaultGroups);
     Assert.assertEquals(1, defaultGroups.length);
-    TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(dsoChannel
+    final TransactionBatchFactory txBatchFactory = new TransactionBatchWriterFactory(dsoChannel
         .getCommitTransactionMessageFactory(), encoding, foldingConfig);
     return new RemoteTransactionManagerImpl(
                                             defaultGroups[0],
@@ -222,11 +224,13 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return sequences[0];
   }
 
-  public ClientHandshakeManager createClientHandshakeManager(TCLogger logger, DSOClientMessageChannel channel,
-                                                             ClientHandshakeMessageFactory chmf, Sink pauseSink,
-                                                             SessionManager sessionManager,
-                                                             DsoClusterInternal dsoCluster, String clientVersion,
-                                                             Collection<ClientHandshakeCallback> callbacks) {
+  public ClientHandshakeManager createClientHandshakeManager(final TCLogger logger,
+                                                             final DSOClientMessageChannel channel,
+                                                             final ClientHandshakeMessageFactory chmf,
+                                                             final Sink pauseSink, final SessionManager sessionManager,
+                                                             final DsoClusterInternal dsoCluster,
+                                                             final String clientVersion,
+                                                             final Collection<ClientHandshakeCallback> callbacks) {
     return new ClientHandshakeManagerImpl(logger, channel, chmf, pauseSink, sessionManager, dsoCluster, clientVersion,
                                           callbacks);
   }

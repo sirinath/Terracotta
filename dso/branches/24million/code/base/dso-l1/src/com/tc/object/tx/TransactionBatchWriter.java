@@ -76,9 +76,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private int                                   numTxns                = 0;
   private boolean                               containsSyncWriteTxn   = false;
 
-  public TransactionBatchWriter(GroupID groupID, TxnBatchID batchID, ObjectStringSerializer serializer,
-                                DNAEncoding encoding, CommitTransactionMessageFactory commitTransactionMessageFactory,
-                                FoldingConfig foldingConfig) {
+  public TransactionBatchWriter(final GroupID groupID, final TxnBatchID batchID,
+                                final ObjectStringSerializer serializer, final DNAEncoding encoding,
+                                final CommitTransactionMessageFactory commitTransactionMessageFactory,
+                                final FoldingConfig foldingConfig) {
     this.groupID = groupID;
     this.batchID = batchID;
     this.encoding = encoding;
@@ -115,8 +116,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return false;
   }
 
-  public synchronized TransactionBuffer removeTransaction(TransactionID txID) {
-    TransactionBufferImpl removed = (TransactionBufferImpl) this.transactionData.remove(txID);
+  public synchronized TransactionBuffer removeTransaction(final TransactionID txID) {
+    final TransactionBufferImpl removed = (TransactionBufferImpl) this.transactionData.remove(txID);
     if (removed == null) { throw new AssertionError("Attempt to remove a transaction that doesn't exist"); }
     // if we get some ACKs from the previous instance of the server after we resend this
     // transaction, but before we write to the network, then we don't recycle. We lose those
@@ -128,8 +129,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return removed;
   }
 
-  private TransactionBuffer getOrCreateBuffer(ClientTransaction txn, SequenceGenerator sequenceGenerator,
-                                              TransactionIDGenerator tidGenerator) {
+  private TransactionBuffer getOrCreateBuffer(final ClientTransaction txn, final SequenceGenerator sequenceGenerator,
+                                              final TransactionIDGenerator tidGenerator) {
     if (this.foldingEnabled) {
       final boolean exceedsLimits = exceedsLimits(txn);
 
@@ -149,9 +150,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
         FoldingKey potential = null;
         IdentityHashMap dependentKeys = null;
 
-        for (Iterator i = txn.getChangeBuffers().values().iterator(); i.hasNext();) {
-          TCChangeBuffer changeBuffer = (TCChangeBuffer) i.next();
-          TCObject tco = changeBuffer.getTCObject();
+        for (final Iterator i = txn.getChangeBuffers().values().iterator(); i.hasNext();) {
+          final TCChangeBuffer changeBuffer = (TCChangeBuffer) i.next();
+          final TCObject tco = changeBuffer.getTCObject();
           if (tco.isNew()) {
             if (DEBUG) {
               logger.info("isNew for " + tco.getObjectID());
@@ -217,7 +218,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
             }
 
             // need to take on the incoming ObjectIDs present in the buffer we are folding into here
-            Set incomingOids = txn.getChangeBuffers().keySet();
+            final Set incomingOids = txn.getChangeBuffers().keySet();
             potential.getObjectIDs().addAll(incomingOids);
 
             registerKeyForOids(incomingOids, potential);
@@ -233,21 +234,22 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     // if we are here, we are not folding
-    SequenceID sid = new SequenceID(sequenceGenerator.getNextSequence());
+    final SequenceID sid = new SequenceID(sequenceGenerator.getNextSequence());
     txn.setSequenceID(sid);
     txn.setTransactionID(tidGenerator.nextTransactionID());
     if (DEBUG) {
       logger.info("NOT folding, created new sequence " + sid);
     }
 
-    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding);
+    final TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding);
 
     if (this.foldingEnabled) {
       // copy the locks since the internal list might be mutated later if locks are nested and lock commits are out of
       // order with respect to acquires
-      List locks = new ArrayList(txn.getAllLockIDs());
+      final List locks = new ArrayList(txn.getAllLockIDs());
 
-      FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), locks, new HashSet(txn.getChangeBuffers().keySet()));
+      final FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), locks, new HashSet(txn.getChangeBuffers()
+          .keySet()));
       registerKeyForOids(txn.getChangeBuffers().keySet(), key);
     }
 
@@ -257,16 +259,17 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   // Overridden in active-active
-  protected TransactionBuffer createTransactionBuffer(SequenceID sid, TCByteBufferOutputStream newOutputStream,
-                                                      ObjectStringSerializer objectStringserializer,
-                                                      DNAEncoding dnaEncoding) {
+  protected TransactionBuffer createTransactionBuffer(final SequenceID sid,
+                                                      final TCByteBufferOutputStream newOutputStream,
+                                                      final ObjectStringSerializer objectStringserializer,
+                                                      final DNAEncoding dnaEncoding) {
     return new TransactionBufferImpl(sid, newOutputStream, objectStringserializer, dnaEncoding);
   }
 
-  private void registerKeyForOids(Set oids, FoldingKey key) {
-    for (Iterator i = oids.iterator(); i.hasNext();) {
-      ObjectID oid = (ObjectID) i.next();
-      Object prev = this.foldingKeys.put(oid, key);
+  private void registerKeyForOids(final Set oids, final FoldingKey key) {
+    for (final Iterator i = oids.iterator(); i.hasNext();) {
+      final ObjectID oid = (ObjectID) i.next();
+      final Object prev = this.foldingKeys.put(oid, key);
       if (DEBUG) {
         logger.info("registered key(" + System.identityHashCode(key) + " for " + oid + ", replaces key("
                     + System.identityHashCode(prev) + ")");
@@ -274,16 +277,16 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
   }
 
-  private void log_incomingTxn(ClientTransaction txn, boolean exceedsLimits, boolean scanForClose) {
+  private void log_incomingTxn(final ClientTransaction txn, final boolean exceedsLimits, final boolean scanForClose) {
     logger.info("incoming txn@" + System.identityHashCode(txn) + "[" + txn.getTransactionID() + " locks="
                 + txn.getAllLockIDs() + ", oids=" + txn.getChangeBuffers().keySet() + ", dmi="
                 + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots() + ", notifies=" + txn.getNotifies()
                 + ", type=" + txn.getLockType() + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
   }
 
-  private void closeDependentKeys(Collection dependentKeys) {
-    for (Iterator i = dependentKeys.iterator(); i.hasNext();) {
-      FoldingKey key = (FoldingKey) i.next();
+  private void closeDependentKeys(final Collection dependentKeys) {
+    for (final Iterator i = dependentKeys.iterator(); i.hasNext();) {
+      final FoldingKey key = (FoldingKey) i.next();
       if (DEBUG) {
         logger.info("closing dependent key " + System.identityHashCode(key));
       }
@@ -291,17 +294,17 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
   }
 
-  private boolean exceedsLimits(ClientTransaction txn) {
+  private boolean exceedsLimits(final ClientTransaction txn) {
     return exceedsLimit(this.foldingLockLimit, txn.getAllLockIDs().size())
            || exceedsLimit(this.foldingObjectLimit, txn.getChangeBuffers().size());
   }
 
-  private void scanForClose(ClientTransaction txn) {
-    Collection locks = new HashSet(txn.getAllLockIDs()); // XXX: only create set if needed?
-    Set oids = txn.getChangeBuffers().keySet();
+  private void scanForClose(final ClientTransaction txn) {
+    final Collection locks = new HashSet(txn.getAllLockIDs()); // XXX: only create set if needed?
+    final Set oids = txn.getChangeBuffers().keySet();
 
-    for (Iterator i = this.foldingKeys.values().iterator(); i.hasNext();) {
-      FoldingKey key = (FoldingKey) i.next();
+    for (final Iterator i = this.foldingKeys.values().iterator(); i.hasNext();) {
+      final FoldingKey key = (FoldingKey) i.next();
       if (key.isClosed() || key.hasCommonality(locks, oids)) {
         i.remove();
         key.close();
@@ -309,32 +312,32 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
   }
 
-  private static boolean exceedsLimit(int limit, int value) {
+  private static boolean exceedsLimit(final int limit, final int value) {
     if (limit > 0) { return value > limit; }
     return false;
   }
 
-  public synchronized boolean addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
-                                             TransactionIDGenerator tidGenerator) {
+  public synchronized boolean addTransaction(final ClientTransaction txn, final SequenceGenerator sequenceGenerator,
+                                             final TransactionIDGenerator tidGenerator) {
     this.numTxns++;
-    
-    if(txn.getLockType().equals(TxnType.SYNC_WRITE)) {
+
+    if (txn.getLockType().equals(TxnType.SYNC_WRITE)) {
       this.containsSyncWriteTxn = true;
     }
 
     removeEmptyDeltaDna(txn);
 
-    TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator, tidGenerator);
+    final TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator, tidGenerator);
 
     this.bytesWritten += txnBuffer.write(txn);
 
     return txnBuffer.getTxnCount() > 1;
   }
 
-  private void removeEmptyDeltaDna(ClientTransaction txn) {
-    for (Iterator i = txn.getChangeBuffers().entrySet().iterator(); i.hasNext();) {
-      Map.Entry entry = (Entry) i.next();
-      TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
+  private void removeEmptyDeltaDna(final ClientTransaction txn) {
+    for (final Iterator i = txn.getChangeBuffers().entrySet().iterator(); i.hasNext();) {
+      final Map.Entry entry = (Entry) i.next();
+      final TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
       if ((!buffer.getTCObject().isNew()) && buffer.isEmpty()) {
         i.remove();
       }
@@ -344,10 +347,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   // Called from CommitTransactionMessageImpl
   public synchronized TCByteBuffer[] getData() {
     this.outstandingWriteCount++;
-    TCByteBufferOutputStream out = newOutputStream();
+    final TCByteBufferOutputStream out = newOutputStream();
     writeHeader(out);
-    for (Iterator i = this.transactionData.values().iterator(); i.hasNext();) {
-      TransactionBuffer tb = ((TransactionBuffer) i.next());
+    for (final Iterator i = this.transactionData.values().iterator(); i.hasNext();) {
+      final TransactionBuffer tb = ((TransactionBuffer) i.next());
       tb.writeTo(out);
     }
     this.batchDataOutputStreams.add(out);
@@ -355,24 +358,24 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return out.toArray();
   }
 
-  protected void writeHeader(TCByteBufferOutputStream out) {
+  protected void writeHeader(final TCByteBufferOutputStream out) {
     out.writeLong(this.batchID.toLong());
     out.writeInt(this.transactionData.size());
-    out.writeBoolean(containsSyncWriteTxn);
+    out.writeBoolean(this.containsSyncWriteTxn);
   }
 
   private TCByteBufferOutputStream newOutputStream() {
-    TCByteBufferOutputStream out = new TCByteBufferOutputStream(32, 4096, false);
+    final TCByteBufferOutputStream out = new TCByteBufferOutputStream(32, 4096, false);
     return out;
   }
 
   public synchronized void send() {
-    CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage(this.groupID);
+    final CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage(this.groupID);
     msg.setBatch(this, this.serializer);
     msg.send();
   }
 
-  public synchronized Collection addTransactionIDsTo(Collection c) {
+  public synchronized Collection addTransactionIDsTo(final Collection c) {
     c.addAll(this.transactionData.keySet());
     return c;
   }
@@ -382,9 +385,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
         .iterator().next()).getSequenceID();
   }
 
-  public Collection addTransactionSequenceIDsTo(Collection sequenceIDs) {
-    for (Iterator i = this.transactionData.values().iterator(); i.hasNext();) {
-      TransactionBufferImpl tb = ((TransactionBufferImpl) i.next());
+  public Collection addTransactionSequenceIDsTo(final Collection sequenceIDs) {
+    for (final Iterator i = this.transactionData.values().iterator(); i.hasNext();) {
+      final TransactionBufferImpl tb = ((TransactionBufferImpl) i.next());
       sequenceIDs.add(tb.getSequenceID());
     }
     return sequenceIDs;
@@ -392,8 +395,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
   // Called from CommitTransactionMessageImpl recycle on write.
   public synchronized void recycle() {
-    for (Iterator iter = this.batchDataOutputStreams.iterator(); iter.hasNext();) {
-      TCByteBufferOutputStream buffer = (TCByteBufferOutputStream) iter.next();
+    for (final Iterator iter = this.batchDataOutputStreams.iterator(); iter.hasNext();) {
+      final TCByteBufferOutputStream buffer = (TCByteBufferOutputStream) iter.next();
       buffer.recycle();
     }
     this.batchDataOutputStreams.clear();
@@ -401,9 +404,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   public synchronized String dump() {
-    StringBuffer sb = new StringBuffer("TransactionBatchWriter = { \n");
-    for (Iterator i = this.transactionData.entrySet().iterator(); i.hasNext();) {
-      Map.Entry entry = (Entry) i.next();
+    final StringBuffer sb = new StringBuffer("TransactionBatchWriter = { \n");
+    for (final Iterator i = this.transactionData.entrySet().iterator(); i.hasNext();) {
+      final Map.Entry entry = (Entry) i.next();
       sb.append(entry.getKey()).append(" = ");
       sb.append(((TransactionBufferImpl) entry.getValue()).dump());
       sb.append("\n");
@@ -432,8 +435,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private Mark                           changesCountMark;
     private Mark                           txnCountMark;
 
-    TransactionBufferImpl(SequenceID sequenceID, TCByteBufferOutputStream output, ObjectStringSerializer serializer,
-                          DNAEncoding encoding) {
+    TransactionBufferImpl(final SequenceID sequenceID, final TCByteBufferOutputStream output,
+                          final ObjectStringSerializer serializer, final DNAEncoding encoding) {
       this.sequenceID = sequenceID;
       this.output = output;
       this.serializer = serializer;
@@ -441,7 +444,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       this.startMark = output.mark();
     }
 
-    public void writeTo(TCByteBufferOutputStream dest) {
+    public void writeTo(final TCByteBufferOutputStream dest) {
       // XXX: make a writeInt() and writeLong() methods on Mark. Maybe ones that take offsets too
 
       // This check is needed since this buffer might need to be resent upon server crash
@@ -449,8 +452,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
         this.txnCountMark.write(Conversion.int2Bytes(this.txnCount));
         this.changesCountMark.write(Conversion.int2Bytes(this.writers.size()));
 
-        for (Iterator i = this.writers.values().iterator(); i.hasNext();) {
-          DNAWriter writer = (DNAWriter) i.next();
+        for (final Iterator i = this.writers.values().iterator(); i.hasNext();) {
+          final DNAWriter writer = (DNAWriter) i.next();
           writer.finalizeHeader();
         }
       }
@@ -464,9 +467,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       final int begin = dest.getBytesWritten();
 
       this.startMark.copyTo(dest, this.headerLength);
-      for (Iterator i = this.writers.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Entry) i.next();
-        DNAWriter writer = (DNAWriter) entry.getValue();
+      for (final Iterator i = this.writers.entrySet().iterator(); i.hasNext();) {
+        final Map.Entry entry = (Entry) i.next();
+        final DNAWriter writer = (DNAWriter) entry.getValue();
 
         writer.copyTo(dest);
       }
@@ -483,15 +486,15 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.sequenceID;
     }
 
-    public int write(ClientTransaction txn) {
+    public int write(final ClientTransaction txn) {
       // Holding on the object references, this method could be called more than once for folded transactions.
       // By definition on the second and subsequent calls will have repeated object references in it, so put() to the
       // map here to not store dupes.
-      for (Iterator i = txn.getReferencesOfObjectsInTxn().iterator(); i.hasNext();) {
+      for (final Iterator i = txn.getReferencesOfObjectsInTxn().iterator(); i.hasNext();) {
         this.references.put(i.next(), null);
       }
 
-      int start = this.output.getBytesWritten();
+      final int start = this.output.getBytesWritten();
 
       if (this.txnCount == 0) {
         writeFirst(txn);
@@ -504,26 +507,26 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.output.getBytesWritten() - start;
     }
 
-    private void appendChanges(ClientTransaction txn) {
+    private void appendChanges(final ClientTransaction txn) {
       writeChanges(txn.getChangeBuffers());
     }
 
-    private void writeChanges(Map changes) {
-      for (Iterator i = changes.entrySet().iterator(); i.hasNext();) {
-        Map.Entry entry = (Entry) i.next();
-        ObjectID oid = (ObjectID) entry.getKey();
-        TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
+    private void writeChanges(final Map changes) {
+      for (final Iterator i = changes.entrySet().iterator(); i.hasNext();) {
+        final Map.Entry entry = (Entry) i.next();
+        final ObjectID oid = (ObjectID) entry.getKey();
+        final TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
 
-        TCObject tco = buffer.getTCObject();
+        final TCObject tco = buffer.getTCObject();
 
         final boolean isNew = tco.isNew();
 
         DNAWriter writer = (DNAWriter) this.writers.get(oid);
         if (writer == null) {
-          TCClass tcc = tco.getTCClass();
+          final TCClass tcc = tco.getTCClass();
           // TODO: move LoaderDescription into DNA
-          LoaderDescription ld = tcc.getDefiningLoaderDescription();
-          String desc = ld.toDelimitedString();
+          final LoaderDescription ld = tcc.getDefiningLoaderDescription();
+          final String desc = ld.toDelimitedString();
           writer = new DNAWriterImpl(this.output, oid, tcc.getExtendingClassName(), this.serializer, this.encoding,
                                      desc, !isNew);
 
@@ -550,58 +553,58 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       }
     }
 
-    private void writeFirst(ClientTransaction txn) {
+    private void writeFirst(final ClientTransaction txn) {
       writeTransactionHeader(txn);
-      Map changes = txn.getChangeBuffers();
+      final Map changes = txn.getChangeBuffers();
       writeChanges(changes);
     }
 
-    private void writeTransactionHeader(ClientTransaction txn) {
-      int startPos = this.output.getBytesWritten();
+    private void writeTransactionHeader(final ClientTransaction txn) {
+      final int startPos = this.output.getBytesWritten();
 
       // /////////////////////////////////////////////////////////////////////////////////////////
       // If you're modifying this format, you'll need to update
       // TransactionBatchReader as well
       // /////////////////////////////////////////////////////////////////////////////////////////
 
-      TransactionID tid = txn.getTransactionID();
+      final TransactionID tid = txn.getTransactionID();
       if (tid.isNull()) { throw new AssertionError("Writing Transaction with null Transaction ID : " + txn.toString()); }
 
       this.output.writeLong(tid.toLong());
       this.output.writeByte(txn.getLockType().getType());
       this.txnCountMark = this.output.mark();
       this.output.writeInt(UNINITIALIZED_LENGTH);
-      SequenceID sid = txn.getSequenceID();
+      final SequenceID sid = txn.getSequenceID();
       if (sid.isNull()) { throw new AssertionError("SequenceID is null: " + txn); }
       this.output.writeLong(sid.toLong());
 
-      Collection locks = txn.getAllLockIDs();
+      final Collection locks = txn.getAllLockIDs();
       this.output.writeInt(locks.size());
-      for (Iterator i = locks.iterator(); i.hasNext();) {
-        new LockIDSerializer((LockID) i.next()).serializeTo(output);
+      for (final Iterator i = locks.iterator(); i.hasNext();) {
+        new LockIDSerializer((LockID) i.next()).serializeTo(this.output);
       }
 
-      Map newRoots = txn.getNewRoots();
+      final Map newRoots = txn.getNewRoots();
       this.output.writeInt(newRoots.size());
-      for (Iterator i = newRoots.entrySet().iterator(); i.hasNext();) {
-        Entry entry = (Entry) i.next();
-        String name = (String) entry.getKey();
-        ObjectID id = (ObjectID) entry.getValue();
+      for (final Iterator i = newRoots.entrySet().iterator(); i.hasNext();) {
+        final Entry entry = (Entry) i.next();
+        final String name = (String) entry.getKey();
+        final ObjectID id = (ObjectID) entry.getValue();
         this.output.writeString(name);
         this.output.writeLong(id.toLong());
       }
 
-      List notifies = txn.getNotifies();
+      final List notifies = txn.getNotifies();
       this.output.writeInt(notifies.size());
-      for (Iterator i = notifies.iterator(); i.hasNext();) {
-        Notify n = (Notify) i.next();
+      for (final Iterator i = notifies.iterator(); i.hasNext();) {
+        final Notify n = (Notify) i.next();
         n.serializeTo(this.output);
       }
 
-      List dmis = txn.getDmiDescriptors();
+      final List dmis = txn.getDmiDescriptors();
       this.output.writeInt(dmis.size());
-      for (Iterator i = dmis.iterator(); i.hasNext();) {
-        DmiDescriptor dd = (DmiDescriptor) i.next();
+      for (final Iterator i = dmis.iterator(); i.hasNext();) {
+        final DmiDescriptor dd = (DmiDescriptor) i.next();
         dd.serializeTo(this.output);
       }
 
@@ -615,14 +618,14 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
     }
 
-    protected void writeAdditionalHeaderInformation(TCByteBufferOutputStream out, ClientTransaction txn) {
+    protected void writeAdditionalHeaderInformation(final TCByteBufferOutputStream out, final ClientTransaction txn) {
       // This is here so that the format is compatible with active-active
       writeLongArray(out, new long[0]);
     }
 
-    protected void writeLongArray(TCByteBufferOutputStream out, long[] ls) {
+    protected void writeLongArray(final TCByteBufferOutputStream out, final long[] ls) {
       out.writeInt(ls.length);
-      for (long element : ls) {
+      for (final long element : ls) {
         out.writeLong(element);
       }
     }
@@ -643,7 +646,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private final TransactionBuffer buffer;
     private boolean                 closed;
 
-    FoldingKey(TransactionBuffer txnBuffer, TxnType txnType, List lockIDs, Set objectIDs) {
+    FoldingKey(final TransactionBuffer txnBuffer, final TxnType txnType, final List lockIDs, final Set objectIDs) {
       this.buffer = txnBuffer;
       this.txnType = txnType;
       this.lockIDs = lockIDs;
@@ -667,7 +670,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.closed;
     }
 
-    public boolean hasCommonality(Collection locks, Collection oids) {
+    public boolean hasCommonality(final Collection locks, final Collection oids) {
       // XXX: Take a lock list here, and only upgrade the larger collection to a set if size > 3
       return CollectionUtils.containsAny(new HashSet(this.lockIDs), locks)
              || CollectionUtils.containsAny(this.objectIDs, oids);
@@ -677,7 +680,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.buffer;
     }
 
-    public boolean canAcceptFold(List txnLocks, TxnType type) {
+    public boolean canAcceptFold(final List txnLocks, final TxnType type) {
       if (this.lockIDs.size() != txnLocks.size()) {
         if (DEBUG) {
           logger.info(System.identityHashCode(this) + ": not accepting fold since lock lists are not equal size");
@@ -711,7 +714,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private final int     objectLimit;
     private final boolean foldingEnabled;
 
-    public FoldingConfig(boolean foldingEnabled, int objectLimit, int lockLimit) {
+    public FoldingConfig(final boolean foldingEnabled, final int objectLimit, final int lockLimit) {
       this.foldingEnabled = foldingEnabled;
       this.objectLimit = objectLimit;
       this.lockLimit = lockLimit;
@@ -729,7 +732,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return this.foldingEnabled;
     }
 
-    public static FoldingConfig createFromProperties(TCProperties props) {
+    public static FoldingConfig createFromProperties(final TCProperties props) {
       return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED), props
           .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT), props
           .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));

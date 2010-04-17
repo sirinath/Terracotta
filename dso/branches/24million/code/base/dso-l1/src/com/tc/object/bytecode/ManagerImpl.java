@@ -252,10 +252,9 @@ public class ManagerImpl implements Manager {
     startupHelper.startUp();
   }
 
-
-  public void registerBeforeShutdownHook(Runnable beforeShutdownHook) {
-    if (shutdownManager != null) {
-      shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
+  public void registerBeforeShutdownHook(final Runnable beforeShutdownHook) {
+    if (this.shutdownManager != null) {
+      this.shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
     }
   }
 
@@ -856,15 +855,15 @@ public class ManagerImpl implements Manager {
   }
 
   public void pinLock(final LockID lock) {
-    lockManager.pinLock(lock);
+    this.lockManager.pinLock(lock);
   }
 
   public void unpinLock(final LockID lock) {
-    lockManager.unpinLock(lock);
+    this.lockManager.unpinLock(lock);
   }
 
-  private boolean clusteredLockingEnabled(LockID lock) {
-    return !((lock instanceof UnclusteredLockID) || txManager.isTransactionLoggingDisabled() || txManager
+  private boolean clusteredLockingEnabled(final LockID lock) {
+    return !((lock instanceof UnclusteredLockID) || this.txManager.isTransactionLoggingDisabled() || this.txManager
         .isObjectCreationInProgress());
   }
 
@@ -904,9 +903,4 @@ public class ManagerImpl implements Manager {
   public void waitForAllCurrentTransactionsToComplete() {
     this.txManager.waitForAllCurrentTransactionsToComplete();
   }
-
-  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) throws ClassNotFoundException {
-    return this.objectManager.getValueForKeyInMap(map, key);
-  }
-
 }
