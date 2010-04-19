@@ -5,7 +5,6 @@
 package com.tc.object.applicator;
 
 import com.tc.logging.TCLogger;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.dna.api.DNAEncoding;
 
 public class PartialHashMapApplicator extends HashMapApplicator {
@@ -17,7 +16,8 @@ public class PartialHashMapApplicator extends HashMapApplicator {
   /*
    * This applicator is to be used where the Map supports partial collection. (ex. HashMap)
    */
-  protected Object getObjectForValue(ClientObjectManager objectManager, Object v) {
+  @Override
+  protected Object getObjectForValue(ObjectLookup objectManager, Object v) {
     return v;
   }
 

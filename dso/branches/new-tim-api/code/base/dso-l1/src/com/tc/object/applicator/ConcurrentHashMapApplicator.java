@@ -61,7 +61,7 @@ public class ConcurrentHashMapApplicator extends PartialHashMapApplicator {
     return addTo;
   }
 
-  public void getPhysicalPortableObjects(Object pojo, TraversedReferences addTo) {
+  private void getPhysicalPortableObjects(Object pojo, TraversedReferences addTo) {
     try {
       filterPortableObject(SEGMENT_MASK_FIELD.get(pojo), addTo);
       filterPortableObject(SEGMENT_SHIFT_FIELD.get(pojo), addTo);

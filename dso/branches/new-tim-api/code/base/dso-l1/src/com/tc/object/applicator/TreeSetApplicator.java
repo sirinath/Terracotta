@@ -5,9 +5,8 @@
 package com.tc.object.applicator;
 
 import com.tc.logging.TCLogger;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -50,7 +49,8 @@ public class TreeSetApplicator extends HashSetApplicator {
     super(encoding, logger);
   }
 
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object pojo) throws IOException,
+  @Override
+  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
       ClassNotFoundException {
     TreeSet set = (TreeSet) pojo;
     DNACursor cursor = dna.getCursor();
@@ -60,12 +60,12 @@ public class TreeSetApplicator extends HashSetApplicator {
       if (action instanceof PhysicalAction) {
         PhysicalAction pa = (PhysicalAction) action;
         Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-        setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject()));
+        setComparator(set, objectLookup.lookupObject((ObjectID) pa.getObject()));
       } else {
         LogicalAction la = (LogicalAction) action;
         int method = la.getMethod();
         Object[] params = la.getParameters();
-        super.apply(objectManager, set, method, params);
+        super.apply(objectLookup, set, method, params);
       }
     }
   }
@@ -79,17 +79,18 @@ public class TreeSetApplicator extends HashSetApplicator {
     }
   }
 
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+  @Override
+  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     TreeSet set = (TreeSet) pojo;
     Comparator cmp = set.comparator();
     if (cmp != null) {
-      Object cmpObj = getDehydratableObject(cmp, objectManager);
+      Object cmpObj = getDehydratableObject(cmp, objectLookup);
       if (cmpObj != null) {
         writer.addPhysicalAction(COMPARATOR_FIELDNAME, cmpObj);
       }
     }
 
-    super.dehydrate(objectManager, tcObject, writer, pojo);
+    super.dehydrate(objectLookup, tcObject, writer, pojo);
   }
 
   @Override
