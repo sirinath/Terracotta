@@ -37,6 +37,7 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpec {
 
   private static final String                     HONOR_TRANSIENT_KEY        = "honor-transient";
   private static final String                     HONOR_VOLATILE_KEY         = "honor-volatile";
+  private static final String                     IGNORE_REWRITE_KEY         = "ignore_rewrite";
 
   private final DSOClientConfigHelper             configuration;
   private final String                            className;
@@ -407,6 +408,17 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpec {
     return this;
   }
 
+  public boolean isIgnoreRewrite() {
+    Boolean flag = flags.get(IGNORE_REWRITE_KEY);
+    if (flag == null) return false;
+    return flag;
+  }
+
+  public TransparencyClassSpec setIgnoreRewrite(final boolean b) {
+    flags.put(IGNORE_REWRITE_KEY, b);
+    return this;
+  }
+  
   public TransparencyClassSpec setCallConstructorOnLoad(final boolean b) {
     onLoad.setToCallConstructorOnLoad(b);
     return this;
