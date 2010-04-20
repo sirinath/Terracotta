@@ -23,13 +23,15 @@ import java.io.IOException;
 
 public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage {
 
-  // TODO:: Comback for other types of requests.
   private final static byte        MAP_OBJECT_ID = 1;
   private final static byte        REQUEST_ID    = 2;
+  private final static byte        PORTABLE_KEY  = 3;
+
+  private final static byte        DUMMY_BYTE    = 0x00;
 
   // TODO::Comeback and verify
-  private static final DNAEncoding encoder       = new SerializerDNAEncodingImpl();
-  private static final DNAEncoding decoder       = new StorageDNAEncodingImpl();
+  private final static DNAEncoding encoder       = new SerializerDNAEncodingImpl();
+  private final static DNAEncoding decoder       = new StorageDNAEncodingImpl();
 
   private ServerMapRequestID       requestID;
   private Object                   portableKey;
@@ -57,8 +59,8 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   @Override
   protected void dehydrateValues() {
     putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
-    putNVPair(REQUEST_ID, requestID.toLong());
-
+    putNVPair(REQUEST_ID, this.requestID.toLong());
+    putNVPair(PORTABLE_KEY, DUMMY_BYTE);
     // Directly encode the key
     encoder.encode(this.portableKey, getOutputStream());
   }
@@ -69,9 +71,14 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
       case MAP_OBJECT_ID:
         this.mapID = new ObjectID(getLongValue());
         return true;
-        
+
       case REQUEST_ID:
         this.requestID = new ServerMapRequestID(getLongValue());
+        return true;
+
+      case PORTABLE_KEY:
+        // Read dummy byte
+        getByteValue();
         // Directly decode the key
         try {
           this.portableKey = decoder.decode(getInputStream());
@@ -97,7 +104,7 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   }
 
   public ServerMapRequestID getRequestID() {
-    return requestID;
+    return this.requestID;
   }
-  
+
 }

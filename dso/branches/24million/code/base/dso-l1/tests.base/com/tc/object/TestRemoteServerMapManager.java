@@ -3,33 +3,28 @@
  */
 package com.tc.object;
 
+import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
-import com.tc.exception.*;
 
 public class TestRemoteServerMapManager implements RemoteServerMapManager {
 
-  public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID, Object portableKey,
-                                            Object portableValue, NodeID nodeID) {
+  public ObjectID getMappingForKey(final ObjectID oid, final Object portableKey) {
+    throw new ImplementMe();
+  }
+
+  public int getSize(final ObjectID oid) {
+    throw new ImplementMe();
+  }
+
+  public void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
+                                  final ClientHandshakeMessage handshakeMessage) {
     throw new ImplementMe();
 
   }
 
-  public ObjectID getMappingForKey(ObjectID oid, Object portableKey) {
-    throw new ImplementMe();
-  }
-
-  public long size(ObjectID oid) {
-    throw new ImplementMe();
-  }
-
-  public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
-    throw new ImplementMe();
-
-  }
-
-  public void pause(NodeID remoteNode, int disconnected) {
+  public void pause(final NodeID remoteNode, final int disconnected) {
     throw new ImplementMe();
 
   }
@@ -39,9 +34,15 @@ public class TestRemoteServerMapManager implements RemoteServerMapManager {
 
   }
 
-  public void unpause(NodeID remoteNode, int disconnected) {
+  public void unpause(final NodeID remoteNode, final int disconnected) {
     throw new ImplementMe();
 
+  }
+
+  public void addResponseForKeyValueMapping(final SessionID localSessionID, final ObjectID mapID,
+                                            final ServerMapRequestID requestID, final Object portableValue,
+                                            final NodeID nodeID) {
+    throw new ImplementMe();
   }
 
 }

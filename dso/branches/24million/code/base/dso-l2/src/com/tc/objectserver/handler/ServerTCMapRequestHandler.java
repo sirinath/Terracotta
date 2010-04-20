@@ -14,17 +14,18 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 public class ServerTCMapRequestHandler extends AbstractEventHandler implements EventHandler {
 
   private ServerTCMapRequestManager serverTCMapRequestManager;
-  
+
   @Override
   public void handleEvent(final EventContext context) {
     final ServerTCMapRequestMessage kvmContext = (ServerTCMapRequestMessage) context;
-    serverTCMapRequestManager.requestValues(kvmContext.getRequestID(), kvmContext.getClientID(), kvmContext.getMapID(), kvmContext.getPortableKey());
+    this.serverTCMapRequestManager.requestValues(kvmContext.getRequestID(), kvmContext.getClientID(), kvmContext
+        .getMapID(), kvmContext.getPortableKey());
   }
-  
+
   @Override
   public void initialize(final ConfigurationContext context) {
     final ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     this.serverTCMapRequestManager = oscc.getServerTCMapRequestManager();
   }
-  
+
 }

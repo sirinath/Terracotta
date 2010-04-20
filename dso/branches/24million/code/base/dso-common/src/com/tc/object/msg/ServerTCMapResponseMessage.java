@@ -5,14 +5,15 @@ package com.tc.object.msg;
 
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapRequestID;
 
 public interface ServerTCMapResponseMessage extends TCMessage {
 
-  public void initialize(ObjectID mapID, Object portableKey, Object portableValue);
+  public void initialize(ObjectID mapID, ServerMapRequestID requestID, Object portableValue);
 
   public ObjectID getMapID();
 
-  public Object getPortableKey();
+  public ServerMapRequestID getRequestID();
 
   public Object getPortableValue();
 

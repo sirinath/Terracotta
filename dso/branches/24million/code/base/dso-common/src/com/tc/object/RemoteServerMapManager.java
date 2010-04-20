@@ -11,8 +11,8 @@ public interface RemoteServerMapManager extends ClientHandshakeCallback {
 
   public Object getMappingForKey(ObjectID oid, Object portableKey);
 
-  public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID, Object portableKey,
+  public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID, ServerMapRequestID requestID,
                                             Object portableValue, NodeID nodeID);
 
-  public long size(ObjectID oid);
+  public int getSize(ObjectID mapID);
 }
