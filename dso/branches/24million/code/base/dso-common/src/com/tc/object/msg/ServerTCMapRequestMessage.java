@@ -19,7 +19,7 @@ public interface ServerTCMapRequestMessage extends EventContext {
   public ObjectID getMapID();
 
   public ClientID getClientID();
-  
+
   public ServerMapRequestID getRequestID();
 
 }

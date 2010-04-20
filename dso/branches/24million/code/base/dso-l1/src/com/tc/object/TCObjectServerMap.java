@@ -62,4 +62,13 @@ public class TCObjectServerMap extends TCObjectLogical implements TCObject {
     }
   }
 
+  public int getSize(final ServerTCMap map) {
+    final TCObject tcObject = map.__tc_managed();
+    if (tcObject == null) { throw new UnsupportedOperationException(
+                                                                    "getSize is not supported in a non-shared ServerTCMap"); }
+    final ObjectID mapID = tcObject.getObjectID();
+
+    return this.serverMapManager.getSize(mapID);
+  }
+
 }

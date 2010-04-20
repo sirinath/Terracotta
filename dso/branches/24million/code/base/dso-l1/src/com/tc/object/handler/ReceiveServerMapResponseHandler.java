@@ -20,6 +20,6 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
   public void handleEvent(final EventContext context) {
     final ServerTCMapResponseMessage kvMsg = (ServerTCMapResponseMessage) context;
     this.remoteServerMapManager.addResponseForKeyValueMapping(kvMsg.getLocalSessionID(), kvMsg.getMapID(), kvMsg
-        .getPortableKey(), kvMsg.getPortableValue(), kvMsg.getSourceNodeID());
+        .getRequestID(), kvMsg.getPortableValue(), kvMsg.getSourceNodeID());
   }
 }

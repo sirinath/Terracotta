@@ -96,11 +96,11 @@ public final class RequestEntryForKeyContext implements ObjectManagerResultsCont
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     if (obj instanceof RequestEntryForKeyContext) {
-      RequestEntryForKeyContext compareTo = (RequestEntryForKeyContext) obj;
-      return clientID.equals(compareTo.getClientID()) && mapID.equals(compareTo.getServerTCMapID())
-             && portableKey.equals(compareTo.getPortableKey());
+      final RequestEntryForKeyContext compareTo = (RequestEntryForKeyContext) obj;
+      return this.clientID.equals(compareTo.getClientID()) && this.mapID.equals(compareTo.getServerTCMapID())
+             && this.portableKey.equals(compareTo.getPortableKey());
     }
     return false;
   }

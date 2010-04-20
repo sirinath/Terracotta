@@ -26,117 +26,123 @@ import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedOb
 import junit.framework.TestCase;
 
 public class ServerTCMapRequestManagerTest extends TestCase {
-  
-  
+
   public void tests() {
-    ObjectManager objManager = mock(ObjectManager.class);
-    ClientID clientID = new ClientID(0);
-    ServerMapRequestID requestID = new ServerMapRequestID(0);
-    ObjectID mapID = new ObjectID(1);
-    Object portableKey = "key1";
-    Object portableValue ="value1";
-    Sink respondToServerTCMapSink = mock(Sink.class);
-    Sink managedObjectRequestSink = mock(Sink.class);
-    DSOChannelManager channelManager = mock(DSOChannelManager.class);
-    ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(objManager, channelManager, respondToServerTCMapSink, managedObjectRequestSink);
+    final ObjectManager objManager = mock(ObjectManager.class);
+    final ClientID clientID = new ClientID(0);
+    final ServerMapRequestID requestID = new ServerMapRequestID(0);
+    final ObjectID mapID = new ObjectID(1);
+    final Object portableKey = "key1";
+    final Object portableValue = "value1";
+    final Sink respondToServerTCMapSink = mock(Sink.class);
+    final Sink managedObjectRequestSink = mock(Sink.class);
+    final DSOChannelManager channelManager = mock(DSOChannelManager.class);
+    final ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(
+                                                                                                      objManager,
+                                                                                                      channelManager,
+                                                                                                      respondToServerTCMapSink,
+                                                                                                      managedObjectRequestSink);
     serverTCMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
-    
-    RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID, clientID, mapID, portableKey,
+
+    final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID, clientID, mapID,
+                                                                                   portableKey,
                                                                                    respondToServerTCMapSink);
-    
+
     verify(objManager, atLeastOnce()).lookupObjectsFor(clientID, requestContext);
-   
-    ManagedObject mo = mock(ManagedObject.class);
-    ConcurrentDistributedServerMapManagedObjectState mos = mock(ConcurrentDistributedServerMapManagedObjectState.class);
+
+    final ManagedObject mo = mock(ManagedObject.class);
+    final ConcurrentDistributedServerMapManagedObjectState mos = mock(ConcurrentDistributedServerMapManagedObjectState.class);
     when(mos.getValueForKey(portableKey)).thenReturn(portableValue);
     when(mo.getManagedObjectState()).thenReturn(mos);
-    MessageChannel messageChannel = mock(MessageChannel.class);
+    final MessageChannel messageChannel = mock(MessageChannel.class);
     try {
       when(channelManager.getActiveChannel(clientID)).thenReturn(messageChannel);
-    } catch (NoSuchChannelException e) {
+    } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
+    final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
     when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
-    
+
     serverTCMapRequestManager.sendValues(mapID, mo);
-   
+
     verify(mo, atLeastOnce()).getManagedObjectState();
-    
+
     verify(objManager, atLeastOnce()).releaseReadOnly(mo);
-    
+
     try {
       verify(channelManager, atLeastOnce()).getActiveChannel(clientID);
-    } catch (NoSuchChannelException e) {
+    } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-      
+
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
-    
-    verify(message, atLeastOnce()).initialize(mapID, portableKey, portableValue);
-    
+
+    verify(message, atLeastOnce()).initialize(mapID, requestID, portableValue);
+
     verify(message, atLeastOnce()).send();
-    
+
   }
-  
+
   public void testMultipleKeysRequests() {
-    ObjectManager objManager = mock(ObjectManager.class);
-    ClientID clientID = new ClientID(0);
-    ServerMapRequestID requestID1 = new ServerMapRequestID(0);
-    ServerMapRequestID requestID2 = new ServerMapRequestID(1);
-    ObjectID mapID = new ObjectID(1);
-    Object portableKey1 = "key1";
-    Object portableValue1 ="value1";
-    Object portableKey2 = "key2";
-    Object portableValue2 ="value2";
-    Sink respondToServerTCMapSink = mock(Sink.class);
-    Sink managedObjectRequestSink = mock(Sink.class);
-    DSOChannelManager channelManager = mock(DSOChannelManager.class);
-    ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(objManager, channelManager, respondToServerTCMapSink, managedObjectRequestSink);
+    final ObjectManager objManager = mock(ObjectManager.class);
+    final ClientID clientID = new ClientID(0);
+    final ServerMapRequestID requestID1 = new ServerMapRequestID(0);
+    final ServerMapRequestID requestID2 = new ServerMapRequestID(1);
+    final ObjectID mapID = new ObjectID(1);
+    final Object portableKey1 = "key1";
+    final Object portableValue1 = "value1";
+    final Object portableKey2 = "key2";
+    final Object portableValue2 = "value2";
+    final Sink respondToServerTCMapSink = mock(Sink.class);
+    final Sink managedObjectRequestSink = mock(Sink.class);
+    final DSOChannelManager channelManager = mock(DSOChannelManager.class);
+    final ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(
+                                                                                                      objManager,
+                                                                                                      channelManager,
+                                                                                                      respondToServerTCMapSink,
+                                                                                                      managedObjectRequestSink);
     serverTCMapRequestManager.requestValues(requestID1, clientID, mapID, portableKey1);
     serverTCMapRequestManager.requestValues(requestID2, clientID, mapID, portableKey2);
-     
-    RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID1, clientID, mapID, portableKey1,
+
+    final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID1, clientID, mapID,
+                                                                                   portableKey1,
                                                                                    respondToServerTCMapSink);
-    
+
     verify(objManager, atMost(1)).lookupObjectsFor(clientID, requestContext);
-   
-    ManagedObject mo = mock(ManagedObject.class);
-    ConcurrentDistributedServerMapManagedObjectState mos = mock(ConcurrentDistributedServerMapManagedObjectState.class);
+
+    final ManagedObject mo = mock(ManagedObject.class);
+    final ConcurrentDistributedServerMapManagedObjectState mos = mock(ConcurrentDistributedServerMapManagedObjectState.class);
     when(mos.getValueForKey(portableKey1)).thenReturn(portableValue1);
     when(mos.getValueForKey(portableKey2)).thenReturn(portableValue2);
-    
+
     when(mo.getManagedObjectState()).thenReturn(mos);
-    MessageChannel messageChannel = mock(MessageChannel.class);
+    final MessageChannel messageChannel = mock(MessageChannel.class);
     try {
       when(channelManager.getActiveChannel(clientID)).thenReturn(messageChannel);
-    } catch (NoSuchChannelException e) {
+    } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
+    final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
     when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
-    
+
     serverTCMapRequestManager.sendValues(mapID, mo);
-   
+
     verify(mo, atMost(1)).getManagedObjectState();
-    
+
     verify(objManager, atLeastOnce()).releaseReadOnly(mo);
-    
+
     try {
       verify(channelManager, atLeastOnce()).getActiveChannel(clientID);
-    } catch (NoSuchChannelException e) {
+    } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-      
+
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
-    
-    verify(message, atLeastOnce()).initialize(mapID, portableKey1, portableValue1);
-    verify(message, atLeastOnce()).initialize(mapID, portableKey2, portableValue2);
-     
+
+    verify(message, atLeastOnce()).initialize(mapID, requestID1, portableValue1);
+    verify(message, atLeastOnce()).initialize(mapID, requestID2, portableValue2);
+
     verify(message, atLeastOnce()).send();
   }
-  
-  
-
 
 }

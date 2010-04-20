@@ -46,58 +46,60 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     this.managedObjectRequestSink = managedObjectRequestSink;
   }
 
-  public void requestValues(ServerMapRequestID requestID, ClientID clientID, ObjectID mapID, Object portableKey) {
+  public void requestValues(final ServerMapRequestID requestID, final ClientID clientID, final ObjectID mapID,
+                            final Object portableKey) {
 
     final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID, clientID, mapID,
                                                                                    portableKey,
                                                                                    this.respondToServerTCMapSink);
-    if (requestCache.add(requestContext)) {
+    if (this.requestCache.add(requestContext)) {
       this.objectManager.lookupObjectsFor(clientID, requestContext);
     }
 
   }
 
-  public void sendValues(ObjectID mapID, ManagedObject managedObject) {
+  public void sendValues(final ObjectID mapID, final ManagedObject managedObject) {
     final ManagedObjectState state = managedObject.getManagedObjectState();
 
-    if (!(state instanceof ConcurrentDistributedServerMapManagedObjectState)) { throw new AssertionError(
-                                                                                                         "Server Map "
-                                                                                                             + mapID
-                                                                                                             + " is not a ConcurrentDistributedServerMapManagedObjectState, state is of class type: "
-                                                                                                             + state
-                                                                                                                 .getClassName()); }
+    if (!(state instanceof ConcurrentDistributedServerMapManagedObjectState)) {
+      // Formatter
+      throw new AssertionError("Server Map " + mapID
+                               + " is not a ConcurrentDistributedServerMapManagedObjectState, state is of class type: "
+                               + state.getClassName());
+    }
 
     final ConcurrentDistributedServerMapManagedObjectState csmState = (ConcurrentDistributedServerMapManagedObjectState) state;
     try {
-      List<RequestEntryForKeyContext> requestList = requestCache.remove(mapID);
+      final List<RequestEntryForKeyContext> requestList = this.requestCache.remove(mapID);
 
-      if (requestList != null) {
-        for (RequestEntryForKeyContext request : requestList) {
+      if (requestList == null) { throw new AssertionError("Looked up : " + managedObject
+                                                          + " But no request pending for it : " + this.requestCache); }
 
-          Object portableKey = request.getPortableKey();
-          ClientID clientID = request.getClientID();
-          final Object portableValue = csmState.getValueForKey(portableKey);
-          // System.err.println("Server : Send response for partial key lookup : " + responseContext + " value : "
-          // + portableValue);
+      for (final RequestEntryForKeyContext request : requestList) {
 
-          preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
+        final ServerMapRequestID requestID = request.getRequestID();
+        final Object portableKey = request.getPortableKey();
+        final ClientID clientID = request.getClientID();
+        final Object portableValue = csmState.getValueForKey(portableKey);
 
-          MessageChannel channel;
-          try {
-            channel = this.channelManager.getActiveChannel(clientID);
-          } catch (final NoSuchChannelException e) {
-            logger.warn("Client " + clientID + " disconnect before sending Entry for mapID : " + mapID + " key : "
-                        + portableKey);
-            continue;
-          }
+        preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
 
-          final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
-              .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
-          responseMessage.initialize(mapID, portableKey, portableValue);
-          responseMessage.send();
+        MessageChannel channel;
+        try {
+          channel = this.channelManager.getActiveChannel(clientID);
+        } catch (final NoSuchChannelException e) {
+          this.logger.warn("Client " + clientID + " disconnect before sending Entry for mapID : " + mapID + " key : "
+                           + portableKey);
+          continue;
         }
+
+        final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
+            .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+        responseMessage.initialize(mapID, requestID, portableValue);
+        responseMessage.send();
       }
     } finally {
+      // TODO::FIXME::Release as soon as possible
       this.objectManager.releaseReadOnly(managedObject);
     }
   }
@@ -122,21 +124,21 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
 
     private final Map<ObjectID, List<RequestEntryForKeyContext>> serverMapRequestMap = new HashMap<ObjectID, List<RequestEntryForKeyContext>>();
 
-    public synchronized boolean add(RequestEntryForKeyContext context) {
+    public synchronized boolean add(final RequestEntryForKeyContext context) {
       boolean newEntry = false;
-      ObjectID mapID = context.getServerTCMapID();
-      List<RequestEntryForKeyContext> requestList = serverMapRequestMap.get(mapID);
+      final ObjectID mapID = context.getServerTCMapID();
+      List<RequestEntryForKeyContext> requestList = this.serverMapRequestMap.get(mapID);
       if (requestList == null) {
         requestList = new ArrayList<RequestEntryForKeyContext>();
-        serverMapRequestMap.put(mapID, requestList);
+        this.serverMapRequestMap.put(mapID, requestList);
         newEntry = true;
       }
       requestList.add(context);
       return newEntry;
     }
 
-    public synchronized List<RequestEntryForKeyContext> remove(ObjectID mapID) {
-      return serverMapRequestMap.remove(mapID);
+    public synchronized List<RequestEntryForKeyContext> remove(final ObjectID mapID) {
+      return this.serverMapRequestMap.remove(mapID);
     }
   }
 

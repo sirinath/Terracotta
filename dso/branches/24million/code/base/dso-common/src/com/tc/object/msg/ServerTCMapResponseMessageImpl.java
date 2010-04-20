@@ -10,6 +10,7 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapRequestID;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.StorageDNAEncodingImpl;
 import com.tc.object.session.SessionID;
@@ -18,15 +19,19 @@ import java.io.IOException;
 
 public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements ServerTCMapResponseMessage {
 
-  private final static byte        MAP_OBJECT_ID = 1;
+  private final static byte        MAP_OBJECT_ID  = 1;
+  private final static byte        REQUEST_ID     = 2;
+  private final static byte        PORTABLE_VALUE = 3;
+
+  private final static byte        DUMMY_BYTE     = 0x00;
 
   // TODO::Comeback and verify
-  private static final DNAEncoding encoder       = new StorageDNAEncodingImpl();
+  private static final DNAEncoding encoder        = new StorageDNAEncodingImpl();
   // Since ApplicatorDNAEncodingImpl is only available in the client, some tricker to get this reference set.
   private final DNAEncoding        decoder;
 
   private ObjectID                 mapID;
-  private Object                   portableKey;
+  private ServerMapRequestID       requestID;
   private Object                   portableValue;
 
   public ServerTCMapResponseMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
@@ -43,9 +48,9 @@ public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements Se
     this.decoder = null; // shouldn't be used
   }
 
-  public void initialize(final ObjectID mapObjectID, final Object key, final Object value) {
+  public void initialize(final ObjectID mapObjectID, final ServerMapRequestID smRequestID, final Object value) {
     this.mapID = mapObjectID;
-    this.portableKey = key;
+    this.requestID = smRequestID;
     // Null Value is not supported in CDSM
     this.portableValue = (value == null ? ObjectID.NULL_ID : value);
   }
@@ -53,7 +58,9 @@ public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements Se
   @Override
   protected void dehydrateValues() {
     putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
-    encoder.encode(this.portableKey, getOutputStream());
+    putNVPair(REQUEST_ID, this.requestID.toLong());
+    putNVPair(PORTABLE_VALUE, DUMMY_BYTE);
+    // Directly encode the value
     encoder.encode(this.portableValue, getOutputStream());
   }
 
@@ -62,9 +69,17 @@ public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements Se
     switch (name) {
       case MAP_OBJECT_ID:
         this.mapID = new ObjectID(getLongValue());
-        // Directly decode the key and value
+        return true;
+
+      case REQUEST_ID:
+        this.requestID = new ServerMapRequestID(getLongValue());
+        return true;
+
+      case PORTABLE_VALUE:
+        // Read dummy byte
+        getByteValue();
+        // Directly decode the value
         try {
-          this.portableKey = this.decoder.decode(getInputStream());
           this.portableValue = this.decoder.decode(getInputStream());
         } catch (final ClassNotFoundException e) {
           throw new AssertionError(e);
@@ -79,12 +94,12 @@ public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements Se
     return this.mapID;
   }
 
-  public Object getPortableKey() {
-    return this.portableKey;
-  }
-
   public Object getPortableValue() {
     return this.portableValue;
+  }
+
+  public ServerMapRequestID getRequestID() {
+    return this.requestID;
   }
 
 }
