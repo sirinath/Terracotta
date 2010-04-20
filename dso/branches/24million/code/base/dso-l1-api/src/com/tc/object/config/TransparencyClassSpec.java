@@ -459,6 +459,19 @@ public interface TransparencyClassSpec {
   public boolean isHonorVolatile();
 
   /**
+   * @return True if ignore rewrite flag is set
+   */
+  public boolean isIgnoreRewrite();
+
+  /**
+   * Set ignore rewrite flag
+   * 
+   * @param b New flag value
+   * @return this
+   */
+  public TransparencyClassSpec setIgnoreRewrite(final boolean b);
+  
+  /**
    * Set honor transient flag
    * 
    * @param b New flag value
