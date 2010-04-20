@@ -143,6 +143,7 @@ public class IgnoreRewriteTestApp extends AbstractErrorCatchingTransparentApp {
 
     private transient int rewriteCounter = 0;
 
+    @SuppressWarnings("unused")
     public boolean __tc_isManaged() {
       rewriteCounter++;
       return true;
