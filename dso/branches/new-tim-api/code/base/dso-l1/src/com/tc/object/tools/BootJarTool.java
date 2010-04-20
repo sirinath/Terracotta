@@ -44,7 +44,6 @@ import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.exception.TCObjectNotSharableException;
 import com.tc.exception.TCRuntimeException;
-import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tc.injection.exceptions.UnsupportedInjectedDsoInstanceTypeException;
 import com.tc.io.TCByteArrayOutputStream;
@@ -549,8 +548,6 @@ public class BootJarTool {
 
       loadTerracottaClass(UnknownJvmVersionException.class.getName());
       loadTerracottaClass(UnknownRuntimeVersionException.class.getName());
-
-      loadTerracottaClass(IBatisAccessPlanInstance.class.getName());
 
       // Locking System Classes
       loadTerracottaClass(com.tc.object.locks.LockID.class.getName());
