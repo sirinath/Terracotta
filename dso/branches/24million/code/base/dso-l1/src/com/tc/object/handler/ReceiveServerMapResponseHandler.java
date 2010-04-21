@@ -6,6 +6,7 @@ package com.tc.object.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.object.RemoteServerMapManager;
+import com.tc.object.ServerMapRequestType;
 import com.tc.object.msg.ServerTCMapResponseMessage;
 
 public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
@@ -18,8 +19,20 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
   @Override
   public void handleEvent(final EventContext context) {
-    final ServerTCMapResponseMessage kvMsg = (ServerTCMapResponseMessage) context;
-    this.remoteServerMapManager.addResponseForKeyValueMapping(kvMsg.getLocalSessionID(), kvMsg.getMapID(), kvMsg
-        .getRequestID(), kvMsg.getPortableValue(), kvMsg.getSourceNodeID());
+    final ServerTCMapResponseMessage responseMsg = (ServerTCMapResponseMessage) context;
+    final ServerMapRequestType requestType = responseMsg.getRequestType();
+    switch (requestType) {
+      case GET_SIZE:
+        this.remoteServerMapManager.addResponseForGetSize(responseMsg.getLocalSessionID(), responseMsg.getMapID(),
+                                                          responseMsg.getRequestID(), responseMsg.getSize(),
+                                                          responseMsg.getSourceNodeID());
+        break;
+      case GET_VALUE_FOR_KEY:
+        this.remoteServerMapManager.addResponseForKeyValueMapping(responseMsg.getLocalSessionID(), responseMsg
+            .getMapID(), responseMsg.getRequestID(), responseMsg.getPortableValue(), responseMsg.getSourceNodeID());
+        break;
+      default:
+        throw new AssertionError("Unsupported Request type : " + requestType);
+    }
   }
 }

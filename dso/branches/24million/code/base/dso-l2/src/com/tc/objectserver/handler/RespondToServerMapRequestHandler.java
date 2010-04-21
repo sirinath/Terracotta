@@ -24,7 +24,7 @@ public class RespondToServerMapRequestHandler extends AbstractEventHandler imple
     final ObjectID mapID = responseContext.getMapID();
     final ManagedObject mo = responseContext.getManagedObject();
     
-    serverTCMapRequestManager.sendValues(mapID, mo);
+    serverTCMapRequestManager.sendResponseFor(mapID, mo);
   }
 
   @Override

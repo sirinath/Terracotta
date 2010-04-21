@@ -45,4 +45,9 @@ public class TestRemoteServerMapManager implements RemoteServerMapManager {
     throw new ImplementMe();
   }
 
+  public void addResponseForGetSize(final SessionID localSessionID, final ObjectID mapID,
+                                    final ServerMapRequestID requestID, final Integer size, final NodeID sourceNodeID) {
+    throw new ImplementMe();
+  }
+
 }
