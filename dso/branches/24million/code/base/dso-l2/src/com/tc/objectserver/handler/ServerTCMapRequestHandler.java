@@ -17,9 +17,14 @@ public class ServerTCMapRequestHandler extends AbstractEventHandler implements E
 
   @Override
   public void handleEvent(final EventContext context) {
-    final ServerTCMapRequestMessage kvmContext = (ServerTCMapRequestMessage) context;
-    this.serverTCMapRequestManager.requestValues(kvmContext.getRequestID(), kvmContext.getClientID(), kvmContext
-        .getMapID(), kvmContext.getPortableKey());
+    final ServerTCMapRequestMessage smContext = (ServerTCMapRequestMessage) context;
+    if (smContext.isGetSizeRequest()) {
+      this.serverTCMapRequestManager.requestSize(smContext.getRequestID(), smContext.getClientID(), smContext
+          .getMapID());
+    } else {
+      this.serverTCMapRequestManager.requestValues(smContext.getRequestID(), smContext.getClientID(), smContext
+          .getMapID(), smContext.getPortableKey());
+    }
   }
 
   @Override

@@ -19,7 +19,7 @@ import com.tc.object.msg.ServerTCMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.context.RequestEntryForKeyContext;
+import com.tc.objectserver.context.ServerMapRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedObjectState;
 
@@ -44,7 +44,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
                                                                                                       managedObjectRequestSink);
     serverTCMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
 
-    final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID, clientID, mapID,
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID, clientID, mapID,
                                                                                    portableKey,
                                                                                    respondToServerTCMapSink);
 
@@ -63,7 +63,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
     when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
-    serverTCMapRequestManager.sendValues(mapID, mo);
+    serverTCMapRequestManager.sendResponseFor(mapID, mo);
 
     verify(mo, atLeastOnce()).getManagedObjectState();
 
@@ -77,7 +77,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
 
-    verify(message, atLeastOnce()).initialize(mapID, requestID, portableValue);
+    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID, portableValue);
 
     verify(message, atLeastOnce()).send();
 
@@ -104,7 +104,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     serverTCMapRequestManager.requestValues(requestID1, clientID, mapID, portableKey1);
     serverTCMapRequestManager.requestValues(requestID2, clientID, mapID, portableKey2);
 
-    final RequestEntryForKeyContext requestContext = new RequestEntryForKeyContext(requestID1, clientID, mapID,
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID1, clientID, mapID,
                                                                                    portableKey1,
                                                                                    respondToServerTCMapSink);
 
@@ -125,7 +125,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
     when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
-    serverTCMapRequestManager.sendValues(mapID, mo);
+    serverTCMapRequestManager.sendResponseFor(mapID, mo);
 
     verify(mo, atMost(1)).getManagedObjectState();
 
@@ -139,8 +139,8 @@ public class ServerTCMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
 
-    verify(message, atLeastOnce()).initialize(mapID, requestID1, portableValue1);
-    verify(message, atLeastOnce()).initialize(mapID, requestID2, portableValue2);
+    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID1, portableValue1);
+    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID2, portableValue2);
 
     verify(message, atLeastOnce()).send();
   }

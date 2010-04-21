@@ -41,6 +41,10 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     return this.references.get(portableKey);
   }
 
+  public Integer getSize() {
+    return this.references.size();
+  }
+
   static MapManagedObjectState readFrom(final ObjectInput in) throws IOException {
     final ConcurrentDistributedServerMapManagedObjectState cdmMos = new ConcurrentDistributedServerMapManagedObjectState(
                                                                                                                          in);

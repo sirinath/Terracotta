@@ -10,7 +10,9 @@ import com.tc.object.ServerMapRequestID;
 
 public interface ServerTCMapRequestMessage extends EventContext {
 
-  public void initialize(ServerMapRequestID requestID, ObjectID mapID, Object portableKey);
+  public void initializeGetValueRequest(ServerMapRequestID requestID, ObjectID mapID, Object portableKey);
+
+  public void initializeGetSizeRequest(ServerMapRequestID requestID, ObjectID mapID);
 
   public void send();
 
@@ -22,4 +24,5 @@ public interface ServerTCMapRequestMessage extends EventContext {
 
   public ServerMapRequestID getRequestID();
 
+  public boolean isGetSizeRequest();
 }

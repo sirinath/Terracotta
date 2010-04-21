@@ -11,7 +11,9 @@ import com.tc.objectserver.core.api.ManagedObject;
 public interface ServerTCMapRequestManager {
 
   public void requestValues(ServerMapRequestID serverMapRequestID, ClientID clientID, ObjectID mapID, Object portableKey);
-  
-  public void sendValues(ObjectID mapID, ManagedObject managedObject);
-  
+
+  public void requestSize(ServerMapRequestID requestID, ClientID clientID, ObjectID mapID);
+
+  public void sendResponseFor(ObjectID mapID, ManagedObject managedObject);
+
 }
