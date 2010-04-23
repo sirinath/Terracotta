@@ -39,8 +39,8 @@ public class FileApplicator extends PhysicalApplicator {
   }
 
   @Override
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     boolean remoteFileSeparatorObtained = false;
     char sepChar = 0;
@@ -69,8 +69,8 @@ public class FileApplicator extends PhysicalApplicator {
   }
 
   @Override
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
-    super.dehydrate(objectLookup, tcObject, writer, pojo);
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    super.dehydrate(objectManager, tcObject, writer, pojo);
 
     String fieldName = FILE_SEPARATOR_FIELD;
     String fieldValue = File.separator;

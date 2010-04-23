@@ -104,8 +104,8 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     LinkedBlockingQueue queue = (LinkedBlockingQueue) po;
     DNACursor cursor = dna.getCursor();
     boolean hasPhysicalAction = false;
@@ -138,9 +138,9 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
         Object value = physicalAction.getObject();
 
         if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + TAKE_LOCK_FIELD_NAME)) {
-          takeLock = objectLookup.lookupObject((ObjectID) value);
+          takeLock = objectManager.lookupObject((ObjectID) value);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + PUT_LOCK_FIELD_NAME)) {
-          putLock = objectLookup.lookupObject((ObjectID) value);
+          putLock = objectManager.lookupObject((ObjectID) value);
         } else if (fieldName.equals(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + CAPACITY_FIELD_NAME)) {
           capacity = value;
         }
@@ -229,39 +229,41 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
-    dehydrateFields(objectLookup, tcObject, writer, pojo);
-    dehydrateMembers(objectLookup, tcObject, writer, pojo);
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    dehydrateFields(objectManager, tcObject, writer, pojo);
+    dehydrateMembers(objectManager, tcObject, writer, pojo);
   }
 
-  private void dehydrateFields(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  private void dehydrateFields(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer,
+                               Object pojo) {
     try {
       Object takeLock = TAKE_LOCK_FIELD.get(pojo);
-      takeLock = getDehydratableObject(takeLock, objectLookup);
+      takeLock = getDehydratableObject(takeLock, objectManager);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + TAKE_LOCK_FIELD_NAME, takeLock);
 
       Object putLock = PUT_LOCK_FIELD.get(pojo);
-      putLock = getDehydratableObject(putLock, objectLookup);
+      putLock = getDehydratableObject(putLock, objectManager);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + PUT_LOCK_FIELD_NAME, putLock);
 
       Object capacity = CAPACITY_FIELD.get(pojo);
-      capacity = getDehydratableObject(capacity, objectLookup);
+      capacity = getDehydratableObject(capacity, objectManager);
       writer.addPhysicalAction(LINKED_BLOCKING_QUEUE_FIELD_NAME_PREFIX + CAPACITY_FIELD_NAME, capacity);
     } catch (IllegalAccessException e) {
       throw new TCRuntimeException(e);
     }
   }
 
-  private void dehydrateMembers(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  private void dehydrateMembers(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer,
+                                Object pojo) {
     Queue queue = (Queue) pojo;
 
     for (Iterator i = queue.iterator(); i.hasNext();) {
       Object value = i.next();
       if (!(value instanceof ObjectID)) {
-        if (!objectLookup.isPortableInstance(value)) {
+        if (!objectManager.isPortableInstance(value)) {
           continue;
         }
-        value = getDehydratableObject(value, objectLookup);
+        value = getDehydratableObject(value, objectManager);
       }
       if (value == null) {
         continue;
@@ -270,7 +272,7 @@ public class LinkedBlockingQueueApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

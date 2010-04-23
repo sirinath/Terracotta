@@ -33,8 +33,8 @@ public class AtomicIntegerApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      IllegalArgumentException, ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
     Assert.assertTrue(po.getClass().getName(), po instanceof AtomicInteger);
@@ -47,14 +47,14 @@ public class AtomicIntegerApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     AtomicInteger ai = (AtomicInteger) pojo;
     int value = ai.get();
 
     writer.addPhysicalAction(AtomicIntegerAdapter.VALUE_FIELD_NAME, Integer.valueOf(value));
   }
 
-  public Object getNewInstance(ObjectLookup objectManager, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

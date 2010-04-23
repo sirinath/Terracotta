@@ -19,24 +19,24 @@ public interface ChangeApplicator {
   /**
    * Reconstitute the state of an object from DNA.
    * 
-   * @param objectLookup The client-side object lookup
+   * @param objectManager The client-side object manager
    * @param tcObject The manager for the object
    * @param dna The DNA, representing the state of the object
    * @param pojo A new instance of the object to reconstitute - this object will be modified with the values from the
    *        DNA
    */
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException;
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException;
 
   /**
    * Write an object's state to DNA
    * 
-   * @param objectLookup The client-side object lookup
+   * @param objectManager The client-side object manager
    * @param tcObject The manager for the object
    * @param writer The DNA writer for writing the DNA
    * @param pojo The object to write to writer
    */
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo);
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo);
 
   /**
    * Traverse an object and find all object references within it.
@@ -50,9 +50,10 @@ public interface ChangeApplicator {
   /**
    * Instantiate a new instance of the object from DNA. May not be supported on all applicators.
    * 
-   * @param objectManager The client-side object lookup
+   * @param objectManager The client-side object manager
    * @param dna The DNA for the new object
    * @return The new instance
    */
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException;
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) throws IOException,
+      ClassNotFoundException;
 }

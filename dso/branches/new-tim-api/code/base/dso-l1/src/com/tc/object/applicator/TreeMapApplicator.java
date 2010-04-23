@@ -67,8 +67,8 @@ public class TreeMapApplicator extends BaseApplicator {
     }
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     Map m = (Map) po;
     DNACursor cursor = dna.getCursor();
 
@@ -78,7 +78,7 @@ public class TreeMapApplicator extends BaseApplicator {
         // This is done so that subclass of TreeMaps can work
         PhysicalAction pa = (PhysicalAction) action;
         Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-        Comparator c = (Comparator) objectLookup.lookupObject((ObjectID) pa.getObject());
+        Comparator c = (Comparator) objectManager.lookupObject((ObjectID) pa.getObject());
         setComparator(po, c);
       } else {
         LogicalAction la = (LogicalAction) action;
@@ -88,12 +88,12 @@ public class TreeMapApplicator extends BaseApplicator {
           case SerializationUtil.PUT:
             Object k = params[0];
             Object v = params[1];
-            Object pkey = k instanceof ObjectID ? objectLookup.lookupObject((ObjectID) k) : k;
-            Object value = v instanceof ObjectID ? objectLookup.lookupObject((ObjectID) v) : v;
+            Object pkey = k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k;
+            Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
             m.put(pkey, value);
             break;
           case SerializationUtil.REMOVE:
-            Object rkey = params[0] instanceof ObjectID ? objectLookup.lookupObject((ObjectID) params[0]) : params[0];
+            Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
             m.remove(rkey);
             break;
           case SerializationUtil.CLEAR:
@@ -114,11 +114,11 @@ public class TreeMapApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     TreeMap map = (TreeMap) pojo;
 
     Comparator cmp = map.comparator();
-    final Object cmpObj = getDehydratableObject(cmp, objectLookup);
+    final Object cmpObj = getDehydratableObject(cmp, objectManager);
     if (cmpObj != null) {
       writer.addPhysicalAction(COMPARATOR_FIELDNAME, cmpObj);
     }
@@ -128,15 +128,15 @@ public class TreeMapApplicator extends BaseApplicator {
       Object key = entry.getKey();
       Object value = entry.getValue();
 
-      if (!objectLookup.isPortableInstance(key)) {
+      if (!objectManager.isPortableInstance(key)) {
         continue;
       }
-      if (!objectLookup.isPortableInstance(value)) {
+      if (!objectManager.isPortableInstance(value)) {
         continue;
       }
 
-      final Object addKey = getDehydratableObject(key, objectLookup);
-      final Object addValue = getDehydratableObject(value, objectLookup);
+      final Object addKey = getDehydratableObject(key, objectManager);
+      final Object addValue = getDehydratableObject(value, objectManager);
 
       if (addKey == null || addValue == null) {
         continue;
@@ -147,12 +147,13 @@ public class TreeMapApplicator extends BaseApplicator {
 
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) throws IOException,
+      ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     if (!cursor.next(encoding)) { throw new AssertionError("Cursor is empty in TreeMap.getNewInstance()"); }
     PhysicalAction physicalAction = cursor.getPhysicalAction();
     Assert.assertEquals(COMPARATOR_FIELDNAME, physicalAction.getFieldName());
-    Comparator c = (Comparator) objectLookup.lookupObject((ObjectID) physicalAction.getObject());
+    Comparator c = (Comparator) objectManager.lookupObject((ObjectID) physicalAction.getObject());
     return (c == null ? new TreeMap() : new TreeMap(c));
   }
 }

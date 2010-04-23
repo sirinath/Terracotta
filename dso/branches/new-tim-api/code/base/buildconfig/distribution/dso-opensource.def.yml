@@ -110,9 +110,10 @@ bundled_components:
         - modules-base
         - thirdparty
         - thirdparty-api
+        - tim-api
         - tim-get-tool:
             kit-resources:
-              - tim-get.properties
+              - tim-get.properties       
 bundled_modules:
   - core:
       install_directory: platform/modules

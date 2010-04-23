@@ -50,8 +50,8 @@ public class TreeSetApplicator extends HashSetApplicator {
   }
 
   @Override
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException {
     TreeSet set = (TreeSet) pojo;
     DNACursor cursor = dna.getCursor();
 
@@ -60,12 +60,12 @@ public class TreeSetApplicator extends HashSetApplicator {
       if (action instanceof PhysicalAction) {
         PhysicalAction pa = (PhysicalAction) action;
         Assert.assertEquals(COMPARATOR_FIELDNAME, pa.getFieldName());
-        setComparator(set, objectLookup.lookupObject((ObjectID) pa.getObject()));
+        setComparator(set, objectManager.lookupObject((ObjectID) pa.getObject()));
       } else {
         LogicalAction la = (LogicalAction) action;
         int method = la.getMethod();
         Object[] params = la.getParameters();
-        super.apply(objectLookup, set, method, params);
+        super.apply(objectManager, set, method, params);
       }
     }
   }
@@ -80,17 +80,17 @@ public class TreeSetApplicator extends HashSetApplicator {
   }
 
   @Override
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     TreeSet set = (TreeSet) pojo;
     Comparator cmp = set.comparator();
     if (cmp != null) {
-      Object cmpObj = getDehydratableObject(cmp, objectLookup);
+      Object cmpObj = getDehydratableObject(cmp, objectManager);
       if (cmpObj != null) {
         writer.addPhysicalAction(COMPARATOR_FIELDNAME, cmpObj);
       }
     }
 
-    super.dehydrate(objectLookup, tcObject, writer, pojo);
+    super.dehydrate(objectManager, tcObject, writer, pojo);
   }
 
   @Override

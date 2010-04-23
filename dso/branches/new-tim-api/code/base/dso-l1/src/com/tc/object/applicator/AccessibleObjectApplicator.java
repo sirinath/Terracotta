@@ -52,8 +52,8 @@ public class AccessibleObjectApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      IllegalArgumentException, ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
     while (cursor.next(encoding)) {
@@ -63,7 +63,7 @@ public class AccessibleObjectApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     Class declaringClass = null;
     String name = null;
     Class[] parameterTypes = null;
@@ -93,7 +93,8 @@ public class AccessibleObjectApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) throws IOException,
+      ClassNotFoundException {
     Class[] parameterTypes = null;
 
     DNACursor cursor = dna.getCursor();

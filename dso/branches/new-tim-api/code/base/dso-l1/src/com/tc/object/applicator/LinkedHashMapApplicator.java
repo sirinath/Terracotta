@@ -41,8 +41,8 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     while (cursor.next(encoding)) {
       Object action = cursor.getAction();
@@ -54,7 +54,7 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
         LogicalAction logicalAction = (LogicalAction) action;
         int method = logicalAction.getMethod();
         Object[] params = logicalAction.getParameters();
-        apply(objectLookup, pojo, method, params);
+        apply(objectManager, pojo, method, params);
       }
     }
   }
@@ -68,14 +68,14 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  protected void apply(ObjectLookup objectLookup, Object pojo, int method, Object[] params)
+  protected void apply(ApplicatorObjectManager objectManager, Object pojo, int method, Object[] params)
       throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.GET:
         ((LinkedHashMap) pojo).get(params[0]);
         break;
       default:
-        super.apply(objectLookup, pojo, method, params);
+        super.apply(objectManager, pojo, method, params);
     }
   }
 
@@ -88,13 +88,14 @@ public class LinkedHashMapApplicator extends PartialHashMapApplicator {
   }
 
   @Override
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     writer.addPhysicalAction(ACCESS_ORDER_FIELDNAME, Boolean.valueOf(getAccessOrder(pojo)));
-    super.dehydrate(objectLookup, tcObject, writer, pojo);
+    super.dehydrate(objectManager, tcObject, writer, pojo);
   }
 
   @Override
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) throws IOException,
+      ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     if (!cursor.next(encoding)) { throw new AssertionError(
                                                            "Cursor is empty in LinkedHashMapApplicator.getNewInstance()"); }

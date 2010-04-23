@@ -47,7 +47,7 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal TCObjectExternal, DNA dna, Object po)
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal TCObjectExternal, DNA dna, Object po)
       throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
@@ -55,19 +55,20 @@ public class HashMapApplicator extends BaseApplicator {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      apply(objectLookup, po, method, params);
+      apply(objectManager, po, method, params);
     }
   }
 
-  protected void apply(ObjectLookup objectLookup, Object po, int method, Object[] params) throws ClassNotFoundException {
+  protected void apply(ApplicatorObjectManager objectManager, Object po, int method, Object[] params)
+      throws ClassNotFoundException {
     Map m = (Map) po;
     switch (method) {
       case SerializationUtil.PUT:
         Object k = getKey(params);
         Object v = getValue(params);
-        Object pkey = getObjectForKey(objectLookup, k);
+        Object pkey = getObjectForKey(objectManager, k);
 
-        Object value = getObjectForValue(objectLookup, v);
+        Object value = getObjectForValue(objectManager, v);
 
         if (m instanceof TCMap) {
           ((TCMap) m).__tc_applicator_put(pkey, value);
@@ -77,7 +78,7 @@ public class HashMapApplicator extends BaseApplicator {
 
         break;
       case SerializationUtil.REMOVE:
-        Object rkey = params[0] instanceof ObjectID ? objectLookup.lookupObject((ObjectID) params[0]) : params[0];
+        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
         if (m instanceof TCMap) {
           ((TCMap) m).__tc_applicator_remove(rkey);
         } else {
@@ -98,13 +99,13 @@ public class HashMapApplicator extends BaseApplicator {
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForValue(ObjectLookup objectLookup, Object v) throws ClassNotFoundException {
-    return (v instanceof ObjectID ? objectLookup.lookupObject((ObjectID) v) : v);
+  protected Object getObjectForValue(ApplicatorObjectManager objectManager, Object v) throws ClassNotFoundException {
+    return (v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v);
   }
 
   // This can be overridden by subclass if you want different behavior.
-  protected Object getObjectForKey(ObjectLookup objectLookup, Object k) throws ClassNotFoundException {
-    return (k instanceof ObjectID ? objectLookup.lookupObject((ObjectID) k) : k);
+  protected Object getObjectForKey(ApplicatorObjectManager objectManager, Object k) throws ClassNotFoundException {
+    return (k instanceof ObjectID ? objectManager.lookupObject((ObjectID) k) : k);
   }
 
   private Object getValue(Object[] params) {
@@ -116,7 +117,8 @@ public class HashMapApplicator extends BaseApplicator {
     return params.length == 3 ? params[1] : params[0];
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal TCObjectExternal, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal TCObjectExternal, DNAWriter writer,
+                        Object pojo) {
 
     Map map = (Map) pojo;
     for (Iterator i = map.entrySet().iterator(); i.hasNext();) {
@@ -124,15 +126,15 @@ public class HashMapApplicator extends BaseApplicator {
       Object key = entry.getKey();
       Object value = entry.getValue();
 
-      if (!objectLookup.isPortableInstance(key)) {
+      if (!objectManager.isPortableInstance(key)) {
         continue;
       }
-      if (!objectLookup.isPortableInstance(value)) {
+      if (!objectManager.isPortableInstance(value)) {
         continue;
       }
 
-      final Object addKey = getDehydratableObject(key, objectLookup);
-      final Object addValue = getDehydratableObject(value, objectLookup);
+      final Object addKey = getDehydratableObject(key, objectManager);
+      final Object addValue = getDehydratableObject(value, objectManager);
 
       if (addKey == null || addValue == null) {
         continue;
@@ -142,7 +144,8 @@ public class HashMapApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) throws IOException,
+      ClassNotFoundException {
     if (false) { throw new IOException(); } // silence compiler warning
     if (false) { throw new ClassNotFoundException(); } // silence compiler warning
     throw new UnsupportedOperationException();

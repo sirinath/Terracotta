@@ -28,8 +28,8 @@ public class URLApplicator extends BaseApplicator {
     super(encoding, logger);
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException {
     TCURL url = (TCURL) pojo;
     DNACursor cursor = dna.getCursor();
 
@@ -89,7 +89,7 @@ public class URLApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     URL url = (URL) pojo;
     writer.addLogicalAction(SerializationUtil.URL_SET,
                             new Object[] { url.getProtocol(), url.getHost(), new Integer(url.getPort()),
@@ -101,7 +101,7 @@ public class URLApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 
