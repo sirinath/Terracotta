@@ -13,8 +13,7 @@ import java.util.concurrent.Future;
 
 import javax.management.remote.JMXConnector;
 
-public interface IClusterModel extends IClusterModelElement, ManagedObjectFacadeProvider, ILiveObjectCountProvider,
-    TIMClusterModel {
+public interface IClusterModel extends IClusterModelElement, ManagedObjectFacadeProvider, ILiveObjectCountProvider {
   static final String PROP_ACTIVE_COORDINATOR = "activeCoordinator";
   static final String PROP_CONNECTED          = "connected";
   static final String PROP_CONNECT_ERROR      = "connectError";
