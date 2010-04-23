@@ -30,8 +30,8 @@ public class HashSetApplicator extends BaseApplicator {
     super(encoding, logger);
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object pojo)
+      throws IOException, ClassNotFoundException {
     Set set = (Set) pojo;
     DNACursor cursor = dna.getCursor();
 
@@ -39,23 +39,24 @@ public class HashSetApplicator extends BaseApplicator {
       LogicalAction action = cursor.getLogicalAction();
       int method = action.getMethod();
       Object[] params = action.getParameters();
-      apply(objectLookup, set, method, params);
+      apply(objectManager, set, method, params);
     }
   }
 
-  protected void apply(ObjectLookup objectLookup, Set set, int method, Object[] params) throws ClassNotFoundException {
+  protected void apply(ApplicatorObjectManager objectManager, Set set, int method, Object[] params)
+      throws ClassNotFoundException {
     switch (method) {
       case SerializationUtil.ADD:
         Object v = params[0];
-        Object value = v instanceof ObjectID ? objectLookup.lookupObject((ObjectID) v) : v;
+        Object value = v instanceof ObjectID ? objectManager.lookupObject((ObjectID) v) : v;
         set.add(value);
         break;
       case SerializationUtil.REMOVE:
-        Object rkey = params[0] instanceof ObjectID ? objectLookup.lookupObject((ObjectID) params[0]) : params[0];
+        Object rkey = params[0] instanceof ObjectID ? objectManager.lookupObject((ObjectID) params[0]) : params[0];
         set.remove(rkey);
         break;
       case SerializationUtil.REMOVE_ALL:
-        set.removeAll(getObjectParams(objectLookup, params));
+        set.removeAll(getObjectParams(objectManager, params));
         break;
       case SerializationUtil.CLEAR:
         set.clear();
@@ -65,24 +66,24 @@ public class HashSetApplicator extends BaseApplicator {
     }
   }
 
-  private List getObjectParams(ObjectLookup objectLookup, Object[] params) throws ClassNotFoundException {
+  private List getObjectParams(ApplicatorObjectManager objectManager, Object[] params) throws ClassNotFoundException {
     List retParams = new ArrayList(params.length);
 
     for (Object param : params) {
-      retParams.add(param instanceof ObjectID ? objectLookup.lookupObject((ObjectID) param) : param);
+      retParams.add(param instanceof ObjectID ? objectManager.lookupObject((ObjectID) param) : param);
     }
     return retParams;
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     Set set = (Set) pojo;
     for (Iterator i = set.iterator(); i.hasNext();) {
       Object value = i.next();
-      if (!objectLookup.isPortableInstance(value)) {
+      if (!objectManager.isPortableInstance(value)) {
         continue;
       }
 
-      final Object addValue = getDehydratableObject(value, objectLookup);
+      final Object addValue = getDehydratableObject(value, objectManager);
 
       if (addValue == null) {
         continue;
@@ -103,7 +104,7 @@ public class HashSetApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

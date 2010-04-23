@@ -38,8 +38,8 @@ public class ListApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     List list = (List) po;
     DNACursor cursor = dna.getCursor();
 
@@ -51,7 +51,7 @@ public class ListApplicator extends BaseApplicator {
       for (int i = 0, n = params.length; i < n; i++) {
         Object param = params[i];
         if (param instanceof ObjectID) {
-          params[i] = objectLookup.lookupObject((ObjectID) param);
+          params[i] = objectManager.lookupObject((ObjectID) param);
         }
       }
 
@@ -148,16 +148,16 @@ public class ListApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     List list = (List) pojo;
 
     for (int i = 0; i < list.size(); i++) {
       Object value = list.get(i);
-      if (!objectLookup.isPortableInstance(value)) {
+      if (!objectManager.isPortableInstance(value)) {
         continue;
       }
 
-      final Object addValue = getDehydratableObject(value, objectLookup);
+      final Object addValue = getDehydratableObject(value, objectManager);
       if (addValue == null) {
         continue;
       }
@@ -165,7 +165,7 @@ public class ListApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

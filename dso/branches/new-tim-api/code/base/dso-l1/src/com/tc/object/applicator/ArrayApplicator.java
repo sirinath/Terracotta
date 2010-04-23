@@ -38,8 +38,8 @@ public class ArrayApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      IllegalArgumentException, ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
     while (cursor.next(encoding)) {
@@ -80,7 +80,7 @@ public class ArrayApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     writer.setArrayLength(Array.getLength(pojo));
 
     if (ClassUtils.isPrimitiveArray(pojo)) {
@@ -92,12 +92,12 @@ public class ArrayApplicator extends BaseApplicator {
       // convert to array of literals and ObjectID
       for (int i = 0, n = array.length; i < n; i++) {
         Object element = array[i];
-        if (!objectLookup.isPortableInstance(element)) {
+        if (!objectManager.isPortableInstance(element)) {
           toEncode[i] = ObjectID.NULL_ID;
           continue;
         }
 
-        final Object obj = getDehydratableObject(element, objectLookup);
+        final Object obj = getDehydratableObject(element, objectManager);
         if (obj == null) {
           toEncode[i] = ObjectID.NULL_ID;
         } else {
@@ -109,7 +109,7 @@ public class ArrayApplicator extends BaseApplicator {
     }
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

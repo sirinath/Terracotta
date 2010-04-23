@@ -17,7 +17,7 @@ public class PartialHashMapApplicator extends HashMapApplicator {
    * This applicator is to be used where the Map supports partial collection. (ex. HashMap)
    */
   @Override
-  protected Object getObjectForValue(ObjectLookup objectManager, Object v) {
+  protected Object getObjectForValue(ApplicatorObjectManager objectManager, Object v) {
     return v;
   }
 

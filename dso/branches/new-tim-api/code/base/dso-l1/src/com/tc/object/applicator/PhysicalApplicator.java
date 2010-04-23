@@ -61,8 +61,8 @@ public class PhysicalApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     String fieldName;
     Object fieldValue;
@@ -76,8 +76,8 @@ public class PhysicalApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
-    if (!objectLookup.isPortableInstance(pojo)) { return; }
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+    if (!objectManager.isPortableInstance(pojo)) { return; }
 
     TCClass tcc = clazz;
     TCField[] fields;
@@ -97,7 +97,7 @@ public class PhysicalApplicator extends BaseApplicator {
           if (clazz.isNonStaticInner()) {
             Object parentObject = fieldValues.get(clazz.getParentFieldName());
             Assert.assertNotNull("parentObject", parentObject);
-            Object parentObjectID = getDehydratableObject(parentObject, objectLookup);
+            Object parentObjectID = getDehydratableObject(parentObject, objectManager);
             if (parentObjectID != null) {
               writer.setParentObjectID((ObjectID) parentObjectID);
             }
@@ -119,11 +119,11 @@ public class PhysicalApplicator extends BaseApplicator {
                                                                                   + fieldValues); }
         }
 
-        if (!objectLookup.isPortableInstance(fieldValue)) {
+        if (!objectManager.isPortableInstance(fieldValue)) {
           continue;
         }
 
-        Object value = getDehydratableObject(fieldValue, objectLookup);
+        Object value = getDehydratableObject(fieldValue, objectManager);
         if (value == null) {
           // instead of ignoring non-portable objects we send ObjectID.NULL_ID so that the state can
           // be created at the server correctly if needed. Another reason is to null the reference across the cluster if
@@ -137,7 +137,7 @@ public class PhysicalApplicator extends BaseApplicator {
 
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

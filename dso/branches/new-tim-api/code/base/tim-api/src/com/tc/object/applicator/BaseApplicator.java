@@ -43,14 +43,14 @@ public abstract class BaseApplicator implements ChangeApplicator {
    * @param objectManager Client-side object lookup
    * @return ObjectID representing pojo, or the pojo itself if its a literal, or null if it's a non-portable object
    */
-  protected final Object getDehydratableObject(Object pojo, ObjectLookup objectLookup) {
+  protected final Object getDehydratableObject(Object pojo, ApplicatorObjectManager objectManager) {
 
     if (pojo == null) {
       return ObjectID.NULL_ID;
     } else if (LiteralValues.isLiteralInstance(pojo)) {
       return pojo;
     } else {
-      TCObjectExternal tcObject = objectLookup.lookupExistingOrNull(pojo);
+      TCObjectExternal tcObject = objectManager.lookupExistingOrNull(pojo);
       if (tcObject == null) {
         // When we dehydrate complex objects, traverser bails out on the first non portable
         // object. We dont want to dehydrate things that are not added in the ClientObjectManager.

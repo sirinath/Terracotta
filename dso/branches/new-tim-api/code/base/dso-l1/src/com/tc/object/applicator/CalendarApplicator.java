@@ -30,9 +30,9 @@ public class CalendarApplicator extends PhysicalApplicator {
   }
 
   @Override
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
-    super.hydrate(objectLookup, tcObject, dna, po);
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
+    super.hydrate(objectManager, tcObject, dna, po);
 
     Class c = po.getClass();
     while (c != OBJECT_CLASS) {

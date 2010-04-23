@@ -33,8 +33,8 @@ public class AtomicLongApplicator extends BaseApplicator {
     return addTo;
   }
 
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      IllegalArgumentException, ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, IllegalArgumentException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
 
     Assert.assertTrue(po.getClass().getName(), po instanceof AtomicLong);
@@ -47,14 +47,14 @@ public class AtomicLongApplicator extends BaseApplicator {
     }
   }
 
-  public void dehydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
+  public void dehydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNAWriter writer, Object pojo) {
     AtomicLong ai = (AtomicLong) pojo;
     long value = ai.get();
 
     writer.addPhysicalAction(AtomicLongAdapter.VALUE_FIELD_NAME, Long.valueOf(value));
   }
 
-  public Object getNewInstance(ObjectLookup objectLookup, DNA dna) {
+  public Object getNewInstance(ApplicatorObjectManager objectManager, DNA dna) {
     throw new UnsupportedOperationException();
   }
 

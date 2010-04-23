@@ -34,8 +34,8 @@ public class ConcurrentHashMapSegmentApplicator extends PhysicalApplicator {
   }
 
   @Override
-  public void hydrate(ObjectLookup objectLookup, TCObjectExternal tcObject, DNA dna, Object po) throws IOException,
-      ClassNotFoundException {
+  public void hydrate(ApplicatorObjectManager objectManager, TCObjectExternal tcObject, DNA dna, Object po)
+      throws IOException, ClassNotFoundException {
     DNACursor cursor = dna.getCursor();
     String fieldName;
     Object fieldValue;
