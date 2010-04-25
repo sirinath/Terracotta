@@ -31,7 +31,7 @@ public class ServerMapTCClassImpl extends TCClassImpl implements TCClass {
       throw new AssertionError("This class should be used only for " + TCClassFactory.CDSM_DSO_CLASSNAME
                                + " but pojo : " + pojo.getClass().getName());
     }
-    return new TCObjectServerMap(getObjectManager(), this.serverMapManager, id, pojo, this, isNew);
+    return new TCObjectServerMapImpl(getObjectManager(), this.serverMapManager, id, pojo, this, isNew);
   }
 
 }

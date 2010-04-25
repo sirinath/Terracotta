@@ -63,6 +63,7 @@ import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
+import com.tc.object.TCObjectServerMap;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
 import com.tc.object.bytecode.AccessibleObjectAdapter;
@@ -502,6 +503,7 @@ public class BootJarTool {
       loadTerracottaClass(SessionConfiguration.class.getName());
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
+      loadTerracottaClass(TCObjectServerMap.class.getName());
       loadTerracottaClass(ToggleableStrongReference.class.getName());
       loadTerracottaClass(TCClass.class.getName());
       loadTerracottaClass(TCField.class.getName());
