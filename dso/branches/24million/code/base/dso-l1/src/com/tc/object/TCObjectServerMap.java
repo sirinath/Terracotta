@@ -5,7 +5,7 @@ package com.tc.object;
 
 import com.tc.object.bytecode.ServerTCMap;
 
-public interface TCObjectServerMap {
+public interface TCObjectServerMap extends TCObject {
 
   /**
    * Returns the value for a particular Key in a ServerTCMap.
