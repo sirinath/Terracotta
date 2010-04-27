@@ -8,7 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
 
-public interface ServerTCMapResponseMessage extends TCMessage {
+public interface ServerMapResponseMessage extends TCMessage {
 
   public void initializeGetValueResponse(ObjectID mapID, ServerMapRequestID requestID, Object portableValue);
 

@@ -3,7 +3,7 @@
  */
 package com.tc.object;
 
-import com.tc.object.bytecode.ServerTCMap;
+import com.tc.object.bytecode.TCServerMap;
 
 public interface TCObjectServerMap extends TCObject {
 
@@ -15,7 +15,7 @@ public interface TCObjectServerMap extends TCObject {
    *        but not shared, it is not supported.
    * @return value Object in the mapping, null if no mapping present.
    */
-  public Object getValueForKeyInMap(final ServerTCMap map, final Object key);
+  public Object getValueForKeyInMap(final TCServerMap map, final Object key);
   
   /**
    * Returns the size of a ServerTCMap
@@ -24,5 +24,5 @@ public interface TCObjectServerMap extends TCObject {
    * 
    * @return int for size of map.
    */
-  public int getSize(final ServerTCMap map);
+  public int getSize(final TCServerMap map);
 }

@@ -18,7 +18,7 @@ import com.tc.object.session.SessionID;
 
 import java.io.IOException;
 
-public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements ServerTCMapResponseMessage {
+public class ServerMapResponseMessageImpl extends DSOMessageBase implements ServerMapResponseMessage {
 
   private final static byte        REQUEST_TYPE   = 0;
   private final static byte        MAP_OBJECT_ID  = 1;
@@ -39,16 +39,16 @@ public class ServerTCMapResponseMessageImpl extends DSOMessageBase implements Se
   private Object                   portableValue;
   private Integer                  size;
 
-  public ServerTCMapResponseMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                        final MessageChannel channel, final TCMessageHeader header,
-                                        final TCByteBuffer[] data, final DNAEncoding decoder) {
+  public ServerMapResponseMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                      final MessageChannel channel, final TCMessageHeader header,
+                                      final TCByteBuffer[] data, final DNAEncoding decoder) {
     super(sessionID, monitor, channel, header, data);
     this.decoder = decoder;
   }
 
-  public ServerTCMapResponseMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                        final TCByteBufferOutputStream out, final MessageChannel channel,
-                                        final TCMessageType type) {
+  public ServerMapResponseMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                      final TCByteBufferOutputStream out, final MessageChannel channel,
+                                      final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
     this.decoder = null; // shouldn't be used
   }

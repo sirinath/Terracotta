@@ -8,7 +8,7 @@ import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
 
-public interface ServerTCMapRequestMessage extends EventContext {
+public interface ServerMapRequestMessage extends EventContext {
 
   public void initializeGetValueRequest(ServerMapRequestID requestID, ObjectID mapID, Object portableKey);
 

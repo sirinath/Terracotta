@@ -8,7 +8,7 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.ServerMapMessageFactory;
-import com.tc.object.msg.ServerTCMapRequestMessage;
+import com.tc.object.msg.ServerMapRequestMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.util.Util;
@@ -241,7 +241,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     // TODO::Change / Batch
     public void sendRequest(final ServerMapMessageFactory factory) {
-      final ServerTCMapRequestMessage requestMessage = factory.newServerTCMapRequestMessage(this.groupID);
+      final ServerMapRequestMessage requestMessage = factory.newServerTCMapRequestMessage(this.groupID);
       initializeMessage(requestMessage);
       requestMessage.send();
     }
@@ -261,7 +261,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       return this.result;
     }
 
-    public abstract void initializeMessage(ServerTCMapRequestMessage requestMessage);
+    public abstract void initializeMessage(ServerMapRequestMessage requestMessage);
 
   }
 
@@ -273,7 +273,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
 
     @Override
-    public void initializeMessage(final ServerTCMapRequestMessage requestMessage) {
+    public void initializeMessage(final ServerMapRequestMessage requestMessage) {
       requestMessage.initializeGetSizeRequest(this.requestID, this.oid);
     }
 
@@ -290,7 +290,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
 
     @Override
-    public void initializeMessage(final ServerTCMapRequestMessage requestMessage) {
+    public void initializeMessage(final ServerMapRequestMessage requestMessage) {
       requestMessage.initializeGetValueRequest(this.requestID, this.oid, this.portableKey);
     }
 

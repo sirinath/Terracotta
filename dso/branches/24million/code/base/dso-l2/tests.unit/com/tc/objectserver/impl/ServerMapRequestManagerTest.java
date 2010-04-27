@@ -15,7 +15,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
-import com.tc.object.msg.ServerTCMapResponseMessage;
+import com.tc.object.msg.ServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
@@ -25,7 +25,7 @@ import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedOb
 
 import junit.framework.TestCase;
 
-public class ServerTCMapRequestManagerTest extends TestCase {
+public class ServerMapRequestManagerTest extends TestCase {
 
   public void tests() {
     final ObjectManager objManager = mock(ObjectManager.class);
@@ -37,16 +37,15 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     final Sink respondToServerTCMapSink = mock(Sink.class);
     final Sink managedObjectRequestSink = mock(Sink.class);
     final DSOChannelManager channelManager = mock(DSOChannelManager.class);
-    final ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(
-                                                                                                      objManager,
-                                                                                                      channelManager,
-                                                                                                      respondToServerTCMapSink,
-                                                                                                      managedObjectRequestSink);
-    serverTCMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
+    final ServerMapRequestManagerImpl serverMapRequestManager = new ServerMapRequestManagerImpl(
+                                                                                                objManager,
+                                                                                                channelManager,
+                                                                                                respondToServerTCMapSink,
+                                                                                                managedObjectRequestSink);
+    serverMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
 
-    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID, clientID, mapID,
-                                                                                   portableKey,
-                                                                                   respondToServerTCMapSink);
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID, clientID, mapID, portableKey,
+                                                                               respondToServerTCMapSink);
 
     verify(objManager, atLeastOnce()).lookupObjectsFor(clientID, requestContext);
 
@@ -60,10 +59,10 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
-    when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
+    final ServerMapResponseMessage message = mock(ServerMapResponseMessage.class);
+    when(messageChannel.createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
-    serverTCMapRequestManager.sendResponseFor(mapID, mo);
+    serverMapRequestManager.sendResponseFor(mapID, mo);
 
     verify(mo, atLeastOnce()).getManagedObjectState();
 
@@ -75,7 +74,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
       throw new AssertionError(e);
     }
 
-    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
 
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID, portableValue);
 
@@ -96,17 +95,16 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     final Sink respondToServerTCMapSink = mock(Sink.class);
     final Sink managedObjectRequestSink = mock(Sink.class);
     final DSOChannelManager channelManager = mock(DSOChannelManager.class);
-    final ServerTCMapRequestManagerImpl serverTCMapRequestManager = new ServerTCMapRequestManagerImpl(
-                                                                                                      objManager,
-                                                                                                      channelManager,
-                                                                                                      respondToServerTCMapSink,
-                                                                                                      managedObjectRequestSink);
+    final ServerMapRequestManagerImpl serverTCMapRequestManager = new ServerMapRequestManagerImpl(
+                                                                                                  objManager,
+                                                                                                  channelManager,
+                                                                                                  respondToServerTCMapSink,
+                                                                                                  managedObjectRequestSink);
     serverTCMapRequestManager.requestValues(requestID1, clientID, mapID, portableKey1);
     serverTCMapRequestManager.requestValues(requestID2, clientID, mapID, portableKey2);
 
     final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID1, clientID, mapID,
-                                                                                   portableKey1,
-                                                                                   respondToServerTCMapSink);
+                                                                               portableKey1, respondToServerTCMapSink);
 
     verify(objManager, atMost(1)).lookupObjectsFor(clientID, requestContext);
 
@@ -122,8 +120,8 @@ public class ServerTCMapRequestManagerTest extends TestCase {
     } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    final ServerTCMapResponseMessage message = mock(ServerTCMapResponseMessage.class);
-    when(messageChannel.createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE)).thenReturn(message);
+    final ServerMapResponseMessage message = mock(ServerMapResponseMessage.class);
+    when(messageChannel.createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
     serverTCMapRequestManager.sendResponseFor(mapID, mo);
 
@@ -137,7 +135,7 @@ public class ServerTCMapRequestManagerTest extends TestCase {
       throw new AssertionError(e);
     }
 
-    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
 
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID1, portableValue1);
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID2, portableValue2);

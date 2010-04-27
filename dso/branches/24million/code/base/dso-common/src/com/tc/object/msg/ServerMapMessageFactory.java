@@ -7,6 +7,6 @@ import com.tc.net.NodeID;
 
 public interface ServerMapMessageFactory {
 
-  public ServerTCMapRequestMessage newServerTCMapRequestMessage(NodeID nodeID);
+  public ServerMapRequestMessage newServerTCMapRequestMessage(NodeID nodeID);
   
 }

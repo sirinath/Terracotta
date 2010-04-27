@@ -8,7 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
 import com.tc.objectserver.core.api.ManagedObject;
 
-public interface ServerTCMapRequestManager {
+public interface ServerMapRequestManager {
 
   public void requestValues(ServerMapRequestID serverMapRequestID, ClientID clientID, ObjectID mapID, Object portableKey);
 

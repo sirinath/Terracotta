@@ -5,7 +5,7 @@ package com.tc.object;
 
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.object.bytecode.Manageable;
-import com.tc.object.bytecode.ServerTCMap;
+import com.tc.object.bytecode.TCServerMap;
 
 public class TCObjectServerMapImpl extends TCObjectLogical implements TCObject, TCObjectServerMap {
 
@@ -27,7 +27,7 @@ public class TCObjectServerMapImpl extends TCObjectLogical implements TCObject, 
    *        but not shared, it is not supported.
    * @return value Object in the mapping, null if no mapping present.
    */
-  public Object getValueForKeyInMap(final ServerTCMap map, final Object key) {
+  public Object getValueForKeyInMap(final TCServerMap map, final Object key) {
 
     final TCObject tcObject = map.__tc_managed();
     if (tcObject == null) { throw new UnsupportedOperationException(
@@ -62,7 +62,7 @@ public class TCObjectServerMapImpl extends TCObjectLogical implements TCObject, 
     }
   }
 
-  public int getSize(final ServerTCMap map) {
+  public int getSize(final TCServerMap map) {
     final TCObject tcObject = map.__tc_managed();
     if (tcObject == null) { throw new UnsupportedOperationException(
                                                                     "getSize is not supported in a non-shared ServerTCMap"); }
