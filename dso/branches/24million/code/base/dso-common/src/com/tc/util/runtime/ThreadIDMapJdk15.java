@@ -11,19 +11,24 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 public class ThreadIDMapJdk15 implements ThreadIDMap {
-  private final Map<Thread, ThreadID> threadIDMap = new WeakHashMap<Thread, ThreadID>();
+  private final Map<Thread, ThreadID> threadIDMap    = new WeakHashMap<Thread, ThreadID>();
+  private final Map<Long, ThreadID>   id2ThreadIDMap = new WeakHashMap<Long, ThreadID>();
 
-  public synchronized void addTCThreadID(ThreadID tcThreadID) {
-    Object prev = threadIDMap.put(Thread.currentThread(), tcThreadID);
-    Assert.assertNull(prev);
+  public synchronized void addTCThreadID(final ThreadID tcThreadID) {
+    final Thread currentThread = Thread.currentThread();
+    final Long javaThreadID = new Long(currentThread.getId());
+    Object prev = threadIDMap.put(currentThread, tcThreadID);
+    Assert.assertNull(javaThreadID + " should not exist before", prev);
+    prev = this.id2ThreadIDMap.put(javaThreadID, tcThreadID);
   }
 
-  public synchronized ThreadID getTCThreadID(Thread thread) {
-    return threadIDMap.get(thread);
+  public synchronized ThreadID getTCThreadID(final Long javaThreadID) {
+    return this.id2ThreadIDMap.get(javaThreadID);
   }
-  
+
   /** For testing only - not in interface */
   public synchronized int getSize() {
-    return threadIDMap.size();
+    return this.threadIDMap.size();
   }
+
 }

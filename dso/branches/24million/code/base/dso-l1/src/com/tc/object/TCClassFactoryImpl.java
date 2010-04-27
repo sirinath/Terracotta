@@ -7,6 +7,8 @@ package com.tc.object;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.exception.TCRuntimeException;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.applicator.AccessibleObjectApplicator;
 import com.tc.object.applicator.ArrayApplicator;
 import com.tc.object.applicator.CalendarApplicator;
@@ -33,7 +35,8 @@ import java.util.concurrent.ConcurrentMap;
 public class TCClassFactoryImpl implements TCClassFactory {
   private static final boolean                   IS_IBM                    = Vm.isIBM();
 
-  private static Class[]                         APPLICATOR_CSTR_SIGNATURE = new Class[] { DNAEncoding.class };
+  private static Class[]                         APPLICATOR_CSTR_SIGNATURE = new Class[] { DNAEncoding.class,
+      TCLogger.class                                                      };
 
   private final ConcurrentMap<Class<?>, TCClass> classes                   = new ConcurrentHashMap<Class<?>, TCClass>();
   private final TCFieldFactory                   fieldFactory;
@@ -129,18 +132,18 @@ public class TCClassFactoryImpl implements TCClassFactory {
         return new CalendarApplicator(clazz, this.encoding);
       } else if (IS_IBM && "java.util.concurrent.atomic.AtomicInteger".equals(name)) {
         try {
-          final Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
-          final Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { this.encoding });
-        } catch (final Exception e) {
+          Class klass = Class.forName("com.tc.object.applicator.AtomicIntegerApplicator");
+          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
+          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding, TCLogging.getLogger(klass) });
+        } catch (Exception e) {
           throw new AssertionError(e);
         }
       } else if (IS_IBM && "java.util.concurrent.atomic.AtomicLong".equals(name)) {
         try {
-          final Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
-          final Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
-          return (ChangeApplicator) constructor.newInstance(new Object[] { this.encoding });
-        } catch (final Exception e) {
+          Class klass = Class.forName("com.tc.object.applicator.AtomicLongApplicator");
+          Constructor constructor = klass.getDeclaredConstructor(APPLICATOR_CSTR_SIGNATURE);
+          return (ChangeApplicator) constructor.newInstance(new Object[] { encoding, TCLogging.getLogger(klass) });
+        } catch (Exception e) {
           throw new AssertionError(e);
         }
       } else {
@@ -148,9 +151,11 @@ public class TCClassFactoryImpl implements TCClassFactory {
       }
     }
 
+    TCLogger logger = TCLogging.getLogger(ChangeApplicator.class.getName() + "." + applicatorClazz.getName());
+
     try {
-      final Constructor cstr = applicatorClazz.getConstructor(APPLICATOR_CSTR_SIGNATURE);
-      final Object[] params = new Object[] { this.encoding };
+      Constructor cstr = applicatorClazz.getConstructor(APPLICATOR_CSTR_SIGNATURE);
+      Object[] params = new Object[] { encoding, logger };
       return (ChangeApplicator) cstr.newInstance(params);
     } catch (final Exception e) {
       throw new AssertionError(e);
