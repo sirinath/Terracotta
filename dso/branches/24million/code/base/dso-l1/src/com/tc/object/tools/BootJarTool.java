@@ -44,8 +44,6 @@ import com.tc.exception.TCNotSupportedMethodException;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.exception.TCObjectNotSharableException;
 import com.tc.exception.TCRuntimeException;
-import com.tc.hibernate.HibernateProxyInstance;
-import com.tc.ibatis.IBatisAccessPlanInstance;
 import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tc.injection.exceptions.UnsupportedInjectedDsoInstanceTypeException;
 import com.tc.io.TCByteArrayOutputStream;
@@ -64,6 +62,7 @@ import com.tc.object.SerializationUtil;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectServerMap;
+import com.tc.object.TCObjectExternal;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
 import com.tc.object.bytecode.AbstractStringBuilderAdapter;
 import com.tc.object.bytecode.AccessibleObjectAdapter;
@@ -77,6 +76,7 @@ import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Clearable;
+import com.tc.object.bytecode.CloneUtil;
 import com.tc.object.bytecode.CopyOnWriteArrayListAdapter;
 import com.tc.object.bytecode.DataOutputStreamAdapter;
 import com.tc.object.bytecode.DuplicateMethodAdapter;
@@ -504,6 +504,8 @@ public class BootJarTool {
       loadTerracottaClass(ManagerUtil.class.getName() + "$GlobalManagerHolder");
       loadTerracottaClass(TCObject.class.getName());
       loadTerracottaClass(TCObjectServerMap.class.getName());
+      loadTerracottaClass(TCObjectExternal.class.getName());
+      loadTerracottaClass(CloneUtil.class.getName());
       loadTerracottaClass(ToggleableStrongReference.class.getName());
       loadTerracottaClass(TCClass.class.getName());
       loadTerracottaClass(TCField.class.getName());
@@ -550,9 +552,6 @@ public class BootJarTool {
 
       loadTerracottaClass(UnknownJvmVersionException.class.getName());
       loadTerracottaClass(UnknownRuntimeVersionException.class.getName());
-
-      loadTerracottaClass(IBatisAccessPlanInstance.class.getName());
-      loadTerracottaClass(HibernateProxyInstance.class.getName());
 
       // Locking System Classes
       loadTerracottaClass(com.tc.object.locks.LockID.class.getName());

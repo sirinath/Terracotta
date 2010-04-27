@@ -15,7 +15,7 @@ import gnu.trove.TLinkable;
  * Terracotta class attached to each shared instance Object. The TCObject may be a simple object value or may have
  * TCFields representing internal field values.
  */
-public interface TCObject extends Cacheable {
+public interface TCObject extends Cacheable, TCObjectExternal {
   /** Indicates null object identifier */
   public static final Long NULL_OBJECT_ID = new Long(-1);
 

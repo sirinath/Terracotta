@@ -15,9 +15,8 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     return getThreadDump(new NullLockInfoByThreadIDImpl(), new NullThreadIDMapImpl());
   }
 
-  public static String getThreadDump(final LockInfoByThreadID lockInfo, final ThreadIDMap threadIDMap) {
-    final MonitorInfo[] emptyMI = new MonitorInfo[0];
-    final StringBuilder sb = new StringBuilder();
+  public static String getThreadDump(LockInfoByThreadID lockInfo, ThreadIDMap threadIDMap) {
+    final StringBuilder sb = new StringBuilder(100 * 1024);
     sb.append(new Date().toString());
     sb.append('\n');
     sb.append("Full thread dump ");
@@ -28,23 +27,21 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     sb.append(System.getProperty("java.vm.info"));
     sb.append("):\n\n");
     try {
-      final Thread[] threads = ThreadDumpUtil.getAllThreads();
+      final ThreadInfo[] threadsInfo = threadMXBean.dumpAllThreads(threadMXBean.isObjectMonitorUsageSupported(),
+                                                                   threadMXBean.isSynchronizerUsageSupported());
 
-      for (final Thread thread : threads) {
-        final long id = thread.getId();
-        final ThreadInfo threadInfo = threadMXBean.getThreadInfo(new long[] { id }, true, true)[0];
-        sb.append(threadHeader(thread, threadInfo));
-        sb.append('\n');
+      for (final ThreadInfo threadInfo : threadsInfo) {
+        threadHeader(sb, threadInfo);
 
-        final StackTraceElement[] stea = thread.getStackTrace();
-        final MonitorInfo[] monitorInfos = threadInfo != null ? threadInfo.getLockedMonitors() : emptyMI;
-        for (final StackTraceElement element : stea) {
+        final StackTraceElement[] stea = threadInfo.getStackTrace();
+        final MonitorInfo[] monitorInfos = threadInfo.getLockedMonitors();
+        for (int j = 0; j < stea.length; j++) {
           sb.append("\tat ");
-          sb.append(element.toString());
+          sb.append(stea[j].toString());
           sb.append('\n');
           for (final MonitorInfo monitorInfo : monitorInfos) {
             final StackTraceElement lockedFrame = monitorInfo.getLockedStackFrame();
-            if (lockedFrame != null && lockedFrame.equals(element)) {
+            if (lockedFrame != null && lockedFrame.equals(stea[j])) {
               sb.append("\t- locked <0x");
               sb.append(Integer.toHexString(monitorInfo.getIdentityHashCode()));
               sb.append("> (a ");
@@ -54,7 +51,7 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
             }
           }
         }
-        sb.append(ThreadDumpUtil.getLockList(lockInfo, threadIDMap.getTCThreadID(thread)));
+        sb.append(ThreadDumpUtil.getLockList(lockInfo, threadIDMap.getTCThreadID(threadInfo.getThreadId())));
         if (!threadMXBean.isObjectMonitorUsageSupported() && threadMXBean.isSynchronizerUsageSupported()) {
           sb.append(threadLockedSynchronizers(threadInfo));
         }
@@ -67,50 +64,45 @@ public class ThreadDumpUtilJdk16 extends ThreadDumpUtil {
     return sb.toString();
   }
 
-  private static String threadHeader(final Thread thread, final ThreadInfo threadInfo) {
-    final String threadName = thread.getName();
-    final StringBuffer sb = new StringBuffer();
+  private static void threadHeader(final StringBuilder sb, final ThreadInfo threadInfo) {
+    final String threadName = threadInfo.getThreadName();
     sb.append("\"");
     sb.append(threadName);
     sb.append("\" ");
     sb.append("Id=");
-    sb.append(thread.getId());
+    sb.append(threadInfo.getThreadId());
 
-    if (threadInfo != null) {
-      try {
-        final Thread.State threadState = threadInfo.getThreadState();
-        final String lockName = threadInfo.getLockName();
-        final String lockOwnerName = threadInfo.getLockOwnerName();
-        final Long lockOwnerId = threadInfo.getLockOwnerId();
-        final Boolean isSuspended = threadInfo.isSuspended();
-        final Boolean isInNative = threadInfo.isInNative();
+    try {
+      final Thread.State threadState = threadInfo.getThreadState();
+      final String lockName = threadInfo.getLockName();
+      final String lockOwnerName = threadInfo.getLockOwnerName();
+      final Long lockOwnerId = threadInfo.getLockOwnerId();
+      final Boolean isSuspended = threadInfo.isSuspended();
+      final Boolean isInNative = threadInfo.isInNative();
 
-        sb.append(" ");
-        sb.append(threadState);
-        if (lockName != null) {
-          sb.append(" on ");
-          sb.append(lockName);
-        }
-        if (lockOwnerName != null) {
-          sb.append(" owned by \"");
-          sb.append(lockOwnerName);
-          sb.append("\" Id=");
-          sb.append(lockOwnerId);
-        }
-        if (isSuspended) {
-          sb.append(" (suspended)");
-        }
-        if (isInNative) {
-          sb.append(" (in native)");
-        }
-      } catch (final Exception e) {
-        return threadInfo.toString();
+      sb.append(" ");
+      sb.append(threadState);
+      if (lockName != null) {
+        sb.append(" on ");
+        sb.append(lockName);
       }
-    } else {
-      sb.append(" (unrecognized thread id; thread state is unavailable)");
+      if (lockOwnerName != null) {
+        sb.append(" owned by \"");
+        sb.append(lockOwnerName);
+        sb.append("\" Id=");
+        sb.append(lockOwnerId);
+      }
+      if (isSuspended) {
+        sb.append(" (suspended)");
+      }
+      if (isInNative) {
+        sb.append(" (in native)");
+      }
+    } catch (final Exception e) {
+      sb.append(" ( Got exception : ").append(e.getMessage()).append(" :");
     }
 
-    return sb.toString();
+    sb.append('\n');
   }
 
   private static String threadLockedSynchronizers(final ThreadInfo threadInfo) {
