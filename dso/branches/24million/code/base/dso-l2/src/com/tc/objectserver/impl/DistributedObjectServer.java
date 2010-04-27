@@ -120,8 +120,8 @@ import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
-import com.tc.object.msg.ServerTCMapRequestMessageImpl;
-import com.tc.object.msg.ServerTCMapResponseMessageImpl;
+import com.tc.object.msg.ServerMapRequestMessageImpl;
+import com.tc.object.msg.ServerMapResponseMessageImpl;
 import com.tc.object.msg.SyncWriteTransactionReceivedMessage;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
@@ -135,7 +135,7 @@ import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.api.ObjectStatsManager;
 import com.tc.objectserver.api.ObjectStatsManagerImpl;
-import com.tc.objectserver.api.ServerTCMapRequestManager;
+import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManagerImpl;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
@@ -173,7 +173,7 @@ import com.tc.objectserver.handler.RespondToObjectRequestHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
 import com.tc.objectserver.handler.RespondToServerMapRequestHandler;
 import com.tc.objectserver.handler.ServerClusterMetaDataHandler;
-import com.tc.objectserver.handler.ServerTCMapRequestHandler;
+import com.tc.objectserver.handler.ServerMapRequestHandler;
 import com.tc.objectserver.handler.SyncWriteTransactionReceivedHandler;
 import com.tc.objectserver.handler.TransactionAcknowledgementHandler;
 import com.tc.objectserver.handler.TransactionLookupHandler;
@@ -315,7 +315,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
   private ServerConfigurationContext             context;
   private ObjectManagerImpl                      objectManager;
   private ObjectRequestManager                   objectRequestManager;
-  private ServerTCMapRequestManager              serverTCMapRequestManager;
+  private ServerMapRequestManager                serverTCMapRequestManager;
   private TransactionalObjectManager             txnObjectManager;
   private CounterManager                         sampledCounterManager;
   private LockManagerImpl                        lockManager;
@@ -901,13 +901,17 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                      this.l2Properties.getInt("seda.managedobjectresponsestage.threads"), maxStageSize);
 
     final Stage serverMapRequestStage = stageManager.createStage(ServerConfigurationContext.SERVER_MAP_REQUEST_STAGE,
-                                                                 new ServerTCMapRequestHandler(), 8, maxStageSize);
-    final Stage respondToServerTCMapStage = stageManager.createStage(ServerConfigurationContext.SERVER_MAP_RESPOND_STAGE,
-                             new RespondToServerMapRequestHandler(), 8, maxStageSize);
+                                                                 new ServerMapRequestHandler(), 8, maxStageSize);
+    final Stage respondToServerTCMapStage = stageManager
+        .createStage(ServerConfigurationContext.SERVER_MAP_RESPOND_STAGE, new RespondToServerMapRequestHandler(), 8,
+                     maxStageSize);
 
-    this.serverTCMapRequestManager = this.serverBuilder.createServerTCMapRequestManager(this.objectManager, channelManager, 
-                                                                     respondToServerTCMapStage.getSink(), objectRequestStage.getSink());
-    
+    this.serverTCMapRequestManager = this.serverBuilder.createServerTCMapRequestManager(this.objectManager,
+                                                                                        channelManager,
+                                                                                        respondToServerTCMapStage
+                                                                                            .getSink(),
+                                                                                        objectRequestStage.getSink());
+
     this.objectRequestManager = this.serverBuilder.createObjectRequestManager(this.objectManager, channelManager,
                                                                               this.clientStateManager,
                                                                               this.transactionManager,
@@ -1033,9 +1037,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     this.context = this.serverBuilder.createServerConfigurationContext(stageManager, this.objectManager,
                                                                        this.objectRequestManager,
                                                                        this.serverTCMapRequestManager,
-                                                                       this.objectStore,
-                                                                       this.lockManager, channelManager,
-                                                                       this.clientStateManager,
+                                                                       this.objectStore, this.lockManager,
+                                                                       channelManager, this.clientStateManager,
                                                                        this.transactionManager, this.txnObjectManager,
                                                                        channelStats, this.l2Coordinator,
                                                                        transactionBatchManager, gtxm,
@@ -1123,7 +1126,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
     this.l1Listener.routeMessageType(TCMessageType.KEYS_FOR_ORPHANED_VALUES_MESSAGE, clusterMetaDataStage.getSink(),
                                      hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.NODE_META_DATA_MESSAGE, clusterMetaDataStage.getSink(), hydrateSink);
-    this.l1Listener.routeMessageType(TCMessageType.SERVER_TC_MAP_REQUEST_MESSAGE, serverMapRequestStage.getSink(),
+    this.l1Listener.routeMessageType(TCMessageType.SERVER_MAP_REQUEST_MESSAGE, serverMapRequestStage.getSink(),
                                      hydrateSink);
 
   }
@@ -1172,8 +1175,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler {
                                     NodeMetaDataResponseMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE,
                                     SyncWriteTransactionReceivedMessage.class);
-    this.l1Listener.addClassMapping(TCMessageType.SERVER_TC_MAP_REQUEST_MESSAGE, ServerTCMapRequestMessageImpl.class);
-    this.l1Listener.addClassMapping(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE, ServerTCMapResponseMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.SERVER_MAP_REQUEST_MESSAGE, ServerMapRequestMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE, ServerMapResponseMessageImpl.class);
   }
 
   protected TCLogger getLogger() {

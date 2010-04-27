@@ -7,7 +7,7 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.object.RemoteServerMapManager;
 import com.tc.object.ServerMapRequestType;
-import com.tc.object.msg.ServerTCMapResponseMessage;
+import com.tc.object.msg.ServerMapResponseMessage;
 
 public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
@@ -19,7 +19,7 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
   @Override
   public void handleEvent(final EventContext context) {
-    final ServerTCMapResponseMessage responseMsg = (ServerTCMapResponseMessage) context;
+    final ServerMapResponseMessage responseMsg = (ServerMapResponseMessage) context;
     final ServerMapRequestType requestType = responseMsg.getRequestType();
     switch (requestType) {
       case GET_SIZE:

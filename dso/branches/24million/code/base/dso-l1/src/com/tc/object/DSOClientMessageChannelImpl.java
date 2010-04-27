@@ -39,7 +39,7 @@ import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessage;
 import com.tc.object.msg.RequestRootMessageFactory;
 import com.tc.object.msg.ServerMapMessageFactory;
-import com.tc.object.msg.ServerTCMapRequestMessage;
+import com.tc.object.msg.ServerMapRequestMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.util.TCTimeoutException;
 
@@ -187,8 +187,8 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     return (KeysForOrphanedValuesMessage) this.channel.createMessage(TCMessageType.KEYS_FOR_ORPHANED_VALUES_MESSAGE);
   }
 
-  public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
-    return (ServerTCMapRequestMessage) this.channel.createMessage(TCMessageType.SERVER_TC_MAP_REQUEST_MESSAGE);
+  public ServerMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
+    return (ServerMapRequestMessage) this.channel.createMessage(TCMessageType.SERVER_MAP_REQUEST_MESSAGE);
   }
 
   public NodeMetaDataMessage newNodeMetaDataMessage() {

@@ -23,7 +23,7 @@ public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
    * called when a Node (Client or Server) leaves.
    */
   public void shutdownNode(NodeID nodeID);
-  
+
   /**
    * called with a Node is connected;
    */
@@ -66,8 +66,8 @@ public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
   public void apply(ServerTransaction txn, Map objects, BackReferences includeIDs, ObjectInstanceMonitor instanceMonitor);
 
   /**
-   * Commits all the changes in objects and releases the objects This could potentially trigger an acknowledgment to
-   * the originating client.
+   * Commits all the changes in objects and releases the objects This could potentially trigger an acknowledgment to the
+   * originating client.
    */
   public void commit(PersistenceTransactionProvider ptxp, Collection objects, Map newRoots,
                      Collection appliedServerTransactionIDs);
@@ -87,13 +87,13 @@ public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
   public void removeTransactionListener(ServerTransactionListener listener);
 
   public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionLister l);
-  
+
   public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionLister l);
 
   public void incomingTransactions(NodeID nodeID, Set txnIDs, Collection txns, boolean relayed);
 
   public void transactionsRelayed(NodeID node, Set serverTxnIDs);
-  
+
   public void objectsSynched(NodeID node, ServerTransactionID tid);
 
   public void setResentTransactionIDs(NodeID source, Collection transactionIDs);
@@ -103,7 +103,7 @@ public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
   public void goToActiveMode();
 
   public int getTotalPendingTransactionsCount();
-  
+
   public long getTotalNumOfActiveTransactions();
 
 }

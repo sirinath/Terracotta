@@ -115,8 +115,8 @@ import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
-import com.tc.object.msg.ServerTCMapRequestMessageImpl;
-import com.tc.object.msg.ServerTCMapResponseMessageImpl;
+import com.tc.object.msg.ServerMapRequestMessageImpl;
+import com.tc.object.msg.ServerMapResponseMessageImpl;
 import com.tc.object.msg.SyncWriteTransactionReceivedMessage;
 import com.tc.object.net.DSOClientMessageChannel;
 import com.tc.object.session.SessionID;
@@ -673,8 +673,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.channel.addClassMapping(TCMessageType.NODE_META_DATA_RESPONSE_MESSAGE, NodeMetaDataResponseMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE,
                                  SyncWriteTransactionReceivedMessage.class);
-    this.channel.addClassMapping(TCMessageType.SERVER_TC_MAP_REQUEST_MESSAGE, ServerTCMapRequestMessageImpl.class);
-    this.channel.addClassMapping(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE,
+    this.channel.addClassMapping(TCMessageType.SERVER_MAP_REQUEST_MESSAGE, ServerMapRequestMessageImpl.class);
+    this.channel.addClassMapping(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE,
     // Special handling to get the applicator encoding
                                  new GeneratedMessageFactory() {
 
@@ -682,8 +682,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                   final MessageChannel mChannel,
                                                                   final TCMessageHeader msgHeader,
                                                                   final TCByteBuffer[] data) {
-                                     return new ServerTCMapResponseMessageImpl(sid, monitor, mChannel, msgHeader, data,
-                                                                               encoding);
+                                     return new ServerMapResponseMessageImpl(sid, monitor, mChannel, msgHeader, data,
+                                                                             encoding);
                                    }
 
                                    public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
@@ -691,7 +691,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                   final MessageChannel mChannel,
                                                                   final TCMessageType type) {
                                      throw new AssertionError(
-                                                              ServerTCMapRequestMessageImpl.class.getName()
+                                                              ServerMapRequestMessageImpl.class.getName()
                                                                   + " shouldn't be created using this constructor at the client.");
                                    }
                                  });
@@ -729,7 +729,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                   hydrateSink);
     this.channel.routeMessageType(TCMessageType.SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE, syncWriteBatchRecvdHandler
         .getSink(), hydrateSink);
-    this.channel.routeMessageType(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
+    this.channel.routeMessageType(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
                                   hydrateSink);
 
     int i = 0;

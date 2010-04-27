@@ -13,7 +13,7 @@ import com.tc.object.net.ChannelStats;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
-import com.tc.objectserver.api.ServerTCMapRequestManager;
+import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
@@ -123,7 +123,7 @@ public class TestServerConfigurationContext implements ServerConfigurationContex
     return clusterMetaDataManager;
   }
 
-  public ServerTCMapRequestManager getServerTCMapRequestManager() {
+  public ServerMapRequestManager getServerTCMapRequestManager() {
     throw new ImplementMe();
   }
 

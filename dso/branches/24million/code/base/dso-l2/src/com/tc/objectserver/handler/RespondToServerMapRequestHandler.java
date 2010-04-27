@@ -8,14 +8,14 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.EventHandler;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.ServerTCMapRequestManager;
+import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.context.EntryForKeyResponseContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 
 public class RespondToServerMapRequestHandler extends AbstractEventHandler implements EventHandler {
 
-  private ServerTCMapRequestManager serverTCMapRequestManager;
+  private ServerMapRequestManager serverTCMapRequestManager;
  
   @Override
   public void handleEvent(final EventContext context) {

@@ -13,11 +13,11 @@ import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
-import com.tc.object.msg.ServerTCMapResponseMessage;
+import com.tc.object.msg.ServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.ServerTCMapRequestManager;
+import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.context.ServerMapRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -30,17 +30,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager {
+public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
 
-  private final TCLogger                logger       = TCLogging.getLogger(ServerTCMapRequestManagerImpl.class);
-  private final ObjectManager           objectManager;
-  private final DSOChannelManager       channelManager;
-  private final Sink                    respondToServerTCMapSink;
-  private final Sink                    managedObjectRequestSink;
-  private final ServerTCMapRequestCache requestCache = new ServerTCMapRequestCache();
+  private final TCLogger              logger       = TCLogging.getLogger(ServerMapRequestManagerImpl.class);
+  private final ObjectManager         objectManager;
+  private final DSOChannelManager     channelManager;
+  private final Sink                  respondToServerTCMapSink;
+  private final Sink                  managedObjectRequestSink;
+  private final ServerMapRequestQueue requestQueue = new ServerMapRequestQueue();
 
-  public ServerTCMapRequestManagerImpl(final ObjectManager objectManager, final DSOChannelManager channelManager,
-                                       final Sink respondToServerTCMapSink, final Sink managedObjectRequestSink) {
+  public ServerMapRequestManagerImpl(final ObjectManager objectManager, final DSOChannelManager channelManager,
+                                     final Sink respondToServerTCMapSink, final Sink managedObjectRequestSink) {
     this.channelManager = channelManager;
     this.objectManager = objectManager;
     this.respondToServerTCMapSink = respondToServerTCMapSink;
@@ -62,7 +62,7 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
   }
 
   private void processRequest(final ClientID clientID, final ServerMapRequestContext requestContext) {
-    if (this.requestCache.add(requestContext)) {
+    if (this.requestQueue.add(requestContext)) {
       this.objectManager.lookupObjectsFor(clientID, requestContext);
     }
   }
@@ -79,10 +79,10 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
 
     final ConcurrentDistributedServerMapManagedObjectState csmState = (ConcurrentDistributedServerMapManagedObjectState) state;
     try {
-      final List<ServerMapRequestContext> requestList = this.requestCache.remove(mapID);
+      final List<ServerMapRequestContext> requestList = this.requestQueue.remove(mapID);
 
       if (requestList == null) { throw new AssertionError("Looked up : " + managedObject
-                                                          + " But no request pending for it : " + this.requestCache); }
+                                                          + " But no request pending for it : " + this.requestQueue); }
 
       for (final ServerMapRequestContext request : requestList) {
 
@@ -116,8 +116,8 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     final MessageChannel channel = getActiveChannel(clientID);
     if (channel == null) { return; }
 
-    final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
-        .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+    final ServerMapResponseMessage responseMessage = (ServerMapResponseMessage) channel
+        .createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
     responseMessage.initializeGetValueResponse(mapID, requestID, portableValue);
     responseMessage.send();
   }
@@ -131,8 +131,8 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     final MessageChannel channel = getActiveChannel(clientID);
     if (channel == null) { return; }
 
-    final ServerTCMapResponseMessage responseMessage = (ServerTCMapResponseMessage) channel
-        .createMessage(TCMessageType.SERVER_TC_MAP_RESPONSE_MESSAGE);
+    final ServerMapResponseMessage responseMessage = (ServerMapResponseMessage) channel
+        .createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
     responseMessage.initializeGetSizeResponse(mapID, requestID, size);
     responseMessage.send();
   }
@@ -162,7 +162,7 @@ public class ServerTCMapRequestManagerImpl implements ServerTCMapRequestManager 
     }
   }
 
-  private final static class ServerTCMapRequestCache {
+  private final static class ServerMapRequestQueue {
 
     private final Map<ObjectID, List<ServerMapRequestContext>> serverMapRequestMap = new HashMap<ObjectID, List<ServerMapRequestContext>>();
 

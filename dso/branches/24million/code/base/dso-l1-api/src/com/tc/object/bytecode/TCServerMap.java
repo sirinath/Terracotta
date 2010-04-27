@@ -3,6 +3,6 @@
  */
 package com.tc.object.bytecode;
 
-public interface ServerTCMap extends Manageable {
+public interface TCServerMap extends Manageable {
   // Just a Marker interface for now.
 }

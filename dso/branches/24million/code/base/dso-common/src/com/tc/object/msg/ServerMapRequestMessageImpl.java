@@ -22,7 +22,7 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements ServerTCMapRequestMessage {
+public class ServerMapRequestMessageImpl extends DSOMessageBase implements ServerMapRequestMessage {
 
   private final static byte        REQUEST_TYPE  = 0;
   private final static byte        MAP_OBJECT_ID = 1;
@@ -40,13 +40,13 @@ public class ServerTCMapRequestMessageImpl extends DSOMessageBase implements Ser
   private Object                   portableKey;
   private ObjectID                 mapID;
 
-  public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+  public ServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                        final MessageChannel channel, final TCMessageHeader header,
                                        final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public ServerTCMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+  public ServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                        final TCByteBufferOutputStream out, final MessageChannel channel,
                                        final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);

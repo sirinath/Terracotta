@@ -31,7 +31,7 @@ import com.tc.object.msg.ObjectIDBatchRequestMessageFactory;
 import com.tc.object.msg.RequestManagedObjectMessageFactory;
 import com.tc.object.msg.RequestRootMessageFactory;
 import com.tc.object.msg.ServerMapMessageFactory;
-import com.tc.object.msg.ServerTCMapRequestMessage;
+import com.tc.object.msg.ServerMapRequestMessage;
 import com.tc.object.session.SessionID;
 
 public class MockChannel implements DSOClientMessageChannel {
@@ -138,7 +138,7 @@ public class MockChannel implements DSOClientMessageChannel {
     throw new ImplementMe();
   }
 
-  public ServerTCMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
+  public ServerMapRequestMessage newServerTCMapRequestMessage(final NodeID nodeID) {
     throw new ImplementMe();
   }
 

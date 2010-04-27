@@ -7,17 +7,17 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.EventHandler;
-import com.tc.object.msg.ServerTCMapRequestMessage;
-import com.tc.objectserver.api.ServerTCMapRequestManager;
+import com.tc.object.msg.ServerMapRequestMessage;
+import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 
-public class ServerTCMapRequestHandler extends AbstractEventHandler implements EventHandler {
+public class ServerMapRequestHandler extends AbstractEventHandler implements EventHandler {
 
-  private ServerTCMapRequestManager serverTCMapRequestManager;
+  private ServerMapRequestManager serverTCMapRequestManager;
 
   @Override
   public void handleEvent(final EventContext context) {
-    final ServerTCMapRequestMessage smContext = (ServerTCMapRequestMessage) context;
+    final ServerMapRequestMessage smContext = (ServerMapRequestMessage) context;
     if (smContext.isGetSizeRequest()) {
       this.serverTCMapRequestManager.requestSize(smContext.getRequestID(), smContext.getClientID(), smContext
           .getMapID());
