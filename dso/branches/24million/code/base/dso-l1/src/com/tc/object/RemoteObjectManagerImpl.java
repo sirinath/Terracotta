@@ -500,14 +500,13 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
     }
   }
 
-  private static final class ObjectLookupState {
+  private static final class ObjectLookupState extends LookupStateTransitionAdaptor {
 
     private final ObjectRequestID requestID;
     private final long            timestamp;
     private final int             depth;
     private final ObjectID        lookupID;
     private final ObjectID        parent;
-    private LookupState           state = LookupState.UNINITALIZED;
 
     ObjectLookupState(final ObjectRequestID requestID, final ObjectID id, final int depth, final ObjectID parent) {
       this.lookupID = id;
@@ -533,42 +532,10 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager {
       return this.depth;
     }
 
-    public void makeLookupRequest() {
-      this.state = this.state.makeLookupRequest();
-    }
-
-    public void makePrefetchRequest() {
-      this.state = this.state.makePrefetchRequest();
-    }
-
-    public void makePending() {
-      this.state = this.state.makePending();
-    }
-
-    public void makeUnPending() {
-      this.state = this.state.makeUnPending();
-    }
-
-    public void makeMissingObject() {
-      this.state = this.state.makeMissingObject();
-    }
-
-    public boolean isPrefetch() {
-      return this.state.isPrefetch();
-    }
-
-    public boolean isMissing() {
-      return this.state.isMissing();
-    }
-
-    public boolean isPending() {
-      return this.state.isPending();
-    }
-
     @Override
     public String toString() {
       return getClass().getName() + "[" + new Date(this.timestamp) + ", requestID =" + this.requestID + ", lookupID ="
-             + this.lookupID + ", parent = " + this.parent + ", depth = " + this.depth + ", state = " + this.state
+             + this.lookupID + ", parent = " + this.parent + ", depth = " + this.depth + ", state = " + getState()
              + "]";
     }
   }

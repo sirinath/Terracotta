@@ -7,16 +7,11 @@ import com.tc.async.api.EventContext;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
+import com.tc.object.ServerMapRequestType;
 
 public interface ServerMapRequestMessage extends EventContext {
 
-  public void initializeGetValueRequest(ServerMapRequestID requestID, ObjectID mapID, Object portableKey);
-
-  public void initializeGetSizeRequest(ServerMapRequestID requestID, ObjectID mapID);
-
   public void send();
-
-  public Object getPortableKey();
 
   public ObjectID getMapID();
 
@@ -24,5 +19,5 @@ public interface ServerMapRequestMessage extends EventContext {
 
   public ServerMapRequestID getRequestID();
 
-  public boolean isGetSizeRequest();
+  public ServerMapRequestType getRequestType();
 }

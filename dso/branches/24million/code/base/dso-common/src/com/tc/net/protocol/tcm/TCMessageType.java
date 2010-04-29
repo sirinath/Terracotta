@@ -68,8 +68,10 @@ public final class TCMessageType {
   public static final int           TYPE_NODE_META_DATA_RESPONSE_MESSAGE            = 53;
   public static final int           TYPE_STRIPE_ID_MAP_MESSAGE                      = 54;
   public static final int           TYPE_SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE    = 55;
-  public static final int           TYPE_SERVER_MAP_REQUEST_MESSAGE                 = 56;
-  public static final int           TYPE_SERVER_MAP_RESPONSE_MESSAGE                = 57;
+  public static final int           TYPE_GET_VALUE_SERVER_MAP_REQUEST_MESSAGE       = 56;
+  public static final int           TYPE_GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE      = 57;
+  public static final int           TYPE_GET_SIZE_SERVER_MAP_REQUEST_MESSAGE        = 58;
+  public static final int           TYPE_GET_SIZE_SERVER_MAP_RESPONSE_MESSAGE       = 59;
 
   public static final TCMessageType PING_MESSAGE                                    = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                    = new TCMessageType();
@@ -112,8 +114,10 @@ public final class TCMessageType {
   public static final TCMessageType NODE_META_DATA_RESPONSE_MESSAGE                 = new TCMessageType();
   public static final TCMessageType STRIPE_ID_MAP_MESSAGE                           = new TCMessageType();
   public static final TCMessageType SYNC_WRITE_TRANSACTION_RECEIVED_MESSAGE         = new TCMessageType();
-  public static final TCMessageType SERVER_MAP_REQUEST_MESSAGE                      = new TCMessageType();
-  public static final TCMessageType SERVER_MAP_RESPONSE_MESSAGE                     = new TCMessageType();
+  public static final TCMessageType GET_VALUE_SERVER_MAP_REQUEST_MESSAGE            = new TCMessageType();
+  public static final TCMessageType GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE           = new TCMessageType();
+  public static final TCMessageType GET_SIZE_SERVER_MAP_REQUEST_MESSAGE             = new TCMessageType();
+  public static final TCMessageType GET_SIZE_SERVER_MAP_RESPONSE_MESSAGE            = new TCMessageType();
 
   public static TCMessageType getInstance(final int i) {
     return (TCMessageType) typeMap.get(i);

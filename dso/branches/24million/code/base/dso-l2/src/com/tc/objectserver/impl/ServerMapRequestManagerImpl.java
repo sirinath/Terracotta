@@ -13,7 +13,8 @@ import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
-import com.tc.object.msg.ServerMapResponseMessage;
+import com.tc.object.msg.GetSizeServerMapResponseMessage;
+import com.tc.object.msg.GetValueServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
@@ -116,8 +117,8 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     final MessageChannel channel = getActiveChannel(clientID);
     if (channel == null) { return; }
 
-    final ServerMapResponseMessage responseMessage = (ServerMapResponseMessage) channel
-        .createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
+    final GetValueServerMapResponseMessage responseMessage = (GetValueServerMapResponseMessage) channel
+        .createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
     responseMessage.initializeGetValueResponse(mapID, requestID, portableValue);
     responseMessage.send();
   }
@@ -131,8 +132,8 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     final MessageChannel channel = getActiveChannel(clientID);
     if (channel == null) { return; }
 
-    final ServerMapResponseMessage responseMessage = (ServerMapResponseMessage) channel
-        .createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
+    final GetSizeServerMapResponseMessage responseMessage = (GetSizeServerMapResponseMessage) channel
+        .createMessage(TCMessageType.GET_SIZE_SERVER_MAP_RESPONSE_MESSAGE);
     responseMessage.initializeGetSizeResponse(mapID, requestID, size);
     responseMessage.send();
   }
