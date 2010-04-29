@@ -7,6 +7,8 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.object.RemoteServerMapManager;
 import com.tc.object.ServerMapRequestType;
+import com.tc.object.msg.GetSizeServerMapResponseMessage;
+import com.tc.object.msg.GetValueServerMapResponseMessage;
 import com.tc.object.msg.ServerMapResponseMessage;
 
 public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
@@ -24,12 +26,14 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
     switch (requestType) {
       case GET_SIZE:
         this.remoteServerMapManager.addResponseForGetSize(responseMsg.getLocalSessionID(), responseMsg.getMapID(),
-                                                          responseMsg.getRequestID(), responseMsg.getSize(),
+                                                          responseMsg.getRequestID(),
+                                                          ((GetSizeServerMapResponseMessage) responseMsg).getSize(),
                                                           responseMsg.getSourceNodeID());
         break;
       case GET_VALUE_FOR_KEY:
         this.remoteServerMapManager.addResponseForKeyValueMapping(responseMsg.getLocalSessionID(), responseMsg
-            .getMapID(), responseMsg.getRequestID(), responseMsg.getPortableValue(), responseMsg.getSourceNodeID());
+            .getMapID(), responseMsg.getRequestID(), ((GetValueServerMapResponseMessage) responseMsg)
+            .getPortableValue(), responseMsg.getSourceNodeID());
         break;
       default:
         throw new AssertionError("Unsupported Request type : " + requestType);

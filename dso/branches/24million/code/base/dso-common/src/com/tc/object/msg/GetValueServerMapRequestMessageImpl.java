@@ -22,12 +22,11 @@ import com.tc.util.Assert;
 
 import java.io.IOException;
 
-public class ServerMapRequestMessageImpl extends DSOMessageBase implements ServerMapRequestMessage {
+public class GetValueServerMapRequestMessageImpl extends DSOMessageBase implements GetValueServerMapRequestMessage {
 
-  private final static byte        REQUEST_TYPE  = 0;
-  private final static byte        MAP_OBJECT_ID = 1;
-  private final static byte        REQUEST_ID    = 2;
-  private final static byte        PORTABLE_KEY  = 3;
+  private final static byte        MAP_OBJECT_ID = 0;
+  private final static byte        REQUEST_ID    = 1;
+  private final static byte        PORTABLE_KEY  = 2;
 
   private final static byte        DUMMY_BYTE    = 0x00;
 
@@ -35,53 +34,36 @@ public class ServerMapRequestMessageImpl extends DSOMessageBase implements Serve
   private final static DNAEncoding encoder       = new SerializerDNAEncodingImpl();
   private final static DNAEncoding decoder       = new StorageDNAEncodingImpl();
 
-  private ServerMapRequestType     requestType;
+  private ObjectID                 mapID;
   private ServerMapRequestID       requestID;
   private Object                   portableKey;
-  private ObjectID                 mapID;
 
-  public ServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                       final MessageChannel channel, final TCMessageHeader header,
-                                       final TCByteBuffer[] data) {
+  public GetValueServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                             final MessageChannel channel, final TCMessageHeader header,
+                                             final TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
-  public ServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
-                                       final TCByteBufferOutputStream out, final MessageChannel channel,
-                                       final TCMessageType type) {
+  public GetValueServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
+                                             final TCByteBufferOutputStream out, final MessageChannel channel,
+                                             final TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
   public void initializeGetValueRequest(final ServerMapRequestID serverMapRequestID, final ObjectID id, final Object key) {
     Assert.assertTrue(LiteralValues.isLiteralInstance(key));
-    this.requestType = ServerMapRequestType.GET_VALUE_FOR_KEY;
     this.requestID = serverMapRequestID;
     this.mapID = id;
     this.portableKey = key;
-  }
-
-  public void initializeGetSizeRequest(final ServerMapRequestID serverMapRequestID, final ObjectID id) {
-    this.requestType = ServerMapRequestType.GET_SIZE;
-    this.requestID = serverMapRequestID;
-    this.mapID = id;
   }
 
   @Override
   protected void dehydrateValues() {
     putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
     putNVPair(REQUEST_ID, this.requestID.toLong());
-    putNVPair(REQUEST_TYPE, this.requestType.ordinal());
-    switch (this.requestType) {
-      case GET_SIZE:
-        break;
-      case GET_VALUE_FOR_KEY:
-        putNVPair(PORTABLE_KEY, DUMMY_BYTE);
-        // Directly encode the key
-        encoder.encode(this.portableKey, getOutputStream());
-        break;
-      default:
-        throw new AssertionError("Dehydrating message before Request Type is set");
-    }
+    putNVPair(PORTABLE_KEY, DUMMY_BYTE);
+    // Directly encode the key
+    encoder.encode(this.portableKey, getOutputStream());
   }
 
   @Override
@@ -93,10 +75,6 @@ public class ServerMapRequestMessageImpl extends DSOMessageBase implements Serve
 
       case REQUEST_ID:
         this.requestID = new ServerMapRequestID(getLongValue());
-        return true;
-
-      case REQUEST_TYPE:
-        this.requestType = ServerMapRequestType.fromOrdinal(getIntValue());
         return true;
 
       case PORTABLE_KEY:
@@ -114,10 +92,6 @@ public class ServerMapRequestMessageImpl extends DSOMessageBase implements Serve
     }
   }
 
-  public boolean isGetSizeRequest() {
-    return this.requestType == ServerMapRequestType.GET_SIZE;
-  }
-
   public ObjectID getMapID() {
     return this.mapID;
   }
@@ -132,5 +106,9 @@ public class ServerMapRequestMessageImpl extends DSOMessageBase implements Serve
 
   public ServerMapRequestID getRequestID() {
     return this.requestID;
+  }
+
+  public ServerMapRequestType getRequestType() {
+    return ServerMapRequestType.GET_VALUE_FOR_KEY;
   }
 }

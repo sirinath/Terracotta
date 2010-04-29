@@ -7,26 +7,51 @@ import com.tc.logging.TCLogger;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
+import com.tc.object.msg.GetSizeServerMapRequestMessage;
+import com.tc.object.msg.GetValueServerMapRequestMessage;
 import com.tc.object.msg.ServerMapMessageFactory;
 import com.tc.object.msg.ServerMapRequestMessage;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Util;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Map.Entry;
 
 public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
+
+  // TODO::Make its own property
+  private static final int                                               MAX_OUTSTANDING_REQUESTS_SENT_IMMEDIATELY = TCPropertiesImpl
+                                                                                                                       .getProperties()
+                                                                                                                       .getInt(
+                                                                                                                               TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY);
+  private static final long                                              BATCH_LOOKUP_TIME_PERIOD                  = TCPropertiesImpl
+                                                                                                                       .getProperties()
+                                                                                                                       .getInt(
+                                                                                                                               TCPropertiesConsts.L1_OBJECTMANAGER_REMOTE_BATCH_LOOKUP_TIME_PERIOD);
 
   private final GroupID                                                  groupID;
   private final ServerMapMessageFactory                                  smmFactory;
   private final TCLogger                                                 logger;
   private final SessionManager                                           sessionManager;
-  private final Map<ServerMapRequestID, AbstractServerMapRequestContext> outstandingRequests = new HashMap();
+  private final Map<ServerMapRequestID, AbstractServerMapRequestContext> outstandingRequests                       = new HashMap<ServerMapRequestID, AbstractServerMapRequestContext>();
 
-  private State                                                          state               = State.RUNNING;
+  private final Timer                                                    requestTimer                              = new Timer(
+                                                                                                                               "RemoteServerMapManager Request Scheduler",
+                                                                                                                               true);
 
-  private long                                                           requestIDCounter    = 0;
+  private State                                                          state                                     = State.RUNNING;
+
+  private long                                                           requestIDCounter                          = 0;
+
+  private boolean                                                        pendingSendTaskScheduled                  = false;
 
   private static enum State {
     PAUSED, RUNNING, STARTING, STOPPED
@@ -42,17 +67,13 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
   public synchronized Object getMappingForKey(final ObjectID oid, final Object portableKey) {
     boolean isInterrupted = false;
-    if (oid.getGroupID() != this.groupID.toInt()) {
-      //
-      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " id : " + oid
-                               + " portableKey : " + portableKey);
-    }
-
+    assertSameGroupID(oid);
     waitUntilRunning();
 
     final AbstractServerMapRequestContext context = createRequestContext(oid, portableKey);
+    context.makeLookupRequest();
+    sendRequest(context);
     Object value;
-    context.sendRequest(this.smmFactory);
     while (true) {
       try {
         wait();
@@ -69,17 +90,21 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return value;
   }
 
+  private void assertSameGroupID(final ObjectID oid) {
+    if (oid.getGroupID() != this.groupID.toInt()) { throw new AssertionError(
+                                                                             "Looking up in the wrong Remote Manager : "
+                                                                                 + this.groupID + " id : " + oid); }
+  }
+
   public synchronized int getSize(final ObjectID mapId) {
     boolean isInterrupted = false;
-    if (mapId.getGroupID() != this.groupID.toInt()) {
-      //
-      throw new AssertionError("Looking up in the wrong Remote Manager : " + this.groupID + " map id : " + mapId);
-    }
+    assertSameGroupID(mapId);
     waitUntilRunning();
 
     final AbstractServerMapRequestContext context = createSizeRequestContext(mapId);
+    context.makeLookupRequest();
+    sendRequestNow(context); // Get size requests are not batched for now
     Integer size;
-    context.sendRequest(this.smmFactory);
     while (true) {
       try {
         wait();
@@ -96,6 +121,76 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return size;
   }
 
+  private void sendRequest(final AbstractServerMapRequestContext context) {
+    final int size = this.outstandingRequests.size();
+    if (size % 5000 == 4999) {
+      this.logger.warn("Too many pending requests in the system : objectLookup states size : " + size);
+    }
+    if (size <= MAX_OUTSTANDING_REQUESTS_SENT_IMMEDIATELY) {
+      sendRequestNow(context);
+    } else {
+      scheduleRequestForLater(context);
+    }
+
+  }
+
+  private void scheduleRequestForLater(final AbstractServerMapRequestContext context) {
+    context.makePending();
+    if (!this.pendingSendTaskScheduled) {
+      this.requestTimer.schedule(new SendPendingRequestsTimer(), BATCH_LOOKUP_TIME_PERIOD);
+      this.pendingSendTaskScheduled = true;
+    }
+  }
+
+  private class SendPendingRequestsTimer extends TimerTask {
+    @Override
+    public void run() {
+      sendPendingRequests();
+    }
+  }
+
+  public synchronized void sendPendingRequests() {
+    waitUntilRunning();
+    this.pendingSendTaskScheduled = false;
+    final Map<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending = getPendingRequestSegregated();
+    if (!segregatedPending.isEmpty()) {
+      sendSegregatedPendingRequests(segregatedPending);
+    }
+  }
+
+  private Map<ObjectID, Set<AbstractServerMapRequestContext>> getPendingRequestSegregated() {
+    final HashMap<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending = new HashMap<ObjectID, Set<AbstractServerMapRequestContext>>();
+    for (final AbstractServerMapRequestContext ols : this.outstandingRequests.values()) {
+      if (ols.isPending()) {
+        ols.makeUnPending();
+        final ObjectID key = ols.getMapObjectID();
+        Set<AbstractServerMapRequestContext> contexts = segregatedPending.get(key);
+        if (contexts == null) {
+          contexts = new HashSet<AbstractServerMapRequestContext>();
+          segregatedPending.put(key, contexts);
+        }
+        contexts.add(ols);
+      }
+    }
+    return segregatedPending;
+  }
+
+  // TODO:: Do batching here
+  private void sendSegregatedPendingRequests(final Map<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending) {
+    for (final Entry<ObjectID, Set<AbstractServerMapRequestContext>> e : segregatedPending.entrySet()) {
+      for (final AbstractServerMapRequestContext context : e.getValue()) {
+        sendRequestNow(context);
+      }
+    }
+  }
+
+  private void sendRequestNow(final AbstractServerMapRequestContext context) {
+    final ServerMapRequestMessage msg = this.smmFactory.newServerTCMapRequestMessage(this.groupID, context
+        .getRequestType());
+    context.initializeMessage(msg);
+    msg.send();
+  }
+
   private AbstractServerMapRequestContext createSizeRequestContext(final ObjectID mapId) {
     final ServerMapRequestID requestID = getNextRequestID();
     final GetSizeServerMapRequestContext context = new GetSizeServerMapRequestContext(requestID, mapId, this.groupID);
@@ -106,7 +201,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   synchronized void requestOutstanding() {
     for (final Object element : this.outstandingRequests.entrySet()) {
       final AbstractServerMapRequestContext context = (AbstractServerMapRequestContext) element;
-      context.sendRequest(this.smmFactory);
+      sendRequestNow(context);
     }
   }
 
@@ -216,7 +311,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   // TODO::FIXME::This will go when we do batching
-  private static abstract class AbstractServerMapRequestContext {
+  private static abstract class AbstractServerMapRequestContext extends LookupStateTransitionAdaptor {
 
     // protected final static TCLogger logger = TCLogging.getLogger(AbstractServerMapRequestContext.class);
 
@@ -235,15 +330,12 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       this.groupID = groupID;
     }
 
-    public ServerMapRequestID getRequestID() {
-      return this.requestID;
+    public ObjectID getMapObjectID() {
+      return this.oid;
     }
 
-    // TODO::Change / Batch
-    public void sendRequest(final ServerMapMessageFactory factory) {
-      final ServerMapRequestMessage requestMessage = factory.newServerTCMapRequestMessage(this.groupID);
-      initializeMessage(requestMessage);
-      requestMessage.send();
+    public ServerMapRequestID getRequestID() {
+      return this.requestID;
     }
 
     public ServerMapRequestType getRequestType() {
@@ -261,6 +353,20 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       return this.result;
     }
 
+    @Override
+    public int hashCode() {
+      return this.requestID.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (o == this) { return true; }
+      if (!(o instanceof AbstractServerMapRequestContext)) { return false; }
+      final AbstractServerMapRequestContext other = (AbstractServerMapRequestContext) o;
+      return (this.requestID.equals(other.requestID) && this.requestType.equals(other.requestType)
+              && this.oid.equals(other.oid) && this.groupID.equals(other.groupID));
+    }
+
     public abstract void initializeMessage(ServerMapRequestMessage requestMessage);
 
   }
@@ -274,7 +380,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     @Override
     public void initializeMessage(final ServerMapRequestMessage requestMessage) {
-      requestMessage.initializeGetSizeRequest(this.requestID, this.oid);
+      ((GetSizeServerMapRequestMessage) requestMessage).initializeGetSizeRequest(this.requestID, this.oid);
     }
 
   }
@@ -291,7 +397,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     @Override
     public void initializeMessage(final ServerMapRequestMessage requestMessage) {
-      requestMessage.initializeGetValueRequest(this.requestID, this.oid, this.portableKey);
+      ((GetValueServerMapRequestMessage) requestMessage).initializeGetValueRequest(this.requestID, this.oid,
+                                                                                   this.portableKey);
     }
 
   }

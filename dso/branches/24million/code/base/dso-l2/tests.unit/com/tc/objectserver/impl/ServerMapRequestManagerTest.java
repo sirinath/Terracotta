@@ -15,7 +15,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestID;
-import com.tc.object.msg.ServerMapResponseMessage;
+import com.tc.object.msg.GetValueServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
@@ -59,8 +59,8 @@ public class ServerMapRequestManagerTest extends TestCase {
     } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    final ServerMapResponseMessage message = mock(ServerMapResponseMessage.class);
-    when(messageChannel.createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
+    final GetValueServerMapResponseMessage message = mock(GetValueServerMapResponseMessage.class);
+    when(messageChannel.createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
     serverMapRequestManager.sendResponseFor(mapID, mo);
 
@@ -74,7 +74,7 @@ public class ServerMapRequestManagerTest extends TestCase {
       throw new AssertionError(e);
     }
 
-    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
+    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID, portableValue);
 
@@ -120,8 +120,8 @@ public class ServerMapRequestManagerTest extends TestCase {
     } catch (final NoSuchChannelException e) {
       throw new AssertionError(e);
     }
-    final ServerMapResponseMessage message = mock(ServerMapResponseMessage.class);
-    when(messageChannel.createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
+    final GetValueServerMapResponseMessage message = mock(GetValueServerMapResponseMessage.class);
+    when(messageChannel.createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE)).thenReturn(message);
 
     serverTCMapRequestManager.sendResponseFor(mapID, mo);
 
@@ -135,7 +135,7 @@ public class ServerMapRequestManagerTest extends TestCase {
       throw new AssertionError(e);
     }
 
-    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.SERVER_MAP_RESPONSE_MESSAGE);
+    verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID1, portableValue1);
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID2, portableValue2);
