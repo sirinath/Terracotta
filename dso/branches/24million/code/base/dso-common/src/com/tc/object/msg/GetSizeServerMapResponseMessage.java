@@ -8,6 +8,8 @@ import com.tc.object.ServerMapRequestID;
 
 public interface GetSizeServerMapResponseMessage extends ServerMapResponseMessage {
 
+  public ServerMapRequestID getRequestID();
+
   public Integer getSize();
 
   public void initializeGetSizeResponse(ObjectID mapID, ServerMapRequestID requestID, Integer size);

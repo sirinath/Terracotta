@@ -8,6 +8,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapGetValueRequest;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
@@ -20,19 +21,20 @@ import java.util.Map;
 
 public final class ServerMapRequestContext implements ObjectManagerResultsContext {
 
-  private final static TCLogger      logger    = TCLogging.getLogger(ServerMapRequestContext.class);
+  private final static TCLogger                      logger    = TCLogging.getLogger(ServerMapRequestContext.class);
 
-  private final ServerMapRequestType requestType;
-  private final ObjectIDSet          lookupIDs = new ObjectIDSet();
-  private final ServerMapRequestID   requestID;
-  private final ObjectID             mapID;
-  private final Object               portableKey;
-  private final ClientID             clientID;
-  private final Sink                 destinationSink;
+  private final ServerMapRequestType                 requestType;
+  private final ObjectIDSet                          lookupIDs = new ObjectIDSet();
+  private final ObjectID                             mapID;
+  private final ClientID                             clientID;
+  private final Sink                                 destinationSink;
 
-  public ServerMapRequestContext(final ServerMapRequestID requestID, final ClientID clientID, final ObjectID mapID,
-                                 final Object portableKey, final Sink destinationSink) {
-    this(ServerMapRequestType.GET_VALUE_FOR_KEY, requestID, clientID, mapID, destinationSink, portableKey);
+  private final ServerMapRequestID                   getSizeRequestID;
+  private final Collection<ServerMapGetValueRequest> getValueRequests;
+
+  public ServerMapRequestContext(final ClientID clientID, final ObjectID mapID,
+                                 final Collection<ServerMapGetValueRequest> getValueRequests, final Sink destinationSink) {
+    this(ServerMapRequestType.GET_VALUE_FOR_KEY, null, clientID, mapID, destinationSink, getValueRequests);
   }
 
   public ServerMapRequestContext(final ServerMapRequestID requestID, final ClientID clientID, final ObjectID mapID,
@@ -42,13 +44,13 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
 
   private ServerMapRequestContext(final ServerMapRequestType requestType, final ServerMapRequestID requestID,
                                   final ClientID clientID, final ObjectID mapID, final Sink destinationSink,
-                                  final Object portableKey) {
+                                  final Collection<ServerMapGetValueRequest> getValueRequests) {
     this.requestType = requestType;
-    this.requestID = requestID;
+    this.getSizeRequestID = requestID;
     this.clientID = clientID;
     this.mapID = mapID;
     this.destinationSink = destinationSink;
-    this.portableKey = portableKey;
+    this.getValueRequests = getValueRequests;
     this.lookupIDs.add(mapID);
   }
 
@@ -56,27 +58,30 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
     return this.requestType;
   }
 
-  public ServerMapRequestID getRequestID() {
-    return this.requestID;
+  public ServerMapRequestID getSizeRequestID() {
+    if (this.requestType != ServerMapRequestType.GET_SIZE) { throw new AssertionError(
+                                                                                      " Request type is not GET SIZE : "
+                                                                                          + this); }
+    return this.getSizeRequestID;
   }
 
   public ClientID getClientID() {
     return this.clientID;
   }
 
-  public Object getPortableKey() {
-    if (this.portableKey == null) { throw new AssertionError("Key is null : " + this); }
-    return this.portableKey;
-  }
-
   public ObjectID getServerTCMapID() {
     return this.mapID;
+  }
+
+  public Collection<ServerMapGetValueRequest> getValueRequests() {
+    return this.getValueRequests;
   }
 
   @Override
   public String toString() {
     return "RequestEntryForKeyContext [  mapID = " + this.mapID + " clientID : " + this.clientID + " requestType : "
-           + this.requestType + " requestID : " + this.requestID + " key : " + this.portableKey + "]";
+           + this.requestType + "  size requestID : " + this.getSizeRequestID + " value requests : "
+           + this.getValueRequests + "]";
   }
 
   public ObjectIDSet getLookupIDs() {
@@ -92,18 +97,15 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
     final ObjectIDSet missingObjects = results.getMissingObjectIDs();
 
     if (!missingObjects.isEmpty()) {
-      logger.error("Ignoring Missing ObjectIDs : " + missingObjects + " Map ID : " + this.mapID + " portable key : "
-                   + this.portableKey);
+      logger.error("Ignoring Missing ObjectIDs : " + missingObjects + " Request Context : " + this);
       // TODO:: Fix this
       return;
     }
     if (objects.size() != 1) { throw new AssertionError("Asked for 1, got more or less"); }
 
-    final Collection<ManagedObject> mobjs = objects.values();
-    final ManagedObject mo = mobjs.iterator().next();
+    final ManagedObject mo = objects.get(this.mapID);
 
-    if (!mo.getID().equals(this.mapID)) { throw new AssertionError("ServerTCMap (mapID " + this.mapID
-                                                                   + " ) is not looked up "); }
+    if (mo == null) { throw new AssertionError("ServerTCMap (mapID " + this.mapID + ") is null "); }
 
     final EntryForKeyResponseContext responseContext = new EntryForKeyResponseContext(mo, this.mapID);
     this.destinationSink.add(responseContext);
@@ -111,15 +113,5 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
 
   public boolean updateStats() {
     return true;
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    if (obj instanceof ServerMapRequestContext) {
-      final ServerMapRequestContext compareTo = (ServerMapRequestContext) obj;
-      return this.clientID.equals(compareTo.getClientID()) && this.mapID.equals(compareTo.getServerTCMapID())
-             && this.portableKey.equals(compareTo.getPortableKey());
-    }
-    return false;
   }
 }

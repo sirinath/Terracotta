@@ -14,6 +14,8 @@ import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapGetValueRequest;
+import com.tc.object.ServerMapGetValueResponse;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.msg.GetValueServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
@@ -22,6 +24,8 @@ import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.ServerMapRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedObjectState;
+
+import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
@@ -42,9 +46,11 @@ public class ServerMapRequestManagerTest extends TestCase {
                                                                                                 channelManager,
                                                                                                 respondToServerTCMapSink,
                                                                                                 managedObjectRequestSink);
-    serverMapRequestManager.requestValues(requestID, clientID, mapID, portableKey);
+    final ArrayList requests = new ArrayList();
+    requests.add(new ServerMapGetValueRequest(requestID, portableKey));
+    serverMapRequestManager.requestValues(clientID, mapID, requests);
 
-    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID, clientID, mapID, portableKey,
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(clientID, mapID, requests,
                                                                                respondToServerTCMapSink);
 
     verify(objManager, atLeastOnce()).lookupObjectsFor(clientID, requestContext);
@@ -76,7 +82,9 @@ public class ServerMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
-    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID, portableValue);
+    final ArrayList responses = new ArrayList();
+    responses.add(new ServerMapGetValueResponse(requestID, portableValue));
+    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, responses);
 
     verify(message, atLeastOnce()).send();
 
@@ -100,11 +108,15 @@ public class ServerMapRequestManagerTest extends TestCase {
                                                                                                   channelManager,
                                                                                                   respondToServerTCMapSink,
                                                                                                   managedObjectRequestSink);
-    serverTCMapRequestManager.requestValues(requestID1, clientID, mapID, portableKey1);
-    serverTCMapRequestManager.requestValues(requestID2, clientID, mapID, portableKey2);
+    final ArrayList request1 = new ArrayList();
+    request1.add(new ServerMapGetValueRequest(requestID1, portableKey1));
+    final ArrayList request2 = new ArrayList();
+    request2.add(new ServerMapGetValueRequest(requestID2, portableKey2));
+    serverTCMapRequestManager.requestValues(clientID, mapID, request1);
+    serverTCMapRequestManager.requestValues(clientID, mapID, request2);
 
-    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID1, clientID, mapID,
-                                                                               portableKey1, respondToServerTCMapSink);
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(clientID, mapID, request1,
+                                                                               respondToServerTCMapSink);
 
     verify(objManager, atMost(1)).lookupObjectsFor(clientID, requestContext);
 
@@ -137,8 +149,10 @@ public class ServerMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
-    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID1, portableValue1);
-    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, requestID2, portableValue2);
+    final ArrayList responses = new ArrayList();
+    responses.add(new ServerMapGetValueResponse(requestID1, portableValue1));
+    responses.add(new ServerMapGetValueResponse(requestID2, portableValue2));
+    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, responses);
 
     verify(message, atLeastOnce()).send();
   }

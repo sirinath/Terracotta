@@ -5,15 +5,18 @@ package com.tc.objectserver.api;
 
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapGetValueRequest;
 import com.tc.object.ServerMapRequestID;
 import com.tc.objectserver.core.api.ManagedObject;
 
-public interface ServerMapRequestManager {
+import java.util.Collection;
 
-  public void requestValues(ServerMapRequestID serverMapRequestID, ClientID clientID, ObjectID mapID, Object portableKey);
+public interface ServerMapRequestManager {
 
   public void requestSize(ServerMapRequestID requestID, ClientID clientID, ObjectID mapID);
 
   public void sendResponseFor(ObjectID mapID, ManagedObject managedObject);
+
+  public void requestValues(ClientID clientID, ObjectID mapID, Collection<ServerMapGetValueRequest> requests);
 
 }

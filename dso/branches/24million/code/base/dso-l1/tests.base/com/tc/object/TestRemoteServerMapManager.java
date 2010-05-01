@@ -8,6 +8,8 @@ import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
 
+import java.util.Collection;
+
 public class TestRemoteServerMapManager implements RemoteServerMapManager {
 
   public ObjectID getMappingForKey(final ObjectID oid, final Object portableKey) {
@@ -39,15 +41,15 @@ public class TestRemoteServerMapManager implements RemoteServerMapManager {
 
   }
 
-  public void addResponseForKeyValueMapping(final SessionID localSessionID, final ObjectID mapID,
-                                            final ServerMapRequestID requestID, final Object portableValue,
-                                            final NodeID nodeID) {
-    throw new ImplementMe();
-  }
-
   public void addResponseForGetSize(final SessionID localSessionID, final ObjectID mapID,
                                     final ServerMapRequestID requestID, final Integer size, final NodeID sourceNodeID) {
     throw new ImplementMe();
+  }
+
+  public void addResponseForKeyValueMapping(final SessionID localSessionID, final ObjectID mapID,
+                                            final Collection<ServerMapGetValueResponse> responses, final NodeID nodeID) {
+    throw new ImplementMe();
+
   }
 
 }

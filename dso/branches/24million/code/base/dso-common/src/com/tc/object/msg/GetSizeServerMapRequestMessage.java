@@ -10,4 +10,8 @@ public interface GetSizeServerMapRequestMessage extends ServerMapRequestMessage 
 
   public void initializeGetSizeRequest(ServerMapRequestID requestID, ObjectID mapID);
 
+  public ServerMapRequestID getRequestID();
+
+  public ObjectID getMapID();
+
 }
