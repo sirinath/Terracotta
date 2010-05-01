@@ -80,4 +80,8 @@ public class GetSizeServerMapRequestMessageImpl extends DSOMessageBase implement
     return ServerMapRequestType.GET_SIZE;
   }
 
+  public int getRequestCount() {
+    return 1;
+  }
+
 }

@@ -11,6 +11,8 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
+import com.tc.object.ServerMapGetValueRequest;
+import com.tc.object.ServerMapGetValueResponse;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
 import com.tc.object.msg.GetSizeServerMapResponseMessage;
@@ -27,9 +29,11 @@ import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedOb
 import com.tc.util.ObjectIDSet;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
 
@@ -48,10 +52,10 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     this.managedObjectRequestSink = managedObjectRequestSink;
   }
 
-  public void requestValues(final ServerMapRequestID requestID, final ClientID clientID, final ObjectID mapID,
-                            final Object portableKey) {
+  public void requestValues(final ClientID clientID, final ObjectID mapID,
+                            final Collection<ServerMapGetValueRequest> requests) {
 
-    final ServerMapRequestContext requestContext = new ServerMapRequestContext(requestID, clientID, mapID, portableKey,
+    final ServerMapRequestContext requestContext = new ServerMapRequestContext(clientID, mapID, requests,
                                                                                this.respondToServerTCMapSink);
     processRequest(clientID, requestContext);
   }
@@ -77,8 +81,9 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
                                + " is not a ConcurrentDistributedServerMapManagedObjectState, state is of class type: "
                                + state.getClassName());
     }
-
     final ConcurrentDistributedServerMapManagedObjectState csmState = (ConcurrentDistributedServerMapManagedObjectState) state;
+
+    final Map<ClientID, Collection<ServerMapGetValueResponse>> results = new HashMap<ClientID, Collection<ServerMapGetValueResponse>>();
     try {
       final List<ServerMapRequestContext> requestList = this.requestQueue.remove(mapID);
 
@@ -93,7 +98,7 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
             sendResponseForGetSize(mapID, request, csmState);
             break;
           case GET_VALUE_FOR_KEY:
-            sendResponseForGetValue(mapID, request, csmState);
+            gatherResponseForGetValue(mapID, request, csmState, results);
             break;
           default:
             throw new AssertionError("Unknown request type : " + requestType);
@@ -103,29 +108,49 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
       // TODO::FIXME::Release as soon as possible
       this.objectManager.releaseReadOnly(managedObject);
     }
+    if (!results.isEmpty()) {
+      sendResponseForGetValue(mapID, results);
+    }
   }
 
-  private void sendResponseForGetValue(final ObjectID mapID, final ServerMapRequestContext request,
-                                       final ConcurrentDistributedServerMapManagedObjectState csmState) {
-    final ServerMapRequestID requestID = request.getRequestID();
-    final Object portableKey = request.getPortableKey();
+  private void gatherResponseForGetValue(final ObjectID mapID, final ServerMapRequestContext request,
+                                         final ConcurrentDistributedServerMapManagedObjectState csmState,
+                                         final Map<ClientID, Collection<ServerMapGetValueResponse>> results) {
     final ClientID clientID = request.getClientID();
-    final Object portableValue = csmState.getValueForKey(portableKey);
+    Collection<ServerMapGetValueResponse> responses = results.get(clientID);
+    if (responses == null) {
+      responses = new ArrayList<ServerMapGetValueResponse>();
+      results.put(clientID, responses);
+    }
+    for (final ServerMapGetValueRequest r : request.getValueRequests()) {
+      Object portableValue = csmState.getValueForKey(r.getKey());
+      // Null Value is not supported in CDSM
+      portableValue = (portableValue == null ? ObjectID.NULL_ID : portableValue);
+      responses.add(new ServerMapGetValueResponse(r.getRequestID(), portableValue));
+      preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
+    }
+  }
 
-    preFetchPortableValueIfNeeded(mapID, portableValue, clientID);
+  private void sendResponseForGetValue(final ObjectID mapID,
+                                       final Map<ClientID, Collection<ServerMapGetValueResponse>> results) {
+    for (final Entry<ClientID, Collection<ServerMapGetValueResponse>> e : results.entrySet()) {
+      final ClientID clientID = e.getKey();
+      final MessageChannel channel = getActiveChannel(clientID);
+      if (channel == null) {
+        this.logger.info("Client " + clientID + " is not active : Ignoring sending response for getValue() ");
+        return;
+      }
+      final GetValueServerMapResponseMessage responseMessage = (GetValueServerMapResponseMessage) channel
+          .createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
+      responseMessage.initializeGetValueResponse(mapID, e.getValue());
+      responseMessage.send();
+    }
 
-    final MessageChannel channel = getActiveChannel(clientID);
-    if (channel == null) { return; }
-
-    final GetValueServerMapResponseMessage responseMessage = (GetValueServerMapResponseMessage) channel
-        .createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
-    responseMessage.initializeGetValueResponse(mapID, requestID, portableValue);
-    responseMessage.send();
   }
 
   private void sendResponseForGetSize(final ObjectID mapID, final ServerMapRequestContext request,
                                       final ConcurrentDistributedServerMapManagedObjectState csmState) {
-    final ServerMapRequestID requestID = request.getRequestID();
+    final ServerMapRequestID requestID = request.getSizeRequestID();
     final ClientID clientID = request.getClientID();
     final Integer size = csmState.getSize();
 
@@ -150,6 +175,7 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
   private void preFetchPortableValueIfNeeded(final ObjectID mapID, final Object portableValue, final ClientID clientID) {
     if (portableValue instanceof ObjectID) {
       final ObjectID valueID = (ObjectID) portableValue;
+      if (valueID.isNull()) { return; }
       if (mapID.getGroupID() != valueID.getGroupID()) {
         // TODO::FIX for AA
         // Not in this server

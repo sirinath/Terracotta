@@ -17,13 +17,11 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Util;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
 
 public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
@@ -66,28 +64,13 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   public synchronized Object getMappingForKey(final ObjectID oid, final Object portableKey) {
-    boolean isInterrupted = false;
     assertSameGroupID(oid);
     waitUntilRunning();
 
-    final AbstractServerMapRequestContext context = createRequestContext(oid, portableKey);
+    final AbstractServerMapRequestContext context = createLookupValueRequestContext(oid, portableKey);
     context.makeLookupRequest();
     sendRequest(context);
-    Object value;
-    while (true) {
-      try {
-        wait();
-      } catch (final InterruptedException e) {
-        isInterrupted = true;
-      }
-      value = context.getResult();
-      if (value != null) {
-        removeRequestContext(context);
-        break;
-      }
-    }
-    Util.selfInterruptIfNeeded(isInterrupted);
-    return value;
+    return waitForResult(context);
   }
 
   private void assertSameGroupID(final ObjectID oid) {
@@ -97,28 +80,32 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   public synchronized int getSize(final ObjectID mapId) {
-    boolean isInterrupted = false;
     assertSameGroupID(mapId);
     waitUntilRunning();
 
-    final AbstractServerMapRequestContext context = createSizeRequestContext(mapId);
+    final AbstractServerMapRequestContext context = createGetSizeRequestContext(mapId);
     context.makeLookupRequest();
     sendRequestNow(context); // Get size requests are not batched for now
-    Integer size;
+    return (Integer) waitForResult(context);
+  }
+
+  private Object waitForResult(final AbstractServerMapRequestContext context) {
+    boolean isInterrupted = false;
+    Object result;
     while (true) {
       try {
         wait();
       } catch (final InterruptedException e) {
         isInterrupted = true;
       }
-      size = (Integer) context.getResult();
-      if (size != null) {
+      result = context.getResult();
+      if (result != null) {
         removeRequestContext(context);
         break;
       }
     }
     Util.selfInterruptIfNeeded(isInterrupted);
-    return size;
+    return result;
   }
 
   private void sendRequest(final AbstractServerMapRequestContext context) {
@@ -149,37 +136,29 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
   }
 
+  /**
+   * Only GET_VALUE_FOR_KEY requests are batched, its a little ugly to assume that here. Needs some refactoring.
+   */
   public synchronized void sendPendingRequests() {
     waitUntilRunning();
     this.pendingSendTaskScheduled = false;
-    final Map<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending = getPendingRequestSegregated();
-    if (!segregatedPending.isEmpty()) {
-      sendSegregatedPendingRequests(segregatedPending);
+    final ServerMapRequestMessage msg = this.smmFactory
+        .newServerTCMapRequestMessage(this.groupID, ServerMapRequestType.GET_VALUE_FOR_KEY);
+    initializeMessageWithPendingRequests(msg);
+    if (msg.getRequestCount() != 0) {
+      msg.send();
     }
   }
 
-  private Map<ObjectID, Set<AbstractServerMapRequestContext>> getPendingRequestSegregated() {
-    final HashMap<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending = new HashMap<ObjectID, Set<AbstractServerMapRequestContext>>();
-    for (final AbstractServerMapRequestContext ols : this.outstandingRequests.values()) {
-      if (ols.isPending()) {
-        ols.makeUnPending();
-        final ObjectID key = ols.getMapObjectID();
-        Set<AbstractServerMapRequestContext> contexts = segregatedPending.get(key);
-        if (contexts == null) {
-          contexts = new HashSet<AbstractServerMapRequestContext>();
-          segregatedPending.put(key, contexts);
+  private void initializeMessageWithPendingRequests(final ServerMapRequestMessage msg) {
+    for (final AbstractServerMapRequestContext context : this.outstandingRequests.values()) {
+      if (context.isPending()) {
+        if (context.getRequestType() == ServerMapRequestType.GET_SIZE) {
+          // Only GET_VALUE_FOR_KEY Requests are batched here
+          throw new AssertionError("Get Size requests are not batched so it should never be pending : " + context);
         }
-        contexts.add(ols);
-      }
-    }
-    return segregatedPending;
-  }
-
-  // TODO:: Do batching here
-  private void sendSegregatedPendingRequests(final Map<ObjectID, Set<AbstractServerMapRequestContext>> segregatedPending) {
-    for (final Entry<ObjectID, Set<AbstractServerMapRequestContext>> e : segregatedPending.entrySet()) {
-      for (final AbstractServerMapRequestContext context : e.getValue()) {
-        sendRequestNow(context);
+        context.makeUnPending();
+        context.initializeMessage(msg);
       }
     }
   }
@@ -191,7 +170,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     msg.send();
   }
 
-  private AbstractServerMapRequestContext createSizeRequestContext(final ObjectID mapId) {
+  private AbstractServerMapRequestContext createGetSizeRequestContext(final ObjectID mapId) {
     final ServerMapRequestID requestID = getNextRequestID();
     final GetSizeServerMapRequestContext context = new GetSizeServerMapRequestContext(requestID, mapId, this.groupID);
     this.outstandingRequests.put(requestID, context);
@@ -210,7 +189,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     if (old != context) { throw new AssertionError("Removed wrong context. context = " + context + " old = " + old); }
   }
 
-  private AbstractServerMapRequestContext createRequestContext(final ObjectID oid, final Object portableKey) {
+  private AbstractServerMapRequestContext createLookupValueRequestContext(final ObjectID oid, final Object portableKey) {
     final ServerMapRequestID requestID = getNextRequestID();
     final GetValueServerMapRequestContext context = new GetValueServerMapRequestContext(requestID, oid, portableKey,
                                                                                         this.groupID);
@@ -223,25 +202,35 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   public synchronized void addResponseForKeyValueMapping(final SessionID sessionID, final ObjectID mapID,
-                                                         final ServerMapRequestID requestID,
-                                                         final Object portableValue, final NodeID nodeID) {
-    setResultForRequest(sessionID, mapID, requestID, portableValue, nodeID);
+                                                         final Collection<ServerMapGetValueResponse> responses,
+                                                         final NodeID nodeID) {
+    waitUntilRunning();
+    if (!this.sessionManager.isCurrentSession(nodeID, sessionID)) {
+      this.logger.warn("Ignoring response for ServerMap :  " + mapID + " ,  responses :" + responses.size()
+                       + " : from a different session: " + sessionID + ", " + this.sessionManager);
+      return;
+    }
+    for (final ServerMapGetValueResponse r : responses) {
+      setResultForRequest(sessionID, mapID, r.getRequestID(), r.getValue(), nodeID);
+    }
+    notifyAll();
   }
 
   public synchronized void addResponseForGetSize(final SessionID sessionID, final ObjectID mapID,
                                                  final ServerMapRequestID requestID, final Integer size,
                                                  final NodeID nodeID) {
+    waitUntilRunning();
+    if (!this.sessionManager.isCurrentSession(nodeID, sessionID)) {
+      this.logger.warn("Ignoring response for ServerMap :  " + mapID + " , " + requestID + " , size : " + size
+                       + " : from a different session: " + sessionID + ", " + this.sessionManager);
+      return;
+    }
     setResultForRequest(sessionID, mapID, requestID, size, nodeID);
+    notifyAll();
   }
 
   private void setResultForRequest(final SessionID sessionID, final ObjectID mapID, final ServerMapRequestID requestID,
                                    final Object result, final NodeID nodeID) {
-    waitUntilRunning();
-    if (!this.sessionManager.isCurrentSession(nodeID, sessionID)) {
-      this.logger.warn("Ignoring response for Server Map request :  " + mapID + " , " + requestID + " , " + result
-                       + " : from a different session: " + sessionID + ", " + this.sessionManager);
-      return;
-    }
     final AbstractServerMapRequestContext context = getRequestContext(requestID);
     if (context != null) {
       context.setResult(mapID, result);
@@ -249,7 +238,6 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       this.logger.warn("Server Map Request Context is null for " + mapID + " request ID : " + requestID + " result : "
                        + result);
     }
-    notifyAll();
   }
 
   private void waitUntilRunning() {
@@ -330,10 +318,6 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
       this.groupID = groupID;
     }
 
-    public ObjectID getMapObjectID() {
-      return this.oid;
-    }
-
     public ServerMapRequestID getRequestID() {
       return this.requestID;
     }
@@ -397,8 +381,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
     @Override
     public void initializeMessage(final ServerMapRequestMessage requestMessage) {
-      ((GetValueServerMapRequestMessage) requestMessage).initializeGetValueRequest(this.requestID, this.oid,
-                                                                                   this.portableKey);
+      ((GetValueServerMapRequestMessage) requestMessage).addGetValueRequestTo(this.requestID, this.oid,
+                                                                              this.portableKey);
     }
 
   }

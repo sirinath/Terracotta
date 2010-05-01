@@ -12,6 +12,7 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
+import com.tc.object.ServerMapGetValueRequest;
 import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
 import com.tc.object.dna.api.DNAEncoding;
@@ -21,22 +22,23 @@ import com.tc.object.session.SessionID;
 import com.tc.util.Assert;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class GetValueServerMapRequestMessageImpl extends DSOMessageBase implements GetValueServerMapRequestMessage {
 
-  private final static byte        MAP_OBJECT_ID = 0;
-  private final static byte        REQUEST_ID    = 1;
-  private final static byte        PORTABLE_KEY  = 2;
-
-  private final static byte        DUMMY_BYTE    = 0x00;
+  private final static byte                                         REQUESTS_COUNT = 0;
+  private final static byte                                         MAP_ID         = 1;
 
   // TODO::Comeback and verify
-  private final static DNAEncoding encoder       = new SerializerDNAEncodingImpl();
-  private final static DNAEncoding decoder       = new StorageDNAEncodingImpl();
+  private final static DNAEncoding                                  encoder        = new SerializerDNAEncodingImpl();
+  private final static DNAEncoding                                  decoder        = new StorageDNAEncodingImpl();
 
-  private ObjectID                 mapID;
-  private ServerMapRequestID       requestID;
-  private Object                   portableKey;
+  private final Map<ObjectID, Collection<ServerMapGetValueRequest>> requests       = new HashMap<ObjectID, Collection<ServerMapGetValueRequest>>();
+  private int                                                       requestsCount;
 
   public GetValueServerMapRequestMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                              final MessageChannel channel, final TCMessageHeader header,
@@ -50,65 +52,79 @@ public class GetValueServerMapRequestMessageImpl extends DSOMessageBase implemen
     super(sessionID, monitor, out, channel, type);
   }
 
-  public void initializeGetValueRequest(final ServerMapRequestID serverMapRequestID, final ObjectID id, final Object key) {
+  public void addGetValueRequestTo(final ServerMapRequestID serverMapRequestID, final ObjectID id, final Object key) {
     Assert.assertTrue(LiteralValues.isLiteralInstance(key));
-    this.requestID = serverMapRequestID;
-    this.mapID = id;
-    this.portableKey = key;
+    Collection<ServerMapGetValueRequest> requestsForMap = this.requests.get(id);
+    if (requestsForMap == null) {
+      requestsForMap = new ArrayList<ServerMapGetValueRequest>();
+      this.requests.put(id, requestsForMap);
+    }
+    requestsForMap.add(new ServerMapGetValueRequest(serverMapRequestID, key));
+    this.requestsCount++;
   }
 
   @Override
   protected void dehydrateValues() {
-    putNVPair(MAP_OBJECT_ID, this.mapID.toLong());
-    putNVPair(REQUEST_ID, this.requestID.toLong());
-    putNVPair(PORTABLE_KEY, DUMMY_BYTE);
-    // Directly encode the key
-    encoder.encode(this.portableKey, getOutputStream());
+    putNVPair(REQUESTS_COUNT, this.requestsCount);
+    int count = 0;
+    final TCByteBufferOutputStream outStream = getOutputStream();
+    for (final Entry<ObjectID, Collection<ServerMapGetValueRequest>> e : this.requests.entrySet()) {
+      final ObjectID mapID = e.getKey();
+      putNVPair(MAP_ID, mapID.toLong());
+      final Collection<ServerMapGetValueRequest> requests4Map = e.getValue();
+      // Directly encode the key
+      outStream.writeInt(requests4Map.size());
+      for (final ServerMapGetValueRequest svr : e.getValue()) {
+        outStream.writeLong(svr.getRequestID().toLong());
+        encoder.encode(svr.getKey(), outStream);
+        count++;
+      }
+    }
+    Assert.assertEquals(this.requestsCount, count);
   }
 
   @Override
   protected boolean hydrateValue(final byte name) throws IOException {
     switch (name) {
-      case MAP_OBJECT_ID:
-        this.mapID = new ObjectID(getLongValue());
+      case REQUESTS_COUNT:
+        this.requestsCount = getIntValue();
         return true;
 
-      case REQUEST_ID:
-        this.requestID = new ServerMapRequestID(getLongValue());
-        return true;
-
-      case PORTABLE_KEY:
-        // Read dummy byte
-        getByteValue();
+      case MAP_ID:
+        final ObjectID mapID = new ObjectID(getLongValue());
+        final Collection<ServerMapGetValueRequest> requests4Map = new ArrayList<ServerMapGetValueRequest>();
+        int count = getIntValue();
         // Directly decode the key
-        try {
-          this.portableKey = decoder.decode(getInputStream());
-        } catch (final ClassNotFoundException e) {
-          throw new AssertionError(e);
+        while (count-- > 0) {
+          try {
+            requests4Map.add(new ServerMapGetValueRequest(new ServerMapRequestID(getLongValue()), decoder
+                .decode(getInputStream())));
+          } catch (final ClassNotFoundException e) {
+            throw new AssertionError(e);
+          }
         }
+        final Collection<ServerMapGetValueRequest> old = this.requests.put(mapID, requests4Map);
+        Assert.assertNull(old);
         return true;
+
       default:
         return false;
     }
   }
 
-  public ObjectID getMapID() {
-    return this.mapID;
-  }
-
-  public Object getPortableKey() {
-    return this.portableKey;
+  public Map<ObjectID, Collection<ServerMapGetValueRequest>> getRequests() {
+    return this.requests;
   }
 
   public ClientID getClientID() {
     return (ClientID) getSourceNodeID();
   }
 
-  public ServerMapRequestID getRequestID() {
-    return this.requestID;
-  }
-
   public ServerMapRequestType getRequestType() {
     return ServerMapRequestType.GET_VALUE_FOR_KEY;
+  }
+
+  public int getRequestCount() {
+    return this.requestsCount;
   }
 }

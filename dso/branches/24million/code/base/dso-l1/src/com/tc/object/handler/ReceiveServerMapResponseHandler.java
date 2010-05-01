@@ -6,10 +6,8 @@ package com.tc.object.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.EventContext;
 import com.tc.object.RemoteServerMapManager;
-import com.tc.object.ServerMapRequestType;
 import com.tc.object.msg.GetSizeServerMapResponseMessage;
 import com.tc.object.msg.GetValueServerMapResponseMessage;
-import com.tc.object.msg.ServerMapResponseMessage;
 
 public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
@@ -21,22 +19,18 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
   @Override
   public void handleEvent(final EventContext context) {
-    final ServerMapResponseMessage responseMsg = (ServerMapResponseMessage) context;
-    final ServerMapRequestType requestType = responseMsg.getRequestType();
-    switch (requestType) {
-      case GET_SIZE:
-        this.remoteServerMapManager.addResponseForGetSize(responseMsg.getLocalSessionID(), responseMsg.getMapID(),
-                                                          responseMsg.getRequestID(),
-                                                          ((GetSizeServerMapResponseMessage) responseMsg).getSize(),
-                                                          responseMsg.getSourceNodeID());
-        break;
-      case GET_VALUE_FOR_KEY:
-        this.remoteServerMapManager.addResponseForKeyValueMapping(responseMsg.getLocalSessionID(), responseMsg
-            .getMapID(), responseMsg.getRequestID(), ((GetValueServerMapResponseMessage) responseMsg)
-            .getPortableValue(), responseMsg.getSourceNodeID());
-        break;
-      default:
-        throw new AssertionError("Unsupported Request type : " + requestType);
+    if (context instanceof GetSizeServerMapResponseMessage) {
+      final GetSizeServerMapResponseMessage responseMsg = (GetSizeServerMapResponseMessage) context;
+
+      this.remoteServerMapManager.addResponseForGetSize(responseMsg.getLocalSessionID(), responseMsg.getMapID(),
+                                                        responseMsg.getRequestID(), responseMsg.getSize(), responseMsg
+                                                            .getSourceNodeID());
+    } else {
+      final GetValueServerMapResponseMessage responseMsg = (GetValueServerMapResponseMessage) context;
+      this.remoteServerMapManager.addResponseForKeyValueMapping(responseMsg.getLocalSessionID(),
+                                                                responseMsg.getMapID(), responseMsg
+                                                                    .getGetValueResponses(), responseMsg
+                                                                    .getSourceNodeID());
     }
   }
 }

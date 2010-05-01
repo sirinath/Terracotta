@@ -4,12 +4,14 @@
 package com.tc.object.msg;
 
 import com.tc.object.ObjectID;
-import com.tc.object.ServerMapRequestID;
+import com.tc.object.ServerMapGetValueResponse;
+
+import java.util.Collection;
 
 public interface GetValueServerMapResponseMessage extends ServerMapResponseMessage {
 
-  public void initializeGetValueResponse(ObjectID mapID, ServerMapRequestID requestID, Object portableValue);
+  public void initializeGetValueResponse(ObjectID mapID, Collection<ServerMapGetValueResponse> responses);
 
-  public Object getPortableValue();
+  public Collection<ServerMapGetValueResponse> getGetValueResponses();
 
 }

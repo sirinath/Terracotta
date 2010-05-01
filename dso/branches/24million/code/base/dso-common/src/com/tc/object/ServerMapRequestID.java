@@ -11,7 +11,7 @@ public class ServerMapRequestID extends AbstractIdentifier {
 
   private static final String            ID_TYPE = "ServerMapRequestID";
 
-  public ServerMapRequestID(long id) {
+  public ServerMapRequestID(final long id) {
     super(id);
   }
 
@@ -19,6 +19,7 @@ public class ServerMapRequestID extends AbstractIdentifier {
     super();
   }
 
+  @Override
   public String getIdentifierType() {
     return ID_TYPE;
   }
