@@ -21,16 +21,16 @@ import java.util.Map;
 
 public final class ServerMapRequestContext implements ObjectManagerResultsContext {
 
-  private final static TCLogger                      logger    = TCLogging.getLogger(ServerMapRequestContext.class);
+  private final static TCLogger              logger    = TCLogging.getLogger(ServerMapRequestContext.class);
 
-  private final ServerMapRequestType                 requestType;
-  private final ObjectIDSet                          lookupIDs = new ObjectIDSet();
-  private final ObjectID                             mapID;
-  private final ClientID                             clientID;
-  private final Sink                                 destinationSink;
+  private final ServerMapRequestType         requestType;
+  private final ObjectIDSet                  lookupIDs = new ObjectIDSet();
+  private final ObjectID                     mapID;
+  private final ClientID                     clientID;
+  private final Sink                         destinationSink;
 
-  private final ServerMapRequestID                   getSizeRequestID;
-  private final Collection<ServerMapGetValueRequest> getValueRequests;
+  final ServerMapRequestID                   getSizeRequestID;
+  final Collection<ServerMapGetValueRequest> getValueRequests;
 
   public ServerMapRequestContext(final ClientID clientID, final ObjectID mapID,
                                  final Collection<ServerMapGetValueRequest> getValueRequests, final Sink destinationSink) {
@@ -114,4 +114,24 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
   public boolean updateStats() {
     return true;
   }
+
+  @Override
+  public boolean equals(Object other) {
+
+    ServerMapRequestContext context = (ServerMapRequestContext) other;
+
+    boolean equals = requestType.equals(context.getRequestType()) && lookupIDs.equals(context.getLookupIDs())
+           && mapID.equals(context.getServerTCMapID()) && clientID.equals(context.getClientID());
+          
+    if(getSizeRequestID != null) {
+      equals = equals && getSizeRequestID.equals(context.getSizeRequestID);
+    }
+    
+    if(getValueRequests != null) {
+      equals = equals && getValueRequests.equals(context.getValueRequests);
+    }
+    
+    return equals;
+  }
+
 }
