@@ -21,4 +21,12 @@ public class ServerMapGetValueResponse {
     return this.value;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    ServerMapGetValueResponse response = (ServerMapGetValueResponse)obj;
+    return getRequestID().equals(response.getRequestID()) && getValue().equals(response.getValue());
+  }
+  
+  
+
 }
