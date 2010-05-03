@@ -23,10 +23,17 @@ public class ServerMapGetValueResponse {
 
   @Override
   public boolean equals(Object obj) {
-    ServerMapGetValueResponse response = (ServerMapGetValueResponse)obj;
-    return getRequestID().equals(response.getRequestID()) && getValue().equals(response.getValue());
+    if (obj instanceof ServerMapGetValueResponse) {
+      ServerMapGetValueResponse response = (ServerMapGetValueResponse) obj;
+      return getRequestID().equals(response.getRequestID()) && getValue().equals(response.getValue());
+    }
+    return false;
   }
-  
-  
 
+  @Override
+  public int hashCode() {
+    return this.requestID.hashCode();
+  }
+
+  
 }
