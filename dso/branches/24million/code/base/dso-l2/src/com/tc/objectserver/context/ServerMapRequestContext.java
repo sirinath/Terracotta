@@ -118,20 +118,42 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
   @Override
   public boolean equals(Object other) {
 
-    ServerMapRequestContext context = (ServerMapRequestContext) other;
+    boolean equals = false;
+    if (other instanceof ServerMapRequestContext) {
+      ServerMapRequestContext context = (ServerMapRequestContext) other;
 
-    boolean equals = requestType.equals(context.getRequestType()) && lookupIDs.equals(context.getLookupIDs())
-           && mapID.equals(context.getServerTCMapID()) && clientID.equals(context.getClientID());
-          
-    if(getSizeRequestID != null) {
-      equals = equals && getSizeRequestID.equals(context.getSizeRequestID);
+      equals = requestType.equals(context.getRequestType()) && lookupIDs.equals(context.getLookupIDs())
+               && mapID.equals(context.getServerTCMapID()) && clientID.equals(context.getClientID());
+
+      if (getSizeRequestID != null) {
+        equals = equals && getSizeRequestID.equals(context.getSizeRequestID);
+      }
+
+      if (getValueRequests != null) {
+        equals = equals && getValueRequests.equals(context.getValueRequests);
+      }
     }
-    
-    if(getValueRequests != null) {
-      equals = equals && getValueRequests.equals(context.getValueRequests);
-    }
-    
     return equals;
   }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 1;
+    
+    hashCode = (31 * requestType.hashCode()) + (31 * lookupIDs.hashCode()) +
+    (31 * mapID.hashCode()) + (31 * clientID.hashCode());
+    
+    if (getSizeRequestID != null) {
+      hashCode = hashCode + (31 * getSizeRequestID.hashCode());
+    }
+
+    if (getValueRequests != null) {
+      hashCode = hashCode + (31 * getValueRequests.hashCode());
+    }
+    
+    return hashCode;
+  }
+  
+  
 
 }
