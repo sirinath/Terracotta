@@ -13,7 +13,7 @@ artifacts:
     groupId: org.terracotta.samples.ehcache
     artifactId: colorcache
     classifier: distribution
-    version: 3.2.1-SNAPSHOT
+    version: 3.2.1
     type: tar.gz
     destination: ehcache/samples/colorcache
     explode: true
@@ -24,7 +24,7 @@ artifacts:
     groupId: org.terracotta.samples.ehcache.hibernate
     artifactId: events
     classifier: distribution
-    version: 3.2.1-SNAPSHOT
+    version: 3.2.1
     type: tar.gz
     destination: ehcache/samples/hibernate
     explode: true
@@ -36,14 +36,14 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.1.0-SNAPSHOT
+    version: 2.1.0
     destination: ehcache
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 2.1.0-SNAPSHOT
+    version: 2.1.0
     destination: ehcache/javadoc
     explode: true
     
@@ -51,7 +51,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 2.1.0-SNAPSHOT
+    version: 2.1.0
     destination: ehcache/src
     explode: true
     
