@@ -7,23 +7,10 @@
   </parent>
 
   <groupId>org.terracotta.api</groupId>
-  <name>tim-api-core</name>
-  <artifactId>tim-api-core</artifactId>
+  <name>thirdparty-api</name>
+  <artifactId>thirdparty-api</artifactId>
   <packaging>jar</packaging>
 
-  <dependencies>
-    <dependency>
-      <groupId>knopflerfish-tc</groupId>
-      <artifactId>knopflerfish-tc</artifactId>
-      <version>2.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta.api</groupId>
-      <artifactId>thirdparty-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-  
 </project>
 
 
