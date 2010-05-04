@@ -13,8 +13,9 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>tim-api-core</module>
+    <module>tim-api</module>
     <module>thirdparty-api</module>
+    <module>dso-cluster-api</module>
   </modules>
   
 </project>
