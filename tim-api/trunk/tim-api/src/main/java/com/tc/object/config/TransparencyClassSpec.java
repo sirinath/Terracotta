@@ -22,8 +22,14 @@ import java.util.List;
 public interface TransparencyClassSpec {
 
   public static final byte NOT_SET       = 0x00;
+
   public static final byte NOT_ADAPTABLE = 0x01;
+  
+  // For classes are not PORTABLE by themselves, but logical classes subclasses them.
+  // We dont want them to get tc fields, TransparentAccess interfaces etc. but we do want them
+  // to be instrumented for Array manipulations, clone(), wait(), notify() calls etc.
   public static final byte ADAPTABLE     = 0x02;
+
   public static final byte PORTABLE      = 0x03;
 
   /**
