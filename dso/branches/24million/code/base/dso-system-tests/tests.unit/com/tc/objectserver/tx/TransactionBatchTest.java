@@ -269,6 +269,7 @@ public class TransactionBatchTest extends TestCase {
 
     // this txn has a common object although not share a common lock with the others -- it should be folded
     final LockID lid2 = new StringLockID("2");
+    
     tc = new TransactionContextImpl(lid2, TxnType.NORMAL, TxnType.NORMAL);
     final ClientTransaction txn4 = new ClientTransactionImpl(new NullRuntimeLogger());
     txn4.setTransactionContext(tc);
