@@ -18,6 +18,17 @@
     <module>dso-cluster-api</module>
   </modules>
   
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration>
+          <createChecksum>true</createChecksum>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
 </project>
 
 
