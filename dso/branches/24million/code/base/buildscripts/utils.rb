@@ -167,20 +167,32 @@ def download_external(default_repos, dest_dir, artifact)
         ant.get(:src => url, :dest => dest_file, :verbose => true)
         exploded_dir = File.join(tmp_dir, "exploded")
         FileUtils.mkdir_p(exploded_dir)
-        ant.untar(:src => dest_file, :dest => exploded_dir, :compression => "gzip")
-        ant.chmod(:dir => exploded_dir, :perm => "ugo+x", :includes => "**/*.sh **/*.bat **/*.exe **/bin/** **/lib/**")
-        # assume the zip file contains a root folder
-        root_dir = nil
-        Dir.new(exploded_dir).each do |e|
-          next if e =~ /^\./
-          root_dir = File.expand_path(File.join(exploded_dir, e))
+        
+        if dest_file =~ /tar.gz$/
+          ant.untar(:src => dest_file, :dest => exploded_dir, :compression => "gzip")
+        elsif dest_file =~ /(jar|zip)$/
+          ant.unzip(:src => dest_file, :dest => exploded_dir)
+        else
+          raise("Don't know how to unpack file #{dest_file}")
         end
+
+        # recover execution bits
+        ant.chmod(:dir => exploded_dir, :perm => "ugo+x", :includes => "**/*.sh **/*.bat **/*.exe **/bin/** **/lib/**")
+        
         if artifact['remove_root_folder'] == true
+          # assume the zip file contains a root folder
+          root_dir = nil
+          Dir.new(exploded_dir).each do |e|
+            next if e =~ /^\./
+            root_dir = File.expand_path(File.join(exploded_dir, e))
+          end
           ant.move(:todir => dest) do
             ant.fileset(:dir => root_dir)
           end
         else
-          ant.move(:file => root_dir, :todir => dest)
+          ant.move(:todir => dest) do
+            ant.fileset(:dir => exploded_dir)
+          end
         end
         FileUtils.rm_rf(tmp_dir)
       else

@@ -222,6 +222,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
    * For management use only (see interface documentation)
    */
   public ManagedObjectFacade lookupFacade(final ObjectID id, final int limit) throws NoSuchObjectException {
+    if (!containsObject(id)) { throw new NoSuchObjectException(id); }
+
     final ManagedObject object = lookup(id, true, false);
     if (object == null) { throw new NoSuchObjectException(id); }
 
@@ -618,6 +620,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   public ObjectIDSet getAllObjectIDs() {
     return this.objectStore.getAllObjectIDs();
+  }
+
+  private boolean containsObject(ObjectID id) {
+    return this.objectStore.containsObject(id);
   }
 
   public synchronized ObjectIDSet getObjectIDsInCache() {

@@ -19,7 +19,6 @@ import com.tc.lang.ThrowableHandler;
 import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
@@ -152,10 +151,6 @@ public class ManagerImpl implements Manager {
 
     registerNamedLoader((NamedClassLoader) sunSystemLoader, null);
     registerNamedLoader((NamedClassLoader) extSystemLoader, null);
-  }
-
-  public SessionMonitor getHttpSessionMonitor() {
-    return this.dso.getHttpSessionMonitor();
   }
 
   public void init() {
@@ -681,8 +676,12 @@ public class ManagerImpl implements Manager {
     return this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().getActionInstance(name);
   }
 
-  public SessionConfiguration getSessionConfiguration(final String appName) {
-    return this.config.getSessionConfiguration(appName);
+  public void registerStatisticRetrievalAction(StatisticRetrievalAction sra) {
+    this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry().registerActionInstance(sra);
+  }
+
+  public SessionConfiguration getSessionConfiguration(String appName) {
+    return config.getSessionConfiguration(appName);
   }
 
   private static class FakeManageableObject implements Manageable {
