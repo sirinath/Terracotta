@@ -19,7 +19,7 @@
     <module>thirdparty-api</module>
     <module>dso-cluster-api</module>
   </modules>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -30,6 +30,6 @@
       </plugin>
     </plugins>
   </build>
-  
+
 </project>
 
