@@ -48,8 +48,7 @@ public class WireProtocolAdaptorImpl extends AbstractTCProtocolAdaptor implement
           WireProtocolMessage wpm = (WireProtocolMessage) i.next();
           sink.putMessage(wpm);
         }
-        // Individual messages are recycled on top layers only. Cleaning up temp data in wpmg.
-        wpmg.recycle();
+        // Individual messages are recycled on top layers only.
       } else {
         sink.putMessage(msg);
       }

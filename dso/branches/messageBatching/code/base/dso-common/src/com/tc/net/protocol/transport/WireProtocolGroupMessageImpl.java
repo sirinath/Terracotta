@@ -156,10 +156,12 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
   }
 
   @Override
-  public void recycle() {
-    super.recycle();
-    messages.clear();
-    this.totalMessagesByteBuffers = null;
+  public void doRecycleOnWrite() {
+    getWireProtocolHeader().recycle();
+    AbstractTCNetworkMessage messagePayLoad = (AbstractTCNetworkMessage) getMessagePayload();
+    if (messagePayLoad != null) {
+      messagePayLoad.doRecycleOnWrite();
+    }
   }
 
 }
