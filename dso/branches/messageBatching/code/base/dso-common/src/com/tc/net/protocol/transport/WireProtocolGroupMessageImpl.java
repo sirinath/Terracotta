@@ -44,9 +44,8 @@ import java.util.Iterator;
 
 public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage implements WireProtocolGroupMessage {
 
-  private final ArrayList<WireProtocolMessage> messages = new ArrayList<WireProtocolMessage>();
-  private TCConnection                         sourceConnection;
-  private volatile TCByteBuffer[]              totalMessagesByteBuffers;
+  private final TCConnection                sourceConnection;
+  private final ArrayList<TCNetworkMessage> messagePayloads;
 
   public static WireProtocolGroupMessageImpl wrapMessages(final ArrayList<TCNetworkMessage> msgPayloads,
                                                           TCConnection source) {
@@ -76,25 +75,33 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
       i++;
     }
 
-    return new WireProtocolGroupMessageImpl(source, header, msgs);
+    return new WireProtocolGroupMessageImpl(source, header, msgs, msgPayloads);
   }
 
-  protected WireProtocolGroupMessageImpl(TCConnection source, TCNetworkHeader header, TCByteBuffer[] msgs) {
-    super(header, msgs);
+  // used by the reader
+  protected WireProtocolGroupMessageImpl(final TCConnection source, final TCNetworkHeader header,
+                                         final TCByteBuffer[] messagePayloadByteBuffers) {
+    this(source, header, messagePayloadByteBuffers, null);
+  }
+
+  // used by the writer
+  protected WireProtocolGroupMessageImpl(final TCConnection source, final TCNetworkHeader header,
+                                         final TCByteBuffer[] messagePayloadByteBuffers,
+                                         final ArrayList<TCNetworkMessage> messagePayloads) {
+    super(header, messagePayloadByteBuffers);
     this.sourceConnection = source;
-    this.totalMessagesByteBuffers = msgs;
+    this.messagePayloads = (messagePayloads != null ? messagePayloads
+        : getMessagesFromByteBuffers(messagePayloadByteBuffers));
     recordLength();
   }
 
-  public Iterator<WireProtocolMessage> getMessageIterator() {
-
-    // if the messages are already built, return the same
-    if (messages.size() > 0) { return messages.iterator(); }
+  private ArrayList<TCNetworkMessage> getMessagesFromByteBuffers(final TCByteBuffer[] messagePayloadByteBuffers) {
+    ArrayList<TCNetworkMessage> messages = new ArrayList<TCNetworkMessage>();
 
     // XXX: should do without copying stuffs around by passing views to upper layers.
     // Recycle is little tricky though.
     byte[] fullMsgsBytes;
-    TCByteBuffer[] msgs = totalMessagesByteBuffers;
+    TCByteBuffer[] msgs = messagePayloadByteBuffers;
 
     if (msgs.length > 1) {
       fullMsgsBytes = new byte[((WireProtocolHeader) getHeader()).getTotalPacketLength()
@@ -126,7 +133,11 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
       messages.add(msg);
     }
     fullMsgsBytes = null;
-    return messages.iterator();
+    return messages;
+  }
+
+  public Iterator<TCNetworkMessage> getMessageIterator() {
+    return this.messagePayloads.iterator();
   }
 
   public int getTotalMessageCount() {
@@ -158,9 +169,9 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
   @Override
   public void doRecycleOnWrite() {
     getWireProtocolHeader().recycle();
-    AbstractTCNetworkMessage messagePayLoad = (AbstractTCNetworkMessage) getMessagePayload();
-    if (messagePayLoad != null) {
-      messagePayLoad.doRecycleOnWrite();
+    // recycle individual messages
+    for (TCNetworkMessage networkMessage : messagePayloads) {
+      ((AbstractTCNetworkMessage) networkMessage).doRecycleOnWrite();
     }
   }
 
