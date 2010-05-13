@@ -41,7 +41,6 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.stats.counter.CounterManager;
 import com.tc.stats.counter.CounterManagerImpl;
-import com.tc.stats.counter.sampled.TimeStampedCounterValue;
 import com.tc.stats.counter.sampled.derived.SampledRateCounter;
 import com.tc.stats.counter.sampled.derived.SampledRateCounterConfig;
 import com.tc.util.Assert;
@@ -95,7 +94,7 @@ public class TransactionBatchTest extends TestCase {
       tx.txnType = TxnType.NORMAL;
       tx.allLockIDs = Arrays.asList(new Object[] { new StringLockID("" + i) });
       list.add(tx);
-      FoldedInfo fi  = writer.addTransaction(tx, sequenceGenerator, tidGenerator);
+      FoldedInfo fi = writer.addTransaction(tx, sequenceGenerator, tidGenerator);
       Assert.assertFalse(fi.isFolded());
     }
 
@@ -221,7 +220,7 @@ public class TransactionBatchTest extends TestCase {
   private DSOGlobalServerStats getDSOGlobalServerStats() {
     final CounterManager counterManager = new CounterManagerImpl();
     final SampledRateCounter transactionSizeCounter = (SampledRateCounter) counterManager
-        .createCounter(new SampledRateCounterConfig(1, 10, true));
+        .createCounter(new SampledRateCounterConfig(1, 10, false));
     final DSOGlobalServerStats stats = new DSOGlobalServerStatsImpl(null, null, null, null, null, null, null, null,
                                                                     null, null, transactionSizeCounter, null);
     return stats;
@@ -326,19 +325,11 @@ public class TransactionBatchTest extends TestCase {
     }
   }
 
-  private void assertTransactionSize(final TCByteBuffer[] actualData, final int actualNumTxns,
-                                     final SampledRateCounter transactionSizeCounter) {
-    final int expectedAvgTxnSize = new TCByteBufferInputStream(actualData).getTotalLength() / actualNumTxns;
-    int actualAvgTxnSize = 0;
-    int nonZeroSamples = 0;
-    for (final TimeStampedCounterValue val : transactionSizeCounter.getAllSampleValues()) {
-      // regardless of how many samples, there should be only one sample with a non-zero value
-      actualAvgTxnSize += val.getCounterValue();
-      if (val.getCounterValue() != 0) {
-        nonZeroSamples++;
-      }
-    }
-    assertEquals(1, nonZeroSamples);
+  private void assertTransactionSize(TCByteBuffer[] actualData, int actualNumTxns,
+                                     SampledRateCounter transactionSizeCounter) {
+    long expectedAvgTxnSize = new TCByteBufferInputStream(actualData).getTotalLength() / actualNumTxns;
+    long actualAvgTxnSize = transactionSizeCounter.getMostRecentSample().getCounterValue();
+    
     assertEquals(expectedAvgTxnSize, actualAvgTxnSize);
   }
 

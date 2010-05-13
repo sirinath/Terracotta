@@ -2152,7 +2152,9 @@ public class BootJarTool {
       }
 
       StandardTVSConfigurationSetupManagerFactory factory;
-      factory = new StandardTVSConfigurationSetupManagerFactory(cmdLine, false,
+      factory = new StandardTVSConfigurationSetupManagerFactory(
+                                                                cmdLine,
+                                                                StandardTVSConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
                                                                 new FatalIllegalConfigurationChangeHandler());
       boolean verbose = cmdLine.hasOption("v");
       TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();

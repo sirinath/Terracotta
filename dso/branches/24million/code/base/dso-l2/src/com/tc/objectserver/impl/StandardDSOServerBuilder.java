@@ -14,6 +14,9 @@ import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.logging.TCLogger;
+import com.tc.management.L2Management;
+import com.tc.management.beans.LockStatisticsMonitor;
+import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.net.GroupID;
 import com.tc.net.ServerID;
 import com.tc.net.groups.GroupManager;
@@ -43,16 +46,21 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
 import com.tc.objectserver.tx.PassThruTransactionFilter;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
+import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
+import com.tc.statistics.StatisticsAgentSubSystemImpl;
+import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.util.runtime.ThreadDumpUtil;
 
+import java.net.InetAddress;
 import java.util.List;
 
 public class StandardDSOServerBuilder implements DSOServerBuilder {
@@ -64,7 +72,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     this.logger = logger;
     this.logger.info("Standard DSO Server created");
     this.haConfig = haConfig;
-    this.thisGroupID = this.haConfig.getThisGroup().getGroupId();
+    this.thisGroupID = this.haConfig.getThisGroupID();
   }
 
   public GarbageCollector createGarbageCollector(List<PostInit> toInit, ObjectManagerConfig objectManagerConfig,
@@ -85,7 +93,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                              StripeIDStateManager stripeStateManager,
                                              ServerGlobalTransactionManager gtxm) {
     if (networkedHA) {
-      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink);
+      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink, this.haConfig.getNodesStore());
     } else {
       return new SingleNodeGroupManager();
     }
@@ -175,5 +183,16 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     return new L2HACoordinator(consoleLogger, server, stageManager, groupCommsManager, persistentMapStore,
                                objectManager, transactionManager, gtxm, weightGeneratorFactory, haConfigure, recycler,
                                thisGroupID, stripeStateManager);
+  }
+  public L2Management createL2Management(TCServerInfoMBean tcServerInfoMBean,
+                                         LockStatisticsMonitor lockStatisticsMBean,
+                                         StatisticsAgentSubSystemImpl statisticsAgentSubSystem,
+                                         StatisticsGatewayMBeanImpl statisticsGateway,
+                                         L2TVSConfigurationSetupManager configSetupManager,
+                                         DistributedObjectServer distributedObjectServer, InetAddress bind,
+                                         int jmxPort, Sink remoteEventsSink, DBEnvironment dbenv,
+                                         ServerConnectionValidator serverConnectionValidator) throws Exception {
+    return new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsAgentSubSystem, statisticsGateway,
+                            configSetupManager, distributedObjectServer, bind, jmxPort, remoteEventsSink);
   }
 }

@@ -43,7 +43,7 @@ import javax.management.ObjectName;
 
 public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean, NotificationListener {
 
-  private static final TCLogger                logger         = TCLogging.getLogger(DSOClient.class);
+  private static final TCLogger                logger                  = TCLogging.getLogger(DSOClient.class);
 
   private final MBeanServer                    mbeanServer;
   private boolean                              isListeningForTunneledBeans;
@@ -60,9 +60,12 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private final SampledCounter                 flushRate;
   private final SampledCounter                 faultRate;
   private final Counter                        pendingTransactions;
-  private final SynchronizedLong               sequenceNumber = new SynchronizedLong(0L);
+  private final SynchronizedLong               sequenceNumber          = new SynchronizedLong(0L);
   private final ClientID                       clientID;
   private final ClientStateManager             stateManager;
+
+  private ObjectName                           enterpriseMBeanName;
+  private boolean                              isEnterpriseBeanNameSet     = false;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
@@ -90,6 +93,7 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     this.instrumentationLoggingBeanName = getTunneledBeanName(L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     this.runtimeLoggingBeanName = getTunneledBeanName(L1MBeanNames.RUNTIME_LOGGING_PUBLIC);
     this.runtimeOutputOptionsBeanName = getTunneledBeanName(L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);
+    this.enterpriseMBeanName = getTunneledBeanName(L1MBeanNames.ENTERPRISE_TC_CLIENT);
 
     testSetupTunneledBeans();
   }
@@ -332,6 +336,11 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
       setupRuntimeOutputOptionsBean();
     }
 
+    if (!isEnterpriseBeanNameSet && matchesClientBeanName(enterpriseMBeanName, beanName)) {
+      enterpriseMBeanName = beanName;
+      isEnterpriseBeanNameSet = true;
+    }
+
     if (haveAllTunneledBeans()) {
       stopListeningForTunneledBeans();
       sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));
@@ -394,5 +403,9 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   @Override
   public MBeanNotificationInfo[] getNotificationInfo() {
     return Arrays.asList(NOTIFICATION_INFO).toArray(EMPTY_NOTIFICATION_INFO);
+  }
+
+  public ObjectName getEnterpriseTCClientBeanName() {
+    return enterpriseMBeanName;
   }
 }
