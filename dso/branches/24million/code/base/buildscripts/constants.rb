@@ -20,7 +20,6 @@ module PropertyNames
 end
 
 module MavenConstants
-  API_VERSION_CONFIG_KEY = 'api.version'
   TIM_API_VERSION_CONFIG_KEY = 'tim-api.version'
   MAVEN_REPO_CONFIG_KEY = 'maven.repo'
   MAVEN_REPO_ID_CONFIG_KEY = 'maven.repositoryId'
@@ -34,7 +33,13 @@ module MavenConstants
   TERRACOTTA_STAGING_REPO_ID = 'terracotta-staging'
   TERRACOTTA_RELEASES_REPO_ID = 'terracotta-releases'
 
+  TERRACOTTA_EE_SNAPSHOTS_REPO_ID = 'terracotta-ee-snapshots'
+  TERRACOTTA_EE_RELEASES_REPO_ID = 'terracotta-ee-releases'
+
   TERRACOTTA_SNAPSHOTS_REPO = 'http://nexus:8080/content/repositories/terracotta-snapshots'
   TERRACOTTA_STAGING_REPO = 'http://nexus:8080/content/repositories/terracotta-staging'
   TERRACOTTA_RELEASES_REPO = 'http://nexus:8080/content/repositories/terracotta-releases'
+
+  TERRACOTTA_EE_SNAPSHOTS_REPO = 'http://nexus:8080/content/repositories/terracotta-ee-snapshots'
+  TERRACOTTA_EE_RELEASES_REPO = 'http://nexus:8080/content/repositories/terracotta-ee-releases'
 end

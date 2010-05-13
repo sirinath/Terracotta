@@ -875,15 +875,16 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   end
 
   def deploy_ee_snapshots
-    deploy(ENTERPRISE, true, TERRACOTTA_SNAPSHOTS_REPO_ID, TERRACOTTA_SNAPSHOTS_REPO)
+    deploy(ENTERPRISE, true, TERRACOTTA_EE_SNAPSHOTS_REPO_ID, TERRACOTTA_EE_SNAPSHOTS_REPO)
   end
 
   def deploy_ee_staging
+    # since staging is always internal, we use it for both OSS and EE artifacts
     deploy(ENTERPRISE, false, TERRACOTTA_STAGING_REPO_ID, TERRACOTTA_STAGING_REPO)
   end
 
   def deploy_ee_releases
-    deploy(ENTERPRISE, false, TERRACOTTA_RELEASES_REPO_ID, TERRACOTTA_RELEASES_REPO)
+    deploy(ENTERPRISE, false, TERRACOTTA_EE_RELEASES_REPO_ID, TERRACOTTA_EE_RELEASES_REPO)
   end
   
   private

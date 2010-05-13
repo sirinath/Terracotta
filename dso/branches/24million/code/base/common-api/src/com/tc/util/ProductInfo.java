@@ -13,6 +13,11 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.tc.timapi.Version;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -40,7 +45,6 @@ public final class ProductInfo {
   private static final String               BUILD_DATA_ROOT_KEY          = "terracotta.build.";
   private static final String               BUILD_DATA_VERSION_KEY       = "version";
   private static final String               BUILD_DATA_MAVEN_VERSION_KEY = "maven.artifacts.version";
-  private static final String               BUILD_DATA_API_VERSION_KEY   = "api.version";
   private static final String               BUILD_DATA_EDITION_KEY       = "edition";
   private static final String               BUILD_DATA_TIMESTAMP_KEY     = "timestamp";
   private static final String               BUILD_DATA_HOST_KEY          = "host";
@@ -74,7 +78,7 @@ public final class ProductInfo {
   private final String                      patchBranch;
 
   private final String                      mavenVersion;
-  private final String                      apiVersion;
+  private final String                      timApiVersion;
   private final String                      buildVersion;
   private String                            buildID;
   private String                            copyright;
@@ -106,7 +110,7 @@ public final class ProductInfo {
     // Get all release build properties
     this.buildVersion = getBuildProperty(properties, BUILD_DATA_VERSION_KEY, UNKNOWN_VALUE);
     this.mavenVersion = getBuildProperty(properties, BUILD_DATA_MAVEN_VERSION_KEY, UNKNOWN_VALUE);
-    this.apiVersion = getBuildProperty(properties, BUILD_DATA_API_VERSION_KEY, UNKNOWN_VALUE);
+    this.timApiVersion = Version.getVersion().getFullVersionString();
     this.edition = getBuildProperty(properties, BUILD_DATA_EDITION_KEY, OPENSOURCE);
     if (!isOpenSource() && !isEnterprise() && !isDevMode()) { throw new AssertionError("Can't recognize kit edition: "
                                                                                        + edition); }
@@ -160,6 +164,16 @@ public final class ProductInfo {
         throw new AssertionError(e);
       } catch (IOException e) {
         // must not be embedded in this jar -- resolve via loader path
+      }
+    } else if (source.getProtocol().equals("file") && (new File(source.getPath()).isDirectory())) {
+      File local = new File(source.getPath(), name);
+
+      if (local.isFile()) {
+        try {
+          return new FileInputStream(local);
+        } catch (FileNotFoundException e) {
+          throw new AssertionError(e);
+        }
       }
     }
 
@@ -235,8 +249,8 @@ public final class ProductInfo {
     return buildVersion;
   }
 
-  public String apiVersion() {
-    return apiVersion;
+  public String timApiVersion() {
+    return timApiVersion;
   }
 
   public String kitID() {

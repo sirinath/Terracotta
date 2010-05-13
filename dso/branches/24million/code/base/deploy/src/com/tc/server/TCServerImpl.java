@@ -455,6 +455,7 @@ public class TCServerImpl extends SEDA implements TCServer {
         .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED), tcProps
         .getBoolean(TCPropertiesConsts.L2_TRANSACTIONMANAGER_LOGGING_PRINT_BROADCAST_STATS), tcProps
         .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED));
+
     this.dsoServer = createDistributedObjectServer(this.configurationSetupManager, this.connectionPolicy, httpSink,
                                                    new TCServerInfo(this, this.state, objectStatsRecorder),
                                                    objectStatsRecorder, this.state, this);
@@ -468,7 +469,7 @@ public class TCServerImpl extends SEDA implements TCServer {
                                                                   ObjectStatsRecorder objectStatsRecorder,
                                                                   L2State l2State, TCServerImpl serverImpl) {
     return new DistributedObjectServer(configSetupManager, getThreadGroup(), policy, httpSink, serverInfo,
-                                       objectStatsRecorder, l2State, this);
+                                       objectStatsRecorder, l2State, this, this);
   }
 
   private void startHTTPServer(final NewCommonL2Config commonL2Config, final TerracottaConnector tcConnector)
@@ -641,17 +642,21 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   private synchronized void notifyShutdown() {
-      shutdown = true;
-      notifyAll();
+    shutdown = true;
+    notifyAll();
   }
 
   public synchronized void waitUntilShutdown() {
-      while (!shutdown) {
-        try {
-          wait();
-        } catch (InterruptedException e) {
-          throw new AssertionError(e);
-        }
+    while (!shutdown) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        throw new AssertionError(e);
       }
+    }
+  }
+
+  public void reloadConfiguration() throws ConfigurationSetupException {
+    dsoServer.reloadConfiguration();
   }
 }

@@ -36,6 +36,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.core.ClusterTopologyChangedListener;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
@@ -418,7 +419,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                        + socketConnectTimeout); }
     this.channel = this.dsoClientBuilder.createDSOClientMessageChannel(this.communicationsManager,
                                                                        this.connectionComponents, sessionProvider,
-                                                                       maxConnectRetries, socketConnectTimeout);
+                                                                       maxConnectRetries, socketConnectTimeout, this);
     final ClientIDLoggerProvider cidLoggerProvider = new ClientIDLoggerProvider(this.channel.getClientIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -523,8 +524,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = this.dsoClientBuilder.createTunnelingEventHandler(this.channel.channel(),
                                                                                         this.config.getUUID());
-    this.l1Management = new L1Management(teh, this.statisticsAgentSubSystem, this.runtimeLogger, this.manager
-        .getInstrumentationLogger(), this.config.rawConfigText(), this, this.config.getMBeanSpecs());
+
+    this.l1Management = this.dsoClientBuilder.createL1Management(teh, this.statisticsAgentSubSystem,
+                                                                 this.runtimeLogger, this.manager
+                                                                     .getInstrumentationLogger(), this.config
+                                                                     .rawConfigText(), this, this.config
+                                                                     .getMBeanSpecs());
     this.l1Management.start(this.createDedicatedMBeanServer);
 
     // Setup the lock manager
@@ -880,5 +885,18 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     } catch (final EvalError e) {
       e.printStackTrace();
     }
+  }
+
+  public void reloadConfiguration() throws ConfigurationSetupException {
+    if (false) { throw new ConfigurationSetupException(); }
+    throw new UnsupportedOperationException();
+  }
+
+  public void addServerConfigurationChangedListeners(ClusterTopologyChangedListener listener) {
+    throw new UnsupportedOperationException();
+  }
+
+  protected DSOClientConfigHelper getClientConfigHelper() {
+    return config;
   }
 }

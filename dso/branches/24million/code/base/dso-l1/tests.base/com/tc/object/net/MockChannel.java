@@ -149,4 +149,8 @@ public class MockChannel implements DSOClientMessageChannel {
   public ServerMapMessageFactory getServerMapMessageFactory() {
     throw new ImplementMe();
   }
+
+  public void reloadConfiguration() {
+    throw new ImplementMe();
+  }
 }
