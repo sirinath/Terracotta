@@ -236,7 +236,14 @@ public interface TransparencyClassSpec {
    * @return True if transient
    */
   public boolean isTransient(int access, ClassInfo classInfo, String fieldName);
-
+  
+  /**
+   * Check whether a ignore rewrite of instrumented methods
+   * 
+   * @return True if ignoreRewrite
+   */
+  public boolean isIgnoreRewrite();
+  
   /**
    * Check whether a field is volatile
    * 
@@ -453,6 +460,14 @@ public interface TransparencyClassSpec {
    * @return this
    */
   public TransparencyClassSpec setHonorVolatile(boolean b);
+  
+  /**
+   * Set ignore rewrite flag
+   * 
+   * @param b New flag value
+   * @return this
+   */
+  public TransparencyClassSpec setIgnoreRewrite(final boolean b);
 
   /**
    * @return True if is honor flag set
