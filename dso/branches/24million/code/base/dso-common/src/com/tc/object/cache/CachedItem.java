@@ -12,7 +12,7 @@ public class CachedItem {
   private final ConcurrentHashMap parentCache;
   private final LockID            lockID;
   private final Object            key;
-  private final Object            value;
+  private volatile Object         value;
   private CachedItem              next;
 
   public CachedItem(final ConcurrentHashMap cache, final LockID lockID, final Object key, final Object value) {
@@ -36,6 +36,10 @@ public class CachedItem {
 
   public Object getValue() {
     return this.value;
+  }
+
+  public void clear() {
+    this.value = null;
   }
 
   public void dispose() {
