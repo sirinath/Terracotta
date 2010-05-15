@@ -69,7 +69,8 @@ public interface DSOClientBuilder {
 
   TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, UUID id);
 
-  ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr);
+  ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr,
+                                                                      RemoteServerMapManager serverMapManager);
 
   RemoteObjectManager createRemoteObjectManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
                                                 final int faultCount, final SessionManager sessionManager);

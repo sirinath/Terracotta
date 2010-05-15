@@ -4,7 +4,9 @@
 package com.tc.object;
 
 import com.tc.net.NodeID;
+import com.tc.object.cache.CachedItem;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
+import com.tc.object.locks.LockID;
 import com.tc.object.session.SessionID;
 
 import java.util.Collection;
@@ -20,4 +22,10 @@ public interface RemoteServerMapManager extends ClientHandshakeCallback {
 
   public void addResponseForGetSize(SessionID localSessionID, ObjectID mapID, ServerMapRequestID requestID,
                                     Integer size, NodeID sourceNodeID);
+
+  public void addCachedItemForLock(LockID lockID, CachedItem item);
+
+  public void removeCachedItemForLock(LockID lockID, CachedItem item);
+
+  public void flush(LockID lockID);
 }
