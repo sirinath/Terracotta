@@ -179,12 +179,12 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
 
       sendBatches(true, "stop()");
 
-      long pollInteval = (this.ackOnExitTimeout > 0) ? (this.ackOnExitTimeout / 10) : (30 * 1000);
-      long t0 = System.currentTimeMillis();
+      final long pollInteval = (this.ackOnExitTimeout > 0) ? (this.ackOnExitTimeout / 10) : (30 * 1000);
+      final long t0 = System.currentTimeMillis();
       if (this.incompleteBatches.size() != 0) {
         try {
           int incompleteBatchesCount = 0;
-          LossyTCLogger lossyLogger = new LossyTCLogger(this.logger, 5, LossyTCLoggerType.COUNT_BASED);
+          final LossyTCLogger lossyLogger = new LossyTCLogger(this.logger, 5, LossyTCLoggerType.COUNT_BASED);
           while ((this.status != STOPPED)
                  && ((this.ackOnExitTimeout <= 0) || (t0 + this.ackOnExitTimeout) > System.currentTimeMillis())) {
             if (incompleteBatchesCount != this.incompleteBatches.size()) {
@@ -193,7 +193,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
             }
             this.lock.wait(pollInteval);
           }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           this.logger.warn("stop(): Interrupted " + e);
         }
         if (this.status != STOPPED) {
@@ -215,14 +215,14 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       while ((!(c = this.lockAccounting.getTransactionsFor(lockID)).isEmpty())) {
         try {
           this.lock.wait(FLUSH_WAIT_INTERVAL);
-          long now = System.currentTimeMillis();
+          final long now = System.currentTimeMillis();
           if ((now - start) > FLUSH_WAIT_INTERVAL && (now - lastPrinted) > FLUSH_WAIT_INTERVAL / 3) {
             this.logger.info("Flush for " + lockID + " took longer than: " + (FLUSH_WAIT_INTERVAL / 1000)
                              + " sec. Took : " + (now - start) + " ms. # Transactions not yet Acked = " + c.size()
                              + "\n");
             lastPrinted = now;
           }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           isInterrupted = true;
         }
       }
@@ -230,7 +230,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
     Util.selfInterruptIfNeeded(isInterrupted);
   }
 
-  public void waitForServerToReceiveTxnsForThisLock(LockID lockId) {
+  public void waitForServerToReceiveTxnsForThisLock(final LockID lockId) {
     // wait for transactions to get acked here from the server
     final long start = System.currentTimeMillis();
     long lastPrinted = 0;
@@ -239,13 +239,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       while (!this.lockAccounting.areTransactionsReceivedForThisLockID(lockId)) {
         try {
           this.lock.wait(FLUSH_WAIT_INTERVAL);
-          long now = System.currentTimeMillis();
+          final long now = System.currentTimeMillis();
           if ((now - start) > FLUSH_WAIT_INTERVAL && (now - lastPrinted) > FLUSH_WAIT_INTERVAL / 3) {
             this.logger.info("Sync Write for " + lockId + " took longer than: " + (FLUSH_WAIT_INTERVAL / 1000)
                              + " sec. Took : " + (now - start) + " ms.\n");
             lastPrinted = now;
           }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
           isInterrupted = true;
         }
       }
@@ -258,18 +258,18 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
    * This method will be called when the server receives a batch. This should ideally be called only when a batch
    * contains a sync write transaction.
    */
-  public void batchReceived(TxnBatchID batchId, Set<TransactionID> syncTxnSet, NodeID nid) {
+  public void batchReceived(final TxnBatchID batchId, final Set<TransactionID> syncTxnSet, final NodeID nid) {
     // This batch id was received by the server
     // so notify the locks waiting for this transaction
-    lockAccounting.transactionRecvdByServer(syncTxnSet);
+    this.lockAccounting.transactionRecvdByServer(syncTxnSet);
 
-    synchronized (lock) {
-      lock.notifyAll();
+    synchronized (this.lock) {
+      this.lock.notifyAll();
     }
   }
 
   /* This does not block unlike flush() */
-  public boolean isTransactionsForLockFlushed(final LockID lockID, final LockFlushCallback callback) {
+  public boolean asyncFlush(final LockID lockID, final LockFlushCallback callback) {
     synchronized (this.lock) {
 
       if ((this.lockAccounting.getTransactionsFor(lockID)).isEmpty()) {
@@ -278,7 +278,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       } else {
         // register for call back
         if (callback != null) {
-          Object prev = this.lockFlushCallbacks.put(lockID, callback);
+          final Object prev = this.lockFlushCallbacks.put(lockID, callback);
           if (prev != null) {
             // Will this scenario come up in server restart scenario ? It should as we check for greediness in the Lock
             // Manager before making this call
@@ -296,11 +296,11 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
                                                                                                                                     "Attempt to commit an empty transaction."); }
     if (!txn.getTransactionID().isNull()) { throw new AssertionError(
                                                                      "Transaction already committed as TransactionID is already assigned"); }
-    long start = System.currentTimeMillis();
+    final long start = System.currentTimeMillis();
 
     this.sequencer.addTransaction(txn);
 
-    long diff = System.currentTimeMillis() - start;
+    final long diff = System.currentTimeMillis() - start;
     if (diff > 1000) {
       this.logger.info(txn.getTransactionID() + " : Took more than 1000ms to add to sequencer  : " + diff + " ms");
     }
@@ -339,13 +339,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
       this.logger.debug("resendOutstanding()...");
       this.outStandingBatches = 0;
       this.outstandingBatchesCounter.setValue(0);
-      List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
+      final List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
       if (toSend.size() == 0) {
         sendBatches(false, " resendOutstanding()");
       } else {
-        for (Iterator i = toSend.iterator(); i.hasNext();) {
-          TxnBatchID id = (TxnBatchID) i.next();
-          ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
+        for (final Iterator i = toSend.iterator(); i.hasNext();) {
+          final TxnBatchID id = (TxnBatchID) i.next();
+          final ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
           if (batch == null) { throw new AssertionError("Unknown batch: " + id); }
           this.logger.debug("Resending outstanding batch: " + id + ", "
                             + batch.addTransactionIDsTo(new LinkedHashSet()));
@@ -357,17 +357,17 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
 
   List getTransactionSequenceIDs() {
     synchronized (this.lock) {
-      ArrayList sequenceIDs = new ArrayList();
+      final ArrayList sequenceIDs = new ArrayList();
       // Add list of SequenceIDs that are going to be resent
-      List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
-      for (Iterator i = toSend.iterator(); i.hasNext();) {
-        TxnBatchID id = (TxnBatchID) i.next();
-        ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
+      final List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
+      for (final Iterator i = toSend.iterator(); i.hasNext();) {
+        final TxnBatchID id = (TxnBatchID) i.next();
+        final ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
         if (batch == null) { throw new AssertionError("Unknown batch: " + id); }
         batch.addTransactionSequenceIDsTo(sequenceIDs);
       }
       // Add Last next
-      SequenceID currentBatchMinSeq = this.sequencer.getNextSequenceID();
+      final SequenceID currentBatchMinSeq = this.sequencer.getNextSequenceID();
       Assert.assertFalse(SequenceID.NULL_ID.equals(currentBatchMinSeq));
       sequenceIDs.add(currentBatchMinSeq);
       return sequenceIDs;
@@ -376,12 +376,12 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
 
   List getResentTransactionIDs() {
     synchronized (this.lock) {
-      ArrayList txIDs = new ArrayList();
+      final ArrayList txIDs = new ArrayList();
       // Add list of TransactionIDs that are going to be resent
-      List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
-      for (Iterator i = toSend.iterator(); i.hasNext();) {
-        TxnBatchID id = (TxnBatchID) i.next();
-        ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
+      final List toSend = this.batchAccounting.addIncompleteBatchIDsTo(new ArrayList());
+      for (final Iterator i = toSend.iterator(); i.hasNext();) {
+        final TxnBatchID id = (TxnBatchID) i.next();
+        final ClientTransactionBatch batch = (ClientTransactionBatch) this.incompleteBatches.get(id);
         if (batch == null) { throw new AssertionError("Unknown batch: " + id); }
         batch.addTransactionIDsTo(txIDs);
       }
@@ -400,7 +400,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
           // formatting
           throw new AssertionError("Batch has already been sent!");
         }
-        Collection txnIds = batchToSend.addTransactionIDsTo(new HashSet());
+        final Collection txnIds = batchToSend.addTransactionIDsTo(new HashSet());
         this.batchAccounting.addBatch(batchToSend.getTransactionBatchID(), txnIds);
 
       }
@@ -438,13 +438,13 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
         return tb;
       }
 
-      Set completedLocks = this.lockAccounting.acknowledge(txID);
+      final Set completedLocks = this.lockAccounting.acknowledge(txID);
 
-      TxnBatchID container = this.batchAccounting.getBatchByTransactionID(txID);
+      final TxnBatchID container = this.batchAccounting.getBatchByTransactionID(txID);
       if (!container.isNull()) {
-        ClientTransactionBatch containingBatch = (ClientTransactionBatch) this.incompleteBatches.get(container);
+        final ClientTransactionBatch containingBatch = (ClientTransactionBatch) this.incompleteBatches.get(container);
         tb = containingBatch.removeTransaction(txID);
-        TxnBatchID completed = this.batchAccounting.acknowledge(txID);
+        final TxnBatchID completed = this.batchAccounting.acknowledge(txID);
         if (!completed.isNull()) {
           this.incompleteBatches.remove(completed);
           if (this.status == STOP_INITIATED && this.incompleteBatches.size() == 0) {
@@ -465,7 +465,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
   }
 
   public void waitForAllCurrentTransactionsToComplete() {
-    lockAccounting.waitAllCurrentTxnCompleted();
+    this.lockAccounting.waitAllCurrentTxnCompleted();
   }
 
   private TransactionID getCompletedTransactionIDLowWaterMark() {
@@ -480,10 +480,10 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
    */
   private void fireLockFlushCallbacks(final Map callbacks) {
     if (callbacks.isEmpty()) { return; }
-    for (Iterator i = callbacks.entrySet().iterator(); i.hasNext();) {
-      Entry e = (Entry) i.next();
-      LockID lid = (LockID) e.getKey();
-      LockFlushCallback callback = (LockFlushCallback) e.getValue();
+    for (final Iterator i = callbacks.entrySet().iterator(); i.hasNext();) {
+      final Entry e = (Entry) i.next();
+      final LockID lid = (LockID) e.getKey();
+      final LockFlushCallback callback = (LockFlushCallback) e.getValue();
       callback.transactionsForLockFlushed(lid);
     }
   }
@@ -491,9 +491,9 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
   private Map getLockFlushCallbacks(final Set completedLocks) {
     Map callbacks = Collections.EMPTY_MAP;
     if (!completedLocks.isEmpty() && !this.lockFlushCallbacks.isEmpty()) {
-      for (Iterator i = completedLocks.iterator(); i.hasNext();) {
-        Object lid = i.next();
-        Object callback = this.lockFlushCallbacks.remove(lid);
+      for (final Iterator i = completedLocks.iterator(); i.hasNext();) {
+        final Object lid = i.next();
+        final Object callback = this.lockFlushCallbacks.remove(lid);
         if (callback != null) {
           if (callbacks == Collections.EMPTY_MAP) {
             callbacks = new HashMap();
@@ -510,7 +510,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
     while (this.status != RUNNING) {
       try {
         this.lock.wait();
-      } catch (InterruptedException e) {
+      } catch (final InterruptedException e) {
         isInterrupted = true;
       }
     }
@@ -531,19 +531,19 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
     @Override
     public void run() {
       try {
-        TransactionID lwm = getCompletedTransactionIDLowWaterMark();
+        final TransactionID lwm = getCompletedTransactionIDLowWaterMark();
         if (lwm.isNull()) { return; }
         if (this.currentLWM.toLong() > lwm.toLong()) { throw new AssertionError(
                                                                                 "Transaction Low watermark moved down from "
                                                                                     + this.currentLWM + " to " + lwm); }
         if (this.currentLWM.toLong() == lwm.toLong()) { return; }
         this.currentLWM = lwm;
-        CompletedTransactionLowWaterMarkMessage ctm = RemoteTransactionManagerImpl.this.channel
+        final CompletedTransactionLowWaterMarkMessage ctm = RemoteTransactionManagerImpl.this.channel
             .getCompletedTransactionLowWaterMarkMessageFactory()
             .newCompletedTransactionLowWaterMarkMessage(RemoteTransactionManagerImpl.this.groupID);
         ctm.initialize(lwm);
         ctm.send();
-      } catch (Exception e) {
+      } catch (final Exception e) {
         RemoteTransactionManagerImpl.this.logger.error("Error sending Low water mark : ", e);
         throw new AssertionError(e);
       }
@@ -555,15 +555,15 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
   }
 
   public void dumpToLogger() {
-    DumpLoggerWriter writer = new DumpLoggerWriter();
-    PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
+    final DumpLoggerWriter writer = new DumpLoggerWriter();
+    final PrintWriter pw = new PrintWriter(writer);
+    final PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
     prettyPrinter.autoflush(false);
     prettyPrinter.visit(this);
     writer.flush();
   }
 
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public PrettyPrinter prettyPrint(final PrettyPrinter out) {
     synchronized (this.lock) {
       out.indent().print("incompleteBatches count: ").print(new Integer(this.incompleteBatches.size())).flush();
       out.indent().print("batchAccounting: ").print(this.batchAccounting).flush();

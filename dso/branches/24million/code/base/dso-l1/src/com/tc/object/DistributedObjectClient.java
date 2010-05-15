@@ -445,9 +445,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                            pendingBatchesSize, transactionSizeCounter,
                                                                            transactionsPerBatchCounter);
 
-    final ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
-        .createClientGlobalTransactionManager(this.rtxManager);
-
     final RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(this.channel
         .getObjectIDBatchRequestMessageFactory());
 
@@ -480,6 +477,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
         .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
+
+    final ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
+        .createClientGlobalTransactionManager(this.rtxManager, remoteServerMapManager);
 
     final TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(this.config), this.config,
                                                                this.classProvider, encoding, remoteServerMapManager);
@@ -586,10 +586,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // By design this stage needs to be single threaded. If it wasn't then cluster membership messages could get
     // processed before the client handshake ack, and this client would get a faulty view of the cluster at best, or
     // more likely an AssertionError
-    Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
-                                                new ClientCoordinationHandler(), 1, maxSize);
+    final Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
+                                                      new ClientCoordinationHandler(), 1, maxSize);
 
-    Stage clusterMembershipEventStage = stageManager
+    final Stage clusterMembershipEventStage = stageManager
         .createStage(ClientConfigurationContext.CLUSTER_MEMBERSHIP_EVENT_STAGE,
                      new ClusterMemberShipEventsHandler(this.dsoCluster), 1, maxSize);
 

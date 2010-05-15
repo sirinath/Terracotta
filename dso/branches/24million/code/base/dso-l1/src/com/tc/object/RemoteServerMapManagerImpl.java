@@ -6,6 +6,9 @@ package com.tc.object;
 import com.tc.logging.TCLogger;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
+import com.tc.object.cache.CachedItem;
+import com.tc.object.cache.CachedItemStore;
+import com.tc.object.locks.LockID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.GetSizeServerMapRequestMessage;
 import com.tc.object.msg.GetValueServerMapRequestMessage;
@@ -46,10 +49,13 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
                                                                                                                                true);
 
   private State                                                          state                                     = State.RUNNING;
-
   private long                                                           requestIDCounter                          = 0;
-
   private boolean                                                        pendingSendTaskScheduled                  = false;
+
+  private final CachedItemStore                                          cachedItems                               = new CachedItemStore(
+                                                                                                                                         16384,
+                                                                                                                                         0.75f,
+                                                                                                                                         1024);
 
   private static enum State {
     PAUSED, RUNNING, STARTING, STOPPED
@@ -240,6 +246,18 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
   }
 
+  public void addCachedItemForLock(final LockID lockID, final CachedItem item) {
+    this.cachedItems.add(lockID, item);
+  }
+
+  public void removeCachedItemForLock(final LockID lockID, final CachedItem item) {
+    this.cachedItems.remove(lockID, item);
+  }
+
+  public void flush(final LockID lockID) {
+    this.cachedItems.flush(lockID);
+  }
+
   private void waitUntilRunning() {
     boolean isInterrupted = false;
     while (this.state != State.RUNNING) {
@@ -298,7 +316,6 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return new ServerMapRequestID(this.requestIDCounter++);
   }
 
-  // TODO::FIXME::This will go when we do batching
   private static abstract class AbstractServerMapRequestContext extends LookupStateTransitionAdaptor {
 
     // protected final static TCLogger logger = TCLogging.getLogger(AbstractServerMapRequestContext.class);

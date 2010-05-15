@@ -106,8 +106,10 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return new TunnelingEventHandler(ch, id);
   }
 
-  public ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr) {
-    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr);
+  public ClientGlobalTransactionManager createClientGlobalTransactionManager(
+                                                                             final RemoteTransactionManager remoteTxnMgr,
+                                                                             final RemoteServerMapManager serverMapManager) {
+    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr, serverMapManager);
   }
 
   public RemoteObjectManagerImpl createRemoteObjectManager(final TCLogger logger,
