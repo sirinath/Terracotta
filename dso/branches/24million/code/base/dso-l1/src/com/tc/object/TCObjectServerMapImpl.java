@@ -61,7 +61,7 @@ public class TCObjectServerMapImpl extends TCObjectLogical implements TCObject, 
    * @param value Object in the mapping
    */
   public void doLogicalRemove(final TCServerMap map, final Object key) {
-    removeFromCache(key);
+    clearFromCache(key);
     ManagerUtil.logicalInvoke(map, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { key });
   }
 
@@ -157,6 +157,13 @@ public class TCObjectServerMapImpl extends TCObjectLogical implements TCObject, 
     final CachedItem removed = this.cache.remove(key);
     if (removed != null) {
       this.serverMapManager.removeCachedItemForLock(removed.getLockID(), removed);
+    }
+  }
+
+  private void clearFromCache(final Object key) {
+    final CachedItem removed = this.cache.get(key);
+    if (removed != null) {
+      removed.clear();
     }
   }
 
