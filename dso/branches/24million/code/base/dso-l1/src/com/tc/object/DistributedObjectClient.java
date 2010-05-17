@@ -65,7 +65,6 @@ import com.tc.object.config.SRASpec;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.event.DmiManager;
 import com.tc.object.event.DmiManagerImpl;
-import com.tc.object.field.TCFieldFactory;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.handler.BatchTransactionAckHandler;
 import com.tc.object.handler.ClientCoordinationHandler;
@@ -481,8 +480,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
         .createClientGlobalTransactionManager(this.rtxManager, remoteServerMapManager);
 
-    final TCClassFactory classFactory = new TCClassFactoryImpl(new TCFieldFactory(this.config), this.config,
-                                                               this.classProvider, encoding, remoteServerMapManager);
+    final TCClassFactory classFactory = dsoClientBuilder.createTCClassFactory(config, classProvider, encoding, remoteServerMapManager);
     final TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
     this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, this.config, idProvider,

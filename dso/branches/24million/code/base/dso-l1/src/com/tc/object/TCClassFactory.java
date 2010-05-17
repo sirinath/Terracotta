@@ -8,9 +8,6 @@ import com.tc.object.applicator.ChangeApplicator;
 
 public interface TCClassFactory {
 
-  // Ugly Hardcoding since the class is elsewhere
-  public static final String CDSM_DSO_CLASSNAME = "org.terracotta.collections.ConcurrentDistributedServerMapDso";
-
   public TCClass getOrCreate(Class clazz, ClientObjectManager objectManager);
 
   public ChangeApplicator createApplicatorFor(TCClass clazz, boolean indexed);

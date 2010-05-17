@@ -14,6 +14,7 @@ import com.tc.management.TCClient;
 import com.tc.management.lock.stats.ClientLockStatisticsManagerImpl;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.GroupID;
+import com.tc.net.NodeID;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
@@ -24,10 +25,12 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
+import com.tc.object.cache.CachedItem;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.MBeanSpec;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.field.TCFieldFactory;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.ClientGlobalTransactionManagerImpl;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
@@ -41,16 +44,19 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientLockManagerConfig;
 import com.tc.object.locks.ClientLockManagerImpl;
+import com.tc.object.locks.LockID;
 import com.tc.object.locks.RemoteLockManager;
 import com.tc.object.locks.RemoteLockManagerImpl;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.KeysForOrphanedValuesMessageFactory;
 import com.tc.object.msg.LockRequestMessageFactory;
 import com.tc.object.msg.NodeMetaDataMessageFactory;
 import com.tc.object.msg.NodesWithObjectsMessageFactory;
 import com.tc.object.net.DSOClientMessageChannel;
+import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.RemoteTransactionManager;
@@ -106,10 +112,9 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return new TunnelingEventHandler(ch, id);
   }
 
-  public ClientGlobalTransactionManager createClientGlobalTransactionManager(
-                                                                             final RemoteTransactionManager remoteTxnMgr,
-                                                                             final RemoteServerMapManager serverMapManager) {
-    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr, serverMapManager);
+  public ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr,
+                                                                             final RemoteServerMapManager remoteServerMapManager) {
+    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr);
   }
 
   public RemoteObjectManagerImpl createRemoteObjectManager(final TCLogger logger,
@@ -120,16 +125,6 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     Assert.assertEquals(1, defaultGroups.length);
     return new RemoteObjectManagerImpl(defaultGroups[0], logger, dsoChannel.getRequestRootMessageFactory(), dsoChannel
         .getRequestManagedObjectMessageFactory(), faultCount, sessionManager);
-  }
-
-  public RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger,
-                                                             final DSOClientMessageChannel dsoChannel,
-                                                             final SessionManager sessionManager) {
-    final GroupID defaultGroups[] = dsoChannel.getGroupIDs();
-    Assert.assertNotNull(defaultGroups);
-    Assert.assertEquals(1, defaultGroups.length);
-    return new RemoteServerMapManagerImpl(defaultGroups[0], logger, dsoChannel.getServerMapMessageFactory(),
-                                          sessionManager);
   }
 
   public ClusterMetaDataManager createClusterMetaDataManager(final DSOClientMessageChannel dsoChannel,
@@ -253,6 +248,65 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                          MBeanSpec[] mBeanSpecs) {
     return new L1Management(teh, statisticsAgentSubSystem, runtimeLogger, instrumentationLogger, rawConfigText,
                             distributedObjectClient, mBeanSpecs);
+  }
+
+  public TCClassFactory createTCClassFactory(DSOClientConfigHelper config, ClassProvider classProvider,
+                                             DNAEncoding dnaEncoding, RemoteServerMapManager remoteServerMapManager) {
+    return new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, dnaEncoding);
+  }
+
+  
+
+  public RemoteServerMapManager createRemoteServerMapManager(TCLogger logger, DSOClientMessageChannel dsoChannel,
+                                                             SessionManager sessionManager) {
+    return new RemoteServerMapManager() {
+      
+      public void unpause(NodeID remoteNode, int disconnected) {
+        //
+      }
+      
+      public void shutdown() {
+        //
+      }
+      
+      public void pause(NodeID remoteNode, int disconnected) {
+        //
+      }
+      
+      public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
+      //
+      }
+      
+      public void removeCachedItemForLock(LockID lockID, CachedItem item) {
+      //
+      }
+      
+      public int getSize(ObjectID mapID) {
+        return -1;
+      }
+      
+      public Object getMappingForKey(ObjectID oid, Object portableKey) {
+          return null;
+      }
+      
+      public void flush(LockID lockID) {
+        //
+      }
+      
+      public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID,
+                                                Collection<ServerMapGetValueResponse> responses, NodeID nodeID) {
+        //
+      }
+      
+      public void addResponseForGetSize(SessionID localSessionID, ObjectID mapID, ServerMapRequestID requestID,
+                                        Integer size, NodeID sourceNodeID) {
+        //
+      }
+      
+      public void addCachedItemForLock(LockID lockID, CachedItem item) {
+        //
+      }
+    };
   }
 
 }
