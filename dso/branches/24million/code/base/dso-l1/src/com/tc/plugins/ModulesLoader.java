@@ -181,8 +181,6 @@ public class ModulesLoader {
     moduleList.addAll(Arrays.asList(modules));
 
     final Module[] allModules = (Module[]) moduleList.toArray(new Module[moduleList.size()]);
-    logger.info("MODULES: " + allModules);
-    consoleLogger.info("MODULES: " + modules);
     final URL[] osgiRepositories = osgiRuntime.getRepositories();
     final ProductInfo info = ProductInfo.getInstance();
     final Resolver resolver = new Resolver(ResolverUtils.urlsToStrings(osgiRepositories), true, info
