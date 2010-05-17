@@ -6,7 +6,6 @@ package com.tc.object.gtx;
 
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
-import com.tc.object.TestRemoteServerMapManager;
 import com.tc.object.tx.TestRemoteTransactionManager;
 import com.tc.object.tx.TransactionID;
 
@@ -18,8 +17,7 @@ public class ClientGlobalTransactionManagerTest extends TestCase {
 
   @Override
   public void setUp() {
-    this.mgr = new ClientGlobalTransactionManagerImpl(new TestRemoteTransactionManager(),
-                                                      new TestRemoteServerMapManager());
+    this.mgr = new ClientGlobalTransactionManagerImpl(new TestRemoteTransactionManager());
   }
 
   public void testBasics() throws Exception {

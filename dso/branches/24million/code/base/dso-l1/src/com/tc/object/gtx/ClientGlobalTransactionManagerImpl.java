@@ -7,7 +7,6 @@ package com.tc.object.gtx;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
-import com.tc.object.RemoteServerMapManager;
 import com.tc.object.locks.LockFlushCallback;
 import com.tc.object.locks.LockID;
 import com.tc.object.tx.RemoteTransactionManager;
@@ -35,12 +34,9 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
   private final RemoteTransactionManager remoteTransactionManager;
   private int                            ignoredCount         = 0;
 
-  private final RemoteServerMapManager   remoteServerMapManager;
-
-  public ClientGlobalTransactionManagerImpl(final RemoteTransactionManager remoteTransactionManager,
-                                            final RemoteServerMapManager serverMapManager) {
+  
+  public ClientGlobalTransactionManagerImpl(final RemoteTransactionManager remoteTransactionManager) {
     this.remoteTransactionManager = remoteTransactionManager;
-    this.remoteServerMapManager = serverMapManager;
   }
 
   // For testing
@@ -97,7 +93,6 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
   }
 
   public void flush(final LockID lockID) {
-    this.remoteServerMapManager.flush(lockID);
     this.remoteTransactionManager.flush(lockID);
   }
 
@@ -106,7 +101,6 @@ public class ClientGlobalTransactionManagerImpl implements ClientGlobalTransacti
   }
 
   public boolean asyncFlush(final LockID lockID, final LockFlushCallback callback) {
-    this.remoteServerMapManager.flush(lockID);
     return this.remoteTransactionManager.asyncFlush(lockID, callback);
   }
 }

@@ -69,8 +69,8 @@ public interface DSOClientBuilder {
 
   TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, UUID id);
 
-  ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr,
-                                                                      RemoteServerMapManager serverMapManager);
+  ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr, 
+                                                                      final RemoteServerMapManager remoteServerMapManager);
 
   RemoteObjectManager createRemoteObjectManager(final TCLogger logger, final DSOClientMessageChannel dsoChannel,
                                                 final int faultCount, final SessionManager sessionManager);
@@ -133,4 +133,7 @@ public interface DSOClientBuilder {
                                   RuntimeLogger runtimeLogger, InstrumentationLogger instrumentationLogger,
                                   String rawConfigText, DistributedObjectClient distributedObjectClient,
                                   MBeanSpec[] mBeanSpecs);
+  
+  TCClassFactory createTCClassFactory(final DSOClientConfigHelper config,
+                            final ClassProvider classProvider, final DNAEncoding dnaEncoding,final RemoteServerMapManager remoteServerMapManager);
 }
