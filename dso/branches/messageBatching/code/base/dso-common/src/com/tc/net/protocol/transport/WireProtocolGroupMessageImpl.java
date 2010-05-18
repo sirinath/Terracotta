@@ -119,20 +119,25 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
     for (int i = 0; i < getTotalMessageCount(); i++) {
       int msgLen = b.getInt();
       short msgProto = b.getShort();
-      byte[] msgPayloadBytes = new byte[msgLen];
-      b.get(msgPayloadBytes);
+
+      TCByteBuffer[] bufs = TCByteBufferFactory.getFixedSizedInstancesForLength(false, msgLen);
+      for (TCByteBuffer buf : bufs) {
+        b.get(buf.array(), 0, buf.limit());
+      }
+
       WireProtocolHeader hdr;
       hdr = (WireProtocolHeader) ((WireProtocolHeader) getHeader()).clone();
       hdr.setTotalPacketLength(hdr.getHeaderByteLength() + msgLen);
       hdr.setProtocol(msgProto);
       hdr.setMessageCount(1);
       hdr.computeChecksum();
-      WireProtocolMessage msg = new WireProtocolMessageImpl(this.sourceConnection, hdr,
-                                                            new TCByteBuffer[] { TCByteBufferFactory
-                                                                .wrap(msgPayloadBytes) });
+      WireProtocolMessage msg = new WireProtocolMessageImpl(this.sourceConnection, hdr, bufs);
       messages.add(msg);
     }
     fullMsgsBytes = null;
+    for (TCByteBuffer buf : msgs) {
+      buf.recycle();
+    }
     return messages;
   }
 
