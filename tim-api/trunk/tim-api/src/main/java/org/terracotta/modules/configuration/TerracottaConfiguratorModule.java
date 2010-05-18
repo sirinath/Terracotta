@@ -132,21 +132,11 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
    * 
    * @param classname the bundle class name to export
    * @param targetSystemLoaderOnly True if only the system classloader should have visibility to this exported class
-   * @param publicApi True if the exported class is public API that is intended to be used by user code
    */
   protected final void addExportedBundleClass(final Bundle bundle, final String classname,
-                                              final boolean targetSystemLoaderOnly, final boolean publicApi) {
-    URL url = getBundleResourceURL(bundle, classNameToFileName(classname));
-    configHelper.addClassResource(classname, url, targetSystemLoaderOnly, publicApi);
-  }
-
-  protected final void addExportedBundleClass(final Bundle bundle, final String classname,
                                               final boolean targetSystemLoaderOnly) {
-    addExportedBundleClass(bundle, classname, targetSystemLoaderOnly, false);
-  }
-
-  protected final void addPublicApiBundleClass(final Bundle bundle, final String classname) {
-    addExportedBundleClass(bundle, classname, false, true);
+    URL url = getBundleResourceURL(bundle, classNameToFileName(classname));
+    configHelper.addClassResource(classname, url, targetSystemLoaderOnly);
   }
 
   protected final void addExportedBundleClass(final Bundle bundle, final String classname) {
@@ -167,7 +157,7 @@ public abstract class TerracottaConfiguratorModule implements BundleActivator {
 
     if (resource == null) { throw new RuntimeException("Exported TC jar class " + classname + " does not exist."); }
 
-    configHelper.addClassResource(classname, resource, false, false);
+    configHelper.addClassResource(classname, resource, false);
   }
 
   protected TransparencyClassSpec getOrCreateSpec(final String expr, final boolean markAsPreInstrumented) {
