@@ -12,7 +12,6 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.CustomerLogging;
-import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
@@ -80,7 +79,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public class ClientObjectManagerImpl implements ClientObjectManager, ClientHandshakeCallback, PortableObjectProvider,
-    Evictable, DumpHandler, PrettyPrintable {
+    Evictable, PrettyPrintable {
 
   private static final long                    CONCURRENT_LOOKUP_TIMED_WAIT = 1000;
   // REFERENCE_MAP_SEG must be power of 2

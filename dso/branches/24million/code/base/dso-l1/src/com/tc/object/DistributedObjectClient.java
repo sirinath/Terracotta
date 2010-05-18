@@ -17,6 +17,7 @@ import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.handler.CallbackDumpAdapter;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.handler.CallbackDumpHandler;
 import com.tc.lang.TCThreadGroup;
 import com.tc.license.LicenseCheck;
 import com.tc.logging.ClientIDLogger;
@@ -215,7 +216,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private DSOClientMessageChannel                    channel;
   private ClientLockManager                          lockManager;
   private ClientObjectManagerImpl                    objectManager;
-  private ClientTransactionManager                   txManager;
+  private ClientTransactionManagerImpl               txManager;
   private CommunicationsManager                      communicationsManager;
   private RemoteTransactionManager                   rtxManager;
   private ClientHandshakeManager                     clientHandshakeManager;
@@ -227,6 +228,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private boolean                                    createDedicatedMBeanServer          = false;
   private CounterManager                             counterManager;
   private ThreadIDManager                            threadIDManager;
+  private final CallbackDumpHandler                  dumpHandler                         = new CallbackDumpHandler();
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
                                  final ClassProvider classProvider,
@@ -443,7 +445,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                            outstandingBatchesCounter,
                                                                            pendingBatchesSize, transactionSizeCounter,
                                                                            transactionsPerBatchCounter);
-
+    
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.rtxManager));
     final RemoteObjectIDBatchSequenceProvider remoteIDProvider = new RemoteObjectIDBatchSequenceProvider(this.channel
         .getObjectIDBatchRequestMessageFactory());
 
@@ -472,6 +475,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final RemoteObjectManager remoteObjectManager = this.dsoClientBuilder
         .createRemoteObjectManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, faultCount, sessionManager);
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(remoteObjectManager));
 
     final RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
         .createRemoteServerMapManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
@@ -490,9 +494,11 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                    this.config.getPortability(), this.channel,
                                                                    toggleRefMgr);
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.objectManager));
-    final TCProperties cacheManagerProperties = this.l1Properties.getPropertiesFor("cachemanager");
-    final CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
-    final TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.objectManager));
+    
+    TCProperties cacheManagerProperties = this.l1Properties.getPropertiesFor("cachemanager");
+    CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
+    TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
         .getLeastCount(), cacheConfig.isOnlyOldGenMonitored(), getThreadGroup());
     final long timeOut = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.LOGGING_LONG_GC_THRESHOLD);
     final LongGCLogger gcLogger = new LongGCLogger(DSO_LOGGER, timeOut);
@@ -538,14 +544,18 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                this.threadIDManager, gtxManager,
                                                                new ClientLockManagerConfigImpl(this.l1Properties
                                                                    .getPropertiesFor("lockmanager")));
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
+    CallbackDumpAdapter lockDumpAdapter = new CallbackDumpAdapter(this.lockManager);
+    this.threadGroup.addCallbackOnExitDefaultHandler(lockDumpAdapter);
+    this.dumpHandler.registerForDump(lockDumpAdapter);
 
     // Setup the transaction manager
     this.txManager = new ClientTransactionManagerImpl(this.channel.getClientIDProvider(), this.objectManager,
                                                       txFactory, this.lockManager, this.rtxManager, this.runtimeLogger,
                                                       txnCounter);
 
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.txManager));
+    CallbackDumpAdapter txnMgrDumpAdapter = new CallbackDumpAdapter(this.txManager);
+    this.threadGroup.addCallbackOnExitDefaultHandler(txnMgrDumpAdapter);
+    this.dumpHandler.registerForDump(txnMgrDumpAdapter);
 
     // Create the SEDA stages
     final Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
@@ -852,21 +862,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   public void dump() {
-    if (this.lockManager != null) {
-      this.lockManager.dumpToLogger();
-    }
-
-    if (this.txManager != null) {
-      this.txManager.dumpToLogger();
-    }
-
-    if (this.objectManager != null) {
-      this.objectManager.dumpToLogger();
-    }
-
-    if (this.rtxManager != null) {
-      this.rtxManager.dumpToLogger();
-    }
+    this.dumpHandler.dump();
   }
 
   public void startBeanShell(final int port) {

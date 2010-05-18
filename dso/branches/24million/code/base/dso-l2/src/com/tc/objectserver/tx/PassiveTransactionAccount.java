@@ -91,4 +91,9 @@ public class PassiveTransactionAccount implements TransactionAccount {
       callback.onComplete(nodeID);
     }
   }
+  
+  @Override
+  public String toString() {
+    return "PassiveTransactionAccount [ " + nodeID + " ] = " + txnIDs;
+  }
 }

@@ -34,14 +34,12 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.stats.counter.Counter;
-import com.tc.text.DumpLoggerWriter;
+import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
-import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerTransactionManagerImpl implements ServerTransactionManager, ServerTransactionManagerMBean,
-    GlobalTransactionManager {
+    GlobalTransactionManager, PrettyPrintable {
 
   private static final TCLogger                         logger                       = TCLogging
                                                                                          .getLogger(ServerTransactionManager.class);
@@ -65,8 +63,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private static final State                            ACTIVE_MODE                  = new State("ACTIVE-MODE");
 
   // TODO::FIXME::Change this to concurrent HashMap
-  private final Map                                     transactionAccounts          = Collections
-                                                                                         .synchronizedMap(new HashMap());
+  private final Map<NodeID, TransactionAccount>         transactionAccounts          = Collections
+                                                                                         .synchronizedMap(new HashMap<NodeID, TransactionAccount>());
   private final ClientStateManager                      stateManager;
   private final ObjectManager                           objectManager;
   private final ResentTransactionSequencer              resentTxnSequencer;
@@ -136,18 +134,23 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
   }
 
-  public void dumpToLogger() {
-    final DumpLoggerWriter writer = new DumpLoggerWriter();
-    final PrintWriter pw = new PrintWriter(writer);
-    final PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.autoflush(false);
-    prettyPrinter.visit(this);
-    writer.flush();
-  }
 
-  public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.print(this.getClass().getName()).flush();
-    out.indent().print("transactionAccounts: ").visit(this.transactionAccounts).println().flush();
+    synchronized (this.transactionAccounts) {
+      out.indent().print("transactionAccounts: ").visit(this.transactionAccounts).flush();
+      for (Iterator<Entry<NodeID, TransactionAccount>> iter = this.transactionAccounts.entrySet().iterator(); iter
+          .hasNext();) {
+        Entry<NodeID, TransactionAccount> entry = iter.next();
+        out.duplicateAndIndent().indent().print(entry.getValue()).flush();
+      }
+    }
+    out.indent().print("totalPendingTransactions: ").visit(this.totalPendingTransactions).flush();
+    out.indent().print("txnsCommitted: ").visit(this.txnsCommitted).flush();
+    out.indent().print("objectsCommitted: ").visit(this.objectsCommitted).flush();
+    out.indent().print("noOfCommits: ").visit(this.noOfCommits).flush();
+    out.indent().print("totalNumOfActiveTransactions: ").visit(this.totalNumOfActiveTransactions).flush();
+
     return out;
   }
 
@@ -157,7 +160,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   public void shutdownNode(final NodeID deadNodeID) {
     boolean callBackAdded = false;
     synchronized (this.transactionAccounts) {
-      final TransactionAccount deadClientTA = (TransactionAccount) this.transactionAccounts.get(deadNodeID);
+
+      TransactionAccount deadClientTA = this.transactionAccounts.get(deadNodeID);
       if (deadClientTA != null) {
         deadClientTA.nodeDead(new TransactionAccount.CallBackOnComplete() {
           public void onComplete(final NodeID dead) {
@@ -175,7 +179,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
         callBackAdded = true;
       }
 
-      final TransactionAccount tas[] = (TransactionAccount[]) this.transactionAccounts.values()
+      TransactionAccount tas[] = this.transactionAccounts.values()
           .toArray(new TransactionAccount[this.transactionAccounts.size()]);
       for (final TransactionAccount client : tas) {
         if (client == deadClientTA) {
@@ -491,7 +495,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       if (this.state != ACTIVE_MODE) { throw new AssertionError(
                                                                 "ServerTransactionManager is not in ACTIVE_MODE, the current state = "
                                                                     + this.state); }
-      TransactionAccount ta = (TransactionAccount) this.transactionAccounts.get(localID);
+      TransactionAccount ta = this.transactionAccounts.get(localID);
       if (ta == null) {
         this.transactionAccounts.put(localID, (ta = new ObjectSynchTransactionAccount(localID)));
       }
@@ -501,7 +505,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private TransactionAccount getOrCreateTransactionAccount(final NodeID source) {
     synchronized (this.transactionAccounts) {
-      TransactionAccount ta = (TransactionAccount) this.transactionAccounts.get(source);
+      TransactionAccount ta = this.transactionAccounts.get(source);
       if (ta != null && ta instanceof ObjectSynchTransactionAccount) { throw new AssertionError(
                                                                                                 "Transaction Account is of type ObjectSyncTransactionAccount : "
                                                                                                     + ta
@@ -527,7 +531,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   }
 
   private TransactionAccount getTransactionAccount(final NodeID node) {
-    return (TransactionAccount) this.transactionAccounts.get(node);
+    return this.transactionAccounts.get(node);
   }
 
   public void addRootListener(final ServerTransactionManagerEventListener listener) {

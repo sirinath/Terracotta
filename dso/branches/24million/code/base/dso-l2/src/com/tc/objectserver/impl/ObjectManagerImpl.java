@@ -5,7 +5,6 @@
 package com.tc.objectserver.impl;
 
 import com.tc.async.api.Sink;
-import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
@@ -39,17 +38,14 @@ import com.tc.objectserver.tx.NullTransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.text.DumpLoggerWriter;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
-import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,8 +59,7 @@ import java.util.Set;
 /**
  * Manages access to all the Managed objects in the system.
  */
-public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, Evictable, DumpHandler,
-    PrettyPrintable {
+public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, Evictable, PrettyPrintable {
 
   private static final TCLogger                       logger                = TCLogging.getLogger(ObjectManager.class);
 
@@ -763,15 +758,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private void flushAllAndCommit(final PersistenceTransaction persistenceTransaction, final Collection managedObjects) {
     this.objectStore.commitAllObjects(persistenceTransaction, managedObjects);
     persistenceTransaction.commit();
-  }
-
-  public void dumpToLogger() {
-    final DumpLoggerWriter writer = new DumpLoggerWriter();
-    final PrintWriter pw = new PrintWriter(writer);
-    final PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.autoflush(false);
-    prettyPrinter.visit(this);
-    writer.flush();
   }
 
   // This method is for tests only

@@ -12,6 +12,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
+import com.tc.text.PrettyPrinter;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
 import java.util.Collection;
@@ -145,6 +146,10 @@ public class TestRemoteObjectManager implements RemoteObjectManager {
 
   public void addResponseForKeyValueMapping(final SessionID localSessionID, final ObjectID mapID,
                                             final Object portableKey, final Object portableValue, final NodeID nodeID) {
+    throw new ImplementMe();
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
     throw new ImplementMe();
   }
 }
