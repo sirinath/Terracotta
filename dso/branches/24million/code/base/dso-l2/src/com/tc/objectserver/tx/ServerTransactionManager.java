@@ -4,20 +4,18 @@
  */
 package com.tc.objectserver.tx;
 
-import com.tc.logging.DumpHandler;
 import com.tc.net.NodeID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.managedobject.BackReferences;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
-import com.tc.text.PrettyPrintable;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-public interface ServerTransactionManager extends DumpHandler, PrettyPrintable {
+public interface ServerTransactionManager {
 
   /**
    * called when a Node (Client or Server) leaves.

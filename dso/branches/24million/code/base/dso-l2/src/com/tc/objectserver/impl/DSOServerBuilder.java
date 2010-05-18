@@ -10,6 +10,7 @@ import com.tc.config.schema.NewHaConfig;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
+import com.tc.logging.DumpHandlerStore;
 import com.tc.logging.TCLogger;
 import com.tc.management.L2Management;
 import com.tc.management.beans.LockStatisticsMonitor;
@@ -39,7 +40,6 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
-import com.tc.objectserver.persistence.sleepycat.DBEnvironment;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
@@ -64,7 +64,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                   ClientStateManager clientStateMgr,
                                                   ServerTransactionManager transactionMgr, Sink objectRequestSink,
                                                   Sink respondObjectRequestSink, ObjectStatsRecorder statsRecorder,
-                                                  List<PostInit> toInit, StageManager stageManager, int maxStageSize);
+                                                  List<PostInit> toInit, StageManager stageManager, int maxStageSize,
+                                                  DumpHandlerStore dumpHandlerStore);
 
   void populateAdditionalStatisticsRetrivalRegistry(StatisticsRetrievalRegistry registry);
 
@@ -95,7 +96,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                               ServerClusterMetaDataManager clusterMetaDataManager,
                                                               DSOGlobalServerStats serverStats,
                                                               ConnectionIDFactory connectionIdFactory,
-                                                              int maxStageSize, ChannelManager genericChannelManager);
+                                                              int maxStageSize, ChannelManager genericChannelManager,
+                                                              DumpHandlerStore dumpHandlerStore);
 
   GroupManager getClusterGroupCommManager();
 
@@ -113,6 +115,6 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                   StatisticsGatewayMBeanImpl statisticsGateway,
                                   L2TVSConfigurationSetupManager configSetupManager,
                                   DistributedObjectServer distributedObjectServer, InetAddress bind, int jmxPort,
-                                  Sink remoteEventsSink, DBEnvironment dbenv,
-                                  ServerConnectionValidator serverConnectionValidator) throws Exception;
+                                  Sink remoteEventsSink, ServerConnectionValidator serverConnectionValidator)
+      throws Exception;
 }
