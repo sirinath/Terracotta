@@ -36,7 +36,6 @@ public class DiagnosticsNode extends ComponentNode implements HyperlinkListener 
     this.adminClientContext = adminClientContext;
     this.clusterModel = clusterModel;
 
-    add(createRuntimeStatsNode());
     try {
       add(createLocksNode(clusterNode));
     } catch (Throwable t) {
@@ -46,10 +45,6 @@ public class DiagnosticsNode extends ComponentNode implements HyperlinkListener 
     }
     add(createThreadDumpsNode(clusterNode));
     add(createStatsRecorderNode());
-  }
-
-  protected RuntimeStatsNode createRuntimeStatsNode() {
-    return new RuntimeStatsNode(adminClientContext, clusterModel);
   }
 
   protected LocksNode createLocksNode(ClusterNode clusterNode) {

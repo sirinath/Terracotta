@@ -102,8 +102,8 @@ class BuildEnvironment < Environment
   end
 
   # return api version defined in build-config.global
-  def api_version
-    @config_source['api.version'] || 'unknown'
+  def tim_api_version
+    @config_source['tim-api.version'] || 'unknown'
   end
 
   # Edition info: opensource or enterprise  

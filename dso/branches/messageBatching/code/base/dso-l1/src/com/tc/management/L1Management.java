@@ -18,8 +18,6 @@ import com.tc.management.beans.logging.RuntimeLogging;
 import com.tc.management.beans.logging.RuntimeLoggingMBean;
 import com.tc.management.beans.logging.RuntimeOutputOptions;
 import com.tc.management.beans.logging.RuntimeOutputOptionsMBean;
-import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.management.beans.sessions.SessionMonitorImpl;
 import com.tc.management.exposed.TerracottaCluster;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
@@ -46,7 +44,7 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
-public final class L1Management extends TerracottaManagement {
+public class L1Management extends TerracottaManagement {
   private static final TCLogger          logger = TCLogging.getLogger(L1Management.class);
 
   private final SetOnceFlag              started;
@@ -54,7 +52,6 @@ public final class L1Management extends TerracottaManagement {
   private final Object                   mBeanServerLock;
   private MBeanServer                    mBeanServer;
 
-  private final SessionMonitor           httpSessionsMonitor;
   private final TerracottaCluster        clusterBean;
   private final L1Info                   l1InfoBean;
   private final InstrumentationLogging   instrumentationLoggingBean;
@@ -80,7 +77,6 @@ public final class L1Management extends TerracottaManagement {
 
     try {
       l1DumpBean = new L1Dumper(client);
-      httpSessionsMonitor = new SessionMonitorImpl();
       clusterBean = new TerracottaCluster();
       l1InfoBean = new L1Info(client, rawConfigText);
       instrumentationLoggingBean = new InstrumentationLogging(instrumentationLogger);
@@ -146,8 +142,7 @@ public final class L1Management extends TerracottaManagement {
 
   @Override
   public Object findMBean(final ObjectName objectName, final Class mBeanInterface) throws IOException {
-    if (objectName.equals(L1MBeanNames.HTTP_SESSIONS_PUBLIC)) return httpSessionsMonitor;
-    else if (objectName.equals(L1MBeanNames.L1INFO_PUBLIC)) return l1InfoBean;
+    if (objectName.equals(L1MBeanNames.L1INFO_PUBLIC)) return l1InfoBean;
     else if (objectName.equals(L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC)) return instrumentationLoggingBean;
     else if (objectName.equals(L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC)) return runtimeOutputOptionsBean;
     else if (objectName.equals(L1MBeanNames.RUNTIME_LOGGING_PUBLIC)) return runtimeLoggingBean;
@@ -157,10 +152,6 @@ public final class L1Management extends TerracottaManagement {
       }
     }
     return null;
-  }
-
-  public SessionMonitor getHttpSessionMonitor() {
-    return httpSessionsMonitor;
   }
 
   public L1InfoMBean findL1InfoMBean() {
@@ -195,12 +186,17 @@ public final class L1Management extends TerracottaManagement {
       }
     }
 
+    registerMBeans();
+  }
+
+  protected void registerMBeans() throws InstanceAlreadyExistsException, MBeanRegistrationException,
+      NotCompliantMBeanException, MalformedObjectNameException {
     registerMBean(l1DumpBean, MBeanNames.L1DUMPER_INTERNAL);
-    registerMBean(httpSessionsMonitor, L1MBeanNames.HTTP_SESSIONS_PUBLIC);
     registerMBean(clusterBean, L1MBeanNames.CLUSTER_BEAN_PUBLIC);
     if (statisticsAgentSubSystem.isActive()) {
       statisticsAgentSubSystem.registerMBeans(mBeanServer, tunnelingHandler.getUUID());
     }
+
     registerMBean(l1InfoBean, L1MBeanNames.L1INFO_PUBLIC);
     registerMBean(instrumentationLoggingBean, L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
     registerMBean(runtimeOutputOptionsBean, L1MBeanNames.RUNTIME_OUTPUT_OPTIONS_PUBLIC);
@@ -214,7 +210,7 @@ public final class L1Management extends TerracottaManagement {
     }
   }
 
-  private void registerMBean(Object bean, ObjectName name) throws InstanceAlreadyExistsException,
+  protected void registerMBean(Object bean, ObjectName name) throws InstanceAlreadyExistsException,
       MBeanRegistrationException, NotCompliantMBeanException, MalformedObjectNameException {
     ObjectName modifiedName = TerracottaManagement.addNodeInfo(name, tunnelingHandler.getUUID());
     mBeanServer.registerMBean(bean, modifiedName);

@@ -52,8 +52,6 @@ import com.tc.logging.LogLevel;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.TerracottaMBean;
-import com.tc.management.beans.sessions.SessionMonitor;
-import com.tc.management.beans.sessions.SessionStatisticsMBean;
 import com.tc.net.NIOWorkarounds;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
@@ -155,6 +153,7 @@ import com.tc.statistics.LazilyInitializedSRA;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticDataCSVParser;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.StatisticType;
 import com.tc.text.Banner;
 import com.tc.util.AbstractIdentifier;
 import com.tc.util.Assert;
@@ -577,6 +576,7 @@ public class BootJarTool {
 
       addClusterEventsAndMetaDataClasses();
       loadTerracottaClass(StatisticRetrievalAction.class.getName());
+      loadTerracottaClass(StatisticType.class.getName());
       loadTerracottaClass(StatisticData.class.getName());
       loadTerracottaClass(StatisticDataCSVParser.class.getName());
       loadTerracottaClass(LazilyInitializedSRA.class.getName());
@@ -734,9 +734,6 @@ public class BootJarTool {
   }
 
   private final void addManagementClasses() {
-    loadTerracottaClass(SessionMonitor.class.getName());
-    loadTerracottaClass(SessionMonitor.class.getName() + "$SessionsComptroller");
-    loadTerracottaClass(SessionStatisticsMBean.class.getName());
     loadTerracottaClass(TerracottaMBean.class.getName());
   }
 
@@ -2153,7 +2150,9 @@ public class BootJarTool {
       }
 
       StandardTVSConfigurationSetupManagerFactory factory;
-      factory = new StandardTVSConfigurationSetupManagerFactory(cmdLine, false,
+      factory = new StandardTVSConfigurationSetupManagerFactory(
+                                                                cmdLine,
+                                                                StandardTVSConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
                                                                 new FatalIllegalConfigurationChangeHandler());
       boolean verbose = cmdLine.hasOption("v");
       TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();

@@ -19,6 +19,7 @@ import com.tc.object.msg.ObjectsNotFoundMessage;
 import com.tc.object.msg.RequestManagedObjectResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
+import com.tc.objectserver.api.NoSuchObjectException;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
 import com.tc.objectserver.api.ObjectRequestManager;
@@ -27,9 +28,12 @@ import com.tc.objectserver.context.ObjectRequestServerContextImpl;
 import com.tc.objectserver.context.RespondToObjectRequestContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.l1.api.ClientStateManager;
+import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.text.PrettyPrintable;
+import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SimpleSequence;
@@ -228,6 +232,14 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
     this.objectStatsRecorder.updateRequestStats(className);
   }
 
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    out.print(this.getClass().getName()).flush();
+    synchronized (this) {
+      out.indent().print("objectRequestCache: ").visit(this.objectRequestCache).flush();
+    }
+    return out;
+  }
+
   protected static class RequestedObject {
 
     private final ObjectIDSet oidSet;
@@ -267,7 +279,7 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
     }
   }
 
-  protected static class ObjectRequestCache {
+  protected static class ObjectRequestCache implements PrettyPrintable {
 
     private final Map<RequestedObject, LinkedHashSet<ClientID>> objectRequestMap = new HashMap<RequestedObject, LinkedHashSet<ClientID>>();
 
@@ -350,6 +362,23 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
     public Set<ClientID> remove(RequestedObject reqObj) {
       return this.objectRequestMap.remove(reqObj);
+    }
+
+    public PrettyPrinter prettyPrint(PrettyPrinter out) {
+      out.duplicateAndIndent().indent().print(getClass().getName()).flush();
+      out.duplicateAndIndent().indent().print("objectRequestMap").flush();
+      for (Iterator<Entry<RequestedObject, LinkedHashSet<ClientID>>> iter = this.objectRequestMap.entrySet().iterator(); iter
+          .hasNext();) {
+        StringBuilder strBuffer = new StringBuilder();
+        Entry<RequestedObject, LinkedHashSet<ClientID>> entry = iter.next();
+        strBuffer.append(entry.getKey());
+        strBuffer.append(", Requested by: ");
+        for (Iterator<ClientID> waitingClients = entry.getValue().iterator(); waitingClients.hasNext();) {
+          strBuffer.append(waitingClients.next() + ", ");
+        }
+        out.duplicateAndIndent().indent().print(strBuffer.toString()).flush();
+      }
+      return out;
     }
   }
 
@@ -564,5 +593,30 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
              + " , requestedObjectIDs = " + this.requestedObjectIDs + " , missingObjectIDs = " + this.missingObjectIDs
              + " , serverInitiated = " + this.serverInitiated + " ] ";
     }
+  }
+
+  // delegating all ObjectManagerMbean requests to the object manager
+  public int getCachedObjectCount() {
+    return this.objectManager.getCachedObjectCount();
+  }
+
+  public int getLiveObjectCount() {
+    return this.objectManager.getLiveObjectCount();
+  }
+
+  public Iterator getRootNames() {
+    return this.objectManager.getRootNames();
+  }
+
+  public Iterator getRoots() {
+    return this.objectManager.getRoots();
+  }
+
+  public ManagedObjectFacade lookupFacade(ObjectID id, int limit) throws NoSuchObjectException {
+    return this.objectManager.lookupFacade(id, limit);
+  }
+
+  public ObjectID lookupRootID(String name) {
+    return this.objectManager.lookupRootID(name);
   }
 }

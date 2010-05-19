@@ -5,13 +5,15 @@
 package com.tc.net.groups;
 
 import com.tc.async.api.Sink;
+import com.tc.config.ClusterInfo;
+import com.tc.config.NodesStore;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
+import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,21 +27,23 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   private final CopyOnWriteArrayList<GroupEventsListener> groupListeners   = new CopyOnWriteArrayList<GroupEventsListener>();
   private final Map<String, GroupMessageListener>         messageListeners = new ConcurrentHashMap<String, GroupMessageListener>();
   private final Set<NodeID>                               groupNodeIDs     = new CopyOnWriteArraySet<NodeID>();
-  private final Set<String>                               groupNodes       = new HashSet<String>();
+  private final ClusterInfo                    serverNamesOfThisGroup;
 
-  public VirtualTCGroupManagerImpl(GroupManager groupManager, Node[] virtualGroupNodes) {
+  public VirtualTCGroupManagerImpl(GroupManager groupManager, ClusterInfo serverNamesOfThisGroup) {
     this.groupManager = groupManager;
-    for (Node n : virtualGroupNodes) {
-      groupNodes.add(n.getServerNodeName());
-    }
     groupManager.registerForGroupEvents(this);
+    this.serverNamesOfThisGroup = serverNamesOfThisGroup;
+  }
+
+  public void closeMember(ServerID serverID) {
+    this.groupManager.closeMember(serverID);
   }
 
   public NodeID getLocalNodeID() {
     return groupManager.getLocalNodeID();
   }
 
-  public NodeID join(Node thisNode, Node[] allNodes) {
+  public NodeID join(Node thisNode, NodesStore nodesStore) {
     // NOP here, the underlying groupManager should have already joined to the entire clustered.
     return this.groupManager.getLocalNodeID();
   }
@@ -135,7 +139,7 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
   private boolean isThisGroup(NodeID nodeID) {
     Assert.assertTrue(nodeID instanceof ServerID);
     ServerID serverID = (ServerID) nodeID;
-    return groupNodes.contains(serverID.getName());
+    return serverNamesOfThisGroup.hasServerInGroup(serverID.getName());
   }
 
   private void fireNodeEvent(NodeID nodeID, boolean joined) {
@@ -154,4 +158,17 @@ public class VirtualTCGroupManagerImpl implements GroupManager, GroupEventsListe
     return groupManager.isConnectionToNodeActive(sid);
   }
 
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    StringBuilder strBuffer = new StringBuilder();
+    strBuffer.append(VirtualTCGroupManagerImpl.class.getSimpleName()).append(" [ ");
+
+    strBuffer.append("groupNodeIDs: {").append(this.groupNodeIDs).append("} ]");
+
+    out.indent().print(strBuffer.toString()).flush();
+    return out;
+  }
+
+  public boolean isServerConnected(String nodeName) {
+    return this.groupManager.isServerConnected(nodeName);
+  }
 }

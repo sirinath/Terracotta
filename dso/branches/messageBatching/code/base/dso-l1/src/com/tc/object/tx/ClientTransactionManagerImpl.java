@@ -5,6 +5,7 @@
 package com.tc.object.tx;
 
 import com.tc.exception.TCClassNotFoundException;
+import com.tc.exception.TCError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
@@ -30,15 +31,13 @@ import com.tc.object.session.SessionID;
 import com.tc.object.util.ReadOnlyException;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.text.Banner;
-import com.tc.text.DumpLoggerWriter;
+import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
-import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.StringUtil;
 import com.tc.util.Util;
 
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class ClientTransactionManagerImpl implements ClientTransactionManager {
+public class ClientTransactionManagerImpl implements ClientTransactionManager, PrettyPrintable {
   private static final TCLogger                logger      = TCLogging.getLogger(ClientTransactionManagerImpl.class);
 
   private final ThreadLocal                    transaction = new ThreadLocal() {
@@ -156,7 +155,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     errorMsg.append(StringUtil.LINE_SEPARATOR).append(StringUtil.LINE_SEPARATOR);
     errorMsg.append("For more information on this issue, please visit our Troubleshooting Guide at:");
     errorMsg.append(StringUtil.LINE_SEPARATOR);
-    errorMsg.append("http://terracotta.org/kit/troubleshooting");
+    errorMsg.append(TCError.TROUBLE_SHOOTING_GUIDE);
 
     return Util.getFormattedMessage(errorMsg.toString());
   }
@@ -197,7 +196,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
                  + " * The code itself does not have synchronization that Terracotta\n" + "   can use as a boundary.\n"
                  + " * The class doing the locking must be included for instrumentation.\n"
                  + " * The object was first locked, then shared.\n\n"
-                 + "For more information on how to solve this issue, see:\n" + "http://www.terracotta.org/usoe";
+                 + "For more information on how to solve this issue, see:\n" + UnlockedSharedObjectException.TROUBLE_SHOOTING_GUIDE;
 
       throw new UnlockedSharedObjectException(errorMsg, Thread.currentThread().getName(), this.cidProvider
           .getClientID().toLong(), details);
@@ -674,14 +673,6 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
     getTransaction().addDmiDescritor(dd);
   }
 
-  public void dumpToLogger() {
-    DumpLoggerWriter writer = new DumpLoggerWriter();
-    PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.visit(this);
-    writer.flush();
-  }
-
   public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
     out.print(getClass().getName());
     return out;
@@ -693,7 +684,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager {
                                                + "\n\nPlease alter the locks section of your Terracotta configuration so that this"
                                                + "\naccess is auto-locked or protected by a named lock with write access."
                                                + "\n\nFor more information on this issue, please visit our Troubleshooting Guide at:"
-                                               + "\nhttp://terracotta.org/kit/troubleshooting ";
+                                               + "\n" + UnlockedSharedObjectException.TROUBLE_SHOOTING_GUIDE;
 
   public void waitForAllCurrentTransactionsToComplete() {
     remoteTxManager.waitForAllCurrentTransactionsToComplete();

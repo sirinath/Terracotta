@@ -23,12 +23,15 @@ import com.tc.net.protocol.transport.ConnectionID;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionIDFactoryListener;
 import com.tc.objectserver.context.NodeStateEventContext;
+import com.tc.text.PrettyPrintable;
+import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
+import com.tc.util.State;
 
 import java.util.Iterator;
 
 public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterStateManager, GroupMessageListener,
-    ConnectionIDFactoryListener {
+    ConnectionIDFactoryListener, PrettyPrintable {
 
   private static final TCLogger logger   = TCLogging.getLogger(ReplicatedClusterStateManagerImpl.class);
 
@@ -197,5 +200,18 @@ public class ReplicatedClusterStateManagerImpl implements ReplicatedClusterState
   public void fireNodeLeftEvent(NodeID nodeID) {
     // this is needed to clean up some data structures internally
     channelLifeCycleSink.add(new NodeStateEventContext(NodeStateEventContext.REMOVE, nodeID));
+  }
+
+  public synchronized void setCurrentState(State currentState) {
+    this.state.setCurrentState(currentState);
+  }
+
+  public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
+    StringBuilder strBuilder = new StringBuilder();
+    strBuilder.append(ReplicatedClusterStateManagerImpl.class.getSimpleName() + " [ ");
+    strBuilder.append(this.state).append(" ").append(this.stateManager);
+    strBuilder.append(" ]");
+    out.indent().print(strBuilder.toString()).flush();
+    return out;
   }
 }

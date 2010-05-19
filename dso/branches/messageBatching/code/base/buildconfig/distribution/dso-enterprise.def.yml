@@ -63,11 +63,6 @@ bundled_components:
               - dso-l2-common
               - dso-statistics-api
               - management-api
-        - terracotta-api-api.version:
-            javadoc: true
-            install_directory: lib
-            modules:
-              - dso-cluster-api
               
       # NOTE: this section also controls what goes into the 'tc.jar' file
       modules:
@@ -82,7 +77,6 @@ bundled_components:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-cluster-api
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -90,9 +84,7 @@ bundled_components:
         - sigarstats
         - management
         - management-api
-        - modules-base
         - thirdparty
-        - thirdparty-api
         - tim-get-tool:
             kit-resources:
               - tim-get.properties
@@ -110,7 +102,6 @@ bundled_modules:
         - guimodels-config
         - jdk15-preinst-config
         - standard-config
-        - modules-base
 packaging:
   - tar:
       assert: '@build_environment.os_type !~ /^\s*windows\s*$/i'
@@ -128,10 +119,10 @@ postscripts:
         - location: lib/resources/tim-get.properties
         - kit-type:
             final:
-              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/releases/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/releases/tim-get/3/index.xml.gz
               org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/releases        
             stable:
-              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/3/index.xml.gz
               org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/stable/version
   - install-forge-tims:
       args:
@@ -149,11 +140,22 @@ postscripts:
         - sessions/samples         
   - maven-deploy:
       args:
-        - artifact_count: 3
+        - artifact_count: 5
         - groupId: org.terracotta
           artifact: parent
           srcfile: pom.xml
           pom: pom.xml
+        - groupId: org.terracotta
+          artifact: terracotta-core-parent
+          srcfile: poms/terracotta-core-parent-pom.xml
+          pom: poms/terracotta-core-parent-pom.xml
+        - groupId: org.terracotta
+          artifact: terracotta-ee
+          file: lib/tc.jar
+          pom: poms/terracotta-ee-pom.xml
+          inject: 
+            - lib/resources/build-data.txt
+            - lib/resources/tim-get.properties
         - groupId: org.terracotta
           artifact: terracotta-l1-parent
           srcfile: poms/terracotta-l1-parent-pom.xml

@@ -5,7 +5,6 @@
 package com.tc.objectserver.impl;
 
 import com.tc.async.api.Sink;
-import com.tc.logging.DumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
@@ -17,7 +16,6 @@ import com.tc.object.cache.EvictionPolicy;
 import com.tc.objectserver.api.NoSuchObjectException;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
-import com.tc.objectserver.api.ObjectManagerMBean;
 import com.tc.objectserver.api.ObjectManagerStatsListener;
 import com.tc.objectserver.api.ShutdownError;
 import com.tc.objectserver.context.GCResultContext;
@@ -40,17 +38,14 @@ import com.tc.objectserver.tx.NullTransactionalObjectManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.text.DumpLoggerWriter;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
-import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,8 +59,7 @@ import java.util.Set;
 /**
  * Manages access to all the Managed objects in the system.
  */
-public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, ObjectManagerMBean, Evictable,
-    DumpHandler, PrettyPrintable {
+public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeListener, Evictable, PrettyPrintable {
 
   private static final TCLogger                       logger                = TCLogging.getLogger(ObjectManager.class);
 
@@ -223,6 +217,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
    * For management use only (see interface documentation)
    */
   public ManagedObjectFacade lookupFacade(final ObjectID id, final int limit) throws NoSuchObjectException {
+
+    if (!containsObject(id)) { throw new NoSuchObjectException(id); }
+
     final ManagedObject object = lookup(id, true, false);
     if (object == null) { throw new NoSuchObjectException(id); }
 
@@ -621,6 +618,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return this.objectStore.getAllObjectIDs();
   }
 
+  private boolean containsObject(ObjectID id) {
+    return this.objectStore.containsObject(id);
+  }
+
   public synchronized ObjectIDSet getObjectIDsInCache() {
     ObjectIDSet ids = new ObjectIDSet();
     ids.addAll(this.references.keySet());
@@ -758,15 +759,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private void flushAllAndCommit(final PersistenceTransaction persistenceTransaction, final Collection managedObjects) {
     this.objectStore.commitAllObjects(persistenceTransaction, managedObjects);
     persistenceTransaction.commit();
-  }
-
-  public void dumpToLogger() {
-    DumpLoggerWriter writer = new DumpLoggerWriter();
-    PrintWriter pw = new PrintWriter(writer);
-    PrettyPrinterImpl prettyPrinter = new PrettyPrinterImpl(pw);
-    prettyPrinter.autoflush(false);
-    prettyPrinter.visit(this);
-    writer.flush();
   }
 
   // This method is for tests only

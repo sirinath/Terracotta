@@ -15,6 +15,7 @@ import com.tc.async.api.StageManager;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.handler.CallbackDumpAdapter;
+import com.tc.handler.CallbackDumpHandler;
 import com.tc.lang.TCThreadGroup;
 import com.tc.license.LicenseCheck;
 import com.tc.logging.ClientIDLogger;
@@ -26,7 +27,6 @@ import com.tc.logging.ThreadDumpHandler;
 import com.tc.management.ClientLockStatManager;
 import com.tc.management.L1Management;
 import com.tc.management.TCClient;
-import com.tc.management.beans.sessions.SessionMonitor;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
@@ -35,6 +35,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.CommStackMismatchException;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
+import com.tc.net.core.ClusterTopologyChangedListener;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
@@ -133,7 +134,6 @@ import com.tc.statistics.StatisticsSystemType;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
-import com.tc.statistics.retrieval.actions.SRAHttpSessions;
 import com.tc.statistics.retrieval.actions.SRAL1OutstandingBatches;
 import com.tc.statistics.retrieval.actions.SRAL1PendingBatchesSize;
 import com.tc.statistics.retrieval.actions.SRAL1TransactionCount;
@@ -205,7 +205,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private DSOClientMessageChannel                    channel;
   private ClientLockManager                          lockManager;
   private ClientObjectManagerImpl                    objectManager;
-  private ClientTransactionManager                   txManager;
+  private ClientTransactionManagerImpl               txManager;
   private CommunicationsManager                      communicationsManager;
   private RemoteTransactionManager                   rtxManager;
   private ClientHandshakeManager                     clientHandshakeManager;
@@ -217,6 +217,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private boolean                                    createDedicatedMBeanServer          = false;
   private CounterManager                             counterManager;
   private ThreadIDManager                            threadIDManager;
+  private final CallbackDumpHandler                  dumpHandler                         = new CallbackDumpHandler();
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
                                  final ClassProvider classProvider,
@@ -317,7 +318,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       registry.registerActionInstance(new SRAL1TransactionsPerBatch(this.transactionsPerBatchCounter));
       registry.registerActionInstance(new SRAL1TransactionSize(this.transactionSizeCounter));
       registry.registerActionInstance(new SRAL1PendingBatchesSize(this.pendingBatchesSize));
-      registry.registerActionInstance(new SRAHttpSessions());
       registry.registerActionInstance(new SRAL1TransactionCount(this.txCounter));
       registry.registerActionInstance(new SRAVmGarbageCollector(SRAVmGarbageCollectorType.L1_VM_GARBAGE_COLLECTOR));
 
@@ -409,7 +409,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                        + socketConnectTimeout); }
     this.channel = this.dsoClientBuilder.createDSOClientMessageChannel(this.communicationsManager,
                                                                        this.connectionComponents, sessionProvider,
-                                                                       maxConnectRetries, socketConnectTimeout);
+                                                                       maxConnectRetries, socketConnectTimeout, this);
     ClientIDLoggerProvider cidLoggerProvider = new ClientIDLoggerProvider(this.channel.getClientIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
 
@@ -434,7 +434,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                            outstandingBatchesCounter,
                                                                            pendingBatchesSize, transactionSizeCounter,
                                                                            transactionsPerBatchCounter);
-
+    
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.rtxManager));
     ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
         .createClientGlobalTransactionManager(this.rtxManager);
 
@@ -470,6 +471,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     RemoteObjectManager remoteObjectManager = this.dsoClientBuilder
         .createRemoteObjectManager(new ClientIDLogger(this.channel.getClientIDProvider(), TCLogging
             .getLogger(RemoteObjectManager.class)), this.channel, faultCount, sessionManager);
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(remoteObjectManager));
 
     this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, this.config, idProvider,
                                                                    new ClockEvictionPolicy(-1), this.runtimeLogger,
@@ -478,6 +480,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                    this.config.getPortability(), this.channel,
                                                                    toggleRefMgr);
     this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.objectManager));
+    this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.objectManager));
+    
     TCProperties cacheManagerProperties = this.l1Properties.getPropertiesFor("cachemanager");
     CacheConfig cacheConfig = new CacheConfigImpl(cacheManagerProperties);
     TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
@@ -510,8 +514,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Set up the JMX management stuff
     final TunnelingEventHandler teh = this.dsoClientBuilder.createTunnelingEventHandler(this.channel.channel(), config
         .getUUID());
-    this.l1Management = new L1Management(teh, this.statisticsAgentSubSystem, this.runtimeLogger, this.manager
-        .getInstrumentationLogger(), this.config.rawConfigText(), this, this.config.getMBeanSpecs());
+
+    this.l1Management = this.dsoClientBuilder.createL1Management(teh, this.statisticsAgentSubSystem,
+                                                                 this.runtimeLogger, this.manager
+                                                                     .getInstrumentationLogger(), this.config
+                                                                     .rawConfigText(), this, this.config
+                                                                     .getMBeanSpecs());
     this.l1Management.start(this.createDedicatedMBeanServer);
 
     // Setup the lock manager
@@ -522,14 +530,18 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                this.threadIDManager, gtxManager,
                                                                new ClientLockManagerConfigImpl(this.l1Properties
                                                                    .getPropertiesFor("lockmanager")));
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.lockManager));
+    CallbackDumpAdapter lockDumpAdapter = new CallbackDumpAdapter(this.lockManager);
+    this.threadGroup.addCallbackOnExitDefaultHandler(lockDumpAdapter);
+    this.dumpHandler.registerForDump(lockDumpAdapter);
 
     // Setup the transaction manager
     this.txManager = new ClientTransactionManagerImpl(this.channel.getClientIDProvider(), this.objectManager,
                                                       txFactory, this.lockManager, this.rtxManager, this.runtimeLogger,
                                                       txnCounter);
 
-    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackDumpAdapter(this.txManager));
+    CallbackDumpAdapter txnMgrDumpAdapter = new CallbackDumpAdapter(this.txManager);
+    this.threadGroup.addCallbackOnExitDefaultHandler(txnMgrDumpAdapter);
+    this.dumpHandler.registerForDump(txnMgrDumpAdapter);
 
     // Create the SEDA stages
     Stage lockResponse = stageManager.createStage(ClientConfigurationContext.LOCK_RESPONSE_STAGE,
@@ -564,7 +576,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // more likely an AssertionError
     Stage pauseStage = stageManager.createStage(ClientConfigurationContext.CLIENT_COORDINATION_STAGE,
                                                 new ClientCoordinationHandler(), 1, maxSize);
-    
+
     Stage clusterMembershipEventStage = stageManager
         .createStage(ClientConfigurationContext.CLUSTER_MEMBERSHIP_EVENT_STAGE,
                      new ClusterMemberShipEventsHandler(this.dsoCluster), 1, maxSize);
@@ -783,10 +795,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     return this.clusterMetaDataManager;
   }
 
-  public SessionMonitor getHttpSessionMonitor() {
-    return this.l1Management.getHttpSessionMonitor();
-  }
-
   public L1Management getL1Management() {
     return this.l1Management;
   }
@@ -800,21 +808,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   public void dump() {
-    if (this.lockManager != null) {
-      this.lockManager.dumpToLogger();
-    }
-
-    if (this.txManager != null) {
-      this.txManager.dumpToLogger();
-    }
-
-    if (this.objectManager != null) {
-      this.objectManager.dumpToLogger();
-    }
-
-    if (this.rtxManager != null) {
-      this.rtxManager.dumpToLogger();
-    }
+    this.dumpHandler.dump();
   }
 
   public void startBeanShell(final int port) {
@@ -831,5 +825,18 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     } catch (EvalError e) {
       e.printStackTrace();
     }
+  }
+
+  public void reloadConfiguration() throws ConfigurationSetupException {
+    if (false) { throw new ConfigurationSetupException(); }
+    throw new UnsupportedOperationException();
+  }
+
+  public void addServerConfigurationChangedListeners(ClusterTopologyChangedListener listener) {
+    throw new UnsupportedOperationException();
+  }
+
+  protected DSOClientConfigHelper getClientConfigHelper() {
+    return config;
   }
 }

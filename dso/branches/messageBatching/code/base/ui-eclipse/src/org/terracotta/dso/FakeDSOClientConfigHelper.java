@@ -14,6 +14,7 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.config.schema.NewCommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
+import com.tc.config.schema.setup.L1TVSConfigurationSetupManager;
 import com.tc.exception.ImplementMe;
 import com.tc.object.Portability;
 import com.tc.object.bytecode.ClassAdapterFactory;
@@ -78,8 +79,7 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
     /**/
   }
 
-  public void addClassResource(final String className, final URL resource, final boolean targetSystemLoader,
-                               final boolean publicApi) {
+  public void addClassResource(final String className, final URL resource, final boolean targetSystemLoader) {
     /**/
   }
 
@@ -494,6 +494,10 @@ public class FakeDSOClientConfigHelper implements StandardDSOClientConfigHelper,
 
   public void addWebApplication(final String pattern, final SessionConfiguration config) {
     //
+  }
+
+  public L1TVSConfigurationSetupManager reloadServersConfiguration() {
+    return null;
   }
 
 }

@@ -23,7 +23,6 @@ bundled_components:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-cluster-api
         - dso-l2
         - dso-l2-common
         - dso-statistics
@@ -31,9 +30,7 @@ bundled_components:
         - sigarstats
         - management
         - management-api
-        - modules-base
         - thirdparty
-        - thirdparty-api
         - tim-get-tool:
             kit-resources:
               - tim-get.properties
@@ -58,7 +55,6 @@ bundled_modules:
         - guimodels-config
         - jdk15-preinst-config
         - standard-config
-        - modules-base
 packaging:
   - tar
 postscripts:
@@ -71,10 +67,10 @@ postscripts:
         - location: lib/resources/tim-get.properties
         - kit-type:
             final:
-              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/releases/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/releases/tim-get/3/index.xml.gz
               org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/releases        
             stable:
-              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/2/index.xml.gz
+              org.terracotta.modules.tool.dataFileUrl: http://www.terracotta.org/download/reflector/stable/version/tim-get/3/index.xml.gz
               org.terracotta.modules.tool.relativeUrlBase: http://www.terracotta.org/download/reflector/stable/version
   - include-schemas:
       args:
