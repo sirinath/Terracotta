@@ -5,8 +5,10 @@
 package com.tc.net.groups;
 
 import com.tc.async.api.Sink;
+import com.tc.config.NodesStore;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
+import com.tc.text.PrettyPrinter;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +45,7 @@ public class SingleNodeGroupManager implements GroupManager {
     this(new ServerID("CurrentNode", CURRENT_NODE_ID));
   }
 
-  public NodeID join(final Node thisN, final Node[] allNodes) throws GroupException {
+  public NodeID join(final Node thisN, final NodesStore nodesStore) throws GroupException {
     if (!joined.compareAndSet(false, true)) { throw new GroupException("Already Joined"); }
 
     return this.thisNode;
@@ -104,4 +106,15 @@ public class SingleNodeGroupManager implements GroupManager {
     return true;
   }
 
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    return out;
+  }
+
+  public boolean isServerConnected(String nodeName) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void closeMember(ServerID serverID) {
+    // NOP
+  }
 }

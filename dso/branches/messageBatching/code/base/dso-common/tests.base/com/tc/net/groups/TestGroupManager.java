@@ -5,9 +5,11 @@
 package com.tc.net.groups;
 
 import com.tc.async.api.Sink;
+import com.tc.config.NodesStore;
 import com.tc.exception.TCRuntimeException;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
+import com.tc.text.PrettyPrinter;
 
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -22,7 +24,11 @@ public class TestGroupManager implements GroupManager {
     return localNodeID;
   }
 
-  public NodeID join(Node thisNode, Node[] allNodes) {
+  public void closeMember(ServerID next) {
+    // NOP
+  }
+
+  public NodeID join(Node thisNode, NodesStore nodeStore) {
     return localNodeID;
   }
 
@@ -94,5 +100,13 @@ public class TestGroupManager implements GroupManager {
 
   public boolean isConnectionToNodeActive(NodeID sid) {
     return true;
+  }
+
+  public boolean isServerConnected(String nodeName) {
+    throw new UnsupportedOperationException();
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    throw new UnsupportedOperationException();
   }
 }

@@ -33,7 +33,9 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.tools.BootJarException;
 import com.tc.plugins.ModulesLoader;
+import com.tc.timapi.Version;
 import com.tc.util.Assert;
+import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
 import com.terracottatech.config.ConfigurationModel;
 
@@ -92,7 +94,7 @@ public class DSOContextImpl implements DSOContext {
   public static DSOContext createContext(String configSpec) throws ConfigurationSetupException {
     StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
                                                                                                           (String[]) null,
-                                                                                                          false,
+                                                                                                          StandardTVSConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
                                                                                                           new FatalIllegalConfigurationChangeHandler(),
                                                                                                           configSpec);
 
@@ -116,7 +118,7 @@ public class DSOContextImpl implements DSOContext {
     // XXX: refactor this to not duplicate createContext() so much
     StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
                                                                                                           (String[]) null,
-                                                                                                          false,
+                                                                                                          StandardTVSConfigurationSetupManagerFactory.ConfigMode.EXPRESS_L1,
                                                                                                           new FatalIllegalConfigurationChangeHandler(),
                                                                                                           configSpec);
 
@@ -170,6 +172,8 @@ public class DSOContextImpl implements DSOContext {
 
     checkForProperlyInstrumentedBaseClasses();
 
+    validateTimApiVersion();
+
     try {
       osgiRuntime = ModulesLoader.initModules(configHelper, classProvider, false, repos, configHelper.getUUID());
       configHelper.validateSessionConfig();
@@ -179,6 +183,22 @@ public class DSOContextImpl implements DSOContext {
       logger.fatal(e);
       System.exit(1);
       throw new AssertionError("Will not run");
+    }
+  }
+
+  /**
+   * Verify that we're not using a SNAPSHOT tim-api with a non-SNAPSHOT core TC
+   */
+  private void validateTimApiVersion() {
+    Version timApiVersion = Version.getVersion();
+    ProductInfo info = ProductInfo.getInstance();
+
+    if (timApiVersion.isSnapshot()) {
+      if (!info.isDevMode() && !info.version().contains("SNAPSHOT")) {
+        //
+        throw new AssertionError("Snapshot version of the TIM API (" + timApiVersion.getFullVersionString()
+                                 + ") is not permitted with a non-SNAPSHOT core TC version (" + info.version() + ")");
+      }
     }
   }
 
@@ -233,7 +253,7 @@ public class DSOContextImpl implements DSOContext {
   private synchronized static DSOClientConfigHelper getGlobalConfigHelper() throws ConfigurationSetupException {
     if (staticConfigHelper == null) {
       StandardTVSConfigurationSetupManagerFactory factory = new StandardTVSConfigurationSetupManagerFactory(
-                                                                                                            false,
+                                                                                                            StandardTVSConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
                                                                                                             new FatalIllegalConfigurationChangeHandler());
 
       logger.debug("Created StandardTVSConfigurationSetupManagerFactory.");

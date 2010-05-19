@@ -8,20 +8,9 @@
 # to a module-group as below (spring, dso, container, etc...)
 
 modules:
-  - thirdparty-api:
-      options:
-        jdk: J2SE-1.5
-  - dso-cluster-api:
-      options:
-        jdk: J2SE-1.5
-        javadoc: true
   - tim-api:
       options:
         jdk: J2SE-1.5
-      # XXX: Should be NO deps here!!!
-      dependencies:
-        - thirdparty-api
-        - dso-cluster-api
   - junit-formatter:
       options:
         jdk: J2SE-1.5
@@ -31,8 +20,6 @@ modules:
   - thirdparty:
       options:
         jdk: J2SE-1.5
-      dependencies:
-        - thirdparty-api
   - common-api:
       options:
         jdk: J2SE-1.5
@@ -54,7 +41,6 @@ modules:
         - common-api
         - license-common
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-statistics-api:
       options:
@@ -75,8 +61,6 @@ modules:
         - common-api
         - license-common
         - dso-statistics-api
-        - thirdparty-api
-        - dso-cluster-api
         - tim-api
   - dso-common:
       options:
@@ -86,8 +70,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - dso-cluster-api
-        - thirdparty-api
         - dso-statistics-api
         - sigarstats
         - tim-api
@@ -137,7 +119,6 @@ modules:
         - dso-l1-api
         - dso-statistics-api
         - management-api
-        - thirdparty-api
         - tim-api
   - deploy-api:
       options:
@@ -149,15 +130,7 @@ modules:
         - dso-l1-api
         - dso-l2-common
         - dso-statistics-api
-        - thirdparty-api
         - management-api
-        - tim-api
-  - modules-base:
-      options:
-        jdk: J2SE-1.5
-        module: true
-      dependencies:
-        - deploy-api
         - tim-api
   - excludes-config:
       options:
@@ -167,7 +140,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - modules-base
         - tim-api
   - guimodels-config:
       options:
@@ -177,7 +149,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - modules-base
         - tim-api
   - jdk15-preinst-config:
       options:
@@ -187,7 +158,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - modules-base
         - tim-api
   - standard-config:
       options:
@@ -197,8 +167,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - modules-base
-        - thirdparty-api
         - tim-api
   - sigarstats:
       options:
@@ -235,14 +203,12 @@ modules:
         - dso-common
         - dso-common-jdk16
         - dso-l1-api
-        - dso-cluster-api
         - dso-statistics
         - dso-statistics-api
         - management
         - management-api
         - sigarstats
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-memory-datastore:
       options:
@@ -253,7 +219,6 @@ modules:
         - license-common
         - dso-common
         - dso-l1-api
-        - thirdparty-api
         - tim-api
   - dso-l2:
       options:
@@ -272,7 +237,6 @@ modules:
         - management
         - management-api
         - thirdparty
-        - thirdparty-api
         - tim-api
   - deploy:
       options:
@@ -292,10 +256,8 @@ modules:
         - dso-statistics
         - dso-statistics-api
         - management-api
-        - modules-base
         - sigarstats
         - thirdparty
-        - thirdparty-api
         - tim-api
   - simulator:
       options:
@@ -335,7 +297,6 @@ modules:
         - dso-statistics-api
         - management-api
         - thirdparty
-        - thirdparty-api
         - tim-api
   - ui-eclipse-33:
       options:
@@ -381,7 +342,6 @@ modules:
         - management-api
         - simulator
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-statistics-tests:
       options:
@@ -406,7 +366,6 @@ modules:
         - management-api
         - simulator
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-system-tests:
       options:
@@ -422,7 +381,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-cluster-api
         - dso-l2
         - dso-l2-common
         - dso-memory-datastore
@@ -433,7 +391,6 @@ modules:
         - management-api
         - simulator
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-alt-boot-jar-tests:
       options:
@@ -458,7 +415,6 @@ modules:
         - management-api
         - simulator
         - thirdparty
-        - thirdparty-api
         - tim-api
   - dso-crash-tests:
       options:
@@ -474,7 +430,6 @@ modules:
         - dso-common-jdk16
         - dso-l1
         - dso-l1-api
-        - dso-cluster-api
         - dso-l2
         - dso-l2-common
         - dso-memory-datastore
@@ -487,7 +442,6 @@ modules:
         - simulator
         - sigarstats
         - thirdparty
-        - thirdparty-api
         - tim-api
   - clustered-surefire-2.3:
       options:
@@ -498,8 +452,6 @@ modules:
         - common-api
         - license-common
         - dso-l1-api
-        - modules-base
-        - thirdparty-api
         - tim-api
   - eclipsegen:
       options:

@@ -8,6 +8,14 @@ default_repos:
   - http://repo1.maven.org/maven2
 
 artifacts:
+  - maven_artifact: true
+    groupId: org.terracotta
+    artifactId: terracotta-express-runtime
+    version: 1.0.0-SNAPSHOT
+    classifier: javadoc
+    destination: common/apidocs
+    explode: true
+
 # begin ehcache samples
   - maven_artifact: true
     groupId: org.terracotta.samples.ehcache
@@ -44,14 +52,16 @@ artifacts:
     artifactId: ehcache-core
     classifier: javadoc
     version: 2.1.0-SNAPSHOT
-    destination: ehcache
+    destination: ehcache/javadoc
+    explode: true
     
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
     version: 2.1.0-SNAPSHOT
-    destination: ehcache
+    destination: ehcache/src
+    explode: true
     
   - maven_artifact: true
     groupId: org.slf4j
@@ -100,4 +110,23 @@ artifacts:
     url: http://download.terracotta.org/quartz/quartz-1.8.0.tar.gz
 # end QUARTZ
 
+# begin express products
+  - maven_artifact: true
+    groupId: net.sf.ehcache
+    artifactId: ehcache-terracotta
+    version: 2.2.0-SNAPSHOT
+    destination: ehcache
+
+  - maven_artifact: true
+    groupId: org.terracotta.quartz
+    artifactId: quartz-terracotta
+    version: 1.2.0-SNAPSHOT
+    destination: quartz
+
+  - maven_artifact: true
+    groupId: org.terracotta.session
+    artifactId: terracotta-session
+    version: 1.1.0-SNAPSHOT
+    destination: sessions
+#end
 

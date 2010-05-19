@@ -12,7 +12,7 @@ class SvnUpdate
     @os_topdir = File.join(File.expand_path(File.dirname(__FILE__)), "..", "..")
     @is_ee_branch = @os_topdir =~ /community/ ? true : false
     @ee_topdir = File.join(@os_topdir, "..") if @is_ee_branch
-
+    
     if ENV['OS'] =~ /Windows/i
       @os_topdir=`cygpath -u #{@os_topdir}`.chomp
       @ee_topdir=`cygpath -u #{@ee_topdir}`.chomp if @is_ee_branch

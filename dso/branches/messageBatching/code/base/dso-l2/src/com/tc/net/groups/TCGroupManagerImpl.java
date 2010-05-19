@@ -7,6 +7,9 @@ package com.tc.net.groups;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
+import com.tc.config.NodesStore;
+import com.tc.config.ReloadConfigChangeContext;
+import com.tc.config.TopologyChangeListener;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.exception.TCRuntimeException;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
@@ -56,6 +59,7 @@ import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.text.PrettyPrinter;
 import com.tc.util.Assert;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
@@ -71,16 +75,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventListener {
+public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventListener, TopologyChangeListener {
   private static final TCLogger                             logger                      = TCLogging
                                                                                             .getLogger(TCGroupManagerImpl.class);
   public static final String                                HANDSHAKE_STATE_MACHINE_TAG = "TcGroupCommHandshake";
@@ -97,7 +103,9 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private final ConcurrentHashMap<MessageChannel, ServerID> channelToNodeID             = new ConcurrentHashMap<MessageChannel, ServerID>();
   private final ConcurrentHashMap<ServerID, TCGroupMember>  members                     = new ConcurrentHashMap<ServerID, TCGroupMember>();
   private final ConcurrentHashMap<String, TCGroupMember>    nodenameToMembers           = new ConcurrentHashMap<String, TCGroupMember>();
-  private final Timer                                       handshakeTimer              = new Timer(true);
+  private final Timer                                       handshakeTimer              = new Timer(
+                                                                                                    "TC Group Manager Handshake timer",
+                                                                                                    true);
   private final Set<NodeID>                                 zappedSet                   = Collections
                                                                                             .synchronizedSet(new HashSet<NodeID>());
   private final StageManager                                stageManager;
@@ -119,12 +127,12 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
    * Setup a communication manager which can establish channel from either sides.
    */
   public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, StageManager stageManager,
-                            ServerID thisNodeID, Sink httpSink) {
-    this(configSetupManager, new NullConnectionPolicy(), stageManager, thisNodeID, httpSink);
+                            ServerID thisNodeID, Sink httpSink, NodesStore nodesStore) {
+    this(configSetupManager, new NullConnectionPolicy(), stageManager, thisNodeID, httpSink, nodesStore);
   }
 
   public TCGroupManagerImpl(L2TVSConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
-                            StageManager stageManager, ServerID thisNodeID, Sink httpSink) {
+                            StageManager stageManager, ServerID thisNodeID, Sink httpSink, NodesStore nodesStore) {
     this.connectionPolicy = connectionPolicy;
     this.stageManager = stageManager;
     this.thisNodeID = thisNodeID;
@@ -154,6 +162,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     init(socketAddress);
     Assert.assertNotNull(thisNodeID);
     setDiscover(new TCGroupMemberDiscoveryStatic(this));
+
+    nodesStore.registerForTopologyChange(this);
   }
 
   public boolean isConnectionToNodeActive(NodeID sid) {
@@ -345,11 +355,11 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     return true;
   }
 
-  public NodeID join(Node thisNode, Node[] allNodes) throws GroupException {
+  public NodeID join(Node thisNode, NodesStore nodesStore) throws GroupException {
     if (!alreadyJoined.compareAndSet(false, true)) { throw new GroupException("Already Joined"); }
 
     // discover must be started before listener thread to avoid missing nodeJoined group events.
-    discover.setupNodes(thisNode, allNodes);
+    discover.setupNodes(thisNode, nodesStore.getAllNodes());
     discover.start();
     try {
       groupListener.start(new HashSet());
@@ -357,6 +367,15 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
       throw new GroupException(e);
     }
     return (getNodeID());
+  }
+
+  public void topologyChanged(ReloadConfigChangeContext reloadContext) {
+    for (Node nodeAdded : reloadContext.getNodesAdded()) {
+      discover.addNode(nodeAdded);
+    }
+    for (Node nodeRemoved : reloadContext.getNodesRemoved()) {
+      discover.removeNode(nodeRemoved);
+    }
   }
 
   public void memberDisappeared(TCGroupMember member) {
@@ -673,6 +692,30 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
   private boolean isZappedNode(NodeID nodeID) {
     return (zappedSet.contains(nodeID));
+  }
+
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+    StringBuilder strBuffer = new StringBuilder();
+    strBuffer.append(TCGroupManagerImpl.class.getSimpleName()).append(" [ ");
+    strBuffer.append("Channel to NodeId Map: {");
+    for (Iterator<Entry<MessageChannel, ServerID>> channelToNodeIdIterator = this.channelToNodeID.entrySet().iterator(); channelToNodeIdIterator
+        .hasNext();) {
+      Entry<MessageChannel, ServerID> entry = channelToNodeIdIterator.next();
+      strBuffer.append(entry.getKey()).append(" -> ").append(entry.getValue()).append("  ");
+    }
+    strBuffer.append("}\n\t");
+
+    strBuffer.append("members: {");
+    for (Iterator<Entry<ServerID, TCGroupMember>> membersIterator = this.members.entrySet().iterator(); membersIterator
+        .hasNext();) {
+      Entry<ServerID, TCGroupMember> entry = membersIterator.next();
+      strBuffer.append(entry.getKey()).append(" -> ").append(entry.getValue()).append("  ");
+    }
+    strBuffer.append("}\n\t");
+
+    strBuffer.append("zappedSet: {").append(this.zappedSet).append(" ").append("} ]");
+    out.indent().print(strBuffer.toString()).flush();
+    return out;
   }
 
   private static class GroupResponseImpl implements GroupResponse {
@@ -1113,4 +1156,17 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     zappedSet.add(nodeID);
   }
 
+  public boolean isServerConnected(String nodeName) {
+    return this.discover.isServerConnected(nodeName);
+  }
+
+  public void closeMember(ServerID serverID) {
+    TCGroupMember member = getMember(serverID);
+    if (member != null) {
+      logger.info("Close member " + member);
+      closeMember(member, true);
+    } else {
+      logger.info("Non-exist member " + serverID);
+    }
+  }
 }

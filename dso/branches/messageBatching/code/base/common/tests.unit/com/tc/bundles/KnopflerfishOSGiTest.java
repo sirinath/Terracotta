@@ -52,8 +52,8 @@ public class KnopflerfishOSGiTest extends TestCase {
       String name = jar.getName().replaceAll("-" + version + ".jar", "");
 
       String[] repos = { System.getProperty("com.tc.l1.modules.repositories") };
-      Resolver resolver = new Resolver(repos, ProductInfo.getInstance().mavenArtifactsVersion(), ProductInfo
-          .getInstance().apiVersion());
+      Resolver resolver = new Resolver(repos, ProductInfo.getInstance().version(), ProductInfo.getInstance()
+          .timApiVersion());
       Module module = Module.Factory.newInstance();
       module.setName(name);
       module.setVersion(version);
@@ -71,7 +71,7 @@ public class KnopflerfishOSGiTest extends TestCase {
       assertTrue("Terracotta-RequireVersion attribute for " + symbolicName + " module must not be empty.",
                  requireversion.length() > 0);
       assertEquals("Terracotta-RequireVersion attribute for " + symbolicName + " module mis expected to be "
-                   + PRODUCT_VERSION_DOT_QUALIFIER, requireversion, PRODUCT_VERSION_DOT_QUALIFIER);
+                   + PRODUCT_VERSION_DASH_QUALIFIER, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
 
       String mode = IVersionCheck.OFF;
       int actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
@@ -117,15 +117,6 @@ public class KnopflerfishOSGiTest extends TestCase {
     }
 
     Collection files = FileUtils.listFiles(file, new String[] { "jar" }, true);
-
-    // Filter modules-base as it will have a different version number that matches the api
-    Iterator iter = files.iterator();
-    while (iter.hasNext()) {
-      File module = (File) iter.next();
-      if (module.getName().contains("modules-base")) {
-        iter.remove();
-      }
-    }
 
     return files;
   }
