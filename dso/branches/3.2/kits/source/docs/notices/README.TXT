@@ -15,10 +15,10 @@ Getting Started
 ---------------
 
 For more information on getting started with Terracotta, begin with the 
-Terracotta website at http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=GettingStarted
+Terracotta website at http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=GettingStarted
 
 To locate Terracotta documentation, see 
-http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=Documentation
+http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=Documentation
 
 
 Join the Terracotta Community
@@ -30,13 +30,13 @@ Enjoy the following benefits by signing up for a Terracotta account:
    -> Submit JIRA reports
    -> Vote on bugs to be fixed, or features for the next release 
 
-Sign up at http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=Register
+Sign up at http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=Register
 
 
 Resources
 ---------
 The latest release notes are available on the web at 
-http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=ReleaseNotes
+http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=ReleaseNotes
 
 The following directories under the Terracotta home directory contain useful 
 examples and information:
@@ -61,11 +61,11 @@ examples and information:
 Help and additional information is available on the web at the following URLs:
 
  - Product Documentation: 
-    http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=ProductDocumentation 
+    http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=ProductDocumentation 
  - Forums:        http://forums.terracotta.org
  - Mailing Lists: http://lists.terracotta.org
  - Services:      
-    http://www.terracotta.org/kit/reflector?kitID=3.2.1&pageID=SupportServices
+    http://www.terracotta.org/kit/reflector?kitID=3.2.2&pageID=SupportServices
 
 
 Java Virtual Machine
