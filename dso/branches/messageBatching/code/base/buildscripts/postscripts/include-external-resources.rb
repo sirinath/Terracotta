@@ -13,6 +13,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
 
   # - extract hibernate referecne config from standalone agent jar
   def postscript(ant, build_environment, product_directory, *args)
+    return if @no_extra
     return if @no_external_resources
 
     args.each do |resource_def|
@@ -26,6 +27,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     puts "default repos: #{default_repos.join(',')}"
     artifacts = resource_config['artifacts']
     artifacts.each do |artifact|
+      next if @no_demo && artifact['is_demo'] == true
       download_external(default_repos, product_directory.to_s, artifact)
     end
   end

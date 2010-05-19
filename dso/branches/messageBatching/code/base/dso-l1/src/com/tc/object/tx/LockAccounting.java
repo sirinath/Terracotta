@@ -23,6 +23,7 @@ public class LockAccounting {
 
   private final Map<TransactionIDWrapper, Set<LockID>>   tx2Locks  = new HashMap();
   private final Map<LockID, Set<TransactionIDWrapper>>   lock2Txs  = new HashMap();
+  private final Map<TransactionID, TransactionIDWrapper> tid2wrap  = new HashMap();
 
   public synchronized Object dump() {
     return toString();
@@ -36,7 +37,7 @@ public class LockAccounting {
   }
 
   public synchronized void add(TransactionID txID, Collection lockIDs) {
-    TransactionIDWrapper txIDWrapper = new TransactionIDWrapper(txID);
+    TransactionIDWrapper txIDWrapper = getOrCreateWrapperFor(txID);
     getOrCreateSetFor(txIDWrapper, tx2Locks).addAll(lockIDs);
     for (Iterator i = lockIDs.iterator(); i.hasNext();) {
       LockID lid = (LockID) i.next();
@@ -59,10 +60,8 @@ public class LockAccounting {
   public synchronized boolean areTransactionsReceivedForThisLockID(LockID lockID) {
     Set<TransactionIDWrapper> txnsForLockID = lock2Txs.get(lockID);
 
-    if(txnsForLockID == null || txnsForLockID.isEmpty()) {
-      return true;
-    }
-    
+    if (txnsForLockID == null || txnsForLockID.isEmpty()) { return true; }
+
     for (TransactionIDWrapper txIDWrapper : txnsForLockID) {
       if (!txIDWrapper.isReceived()) { return false; }
     }
@@ -72,10 +71,8 @@ public class LockAccounting {
 
   public synchronized void transactionRecvdByServer(Set<TransactionID> txnsRecvd) {
     Set<TransactionIDWrapper> txnSet = tx2Locks.keySet();
-    
-    if(txnSet == null) {
-      return;
-    }
+
+    if (txnSet == null) { return; }
 
     for (TransactionIDWrapper txIDWrapper : txnSet) {
       if (txnsRecvd.contains(txIDWrapper)) {
@@ -110,6 +107,7 @@ public class LockAccounting {
 
   private void removeTxn(TransactionIDWrapper txnIDWrapper) {
     tx2Locks.remove(txnIDWrapper);
+    tid2wrap.remove(txnIDWrapper.getTransactionID());
     notifyTxnRemoved(txnIDWrapper);
   }
 
@@ -149,6 +147,15 @@ public class LockAccounting {
     if (rv == null) {
       rv = new HashSet();
       m.put(key, rv);
+    }
+    return rv;
+  }
+
+  private TransactionIDWrapper getOrCreateWrapperFor(TransactionID txID) {
+    TransactionIDWrapper rv = tid2wrap.get(txID);
+    if (rv == null) {
+      rv = new TransactionIDWrapper(txID);
+      tid2wrap.put(txID, rv);
     }
     return rv;
   }
@@ -213,6 +220,21 @@ public class LockAccounting {
     public String toString() {
       return "TransactionIDWrapper [isReceived=" + isReceived + ", txID=" + txID + "]";
     }
+  }
+
+  // for testing purpose only
+  int sizeOfTransactionMap() {
+    return tx2Locks.size();
+  }
+
+  // for testing purpose only
+  int sizeOfLockMap() {
+    return lock2Txs.size();
+  }
+
+  // for testing purpose only
+  int sizeOfIDWrapMap() {
+    return tid2wrap.size();
   }
 
 }
