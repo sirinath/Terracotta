@@ -15,3 +15,5 @@ level: 1
 #- lib/tc.jar
 files: 
  - lib/tc.jar
+ - lib/terracotta-jmx-api.jar
+
