@@ -140,7 +140,7 @@ public class CachedItemStore {
       head = head.getNext();
       item.setNext(null); // Aid GC
     } else if (head != null) {
-      final CachedItem current = head;
+      CachedItem current = head;
       CachedItem next;
       while ((next = current.getNext()) != null) {
         if (next == item) {
@@ -148,6 +148,7 @@ public class CachedItemStore {
           item.setNext(null); // Aid GC
           break; // hopefully only one occurrence
         }
+        current = next;
       }
     }
     return head;
