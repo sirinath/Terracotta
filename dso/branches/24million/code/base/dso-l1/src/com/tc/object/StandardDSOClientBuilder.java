@@ -85,11 +85,11 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   public DSOClientMessageChannel createDSOClientMessageChannel(final CommunicationsManager commMgr,
                                                                final PreparedComponentsFromL2Connection connComp,
                                                                final SessionProvider sessionProvider,
-                                                               int maxReconnectTries, int socketConnectTimeout,
-                                                               TCClient client) {
-    ConnectionAddressProvider cap = createConnectionAddressProvider(connComp);
-    ClientMessageChannel cmc = commMgr.createClientChannel(sessionProvider, maxReconnectTries, null, 0,
-                                                           socketConnectTimeout, cap);
+                                                               final int maxReconnectTries,
+                                                               final int socketConnectTimeout, final TCClient client) {
+    final ConnectionAddressProvider cap = createConnectionAddressProvider(connComp);
+    final ClientMessageChannel cmc = commMgr.createClientChannel(sessionProvider, maxReconnectTries, null, 0,
+                                                                 socketConnectTimeout, cap);
     return new DSOClientMessageChannelImpl(cmc, new GroupID[] { new GroupID(cap.getGroupId()) });
   }
 
@@ -112,9 +112,10 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return new TunnelingEventHandler(ch, id);
   }
 
-  public ClientGlobalTransactionManager createClientGlobalTransactionManager(final RemoteTransactionManager remoteTxnMgr,
+  public ClientGlobalTransactionManager createClientGlobalTransactionManager(
+                                                                             final RemoteTransactionManager remoteTxnMgr,
                                                                              final RemoteServerMapManager remoteServerMapManager) {
-    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr);
+    return new ClientGlobalTransactionManagerImpl(remoteTxnMgr, remoteServerMapManager);
   }
 
   public RemoteObjectManagerImpl createRemoteObjectManager(final TCLogger logger,
@@ -242,68 +243,73 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                           callbacks);
   }
 
-  public L1Management createL1Management(TunnelingEventHandler teh, StatisticsAgentSubSystem statisticsAgentSubSystem,
-                                         RuntimeLogger runtimeLogger, InstrumentationLogger instrumentationLogger,
-                                         String rawConfigText, DistributedObjectClient distributedObjectClient,
-                                         MBeanSpec[] mBeanSpecs) {
+  public L1Management createL1Management(final TunnelingEventHandler teh,
+                                         final StatisticsAgentSubSystem statisticsAgentSubSystem,
+                                         final RuntimeLogger runtimeLogger,
+                                         final InstrumentationLogger instrumentationLogger, final String rawConfigText,
+                                         final DistributedObjectClient distributedObjectClient,
+                                         final MBeanSpec[] mBeanSpecs) {
     return new L1Management(teh, statisticsAgentSubSystem, runtimeLogger, instrumentationLogger, rawConfigText,
                             distributedObjectClient, mBeanSpecs);
   }
 
-  public TCClassFactory createTCClassFactory(DSOClientConfigHelper config, ClassProvider classProvider,
-                                             DNAEncoding dnaEncoding, RemoteServerMapManager remoteServerMapManager) {
+  public TCClassFactory createTCClassFactory(final DSOClientConfigHelper config, final ClassProvider classProvider,
+                                             final DNAEncoding dnaEncoding,
+                                             final RemoteServerMapManager remoteServerMapManager) {
     return new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, dnaEncoding);
   }
 
-  
-
-  public RemoteServerMapManager createRemoteServerMapManager(TCLogger logger, DSOClientMessageChannel dsoChannel,
-                                                             SessionManager sessionManager) {
+  public RemoteServerMapManager createRemoteServerMapManager(final TCLogger logger,
+                                                             final DSOClientMessageChannel dsoChannel,
+                                                             final SessionManager sessionManager) {
     return new RemoteServerMapManager() {
-      
-      public void unpause(NodeID remoteNode, int disconnected) {
+
+      public void unpause(final NodeID remoteNode, final int disconnected) {
         //
       }
-      
+
       public void shutdown() {
         //
       }
-      
-      public void pause(NodeID remoteNode, int disconnected) {
+
+      public void pause(final NodeID remoteNode, final int disconnected) {
         //
       }
-      
-      public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
-      //
+
+      public void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
+                                      final ClientHandshakeMessage handshakeMessage) {
+        //
       }
-      
-      public void removeCachedItemForLock(LockID lockID, CachedItem item) {
-      //
+
+      public void removeCachedItemForLock(final LockID lockID, final CachedItem item) {
+        //
       }
-      
-      public int getSize(ObjectID mapID) {
+
+      public int getSize(final ObjectID mapID) {
         return -1;
       }
-      
-      public Object getMappingForKey(ObjectID oid, Object portableKey) {
-          return null;
+
+      public Object getMappingForKey(final ObjectID oid, final Object portableKey) {
+        return null;
       }
-      
-      public void flush(LockID lockID) {
+
+      public void flush(final LockID lockID) {
         //
       }
-      
-      public void addResponseForKeyValueMapping(SessionID localSessionID, ObjectID mapID,
-                                                Collection<ServerMapGetValueResponse> responses, NodeID nodeID) {
+
+      public void addResponseForKeyValueMapping(final SessionID localSessionID, final ObjectID mapID,
+                                                final Collection<ServerMapGetValueResponse> responses,
+                                                final NodeID nodeID) {
         //
       }
-      
-      public void addResponseForGetSize(SessionID localSessionID, ObjectID mapID, ServerMapRequestID requestID,
-                                        Integer size, NodeID sourceNodeID) {
+
+      public void addResponseForGetSize(final SessionID localSessionID, final ObjectID mapID,
+                                        final ServerMapRequestID requestID, final Integer size,
+                                        final NodeID sourceNodeID) {
         //
       }
-      
-      public void addCachedItemForLock(LockID lockID, CachedItem item) {
+
+      public void addCachedItemForLock(final LockID lockID, final CachedItem item) {
         //
       }
     };
