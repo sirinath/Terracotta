@@ -73,7 +73,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
   private short                                 outstandingWriteCount  = 0;
   private int                                   bytesWritten           = 0;
-  private int                                   numTxns                = 0;
+  private int                                   numTxnsBeforeFolding   = 0;
+  private int                                   numTxnsAfterFolding    = 0;
   private boolean                               containsSyncWriteTxn   = false;
 
   public TransactionBatchWriter(GroupID groupID, TxnBatchID batchID, ObjectStringSerializer serializer,
@@ -92,7 +93,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
   @Override
   public synchronized String toString() {
-    return super.toString() + "[" + this.batchID + ", isEmpty=" + isEmpty() + ", numTxnsBeforeFolding=" + this.numTxns;
+    return super.toString() + "[" + this.batchID + ", isEmpty=" + isEmpty() + ", numTxnsBeforeFolding= "
+           + this.numTxnsBeforeFolding + " numTxnAfterfoldingTxn= " + this.numTxnsAfterFolding + " size="
+           + this.bytesWritten + " foldingKeys=" + foldingKeys.size();
   }
 
   public TxnBatchID getTransactionBatchID() {
@@ -104,7 +107,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   public synchronized int numberOfTxnsBeforeFolding() {
-    return this.numTxns;
+    return this.numTxnsBeforeFolding;
   }
 
   public synchronized int byteSize() {
@@ -240,14 +243,14 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       logger.info("NOT folding, created new sequence " + sid);
     }
 
-    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding);
+    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding, txn
+        .getTransactionID());
 
     if (this.foldingEnabled) {
-      // copy the locks since the internal list might be mutated later if locks are nested and lock commits are out of
-      // order with respect to acquires
-      List locks = new ArrayList(txn.getAllLockIDs());
 
-      FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), locks, new HashSet(txn.getChangeBuffers().keySet()));
+      FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), new HashSet(txn
+          .getChangeBuffers().keySet()));
+      ++this.numTxnsAfterFolding;
       registerKeyForOids(txn.getChangeBuffers().keySet(), key);
     }
 
@@ -259,8 +262,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   // Overridden in active-active
   protected TransactionBuffer createTransactionBuffer(SequenceID sid, TCByteBufferOutputStream newOutputStream,
                                                       ObjectStringSerializer objectStringserializer,
-                                                      DNAEncoding dnaEncoding) {
-    return new TransactionBufferImpl(sid, newOutputStream, objectStringserializer, dnaEncoding);
+                                                      DNAEncoding dnaEncoding, TransactionID txnID) {
+    return new TransactionBufferImpl(sid, newOutputStream, objectStringserializer, dnaEncoding, txnID);
   }
 
   private void registerKeyForOids(Set oids, FoldingKey key) {
@@ -314,11 +317,11 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return false;
   }
 
-  public synchronized boolean addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
-                                             TransactionIDGenerator tidGenerator) {
-    this.numTxns++;
-    
-    if(txn.getLockType().equals(TxnType.SYNC_WRITE)) {
+  public synchronized FoldedInfo addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
+                                                TransactionIDGenerator tidGenerator) {
+    this.numTxnsBeforeFolding++;
+
+    if (txn.getLockType().equals(TxnType.SYNC_WRITE)) {
       this.containsSyncWriteTxn = true;
     }
 
@@ -328,7 +331,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
     this.bytesWritten += txnBuffer.write(txn);
 
-    return txnBuffer.getTxnCount() > 1;
+    return new FoldedInfo(txnBuffer.getFoldedTransactionID(), txnBuffer.getTxnCount() > 1);
   }
 
   private void removeEmptyDeltaDna(ClientTransaction txn) {
@@ -423,6 +426,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private final SetOnceFlag              committed            = new SetOnceFlag();
 
     private final Map                      writers              = new LinkedHashMap();
+    private final TransactionID            txnID;
 
     // Maintaining hard references so that it doesn't get GC'ed on us
     private final IdentityHashMap          references           = new IdentityHashMap();
@@ -433,12 +437,17 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     private Mark                           txnCountMark;
 
     TransactionBufferImpl(SequenceID sequenceID, TCByteBufferOutputStream output, ObjectStringSerializer serializer,
-                          DNAEncoding encoding) {
+                          DNAEncoding encoding, TransactionID txnID) {
       this.sequenceID = sequenceID;
       this.output = output;
       this.serializer = serializer;
       this.encoding = encoding;
       this.startMark = output.mark();
+      this.txnID = txnID;
+    }
+
+    public TransactionID getFoldedTransactionID() {
+      return this.txnID;
     }
 
     public void writeTo(TCByteBufferOutputStream dest) {
@@ -637,21 +646,19 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   }
 
   private static class FoldingKey {
-    private final List              lockIDs;
     private final Set               objectIDs;
     private final TxnType           txnType;
     private final TransactionBuffer buffer;
     private boolean                 closed;
 
-    FoldingKey(TransactionBuffer txnBuffer, TxnType txnType, List lockIDs, Set objectIDs) {
+    FoldingKey(TransactionBuffer txnBuffer, TxnType txnType, Set objectIDs) {
       this.buffer = txnBuffer;
       this.txnType = txnType;
-      this.lockIDs = lockIDs;
       this.objectIDs = objectIDs;
 
       if (DEBUG) {
-        logger.info("created new fold key(" + System.identityHashCode(this) + "), locks=" + lockIDs + ", txnType="
-                    + txnType + ", oids=" + objectIDs);
+        logger.info("created new fold key(" + System.identityHashCode(this) + "), txnType=" + txnType + ", oids="
+                    + objectIDs);
       }
     }
 
@@ -668,9 +675,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     public boolean hasCommonality(Collection locks, Collection oids) {
-      // XXX: Take a lock list here, and only upgrade the larger collection to a set if size > 3
-      return CollectionUtils.containsAny(new HashSet(this.lockIDs), locks)
-             || CollectionUtils.containsAny(this.objectIDs, oids);
+      return CollectionUtils.containsAny(this.objectIDs, oids);
     }
 
     public TransactionBuffer getBuffer() {
@@ -678,13 +683,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     public boolean canAcceptFold(List txnLocks, TxnType type) {
-      if (this.lockIDs.size() != txnLocks.size()) {
-        if (DEBUG) {
-          logger.info(System.identityHashCode(this) + ": not accepting fold since lock lists are not equal size");
-        }
-        return false;
-      }
-
+      // relax folding rules to allow folding txn with common object even lock sets different
       if (!type.equals(this.txnType)) {
         if (DEBUG) {
           logger.info(System.identityHashCode(this) + ": not accepting fold since txn type is different");
@@ -692,16 +691,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
         return false;
       }
 
-      if (!this.lockIDs.equals(txnLocks)) {
-        if (DEBUG) {
-          logger.info(System.identityHashCode(this) + ": not accepting fold since locks lists are not equal");
-        }
-        return false;
-      }
-
       if (DEBUG) {
         logger.info(System.identityHashCode(this) + ": fold accepted");
       }
+
       return true;
     }
   }
@@ -733,6 +726,24 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED), props
           .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT), props
           .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
+    }
+  }
+
+  public static class FoldedInfo {
+    private final TransactionID txnID;
+    private final boolean       folded;
+
+    public FoldedInfo(TransactionID txnID, boolean folded) {
+      this.txnID = txnID;
+      this.folded = folded;
+    }
+
+    public TransactionID getFoldedTransactionID() {
+      return this.txnID;
+    }
+
+    public boolean isFolded() {
+      return this.folded;
     }
   }
 

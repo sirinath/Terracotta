@@ -10,6 +10,7 @@ import com.tc.config.schema.dynamic.IntConfigItem;
 import com.tc.config.schema.dynamic.ParameterSubstituter;
 import com.tc.config.schema.dynamic.StringConfigItem;
 import com.terracottatech.config.Authentication;
+import com.terracottatech.config.AuthenticationMode;
 import com.terracottatech.config.HttpAuthentication;
 import com.terracottatech.config.Server;
 
@@ -30,6 +31,7 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
   private final StringConfigItem host;
   private final boolean          authentication;
   private final String           passwordFile;
+  private final String           loginConfigName;
   private final String           accessFile;
   private final boolean          httpAuthentication;
   private final String           userRealmFile;
@@ -45,11 +47,13 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
     this.serverDbBackupPath = context.configRelativeSubstitutedFileItem("data-backup");
 
     this.statisticsPath = context.configRelativeSubstitutedFileItem("statistics");
-    this.jmxPort = context.intItem("jmx-port");
+    int defaultJmxPort = context.intItem("dso-port").getInt() + NewCommonL2Config.DEFAULT_JMXPORT_OFFSET_FROM_DSOPORT;
+    this.jmxPort = context.intItem("jmx-port", defaultJmxPort);
     this.host = context.stringItem("@host");
 
     // JMX authentication
     String pwd = null;
+    String loginConfig = null;
     String access = null;
     Server server = (Server) context.bean();
     if (server != null) {
@@ -59,10 +63,19 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
     }
 
     if (authentication) {
-      pwd = server.getAuthentication().getPasswordFile();
-      if (pwd == null) pwd = Authentication.type.getElementProperty(QName.valueOf("password-file")).getDefaultText();
-      pwd = new File(ParameterSubstituter.substitute(pwd)).getAbsolutePath();
-
+      if (server.getAuthentication().isSetMode()) {
+        if (server.getAuthentication().getMode().isSetLoginConfigName()) {
+          loginConfig = server.getAuthentication().getMode().getLoginConfigName();
+        } else {
+          pwd = server.getAuthentication().getMode().getPasswordFile();
+          if (pwd == null) pwd = AuthenticationMode.type.getElementProperty(QName.valueOf("password-file"))
+              .getDefaultText();
+          pwd = new File(ParameterSubstituter.substitute(pwd)).getAbsolutePath();
+        }
+      } else {
+        pwd = AuthenticationMode.type.getElementProperty(QName.valueOf("password-file")).getDefaultText();
+        pwd = new File(ParameterSubstituter.substitute(pwd)).getAbsolutePath();
+      }
       access = server.getAuthentication().getAccessFile();
       if (access == null) access = Authentication.type.getElementProperty(QName.valueOf("access-file"))
           .getDefaultText();
@@ -70,6 +83,7 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
     }
     this.passwordFile = pwd;
     this.accessFile = access;
+    this.loginConfigName = loginConfig;
 
     // HTTP authentication
     String userRealm = null;
@@ -119,6 +133,10 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
 
   public String authenticationAccessFile() {
     return accessFile;
+  }
+
+  public String authenticationLoginConfigName() {
+    return loginConfigName;
   }
 
   public String authenticationPasswordFile() {
