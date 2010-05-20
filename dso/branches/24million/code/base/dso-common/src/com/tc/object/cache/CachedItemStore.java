@@ -81,6 +81,19 @@ public class CachedItemStore {
     return (hash >>> this.segmentShift) & this.segmentMask;
   }
 
+  // For tests
+  CachedItem get(final LockID lockID) {
+    final int hash = hash(lockID.hashCode());
+    final int index = segmentFor(hash);
+
+    this.locks[index].lock();
+    try {
+      return this.segments[index].get(lockID);
+    } finally {
+      this.locks[index].unlock();
+    }
+  }
+
   public void add(final LockID lockID, final CachedItem item) {
     if (item == null) { throw new NullPointerException(); }
     final int hash = hash(lockID.hashCode());
