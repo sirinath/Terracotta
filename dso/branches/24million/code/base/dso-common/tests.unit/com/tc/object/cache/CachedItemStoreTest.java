@@ -15,14 +15,14 @@ import junit.framework.TestCase;
 public class CachedItemStoreTest extends TestCase {
 
   CachedItemStore                       store;
-  ConcurrentHashMap<LockID, CachedItem> parent;
+  ConcurrentHashMap<Object, CachedItem> parent;
   HashMap<LockID, Integer>              lockID2Index;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     this.store = new CachedItemStore(256, 0.75f, 16);
-    this.parent = new ConcurrentHashMap<LockID, CachedItem>();
+    this.parent = new ConcurrentHashMap<Object, CachedItem>();
     this.lockID2Index = new HashMap<LockID, Integer>();
   }
 
@@ -32,16 +32,20 @@ public class CachedItemStoreTest extends TestCase {
     for (int i = 0; i < 50; i++) {
       final LockID lockID = getLockId(i);
       CachedItem item = new CachedItem(this.parent, lockID, getKey(i), getValue(i));
+      this.parent.put(getKey(i), item);
       this.store.add(lockID, item);
       if (i % 2 == 0) {
         lastEntriesOfTwo.add(item);
         item = new CachedItem(this.parent, lockID, getKey(i + 10000), getValue(i + 10000));
+        this.parent.put(getKey(i + 10000), item);
         this.store.add(lockID, item);
       } else if (i % 3 == 0) {
         item = new CachedItem(this.parent, lockID, getKey(i + 20000), getValue(i + 20000));
         middleEntriesOfThree.add(item);
+        this.parent.put(getKey(i + 20000), item);
         this.store.add(lockID, item);
         item = new CachedItem(this.parent, lockID, getKey(i + 30000), getValue(i + 30000));
+        this.parent.put(getKey(i + 30000), item);
         this.store.add(lockID, item);
       }
     }
