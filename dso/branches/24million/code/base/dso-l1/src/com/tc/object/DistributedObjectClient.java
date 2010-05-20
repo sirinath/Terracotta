@@ -484,7 +484,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final ClientGlobalTransactionManager gtxManager = this.dsoClientBuilder
         .createClientGlobalTransactionManager(this.rtxManager, remoteServerMapManager);
 
-    final TCClassFactory classFactory = dsoClientBuilder.createTCClassFactory(config, classProvider, encoding, remoteServerMapManager);
+    final TCClassFactory classFactory = dsoClientBuilder.createTCClassFactory(config, classProvider, encoding, this.manager, remoteServerMapManager);
     final TCObjectFactory objectFactory = new TCObjectFactoryImpl(classFactory);
 
     this.objectManager = this.dsoClientBuilder.createObjectManager(remoteObjectManager, this.config, idProvider,

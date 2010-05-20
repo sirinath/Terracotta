@@ -184,8 +184,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   synchronized void requestOutstanding() {
-    for (final Object element : this.outstandingRequests.entrySet()) {
-      final AbstractServerMapRequestContext context = (AbstractServerMapRequestContext) element;
+    for (final AbstractServerMapRequestContext context : this.outstandingRequests.values()) {
       sendRequestNow(context);
     }
   }
