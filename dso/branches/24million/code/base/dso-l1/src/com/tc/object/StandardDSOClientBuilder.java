@@ -24,6 +24,7 @@ import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
+import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.CachedItem;
 import com.tc.object.cache.ClockEvictionPolicy;
@@ -255,6 +256,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
 
   public TCClassFactory createTCClassFactory(final DSOClientConfigHelper config, final ClassProvider classProvider,
                                              final DNAEncoding dnaEncoding,
+                                             final Manager manager,
                                              final RemoteServerMapManager remoteServerMapManager) {
     return new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, dnaEncoding);
   }

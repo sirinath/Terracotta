@@ -16,6 +16,7 @@ import com.tc.net.protocol.tcm.CommunicationsManager;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
+import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.cache.ClockEvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -135,5 +136,5 @@ public interface DSOClientBuilder {
                                   MBeanSpec[] mBeanSpecs);
   
   TCClassFactory createTCClassFactory(final DSOClientConfigHelper config,
-                            final ClassProvider classProvider, final DNAEncoding dnaEncoding,final RemoteServerMapManager remoteServerMapManager);
+                            final ClassProvider classProvider, final DNAEncoding dnaEncoding,final Manager manager, final RemoteServerMapManager remoteServerMapManager);
 }
