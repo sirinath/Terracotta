@@ -201,38 +201,41 @@ public class StandardClassProvider implements ClassProvider {
     while (true) {
       ClassLoader loader;
 
-      // if (the DNA specifies an app-group,
-      // and there is a loader that exactly matches both the app-group and the name,
-      // and there is exactly one loader registered in that app-group that is a *child* of the exact match) {
-      // use the child;
-      // }
       Set<String> appGroupLoaders = null;
       if (desc.appGroup() != null) {
         appGroupLoaders = appGroups.get(desc.appGroup());
-        if (appGroupLoaders != null && appGroupLoaders.contains(desc.name())) {
-          Set<String> children = loaderChildren.get(desc.name());
-          // Clean up GC'ed children before deciding that there is exactly one
-          ClassLoader firstChild = null;
-          boolean exactlyOne = false;
-          for (String child : children) {
-            loader = lookupLoaderByName(child);
-            Assert.assertNotNull(loader); // invariant: loaderChildren only contains valid loader names
-            if (loader != REMOVED) {
-              if (firstChild == null) {
-                // keep a ref so it doesn't get GC'ed before we come back to it
-                firstChild = loader;
-                exactlyOne = true;
-              } else {
-                // no point in looking further; there are at least two non-GC'ed children
-                exactlyOne = false;
-                break;
+
+        if (appGroupLoaders != null) {
+          // if (the DNA specifies an app-group,
+          // and there is a loader that exactly matches both the app-group and the name,
+          // and there is exactly one loader registered in that app-group that is a *child* of the exact match) {
+          // use the child;
+          // }
+          if (appGroupLoaders.contains(desc.name())) {
+            Set<String> children = loaderChildren.get(desc.name());
+            // Clean up GC'ed children before deciding that there is exactly one
+            ClassLoader firstChild = null;
+            boolean exactlyOne = false;
+            for (String child : children) {
+              loader = lookupLoaderByName(child);
+              Assert.assertNotNull(loader); // invariant: loaderChildren only contains valid loader names
+              if (loader != REMOVED) {
+                if (firstChild == null) {
+                  // keep a ref so it doesn't get GC'ed before we come back to it
+                  firstChild = loader;
+                  exactlyOne = true;
+                } else {
+                  // no point in looking further; there are at least two non-GC'ed children
+                  exactlyOne = false;
+                  break;
+                }
               }
             }
+            if (exactlyOne) { return firstChild; }
           }
-          if (exactlyOne) { return firstChild; }
 
-          // there might not be an observable parent/child relationship. If there is exactly one loader in the app-grpip
-          // that is not a "standard" loader, select it
+          // there might not be an observable parent/child relationship. If there is exactly
+          // one loader in the app-group that is not a "standard" loader, select it
           Set<String> copy = new HashSet<String>(appGroupLoaders);
           for (Iterator<String> iter = copy.iterator(); iter.hasNext();) {
             String name = iter.next();
