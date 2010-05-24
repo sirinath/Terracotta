@@ -176,6 +176,9 @@ public class DSOContextImpl implements DSOContext {
       logger.fatal(e);
       System.exit(1);
     }
+
+    //do a pre-emptive class load since this path gets nested inside other classloads...
+    getClassResource("non.existent.Class", getClass().getClassLoader(), true);
   }
 
   private void validateBootJar() throws BootJarException {
