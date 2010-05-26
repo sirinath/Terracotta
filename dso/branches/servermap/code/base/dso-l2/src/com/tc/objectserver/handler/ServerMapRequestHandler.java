@@ -28,9 +28,9 @@ public class ServerMapRequestHandler extends AbstractEventHandler implements Eve
   private final Counter         globalGetSizeRequestCounter;
   private ChannelStats channelStats;
 
-  public ServerMapRequestHandler(Counter globalGetValueRequestCounter, Counter globalGetSizeRequestCounter) {
-    this.globalGetValueRequestCounter = globalGetValueRequestCounter;
+  public ServerMapRequestHandler(Counter globalGetSizeRequestCounter, Counter globalGetValueRequestCounter) {
     this.globalGetSizeRequestCounter = globalGetSizeRequestCounter;
+    this.globalGetValueRequestCounter = globalGetValueRequestCounter;
   }
 
   @Override
@@ -44,8 +44,9 @@ public class ServerMapRequestHandler extends AbstractEventHandler implements Eve
     } else {
       final GetValueServerMapRequestMessage smContext = (GetValueServerMapRequestMessage) context;
       final Map<ObjectID, Collection<ServerMapGetValueRequest>> requests = smContext.getRequests();
-      globalGetValueRequestCounter.increment();
-      this.channelStats.notifyServerMapRequest(ServerMapRequestType.GET_VALUE_FOR_KEY, smContext.getChannel(), requests.size());
+      int numRequests = requests.size();
+      globalGetValueRequestCounter.increment(numRequests);
+      this.channelStats.notifyServerMapRequest(ServerMapRequestType.GET_VALUE_FOR_KEY, smContext.getChannel(), numRequests);
       for (final Entry<ObjectID, Collection<ServerMapGetValueRequest>> e : requests.entrySet()) {
         this.serverTCMapRequestManager.requestValues(smContext.getClientID(), e.getKey(), e.getValue());
       }
