@@ -65,7 +65,7 @@ artifacts:
     groupId: org.slf4j
     artifactId: slf4j-jdk14
     version: 1.5.11
-    destination: ehcache    
+    destination: ehcache
     
   - maven_artifact: false
     name: README.html
@@ -75,12 +75,12 @@ artifacts:
   - maven_artifact: false
     name: CHANGELOG.txt
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/CHANGELOG.txt
+    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/CHANGELOG.txt
     
   - maven_artifact: false
-    name: EHCACHE_CORE_LICENSE.txt
+    name: EHCACHE-CORE-LICENSE.txt
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE_CORE_LICENSE.txt  
+    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/LICENSE.txt
 
   - maven_artifact: false
     name: ehcache.xml
@@ -95,20 +95,14 @@ artifacts:
 
 # begin QUARTZ
   - maven_artifact: false
-    name: quartz-1.8.0.tar.gz
-    destination: quartz 
+    name: quartz.tar.gz
+    destination: quartz
     explode: true
     remove_root_folder: true
-    url: http://download.terracotta.org/quartz/quartz-1.8.0.tar.gz
+    url: http://download.terracotta.org/nightly/quartz/quartz-1.8.1-SNAPSHOT.tar.gz
 # end QUARTZ
 
 # begin express products
-  - maven_artifact: true
-    groupId: net.sf.ehcache
-    artifactId: ehcache-terracotta
-    version: 2.2.0-SNAPSHOT
-    destination: ehcache
-
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta
