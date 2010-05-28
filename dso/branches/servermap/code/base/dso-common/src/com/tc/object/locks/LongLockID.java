@@ -49,6 +49,26 @@ public class LongLockID implements LockID {
     }
     return false;
   }
+  
+  public int compareTo(Object o) {
+    if (o instanceof LongLockID) {
+      LongLockID other = (LongLockID)o;
+      if (this.id < other.id) {
+        return -1;
+      } else if (this.id > other.id) {
+        return 1;
+      } else {
+        return 0;
+      }
+    } else if (o instanceof LockID) {
+      if (((LockID)o).getLockType() == LockIDType.DSO_LITERAL) {
+        throw new ClassCastException("Can't compare LiteralLockID types.");
+      }
+      return toString().compareTo(o.toString());
+    }
+    
+    throw new ClassCastException(o + " is not an instance of LockID");
+  }
 
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     this.id = serialInput.readLong();
