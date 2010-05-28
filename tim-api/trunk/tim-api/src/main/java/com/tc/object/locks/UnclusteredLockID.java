@@ -41,4 +41,10 @@ public class UnclusteredLockID implements LockID {
   private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
     throw new AssertionError("UnclusteredLockID instances should not be being serialized");
   }
+  
+  @SuppressWarnings("unused")
+  public int compareTo(final Object o) {
+    throw new AssertionError("UnclusteredLockID should not be compared or stored into sorted collections");
+  }
+
 }
