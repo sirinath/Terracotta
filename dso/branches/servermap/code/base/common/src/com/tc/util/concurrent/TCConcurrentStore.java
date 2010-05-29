@@ -4,6 +4,7 @@
 package com.tc.util.concurrent;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -11,24 +12,39 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * various optimizations like {@link java.util.concurrent.ConcurrentHashMap} on reads so get might be slower than CHM
  * but is still striped so faster than Hashtable for concurrent usecases.
  * <p>
- * Where this class will excel is when you want to perform certain operation (using the callbacks) with in the lock for
- * that segment. for example things like these are simple.
+ * Where this class will excel is when you want to perform certain operation (using the callback) with in the lock for
+ * that segment. For example, create a MultiMap becomes as simple as
  * <p>
  * <hr>
  * <blockquote>
  * 
  * <pre>
- * ArrayList list = new ArrayList();
- * list.add(value);
- * tcConcurrentStore.putIfAbsent(key, new ArrayList(), new Callback() {
- *   //TODO 
+ * // Put into MultiMap
+ * tcConcurrentStore.executeUnderWriteLock(key, value, new TCConcurrentStoreCallback() {
+ *   public Object callback(Object key, Object value, Map segment) {
+ *     boolean newEntry = false;
+ *     List list = segment.get(key);
+ *     if (list == null) {
+ *       list = new ArrayList();
+ *       segment.put(key, list);
+ *       newEntry = true;
+ *     }
+ *     list.add(value);
+ *     return newEntry;
+ *   }
  * });
+ * 
+ * // Get From MultiMap
+ * tcConcurrentStore.remove(key);
+ * 
  * </pre>
  * 
  * </blockquote>
  * <p>
  * Someday this class could implement all the methods of {@link java.util.concurrent.ConcurrentMap}
  * <hr>
+ * 
+ * @author Saravanan Subbiah
  */
 public class TCConcurrentStore<K, V> {
 
@@ -43,14 +59,48 @@ public class TCConcurrentStore<K, V> {
 
   private final Segment<K, V>[] segments;
 
-  public TCConcurrentStore(final int initialCapacity) {
-    this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_SEGMENTS);
-  }
-
+  /**
+   * Creates a store with a default initial capacity (16), load factor (0.75) and concurrencyLevel (16).
+   */
   public TCConcurrentStore() {
     this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_SEGMENTS);
   }
 
+  /**
+   * Creates a store with the specified initial capacity, and with default load factor (0.75) and concurrencyLevel (16).
+   * 
+   * @param initialCapacity the initial capacity. The implementation performs internal sizing to accommodate this many
+   *        elements.
+   * @throws IllegalArgumentException if the initial capacity of elements is negative.
+   */
+  public TCConcurrentStore(final int initialCapacity) {
+    this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_SEGMENTS);
+  }
+
+  /**
+   * Creates a store with the specified initial capacity and load factor and with the default concurrencyLevel (16).
+   * 
+   * @param initialCapacity The implementation performs internal sizing to accommodate this many elements.
+   * @param loadFactor the load factor threshold, used to control resizing. Resizing may be performed when the average
+   *        number of elements per bin exceeds this threshold.
+   * @throws IllegalArgumentException if the initial capacity of elements is negative or the load factor is non-positive
+   */
+  public TCConcurrentStore(final int initialCapacity, final float loadFactor) {
+    this(initialCapacity, loadFactor, DEFAULT_SEGMENTS);
+  }
+
+  /**
+   * Creates a store with the specified initial capacity, load factor and concurrency level.
+   * 
+   * @param initialCapacity the initial capacity. The implementation performs internal sizing to accommodate this many
+   *        elements.
+   * @param loadFactor the load factor threshold, used to control resizing. Resizing may be performed when the average
+   *        number of elements per bin exceeds this threshold.
+   * @param concurrencyLevel the estimated number of concurrently updating threads. The implementation performs internal
+   *        sizing to try to accommodate this many threads.
+   * @throws IllegalArgumentException if the initial capacity is negative or the load factor or concurrencyLevel are
+   *         non-positive.
+   */
   public TCConcurrentStore(int initialCapacity, final float loadFactor, int concurrencyLevel) {
     if (!(loadFactor > 0) || initialCapacity < 0 || concurrencyLevel <= 0) { throw new IllegalArgumentException(); }
 
@@ -109,30 +159,105 @@ public class TCConcurrentStore<K, V> {
    * @param hash the hash code for the key
    * @return the segment
    */
-  final Segment<K, V> segmentFor(Object key) {
+  final Segment<K, V> segmentFor(final Object key) {
     final int hash = hash(key.hashCode()); // throws NullPointerException if key null
     return this.segments[(hash >>> this.segmentShift) & this.segmentMask];
   }
 
-  public V get(K key) {
+  /**
+   * Returns the value to which the specified key is mapped, or {@code null} if this map contains no mapping for the
+   * key.
+   * <p>
+   * More formally, if this store contains a mapping from a key {@code k} to a value {@code v} such that {@code
+   * key.equals(k)}, then this method returns {@code v}; otherwise it returns {@code null}. (There can be at most one
+   * such mapping.)
+   * 
+   * @throws NullPointerException if the specified key is null
+   */
+  public V get(final K key) {
     return segmentFor(key).get(key);
   }
 
-  public V put(K key, V value) {
+  /**
+   * Maps the specified key to the specified value in this table. Neither the key nor the value can be null.
+   * <p>
+   * The value can be retrieved by calling the <tt>get</tt> method with a key that is equal to the original key.
+   * 
+   * @param key key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @return the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>
+   * @throws NullPointerException if the specified key or value is null
+   */
+  public V put(final K key, final V value) {
+    if (value == null) { throw new NullPointerException(); }
     return segmentFor(key).put(key, value);
   }
 
-  public V putIfAbsent(K key, V value) {
+  /**
+   * If the specified key is not already associated with a value, associate it with the given value. This is equivalent
+   * to
+   * 
+   * <pre>
+   * if (!map.containsKey(key)) return map.put(key, value);
+   * else return map.get(key);
+   * </pre>
+   * 
+   * except that the action is performed atomically.
+   * 
+   * @param key key with which the specified value is to be associated
+   * @param value value to be associated with the specified key
+   * @return the previous value associated with the specified key, or <tt>null</tt> if there was no mapping for the key
+   * @throws NullPointerException if the specified key or value is null
+   */
+  public V putIfAbsent(final K key, final V value) {
+    if (value == null) { throw new NullPointerException(); }
     return segmentFor(key).putIfAbsent(key, value);
   }
 
-  public V remove(K key) {
+  /**
+   * Removes the key (and its corresponding value) from this map. This method does nothing if the key is not in the map.
+   * 
+   * @param key the key that needs to be removed
+   * @return the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>
+   * @throws NullPointerException if the specified key is null
+   */
+  public V remove(final K key) {
     return segmentFor(key).remove(key);
   }
 
+  /**
+   * Executes the callback under the read lock for the segment where the key could possibly be present.
+   * 
+   * @param key the key mapping to the segment
+   * @param param any user-defined param
+   * @param callback the callback that is executed
+   * @return the return value from the callback function
+   * @throws NullPointerException if the specified key is null
+   */
+  public Object executeUnderReadLock(final K key, final Object param, final TCConcurrentStoreCallback<K, V> callback) {
+    return segmentFor(key).executeUnderReadLock(key, param, callback);
+  }
+
+  /**
+   * Executes the callback under the write lock for the segment where the key could possibly be present.
+   * 
+   * @param key the key mapping to the segment
+   * @param param any user-defined param
+   * @param callback the callback that is executed
+   * @return the return value from the callback function
+   * @throws NullPointerException if the specified key is null
+   */
+  public Object executeUnderWriteLock(final K key, final Object param, final TCConcurrentStoreCallback<K, V> callback) {
+    return segmentFor(key).executeUnderWriteLock(key, param, callback);
+  }
+
+  /**
+   * The callback interface that needs to be implemented so <code>executeUnderWriteLock</code> and
+   * <code>executeUnderReadLock</code> can be called
+   */
   public interface TCConcurrentStoreCallback<K, V> {
 
-    public void callback(K key, V newValue, V oldValue);
+    public Object callback(K key, Object param, Map<K, V> segment);
 
   }
 
@@ -141,11 +266,11 @@ public class TCConcurrentStore<K, V> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final HashMap<K, V>          map;
 
-    public Segment(int initialCapacity, float loadFactor) {
+    public Segment(final int initialCapacity, final float loadFactor) {
       this.map = new HashMap<K, V>(initialCapacity, loadFactor);
     }
 
-    public V get(K key) {
+    public V get(final K key) {
       this.lock.readLock().lock();
       try {
         return this.map.get(key);
@@ -154,7 +279,7 @@ public class TCConcurrentStore<K, V> {
       }
     }
 
-    public V put(K key, V value) {
+    public V put(final K key, final V value) {
       this.lock.writeLock().lock();
       try {
         return this.map.put(key, value);
@@ -163,7 +288,7 @@ public class TCConcurrentStore<K, V> {
       }
     }
 
-    public V putIfAbsent(K key, V value) {
+    public V putIfAbsent(final K key, final V value) {
       this.lock.writeLock().lock();
       try {
         if (!this.map.containsKey(key)) {
@@ -176,7 +301,7 @@ public class TCConcurrentStore<K, V> {
       }
     }
 
-    public V remove(K key) {
+    public V remove(final K key) {
       this.lock.writeLock().lock();
       try {
         return this.map.remove(key);
@@ -185,6 +310,22 @@ public class TCConcurrentStore<K, V> {
       }
     }
 
-  }
+    public Object executeUnderReadLock(final K key, final Object param, final TCConcurrentStoreCallback<K, V> callback) {
+      this.lock.readLock().lock();
+      try {
+        return callback.callback(key, param, this.map);
+      } finally {
+        this.lock.readLock().unlock();
+      }
+    }
 
+    public Object executeUnderWriteLock(final K key, final Object param, final TCConcurrentStoreCallback<K, V> callback) {
+      this.lock.writeLock().lock();
+      try {
+        return callback.callback(key, param, this.map);
+      } finally {
+        this.lock.writeLock().unlock();
+      }
+    }
+  }
 }
