@@ -27,6 +27,7 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedObjectState;
 import com.tc.util.ObjectIDSet;
+import com.tc.util.concurrent.TCConcurrentMultiMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,8 +88,8 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     try {
       final List<ServerMapRequestContext> requestList = this.requestQueue.remove(mapID);
 
-      if (requestList == null) { throw new AssertionError("Looked up : " + managedObject
-                                                          + " But no request pending for it : " + this.requestQueue); }
+      if (requestList.isEmpty()) { throw new AssertionError("Looked up : " + managedObject
+                                                            + " But no request pending for it : " + this.requestQueue); }
 
       for (final ServerMapRequestContext request : requestList) {
 
@@ -191,23 +192,15 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
 
   private final static class ServerMapRequestQueue {
 
-    private final Map<ObjectID, List<ServerMapRequestContext>> serverMapRequestMap = new HashMap<ObjectID, List<ServerMapRequestContext>>();
+    private final TCConcurrentMultiMap<ObjectID, ServerMapRequestContext> requests = new TCConcurrentMultiMap<ObjectID, ServerMapRequestContext>();
 
-    public synchronized boolean add(final ServerMapRequestContext context) {
-      boolean newEntry = false;
+    public boolean add(final ServerMapRequestContext context) {
       final ObjectID mapID = context.getServerTCMapID();
-      List<ServerMapRequestContext> requestList = this.serverMapRequestMap.get(mapID);
-      if (requestList == null) {
-        requestList = new ArrayList<ServerMapRequestContext>();
-        this.serverMapRequestMap.put(mapID, requestList);
-        newEntry = true;
-      }
-      requestList.add(context);
-      return newEntry;
+      return this.requests.add(mapID, context);
     }
 
-    public synchronized List<ServerMapRequestContext> remove(final ObjectID mapID) {
-      return this.serverMapRequestMap.remove(mapID);
+    public List<ServerMapRequestContext> remove(final ObjectID mapID) {
+      return this.requests.removeAll(mapID);
     }
   }
 
