@@ -65,11 +65,21 @@ public interface DsoCluster {
   public DsoClusterTopology getClusterTopology();
 
   /**
-   * Retrieves the {@code DsoNode} instance that corresponds to the current node.
-   *
-   * @return the {@code DsoNode} instance that corresponds to the current node
+   * Retrieves the {@code DsoNode} instance that corresponds to the current node. May return null if this node is not
+   * connected to the cluster yet.
+   * 
+   * @return the {@code DsoNode} instance that corresponds to the current node. May return null if this node is not
+   *         connected to the cluster yet.
    */
   public DsoNode getCurrentNode();
+
+  /**
+   * Waits until this node joins the cluster. This operation can be interrupted.
+   * 
+   * @return the {@code DsoNode} instance that corresponds to the current node. May return null if the thread is
+   *         interrupted before the current node joins the cluster.
+   */
+  public DsoNode waitUntilNodeJoinsCluster();
 
   /**
    * Indicates whether the current node has joined the cluster.
