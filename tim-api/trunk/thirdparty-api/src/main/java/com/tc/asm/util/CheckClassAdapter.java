@@ -37,21 +37,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+
 import com.tc.asm.AnnotationVisitor;
-import com.tc.asm.FieldVisitor;
+import com.tc.asm.Attribute;
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
+import com.tc.asm.FieldVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
-import com.tc.asm.Attribute;
 import com.tc.asm.Type;
-import com.tc.asm.tree.MethodNode;
 import com.tc.asm.tree.ClassNode;
+import com.tc.asm.tree.MethodNode;
 import com.tc.asm.tree.TryCatchBlockNode;
 import com.tc.asm.tree.analysis.Analyzer;
-import com.tc.asm.tree.analysis.SimpleVerifier;
 import com.tc.asm.tree.analysis.Frame;
+import com.tc.asm.tree.analysis.SimpleVerifier;
 
 /**
  * A {@link ClassAdapter} that checks that its methods are properly used. More
@@ -90,9 +91,9 @@ import com.tc.asm.tree.analysis.Frame;
  * insnNumber locals : stack):
  * 
  * <pre>
- * com.tc.asm.tree.analysis.AnalyzerException: Error at instruction 71: Expected I, but found .
- *   at com.tc.asm.tree.analysis.Analyzer.analyze(Analyzer.java:289)
- *   at com.tc.asm.util.CheckClassAdapter.verify(CheckClassAdapter.java:135)
+ * org.objectweb.asm.tree.analysis.AnalyzerException: Error at instruction 71: Expected I, but found .
+ *   at org.objectweb.asm.tree.analysis.Analyzer.analyze(Analyzer.java:289)
+ *   at org.objectweb.asm.util.CheckClassAdapter.verify(CheckClassAdapter.java:135)
  * ...
  * remove()V
  * 00000 LinkedBlockingQueue$Itr . . . . . . . .  :
@@ -343,7 +344,8 @@ public class CheckClassAdapter extends ClassAdapter {
                 + Opcodes.ACC_SUPER + Opcodes.ACC_INTERFACE
                 + Opcodes.ACC_ABSTRACT + Opcodes.ACC_SYNTHETIC
                 + Opcodes.ACC_ANNOTATION + Opcodes.ACC_ENUM
-                + Opcodes.ACC_DEPRECATED);
+                + Opcodes.ACC_DEPRECATED
+                + 0x40000); // ClassWriter.ACC_SYNTHETIC_ATTRIBUTE
         if (name == null || !name.endsWith("package-info")) {
             CheckMethodAdapter.checkInternalName(name, "class name");
         }
@@ -433,7 +435,8 @@ public class CheckClassAdapter extends ClassAdapter {
                 + Opcodes.ACC_PROTECTED + Opcodes.ACC_STATIC
                 + Opcodes.ACC_FINAL + Opcodes.ACC_VOLATILE
                 + Opcodes.ACC_TRANSIENT + Opcodes.ACC_SYNTHETIC
-                + Opcodes.ACC_ENUM + Opcodes.ACC_DEPRECATED);
+                + Opcodes.ACC_ENUM + Opcodes.ACC_DEPRECATED
+                + 0x40000); // ClassWriter.ACC_SYNTHETIC_ATTRIBUTE
         CheckMethodAdapter.checkIdentifier(name, "field name");
         CheckMethodAdapter.checkDesc(desc, false);
         if (signature != null) {
@@ -459,7 +462,8 @@ public class CheckClassAdapter extends ClassAdapter {
                 + Opcodes.ACC_FINAL + Opcodes.ACC_SYNCHRONIZED
                 + Opcodes.ACC_BRIDGE + Opcodes.ACC_VARARGS + Opcodes.ACC_NATIVE
                 + Opcodes.ACC_ABSTRACT + Opcodes.ACC_STRICT
-                + Opcodes.ACC_SYNTHETIC + Opcodes.ACC_DEPRECATED);
+                + Opcodes.ACC_SYNTHETIC + Opcodes.ACC_DEPRECATED
+                + 0x40000); // ClassWriter.ACC_SYNTHETIC_ATTRIBUTE
         CheckMethodAdapter.checkMethodIdentifier(name, "method name");
         CheckMethodAdapter.checkMethodDesc(desc);
         if (signature != null) {

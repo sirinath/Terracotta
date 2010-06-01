@@ -31,6 +31,7 @@ package com.tc.asm.tree.analysis;
 
 import java.util.List;
 
+
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.asm.tree.AbstractInsnNode;
@@ -199,7 +200,7 @@ public class BasicInterpreter implements Opcodes, Interpreter {
                     case T_LONG:
                         return newValue(Type.getType("[J"));
                     default:
-                        throw new AnalyzerException("Invalid array type");
+                        throw new AnalyzerException(insn, "Invalid array type");
                 }
             case ANEWARRAY:
                 String desc = ((TypeInsnNode) insn).desc;
