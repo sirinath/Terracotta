@@ -120,6 +120,7 @@ public class WireProtocolGroupMessageImpl extends AbstractTCNetworkMessage imple
       int msgLen = b.getInt();
       short msgProto = b.getShort();
 
+      // XXX: we are giving out 4K BB for a smaller msgs too; Though it is recycled, can do some opti., here
       TCByteBuffer[] bufs = TCByteBufferFactory.getFixedSizedInstancesForLength(false, msgLen);
       for (TCByteBuffer buf : bufs) {
         b.get(buf.array(), 0, buf.limit());
