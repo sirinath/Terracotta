@@ -54,7 +54,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamSource;
 
-import com.tc.asm.ClassReader;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -65,6 +64,8 @@ import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import com.tc.asm.ClassReader;
 
 /**
  * Processor is a command line tool that can be used for bytecode waving
@@ -453,7 +454,7 @@ public class Processor {
     private static final class ProtectedInputStream extends InputStream {
         private final InputStream is;
 
-        private ProtectedInputStream(final InputStream is) {
+        ProtectedInputStream(final InputStream is) {
             this.is = is;
         }
 
@@ -501,7 +502,7 @@ public class Processor {
 
         private final boolean optimizeEmptyElements;
 
-        private SAXWriterFactory(
+        SAXWriterFactory(
             final Writer w,
             final boolean optimizeEmptyElements)
         {
@@ -525,7 +526,7 @@ public class Processor {
 
         private final boolean computeMax;
 
-        private ASMContentHandlerFactory(
+        ASMContentHandlerFactory(
             final OutputStream os,
             final boolean computeMax)
         {
@@ -551,7 +552,7 @@ public class Processor {
 
         private ContentHandler outputHandler;
 
-        private TransformerHandlerFactory(
+        TransformerHandlerFactory(
             final SAXTransformerFactory saxtf,
             final Templates templates,
             final ContentHandler outputHandler)
@@ -580,7 +581,7 @@ public class Processor {
     {
         private final ContentHandler subdocumentHandler;
 
-        private SubdocumentHandlerFactory(final ContentHandler subdocumentHandler)
+        SubdocumentHandlerFactory(final ContentHandler subdocumentHandler)
         {
             this.subdocumentHandler = subdocumentHandler;
         }
@@ -619,7 +620,7 @@ public class Processor {
          * @param optimizeEmptyElements if set to <code>true</code>, short
          *        XML syntax will be used for empty elements
          */
-        private SAXWriter(final Writer w, final boolean optimizeEmptyElements) {
+        SAXWriter(final Writer w, final boolean optimizeEmptyElements) {
             this.w = w;
             this.optimizeEmptyElements = optimizeEmptyElements;
         }
@@ -833,7 +834,7 @@ public class Processor {
          *        create {@link ContentHandler ContentHandler} instances for
          *        subdocuments.
          */
-        private InputSlicingHandler(
+        InputSlicingHandler(
             final String subdocumentRoot,
             final ContentHandler rootHandler,
             final ContentHandlerFactory subdocumentHandlerFactory)
@@ -944,7 +945,7 @@ public class Processor {
          * @param entryElement TODO.
          * @param isXml TODO.
          */
-        private OutputSlicingHandler(
+        OutputSlicingHandler(
             final ContentHandlerFactory subdocumentHandlerFactory,
             final EntryElement entryElement,
             final boolean isXml)
@@ -1036,7 +1037,7 @@ public class Processor {
     private static final class SingleDocElement implements EntryElement {
         private final OutputStream os;
 
-        private SingleDocElement(final OutputStream os) {
+        SingleDocElement(final OutputStream os) {
             this.os = os;
         }
 
@@ -1053,7 +1054,7 @@ public class Processor {
     private static final class ZipEntryElement implements EntryElement {
         private ZipOutputStream zos;
 
-        private ZipEntryElement(final ZipOutputStream zos) {
+        ZipEntryElement(final ZipOutputStream zos) {
             this.zos = zos;
         }
 

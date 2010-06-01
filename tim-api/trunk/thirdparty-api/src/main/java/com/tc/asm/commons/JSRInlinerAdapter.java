@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -48,11 +49,11 @@ import com.tc.asm.tree.InsnList;
 import com.tc.asm.tree.InsnNode;
 import com.tc.asm.tree.JumpInsnNode;
 import com.tc.asm.tree.LabelNode;
+import com.tc.asm.tree.LocalVariableNode;
 import com.tc.asm.tree.LookupSwitchInsnNode;
 import com.tc.asm.tree.MethodNode;
 import com.tc.asm.tree.TableSwitchInsnNode;
 import com.tc.asm.tree.TryCatchBlockNode;
-import com.tc.asm.tree.LocalVariableNode;
 
 /**
  * A {@link com.tc.asm.MethodAdapter} that removes JSR instructions and
@@ -89,7 +90,7 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
      * This BitSet contains the index of every instruction that belongs to more
      * than one subroutine. This should not happen often.
      */
-    private final BitSet dualCitizens = new BitSet();
+    final BitSet dualCitizens = new BitSet();
 
     /**
      * Creates a new JSRInliner.
@@ -596,7 +597,7 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
          */
         public final LabelNode returnLabel;
 
-        private Instantiation(final Instantiation prev, final Subroutine sub) {
+        Instantiation(final Instantiation prev, final Subroutine sub) {
             previous = prev;
             subroutine = sub;
             for (Instantiation p = prev; p != null; p = p.previous) {

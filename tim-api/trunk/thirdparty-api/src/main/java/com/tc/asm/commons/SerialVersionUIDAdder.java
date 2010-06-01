@@ -263,14 +263,13 @@ public class SerialVersionUIDAdder extends ClassAdapter {
              * ACC_FINAL, ACC_VOLATILE, and ACC_TRANSIENT flags are used when
              * computing serialVersionUID values.
              */
-            int mods = access
-                    & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE
-                            | Opcodes.ACC_PROTECTED | Opcodes.ACC_STATIC
-                            | Opcodes.ACC_FINAL | Opcodes.ACC_VOLATILE | Opcodes.ACC_TRANSIENT);
-
             if ((access & Opcodes.ACC_PRIVATE) == 0
                     || (access & (Opcodes.ACC_STATIC | Opcodes.ACC_TRANSIENT)) == 0)
             {
+                int mods = access
+                & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE
+                        | Opcodes.ACC_PROTECTED | Opcodes.ACC_STATIC
+                        | Opcodes.ACC_FINAL | Opcodes.ACC_VOLATILE | Opcodes.ACC_TRANSIENT);
                 svuidFields.add(new Item(name, mods, desc));
             }
         }
@@ -287,7 +286,7 @@ public class SerialVersionUIDAdder extends ClassAdapter {
      */
     public void visitInnerClass(final String aname, final String outerName, final String innerName, final int attr_access) {
         if ((name != null) && name.equals(aname)) {
-            this.access = attr_access; 
+            this.access = attr_access;
         }
         super.visitInnerClass(aname, outerName, innerName, attr_access);
     }
