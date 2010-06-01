@@ -10,6 +10,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.bytes.TCByteBufferFactory;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
@@ -55,37 +56,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJDK14ChannelWriter {
 
-  private static final long                  NO_CONNECT_TIME       = -1L;
-  private static final TCLogger              logger                = TCLogging.getLogger(TCConnection.class);
-  private static final long                  WARN_THRESHOLD        = 0x400000L;                                       // 4MB
+  private static final long                  NO_CONNECT_TIME               = -1L;
+  private static final TCLogger              logger                        = TCLogging.getLogger(TCConnection.class);
+  private static final long                  WARN_THRESHOLD                = 0x400000L;                              // 4MB
 
-  private final LinkedList<TCNetworkMessage> writeMessags          = new LinkedList<TCNetworkMessage>();
-  private CoreNIOServices                    commWorker;
+  private final LinkedList<TCNetworkMessage> writeMessages                 = new LinkedList<TCNetworkMessage>();
+  private volatile CoreNIOServices           commWorker;
 
-  private final TCConnectionManagerJDK14     parent; 
-  private final TCConnectionEventCaller      eventCaller           = new TCConnectionEventCaller(logger);
-  private final SynchronizedLong             lastDataWriteTime     = new SynchronizedLong(System.currentTimeMillis());
-  private final SynchronizedLong             lastDataReceiveTime   = new SynchronizedLong(System.currentTimeMillis());
-  private final SynchronizedLong             connectTime           = new SynchronizedLong(NO_CONNECT_TIME);
-  private final List                         eventListeners        = new CopyOnWriteArrayList();
+  private final TCConnectionManagerJDK14     parent;
+  private final TCConnectionEventCaller      eventCaller                   = new TCConnectionEventCaller(logger);
+  private final SynchronizedLong             lastDataWriteTime             = new SynchronizedLong(System
+                                                                               .currentTimeMillis());
+  private final SynchronizedLong             lastDataReceiveTime           = new SynchronizedLong(System
+                                                                               .currentTimeMillis());
+  private final SynchronizedLong             connectTime                   = new SynchronizedLong(NO_CONNECT_TIME);
+  private final List                         eventListeners                = new CopyOnWriteArrayList();
   private final TCProtocolAdaptor            protocolAdaptor;
-  private final SynchronizedBoolean          isSocketEndpoint      = new SynchronizedBoolean(false);
-  private final SetOnceFlag                  closed                = new SetOnceFlag();
-  private final SynchronizedBoolean          connected             = new SynchronizedBoolean(false);
-  private final SetOnceRef                   localSocketAddress    = new SetOnceRef();
-  private final SetOnceRef                   remoteSocketAddress   = new SetOnceRef();
+  private final SynchronizedBoolean          isSocketEndpoint              = new SynchronizedBoolean(false);
+  private final SetOnceFlag                  closed                        = new SetOnceFlag();
+  private final SynchronizedBoolean          connected                     = new SynchronizedBoolean(false);
+  private final SetOnceRef                   localSocketAddress            = new SetOnceRef();
+  private final SetOnceRef                   remoteSocketAddress           = new SetOnceRef();
   private final SocketParams                 socketParams;
-  private final SynchronizedLong             totalRead             = new SynchronizedLong(0);
-  private final SynchronizedLong             totalWrite            = new SynchronizedLong(0);
-  private final ArrayList<WriteContext>      writeContexts         = new ArrayList<WriteContext>();
-  private final int                          messageGroupMaxSizeKB = TCPropertiesImpl
-                                                                       .getProperties()
-                                                                       .getInt(
-                                                                               TCPropertiesConsts.TC_MESSAGE_GROUPING_MAXSIZE_KB,
-                                                                               128);
+  private final SynchronizedLong             totalRead                     = new SynchronizedLong(0);
+  private final SynchronizedLong             totalWrite                    = new SynchronizedLong(0);
+  private final ArrayList<WriteContext>      writeContexts                 = new ArrayList<WriteContext>();
+  private final int                          MESSAGES_GROUP_MAX_SIZE_BYTES = TCPropertiesImpl
+                                                                               .getProperties()
+                                                                               .getInt(
+                                                                                       TCPropertiesConsts.TC_MESSAGE_GROUPING_MAXSIZE_KB,
+                                                                                       128) * 1024;
 
   private volatile SocketChannel             channel;
-  private final AtomicBoolean                transportEstablished  = new AtomicBoolean(false);
+  private final AtomicBoolean                transportEstablished          = new AtomicBoolean(false);
 
   // for creating unconnected client connections
   TCConnectionJDK14(TCConnectionEventListener listener, TCProtocolAdaptor adaptor,
@@ -128,8 +131,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         callback.run();
       }
     } finally {
-      synchronized (writeMessags) {
-        writeMessags.clear();
+      synchronized (writeMessages) {
+        writeMessages.clear();
       }
     }
   }
@@ -214,10 +217,10 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
   private void buildWriteContextsFromMessages() {
     final TCNetworkMessage messagesToWrite[];
-    synchronized (writeMessags) {
+    synchronized (writeMessages) {
       if (closed.isSet()) { return; }
-      messagesToWrite = writeMessags.toArray(new TCNetworkMessage[writeMessags.size()]);
-      writeMessags.clear();
+      messagesToWrite = writeMessages.toArray(new TCNetworkMessage[writeMessages.size()]);
+      writeMessages.clear();
     }
 
     ArrayList<TCNetworkMessage> batchMsgs = new ArrayList<TCNetworkMessage>();
@@ -225,31 +228,51 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     int batchMsgCount = 0;
     for (int i = 0; i < messagesToWrite.length; i++) {
       TCNetworkMessage msg = messagesToWrite[i];
+
+      // we don't want to group already constructed Transport Handshake WireProtocolMessages
+      if (msg instanceof WireProtocolMessage) {
+        TCNetworkMessage ms = finalizeWireProtocolMessage((WireProtocolMessage) msg, 1);
+        writeContexts.add(new WriteContext(ms));
+        continue;
+      }
+
       // GenericNetwork messages are used for testing
-      if (!(msg instanceof WireProtocolMessage)
-          && (WireProtocolHeader.PROTOCOL_UNKNOWN == WireProtocolHeader.getProtocolForMessageClass(msg))) {
+      if (WireProtocolHeader.PROTOCOL_UNKNOWN == WireProtocolHeader.getProtocolForMessageClass(msg)) {
         writeContexts.add(new WriteContext(msg));
         continue;
       }
-      if (!(msg instanceof WireProtocolMessage) && ((batchSize + msg.getTotalLength()) <= messageGroupMaxSizeKB * 1024)
-          && (batchMsgCount <= WireProtocolHeader.MAX_MESSAGE_COUNT)) {
-        batchSize += msg.getTotalLength();
-        batchMsgCount++;
-        batchMsgs.add(msg);
-      } else {
+
+      if (!canBatch(msg, batchSize, batchMsgCount)) {
         if (batchMsgCount > 0) {
-          writeContexts.add(new WriteContext(buildWireProtocolMessageGroup(batchMsgs)));
+          TCNetworkMessage ms = buildWireProtocolMessageGroup(batchMsgs);
+          writeContexts.add(new WriteContext(ms));
           batchSize = 0;
           batchMsgCount = 0;
           batchMsgs = new ArrayList<TCNetworkMessage>();
+        } else {
+          // fall thru and add to the existing batch. next message will goto a new batch
         }
-        writeContexts.add(new WriteContext(buildWireProtocolMessage(msg)));
       }
+
+      batchSize += getRealMessgeSize(msg.getTotalLength());
+      batchMsgCount++;
+      batchMsgs.add(msg);
     }
 
     if (batchMsgCount > 0) {
-      writeContexts.add(new WriteContext(buildWireProtocolMessageGroup(batchMsgs)));
+      TCNetworkMessage ms = buildWireProtocolMessageGroup(batchMsgs);
+      writeContexts.add(new WriteContext(ms));
     }
+  }
+
+  private boolean canBatch(final TCNetworkMessage newMessage, final int currentBatchSize, final int currentBatchMsgCount) {
+    if ((currentBatchSize + getRealMessgeSize(newMessage.getTotalLength())) <= MESSAGES_GROUP_MAX_SIZE_BYTES
+        && (currentBatchMsgCount + 1 <= WireProtocolHeader.MAX_MESSAGE_COUNT)) { return true; }
+    return false;
+  }
+
+  private int getRealMessgeSize(final int length) {
+    return TCByteBufferFactory.getTotalBufferSizeNeededForMessageSize(length);
   }
 
   private int doReadInternal(ScatteringByteChannel sbc) {
@@ -360,17 +383,17 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
       if (context.done()) {
         if (debug) logger.debug("Complete message sent on connection " + channel.toString());
         context.writeComplete();
-	writeContexts.remove(0);
+        writeContexts.remove(0);
       } else {
         if (debug) logger.debug("Message not yet completely sent on connection " + channel.toString());
         break;
       }
     }
 
-    synchronized (writeMessags) {
+    synchronized (writeMessages) {
       if (closed.isSet()) { return totalBytesWritten; }
 
-      if (writeMessags.isEmpty() && writeContexts.isEmpty()) {
+      if (writeMessages.isEmpty() && writeContexts.isEmpty()) {
         commWorker.removeWriteInterest(this, channel);
       }
     }
@@ -404,10 +427,10 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
     final boolean newData;
     final int msgCount;
 
-    synchronized (writeMessags) {
+    synchronized (writeMessages) {
       if (closed.isSet()) { return; }
-      writeMessags.addLast(message);
-      msgCount = writeMessags.size();
+      writeMessages.addLast(message);
+      msgCount = writeMessages.size();
       newData = (msgCount == 1);
     }
 
@@ -653,7 +676,8 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
   }
 
   private TCNetworkMessage buildWireProtocolMessageGroup(ArrayList<TCNetworkMessage> messages) {
-    Assert.eval((messages.size() > 0) && (messages.size() < Short.MAX_VALUE));
+    Assert.assertTrue("Messages count not ok to build WireProtocolMessageGroup : " + messages.size(),
+                      (messages.size() > 0) && (messages.size() <= WireProtocolHeader.MAX_MESSAGE_COUNT));
     if (messages.size() == 1) { return buildWireProtocolMessage(messages.get(0)); }
 
     final TCNetworkMessage message = WireProtocolGroupMessageImpl.wrapMessages(messages, this);
@@ -661,6 +685,7 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
 
     final Runnable[] callbacks = new Runnable[messages.size()];
     for (int i = 0; i < messages.size(); i++) {
+      Assert.eval(!(messages.get(i) instanceof WireProtocolMessage));
       callbacks[i] = messages.get(i).getSentCallback();
     }
 
@@ -671,42 +696,34 @@ final class TCConnectionJDK14 implements TCConnection, TCJDK14ChannelReader, TCJ
         }
       }
     });
-
-    WireProtocolHeader hdr = (WireProtocolHeader) message.getHeader();
-    hdr.setSourceAddress(getLocalAddress().getAddressBytes());
-    hdr.setSourcePort(getLocalAddress().getPort());
-    hdr.setDestinationAddress(getRemoteAddress().getAddressBytes());
-    hdr.setDestinationPort(getRemoteAddress().getPort());
-    hdr.setMessageCount(messages.size());
-    hdr.computeChecksum();
-    return message;
+    return finalizeWireProtocolMessage((WireProtocolMessage) message, messages.size());
   }
 
   private TCNetworkMessage buildWireProtocolMessage(TCNetworkMessage message) {
-    if (!(message instanceof WireProtocolMessage)) {
-      final TCNetworkMessage payload = message;
+    Assert.eval(!(message instanceof WireProtocolMessage));
+    final TCNetworkMessage payload = message;
 
-      message = WireProtocolMessageImpl.wrapMessage(message, this);
-      Assert.eval(message.getSentCallback() == null);
+    message = WireProtocolMessageImpl.wrapMessage(message, this);
+    Assert.eval(message.getSentCallback() == null);
 
-      final Runnable callback = payload.getSentCallback();
-      if (callback != null) {
-        message.setSentCallback(new Runnable() {
-          public void run() {
-            callback.run();
-          }
-        });
-      }
-    } else {
-      // All Tx handshaking messages are already WPM bound. Let them go without grouping
+    final Runnable callback = payload.getSentCallback();
+    if (callback != null) {
+      message.setSentCallback(new Runnable() {
+        public void run() {
+          callback.run();
+        }
+      });
     }
+    return finalizeWireProtocolMessage((WireProtocolMessage) message, 1);
+  }
 
+  private TCNetworkMessage finalizeWireProtocolMessage(final WireProtocolMessage message, final int messageCount) {
     WireProtocolHeader hdr = (WireProtocolHeader) message.getHeader();
     hdr.setSourceAddress(getLocalAddress().getAddressBytes());
     hdr.setSourcePort(getLocalAddress().getPort());
     hdr.setDestinationAddress(getRemoteAddress().getAddressBytes());
     hdr.setDestinationPort(getRemoteAddress().getPort());
-    hdr.setMessageCount(1);
+    hdr.setMessageCount(messageCount);
     hdr.computeChecksum();
     return message;
   }
