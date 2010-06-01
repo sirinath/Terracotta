@@ -58,6 +58,8 @@ public interface StandardDSOClientConfigHelper {
   void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,
                          boolean honorVolatile);
 
+  void addIncludePattern(String expression, boolean honorTransient, String methodToCallOnLoad, boolean honorVolatile);
+
   void addAutolock(String methodPattern, ConfigLockLevel type);
 
   void addExcludePattern(String string);
