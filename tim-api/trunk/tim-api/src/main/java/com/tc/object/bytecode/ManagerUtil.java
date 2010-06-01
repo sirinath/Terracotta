@@ -73,6 +73,10 @@ public class ManagerUtil {
     pw.close();
     return sw.toString();
   }
+  
+  public static boolean isManagerEnabled() {
+  	return ENABLED;
+  }
 
   public static Manager getManager() {
     if (!ENABLED) { return NULL_MANAGER; }
