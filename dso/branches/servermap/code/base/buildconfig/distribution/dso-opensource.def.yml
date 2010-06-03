@@ -55,7 +55,7 @@ bundled_components:
             # install in 'api-jars' folder so it can be deleted later
             install_directory: api-jars
             source: tests.base
-            filter: "**/*TestApp.class"
+            filter: "**/*TestApp*.class"
             modules:
               - common-api
               - common
@@ -136,9 +136,19 @@ postscripts:
       args:
         - platform/samples/pojo
         - sessions/samples
+  - package-sources:
+      args:
+        - artifact: terracotta-sources
+          includes: **/src*/**
+          excludes: **/build.eclipse/**, **/build/**
+          dest: build/sources
+        - artifact: test-api-sources
+          includes: **/tests*/**
+          excludes: **/build.eclipse/**, **/build/**, **/*TestApp.java, **/*Test.java
+          dest: build/sources
   - maven-deploy:
       args:
-        - artifact_count: 9
+        - artifact_count: 11
         - groupId: org.terracotta
           artifact: parent
           srcfile: pom.xml
@@ -150,7 +160,12 @@ postscripts:
         - groupId: org.terracotta
           artifact: terracotta-l1-parent
           srcfile: poms/terracotta-l1-parent-pom.xml
-          pom: poms/terracotta-l1-parent-pom.xml        
+          pom: poms/terracotta-l1-parent-pom.xml       
+        - groupId: org.terracotta
+          artifact: terracotta
+          classifier: sources
+          srcfile: build/sources/terracotta-sources.jar
+          pom: poms/terracotta-pom.xml
         - groupId: org.terracotta
           artifact: terracotta
           file: lib/tc.jar
@@ -176,6 +191,11 @@ postscripts:
           artifact: tcstats
           file: lib/tcstats-xmlbeans-generated.jar
           pom: poms/tcstats-pom.xml
+        - groupId: org.terracotta.api
+          artifact: test-api
+          classifier: sources
+          srcfile: build/sources/test-api-sources.jar
+          pom: poms/terracotta-test-api-pom.xml
         - groupId: org.terracotta.api
           artifact: test-api
           file: api-jars/test-api.jar
