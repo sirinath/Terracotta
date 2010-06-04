@@ -810,6 +810,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private static class TCGroupHandshakeStateMachine {
     private final HandshakeState     STATE_NODEID         = new NodeIDState();
     private final HandshakeState     STATE_TRY_ADD_MEMBER = new TryAddMemberState();
+    private final HandshakeState     STATE_ACK_OK         = new AckOkState();
     private final HandshakeState     STATE_SUCCESS        = new SuccessState();
     private final HandshakeState     STATE_FAILURE        = new FailureState();
 
@@ -1028,7 +1029,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
           }
           signalToJoin(isOkToJoin);
         }
-        if (isOkToJoin) switchToState(STATE_SUCCESS);
+        if (isOkToJoin) switchToState(STATE_ACK_OK);
         else switchToState(STATE_FAILURE);
       }
 
@@ -1055,6 +1056,37 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     }
 
     /*
+     * AckOkState -- Ack ok message
+     */
+    private class AckOkState extends HandshakeState {
+      public AckOkState() {
+        super("Ack-Ok");
+      }
+
+      @Override
+      public void enter() {
+        member.setReady(true);
+        member.notifyMemberAdded();
+        ackOk();
+      }
+
+      @Override
+      public void execute(TCGroupHandshakeMessage msg) {
+        if (msg.isAckMessage()) switchToState(STATE_SUCCESS);
+        else switchToState(STATE_FAILURE);
+      }
+
+      private void ackOk() {
+        TCGroupHandshakeMessage msg = (TCGroupHandshakeMessage) channel
+            .createMessage(TCMessageType.GROUP_HANDSHAKE_MESSAGE);
+        if (logger.isDebugEnabled()) logger.debug("Send ack message to " + member);
+        msg.initializeAck();
+        msg.send();
+      }
+
+    }
+
+    /*
      * SucessState -- Both added to group. Fire nodeJoined event.
      */
     private class SuccessState extends HandshakeState {
@@ -1065,8 +1097,6 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
       @Override
       public void enter() {
         cancelTimerTask();
-        member.setReady(true);
-        member.notifyMemberAdded();
         manager.fireNodeEvent(member, true);
         member.setJoinedEventFired(true);
 
