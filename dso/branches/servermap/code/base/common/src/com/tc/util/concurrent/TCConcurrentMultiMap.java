@@ -5,10 +5,10 @@ package com.tc.util.concurrent;
 
 import com.tc.util.concurrent.TCConcurrentStore.TCConcurrentStoreCallback;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A concurrent implementation of a MultiMap (one to many mapping) with configurable concurrency level. Basic methods
@@ -18,14 +18,16 @@ import java.util.Map;
  */
 public class TCConcurrentMultiMap<K, V> {
 
-  private final TCConcurrentStore<K, List<V>> store;
-  private final AddCallBack                   callback = new AddCallBack();
+  private final AddCallBack<K, V>            addCallback    = new AddCallBack<K, V>();
+  private final RemoveCallBack<K, V>         removeCallback = new RemoveCallBack<K, V>();
+
+  private final TCConcurrentStore<K, Set<V>> store;
 
   /**
    * Creates a Multimap with a default initial capacity (16), load factor (0.75) and concurrencyLevel (16).
    */
   public TCConcurrentMultiMap() {
-    this.store = new TCConcurrentStore<K, List<V>>();
+    this.store = new TCConcurrentStore<K, Set<V>>();
   }
 
   /**
@@ -36,7 +38,7 @@ public class TCConcurrentMultiMap<K, V> {
    * @throws IllegalArgumentException if the initial capacity of elements is negative.
    */
   public TCConcurrentMultiMap(final int initialCapacity) {
-    this.store = new TCConcurrentStore<K, List<V>>(initialCapacity);
+    this.store = new TCConcurrentStore<K, Set<V>>(initialCapacity);
   }
 
   /**
@@ -47,7 +49,7 @@ public class TCConcurrentMultiMap<K, V> {
    * @throws IllegalArgumentException if the initial capacity of elements is negative or the load factor is non-positive
    */
   public TCConcurrentMultiMap(final int initialCapacity, final float loadFactor) {
-    this.store = new TCConcurrentStore<K, List<V>>(initialCapacity, loadFactor);
+    this.store = new TCConcurrentStore<K, Set<V>>(initialCapacity, loadFactor);
   }
 
   /**
@@ -60,18 +62,29 @@ public class TCConcurrentMultiMap<K, V> {
    *         non-positive.
    */
   public TCConcurrentMultiMap(final int initialCapacity, final float loadFactor, final int concurrencyLevel) {
-    this.store = new TCConcurrentStore<K, List<V>>(initialCapacity, loadFactor, concurrencyLevel);
+    this.store = new TCConcurrentStore<K, Set<V>>(initialCapacity, loadFactor, concurrencyLevel);
   }
 
   /**
-   * Adds a mapping of key to value to the Multimap. If there already exists a mapping for key, that mapping is still
-   * retained while adding the new mapping. Also the mapping is added if there exists a mapping for key to value.
+   * Adds a mapping of key to value to the Multimap. If there already exists a mapping for the key, then the value is
+   * added to the set of values mapped to that key. If there already exists a mapping for the key to the value, then the
+   * Multimap is not mutated.
    * 
    * @return true, if this is the first mapping for key in this Multimap at this point in time, else false
    * @throws NullPointerException if key or value is null
    */
   public boolean add(final K key, final V value) {
-    return (Boolean) this.store.executeUnderWriteLock(key, value, this.callback);
+    return (Boolean) this.store.executeUnderWriteLock(key, value, this.addCallback);
+  }
+
+  /**
+   * Removes the mapping of key to value if it exists in the Multimap.
+   * 
+   * @returns true if the mapping existed and was successfully removed, false if the mapping didn't exist.
+   * @throws NullPointerException if key or value is null
+   */
+  public boolean remove(final K key, final V value) {
+    return (Boolean) this.store.executeUnderWriteLock(key, value, this.removeCallback);
   }
 
   /**
@@ -81,10 +94,10 @@ public class TCConcurrentMultiMap<K, V> {
    * @return list of mappings for key
    * @throws NullPointerException if key is null
    */
-  public List<V> removeAll(final K key) {
-    final List<V> list = this.store.remove(key);
-    if (list == null) { return Collections.EMPTY_LIST; }
-    return list;
+  public Set<V> removeAll(final K key) {
+    final Set<V> set = this.store.remove(key);
+    if (set == null) { return Collections.EMPTY_SET; }
+    return set;
   }
 
   /**
@@ -96,24 +109,37 @@ public class TCConcurrentMultiMap<K, V> {
    * @return list of mappings for key
    * @throws NullPointerException if key is null
    */
-  public List<V> get(final K key) {
-    final List<V> list = this.store.get(key);
-    if (list == null) { return Collections.EMPTY_LIST; }
-    return Collections.unmodifiableList(list);
+  public Set<V> get(final K key) {
+    final Set<V> set = this.store.get(key);
+    if (set == null) { return Collections.EMPTY_SET; }
+    return Collections.unmodifiableSet(set);
   }
 
-  private final class AddCallBack implements TCConcurrentStoreCallback<K, List<V>> {
+  private static final class AddCallBack<K, V> implements TCConcurrentStoreCallback<K, Set<V>> {
     // Called under segment lock
-    public Object callback(final K key, final Object value, final Map<K, List<V>> segment) {
+    public Object callback(final K key, final Object value, final Map<K, Set<V>> segment) {
       boolean newEntry = false;
-      List<V> list = segment.get(key);
-      if (list == null) {
-        list = new ArrayList<V>();
-        segment.put(key, list);
+      Set<V> set = segment.get(key);
+      if (set == null) {
+        set = new HashSet<V>();
+        segment.put(key, set);
         newEntry = true;
       }
-      list.add((V) value);
+      set.add((V) value);
       return newEntry;
+    }
+  }
+
+  private static final class RemoveCallBack<K, V> implements TCConcurrentStoreCallback<K, Set<V>> {
+    // Called under segment lock
+    public Object callback(final K key, final Object value, final Map<K, Set<V>> segment) {
+      final Set<V> set = segment.get(key);
+      if (set == null) { return false; }
+      final boolean removed = set.remove(value);
+      if (set.isEmpty()) {
+        segment.remove(key);
+      }
+      return removed;
     }
   }
 }

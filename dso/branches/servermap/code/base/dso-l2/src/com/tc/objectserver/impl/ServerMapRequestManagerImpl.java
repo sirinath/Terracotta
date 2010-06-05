@@ -32,7 +32,6 @@ import com.tc.util.concurrent.TCConcurrentMultiMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -86,12 +85,12 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
 
     final Map<ClientID, Collection<ServerMapGetValueResponse>> results = new HashMap<ClientID, Collection<ServerMapGetValueResponse>>();
     try {
-      final List<ServerMapRequestContext> requestList = this.requestQueue.remove(mapID);
+      final Collection<ServerMapRequestContext> requests = this.requestQueue.remove(mapID);
 
-      if (requestList.isEmpty()) { throw new AssertionError("Looked up : " + managedObject
-                                                            + " But no request pending for it : " + this.requestQueue); }
+      if (requests.isEmpty()) { throw new AssertionError("Looked up : " + managedObject
+                                                         + " But no request pending for it : " + this.requestQueue); }
 
-      for (final ServerMapRequestContext request : requestList) {
+      for (final ServerMapRequestContext request : requests) {
 
         final ServerMapRequestType requestType = request.getRequestType();
         switch (requestType) {
@@ -199,7 +198,7 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
       return this.requests.add(mapID, context);
     }
 
-    public List<ServerMapRequestContext> remove(final ObjectID mapID) {
+    public Collection<ServerMapRequestContext> remove(final ObjectID mapID) {
       return this.requests.removeAll(mapID);
     }
   }
