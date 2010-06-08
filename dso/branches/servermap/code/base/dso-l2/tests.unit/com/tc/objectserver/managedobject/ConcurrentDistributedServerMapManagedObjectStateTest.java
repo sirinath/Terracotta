@@ -14,7 +14,7 @@ import com.tc.util.Assert;
 
 public class ConcurrentDistributedServerMapManagedObjectStateTest extends AbstractTestManagedObjectState {
 
-  public static final String CDSM_DSO_CLASSNAME = "org.terracotta.collections.ConcurrentDistributedServerMapDso";
+  public static final String CDSM_DSO_CLASSNAME = "com.terracotta.toolkit.collections.ConcurrentDistributedServerMapDso";
 
   public void testDehydration() throws Exception {
 
