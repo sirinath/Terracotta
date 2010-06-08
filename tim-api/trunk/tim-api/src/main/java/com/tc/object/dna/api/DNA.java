@@ -10,9 +10,11 @@ import com.tc.object.ObjectID;
  * Represents the data of an object. Implementations of this interface are used to extract data from and apply
  * (new/updated) data to objects. It's like serialization data, but it allows deltas to be extracted and applied.
  *
- * @author Orion Letizi
  */
 public interface DNA {
+  
+  enum DNAType { L2_SYNC, L1_FAULT }
+  
   /** Array size constant indicating no array size */
   public static final int  NULL_ARRAY_SIZE  = -1;
 
