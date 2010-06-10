@@ -42,10 +42,6 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
 
   private final Object                             attachingNewConnection = new Object();
   private final SynchronizedRef                    connectionCloseEvent   = new SynchronizedRef(null);
-  private byte[]                                   sourceAddress;
-  private int                                      sourcePort;
-  private byte[]                                   destinationAddress;
-  private int                                      destinationPort;
   private boolean                                  allowConnectionReplace = false;
   private volatile ConnectionHealthCheckerContext  healthCheckerContext   = null;
   private int                                      remoteCallbackPort     = TransportHandshakeMessage.NO_CALLBACK_PORT;
@@ -184,30 +180,6 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   // Do not override this method. Not a final method, as a test class is deriving it
   public void sendToConnection(TCNetworkMessage message) {
     if (message == null) throw new AssertionError("Attempt to send a null message.");
-    if (!(message instanceof WireProtocolMessage)) {
-      final TCNetworkMessage payload = message;
-
-      message = WireProtocolMessageImpl.wrapMessage(message, connection);
-      Assert.eval(message.getSentCallback() == null);
-
-      final Runnable callback = payload.getSentCallback();
-      if (callback != null) {
-        message.setSentCallback(new Runnable() {
-          public void run() {
-            callback.run();
-          }
-        });
-      }
-    }
-
-    WireProtocolHeader hdr = (WireProtocolHeader) message.getHeader();
-
-    hdr.setSourceAddress(getSourceAddress());
-    hdr.setSourcePort(getSourcePort());
-    hdr.setDestinationAddress(getDestinationAddress());
-    hdr.setDestinationPort(getDestinationPort());
-    hdr.computeChecksum();
-
     connection.putMessage(message);
   }
 
@@ -337,7 +309,6 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
   protected void setConnection(TCConnection conn) {
     TCConnection old = this.connection;
     this.connection = conn;
-    clearAddressCache();
     this.connection.addListener(this);
     if (old != null) {
       old.removeListener(this);
@@ -350,36 +321,8 @@ abstract class MessageTransportBase extends AbstractMessageTransport implements 
       conn.close(10000);
       this.connectionId = ConnectionID.NULL_ID;
       conn.removeListener(this);
-      clearAddressCache();
       this.connection = null;
     }
-  }
-
-  private void clearAddressCache() {
-    this.sourceAddress = null;
-    this.sourcePort = -1;
-    this.destinationAddress = null;
-    this.destinationPort = -1;
-  }
-
-  private byte[] getSourceAddress() {
-    if (sourceAddress == null) { return sourceAddress = connection.getLocalAddress().getAddressBytes(); }
-    return sourceAddress;
-  }
-
-  private byte[] getDestinationAddress() {
-    if (destinationAddress == null) { return destinationAddress = connection.getRemoteAddress().getAddressBytes(); }
-    return destinationAddress;
-  }
-
-  private int getSourcePort() {
-    if (sourcePort == -1) { return this.sourcePort = connection.getLocalAddress().getPort(); }
-    return sourcePort;
-  }
-
-  private int getDestinationPort() {
-    if (destinationPort == -1) { return this.destinationPort = connection.getRemoteAddress().getPort(); }
-    return destinationPort;
   }
 
   protected void wireNewConnection(TCConnection conn) {

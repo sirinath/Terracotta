@@ -145,20 +145,21 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     validateGroups();
     validateDSOClusterPersistenceMode();
     validateLicenseCapabilities();
+    validateHaConfiguration();
   }
 
   public TopologyReloadStatus reloadConfiguration(ServerConnectionValidator serverConnectionValidator)
       throws ConfigurationSetupException {
     MutableBeanRepository changedL2sBeanRepository = new StandardBeanRepository(Servers.class);
 
-    this.configurationCreator.reloadServersConfiguration(changedL2sBeanRepository);
+    this.configurationCreator.reloadServersConfiguration(changedL2sBeanRepository, false);
 
     TopologyVerifier topologyVerifier = new TopologyVerifier(serversBeanRepository(), changedL2sBeanRepository,
                                                              this.activeServerGroupsConfig, serverConnectionValidator);
     TopologyReloadStatus status = topologyVerifier.checkAndValidateConfig();
     if (TopologyReloadStatus.TOPOLOGY_CHANGE_ACCEPTABLE != status) { return status; }
 
-    this.configurationCreator.reloadServersConfiguration(serversBeanRepository());
+    this.configurationCreator.reloadServersConfiguration(serversBeanRepository(), true);
 
     try {
       this.activeServerGroupsConfig = createActiveServerGroupsConfig();
@@ -577,6 +578,25 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
       LicenseCheck.checkCapability(Capability.SERVER_STRIPING);
     }
+  }
+
+  public void validateHaConfiguration() throws ConfigurationSetupException {
+    int networkedHa = 0;
+    int diskbasedHa = 0;
+    ActiveServerGroupConfig[] asgcArray = activeServerGroupsConfig.getActiveServerGroupArray();
+    for (ActiveServerGroupConfig asgc : asgcArray) {
+      if (asgc.getHa().isNetworkedActivePassive()) {
+        ++networkedHa;
+      } else {
+        ++diskbasedHa;
+      }
+    }
+    if (networkedHa > 0 && diskbasedHa > 0) { throw new ConfigurationSetupException(
+                                                                                    "All mirror-groups must be set to the same High Availability mode. Your tc-config.xml has "
+                                                                                        + networkedHa
+                                                                                        + " group(s) set to networked HA and "
+                                                                                        + diskbasedHa
+                                                                                        + " group(s) set to disk-based HA."); }
   }
 
   public NewCommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException {
