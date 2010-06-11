@@ -19,7 +19,6 @@ import com.tc.net.ServerID;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
-import com.tc.net.core.TCConnection;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.L2ReconnectConfigImpl;
@@ -156,16 +155,9 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     setDiscover(new TCGroupMemberDiscoveryStatic(this));
   }
 
-  public boolean isConnectionToNodeActive(NodeID sid) {
+  public boolean isNodeConnected(NodeID sid) {
     TCGroupMember m = members.get(sid);
-    if (m != null) {
-      TCSocketAddress remoteAddr = m.getChannel().getRemoteAddress();
-      TCConnection[] conns = communicationsManager.getConnectionManager().getAllActiveConnections();
-      for (int i = 0; i < conns.length; ++i) {
-        if (conns[i].isConnected() && conns[i].getRemoteAddress().equals(remoteAddr)) { return true; }
-      }
-    }
-    return false;
+    return (m != null) && m.getChannel().isOpen();
   }
 
   /*
