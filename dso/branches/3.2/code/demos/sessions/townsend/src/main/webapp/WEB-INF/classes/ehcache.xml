@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ehcache name="Townsend" xsi:noNamespaceSchemaLocation="ehcache.xsd">
-  <defaultCache maxElementsInMemory="1.0.4-SNAPSHOT" eternal="false"
-    timeToIdleSeconds="120" timeToLiveSeconds="120" maxElementsOnDisk="1.0.4-SNAPSHOT000" />
+  <defaultCache maxElementsInMemory="10000" eternal="false"
+    timeToIdleSeconds="120" timeToLiveSeconds="120" maxElementsOnDisk="10000000" />
 
-  <cache name="catalog" maxElementsInMemory="1.0.4-SNAPSHOT" eternal="true"
-    timeToIdleSeconds="0" timeToLiveSeconds="0" maxElementsOnDisk="1.0.4-SNAPSHOT000">
+  <cache name="catalog" maxElementsInMemory="10000" eternal="true"
+    timeToIdleSeconds="0" timeToLiveSeconds="0" maxElementsOnDisk="10000000">
     <terracotta />
   </cache>
   
