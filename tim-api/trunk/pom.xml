@@ -27,7 +27,39 @@
         <configuration>
           <createChecksum>true</createChecksum>
         </configuration>
+      </plugin>   
+      <plugin>
+        <groupId>org.terracotta</groupId>
+        <artifactId>maven-forge-plugin</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <id>create-manifest</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <forceCreation>true</forceCreation>
+              <archive>
+                <manifestFile>${project.build.directory}/MANIFEST.MF</manifestFile>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>       
     </plugins>
   </build>
 
