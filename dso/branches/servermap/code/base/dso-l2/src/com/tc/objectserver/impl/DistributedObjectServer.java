@@ -62,6 +62,7 @@ import com.tc.management.remote.connect.ClientConnectEventHandler;
 import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
+import com.tc.management.remote.protocol.terracotta.TunneledDomainsChanged;
 import com.tc.net.AddressChecker;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.NodeID;
@@ -742,7 +743,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final TCMemoryManagerImpl tcMemManager = new TCMemoryManagerImpl(cacheConfig.getSleepInterval(), cacheConfig
         .getLeastCount(), cacheConfig.isOnlyOldGenMonitored(), this.threadGroup);
     final long timeOut = TCPropertiesImpl.getProperties().getLong(TCPropertiesConsts.LOGGING_LONG_GC_THRESHOLD);
-    final LongGCLogger gcLogger = new LongGCLogger(logger, timeOut);
+    final LongGCLogger gcLogger = new LongGCLogger(timeOut);
     tcMemManager.registerForMemoryEvents(gcLogger);
     tcMemManager.registerForMemoryEvents(new MemoryOperatorEventListener(cacheConfig.getUsedCriticalThreshold()));
     // CDV-1181 warn if using CMS
@@ -1119,6 +1120,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     if (!networkedHA) {
       // In non-network enabled HA, Only active server reached here.
       startActiveMode();
+      startL1Listener();
     }
     setLoggerOnExit();
   }
@@ -1158,6 +1160,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.l1Listener.routeMessageType(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE,
                                      jmxRemoteTunnelStage.getSink(), hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.CLIENT_JMX_READY_MESSAGE, jmxRemoteTunnelStage.getSink(),
+                                     hydrateSink);
+    this.l1Listener.routeMessageType(TCMessageType.TUNNELED_DOMAINS_CHANGED_MESSAGE, jmxRemoteTunnelStage.getSink(),
                                      hydrateSink);
     this.l1Listener.routeMessageType(TCMessageType.LOCK_STATISTICS_RESPONSE_MESSAGE, clientLockStatisticsRespondStage
         .getSink(), hydrateSink);
@@ -1227,6 +1231,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                     GetValueServerMapRequestMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE,
                                     GetValueServerMapResponseMessageImpl.class);
+    this.l1Listener.addClassMapping(TCMessageType.TUNNELED_DOMAINS_CHANGED_MESSAGE, TunneledDomainsChanged.class);
   }
 
   protected TCLogger getLogger() {
@@ -1313,14 +1318,16 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.startupLock != null && this.startupLock.isBlocking();
   }
 
-  public boolean startActiveMode() throws IOException {
+  public void startActiveMode() {
     this.transactionManager.goToActiveMode();
+  }
+
+  public void startL1Listener() throws IOException {
     final Set existingConnections = Collections.unmodifiableSet(this.connectionIdFactory.loadConnectionIDs());
     this.context.getClientHandshakeManager().setStarting(existingConnections);
     this.l1Listener.start(existingConnections);
     consoleLogger.info("Terracotta Server instance has started up as ACTIVE node on " + format(this.l1Listener)
                        + " successfully, and is now ready for work.");
-    return true;
   }
 
   private static String format(final NetworkListener listener) {
