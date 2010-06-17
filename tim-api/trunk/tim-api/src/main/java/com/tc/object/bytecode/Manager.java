@@ -7,6 +7,7 @@ package com.tc.object.bytecode;
 import com.tc.cluster.DsoCluster;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
+import com.tc.management.TunneledDomainUpdater;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
@@ -307,6 +308,11 @@ public interface Manager extends TerracottaLocking {
    * Get the ClassProvider associated with this Manager
    */
   public ClassProvider getClassProvider();
+
+  /**
+   * Get the TunneledDomainUpdater associated with this Manager
+   */
+  public TunneledDomainUpdater getTunneledDomainUpdater();
 
   /**
    * Retrieves the DSO cluster instance.

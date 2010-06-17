@@ -7,6 +7,7 @@ package com.tc.object.bytecode;
 import com.tc.cluster.DsoCluster;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
+import com.tc.management.TunneledDomainUpdater;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
@@ -187,6 +188,10 @@ public class NullManager implements Manager {
   }
 
   public ClassProvider getClassProvider() {
+    throw new UnsupportedOperationException();
+  }
+
+  public TunneledDomainUpdater getTunneledDomainUpdater() {
     throw new UnsupportedOperationException();
   }
 
