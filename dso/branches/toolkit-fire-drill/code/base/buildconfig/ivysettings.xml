@@ -44,6 +44,7 @@
          All of these repos are Maven2 repo
     -->
     <chain name="ibiblio-chain" returnFirst="true">
+      <resolver ref="toolkit-fire-drill" />
       <resolver ref="tc-releases-m2" />
       <resolver ref="tc-snapshots-m2" />
       <ibiblio name="ibiblio" m2compatible="true" />
