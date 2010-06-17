@@ -36,14 +36,14 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.1.1-SNAPSHOT
+    version: 2.2.0-SNAPSHOT
     destination: ehcache
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 2.1.1-SNAPSHOT
+    version: 2.2.0-SNAPSHOT
     destination: ehcache/javadoc
     explode: true
     
@@ -51,7 +51,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 2.1.1-SNAPSHOT
+    version: 2.2.0-SNAPSHOT
     destination: ehcache/src
     explode: true
     
@@ -95,11 +95,11 @@ artifacts:
 
 # begin QUARTZ
   - maven_artifact: false
-    name: quartz-1.8.0.tar.gz
+    name: quartz.tar.gz
     destination: quartz 
     explode: true
     remove_root_folder: true
-    url: http://download.terracotta.org/quartz/quartz-1.8.0.tar.gz
+    url: http://download.terracotta.org/quartz/quartz-1.8.1.tar.gz
 # end QUARTZ
 
 
