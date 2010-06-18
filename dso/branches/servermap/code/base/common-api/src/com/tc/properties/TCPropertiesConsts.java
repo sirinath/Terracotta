@@ -806,4 +806,15 @@ public interface TCPropertiesConsts {
    * </code>
    ********************************************************************************************************************/
   public static final String   L2_DUMP_ON_EXCEPTION_TIMEOUT                                  = "l2.dump.on.exception.timeout";
+
+  /*********************************************************************************************************************
+   * <code>
+   * Dev console Settings
+   *  console.max.operator.events   -   Number of operator events dev console will show 
+   *                                    in the panel before it starts recycling
+   *  l2.operator.events.store      -   Number of operator events L2s will store to keep the history of the events                                 
+   * </code>
+   ********************************************************************************************************************/
+  public static final String   DEV_CONSOLE_MAX_OPERATOR_EVENTS                               = "dev.console.max.operator.events";
+  public static final String   L2_OPERATOR_EVENTS_STORE                                      = "l2.operator.events.store";
 }
