@@ -11,10 +11,6 @@
       <artifact pattern="${local-m2-pattern}"/>
     </filesystem> 
 
-    <url name="toolkit-fire-drill" m2compatible="true">
-      <artifact pattern="http://nexus.terracotta.lan:8080/content/repositories/toolkit-fire-drill/${m2_pattern}"/>
-    </url>
-
     <url name="tc-repo-eclipse">
       <artifact pattern="http://download.terracotta.org/buildjars/eclipse-api/[artifact]-[revision].[ext]"/>
     </url>
