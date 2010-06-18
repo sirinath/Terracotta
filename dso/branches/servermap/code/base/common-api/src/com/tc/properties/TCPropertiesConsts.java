@@ -22,7 +22,7 @@ public interface TCPropertiesConsts {
       "l2.nha.tribes.mcast.mcastFrequency", "l2.nha.tribes.mcast.tcpListenPort", "l2.nha.tribes.mcast.tcpListenHost",
       "l2.nha.mcast.enabled", "l2.nha.tcgroupcomm.response.timelimit", "net.core.recv.buffer", "net.core.send.buffer",
       "l2.objectmanager.loadObjectID.measure.performance", "console.showObjectID",
-      "l1.serverarray.objectCreationStrategy.roundRobin.coordinatorLoad"                    };
+      "l1.serverarray.objectCreationStrategy.roundRobin.coordinatorLoad", "l2.objectmanager.loadObjectID.fastLoad" };
 
   /*********************************************************************************************************************
    * <code>
@@ -100,12 +100,6 @@ public interface TCPropertiesConsts {
    *                                  disk. If enabled, it logs every 1000 faults.
    * persistor.logging.enabled      - Enables/Disables logging of commits to disk while running
    *                                  in persistent mode.
-   * loadObjectID.fastLoad          - Enables/Disables fast loading of ObjectIDs.
-   *                                  Only effective for persistence with mode permanent-store.
-   *                                  This will speed up Object-Ids loading at restart but
-   *                                  some overhead occurred at regular operations.
-   *                                  You can go from enable to disable but need a fresh start if
-   *                                  change from disable to enable for building up compressed object-Id.
    * loadObjectID.longsPerDiskEntry - Size of long array entry to store object IDs
    *                                  in persistent store. One bit for each ID.
    * loadObjectID.mapsdatabase.longsPerDiskEntry - Size of long array entry to store existence of
@@ -145,7 +139,6 @@ public interface TCPropertiesConsts {
   public static final String   L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED                      = "l2.objectmanager.request.logging.enabled";
   public static final String   L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED                        = "l2.objectmanager.flush.logging.enabled";
   public static final String   L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED                    = "l2.objectmanager.persistor.logging.enabled";
-  public static final String   L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD                        = "l2.objectmanager.loadObjectID.fastLoad";
   public static final String   L2_OBJECTMANAGER_LOADOBJECTID_LONGS_PERDISKENTRY              = "l2.objectmanager.loadObjectID.longsPerDiskEntry";
   public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_CHANGES              = "l2.objectmanager.loadObjectID.checkpoint.changes";
   public static final String   L2_OBJECTMANAGER_LOADOBJECTID_CHECKPOINT_MAXLIMIT             = "l2.objectmanager.loadObjectID.checkpoint.maxlimit";
@@ -486,7 +479,7 @@ public interface TCPropertiesConsts {
   public static final String   L1_OBJECTMANAGER_OBJECTID_REQUEST_SIZE                        = "l1.objectmanager.objectid.request.size";
   public static final String   L1_OBJECTMANAGER_FLUSH_LOGGING_ENABLED                        = "l1.objectmanager.flush.logging.enabled";
   public static final String   L1_OBJECTMANAGER_FAULT_LOGGING_ENABLED                        = "l1.objectmanager.fault.logging.enabled";
-  
+
   /*********************************************************************************************************************
    * <code>
    * Section : L1 ServerMap Manager Properties
@@ -498,8 +491,8 @@ public interface TCPropertiesConsts {
    *
    * </code>
    ********************************************************************************************************************/
-  public static final String   L1_SERVERMAPMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY          = "l1.servermapmanager.remote.maxRequestSentImmediately";
-  public static final String   L1_SERVERMAPMANAGER_REMOTE_BATCH_LOOKUP_TIME_PERIOD              = "l1.servermapmanager.remote.batchLookupTimePeriod";
+  public static final String   L1_SERVERMAPMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY       = "l1.servermapmanager.remote.maxRequestSentImmediately";
+  public static final String   L1_SERVERMAPMANAGER_REMOTE_BATCH_LOOKUP_TIME_PERIOD           = "l1.servermapmanager.remote.batchLookupTimePeriod";
 
   /*********************************************************************************************************************
    * <code>

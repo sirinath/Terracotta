@@ -88,7 +88,8 @@ public class ManagedObjectStateFactory {
                             new Byte(ManagedObjectState.LIST_TYPE));
     // XXX: Hack for terracotta toolkit
     classNameToStateMap.put("org.terracotta.async.ProcessingBucketItems", new Byte(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put("org.terracotta.collections.ConcurrentBlockingQueue", new Byte(ManagedObjectState.QUEUE_TYPE));
+    classNameToStateMap.put("org.terracotta.collections.ConcurrentBlockingQueue",
+                            new Byte(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put("org.terracotta.collections.TerracottaList", new Byte(ManagedObjectState.LIST_TYPE));
   }
 
