@@ -98,6 +98,8 @@ public class ServerMapRequestManagerTest extends TestCase {
     verify(message, atLeastOnce()).send();
 
   }
+  
+  
 
   public void testMultipleKeysRequests() {
     final ObjectManager objManager = mock(ObjectManager.class);
@@ -164,8 +166,8 @@ public class ServerMapRequestManagerTest extends TestCase {
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
     final ArrayList responses = new ArrayList();
-    responses.add(new ServerMapGetValueResponse(requestID1, portableValue1));
     responses.add(new ServerMapGetValueResponse(requestID2, portableValue2));
+    responses.add(new ServerMapGetValueResponse(requestID1, portableValue1));
     verify(message, atLeastOnce()).initializeGetValueResponse(mapID, responses);
 
     verify(message, atLeastOnce()).send();
