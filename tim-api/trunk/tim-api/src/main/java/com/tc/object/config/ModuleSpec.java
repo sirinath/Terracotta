@@ -40,11 +40,4 @@ public interface ModuleSpec extends OsgiServiceSpec {
    * @return True if portable, false if unknown (should check with other modules)
    */
   public boolean isPortableClass(Class clazz);
-
-  /**
-   * Get the L1 MBean domains that should be tunneled through the L2 MBeans
-   * 
-   * @return the array of mbean domains that should be tunneled
-   */
-  public String[] getTunneledMBeanDomains();
 }
