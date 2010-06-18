@@ -1,4 +1,4 @@
-Terracotta 3.3.0 - Simple Scale for Enterprise Java
+Terracotta 3.3.1 - Simple Scale for Enterprise Java
 ===================================================
 
 These simplified installation instructions are intended for quick platform 
