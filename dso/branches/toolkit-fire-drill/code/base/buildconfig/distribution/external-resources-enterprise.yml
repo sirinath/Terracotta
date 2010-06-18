@@ -1,5 +1,6 @@
 
 default_repos:
+  - http://nexus.terracotta.lan:8080/content/repositories/toolkit-fire-drill
   - http://kong/repo/snapshots
   - http://kong/repo/staging
   - http://kong/repo/releases
@@ -13,13 +14,13 @@ artifacts:
   - maven_artifact: true
     groupId: org.terracotta
     artifactId: terracotta-toolkit-1.0-runtime-ee
-    version: 1.0.0-SNAPSHOT
+    version: 1.0.0
     destination: common
   
   - maven_artifact: true
     groupId: org.terracotta
     artifactId: terracotta-toolkit-1.0-runtime-ee
-    version: 1.0.0-SNAPSHOT
+    version: 1.0.0
     classifier: javadoc
     destination: common/docs/javadoc
     explode: true
@@ -27,5 +28,5 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-terracotta-ee
-    version: 2.2.0-SNAPSHOT
+    version: 2.2.0
     destination: ehcache
