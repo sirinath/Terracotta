@@ -26,10 +26,8 @@ import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
 import com.tc.objectserver.persistence.sleepycat.FastObjectIDManagerImpl.StoppedFlag;
-import com.tc.properties.TCProperties;
-import com.tc.properties.TCPropertiesConsts;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.SyncObjectIdSet;
 import com.tc.util.SyncObjectIdSetImpl;
 
@@ -61,9 +59,6 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     // test only with Oid fastLoad enabled
-    final TCProperties tcProps = TCPropertiesImpl.getProperties();
-    tcProps.setProperty(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD, "true");
-    assertTrue(TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_LOADOBJECTID_FASTLOAD));
     final boolean paranoid = true;
     this.env = newDBEnvironment(paranoid);
     this.env.open();
@@ -163,8 +158,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     assertTrue("Wrong bits in memory were set", originalIds.containsAll(inMemoryIds));
 
     // verify on disk object IDs
-    final SyncObjectIdSet idSet = this.managedObjectPersistor.getAllObjectIDs();
-    idSet.snapshot(); // blocked while reading from disk
+    final ObjectIDSet idSet = this.managedObjectPersistor.snapshotObjectIDs();
     assertTrue("Wrong object IDs on disk", idSet.containsAll(inMemoryIds));
     assertTrue("Wrong object IDs on disk", inMemoryIds.containsAll(idSet));
   }
@@ -227,6 +221,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     ptx = this.persistenceTransactionProvider.newTransaction();
     try {
+      this.managedObjectPersistor.removeAllObjectIDs(toDelete);
       this.managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
     } finally {
       ptx.commit();
@@ -260,6 +255,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     }
     ptx = this.persistenceTransactionProvider.newTransaction();
     try {
+      this.managedObjectPersistor.removeAllObjectIDs(objectIds);
       this.managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
     } finally {
       ptx.commit();
@@ -324,6 +320,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     this.testSleepycatCollectionsPersistor.setCounter(0);
     ptx = this.persistenceTransactionProvider.newTransaction();
     try {
+      this.managedObjectPersistor.removeAllObjectIDs(toDelete);
       this.managedObjectPersistor.deleteAllObjectsByID(ptx, toDelete);
     } finally {
       ptx.commit();
@@ -362,6 +359,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     this.testSleepycatCollectionsPersistor.setCounter(0);
     ptx = this.persistenceTransactionProvider.newTransaction();
     try {
+      this.managedObjectPersistor.removeAllObjectIDs(objectIds);
       this.managedObjectPersistor.deleteAllObjectsByID(ptx, objectIds);
     } finally {
       ptx.commit();
