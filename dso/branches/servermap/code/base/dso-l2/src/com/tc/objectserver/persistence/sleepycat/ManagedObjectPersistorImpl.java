@@ -178,13 +178,13 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
 
   public void removeAllObjectIDs(final SortedSet<ObjectID> ids) {
     this.extantObjectIDs.removeAll(ids);
-    // Note:: Not removing from the maps IDs because that information is used to delete objects from the maps database
-    // later when delete is called from Delete stage.
-    this.extantEvictableOidSet.removeAll(ids);
   }
 
   public ObjectIDSet snapshotEvictableObjectIDs() {
-    return this.extantEvictableOidSet.snapshot();
+    ObjectIDSet evictables = this.extantEvictableOidSet.snapshot();
+    // As deleted objects are not deleted from extantEvictableOidSet inline, we want to only return things that are
+    evictables.retainAll(extantObjectIDs);
+    return evictables;
   }
 
   public ObjectIDSet snapshotObjectIDs() {
@@ -199,8 +199,9 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     return this.extantMapTypeOidSet.add(id);
   }
 
-  private void removeAllMapTypeObject(final Collection ids) {
+  private void removeAllFromOtherExtantSets(final Collection ids) {
     this.extantMapTypeOidSet.removeAll(ids);
+    this.extantEvictableOidSet.removeAll(ids);
   }
 
   private boolean addEvictableTypeObject(final ObjectID id) {
@@ -547,15 +548,15 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
       deleteObjectByID(tx, objectID);
     }
 
-    // NOTE:: Deleting from MapType after we use the info for deleting from collections DB. The rest of the extant ids
-    // are deleted when removeAllObjectIDs is called
-    removeAllMapTypeObject(sortedOids);
-
     try {
       this.objectIDManager.deleteAll(tx, sortedOids, this.extantMapTypeOidSet, this.extantEvictableOidSet);
     } catch (final TCDatabaseException de) {
       throw new TCRuntimeException(de);
     }
+
+    // NOTE:: Deleting from MapType and Evictable Oids after we use the info for deleting from collections DB.
+    removeAllFromOtherExtantSets(sortedOids);
+
   }
 
   /**

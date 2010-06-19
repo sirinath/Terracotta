@@ -37,7 +37,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
                                                                       .getLogger(ServerMapEvictionManagerImpl.class);
 
   // 15 Minutes
-  public static final long                     DEFAULT_SLEEP_TIME = 15 * 60000;
+  public static final long                     DEFAULT_SLEEP_TIME = 1 * 60000;
 
   private final ObjectManager                  objectManager;
   private final ManagedObjectStore             objectStore;
@@ -55,7 +55,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     this.objectManager = objectManager;
     this.objectStore = objectStore;
     this.clientStateManager = clientStateManager;
-    this.evictionSleepTime = evictionSleepTime;
+    this.evictionSleepTime = 60000;
     this.transactionStorePTP = transactionStorePTP;
   }
 
@@ -65,6 +65,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
 
   public void startEvictor() {
     if (!this.isStarted.getAndSet(true)) {
+      logger.info("Server Map Eviction : Evictor will run every " + this.evictionSleepTime + " ms");
       this.evictor.schedule(new EvictorTask(this), this.evictionSleepTime, this.evictionSleepTime);
     }
   }
