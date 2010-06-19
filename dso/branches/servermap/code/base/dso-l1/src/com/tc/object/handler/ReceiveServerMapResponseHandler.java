@@ -8,6 +8,7 @@ import com.tc.async.api.EventContext;
 import com.tc.object.RemoteServerMapManager;
 import com.tc.object.msg.GetSizeServerMapResponseMessage;
 import com.tc.object.msg.GetValueServerMapResponseMessage;
+import com.tc.object.msg.ObjectNotFoundServerMapResponseMessage;
 
 public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
 
@@ -20,17 +21,22 @@ public class ReceiveServerMapResponseHandler extends AbstractEventHandler {
   @Override
   public void handleEvent(final EventContext context) {
     if (context instanceof GetSizeServerMapResponseMessage) {
-      final GetSizeServerMapResponseMessage responseMsg = (GetSizeServerMapResponseMessage) context;
+      final GetSizeServerMapResponseMessage responseMsg = (GetSizeServerMapResponseMessage)context;
 
       this.remoteServerMapManager.addResponseForGetSize(responseMsg.getLocalSessionID(), responseMsg.getMapID(),
                                                         responseMsg.getRequestID(), responseMsg.getSize(), responseMsg
                                                             .getSourceNodeID());
-    } else {
-      final GetValueServerMapResponseMessage responseMsg = (GetValueServerMapResponseMessage) context;
+    } else if (context instanceof GetValueServerMapResponseMessage) {
+      final GetValueServerMapResponseMessage responseMsg = (GetValueServerMapResponseMessage)context;
       this.remoteServerMapManager.addResponseForKeyValueMapping(responseMsg.getLocalSessionID(),
                                                                 responseMsg.getMapID(), responseMsg
                                                                     .getGetValueResponses(), responseMsg
                                                                     .getSourceNodeID());
+    } else {
+      final ObjectNotFoundServerMapResponseMessage notFoundMsg = (ObjectNotFoundServerMapResponseMessage)context;
+      this.remoteServerMapManager.objectsNotFoundFor(notFoundMsg.getLocalSessionID(), notFoundMsg.getMapID(),
+                                                     notFoundMsg.getRequestID(),
+                                                     notFoundMsg.getSourceNodeID());
     }
   }
 }
