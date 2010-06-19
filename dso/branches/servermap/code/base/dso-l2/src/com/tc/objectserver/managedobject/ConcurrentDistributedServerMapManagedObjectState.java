@@ -10,30 +10,37 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.api.DNA.DNAType;
+import com.tc.objectserver.api.EvictableObject;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
+import java.util.SortedSet;
+import java.util.Map.Entry;
 
-public class ConcurrentDistributedServerMapManagedObjectState extends ConcurrentDistributedMapManagedObjectState {
-  
-  private static final String  MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
-  private static final String  MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
-  private static final String  TARGET_MAX_IN_MEMORY_COUNT_FIELDNAME = "targetMaxInMemoryCount";
-  private static final String  TARGET_MAX_TOTAL_COUNT_FIELDNAME     = "targetMaxTotalCount";
-  
-  private int                                  maxTTISeconds;
-  private int                                  maxTTLSeconds;
-  private int                                  targetMaxInMemoryCount;
-  private int                                  targetMaxTotalCount;
+public class ConcurrentDistributedServerMapManagedObjectState extends ConcurrentDistributedMapManagedObjectState
+    implements EvictableObject {
+
+  private static final String MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
+  private static final String MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
+  private static final String TARGET_MAX_IN_MEMORY_COUNT_FIELDNAME = "targetMaxInMemoryCount";
+  private static final String TARGET_MAX_TOTAL_COUNT_FIELDNAME     = "targetMaxTotalCount";
+
+  private int                 maxTTISeconds;
+  private int                 maxTTLSeconds;
+  private int                 targetMaxInMemoryCount;
+  private int                 targetMaxTotalCount;
 
   protected ConcurrentDistributedServerMapManagedObjectState(final ObjectInput in) throws IOException {
     super(in);
-    maxTTISeconds = in.readInt();
-    maxTTLSeconds = in.readInt();
-    targetMaxInMemoryCount = in.readInt();
-    targetMaxTotalCount = in.readInt();
+    this.maxTTISeconds = in.readInt();
+    this.maxTTLSeconds = in.readInt();
+    this.targetMaxInMemoryCount = in.readInt();
+    this.targetMaxTotalCount = in.readInt();
   }
 
   protected ConcurrentDistributedServerMapManagedObjectState(final long classId, final Map map) {
@@ -60,7 +67,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
       dehydrateFields(objectID, writer);
     }
   }
-  
+
   @Override
   protected void dehydrateFields(final ObjectID objectID, final DNAWriter writer) {
     super.dehydrateFields(objectID, writer);
@@ -120,7 +127,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   }
 
   @Override
-  protected void basicWriteTo(ObjectOutput out) throws IOException {
+  protected void basicWriteTo(final ObjectOutput out) throws IOException {
     super.basicWriteTo(out);
     out.writeInt(this.maxTTISeconds);
     out.writeInt(this.maxTTLSeconds);
@@ -132,13 +139,9 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     return this.references.get(portableKey);
   }
 
-  public Integer getSize() {
-    return this.references.size();
-  }
-  
   @Override
   protected boolean basicEquals(final LogicalManagedObjectState o) {
-    //TODO: should maxTTI, maxTTL, targetInMemory, targetMaxTotalCount be considered here too?
+    // TODO: should maxTTI, maxTTL, targetInMemory, targetMaxTotalCount be considered here too?
     return super.basicEquals(o);
   }
 
@@ -148,4 +151,58 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     return cdmMos;
   }
 
+  /****************************************************************************
+   * EvictableObject interface
+   */
+
+  public int getMaxTotalCount() {
+    return this.targetMaxTotalCount;
+  }
+
+  public int getSize() {
+    return this.references.size();
+  }
+
+  public int getTTISeconds() {
+    return this.maxTTISeconds;
+  }
+
+  public int getTTLSeconds() {
+    return this.maxTTLSeconds;
+  }
+
+  // TODO:: This implementation could be better, could use LinkedHashMap to increase the chances of getting the
+  // right samples, also should it return a sorted Map ? Are objects with lower OIDs having more changes to be evicted ?
+  public Map getRandomSamples(final int count, final SortedSet<ObjectID> ignoreList) {
+    final Map samples = new HashMap(count);
+    final Map ignored = new HashMap(count);
+    final Random r = new Random();
+    final int size = getSize();
+    final int chance = count > size ? 100 : Math.max(10, (count / size) * 100);
+    for (final Iterator i = this.references.entrySet().iterator(); samples.size() < count && i.hasNext();) {
+      final Entry e = (Entry) i.next();
+      if (ignoreList.contains(e.getValue())) {
+        continue;
+      }
+      if (r.nextInt(100) < chance) {
+        samples.put(e.getKey(), e.getValue());
+      } else {
+        ignored.put(e.getKey(), e.getValue());
+      }
+    }
+    if (samples.size() < count) {
+      for (final Iterator i = ignored.entrySet().iterator(); samples.size() < count && i.hasNext();) {
+        final Entry e = (Entry) i.next();
+        samples.put(e.getKey(), e.getValue());
+      }
+    }
+    return samples;
+  }
+
+  public void evict(final Map candidates) {
+    // Note :: Not calling removeAll on the keySet directly because SleepycatPersistableMap doesn't implement it.
+    for (final Iterator i = candidates.keySet().iterator(); i.hasNext();) {
+      this.references.remove(i.next());
+    }
+  }
 }

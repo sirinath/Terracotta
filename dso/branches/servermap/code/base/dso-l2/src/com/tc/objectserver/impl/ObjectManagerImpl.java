@@ -617,7 +617,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     return this.objectStore.getAllObjectIDs();
   }
 
-  private boolean containsObject(ObjectID id) {
+  private boolean containsObject(final ObjectID id) {
     return this.objectStore.containsObject(id);
   }
 
