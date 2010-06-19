@@ -96,18 +96,20 @@ public final class ServerMapRequestContext implements ObjectManagerResultsContex
     final Map<ObjectID, ManagedObject> objects = results.getObjects();
     final ObjectIDSet missingObjects = results.getMissingObjectIDs();
 
+    final ManagedObject mo = objects.get(this.mapID);
+
     if (!missingObjects.isEmpty()) {
-      logger.error("Ignoring Missing ObjectIDs : " + missingObjects + " Request Context : " + this);
-      // TODO:: Fix this
+      logger.error("Missing ObjectIDs : " + missingObjects + " Request Context : " + this);
+      final ServerMapMissingObjectResponseContext responseContext = new ServerMapMissingObjectResponseContext(this.mapID);
+      this.destinationSink.add(responseContext);
       return;
     }
     if (objects.size() != 1) { throw new AssertionError("Asked for 1, got more or less"); }
 
-    final ManagedObject mo = objects.get(this.mapID);
+   
+    if (mo == null) { throw new AssertionError("ServerMap (mapID " + this.mapID + ") is null "); }
 
-    if (mo == null) { throw new AssertionError("ServerTCMap (mapID " + this.mapID + ") is null "); }
-
-    final EntryForKeyResponseContext responseContext = new EntryForKeyResponseContext(mo, this.mapID);
+    final ServerMapResponseContext responseContext = new ServerMapResponseContext(mo, this.mapID);
     this.destinationSink.add(responseContext);
   }
 

@@ -65,4 +65,8 @@ public class TestRemoteServerMapManager implements RemoteServerMapManager {
   public void clearCachedItemsForLocks(final Set<LockID> toEvict) {
     throw new ImplementMe();
   }
+
+  public void objectsNotFoundFor(SessionID sessionID, ObjectID mapID, ServerMapRequestID requestID, NodeID nodeID) {
+    throw new ImplementMe();
+  }
 }
