@@ -279,7 +279,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       return new TestStage();
     }
 
-    public ServerMapRequestManager getServerMapRequestManager() {
+    public ServerMapRequestManager getServerTCMapRequestManager() {
       throw new ImplementMe();
     }
 

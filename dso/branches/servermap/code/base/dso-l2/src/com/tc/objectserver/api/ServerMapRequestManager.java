@@ -16,8 +16,6 @@ public interface ServerMapRequestManager {
   public void requestSize(ServerMapRequestID requestID, ClientID clientID, ObjectID mapID);
 
   public void sendResponseFor(ObjectID mapID, ManagedObject managedObject);
-  
-  public void sendMissingObjectResponseFor(ObjectID mapID);
 
   public void requestValues(ClientID clientID, ObjectID mapID, Collection<ServerMapGetValueRequest> requests);
 

@@ -56,7 +56,7 @@ public class ServerMapRequestHandler extends AbstractEventHandler implements Eve
   @Override
   public void initialize(final ConfigurationContext context) {
     final ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.serverTCMapRequestManager = oscc.getServerMapRequestManager();
+    this.serverTCMapRequestManager = oscc.getServerTCMapRequestManager();
     this.channelStats = oscc.getChannelStats();
   }
 

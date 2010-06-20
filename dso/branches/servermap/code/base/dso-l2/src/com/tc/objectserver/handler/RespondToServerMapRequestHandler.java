@@ -7,31 +7,30 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.EventHandler;
+import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ServerMapRequestManager;
-import com.tc.objectserver.context.ServerMapMissingObjectResponseContext;
-import com.tc.objectserver.context.ServerMapResponseContext;
+import com.tc.objectserver.context.EntryForKeyResponseContext;
+import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 
 public class RespondToServerMapRequestHandler extends AbstractEventHandler implements EventHandler {
 
-  private ServerMapRequestManager serverMapRequestManager;
-
+  private ServerMapRequestManager serverTCMapRequestManager;
+ 
   @Override
   public void handleEvent(final EventContext context) {
+    final EntryForKeyResponseContext responseContext = (EntryForKeyResponseContext) context;
 
-    if (context instanceof ServerMapMissingObjectResponseContext) {
-      final ServerMapMissingObjectResponseContext responseContext = (ServerMapMissingObjectResponseContext) context;
-      serverMapRequestManager.sendMissingObjectResponseFor(responseContext.getMapID());
-    } else if (context instanceof ServerMapResponseContext) {
-      final ServerMapResponseContext responseContext = (ServerMapResponseContext) context;
-      serverMapRequestManager.sendResponseFor(responseContext.getMapID(), responseContext.getManagedObject());
-    }
+    final ObjectID mapID = responseContext.getMapID();
+    final ManagedObject mo = responseContext.getManagedObject();
+    
+    serverTCMapRequestManager.sendResponseFor(mapID, mo);
   }
 
   @Override
   public void initialize(final ConfigurationContext context) {
     final ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.serverMapRequestManager = oscc.getServerMapRequestManager();
+    this.serverTCMapRequestManager = oscc.getServerTCMapRequestManager();
   }
 
 }
