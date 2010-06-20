@@ -166,7 +166,7 @@ public final class ManagedObjectPersistorImpl extends SleepycatPersistorBase imp
     if (PersistentCollectionsUtil.isPersistableCollectionType(type)) {
       result &= addMapTypeObject(id);
     }
-    if (PersistentCollectionsUtil.isEvictableObjectType(type)) {
+    if (PersistentCollectionsUtil.isEvictableMapType(type)) {
       result &= addEvictableTypeObject(id);
     }
     return result;

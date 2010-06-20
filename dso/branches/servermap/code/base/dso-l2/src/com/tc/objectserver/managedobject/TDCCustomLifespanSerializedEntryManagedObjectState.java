@@ -28,6 +28,11 @@ public class TDCCustomLifespanSerializedEntryManagedObjectState extends TDCSeria
   }
 
   @Override
+  public boolean canEvict(final int ttiSeconds, final int ttlSeconds) {
+    return canEvictNow(this.customTti, this.customTtl);
+  }
+
+  @Override
   protected boolean basicEquals(final AbstractManagedObjectState o) {
     final TDCCustomLifespanSerializedEntryManagedObjectState other = (TDCCustomLifespanSerializedEntryManagedObjectState) o;
 

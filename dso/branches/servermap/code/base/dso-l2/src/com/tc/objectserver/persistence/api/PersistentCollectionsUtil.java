@@ -27,7 +27,7 @@ public class PersistentCollectionsUtil {
     }
   }
 
-  public static boolean isEvictableObjectType(final byte type) {
+  public static boolean isEvictableMapType(final byte type) {
     switch (type) {
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
         return true;
