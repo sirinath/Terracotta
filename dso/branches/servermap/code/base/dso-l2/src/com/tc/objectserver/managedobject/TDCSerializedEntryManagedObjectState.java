@@ -11,6 +11,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.api.DNA.DNAType;
+import com.tc.objectserver.api.EvictableEntry;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.PhysicalManagedObjectFacade;
 
@@ -23,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectState {
+public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectState implements EvictableEntry {
 
   private static final TCLogger logger                     = TCLogging
                                                                .getLogger(TDCSerializedEntryManagedObjectState.class);
@@ -42,6 +43,17 @@ public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectS
 
   public TDCSerializedEntryManagedObjectState(final long classID) {
     this.classID = classID;
+  }
+
+  public boolean canEvict(final int ttiSeconds, final int ttlSeconds) {
+    return canEvictNow(ttiSeconds, ttlSeconds);
+  }
+
+  protected boolean canEvictNow(final int ttiSeconds, final int ttlSeconds) {
+    final int now = (int) (System.currentTimeMillis() / 1000);
+    final int expiresAtTTI = ttiSeconds <= 0 ? Integer.MAX_VALUE : this.lastAccessedTime + ttiSeconds;
+    final int expiresAtTTL = ttlSeconds <= 0 ? Integer.MAX_VALUE : this.createTime + ttlSeconds;
+    return now >= Math.min(expiresAtTTI, expiresAtTTL);
   }
 
   @Override

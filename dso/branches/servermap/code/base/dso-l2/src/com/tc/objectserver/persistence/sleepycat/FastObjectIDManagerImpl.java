@@ -147,7 +147,7 @@ public final class FastObjectIDManagerImpl extends SleepycatPersistorBase implem
   private byte getIDFromStateObjectType(final byte type) {
     byte id = PersistentCollectionsUtil.isPersistableCollectionType(type) ? this.PERSISTABLE_COLLECTION
         : this.NOT_PERSISTABLE_COLLECTION;
-    if (PersistentCollectionsUtil.isEvictableObjectType(type)) {
+    if (PersistentCollectionsUtil.isEvictableMapType(type)) {
       id |= this.EVICTABLE_OBJECT;
     }
     return id;

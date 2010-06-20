@@ -8,7 +8,7 @@ import com.tc.object.ObjectID;
 import java.util.Map;
 import java.util.SortedSet;
 
-public interface EvictableObject {
+public interface EvictableMap {
 
   public int getMaxTotalCount();
 

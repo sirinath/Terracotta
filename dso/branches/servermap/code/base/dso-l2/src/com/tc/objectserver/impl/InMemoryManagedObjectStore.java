@@ -48,7 +48,7 @@ public class InMemoryManagedObjectStore implements ManagedObjectStore {
 
   private void localPut(final ManagedObject managedObject) {
     this.managed.put(managedObject.getID(), managedObject);
-    if (PersistentCollectionsUtil.isEvictableObjectType(managedObject.getManagedObjectState().getType())) {
+    if (PersistentCollectionsUtil.isEvictableMapType(managedObject.getManagedObjectState().getType())) {
       this.evictables.add(managedObject.getID());
     }
   }

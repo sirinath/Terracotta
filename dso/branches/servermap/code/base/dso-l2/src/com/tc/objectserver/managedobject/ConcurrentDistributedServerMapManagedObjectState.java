@@ -10,7 +10,7 @@ import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.api.DNA.DNAType;
-import com.tc.objectserver.api.EvictableObject;
+import com.tc.objectserver.api.EvictableMap;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -23,7 +23,7 @@ import java.util.SortedSet;
 import java.util.Map.Entry;
 
 public class ConcurrentDistributedServerMapManagedObjectState extends ConcurrentDistributedMapManagedObjectState
-    implements EvictableObject {
+    implements EvictableMap {
 
   private static final String MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
   private static final String MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
@@ -152,7 +152,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   }
 
   /****************************************************************************
-   * EvictableObject interface
+   * EvictableMap interface
    */
 
   public int getMaxTotalCount() {
