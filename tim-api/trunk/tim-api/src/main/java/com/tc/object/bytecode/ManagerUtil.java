@@ -64,6 +64,11 @@ public class ManagerUtil {
     enable();
   }
 
+  public static void clearSingleton() {
+    if (ClassProcessorHelper.USE_GLOBAL_CONTEXT) { throw new AssertionError("global mode"); }
+    SINGLETON = null;
+  }
+
   private static String captureInitInfo() {
     StringWriter sw = new StringWriter();
     sw.append("The singleton instance was initialized at " + new Date() + " by thread ["
@@ -73,9 +78,9 @@ public class ManagerUtil {
     pw.close();
     return sw.toString();
   }
-  
+
   public static boolean isManagerEnabled() {
-  	return ENABLED;
+    return ENABLED;
   }
 
   public static Manager getManager() {

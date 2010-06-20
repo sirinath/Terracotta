@@ -22,6 +22,8 @@ public interface DSOContext extends ClassProcessor, ClassFileTransformer {
    */
   public Manager getManager();
 
+  public void shutdown();
+
   /**
    * Get url to class file
    * 
