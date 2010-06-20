@@ -73,10 +73,9 @@ public class ManagedObjectStateFactory {
                             new Byte(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put(java.util.concurrent.ConcurrentHashMap.class.getName(),
                             new Byte(ManagedObjectState.CONCURRENT_HASHMAP_TYPE));
-    // XXX: hack to support CDM in tim-concurrent-collections.
+    // XXX: Support for CDM, CDSM in terracotta-toolkit
     classNameToStateMap.put("com.terracotta.toolkit.collections.ConcurrentDistributedMapDso", Byte
         .valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE));
-    // XXX: hack to support CDMServerMap in tim-concurrent-collections.
     classNameToStateMap.put("com.terracotta.toolkit.collections.ConcurrentDistributedServerMapDso", Byte
         .valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE));
     // XXX: hack to support Hibernate cache entry type

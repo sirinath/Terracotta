@@ -20,6 +20,8 @@ import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.api.PersistenceTransaction;
 import com.tc.objectserver.persistence.api.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.api.PersistentCollectionsUtil;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.ObjectIDSet;
 
 import java.util.HashMap;
@@ -33,19 +35,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
 
-  private static final TCLogger                logger             = TCLogging
-                                                                      .getLogger(ServerMapEvictionManagerImpl.class);
+  private static final boolean                 ELEMENT_BASED_TTI_TTL_ENABLED = TCPropertiesImpl
+                                                                                 .getProperties()
+                                                                                 .getBoolean(
+                                                                                             TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERELEMENT_TTI_TTL_ENABLED);
+
+  private static final TCLogger                logger                        = TCLogging
+                                                                                 .getLogger(ServerMapEvictionManagerImpl.class);
 
   // 15 Minutes
-  public static final long                     DEFAULT_SLEEP_TIME = 15 * 60000;
+  public static final long                     DEFAULT_SLEEP_TIME            = 15 * 60000;
 
   private final ObjectManager                  objectManager;
   private final ManagedObjectStore             objectStore;
   private final ClientStateManager             clientStateManager;
   private final PersistenceTransactionProvider transactionStorePTP;
   private final long                           evictionSleepTime;
-  private final AtomicBoolean                  isStarted          = new AtomicBoolean(false);
-  private final Timer                          evictor            = new Timer("Server Map Evictor", true);
+  private final AtomicBoolean                  isStarted                     = new AtomicBoolean(false);
+  private final Timer                          evictor                       = new Timer("Server Map Evictor", true);
 
   private Sink                                 evictorSink;
 
@@ -158,8 +165,12 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     txn.commit();
   }
 
-  // TODO:: check TTI and TTL
   private boolean canEvict(final Object value, final int ttiSeconds, final int ttlSeconds) {
+    if ((!(value instanceof ObjectID)) || (ttiSeconds <= 0 && ttlSeconds <= 0 && !ELEMENT_BASED_TTI_TTL_ENABLED)) { return true; }
+    if (true) return true;
+    ObjectID oid = (ObjectID) value;
+    final ManagedObject mo = this.objectManager.getObjectByID(oid);
+    logger.info("CDSM Value object : " + mo);
     return true;
   }
 

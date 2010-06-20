@@ -628,6 +628,7 @@ public interface TCPropertiesConsts {
   public static final String   EHCAHCE_LOCK_READLEVEL                                        = "ehcache.lock.readLevel";
   public static final String   EHCAHCE_LOCK_WRITELEVEL                                       = "ehcache.lock.writeLevel";
   public static final String   EHCACHE_STORAGESTRATEGY_DCV2_LOCALCACHE_ENABLED               = "ehcache.storageStrategy.dcv2.localcache.enabled";
+  public static final String   EHCACHE_STORAGESTRATEGY_DCV2_PERELEMENT_TTI_TTL_ENABLED       = "ehcache.storageStrategy.dcv2.perElementTTITTL.enabled";
   /*********************************************************************************************************************
    * <code>
    * Section : L1 Lock Manager Properties
