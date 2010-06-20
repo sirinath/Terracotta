@@ -193,7 +193,6 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       buf.append("  isDelta->" + isDelta() + "\n");
       buf.append("  actionCount->" + this.actionCount + "\n");
       buf.append("  actionCount (orig)->" + this.origActionCount + "\n");
-      buf.append("  currentAction ->" + this.getAction());
       buf.append("  deserialized?->" + this.wasDeserialized + "\n");
       buf.append("}\n");
       return buf.toString();

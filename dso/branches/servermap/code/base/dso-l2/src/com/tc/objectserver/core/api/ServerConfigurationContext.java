@@ -88,7 +88,7 @@ public interface ServerConfigurationContext extends ConfigurationContext {
 
   public ObjectRequestManager getObjectRequestManager();
 
-  public ServerMapRequestManager getServerMapRequestManager();
+  public ServerMapRequestManager getServerTCMapRequestManager();
 
   public LockManager getLockManager();
 

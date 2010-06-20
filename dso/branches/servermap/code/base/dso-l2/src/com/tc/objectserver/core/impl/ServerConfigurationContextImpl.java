@@ -93,7 +93,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
     return objectRequestManager;
   }
 
-  public ServerMapRequestManager getServerMapRequestManager() {
+  public ServerMapRequestManager getServerTCMapRequestManager() {
     return serverTCMapRequestManager;
   }
 

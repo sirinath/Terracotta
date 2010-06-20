@@ -63,8 +63,4 @@ public final class NullRemoteServerMapManager implements RemoteServerMapManager 
   public void clearCachedItemsForLocks(final Set<LockID> toEvict) {
     //
   }
-
-  public void objectsNotFoundFor(SessionID sessionID, ObjectID mapID, ServerMapRequestID requestID, NodeID nodeID) {
-   // 
-  }
 }

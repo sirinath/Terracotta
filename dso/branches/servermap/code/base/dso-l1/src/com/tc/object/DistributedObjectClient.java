@@ -118,7 +118,6 @@ import com.tc.object.msg.NodesWithObjectsMessageImpl;
 import com.tc.object.msg.NodesWithObjectsResponseMessageImpl;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
-import com.tc.object.msg.ObjectNotFoundServerMapResponseMessageImpl;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
 import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
@@ -706,8 +705,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  GetSizeServerMapRequestMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.GET_SIZE_SERVER_MAP_RESPONSE_MESSAGE,
                                  GetSizeServerMapResponseMessageImpl.class);
-    this.channel.addClassMapping(TCMessageType.OBJECT_NOT_FOUND_SERVER_MAP_RESPONSE_MESSAGE,
-                                 ObjectNotFoundServerMapResponseMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.GET_VALUE_SERVER_MAP_REQUEST_MESSAGE,
                                  GetValueServerMapRequestMessageImpl.class);
     this.channel.addClassMapping(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE,
@@ -769,8 +766,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.channel.routeMessageType(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
                                   hydrateSink);
     this.channel.routeMessageType(TCMessageType.GET_SIZE_SERVER_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
-                                  hydrateSink);
-    this.channel.routeMessageType(TCMessageType.OBJECT_NOT_FOUND_SERVER_MAP_RESPONSE_MESSAGE, receiveServerMapStage.getSink(),
                                   hydrateSink);
 
     int i = 0;

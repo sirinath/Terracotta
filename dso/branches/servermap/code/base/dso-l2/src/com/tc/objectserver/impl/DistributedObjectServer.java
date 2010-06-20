@@ -121,7 +121,6 @@ import com.tc.object.msg.NodesWithObjectsMessageImpl;
 import com.tc.object.msg.NodesWithObjectsResponseMessageImpl;
 import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
-import com.tc.object.msg.ObjectNotFoundServerMapResponseMessageImpl;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
 import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
@@ -1240,8 +1239,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                     GetValueServerMapRequestMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE,
                                     GetValueServerMapResponseMessageImpl.class);
-    this.l1Listener.addClassMapping(TCMessageType.OBJECT_NOT_FOUND_SERVER_MAP_RESPONSE_MESSAGE,
-                                   ObjectNotFoundServerMapResponseMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.TUNNELED_DOMAINS_CHANGED_MESSAGE, TunneledDomainsChanged.class);
   }
 

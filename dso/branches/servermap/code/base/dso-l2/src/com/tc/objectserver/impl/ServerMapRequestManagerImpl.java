@@ -17,7 +17,6 @@ import com.tc.object.ServerMapRequestID;
 import com.tc.object.ServerMapRequestType;
 import com.tc.object.msg.GetSizeServerMapResponseMessage;
 import com.tc.object.msg.GetValueServerMapResponseMessage;
-import com.tc.object.msg.ObjectNotFoundServerMapResponseMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
 import com.tc.objectserver.api.ObjectManager;
@@ -72,13 +71,8 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
       this.objectManager.lookupObjectsFor(clientID, requestContext);
     }
   }
-  
-  
 
   public void sendResponseFor(final ObjectID mapID, final ManagedObject managedObject) {
-
-    final Collection<ServerMapRequestContext> requests = this.requestQueue.remove(mapID);
-
     final ManagedObjectState state = managedObject.getManagedObjectState();
 
     if (!(state instanceof ConcurrentDistributedServerMapManagedObjectState)) {
@@ -92,6 +86,7 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     final Map<ClientID, Collection<ServerMapGetValueResponse>> results = new HashMap<ClientID, Collection<ServerMapGetValueResponse>>();
     final Map<ClientID, ObjectIDSet> prefetches = new HashMap<ClientID, ObjectIDSet>();
     try {
+      final Collection<ServerMapRequestContext> requests = this.requestQueue.remove(mapID);
 
       if (requests.isEmpty()) { throw new AssertionError("Looked up : " + managedObject
                                                          + " But no request pending for it : " + this.requestQueue); }
@@ -119,24 +114,6 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     }
     if (!results.isEmpty()) {
       sendResponseForGetValue(mapID, results);
-    }
-  }
-  
-  public void sendMissingObjectResponseFor(ObjectID mapID) {
-    final Collection<ServerMapRequestContext> requests = this.requestQueue.remove(mapID);
-
-    for (final ServerMapRequestContext request : requests) {
-      final ServerMapRequestID requestID = request.getSizeRequestID();
-      final ServerMapRequestType requestType = request.getRequestType();
-      final ClientID clientID = request.getClientID();
-
-      final MessageChannel channel = getActiveChannel(clientID);
-      if (channel == null) { return; }
-
-      final ObjectNotFoundServerMapResponseMessage notFound = (ObjectNotFoundServerMapResponseMessage) channel
-          .createMessage(TCMessageType.OBJECT_NOT_FOUND_SERVER_MAP_RESPONSE_MESSAGE);
-      notFound.initialize(mapID, requestID, requestType);
-      notFound.send();
     }
   }
 
