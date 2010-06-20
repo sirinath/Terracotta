@@ -141,8 +141,11 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
 
   @Override
   protected boolean basicEquals(final LogicalManagedObjectState o) {
-    // TODO: should maxTTI, maxTTL, targetInMemory, targetMaxTotalCount be considered here too?
-    return super.basicEquals(o);
+    if (!(o instanceof ConcurrentDistributedServerMapManagedObjectState)) { return false; }
+    final ConcurrentDistributedServerMapManagedObjectState mmo = (ConcurrentDistributedServerMapManagedObjectState) o;
+    return super.basicEquals(o) && this.maxTTISeconds == mmo.maxTTISeconds && this.maxTTLSeconds == mmo.maxTTLSeconds
+           && this.targetMaxInMemoryCount == mmo.targetMaxInMemoryCount
+           && this.targetMaxTotalCount == mmo.targetMaxTotalCount;
   }
 
   static MapManagedObjectState readFrom(final ObjectInput in) throws IOException {
