@@ -326,22 +326,22 @@ public class ObjectManagerTest extends TCTestCase {
     // fetch 10 objects and with fault-count -1
     this.objectManager.lookupObjectsAndSubObjectsFor(c1, results, -1);
     Assert.assertEquals(10, results.objects.size());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // fetch 10 objects and with fault-count 1K
     this.objectManager.lookupObjectsAndSubObjectsFor(c1, results, 1000);
     Assert.assertEquals(1000, results.objects.size());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // fetch 10 objects and with fault-count 10K
     this.objectManager.lookupObjectsAndSubObjectsFor(c1, results, 10000);
     Assert.assertEquals(10000, results.objects.size());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // fetch 10 objects and with fault-count 20K. but, max objects available are 10010
     this.objectManager.lookupObjectsAndSubObjectsFor(c1, results, 20000);
     Assert.assertEquals(10010, results.objects.size());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // single object reaching more objects than fault count
     createObjects(10, 11, createObjects(11000, 18000, new HashSet<ObjectID>()));
@@ -353,7 +353,7 @@ public class ObjectManagerTest extends TCTestCase {
     // fetch 1 object and with fault-count 5K. but, object can reach 7K
     this.objectManager.lookupObjectsAndSubObjectsFor(c1, results, 5000);
     Assert.assertEquals(5000, results.objects.size());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
   }
 
@@ -376,7 +376,7 @@ public class ObjectManagerTest extends TCTestCase {
     this.testFaultSinkContext.resetCounter();
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     this.testFaultSinkContext.waitUntillCounterIs(10);
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // before no objects were pre-fetched, we should expect 0 hits and 10 misses
     assertEquals(0, this.stats.getTotalCacheHits());
@@ -399,7 +399,7 @@ public class ObjectManagerTest extends TCTestCase {
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
     assertEquals(0, this.testFaultSinkContext.getCounter());
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     // because objects where prefetched we should have 10 hits, but also 10 more
     // misses because the prefetching gets factored in as a miss to bring the total
@@ -434,7 +434,7 @@ public class ObjectManagerTest extends TCTestCase {
     assertEquals(missingids, result2.missing);
 
     // Now release the first two objects
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, result1.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, result1.objects.values());
 
     // Counter shouldn't be incremented, in other words, missing objects should not be looked up again.
     assertEquals(2, this.testFaultSinkContext.getCounter());
@@ -471,7 +471,7 @@ public class ObjectManagerTest extends TCTestCase {
     assertEquals(1, ic.size());
     assertEquals(2, ic.get(ta.getTypeName()));
 
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     ids.add(new ObjectID(3));
     ids.add(new ObjectID(4));
@@ -500,7 +500,7 @@ public class ObjectManagerTest extends TCTestCase {
     assertEquals(1, ic.size());
     assertEquals(4, ic.get(ta.getTypeName()));
 
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
   }
 
   public void testArrayFacade() throws Exception {
@@ -519,7 +519,7 @@ public class ObjectManagerTest extends TCTestCase {
     final ObjectInstanceMonitor imo = new ObjectInstanceMonitorImpl();
     final ManagedObject mo = lookedUpObjects.get(id);
     mo.apply(new TestArrayDNA(id), new TransactionID(1), new BackReferences(), imo, false);
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, lookedUpObjects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, lookedUpObjects.values());
 
     ManagedObjectFacade facade;
 
@@ -574,7 +574,7 @@ public class ObjectManagerTest extends TCTestCase {
     dateManagedObject.apply(new TestDateDNA("java.util.Date", dateID), new TransactionID(1), new BackReferences(), imo,
                             false);
 
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, lookedUpObjects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, lookedUpObjects.values());
 
     ManagedObjectFacade facade;
 
@@ -603,7 +603,7 @@ public class ObjectManagerTest extends TCTestCase {
     final ObjectInstanceMonitor imo = new ObjectInstanceMonitorImpl();
     managedObject.apply(new TestLiteralValuesDNA(literalID), new TransactionID(1), new BackReferences(), imo, false);
 
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, lookedUpObjects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, lookedUpObjects.values());
 
     ManagedObjectFacade facade;
 
@@ -653,7 +653,7 @@ public class ObjectManagerTest extends TCTestCase {
     list.apply(new TestListSetDNA("java.util.LinkedList", listID), new TransactionID(1), new BackReferences(), imo,
                false);
 
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, lookedUpObjects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, lookedUpObjects.values());
 
     ManagedObjectFacade facade;
 
@@ -896,7 +896,7 @@ public class ObjectManagerTest extends TCTestCase {
     lookedUpViaLookupObjectsForCreateIfNecessary.apply(dna, new TransactionID(1), new BackReferences(), imo, false);
 
     PersistenceTransaction tx = ptp.newTransaction();
-    this.objectManager.release(tx, lookedUpViaLookupObjectsForCreateIfNecessary);
+    this.objectManager.releaseAndCommit(tx, lookedUpViaLookupObjectsForCreateIfNecessary);
 
     ManagedObject lookedUpViaLookup = this.objectManager.getObjectByID(id);
     assertEquals(1, lookedUpViaLookupObjectsForCreateIfNecessary.getObjectReferences().size());
@@ -904,7 +904,7 @@ public class ObjectManagerTest extends TCTestCase {
         .getObjectReferences());
 
     tx = ptp.newTransaction();
-    this.objectManager.release(tx, lookedUpViaLookup);
+    this.objectManager.releaseAndCommit(tx, lookedUpViaLookup);
 
     // now do another lookup, change, and commit cycle
     responseContext = new TestResultsContext(ids, new ObjectIDSet());
@@ -921,7 +921,7 @@ public class ObjectManagerTest extends TCTestCase {
     lookedUpViaLookupObjectsForCreateIfNecessary.apply(dna, new TransactionID(2), new BackReferences(), imo, false);
     // lookedUpViaLookupObjectsForCreateIfNecessary.commit();
     tx = ptp.newTransaction();
-    this.objectManager.release(tx, lookedUpViaLookupObjectsForCreateIfNecessary);
+    this.objectManager.releaseAndCommit(tx, lookedUpViaLookupObjectsForCreateIfNecessary);
 
     lookedUpViaLookup = this.objectManager.getObjectByID(id);
     assertEquals(1, lookedUpViaLookupObjectsForCreateIfNecessary.getObjectReferences().size());
@@ -961,7 +961,7 @@ public class ObjectManagerTest extends TCTestCase {
     final ManagedObject mo2 = this.objectManager.getObjectByID(id);
     assertTrue(mo == mo2);
     assertTrue(this.objectManager.isReferenced(id));
-    this.objectManager.release(this.NULL_TRANSACTION, mo);
+    this.objectManager.releaseAndCommit(this.NULL_TRANSACTION, mo);
     assertFalse(this.objectManager.isReferenced(id));
 
     this.objectManager.getObjectByID(id);
@@ -980,7 +980,7 @@ public class ObjectManagerTest extends TCTestCase {
     t.start();
     ThreadUtil.reallySleep(1000);
     assertFalse(gotIt[0]);
-    this.objectManager.release(this.NULL_TRANSACTION, mo);
+    this.objectManager.releaseAndCommit(this.NULL_TRANSACTION, mo);
     ThreadUtil.reallySleep(1000);
     assertTrue(gotIt[0]);
   }
@@ -1015,7 +1015,7 @@ public class ObjectManagerTest extends TCTestCase {
     mo.apply(new TestPhysicalDNA(new ObjectID(1)), new TransactionID(1), new BackReferences(), imo, false);
 
     final PersistenceTransaction tx = ptp.newTransaction();
-    this.objectManager.release(tx, mo);
+    this.objectManager.releaseAndCommit(tx, mo);
 
     ManagedObjectFacade facade;
     try {
@@ -1098,7 +1098,7 @@ public class ObjectManagerTest extends TCTestCase {
     final ManagedObject retrievedMo = (ManagedObject) context.getResults().values().iterator().next();
     assertTrue(mo == retrievedMo);
     assertTrue(this.objectManager.isReferenced(id));
-    this.objectManager.release(this.NULL_TRANSACTION, mo);
+    this.objectManager.releaseAndCommit(this.NULL_TRANSACTION, mo);
     assertFalse(this.objectManager.isReferenced(id));
 
     this.objectManager.getObjectByID(id);
@@ -1113,7 +1113,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                                                      objectIDs), -1);
     assertFalse(notPending);
     assertEquals(0, context.getResults().size());
-    this.objectManager.release(this.NULL_TRANSACTION, mo);
+    this.objectManager.releaseAndCommit(this.NULL_TRANSACTION, mo);
     assertEquals(objectIDs.size(), context.getResults().size());
 
     final Collection objs = context.getResults().values();
@@ -1152,7 +1152,7 @@ public class ObjectManagerTest extends TCTestCase {
 
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
 
     assertEquals(10, this.stats.getTotalRequests());
     assertEquals(0, this.stats.getTotalCacheHits());
@@ -1161,7 +1161,7 @@ public class ObjectManagerTest extends TCTestCase {
     results = new TestResultsContext(ids, new ObjectIDSet());
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
     assertEquals(20, this.stats.getTotalRequests());
     assertEquals(10, this.stats.getTotalCacheHits());
     assertEquals(10, this.stats.getTotalCacheMisses());
@@ -1170,7 +1170,7 @@ public class ObjectManagerTest extends TCTestCase {
     results = new TestResultsContext(ids, new ObjectIDSet());
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
     assertEquals(30, this.stats.getTotalRequests());
     assertEquals(10, this.stats.getTotalCacheHits());
     assertEquals(20, this.stats.getTotalCacheMisses());
@@ -1181,7 +1181,7 @@ public class ObjectManagerTest extends TCTestCase {
     results = new TestResultsContext(ids, new ObjectIDSet());
     this.objectManager.lookupObjectsAndSubObjectsFor(null, results, -1);
     results.waitTillComplete();
-    this.objectManager.releaseAll(this.NULL_TRANSACTION, results.objects.values());
+    this.objectManager.releaseAllAndCommit(this.NULL_TRANSACTION, results.objects.values());
     assertEquals(40, this.stats.getTotalRequests());
     assertEquals(15, this.stats.getTotalCacheHits());
     assertEquals(25, this.stats.getTotalCacheMisses());
@@ -1291,7 +1291,7 @@ public class ObjectManagerTest extends TCTestCase {
     // now call release and make sure it calls the appropriate GC methods...
 
     assertFalse(gc.notifyReadyToGC_WasCalled());
-    this.objectManager.release(this.NULL_TRANSACTION, mo);
+    this.objectManager.releaseAndCommit(this.NULL_TRANSACTION, mo);
 
     // make sure release calls notifyReadyToGC
     assertTrue(gc.waitFor_notifyReadyToGC_ToBeCalled(5000));
@@ -1470,7 +1470,7 @@ public class ObjectManagerTest extends TCTestCase {
 
     // Now check back Object 1
     PersistenceTransaction dbtxn = ptp.newTransaction();
-    this.objectManager.releaseAll(dbtxn, ctc1.getObjects());
+    this.objectManager.releaseAllAndCommit(dbtxn, ctc1.getObjects());
 
     // Lookup context should have been fired
     loc = (LookupEventContext) this.coordinator.lookupSink.queue.take();
@@ -1510,7 +1510,7 @@ public class ObjectManagerTest extends TCTestCase {
 
     // Check in Object 2 to make the GC go to paused state
     dbtxn = ptp.newTransaction();
-    this.objectManager.releaseAll(dbtxn, ctc2.getObjects());
+    this.objectManager.releaseAllAndCommit(dbtxn, ctc2.getObjects());
 
     cb.await();
 
@@ -1553,7 +1553,7 @@ public class ObjectManagerTest extends TCTestCase {
 
     // Now check back the objects
     dbtxn = ptp.newTransaction();
-    this.objectManager.releaseAll(dbtxn, ctc3.getObjects());
+    this.objectManager.releaseAllAndCommit(dbtxn, ctc3.getObjects());
 
     assertEquals(0, this.objectManager.getCheckedOutCount());
     assertFalse(this.objectManager.isReferenced(new ObjectID(1)));
