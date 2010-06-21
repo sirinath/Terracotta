@@ -188,7 +188,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
   private void releaseAndCommit(final ManagedObject mo) {
     final PersistenceTransaction txn = this.transactionStorePTP.newTransaction();
     // This call commits the transaction too.
-    this.objectManager.release(txn, mo);
+    this.objectManager.releaseAndCommit(txn, mo);
   }
 
   private boolean canEvict(final Object value, final int ttiSeconds, final int ttlSeconds) {
