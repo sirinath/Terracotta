@@ -24,7 +24,7 @@ import java.util.Map.Entry;
 
 public class ConcurrentDistributedServerMapManagedObjectState extends ConcurrentDistributedMapManagedObjectState
     implements EvictableMap {
-
+  
   private static final String MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
   private static final String MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
   private static final String TARGET_MAX_IN_MEMORY_COUNT_FIELDNAME = "targetMaxInMemoryCount";
@@ -67,6 +67,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
       dehydrateFields(objectID, writer);
     }
   }
+  
 
   @Override
   protected void dehydrateFields(final ObjectID objectID, final DNAWriter writer) {
@@ -147,6 +148,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
            && this.targetMaxInMemoryCount == mmo.targetMaxInMemoryCount
            && this.targetMaxTotalCount == mmo.targetMaxTotalCount;
   }
+  
 
   static MapManagedObjectState readFrom(final ObjectInput in) throws IOException {
     final ConcurrentDistributedServerMapManagedObjectState cdmMos = new ConcurrentDistributedServerMapManagedObjectState(
