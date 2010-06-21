@@ -101,6 +101,10 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     for (final ObjectID mapID : evictableObjects) {
       doEvictionOn(mapID, faultedInClients);
     }
+    
+    if (EVICTOR_LOGGING) {
+      logger.info("Server Map Eviction  : Ended ");
+    }
   }
 
   public void doEvictionOn(final ObjectID oid, final SortedSet<ObjectID> faultedInClients) {
