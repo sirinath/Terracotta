@@ -116,9 +116,9 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
   private EvictableMap getEvictableMapFrom(final ManagedObject mo) {
     final ManagedObjectState state = mo.getManagedObjectState();
     if (!PersistentCollectionsUtil.isEvictableMapType(state.getType())) { throw new AssertionError(
-                                                                                                      "Received wrong object thats not evictable : "
-                                                                                                          + mo.getID()
-                                                                                                          + " : " + mo); }
+                                                                                                   "Received wrong object thats not evictable : "
+                                                                                                       + mo.getID()
+                                                                                                       + " : " + mo); }
     return (EvictableMap) state;
   }
 
@@ -187,8 +187,8 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
 
   private void releaseAndCommit(final ManagedObject mo) {
     final PersistenceTransaction txn = this.transactionStorePTP.newTransaction();
+    // This call commits the transaction too.
     this.objectManager.release(txn, mo);
-    txn.commit();
   }
 
   private boolean canEvict(final Object value, final int ttiSeconds, final int ttlSeconds) {
