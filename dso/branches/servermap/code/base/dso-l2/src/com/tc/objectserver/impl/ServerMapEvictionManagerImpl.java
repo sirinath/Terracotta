@@ -34,6 +34,12 @@ import java.util.TimerTask;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * The main class that performs server side eviction for ConcurrentDistributedServerMap and other similar
+ * data-structures in future.
+ * 
+ * @author Saravanan Subbiah
+ */
 public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
 
   private static final boolean                 EVICTOR_LOGGING               = TCPropertiesImpl
@@ -101,7 +107,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     for (final ObjectID mapID : evictableObjects) {
       doEvictionOn(mapID, faultedInClients);
     }
-    
+
     if (EVICTOR_LOGGING) {
       logger.info("Server Map Eviction  : Ended ");
     }
@@ -138,7 +144,8 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
 
     final int ttl = ev.getTTLSeconds();
     final int tti = ev.getTTISeconds();
-    final Map samples = ev.getRandomSamples((int) (overshoot * 1.5), faultedInClients);
+    final int requested = isInterestedInTTIOrTTL(tti, ttl) ? (int) (overshoot * 1.5) : overshoot;
+    final Map samples = ev.getRandomSamples(requested, faultedInClients);
 
     if ((samples.size() < overshoot * 0.5) || EVICTOR_LOGGING) {
       logger.info("Server Map Eviction  : Got Random samples to evict : " + oid + " : Random Samples : "
@@ -150,6 +157,10 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
                                                                             samples, overshoot);
       this.evictorSink.add(context);
     }
+  }
+
+  private boolean isInterestedInTTIOrTTL(final int tti, final int ttl) {
+    return (tti > 0 || ttl > 0 || ELEMENT_BASED_TTI_TTL_ENABLED);
   }
 
   public void evict(final ObjectID oid, final Map samples, final int targetMaxTotalCount, final int ttiSeconds,
@@ -196,7 +207,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
   }
 
   private boolean canEvict(final Object value, final int ttiSeconds, final int ttlSeconds) {
-    if ((!(value instanceof ObjectID)) || (ttiSeconds <= 0 && ttlSeconds <= 0 && !ELEMENT_BASED_TTI_TTL_ENABLED)) { return true; }
+    if ((!(value instanceof ObjectID)) || !isInterestedInTTIOrTTL(ttiSeconds, ttlSeconds)) { return true; }
     final ObjectID oid = (ObjectID) value;
     final ManagedObject mo = this.objectManager.getObjectByID(oid);
     try {
@@ -204,7 +215,6 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
       if (ev != null) {
         return ev.canEvict(ttiSeconds, ttlSeconds);
       } else {
-        // TODO:: Custom mode support
         return true;
       }
     } finally {
