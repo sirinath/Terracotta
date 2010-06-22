@@ -29,6 +29,7 @@ import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedObjectState;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -162,12 +163,23 @@ public class ServerMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
+    final ArgumentCaptor<Collection> responsesArg = ArgumentCaptor
+    .forClass(Collection.class);
+
     final ArrayList responses = new ArrayList();
-    responses.add(new ServerMapGetValueResponse(requestID2, portableValue2));
-    responses.add(new ServerMapGetValueResponse(requestID1, portableValue1));
-    verify(message, atLeastOnce()).initializeGetValueResponse(mapID, responses);
+    verify(message, atLeastOnce()).initializeGetValueResponse(Matchers.eq(mapID), responsesArg.capture());
+   
+    ServerMapGetValueResponse response2 = new ServerMapGetValueResponse(requestID1, portableValue1);
+    ServerMapGetValueResponse response1 = new ServerMapGetValueResponse(requestID2, portableValue2);
+    
+    responses.add(response1);
+    responses.add(response2);
+  
 
     verify(message, atLeastOnce()).send();
+    assertTrue(responsesArg.getValue().contains(response1));
+    assertTrue(responsesArg.getValue().contains(response2));
+     
   }
 
 }
