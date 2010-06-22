@@ -25,10 +25,10 @@ import java.util.Map.Entry;
 public class ConcurrentDistributedServerMapManagedObjectState extends ConcurrentDistributedMapManagedObjectState
     implements EvictableMap {
   
-  private static final String MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
-  private static final String MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
-  private static final String TARGET_MAX_IN_MEMORY_COUNT_FIELDNAME = "targetMaxInMemoryCount";
-  private static final String TARGET_MAX_TOTAL_COUNT_FIELDNAME     = "targetMaxTotalCount";
+  public static final String MAX_TTI_SECONDS_FIELDNAME            = "maxTTISeconds";
+  public static final String MAX_TTL_SECONDS_FIELDNAME            = "maxTTLSeconds";
+  public static final String TARGET_MAX_IN_MEMORY_COUNT_FIELDNAME = "targetMaxInMemoryCount";
+  public static final String TARGET_MAX_TOTAL_COUNT_FIELDNAME     = "targetMaxTotalCount";
 
   private int                 maxTTISeconds;
   private int                 maxTTLSeconds;
