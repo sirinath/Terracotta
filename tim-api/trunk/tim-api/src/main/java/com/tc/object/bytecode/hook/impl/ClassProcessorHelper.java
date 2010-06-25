@@ -109,9 +109,7 @@ public class ClassProcessorHelper {
       TRACE = TRACE_STREAM != null;
 
       tcLoader = createTCLoader();
-      classLoaderTransformer = (ClassFileTransformer) tcLoader
-          .loadClass("com.tc.object.bytecode.ClassLoaderTransformer").newInstance();
-
+      classLoaderTransformer = createClassLoaderTransformer();
     } catch (Throwable t) {
       Util.exit(t);
       throw new AssertionError(); // this has to be here to make the compiler happy
@@ -121,6 +119,14 @@ public class ClassProcessorHelper {
   private static URLClassLoader createTCLoader() throws Exception {
     URL[] tcClassPath = buildTerracottaClassPath();
     return new URLClassLoader(tcClassPath, null);
+  }
+
+  private static ClassFileTransformer createClassLoaderTransformer() {
+    try {
+      return (ClassFileTransformer) tcLoader.loadClass("com.tc.object.bytecode.ClassLoaderTransformer").newInstance();
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   /**
@@ -503,15 +509,17 @@ public class ClassProcessorHelper {
 
     if (TRACE) traceLookup(caller, name);
 
-    try {
-      if (len != b.length) {
-        byte[] copy = new byte[len];
-        System.arraycopy(b, off, copy, 0, len);
-        b = copy;
+    if (classLoaderTransformer != null) {
+      try {
+        if (len != b.length) {
+          byte[] copy = new byte[len];
+          System.arraycopy(b, off, copy, 0, len);
+          b = copy;
+        }
+        b = classLoaderTransformer.transform(caller, name, null, pd, b);
+      } catch (IllegalClassFormatException e) {
+        throw new RuntimeException(e);
       }
-      b = classLoaderTransformer.transform(caller, name, null, pd, b);
-    } catch (IllegalClassFormatException e) {
-      throw new RuntimeException(e);
     }
 
     if (isAWDependency(name)) { return b; }
