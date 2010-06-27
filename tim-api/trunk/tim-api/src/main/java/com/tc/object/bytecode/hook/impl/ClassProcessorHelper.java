@@ -19,8 +19,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -38,45 +36,43 @@ import java.util.logging.LogManager;
 public class ClassProcessorHelper {
 
   /** Name reserved for apps running as root web app in a container */
-  private static final String               ROOT_WEB_APP_NAME         = "ROOT";
+  private static final String      ROOT_WEB_APP_NAME         = "ROOT";
 
   // Directory where Terracotta jars (and dependencies) can be found
-  private static final String               TC_INSTALL_ROOT_SYSPROP   = "tc.install-root";
+  private static final String      TC_INSTALL_ROOT_SYSPROP   = "tc.install-root";
 
   // Property to indicate whether the Terracotta classloader is active
-  private static final String               TC_ACTIVE_SYSPROP         = "tc.active";
+  private static final String      TC_ACTIVE_SYSPROP         = "tc.active";
 
   // NOTE: This is not intended to be a public/documented system property,
   // it is for dev use only. It is NOT for QA or customer use
-  private static final String               TC_CLASSPATH_SYSPROP      = "tc.classpath";
+  private static final String      TC_CLASSPATH_SYSPROP      = "tc.classpath";
 
-  private static final String               TC_DSO_GLOBALMODE_SYSPROP = "tc.dso.globalmode";
+  private static final String      TC_DSO_GLOBALMODE_SYSPROP = "tc.dso.globalmode";
 
   // Used for converting resource names into class names
-  private static final String               CLASS_SUFFIX              = ".class";
-  private static final int                  CLASS_SUFFIX_LENGTH       = CLASS_SUFFIX.length();
+  private static final String      CLASS_SUFFIX              = ".class";
+  private static final int         CLASS_SUFFIX_LENGTH       = CLASS_SUFFIX.length();
 
-  private static final boolean              GLOBAL_MODE_DEFAULT       = true;
+  private static final boolean     GLOBAL_MODE_DEFAULT       = true;
 
-  public static final boolean               USE_GLOBAL_CONTEXT;
+  public static final boolean      USE_GLOBAL_CONTEXT;
 
-  private static final State                initState                 = new State();
+  private static final State       initState                 = new State();
 
-  private static final String               tcInstallRootSysProp      = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
+  private static final String      tcInstallRootSysProp      = System.getProperty(TC_INSTALL_ROOT_SYSPROP);
 
   // This map should only hold a weak reference to the loader (key).
   // If we didn't we'd prevent loaders from being GC'd
-  private static final Map                  contextMap                = new WeakHashMap();
+  private static final Map         contextMap                = new WeakHashMap();
 
-  private static final URLClassLoader       tcLoader;
-  private static DSOContext                 globalContext;
+  private static URLClassLoader    tcLoader;
+  private static DSOContext        globalContext;
 
-  private static final boolean              TRACE;
-  private static final PrintStream          TRACE_STREAM;
+  private static final boolean     TRACE;
+  private static final PrintStream TRACE_STREAM;
 
-  private static volatile boolean           systemLoaderInitialized   = false;
-
-  private static final ClassFileTransformer classLoaderTransformer;
+  private static volatile boolean  systemLoaderInitialized   = false;
 
   static {
 
@@ -108,8 +104,6 @@ public class ClassProcessorHelper {
       TRACE_STREAM = ts;
       TRACE = TRACE_STREAM != null;
 
-      tcLoader = createTCLoader();
-      classLoaderTransformer = createClassLoaderTransformer();
     } catch (Throwable t) {
       Util.exit(t);
       throw new AssertionError(); // this has to be here to make the compiler happy
@@ -117,16 +111,7 @@ public class ClassProcessorHelper {
   }
 
   private static URLClassLoader createTCLoader() throws Exception {
-    URL[] tcClassPath = buildTerracottaClassPath();
-    return new URLClassLoader(tcClassPath, null);
-  }
-
-  private static ClassFileTransformer createClassLoaderTransformer() {
-    try {
-      return (ClassFileTransformer) tcLoader.loadClass("com.tc.object.bytecode.ClassLoaderTransformer").newInstance();
-    } catch (Exception e) {
-      return null;
-    }
+    return new URLClassLoader(buildTerracottaClassPath(), null);
   }
 
   /**
@@ -220,7 +205,14 @@ public class ClassProcessorHelper {
 
   static File getTCInstallDir(boolean systemClassPathAllowed) {
     if (tcInstallRootSysProp == null) {
-      if (systemClassPathAllowed) { return null; }
+      if (systemClassPathAllowed) {
+        try {
+          ClassLoader.getSystemClassLoader().loadClass("com.tc.object.NotInBootJar");
+          return null;
+        } catch (ClassNotFoundException cnfe) {
+          // ignore
+        }
+      }
 
       Banner.errorBanner("Terracotta home directory is not set. Please set it with -D" + TC_INSTALL_ROOT_SYSPROP
                          + "=<path-to-Terracotta-install>");
@@ -346,6 +338,8 @@ public class ClassProcessorHelper {
   public static void initialize() {
     if (initState.attemptInit()) {
       try {
+        tcLoader = createTCLoader();
+
         // do this before doing anything with the TC loader
         initTCLogging();
 
@@ -508,19 +502,6 @@ public class ClassProcessorHelper {
     name = (name != null) ? name.replace('/', '.') : null;
 
     if (TRACE) traceLookup(caller, name);
-
-    if (classLoaderTransformer != null) {
-      try {
-        if (len != b.length) {
-          byte[] copy = new byte[len];
-          System.arraycopy(b, off, copy, 0, len);
-          b = copy;
-        }
-        b = classLoaderTransformer.transform(caller, name, null, pd, b);
-      } catch (IllegalClassFormatException e) {
-        throw new RuntimeException(e);
-      }
-    }
 
     if (isAWDependency(name)) { return b; }
 
