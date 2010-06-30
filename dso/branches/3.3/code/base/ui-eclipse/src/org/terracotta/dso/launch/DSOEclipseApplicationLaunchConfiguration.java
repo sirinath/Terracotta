@@ -20,8 +20,8 @@ import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.pde.core.plugin.IPluginModelBase;
 import org.eclipse.pde.core.plugin.PluginRegistry;
-import org.eclipse.pde.launching.EclipseApplicationLaunchConfiguration;
-import org.eclipse.pde.launching.IPDELauncherConstants;
+import org.eclipse.pde.ui.launcher.EclipseApplicationLaunchConfiguration;
+import org.eclipse.pde.ui.launcher.IPDELauncherConstants;
 import org.terracotta.dso.TcPlugin;
 
 import java.util.ArrayList;
