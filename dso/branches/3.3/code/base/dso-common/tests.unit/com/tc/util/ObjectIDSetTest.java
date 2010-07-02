@@ -884,6 +884,17 @@ public class ObjectIDSetTest extends TCTestCase {
     for(ObjectID id : rangeBasedObjectIDSetSerial) {
       assertTrue(rangeBasedObjectIDSet2.contains(id));
     }
+   
+
+    //now lets add to serial, and see if the random set exist in it
+    rangeBasedObjectIDSetSerial.addAll(rangeBasedObjectIDSet);
+    
+    for(ObjectID id : rangeBasedObjectIDSet) {
+      assertTrue(rangeBasedObjectIDSetSerial.contains(id));
+    }
+    
+     */
+  }
   
     
     
