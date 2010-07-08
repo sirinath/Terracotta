@@ -5,7 +5,7 @@ Release Notes: http://www.terracotta.org/kit/reflector?kitID=3.3.0&pageID=BetaRe
 Documentation: http://www.terracotta.org/kit/reflector?kitID=3.3.0&pageID=Documentation
 Forums:        http://forums.terracotta.org/forums/forums/list.page
 Mailing Lists: http://lists.terracotta.org
-Support:       http://www.terracotta.org/web/display/enterprise/Support
+Support:       http://www.terracotta.org/kit/reflector?kitID=default&pageID=SupportServices
 
 ----
 All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved. 
