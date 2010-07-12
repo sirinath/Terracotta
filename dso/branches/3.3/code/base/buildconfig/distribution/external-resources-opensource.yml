@@ -26,4 +26,4 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-terracotta
     version: 2.2.0
-    destination: ehcache
+    destination: ehcache/lib

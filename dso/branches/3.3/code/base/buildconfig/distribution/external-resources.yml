@@ -37,7 +37,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     version: 2.2.0
-    destination: ehcache
+    destination: ehcache/lib
 
   - maven_artifact: true
     groupId: net.sf.ehcache
@@ -59,18 +59,24 @@ artifacts:
     groupId: org.slf4j
     artifactId: slf4j-api
     version: 1.5.11
-    destination: ehcache
+    destination: ehcache/lib
 
   - maven_artifact: true
     groupId: org.slf4j
     artifactId: slf4j-jdk14
     version: 1.5.11
-    destination: ehcache
+    destination: ehcache/lib
     
   - maven_artifact: false
     name: README.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/README.html
+
+  - maven_artifact: false
+    name: QUICK-START.html
+    destination: ehcache
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/QUICK-START.html
+    
     
   - maven_artifact: false
     name: CHANGELOG.txt
@@ -79,8 +85,18 @@ artifacts:
     
   - maven_artifact: false
     name: EHCACHE-CORE-LICENSE.txt
-    destination: ehcache
+    destination: ehcache/licenses
     url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/LICENSE.txt
+
+  - maven_artifact: false
+    name: THIRD-PARTY-LICENSES.txt
+    destination: ehcache/licenses
+    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/THIRD-PARTY-LICENSES.txt
+
+  - maven_artifact: false
+    name: EHCACHE-TERRACOTTA-LICENSE.txt
+    destination: ehcache/licenses
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt 
 
   - maven_artifact: false
     name: ehcache.xml
