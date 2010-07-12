@@ -37,7 +37,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     version: 2.2.0
-    destination: ehcache/lib
+    destination: ehcache
 
   - maven_artifact: true
     groupId: net.sf.ehcache
@@ -59,13 +59,13 @@ artifacts:
     groupId: org.slf4j
     artifactId: slf4j-api
     version: 1.5.11
-    destination: ehcache/lib
+    destination: ehcache
 
   - maven_artifact: true
     groupId: org.slf4j
     artifactId: slf4j-jdk14
     version: 1.5.11
-    destination: ehcache/lib
+    destination: ehcache
     
   - maven_artifact: false
     name: README.html
@@ -76,7 +76,6 @@ artifacts:
     name: QUICK-START.html
     destination: ehcache
     url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/QUICK-START.html
-    
     
   - maven_artifact: false
     name: CHANGELOG.txt
