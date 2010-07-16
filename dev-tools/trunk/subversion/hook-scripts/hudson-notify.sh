@@ -20,7 +20,7 @@ tries=3
   $notify_url
 
 timestamp=`/bin/date`
-log=$HOME/logs/$repo_name-post-commit.log
+log=~cruise/logs/$repo_name-post-commit.log
 echo "$timestamp: $notify_url" > $log
 echo "post data $repos: `svnlook changed --revision $rev $repos`" >> $log
 echo "">> $log
