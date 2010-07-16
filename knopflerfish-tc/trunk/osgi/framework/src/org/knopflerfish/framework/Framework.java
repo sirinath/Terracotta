@@ -234,7 +234,7 @@ public class Framework {
     }
         
     ProtectionDomain pd = null;
-    if (System.getSecurityManager() != null) {
+    if (false && System.getSecurityManager() != null) {
       try {
         pd = getClass().getProtectionDomain();
       } catch (Throwable t) {

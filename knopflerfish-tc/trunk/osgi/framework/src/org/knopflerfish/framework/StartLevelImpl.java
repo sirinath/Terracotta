@@ -91,6 +91,7 @@ public class StartLevelImpl implements StartLevel, Runnable {
     }
     Runnable firstJob = (Runnable)jobQueue.firstElement();
     wc   = new Thread(this, "startlevel job thread");
+    wc.setDaemon(true);
     synchronized (firstJob) {
       bRun = true;
       wc.start();
