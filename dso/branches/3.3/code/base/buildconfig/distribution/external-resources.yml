@@ -37,7 +37,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     version: 2.2.0
-    destination: ehcache
+    destination: ehcache/lib
 
   - maven_artifact: true
     groupId: net.sf.ehcache
