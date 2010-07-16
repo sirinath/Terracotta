@@ -348,6 +348,16 @@ public class Version implements Comparable {
 			return result;
 		}
 
+                // Any version with a qualifier is considered "less than" a version
+                // without: 1.0.0-SNAPSHOT < 1.0.0
+                if (qualifier.length() == 0) {
+                        if (other.qualifier.length() > 0) {
+                                return 1;
+                        }
+                } else if (other.qualifier.length() == 0) {
+                        return -1;
+                }
+
 		return qualifier.compareTo(other.qualifier);
 	}
 }
