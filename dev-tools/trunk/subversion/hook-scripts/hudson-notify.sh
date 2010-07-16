@@ -1,13 +1,23 @@
 # Notify Hudson of changes
 
-REPOS="$1"
-REV="$2"
-HUDSON_MASTER_HOST="rh5fm0.terracotta.lan:9000"
+repos="$1"
+rev="$2"
+repo_name=`basename $repos`
+hudson_master_host="rh5fm0.terracotta.lan:9000"
 
-UUID=`svnlook uuid $REPOS`
-#/usr/bin/wget \
-#  --header "Content-Type:text/plain;charset=UTF-8" \
-#  --post-data "`svnlook changed --revision $REV $REPOS`" \
-#  --output-document "-" \
-#  http://$HUDSON_MASTER_HOST/hudson/subversion/${UUID}/notifyCommit?rev=$REV
+uuid=`svnlook uuid $repos`
+timeout=10
+tries=3
+/usr/bin/wget \
+  --header "Content-Type:text/plain;charset=UTF-8" \
+  --timeout $timeout --tries $tries \
+  --post-data "`svnlook changed --revision $rev $repos`" \
+  --output-document "-" \
+  http://$hudson_master_host/hudson/subversion/${uuid}/notifyCommit?rev=$rev
+
+timestamp=`/bin/date`
+log=$HOME/logs/$repo_name-post-commit.log
+echo "$timestamp: http://rh5fm0.terracotta.lan:9000/subversion/${uuid}/notifyCommit?rev=$rev" > $log
+echo "post data $repos: `svnlook changed --revision $rev $repos`" >> $log
+echo "">> $log
 
