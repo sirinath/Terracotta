@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Notify Hudson of changes
 
 repos="$1"
