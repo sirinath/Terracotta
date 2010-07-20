@@ -118,17 +118,17 @@ public class OSGiToMavenTest extends TestCase {
 
     bundleVersionToProjectVersion("1.0-SNAPSHOT", "1.0-SNAPSHOT");
     bundleVersionToProjectVersion("12.0-SNAPSHOT", "12.0-SNAPSHOT");
-    bundleVersionToProjectVersion("123.0-SNAPSHOT", "123.0-SNAPSHOT");
+    bundleVersionToProjectVersion("120.0-SNAPSHOT", "120.0-SNAPSHOT");
 
     bundleVersionToProjectVersion("1.0.0.SNAPSHOT", "1.0.0-SNAPSHOT");
     bundleVersionToProjectVersion("12.0.0.SNAPSHOT", "12.0.0-SNAPSHOT");
-    bundleVersionToProjectVersion("123.3.0", "123.3.1-SNAPSHOT");
+    bundleVersionToProjectVersion("12.3.0", "12.3.0");
     bundleVersionToProjectVersion("0.0.0.SNAPSHOT", "0.0.0-SNAPSHOT");
     bundleVersionToProjectVersion("123.456.789.SNAPSHOT", "123.456.789-SNAPSHOT");
 
     bundleVersionToProjectVersion("1.0.0-SNAPSHOT", "1.0.0-SNAPSHOT");
     bundleVersionToProjectVersion("12.0.0-SNAPSHOT", "12.0.0-SNAPSHOT");
-    bundleVersionToProjectVersion("123.3.1-SNAPSHOT", "123.3.1-SNAPSHOT");
+    bundleVersionToProjectVersion("120.3.1-SNAPSHOT", "120.3.1-SNAPSHOT");
     bundleVersionToProjectVersion("0.0.0-SNAPSHOT", "0.0.0-SNAPSHOT");
     bundleVersionToProjectVersion("123.456.789.SNAPSHOT", "123.456.789-SNAPSHOT");
     bundleVersionToProjectVersion("123.456.789-SNAPSHOT", "123.456.789-SNAPSHOT");
