@@ -14,4 +14,6 @@ public interface ObjectIDProvider {
 
   public ObjectID next(ClientTransaction txn, Object pojo);
 
+  public void reserve(int size);
+
 }

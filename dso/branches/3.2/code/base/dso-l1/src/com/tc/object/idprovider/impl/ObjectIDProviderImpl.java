@@ -9,15 +9,34 @@ import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.tx.ClientTransaction;
 import com.tc.util.sequence.Sequence;
 
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 public class ObjectIDProviderImpl implements ObjectIDProvider {
 
-  private final Sequence sequence;
+  private final Sequence        sequence;
+  private final SortedSet<Long> cachedObjectIds = new TreeSet<Long>();
 
   public ObjectIDProviderImpl(Sequence sequence) {
     this.sequence = sequence;
   }
 
-  public ObjectID next(ClientTransaction txn, Object pojo) {
-    return new ObjectID(this.sequence.next());
+  public synchronized ObjectID next(ClientTransaction txn, Object pojo) {
+    long oidLong = -1;
+    if (cachedObjectIds.size() > 0) {
+      oidLong = this.cachedObjectIds.first();
+      this.cachedObjectIds.remove(oidLong);
+    } else {
+      oidLong = this.sequence.next();
+    }
+
+    return new ObjectID(oidLong);
+  }
+
+  public synchronized void reserve(int size) {
+    int sizeNeeded = size - cachedObjectIds.size();
+    for (int i = 0; i < sizeNeeded; i++) {
+      cachedObjectIds.add(this.sequence.next());
+    }
   }
 }
