@@ -78,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.Semaphore;
 
 public class ClientObjectManagerImpl implements ClientObjectManager, ClientHandshakeCallback, PortableObjectProvider,
     Evictable, DumpHandler, PrettyPrintable {
@@ -139,6 +140,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                                                               }
 
                                                                             };
+  private final Semaphore                      creationSemaphore            = new Semaphore(1, true);
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager,
                                  final DSOClientConfigHelper clientConfiguration, final ObjectIDProvider idProvider,
@@ -862,7 +864,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       // TODO:: Optimize this, do lazy instantiation
       TCObject root = null;
       if (isLiteralPojo(rootPojo)) {
-        root = basicCreateIfNecessary(rootPojo);
+        root = basicCreate(rootPojo);
       } else {
         root = lookupOrCreate(rootPojo, this.appEventContextFactory.createNonPortableRootContext(rootName, rootPojo));
       }
@@ -1052,6 +1054,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
+  private TCObject basicCreate(final Object rootPojo) {
+    reserveObjectIds(1);
+    return basicCreateIfNecessary(rootPojo);
+  }
+
   private TCObject basicCreateIfNecessary(final Object pojo) {
     TCObject obj = null;
 
@@ -1067,13 +1074,35 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return obj;
   }
 
-  private synchronized List basicCreateIfNecessary(final List pojos) {
-    waitUntilRunning();
-    List tcObjects = new ArrayList(pojos.size());
-    for (Iterator i = pojos.iterator(); i.hasNext();) {
-      tcObjects.add(basicCreateIfNecessary(i.next()));
+  private List basicCreateIfNecessary(final List pojos) {
+    canCreate();
+    reserveObjectIds(pojos.size());
+
+    synchronized (this) {
+      waitUntilRunning();
+      final List tcObjects = new ArrayList(pojos.size());
+      for (final Iterator i = pojos.iterator(); i.hasNext();) {
+        tcObjects.add(basicCreateIfNecessary(i.next()));
+      }
+      allowCreation();
+      return tcObjects;
     }
-    return tcObjects;
+  }
+
+  private void allowCreation() {
+    creationSemaphore.release();
+  }
+
+  private void canCreate() {
+    try {
+      creationSemaphore.acquire();
+    } catch (InterruptedException e) {
+      // do nothing
+    }
+  }
+
+  private void reserveObjectIds(int size) {
+    this.idProvider.reserve(size);
   }
 
   private ObjectID nextObjectID(final ClientTransaction txn, final Object pojo) {
