@@ -8,8 +8,8 @@
   <description>Terracotta License Generator 3.3</description>
   <description kind="short">Terracotta License Generator 3.3</description>
   <description kind="tooltip">Terracotta License Generator 3.3</description> 
-  <icon href="resources/Elephant_32x32.png" width="32" height="32"/>
-  <icon href="resources/Elephant_48x48.png" width="48" height="48"/>
+  <icon href="resources/tclogo32x32.png" width="32" height="32"/>
+  <icon href="resources/tclogo48x48.png" width="48" height="48"/>
   <shortcut online="true">
     <desktop/>
     <menu submenu="Terracotta License Generator 3.3"/>
