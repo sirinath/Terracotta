@@ -14,6 +14,8 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.tc.util.VicariousThreadLocal;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * TCByteBuffer source that hides JDK dependencies and that can pool instances. Instance pooling is likely to be a good
  * idea for fixed size buffers and definitely a good idea for java 1.4 direct buffers (since their
@@ -77,6 +79,9 @@ public class TCByteBufferFactory {
   private static final boolean            disablePooling          = !(TCPropertiesImpl.getProperties()
                                                                       .getBoolean(TCPropertiesConsts.TC_BYTEBUFFER_POOLING_ENABLED));
 
+  private static AtomicLong               newInstanceCreation     = new AtomicLong(0);
+  private static AtomicLong               returnBufCount          = new AtomicLong(0);
+
   private static TCByteBuffer createNewInstance(boolean direct, int capacity, int index, int totalCount) {
     try {
       BoundedLinkedQueue poolQueue = (direct ? ((BoundedLinkedQueue) (directFreePool.get()))
@@ -125,9 +130,11 @@ public class TCByteBufferFactory {
   }
 
   private static TCByteBuffer getFromPoolOrCreate(boolean direct, int i, int numBuffers) {
-
     TCByteBuffer buffer = getFromPool(direct);
     if (null == buffer) {
+      if (newInstanceCreation.incrementAndGet() % 2500 == 0) {
+        logger.info("XXX new instance " + newInstanceCreation.get());
+      }
       buffer = createNewInstance(direct, fixedBufferSize, i, numBuffers);
     }
     return buffer;
@@ -228,6 +235,11 @@ public class TCByteBufferFactory {
       if (bufferPool != null) {
         try {
           bufferPool.offer(buf);
+
+          if (returnBufCount.incrementAndGet() % 2500 == 0) {
+            logger.info("XXX return " + returnBufCount.get());
+          }
+
         } catch (InterruptedException e) {
           logger.warn("interrupted while trying to return buffer", e);
         }

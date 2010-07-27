@@ -22,11 +22,7 @@ public class StateMachineRunner implements EventContext {
     this.sink = sink;
     this.stateMachine = stateMachine;
   }
-
-  public synchronized int getEventsCount() {
-    return (events.size());
-  }
-
+  
   public void start() {
     stateMachine.start();
   }
