@@ -141,7 +141,7 @@ public class TCTestCase extends TestCase {
   }
 
   protected boolean shouldBeSkipped() {
-    return !isContainerTest() && isConfiguredToRunWithAppServer();
+    return isContainerTest() ^ isConfiguredToRunWithAppServer();
   }
 
   @Override
