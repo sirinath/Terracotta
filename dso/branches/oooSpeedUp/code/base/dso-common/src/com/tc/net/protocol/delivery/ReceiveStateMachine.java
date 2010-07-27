@@ -19,10 +19,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   private int                              delayedAcks        = 0;
   private final int                        maxDelayedAcks;
   private final OOOProtocolMessageDelivery delivery;
-  private StateMachineRunner               runner;
-
   private String                           debugId            = "UNKNOWN";
-
   private static final boolean             debug              = false;
 
   public ReceiveStateMachine(OOOProtocolMessageDelivery delivery, ReconnectConfig reconnectConfig) {
@@ -37,10 +34,6 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   protected State initialState() {
     return MESSAGE_WAIT_STATE;
-  }
-
-  private int getRunnerEventLength() {
-    return ((runner != null) ? runner.getEventsCount() : 0);
   }
 
   private class MessageWaitState extends AbstractState {
@@ -87,7 +80,7 @@ public class ReceiveStateMachine extends AbstractStateMachine {
   }
 
   private void ackIfNeeded(long next) {
-    if ((delayedAcks < maxDelayedAcks) && (getRunnerEventLength() > 0)) {
+    if (delayedAcks < maxDelayedAcks) {
       ++delayedAcks;
     } else {
       /*
@@ -125,10 +118,6 @@ public class ReceiveStateMachine extends AbstractStateMachine {
 
   public synchronized long getReceived() {
     return received;
-  }
-
-  public void setRunner(StateMachineRunner receive) {
-    this.runner = receive;
   }
 
   // for testing purpose only

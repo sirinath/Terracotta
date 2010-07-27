@@ -78,15 +78,19 @@ public class SendStateMachine extends AbstractStateMachine {
     }
 
     public void enter() {
-      execute(null);
+      //
     }
 
     public void execute(OOOProtocolMessage protocolMessage) {
-      if (!sendQueue.isEmpty()) {
-        if ((sendWindow == 0) || (outstandingCnt.get() < sendWindow)) {
-          delivery.sendMessage(createProtocolMessage(++sent));
-        }
+      if ((protocolMessage != null) && protocolMessage.isAck()) {
         switchToState(ACK_WAIT_STATE);
+        getCurrentState().execute(protocolMessage);
+      } else {
+        // instead of waiting for every protocol event to send message, try at one shot
+        sendMoreIfAvailable();
+        if ((sendWindow != 0) && (outstandingCnt.get() >= sendWindow)) {
+          switchToState(ACK_WAIT_STATE);
+        }
       }
     }
   }
@@ -149,7 +153,7 @@ public class SendStateMachine extends AbstractStateMachine {
     }
 
     public void enter() {
-      sendMoreIfAvailable();
+      //
     }
 
     public void execute(OOOProtocolMessage protocolMessage) {
@@ -163,22 +167,17 @@ public class SendStateMachine extends AbstractStateMachine {
         ++acked;
         removeMessage();
       }
-
-      // try pump more
-      sendMoreIfAvailable();
-
-      if (outstandingCnt.get() == 0) {
-        switchToState(MESSAGE_WAIT_STATE);
-      }
-
-      // ???: is this check properly synchronized?
       Assert.eval(acked <= sent);
+
+      switchToState(MESSAGE_WAIT_STATE);
+      sendMoreIfAvailable();
     }
 
-    public void sendMoreIfAvailable() {
-      while ((outstandingCnt.get() < sendWindow) && !sendQueue.isEmpty()) {
-        delivery.sendMessage(createProtocolMessage(++sent));
-      }
+  }
+
+  private void sendMoreIfAvailable() {
+    while (((sendWindow == 0) || (outstandingCnt.get() < sendWindow)) && !sendQueue.isEmpty()) {
+      delivery.sendMessage(createProtocolMessage(++sent));
     }
   }
 
