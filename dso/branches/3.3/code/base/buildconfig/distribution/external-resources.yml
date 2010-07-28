@@ -48,14 +48,6 @@ artifacts:
     explode: true
     
   - maven_artifact: true
-    groupId: net.sf.ehcache
-    artifactId: ehcache-core
-    classifier: sources
-    version: 2.2.0
-    destination: ehcache/src
-    explode: true
-    
-  - maven_artifact: true
     groupId: org.slf4j
     artifactId: slf4j-api
     version: 1.5.11
@@ -70,12 +62,12 @@ artifacts:
   - maven_artifact: false
     name: README.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/README.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html
 
   - maven_artifact: false
     name: QUICK-START.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/QUICK-START.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html
     
   - maven_artifact: false
     name: CHANGELOG.txt
@@ -121,13 +113,13 @@ artifacts:
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta
-    version: 1.2.0
+    version: 1.2.1-SNAPSHOT
     destination: quartz
 
   - maven_artifact: true
     groupId: org.terracotta.session
     artifactId: terracotta-session
-    version: 1.1.0
+    version: 1.1.1-SNAPSHOT
     destination: sessions
 #end
 
