@@ -1,5 +1,6 @@
 
 default_repos:
+  - http://nexus:8080/content/groups/public
   - http://kong/repo/snapshots
   - http://kong/repo/staging
   - http://kong/repo/releases
@@ -13,7 +14,7 @@ artifacts:
     groupId: org.terracotta.samples.ehcache
     artifactId: colorcache
     classifier: distribution
-    version: 3.4.0-SNAPSHOT
+    version: 3.3.1-SNAPSHOT
     type: tar.gz
     destination: ehcache/samples/colorcache
     explode: true
@@ -24,7 +25,7 @@ artifacts:
     groupId: org.terracotta.samples.ehcache.hibernate
     artifactId: events
     classifier: distribution
-    version: 3.4.0-SNAPSHOT
+    version: 3.3.1-SNAPSHOT
     type: tar.gz
     destination: ehcache/samples/hibernate
     explode: true
@@ -32,28 +33,26 @@ artifacts:
     is_demo: true
 # end
 
-# begin EHCACHE
+# begin 'ehcache' folder
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.2.0-SNAPSHOT
-    destination: ehcache
+    version: 2.2.1-SNAPSHOT
+    destination: ehcache/lib
 
   - maven_artifact: true
     groupId: net.sf.ehcache
-    artifactId: ehcache-core
-    classifier: javadoc
-    version: 2.2.0-SNAPSHOT
-    destination: ehcache/javadoc
-    explode: true
-    
+    artifactId: ehcache-terracotta
+    version: 2.2.1-SNAPSHOT
+    destination: ehcache/lib
+    kit_edition: opensource
+
   - maven_artifact: true
     groupId: net.sf.ehcache
-    artifactId: ehcache-core
-    classifier: sources
-    version: 2.2.0-SNAPSHOT
-    destination: ehcache/src
-    explode: true
+    artifactId: ehcache-terracotta-ee
+    version: 2.2.1-SNAPSHOT
+    destination: ehcache/lib
+    kit_edition: enterprise
     
   - maven_artifact: true
     groupId: org.slf4j
@@ -66,16 +65,33 @@ artifacts:
     artifactId: slf4j-jdk14
     version: 1.5.11
     destination: ehcache/lib
+
+  - maven_artifact: true
+    groupId: net.sf.ehcache
+    artifactId: ehcache-core
+    classifier: javadoc
+    version: 2.2.1-SNAPSHOT
+    destination: ehcache/javadoc
+    explode: true
+
+  - maven_artifact: true
+    groupId: net.sf.ehcache
+    artifactId: ehcache-core
+    classifier: sources
+    version: 2.2.1-SNAPSHOT
+    destination: ehcache/src
+    explode: true
+    kit_edition: opensource
     
   - maven_artifact: false
     name: README.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/README.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html
 
   - maven_artifact: false
     name: QUICK-START.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/taraval-rc/ehcache-express-kit/src/assemble/QUICK-START.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html
     
   - maven_artifact: false
     name: CHANGELOG.txt
@@ -108,26 +124,60 @@ artifacts:
     url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache.xsd
 # end EHCACHE
 
+# begin toolkit runtime
+  - maven_artifact: true
+    groupId: org.terracotta
+    artifactId: terracotta-toolkit-1.0-runtime-ee
+    version: 2.0.0-SNAPSHOT
+    destination: common
+    kit_edition: enterprise
+
+  - maven_artifact: true
+    groupId: org.terracotta
+    artifactId: terracotta-toolkit-1.0-runtime-ee
+    version: 2.0.0-SNAPSHOT
+    classifier: javadoc
+    destination: common/docs/javadoc
+    explode: true
+    kit_edition: enterprise
+
+  - maven_artifact: true
+    groupId: org.terracotta
+    artifactId: terracotta-toolkit-1.0-runtime
+    version: 2.0.0-SNAPSHOT
+    destination: common
+    kit_edition: opensource
+
+  - maven_artifact: true
+    groupId: org.terracotta
+    artifactId: terracotta-toolkit-1.0-runtime
+    version: 2.0.0-SNAPSHOT
+    classifier: javadoc
+    destination: common/docs/javadoc
+    explode: true
+    kit_edition: opensource
+# end toolkit runtime
+
 # begin QUARTZ
   - maven_artifact: false
     name: quartz.tar.gz
     destination: quartz
     explode: true
     remove_root_folder: true
-    url: http://download.terracotta.org/quartz/quartz-1.8.4.tar.gz
+    url: http://download.terracotta.org/quartz/quartz-2.0.0-SNAPSHOT.tar.gz
 # end QUARTZ
 
 # begin express products
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta
-    version: 1.2.0-SNAPSHOT
+    version: 1.2.1-SNAPSHOT
     destination: quartz
 
   - maven_artifact: true
     groupId: org.terracotta.session
     artifactId: terracotta-session
-    version: 1.1.0-SNAPSHOT
+    version: 1.1.1-SNAPSHOT
     destination: sessions
 #end
 

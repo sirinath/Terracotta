@@ -149,6 +149,13 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   def init
     # set flavor property passed in by users
     @internal_config_source['flavor'] = @flavor
+
+    # this setup is for kit packaging naming pattern
+    # it's overwritten by build nightly kits target to add revision to the name
+    unless @internal_config_source['version_string']
+      @internal_config_source['version_string'] = @build_environment.version
+    end
+    
     write_build_info_file if monkey?
   end
 
@@ -886,8 +893,29 @@ class BaseCodeTerracottaBuilder < TerracottaBuilder
   def deploy_ee_releases
     deploy(ENTERPRISE, false, TERRACOTTA_EE_RELEASES_REPO_ID, TERRACOTTA_EE_RELEASES_REPO)
   end
-  
+
+  def build_nightly_kits
+    setup_config_for_nightly_kits()
+    publish_packages(['dso', 'web'], OPENSOURCE)
+  end
+
+  def build_nightly_ee_kits
+    setup_config_for_nightly_kits()
+    publish_packages(['dso'], ENTERPRISE)
+  end
+
   private
+
+  def setup_config_for_nightly_kits
+    @internal_config_source['kit-type'] = 'nightly'
+    if @build_environment.current_branch == 'trunk'
+      version = 'trunk-SNAPSHOT'
+    else
+      version = @build_environment.maven_version
+    end
+    @internal_config_source['version_string'] = version.gsub(/SNAPSHOT/, "nightly-rev#{@build_environment.os_revision}")
+    @internal_config_source['build-archive-dir'] = @config_source['build-archive-dir'] || '/shares/monkeyoutput/kits'
+  end
 
   def deploy(flavor, snapshot, repo_id, repo_url)
     @internal_config_source[MAVEN_SNAPSHOT_CONFIG_KEY] = snapshot.to_s

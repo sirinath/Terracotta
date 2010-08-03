@@ -71,8 +71,12 @@ module DistributionUtils
     FilePath.new(@build_results.build_dir, "dist")
   end
 
+  def package_directory
+    FilePath.new(@build_results.build_dir, "packages")
+  end
+
   def product_directory
-    FilePath.new(@distribution_results.build_dir, get_config(:root_directory)).ensure_directory
+    FilePath.new(@distribution_results.build_dir, root_directory).ensure_directory
   end
 
   def dorevpath(component)
@@ -98,6 +102,11 @@ module DistributionUtils
     pattern
   end
 
+  def root_directory
+    pattern = get_config(:root_directory)
+    pattern
+  end
+
   def get_spec(symbol, default=nil)
     out     = []
     configs = @config[symbol.to_s]
@@ -120,16 +129,6 @@ module DistributionUtils
     else
       @config[symbol.to_s] || default
     end
-    
-    # append revision number to kitname and root directory in
-    # case of building a nightly
-    if @build_environment.version =~ /nightly/ && out =~ /terracotta/
-      case symbol
-      when :kit_name_pattern then out += "-revrevision"
-      when :root_directory then out += "-revrevision"
-      end
-    end
-    
     out = interpolate(out) unless out.nil?
     out
   end
@@ -159,7 +158,7 @@ module DistributionUtils
   VARIABLE_MAP = {
     'tim-api.version' => lambda { @config_source['tim-api.version'] || 'unknown' },
     'kitversion' => 'kit.version',
-    'version' => :version,
+    'version_string' => 'version_string',
     'branch' => :current_branch,
     'platform' => lambda { @build_environment.os_family.downcase },
     'revision' => :os_revision,
