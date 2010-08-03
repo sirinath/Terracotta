@@ -1,7 +1,7 @@
 name: Terracotta DSO
 internal_name: dso
-kit_name_pattern: terracotta-version{_kitversion}
-root_directory: terracotta-version{_kitversion}
+kit_name_pattern: terracotta-version_string{_kitversion}
+root_directory: terracotta-version_string{_kitversion}
 bundled_demos:
   - pojo:
       install_directory: platform/samples/pojo
@@ -100,10 +100,7 @@ bundled_modules:
         - jdk15-preinst-config
         - standard-config
 packaging:
-  - tar:
-      assert: '@build_environment.os_type !~ /^\s*windows\s*$/i'
-  - zip:
-      assert: '!@build_environment.os_type =~ /^\s*windows\s*$/i'
+  - tar
   - izpack
 
 postscripts:
@@ -127,7 +124,6 @@ postscripts:
   - include-external-resources:
       args:
         - buildconfig/distribution/external-resources.yml
-        - buildconfig/distribution/external-resources-opensource.yml
   - delete-tim-get-index
   - include-schemas:
       args:
