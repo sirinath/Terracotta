@@ -158,7 +158,7 @@ module DistributionUtils
   VARIABLE_MAP = {
     'api.version' => lambda { @config_source['api.version'] || 'unknown' },
     'kitversion' => 'kit.version',
-    'version' => 'version',
+    'version_string' => 'version_string',
     'branch' => :current_branch,
     'platform' => lambda { @build_environment.os_family.downcase },
     'revision' => :os_revision,
