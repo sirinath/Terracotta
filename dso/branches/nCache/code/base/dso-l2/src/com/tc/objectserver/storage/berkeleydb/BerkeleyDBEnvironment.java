@@ -38,6 +38,8 @@ import com.tc.objectserver.storage.api.TCMapsDatabase;
 import com.tc.objectserver.storage.api.TCObjectDatabase;
 import com.tc.objectserver.storage.api.TCRootDatabase;
 import com.tc.objectserver.storage.api.TCStringToStringDatabase;
+import com.tc.objectserver.storage.nativeCache.NativeCacheConfig;
+import com.tc.objectserver.storage.nativeCache.NativeCachedTCObjectDatabase;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.MutableSequence;
 
@@ -200,7 +202,8 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
       for (Iterator i = createdDatabases.iterator(); i.hasNext();) {
         Object o = i.next();
         Database db = null;
-        if (o instanceof AbstractBerkeleyDatabase) {
+        // XXX: Hack; Fix it; design proper hierarchy
+        if ((o instanceof AbstractBerkeleyDatabase) || (o instanceof NativeCachedTCObjectDatabase)) {
           db = ((AbstractBerkeleyDatabase) o).getDatabase();
         } else {
           db = (Database) o;
@@ -438,7 +441,18 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     try {
       Database db = e.openDatabase(null, name, dbcfg);
       BerkeleyDBTCObjectDatabase bdb = new BerkeleyDBTCObjectDatabase(db);
-      createdDatabases.add(bdb);
+
+      /*
+       * XXX:This is a hacky version of using Native Cache for Object Database. Need to properly refactor the code and
+       * plugin the native cache usage at the top layer.
+       */
+      TCObjectDatabase objectDatabse = bdb;
+      NativeCacheConfig nCacheConfig = new NativeCacheConfig();
+      if (nCacheConfig.enabled()) {
+        objectDatabse = new NativeCachedTCObjectDatabase(nCacheConfig, bdb);
+      }
+
+      createdDatabases.add(objectDatabse);
       databasesByName.put(name, bdb);
     } catch (Exception de) {
       throw new TCDatabaseException(de.getMessage());
@@ -575,8 +589,8 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
 
   public MutableSequence getSequence(PersistenceTransactionProvider ptxp, TCLogger log, String sequenceID,
                                      int startValue) {
-    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue, (Database) databasesByName
-        .get(GLOBAL_SEQUENCE_DATABASE));
+    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue,
+                                  (Database) databasesByName.get(GLOBAL_SEQUENCE_DATABASE));
   }
 
   public PersistenceTransactionProvider getPersistenceTransactionProvider() {
