@@ -140,6 +140,7 @@ public class LockManagerImpl implements LockManager, DumpHandler, PrettyPrintabl
 
     ServerLock lock = lockStore.checkOut(lid);
     try {
+      if (!isClientAlive(cid)) { return; }
       lock.recallCommit(cid, serverLockContexts, lockHelper);
     } finally {
       lockStore.checkIn(lock);
