@@ -291,7 +291,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
 
   public synchronized TCObjectDatabase getObjectDatabase() throws TCDatabaseException {
     assertOpen();
-    return (BerkeleyDBTCObjectDatabase) databasesByName.get(OBJECT_DB_NAME);
+    return (TCObjectDatabase) databasesByName.get(OBJECT_DB_NAME);
   }
 
   public synchronized TCBytesToBytesDatabase getObjectOidStoreDatabase() throws TCDatabaseException {
@@ -453,7 +453,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
       }
 
       createdDatabases.add(objectDatabse);
-      databasesByName.put(name, bdb);
+      databasesByName.put(name, objectDatabse);
     } catch (Exception de) {
       throw new TCDatabaseException(de.getMessage());
     }
