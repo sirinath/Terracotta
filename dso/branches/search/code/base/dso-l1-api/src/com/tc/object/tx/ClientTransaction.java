@@ -9,6 +9,7 @@ import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.Notify;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.util.SequenceID;
 
 import java.util.Collection;
@@ -212,6 +213,11 @@ public interface ClientTransaction {
    * @param dd Descriptor
    */
   public void addDmiDescriptor(DmiDescriptor dd);
+  
+  /**
+   * Add a new MetaData descriptor
+   */
+  public void addMetaDataDescriptor(MetaDataDescriptor md);
 
   /**
    * Get all DmiDescriptors
@@ -219,6 +225,11 @@ public interface ClientTransaction {
    * @return List of DmiDescriptors in transaction
    */
   public List getDmiDescriptors();
+  
+  /**
+   * 
+   */
+  public Map getMetaDataDescriptors();
 
   /**
    * Get all Notify calls
