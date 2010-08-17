@@ -7,7 +7,7 @@ import com.tc.properties.TCPropertiesImpl;
 
 public class NativeCacheConfig {
 
-  private static final int  MEGABYTE    = 1024 * 0124;
+  private static final int  MEGABYTE    = 1024 * 1024;
   private static final long GIGABYTE    = 1024 * 1024 * 1024;
 
   private final long        maxDataSize = TCPropertiesImpl.getProperties().getLong("nCache.maxDataSize", 1 * GIGABYTE);
