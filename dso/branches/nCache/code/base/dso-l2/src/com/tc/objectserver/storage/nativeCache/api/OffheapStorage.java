@@ -21,7 +21,7 @@ public class OffheapStorage<K, V> implements Storage<K, V> {
                                                             (int) chunkSize);
     StorageEngineFactory<K, V> factory = MyStorageEngine.createFactory(source, initialDataSize, keyProtability,
                                                                        valueProtability);
-    this.cache = new ConcurrentNativeClockCache<K, V>(factory);
+    this.cache = new ConcurrentNativeClockCache<K, V>(source, factory);
   }
 
   public OffheapStorage(int initialDataSize, long maximalDataSize, int tableSize, int concurrency,
@@ -32,7 +32,7 @@ public class OffheapStorage<K, V> implements Storage<K, V> {
                                                             (int) chunkSize);
     StorageEngineFactory<K, V> factory = MyStorageEngine.createFactory(source, initialDataSize, keyProtability,
                                                                        valueProtability);
-    this.cache = new ConcurrentNativeClockCache<K, V>(factory, tableSize, concurrency);
+    this.cache = new ConcurrentNativeClockCache<K, V>(source, factory, tableSize, concurrency);
   }
 
   private int calculateSegments(int concurrency) {
