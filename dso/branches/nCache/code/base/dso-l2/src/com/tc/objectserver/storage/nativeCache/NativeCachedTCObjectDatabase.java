@@ -14,6 +14,9 @@ import com.tc.objectserver.storage.nativeCache.api.LongPortability;
 import com.tc.objectserver.storage.nativeCache.api.OffheapStorage;
 import com.tc.util.ObjectIDSet;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class NativeCachedTCObjectDatabase implements TCObjectDatabase {
 
   private static final TCLogger              logger = TCLogging.getLogger(NativeCachedTCObjectDatabase.class);
@@ -24,9 +27,18 @@ public class NativeCachedTCObjectDatabase implements TCObjectDatabase {
   public NativeCachedTCObjectDatabase(final NativeCacheConfig cacheConfig, final TCObjectDatabase objectDatabase) {
     this.objectDatabase = objectDatabase;
     this.offheapCache = new OffheapStorage<Long, byte[]>(cacheConfig.getInitialDataSize(),
-                                                         cacheConfig.getMaxDataSize(), cacheConfig.getSegments(),
-                                                         new LongPortability(), new ByteArrayPortability());
+                                                         cacheConfig.getMaxDataSize(), cacheConfig.getTableSize(),
+                                                         cacheConfig.getConcurrency(), new LongPortability(),
+                                                         new ByteArrayPortability());
     logger.info("XXX Using Native Cache for Object Database");
+    Timer t = new Timer();
+    TimerTask task = new TimerTask() {
+      public void run() {
+        System.out.println("XXX OffHepCache Size: " + offheapCache.getSize() + "; MemSize: "
+                           + offheapCache.getMemorySize());
+      }
+    };
+    t.schedule(task, 60000, 60000);
   }
 
   public Status insert(long id, byte[] b, PersistenceTransaction tx) {
