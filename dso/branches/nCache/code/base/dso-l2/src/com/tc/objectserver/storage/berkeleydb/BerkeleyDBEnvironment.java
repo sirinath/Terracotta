@@ -38,8 +38,6 @@ import com.tc.objectserver.storage.api.TCMapsDatabase;
 import com.tc.objectserver.storage.api.TCObjectDatabase;
 import com.tc.objectserver.storage.api.TCRootDatabase;
 import com.tc.objectserver.storage.api.TCStringToStringDatabase;
-import com.tc.objectserver.storage.nativeCache.NativeCacheConfig;
-import com.tc.objectserver.storage.nativeCache.NativeCachedTCObjectDatabase;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.MutableSequence;
 
@@ -202,8 +200,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
       for (Iterator i = createdDatabases.iterator(); i.hasNext();) {
         Object o = i.next();
         Database db = null;
-        // XXX: Hack; Fix it; design proper hierarchy
-        if ((o instanceof AbstractBerkeleyDatabase) || (o instanceof NativeCachedTCObjectDatabase)) {
+        if ((o instanceof AbstractBerkeleyDatabase)) {
           db = ((AbstractBerkeleyDatabase) o).getDatabase();
         } else {
           db = (Database) o;
@@ -440,17 +437,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   private void newObjectDB(Environment e, String name) throws TCDatabaseException {
     try {
       Database db = e.openDatabase(null, name, dbcfg);
-      BerkeleyDBTCObjectDatabase bdb = new BerkeleyDBTCObjectDatabase(db);
-
-      /*
-       * XXX:This is a hacky version of using Native Cache for Object Database. Need to properly refactor the code and
-       * plugin the native cache usage at the top layer.
-       */
-      TCObjectDatabase objectDatabse = bdb;
-      NativeCacheConfig nCacheConfig = new NativeCacheConfig();
-      if (nCacheConfig.enabled()) {
-        objectDatabse = new NativeCachedTCObjectDatabase(nCacheConfig, bdb);
-      }
+      BerkeleyDBTCObjectDatabase objectDatabse = new BerkeleyDBTCObjectDatabase(db);
 
       createdDatabases.add(objectDatabse);
       databasesByName.put(name, objectDatabse);

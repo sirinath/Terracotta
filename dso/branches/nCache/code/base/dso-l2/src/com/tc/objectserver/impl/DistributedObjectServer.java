@@ -180,8 +180,8 @@ import com.tc.objectserver.handler.RespondToObjectRequestHandler;
 import com.tc.objectserver.handler.RespondToRequestLockHandler;
 import com.tc.objectserver.handler.RespondToServerMapRequestHandler;
 import com.tc.objectserver.handler.ServerClusterMetaDataHandler;
-import com.tc.objectserver.handler.ServerMapEvictionBroadcastHandler;
 import com.tc.objectserver.handler.ServerMapCapacityEvictionHandler;
+import com.tc.objectserver.handler.ServerMapEvictionBroadcastHandler;
 import com.tc.objectserver.handler.ServerMapEvictionHandler;
 import com.tc.objectserver.handler.ServerMapRequestHandler;
 import com.tc.objectserver.handler.SyncWriteTransactionReceivedHandler;
@@ -206,9 +206,9 @@ import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.objectserver.persistence.db.ConnectionIDFactoryImpl;
 import com.tc.objectserver.persistence.db.CustomSerializationAdapterFactory;
 import com.tc.objectserver.persistence.db.DBException;
+import com.tc.objectserver.persistence.db.DBPersistorImpl;
 import com.tc.objectserver.persistence.db.DatabaseDirtyException;
 import com.tc.objectserver.persistence.db.SerializationAdapterFactory;
-import com.tc.objectserver.persistence.db.DBPersistorImpl;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.persistence.inmemory.InMemoryPersistor;
 import com.tc.objectserver.persistence.inmemory.InMemorySequenceProvider;
@@ -245,10 +245,10 @@ import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.StatisticsSystemType;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.statistics.retrieval.actions.SRAForDB;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvictRequest;
 import com.tc.statistics.retrieval.actions.SRACacheObjectsEvicted;
 import com.tc.statistics.retrieval.actions.SRADistributedGC;
+import com.tc.statistics.retrieval.actions.SRAForDB;
 import com.tc.statistics.retrieval.actions.SRAGlobalLockRecallCount;
 import com.tc.statistics.retrieval.actions.SRAL1ReferenceCount;
 import com.tc.statistics.retrieval.actions.SRAL1ToL2FlushRate;
@@ -306,7 +306,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 
@@ -555,13 +554,13 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
       final CallbackOnExitHandler dirtydbHandler = new CallbackDatabaseDirtyAlertAdapter(logger, consoleLogger);
       this.threadGroup.addCallbackOnExitExceptionHandler(DatabaseDirtyException.class, dirtydbHandler);
 
-      dbenv = dbFactory.createEnvironment(persistent, dbhome, this.l2Properties.getPropertiesFor("berkeleydb")
-          .addAllPropertiesTo(new Properties()));
+      dbenv = this.serverBuilder.createDBEnvironment(dbFactory, persistent, dbhome, this.l2Properties);
+
       final SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
 
       this.persistor = new DBPersistorImpl(TCLogging.getLogger(DBPersistorImpl.class), dbenv,
-                                              serializationAdapterFactory, this.configSetupManager.commonl2Config()
-                                                  .dataPath().getFile(), this.objectStatsRecorder);
+                                           serializationAdapterFactory, this.configSetupManager.commonl2Config()
+                                               .dataPath().getFile(), this.objectStatsRecorder);
       sraForDb = dbFactory.createSRAForDB(dbenv);
       // Setting the DB environment for the bean which takes backup of the active server
       if (persistent) {

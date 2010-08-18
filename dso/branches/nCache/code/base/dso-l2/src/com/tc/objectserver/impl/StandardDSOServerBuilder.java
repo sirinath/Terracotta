@@ -48,6 +48,7 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
 import com.tc.objectserver.tx.PassThruTransactionFilter;
@@ -56,6 +57,7 @@ import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
+import com.tc.properties.TCProperties;
 import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -63,8 +65,11 @@ import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
 import com.tc.util.runtime.ThreadDumpUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Properties;
 
 import javax.management.MBeanServer;
 
@@ -126,8 +131,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                            managedObjectRequestSink);
   }
 
-  public ServerConfigurationContext createServerConfigurationContext(
-                                                                     StageManager stageManager,
+  public ServerConfigurationContext createServerConfigurationContext(StageManager stageManager,
                                                                      ObjectManager objMgr,
                                                                      ObjectRequestManager objRequestMgr,
                                                                      ServerMapRequestManager serverTCMapRequestManager,
@@ -211,5 +215,11 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                         TerracottaOperatorEventHistoryProvider operatorEventHistoryProvider,
                                         MBeanServer l2MbeanServer) {
     // NOP
+  }
+
+  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
+                                           TCProperties l2Properties) throws IOException {
+    return dbFactory.createEnvironment(persistent, dbhome, l2Properties.getPropertiesFor("berkeleydb")
+        .addAllPropertiesTo(new Properties()));
   }
 }
