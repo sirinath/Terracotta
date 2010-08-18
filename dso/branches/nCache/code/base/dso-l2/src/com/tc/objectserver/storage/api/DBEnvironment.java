@@ -117,4 +117,11 @@ public interface DBEnvironment {
    */
   public abstract MutableSequence getSequence(PersistenceTransactionProvider ptxp, TCLogger logger, String sequenceID,
                                               int startValue);
+
+  /**
+   * Stats for Databases.
+   * 
+   * @return: Database specific stats object
+   */
+  public Object getStats() throws TCDatabaseException;
 }
