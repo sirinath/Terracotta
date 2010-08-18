@@ -12,32 +12,35 @@ import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticType;
 
 public class SRAForDB implements StatisticRetrievalAction {
-  public final static String          ACTION_NAME = "berkeley db stats";
+  public final static String  ACTION_NAME = "berkeley db stats";
 
-  private final SRABDBLogging         sraLogging;
-  private final SRABDBCache           sraCache;
-  private final SRABDBCleaner         sraCleaner;
-  private final SRABDBIO              sraIo;
+  private final SRABDBLogging sraLogging;
+  private final SRABDBCache   sraCache;
+  private final SRABDBCleaner sraCleaner;
+  private final SRABDBIO      sraIo;
 
-  private final BerkeleyDBEnvironment dbEnv;
+  private final DBEnvironment dbEnv;
 
   public SRAForDB(DBEnvironment env) {
     sraLogging = new SRABDBLogging();
     sraCache = new SRABDBCache();
     sraCleaner = new SRABDBCleaner();
     sraIo = new SRABDBIO();
-    dbEnv = (BerkeleyDBEnvironment) env;
+    dbEnv = env;
   }
 
   private void forceUpdate() {
-    EnvironmentStats stats;
-    try {
-      stats = dbEnv.getStats();
-    } catch (TCDatabaseException e) {
-      return;
+    // XXX: Fix SRA for CacheDBEnvironment
+    if (dbEnv instanceof BerkeleyDBEnvironment) {
+      EnvironmentStats stats;
+      try {
+        stats = (EnvironmentStats) dbEnv.getStats();
+      } catch (TCDatabaseException e) {
+        return;
+      }
+      if (stats == null) return;
+      updateValues(stats);
     }
-    if (stats == null) return;
-    updateValues(stats);
   }
 
   private void updateValues(EnvironmentStats envStats) {
