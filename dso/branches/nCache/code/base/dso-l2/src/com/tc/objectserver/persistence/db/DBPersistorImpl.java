@@ -42,10 +42,10 @@ public class DBPersistorImpl implements Persistor {
   private final ClassPersistor                 classPersistor;
   private final PersistenceTransactionProvider persistenceTransactionProvider;
   private final DBEnvironment                  env;
-  private final PersistableCollectionFactory     sleepycatCollectionFactory;
+  private final PersistableCollectionFactory   sleepycatCollectionFactory;
   private final PersistentMapStore             persistentStateStore;
 
-  private TCCollectionsPersistor        sleepycatCollectionsPersistor;
+  private TCCollectionsPersistor               sleepycatCollectionsPersistor;
 
   // only for tests
   public DBPersistorImpl(TCLogger logger, DBEnvironment env, SerializationAdapterFactory serializationAdapterFactory)
@@ -53,9 +53,8 @@ public class DBPersistorImpl implements Persistor {
     this(logger, env, serializationAdapterFactory, null, new ObjectStatsRecorder());
   }
 
-  public DBPersistorImpl(TCLogger logger, DBEnvironment env,
-                            SerializationAdapterFactory serializationAdapterFactory, File l2DataPath,
-                            ObjectStatsRecorder objectStatsRecorder) throws TCDatabaseException {
+  public DBPersistorImpl(TCLogger logger, DBEnvironment env, SerializationAdapterFactory serializationAdapterFactory,
+                         File l2DataPath, ObjectStatsRecorder objectStatsRecorder) throws TCDatabaseException {
 
     open(env, logger);
     this.env = env;
@@ -63,28 +62,32 @@ public class DBPersistorImpl implements Persistor {
     sanityCheckAndClean(env, l2DataPath, logger);
 
     this.persistenceTransactionProvider = env.getPersistenceTransactionProvider();
-    this.stringIndexPersistor = new StringIndexPersistorImpl(persistenceTransactionProvider, env
-        .getStringIndexDatabase());
+    this.stringIndexPersistor = new StringIndexPersistorImpl(persistenceTransactionProvider,
+                                                             env.getStringIndexDatabase());
     this.stringIndex = new StringIndexImpl(this.stringIndexPersistor, DEFAULT_CAPACITY);
     this.sleepycatCollectionFactory = new PersistableCollectionFactory();
     this.sleepycatCollectionsPersistor = new TCCollectionsPersistor(logger, env.getMapsDatabase(),
-                                                                           sleepycatCollectionFactory);
-    this.managedObjectPersistor = new ManagedObjectPersistorImpl(logger,
-
-    serializationAdapterFactory, env, env.getSequence(this.persistenceTransactionProvider, logger,
-                                                      DBSequenceKeys.OBJECTID_SEQUENCE_NAME, 1000), env
-        .getRootDatabase(), this.persistenceTransactionProvider, this.sleepycatCollectionsPersistor, env
-        .isParanoidMode(), objectStatsRecorder);
-    this.clientStatePersistor = new ClientStatePersistorImpl(logger, this.persistenceTransactionProvider, env
-        .getSequence(this.persistenceTransactionProvider, logger, DBSequenceKeys.CLIENTID_SEQUENCE_NAME, 0), env
-        .getClientStateDatabase());
+                                                                    sleepycatCollectionFactory);
+    this.managedObjectPersistor = new ManagedObjectPersistorImpl(logger, serializationAdapterFactory, env,
+                                                                 env.getSequence(this.persistenceTransactionProvider,
+                                                                                 logger,
+                                                                                 DBSequenceKeys.OBJECTID_SEQUENCE_NAME,
+                                                                                 1000), env.getRootDatabase(),
+                                                                 this.persistenceTransactionProvider,
+                                                                 this.sleepycatCollectionsPersistor,
+                                                                 env.isParanoidMode(), objectStatsRecorder);
+    this.clientStatePersistor = new ClientStatePersistorImpl(logger, this.persistenceTransactionProvider,
+                                                             env.getSequence(this.persistenceTransactionProvider,
+                                                                             logger,
+                                                                             DBSequenceKeys.CLIENTID_SEQUENCE_NAME, 0),
+                                                             env.getClientStateDatabase());
     this.transactionPerisistor = new TransactionPersistorImpl(env.getTransactionDatabase(),
                                                               this.persistenceTransactionProvider);
     this.globalTransactionIDSequence = env.getSequence(this.persistenceTransactionProvider, logger,
                                                        DBSequenceKeys.TRANSACTION_SEQUENCE_DB_NAME, 1);
     this.classPersistor = new ClassPersistorImpl(this.persistenceTransactionProvider, logger, env.getClassDatabase());
-    this.persistentStateStore = new TCMapStore(this.persistenceTransactionProvider, logger, env
-        .getClusterStateStoreDatabase());
+    this.persistentStateStore = new TCMapStore(this.persistenceTransactionProvider, logger,
+                                               env.getClusterStateStoreDatabase());
   }
 
   private void open(DBEnvironment dbenv, TCLogger logger) throws TCDatabaseException {
@@ -101,8 +104,8 @@ public class DBPersistorImpl implements Persistor {
 
   private void sanityCheckAndClean(DBEnvironment dbenv, File l2DataPath, TCLogger logger) throws TCDatabaseException {
     PersistenceTransactionProvider persistentTxProvider = dbenv.getPersistenceTransactionProvider();
-    PersistentMapStore persistentMapStore = new TCMapStore(persistentTxProvider, logger, dbenv
-        .getClusterStateStoreDatabase());
+    PersistentMapStore persistentMapStore = new TCMapStore(persistentTxProvider, logger,
+                                                           dbenv.getClusterStateStoreDatabase());
 
     // check for DBversion mismatch
     DBVersionChecker dbVersionChecker = new DBVersionChecker(persistentMapStore);
