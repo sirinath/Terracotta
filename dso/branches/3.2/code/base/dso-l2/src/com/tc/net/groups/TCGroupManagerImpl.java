@@ -1001,8 +1001,9 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
       public void enter() {
         createMember();
         if (member.isHighPriorityNode()) {
+          member.memberAddingInProcess();
           boolean isAdded = manager.tryAddMember(member);
-          if (isAdded) member.memberAddingInProcess();
+          if (!isAdded) member.abortMemberAdding();
           signalToJoin(isAdded);
         }
       }
