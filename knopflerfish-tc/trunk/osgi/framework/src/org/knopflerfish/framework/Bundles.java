@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.regex.Pattern;
 
 import org.osgi.framework.*;
 
@@ -56,7 +57,11 @@ import org.osgi.framework.*;
  */
 public class Bundles {
 
-    private static final String TC_TOOLKIT_PREFIX = "org.terracotta.toolkit.terracotta-toolkit-";
+    private static final String TOOLKIT_REGEX = "^org\\.terracotta\\.toolkit\\.terracotta-toolkit-\\d+\\.\\d+$";
+    private static final String TOOLKIT_EE_REGEX = "^org\\.terracotta\\.toolkit\\.terracotta-toolkit-\\d+\\.\\d+-ee$";
+
+    private static final Pattern TOOLKIT_PATTERN = Pattern.compile(TOOLKIT_REGEX);
+    private static final Pattern TOOLKIT_EE_PATTERN = Pattern.compile(TOOLKIT_EE_REGEX);
 
     /**
    * Table of all installed bundles in this framework.
@@ -114,7 +119,7 @@ public class Bundles {
           if ("http".equals(url.getProtocol()) ||
               "https".equals(url.getProtocol())) {
                         String base64 = Util.base64Encode(auth);
-            conn.setRequestProperty("Proxy-Authorization", 
+            conn.setRequestProperty("Proxy-Authorization",
                                     "Basic " + base64);
                     }
                 }
@@ -249,7 +254,11 @@ public class Bundles {
         BundleImpl b = (BundleImpl)e.nextElement();
         if (name.equals(b.symbolicName)) {
           res.add(b);
-        } else if (name.startsWith(TC_TOOLKIT_PREFIX) && b.symbolicName.startsWith(TC_TOOLKIT_PREFIX)) {
+        } else if (
+                (TOOLKIT_PATTERN.matcher(name).matches() && TOOLKIT_PATTERN.matcher(b.symbolicName).matches())
+                ||
+                (TOOLKIT_EE_PATTERN.matcher(name).matches() && TOOLKIT_EE_PATTERN.matcher(b.symbolicName).matches())
+                ) {
           // XXX: This is quite an enormous hack. We make sure to only ever load one version of the toolkit in this OSGi runtime at a higher level
           if (toolkitHackUsed) {
             throw new AssertionError("Multile toolkit like bundles detected");
@@ -342,7 +351,7 @@ public class Bundles {
     }
 
     /**
-   * Returns all fragment bundles that is 
+   * Returns all fragment bundles that is
    * already attached and targets given bundle.
      *
    * @param target the targetted bundle
