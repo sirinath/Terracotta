@@ -33,7 +33,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   private Map                 newRoots;
   private List                notifies;
   private List                dmis;
-  private Map                 metaDataDescriptors;
+  private List                metaDataDescriptors;
 
   // used to keep things referenced until the transaction is completely ACKED
   private final Map           referenced    = new IdentityHashMap();
@@ -165,19 +165,18 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   }
   
   public void addMetaDataDescriptor(MetaDataDescriptor md) {
-    final ObjectID oid = md.getSharedObjectID();
     if (metaDataDescriptors == null) {
-      metaDataDescriptors = new HashMap();
+      metaDataDescriptors = new ArrayList();
     }
-    metaDataDescriptors.put(oid, md);
+    metaDataDescriptors.add(md);
   }
 
   public List getDmiDescriptors() {
     return dmis == null ? Collections.EMPTY_LIST : dmis;
   }
 
-  public Map getMetaDataDescriptors() {
-    return metaDataDescriptors == null ? Collections.EMPTY_MAP : metaDataDescriptors;
+  public List getMetaDataDescriptors() {
+    return metaDataDescriptors == null ? Collections.EMPTY_LIST : metaDataDescriptors;
   }
 
 }

@@ -29,6 +29,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.msg.BroadcastTransactionMessage;
 import com.tc.object.net.ChannelStats;
@@ -132,6 +133,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     public DmiDescriptor[] getDmiDescriptors() {
       return new DmiDescriptor[0];
+    }
+    
+    public MetaDataDescriptor[] getMetaDataDescriptors() {
+      return new MetaDataDescriptor[0];
     }
 
     public long[] getHighWaterMarks() {

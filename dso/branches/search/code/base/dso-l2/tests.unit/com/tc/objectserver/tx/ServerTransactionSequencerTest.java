@@ -9,6 +9,7 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -181,25 +182,29 @@ public class ServerTransactionSequencerTest extends TCTestCase {
                                                        new SequenceID(this.sqID++), createLocks(lock, lock++),
                                                        this.clientID, createDNAs(1, 1), new ObjectStringSerializer(),
                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                       DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                       1, new long[0]);
 
     ServerTransaction txn2 = new ServerTransactionImpl(new TxnBatchID(this.batchID), new TransactionID(2),
                                                        new SequenceID(this.sqID++), createLocks(lock, lock++),
                                                        this.clientID, createDNAs(2, 2), new ObjectStringSerializer(),
                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                       DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                       1, new long[0]);
 
     ServerTransaction txn3 = new ServerTransactionImpl(new TxnBatchID(this.batchID), new TransactionID(3),
                                                        new SequenceID(this.sqID++), createLocks(lock, lock++),
                                                        this.clientID, createDNAs(2, 3), new ObjectStringSerializer(),
                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                       DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                       1, new long[0]);
 
     ServerTransaction txn4 = new ServerTransactionImpl(new TxnBatchID(this.batchID), new TransactionID(4),
                                                        new SequenceID(this.sqID++), createLocks(lock, lock++),
                                                        this.clientID, createDNAs(1, 2), new ObjectStringSerializer(),
                                                        Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                       DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                       1, new long[0]);
 
     txns.add(txn1);
     txns.add(txn2);
@@ -326,7 +331,8 @@ public class ServerTransactionSequencerTest extends TCTestCase {
     return new ServerTransactionImpl(new TxnBatchID(this.batchID), new TransactionID(this.txnID++),
                                      new SequenceID(this.sqID++), createLocks(lockID, lockID), this.clientID,
                                      new ArrayList(dnas.values()), new ObjectStringSerializer(), Collections.EMPTY_MAP,
-                                     TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                     TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                     1, new long[0]);
   }
 
   private List getAllTxnsPossible() {
@@ -348,7 +354,8 @@ public class ServerTransactionSequencerTest extends TCTestCase {
                                          new SequenceID(this.sqID++), createLocks(this.start, e), this.clientID,
                                          createDNAs(this.start, e), new ObjectStringSerializer(),
                                          Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                         DmiDescriptor.EMPTY_ARRAY, 1, new long[0]));
+                                         DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                         1, new long[0]));
       this.start = e + 1;
     }
     return txns;
@@ -364,7 +371,8 @@ public class ServerTransactionSequencerTest extends TCTestCase {
                                          new SequenceID(this.sqID++), createLocks(this.start, e + j), this.clientID,
                                          createDNAs(this.start, e), new ObjectStringSerializer(),
                                          Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                         DmiDescriptor.EMPTY_ARRAY, 1, new long[0]));
+                                         DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                         1, new long[0]));
       this.start = e + 1;
     }
     return txns;
@@ -380,7 +388,8 @@ public class ServerTransactionSequencerTest extends TCTestCase {
                                          new SequenceID(this.sqID++), createLocks(this.start, e), this.clientID,
                                          createDNAs(this.start, e + j), new ObjectStringSerializer(),
                                          Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                         DmiDescriptor.EMPTY_ARRAY, 1, new long[0]));
+                                         DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                         1, new long[0]));
       this.start = e + 1;
     }
     return txns;
@@ -396,7 +405,8 @@ public class ServerTransactionSequencerTest extends TCTestCase {
                                          new SequenceID(this.sqID++), createLocks(this.start, e + j), this.clientID,
                                          createDNAs(this.start, e + j), new ObjectStringSerializer(),
                                          Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                         DmiDescriptor.EMPTY_ARRAY, 1, new long[0]));
+                                         DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                         1, new long[0]));
       this.start = e + 1;
     }
     return txns;

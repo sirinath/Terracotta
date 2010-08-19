@@ -31,6 +31,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.locks.LockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -1341,7 +1342,9 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                              1, new long[0]);
+
     final List<ServerTransaction> txns = new ArrayList<ServerTransaction>();
     txns.add(stxn1);
 
@@ -1390,7 +1393,9 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                              1, new long[0]);
+
 
     txns.clear();
     txns.add(stxn2);
@@ -1423,7 +1428,9 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
+                                                              1, new long[0]);
+
 
     txns.clear();
     txns.add(stxn3);

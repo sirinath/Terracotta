@@ -85,10 +85,6 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return;
   }
 
-  public boolean hasDmiDescriptors() {
-    return false;
-  }
-
   public List getDmiDescriptors() {
     return Collections.EMPTY_LIST;
   }
@@ -98,11 +94,11 @@ public class NullClientTransaction extends AbstractClientTransaction {
   }
 
   public void addMetaDataDescriptor(MetaDataDescriptor md) {
-   // do nothing
+   return;
   }
 
-  public Map getMetaDataDescriptors() {
-    return Collections.EMPTY_MAP;
+  public List getMetaDataDescriptors() {
+    return Collections.EMPTY_LIST;
   }
 
 }
