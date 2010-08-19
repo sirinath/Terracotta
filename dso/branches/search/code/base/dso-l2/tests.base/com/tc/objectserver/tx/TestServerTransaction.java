@@ -11,6 +11,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -92,6 +93,10 @@ public final class TestServerTransaction implements ServerTransaction {
   }
 
   public DmiDescriptor[] getDmiDescriptors() {
+    throw new ImplementMe();
+  }
+  
+  public MetaDataDescriptor[] getMetaDataDescriptors() {
     throw new ImplementMe();
   }
 

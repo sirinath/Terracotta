@@ -137,12 +137,9 @@ public class TestClientTransaction implements ClientTransaction {
     return Collections.EMPTY_LIST;
   }
 
-  public boolean hasDmiDescriptors() {
-    throw new ImplementMe();
-  }
   
-  public Map getMetaDataDescriptors() {
-    return Collections.EMPTY_MAP;
+  public List getMetaDataDescriptors() {
+    return Collections.EMPTY_LIST;
   }
   
   public void addMetaDataDescriptor(MetaDataDescriptor md) {
@@ -161,7 +158,4 @@ public class TestClientTransaction implements ClientTransaction {
     return txnType;
   }
 
-  public boolean isEffectivelyReadOnly() {
-    throw new ImplementMe();
-  }
 }

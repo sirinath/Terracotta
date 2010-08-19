@@ -227,9 +227,11 @@ public interface ClientTransaction {
   public List getDmiDescriptors();
   
   /**
+   * Get all MetaDataDescriptors
    * 
+   * @return List of MetaDataDescriptos in transaction
    */
-  public Map getMetaDataDescriptors();
+  public List getMetaDataDescriptors();
 
   /**
    * Get all Notify calls
