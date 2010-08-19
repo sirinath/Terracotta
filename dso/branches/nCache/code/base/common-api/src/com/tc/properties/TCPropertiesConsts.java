@@ -133,6 +133,7 @@ public interface TCPropertiesConsts {
   public static final String   L2_OBJECTMANAGER_MAXOBJECTS_INTXNOBJ_GROUPING                 = "l2.objectmanager.maxObjectsInTxnObjGrouping";
   public static final String   L2_OBJECTMANAGER_MAXTXNS_INTXNOBJECT_GROUPING                 = "l2.objectmanager.maxTxnsInTxnObjectGrouping";
   public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE                    = "l2.objectmanager.objectrequest.split.size";
+  public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_ENABLED                 = "l2.objectmanager.objectrequest.split.enabled";
   public static final String   L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED               = "l2.objectmanager.objectrequest.logging.enabled";
   public static final String   L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED                        = "l2.objectmanager.fault.logging.enabled";
   public static final String   L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED                      = "l2.objectmanager.request.logging.enabled";
@@ -486,7 +487,7 @@ public interface TCPropertiesConsts {
    *                         : Maximum number of requests send immediately after which it will be batched
    * remote.batchLookupTimePeriod   
    *                         : Time to wait before sending batch requests
-   *
+   * 
    * </code>
    ********************************************************************************************************************/
   public static final String   L1_SERVERMAPMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY       = "l1.servermapmanager.remote.maxRequestSentImmediately";
@@ -715,7 +716,7 @@ public interface TCPropertiesConsts {
    *                         connecting to the peer node. On timeout, healthchecker
    *                         concludes peer node as dead irrespective of previous
    *                         successful socket connects
-   *</code>
+   * </code>
    ********************************************************************************************************************/
   public static final String   L2_HEALTHCHECK_L1_PING_ENABLED                                = "l2.healthcheck.l1.ping.enabled";
   public static final String   L2_HEALTHCHECK_L1_PING_IDLETIME                               = "l2.healthcheck.l1.ping.idletime";
@@ -820,7 +821,7 @@ public interface TCPropertiesConsts {
    ********************************************************************************************************************/
   public static final String   DEV_CONSOLE_MAX_OPERATOR_EVENTS                               = "dev.console.max.operator.events";
   public static final String   L2_OPERATOR_EVENTS_STORE                                      = "l2.operator.events.store";
-  
+
   /*********************************************************************************************************************
    * <code>
    * Section :  L1 Shutdown Settings
