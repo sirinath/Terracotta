@@ -830,4 +830,16 @@ public interface TCPropertiesConsts {
    ********************************************************************************************************************/
   public static final String   L1_SHUTDOWN_THREADGROUP_GRACETIME                             = "l1.shutdown.threadgroup.gracetime";
 
+  /*********************************************************************************************************************
+   * <code>
+   * Section :  OffHeap Cache Settings
+   * </code>
+   ********************************************************************************************************************/
+
+  public static final String   L2_OFFHEAP_CACHE_ENABLED                                      = "l2.offHeapCache.enabled";
+  public static final String   L2_OFFHEAP_CACHE_MAX_DATASIZE                                 = "l2.offHeapCache.maxDataSize";
+  public static final String   L2_OFFHEAP_CACHE_INITIAL_DATASIZE                             = "l2.offHeapCache.initialDataSize";
+  public static final String   L2_OFFHEAP_CACHE_TABLESIZE                                    = "l2.offHeapCache.tableSize";
+  public static final String   L2_OFFHEAP_CACHE_CONCURRENCY                                  = "l2.offHeapCache.concurrency";
+
 }
