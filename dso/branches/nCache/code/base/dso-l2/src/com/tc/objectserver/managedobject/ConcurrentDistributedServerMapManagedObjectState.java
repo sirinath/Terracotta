@@ -16,9 +16,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.Map.Entry;
 
@@ -173,6 +175,10 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
 
   public int getSize() {
     return this.references.size();
+  }
+  
+  public Set getAllKeys() {
+    return new HashSet(this.references.keySet());
   }
 
   public int getTTISeconds() {
