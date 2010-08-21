@@ -226,7 +226,6 @@ modules:
         - management
         - management-api
         - thirdparty
-        - sigarstats #hack; move the native cache jar to repos and let ivy pull
         - tim-api
   - deploy:
       options:
