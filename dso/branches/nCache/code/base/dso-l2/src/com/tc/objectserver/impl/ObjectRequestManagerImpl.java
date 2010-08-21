@@ -54,15 +54,12 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
   public static final int           SPLIT_SIZE      = TCPropertiesImpl
                                                         .getProperties()
-                                                        .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE);
-
-  public static final boolean       SPLIT_ENABLED   = TCPropertiesImpl
-                                                        .getProperties()
-                                                        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_ENABLED);
-
+                                                        .getInt(
+                                                                TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_SPLIT_SIZE);
   public static final boolean       LOGGING_ENABLED = TCPropertiesImpl
                                                         .getProperties()
-                                                        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED);
+                                                        .getBoolean(
+                                                                    TCPropertiesConsts.L2_OBJECTMANAGER_OBJECT_REQUEST_LOGGING_ENABLED);
 
   private final static TCLogger     logger          = TCLogging.getLogger(ObjectRequestManagerImpl.class);
 
@@ -91,29 +88,24 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
   }
 
   public void requestObjects(final ObjectRequestServerContext requestContext) {
-    splitAndRequestObjects(requestContext.getClientID(), requestContext.getRequestID(),
-                           requestContext.getRequestedObjectIDs(), requestContext.getRequestDepth(),
-                           requestContext.isServerInitiated(), requestContext.getRequestingThreadName());
+    splitAndRequestObjects(requestContext.getClientID(), requestContext.getRequestID(), requestContext
+        .getRequestedObjectIDs(), requestContext.getRequestDepth(), requestContext.isServerInitiated(), requestContext
+        .getRequestingThreadName());
   }
 
   private void splitAndRequestObjects(final ClientID clientID, final ObjectRequestID requestID,
                                       final SortedSet<ObjectID> ids, final int maxRequestDepth,
                                       final boolean serverInitiated, final String requestingThreadName) {
 
-    if (SPLIT_ENABLED) {
-      ObjectIDSet split = new ObjectIDSet();
-      for (final Iterator<ObjectID> iter = ids.iterator(); iter.hasNext();) {
-        final ObjectID id = iter.next();
-        split.add(id);
-        if (split.size() >= SPLIT_SIZE || !iter.hasNext()) {
-          basicRequestObjects(clientID, requestID, serverInitiated, requestingThreadName,
-                              new RequestedObject(split, maxRequestDepth));
-          split = new ObjectIDSet();
-        }
+    ObjectIDSet split = new ObjectIDSet();
+    for (final Iterator<ObjectID> iter = ids.iterator(); iter.hasNext();) {
+      final ObjectID id = iter.next();
+      split.add(id);
+      if (split.size() >= SPLIT_SIZE || !iter.hasNext()) {
+        basicRequestObjects(clientID, requestID, serverInitiated, requestingThreadName,
+                            new RequestedObject(split, maxRequestDepth));
+        split = new ObjectIDSet();
       }
-    } else {
-      basicRequestObjects(clientID, requestID, serverInitiated, requestingThreadName,
-                          new RequestedObject(new ObjectIDSet(ids), maxRequestDepth));
     }
 
   }
@@ -126,9 +118,9 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
 
     synchronized (this) {
       if (this.objectRequestCache.add(requestedObject, clientID)) {
-        lookupContext = new LookupContext(clientID, requestID, requestedObject.getLookupIDSet(),
-                                          requestedObject.getMaxDepth(), requestingThreadName, serverInitiated,
-                                          this.objectRequestSink, this.respondObjectRequestSink);
+        lookupContext = new LookupContext(clientID, requestID, requestedObject.getLookupIDSet(), requestedObject
+            .getMaxDepth(), requestingThreadName, serverInitiated, this.objectRequestSink,
+                                          this.respondObjectRequestSink);
       }
     }
     if (lookupContext != null) {
