@@ -16,7 +16,7 @@ public abstract class AbstractBerkeleyDatabase {
   }
 
   protected Transaction pt2nt(PersistenceTransaction tx) {
-    Object o = tx.getTransaction();
+    Object o = (tx != null) ? tx.getTransaction() : null;
     if (o != null) {
       Assert.eval(o instanceof Transaction);
       return (Transaction) o;
