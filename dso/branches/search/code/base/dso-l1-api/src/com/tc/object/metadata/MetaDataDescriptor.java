@@ -6,7 +6,6 @@ package com.tc.object.metadata;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
-import com.tc.object.ObjectID;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,66 +21,63 @@ public class MetaDataDescriptor implements TCSerializable {
   
   public static final MetaDataDescriptor[] EMPTY_ARRAY = new MetaDataDescriptor[0];
 
-
-  private Map<String, MetaData> metaDatas;
+  private String category;
+  private Map<String, String> metaDatas;
 
   /**
    * default constructor
    */
   public MetaDataDescriptor() {
-    metaDatas = null;
+    this.category = null;
+    this.metaDatas = null;
   }
 
   /**
    * 
    */
-  public MetaDataDescriptor(final ObjectID sharedObjectID) {
-    this.metaDatas = new HashMap();
+  public MetaDataDescriptor(String category) {
+    this.category = category;
+    this.metaDatas = new HashMap<String, String>();
   }
 
   /**
    * 
    */
-  public Map<String, MetaData> getMetaDatas() {
+  public Map<String, String> getMetaDatas() {
     return metaDatas;
   }
 
   /**
    * 
    */
-  public MetaData getMetaData(String category) {
-    return this.metaDatas.get(category);
+  public void addProperties(Map<String,String> properties) {
+    this.metaDatas = properties;
   }
 
   /**
    * 
    */
-  public void addMetaData(String category, MetaData value) {
-    if (metaDatas == null) {
-      metaDatas = new HashMap<String, MetaData>();
-    }
-
-    metaDatas.put(category, value);
+  public String getCategory() {
+    return this.category;
   }
 
   public Object deserializeFrom(TCByteBufferInput in) throws IOException {
     final int size = in.readInt();
-    metaDatas = new HashMap<String, MetaData>();
+    metaDatas = new HashMap<String, String>();
     for (int i = 0; i < size; i++) {
       final String property = in.readString();
-      MetaData obj = new MetaData();
-      obj.deserializeFrom(in);
-      metaDatas.put(property, obj);
+      final String value = in.readString();
+      metaDatas.put(property, value);
     }
     return this;
   }
 
   public void serializeTo(TCByteBufferOutput out) {
     out.writeInt(metaDatas.size());
-    for (Iterator<Map.Entry<String, MetaData>> iter = metaDatas.entrySet().iterator(); iter.hasNext();) {
-      Map.Entry<String, MetaData> entry = iter.next();
+    for (Iterator<Map.Entry<String, String>> iter = metaDatas.entrySet().iterator(); iter.hasNext();) {
+      Map.Entry<String, String> entry = iter.next();
       out.writeString(entry.getKey());
-      entry.getValue().serializeTo(out);
+      out.writeString(entry.getValue());
     }
   }
 
