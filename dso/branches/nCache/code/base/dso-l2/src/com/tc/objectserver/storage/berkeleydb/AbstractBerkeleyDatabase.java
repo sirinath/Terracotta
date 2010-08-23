@@ -6,7 +6,6 @@ package com.tc.objectserver.storage.berkeleydb;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.Transaction;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
-import com.tc.util.Assert;
 
 public abstract class AbstractBerkeleyDatabase {
   protected final Database db;
@@ -18,7 +17,7 @@ public abstract class AbstractBerkeleyDatabase {
   protected Transaction pt2nt(PersistenceTransaction tx) {
     Object o = (tx != null) ? tx.getTransaction() : null;
     if (o != null) {
-      Assert.eval(o instanceof Transaction);
+      if (!(o instanceof Transaction)) { throw new AssertionError("Invalid transaction from " + tx + ": " + o); }
       return (Transaction) o;
     } else {
       return null;

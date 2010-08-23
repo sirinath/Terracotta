@@ -200,7 +200,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
       for (Iterator i = createdDatabases.iterator(); i.hasNext();) {
         Object o = i.next();
         Database db = null;
-        if ((o instanceof AbstractBerkeleyDatabase)) {
+        if (o instanceof AbstractBerkeleyDatabase) {
           db = ((AbstractBerkeleyDatabase) o).getDatabase();
         } else {
           db = (Database) o;
