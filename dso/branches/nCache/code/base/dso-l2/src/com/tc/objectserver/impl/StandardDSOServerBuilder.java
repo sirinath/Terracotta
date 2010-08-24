@@ -57,7 +57,6 @@ import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
-import com.tc.properties.TCProperties;
 import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -69,7 +68,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.Properties;
 
 import javax.management.MBeanServer;
 
@@ -217,9 +215,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     // NOP
   }
 
-  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
-                                           TCProperties l2Properties) throws IOException {
-    return dbFactory.createEnvironment(persistent, dbhome, l2Properties.getPropertiesFor("berkeleydb")
-        .addAllPropertiesTo(new Properties()));
+  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome)
+      throws IOException {
+    return dbFactory.createEnvironment(persistent, dbhome);
   }
 }

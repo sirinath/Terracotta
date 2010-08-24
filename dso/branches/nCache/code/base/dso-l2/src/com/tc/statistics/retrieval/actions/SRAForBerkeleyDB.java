@@ -11,36 +11,33 @@ import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticType;
 
-public class SRAForDB implements StatisticRetrievalAction {
-  public final static String  ACTION_NAME = "berkeley db stats";
+public class SRAForBerkeleyDB implements StatisticRetrievalAction {
+  public final static String          ACTION_NAME = "berkeley db stats";
 
-  private final SRABDBLogging sraLogging;
-  private final SRABDBCache   sraCache;
-  private final SRABDBCleaner sraCleaner;
-  private final SRABDBIO      sraIo;
+  private final SRABDBLogging         sraLogging;
+  private final SRABDBCache           sraCache;
+  private final SRABDBCleaner         sraCleaner;
+  private final SRABDBIO              sraIo;
 
-  private final DBEnvironment dbEnv;
+  private final BerkeleyDBEnvironment dbEnv;
 
-  public SRAForDB(DBEnvironment env) {
+  public SRAForBerkeleyDB(DBEnvironment env) {
     sraLogging = new SRABDBLogging();
     sraCache = new SRABDBCache();
     sraCleaner = new SRABDBCleaner();
     sraIo = new SRABDBIO();
-    dbEnv = env;
+    dbEnv = (BerkeleyDBEnvironment) env;
   }
 
   private void forceUpdate() {
-    // XXX: Fix SRA for CacheDBEnvironment
-    if (dbEnv instanceof BerkeleyDBEnvironment) {
-      EnvironmentStats stats;
-      try {
-        stats = (EnvironmentStats) dbEnv.getStats();
-      } catch (TCDatabaseException e) {
-        return;
-      }
-      if (stats == null) return;
-      updateValues(stats);
+    EnvironmentStats stats;
+    try {
+      stats = dbEnv.getStats();
+    } catch (TCDatabaseException e) {
+      return;
     }
+    if (stats == null) return;
+    updateValues(stats);
   }
 
   private void updateValues(EnvironmentStats envStats) {

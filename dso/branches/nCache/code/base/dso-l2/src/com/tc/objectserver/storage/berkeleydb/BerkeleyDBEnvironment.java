@@ -38,6 +38,8 @@ import com.tc.objectserver.storage.api.TCMapsDatabase;
 import com.tc.objectserver.storage.api.TCObjectDatabase;
 import com.tc.objectserver.storage.api.TCRootDatabase;
 import com.tc.objectserver.storage.api.TCStringToStringDatabase;
+import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.statistics.retrieval.actions.SRAForBerkeleyDB;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.MutableSequence;
 
@@ -284,6 +286,10 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     } catch (Exception e) {
       throw new TCDatabaseException(e.getMessage());
     }
+  }
+
+  public StatisticRetrievalAction getSRA() {
+    return new SRAForBerkeleyDB(this);
   }
 
   public synchronized TCObjectDatabase getObjectDatabase() throws TCDatabaseException {
