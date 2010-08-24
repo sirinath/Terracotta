@@ -15,15 +15,17 @@ import java.io.ObjectInput;
 
 public class TCCollectionsSerializerImpl implements TCCollectionsSerializer {
 
-  private final BasicSerializer serializer;
-  private final ByteArrayOutputStream bao;
-  private final TCObjectOutputStream oo;
+  private final BasicSerializer                   serializer;
+
+  private final ThreadLocal<OutputStreamWrappers> td = new ThreadLocal<OutputStreamWrappers>() {
+                                                       protected OutputStreamWrappers initialValue() {
+                                                         return new OutputStreamWrappers();
+                                                       }
+                                                     };
 
   public TCCollectionsSerializerImpl() {
     final DSOSerializerPolicy policy = new DSOSerializerPolicy();
     this.serializer = new BasicSerializer(policy);
-    this.bao = new ByteArrayOutputStream(1024);
-    this.oo = new TCObjectOutputStream(this.bao);
   }
 
   public Object deserialize(final byte[] data) throws IOException, ClassNotFoundException {
@@ -37,21 +39,44 @@ public class TCCollectionsSerializerImpl implements TCCollectionsSerializer {
     return this.serializer.deserializeFrom(ois);
   }
 
-  //TODO::FIXME:: remove synchronization, maybe use thread local
-  public synchronized byte[] serialize(final long id, final Object o) throws IOException {
-    this.oo.writeLong(id);
-    this.serializer.serializeTo(o, this.oo);
-    this.oo.flush();
-    final byte b[] = this.bao.toByteArray();
-    this.bao.reset();
+  public byte[] serialize(final long id, final Object o) throws IOException {
+    TCObjectOutputStream oo = this.td.get().getTCObjectOutputStream();
+    ByteArrayOutputStream bao = this.td.get().getByteArrayOutputStream();
+
+    oo.writeLong(id);
+    this.serializer.serializeTo(o, oo);
+    oo.flush();
+    final byte b[] = bao.toByteArray();
+    bao.reset();
     return b;
   }
 
-  public synchronized byte[] serialize(final Object o) throws IOException {
-    this.serializer.serializeTo(o, this.oo);
-    this.oo.flush();
-    final byte b[] = this.bao.toByteArray();
-    this.bao.reset();
+  public byte[] serialize(final Object o) throws IOException {
+    TCObjectOutputStream oo = this.td.get().getTCObjectOutputStream();
+    ByteArrayOutputStream bao = this.td.get().getByteArrayOutputStream();
+
+    this.serializer.serializeTo(o, oo);
+    oo.flush();
+    final byte b[] = bao.toByteArray();
+    bao.reset();
     return b;
+  }
+
+  private final static class OutputStreamWrappers {
+    private final ByteArrayOutputStream bao;
+    private final TCObjectOutputStream  oo;
+
+    private OutputStreamWrappers() {
+      this.bao = new ByteArrayOutputStream(1024);
+      this.oo = new TCObjectOutputStream(this.bao);
+    }
+
+    public ByteArrayOutputStream getByteArrayOutputStream() {
+      return bao;
+    }
+
+    public TCObjectOutputStream getTCObjectOutputStream() {
+      return oo;
+    }
   }
 }
