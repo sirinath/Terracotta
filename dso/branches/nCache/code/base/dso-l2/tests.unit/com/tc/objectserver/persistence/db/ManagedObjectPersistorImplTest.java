@@ -20,11 +20,6 @@ import com.tc.objectserver.managedobject.ApplyTransactionInfo;
 import com.tc.objectserver.managedobject.ManagedObjectTraverser;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
-import com.tc.objectserver.persistence.db.CustomSerializationAdapterFactory;
-import com.tc.objectserver.persistence.db.FastObjectIDManagerImpl;
-import com.tc.objectserver.persistence.db.ManagedObjectPersistorImpl;
-import com.tc.objectserver.persistence.db.PersistableCollectionFactory;
-import com.tc.objectserver.persistence.db.TCCollectionsPersistor;
 import com.tc.objectserver.persistence.db.FastObjectIDManagerImpl.StoppedFlag;
 import com.tc.objectserver.persistence.impl.TestMutableSequence;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
@@ -68,15 +63,16 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     this.env = newDBEnvironment(paranoid);
     this.env.open();
     this.persistenceTransactionProvider = new BerkeleyDBPersistenceTransactionProvider(this.env.getEnvironment());
-    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory();
+    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory(new HashMapBackingMapFactory());
     this.testSleepycatCollectionsPersistor = new TestSleepycatCollectionsPersistor(logger, this.env.getMapsDatabase(),
-                                                                                   sleepycatCollectionFactory);
+                                                                                   sleepycatCollectionFactory,
+                                                                                   new TCCollectionsSerializerImpl());
     this.managedObjectPersistor = new ManagedObjectPersistorImpl(logger, new CustomSerializationAdapterFactory(),
                                                                  this.env, new TestMutableSequence(), this.env
-                                                                     .getRootDatabase(),
+                                                                 .getRootDatabase(),
                                                                  this.persistenceTransactionProvider,
                                                                  this.testSleepycatCollectionsPersistor, this.env
-                                                                     .isParanoidMode(), new ObjectStatsRecorder());
+                                                                 .isParanoidMode(), new ObjectStatsRecorder());
     this.objectStore = new PersistentManagedObjectStore(this.managedObjectPersistor, new MockSink());
     this.oidManager = (FastObjectIDManagerImpl) this.managedObjectPersistor.getOibjectIDManager();
   }
@@ -180,7 +176,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     // publish data
     final Collection objects = createRandomObjects(15050, false);
-    PersistenceTransaction ptx = this.persistenceTransactionProvider.newTransaction();
+    final PersistenceTransaction ptx = this.persistenceTransactionProvider.newTransaction();
     try {
       this.managedObjectPersistor.saveAllObjects(ptx, objects);
     } finally {
@@ -388,15 +384,16 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     private int counter;
 
     public TestSleepycatCollectionsPersistor(final TCLogger logger, final TCMapsDatabase mapsDatabase,
-                                             final PersistableCollectionFactory sleepycatCollectionFactory) {
-      super(logger, mapsDatabase, sleepycatCollectionFactory);
+                                             final PersistableCollectionFactory sleepycatCollectionFactory,
+                                             final TCCollectionsSerializer serializer) {
+      super(logger, mapsDatabase, sleepycatCollectionFactory, serializer);
     }
 
     @Override
-    public long deleteAllCollections(PersistenceTransactionProvider ptp, SortedSet<ObjectID> mapIds,
-                                     SortedSet<ObjectID> mapObjectIds) {
+    public long deleteAllCollections(final PersistenceTransactionProvider ptp, final SortedSet<ObjectID> mapIds,
+                                     final SortedSet<ObjectID> mapObjectIds) {
       ++this.counter;
-      return counter;
+      return this.counter;
     }
 
     public void setCounter(final int value) {
