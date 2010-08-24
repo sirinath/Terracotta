@@ -6,6 +6,7 @@ package com.tc.objectserver.storage.api;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
+import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.sequence.MutableSequence;
 
 import java.io.File;
@@ -118,10 +119,5 @@ public interface DBEnvironment {
   public abstract MutableSequence getSequence(PersistenceTransactionProvider ptxp, TCLogger logger, String sequenceID,
                                               int startValue);
 
-  /**
-   * Stats for Databases.
-   * 
-   * @return: Database specific stats object
-   */
-  public Object getStats() throws TCDatabaseException;
+  public StatisticRetrievalAction getSRA();
 }

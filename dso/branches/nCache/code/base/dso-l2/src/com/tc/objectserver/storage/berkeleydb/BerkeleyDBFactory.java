@@ -8,7 +8,6 @@ import com.tc.management.beans.object.ServerDBBackup;
 import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
-import com.tc.statistics.retrieval.actions.SRAForDB;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +16,13 @@ import java.util.Properties;
 import javax.management.NotCompliantMBeanException;
 
 public class BerkeleyDBFactory implements DBFactory {
-  public DBEnvironment createEnvironment(boolean paranoid, File envHome, Properties properties) throws IOException {
+  private final Properties properties;
+
+  public BerkeleyDBFactory(final Properties properties) {
+    this.properties = properties;
+  }
+
+  public DBEnvironment createEnvironment(boolean paranoid, File envHome) throws IOException {
     return new BerkeleyDBEnvironment(paranoid, envHome, properties);
   }
 
@@ -26,7 +31,4 @@ public class BerkeleyDBFactory implements DBFactory {
     return new ServerDBBackup(configurationSetupManager);
   }
 
-  public SRAForDB createSRAForDB(DBEnvironment dbenv) {
-    return new SRAForDB(dbenv);
-  }
 }
