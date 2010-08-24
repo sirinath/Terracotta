@@ -129,7 +129,7 @@ class TCPersistableMap implements Map, PersistableCollection {
   }
 
   public int commit(final TCCollectionsSerializer serializer, final PersistenceTransaction tx, final TCMapsDatabase db)
-  throws IOException, TCDatabaseException {
+      throws IOException, TCDatabaseException {
 
     int written = 0;
     // Clear the map first if necessary
@@ -154,6 +154,7 @@ class TCPersistableMap implements Map, PersistableCollection {
         }
       }
       this.delta.clear();
+      this.removeCount = 0;
     }
     return written;
   }
@@ -178,11 +179,11 @@ class TCPersistableMap implements Map, PersistableCollection {
   @Override
   public String toString() {
     return "TCPersistableMap(" + this.id + ")={ Map.size() = " + this.map.size() + ", delta.size() = "
-    + this.delta.size() + ", removeCount = " + this.removeCount + " }";
+           + this.delta.size() + ", removeCount = " + this.removeCount + " }";
   }
 
   public void load(final TCCollectionsSerializer serializer, final PersistenceTransaction tx, final TCMapsDatabase db)
-  throws TCDatabaseException {
+      throws TCDatabaseException {
     Assert.assertTrue(this.map.isEmpty());
     db.loadMap(tx, this.id, this.map, serializer);
   }
