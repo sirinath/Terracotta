@@ -26,10 +26,17 @@ public class SRAForBerkeleyDB implements StatisticRetrievalAction {
     sraCache = new SRABDBCache();
     sraCleaner = new SRABDBCleaner();
     sraIo = new SRABDBIO();
-    dbEnv = (BerkeleyDBEnvironment) env;
+
+    if (env instanceof BerkeleyDBEnvironment) {
+      dbEnv = (BerkeleyDBEnvironment) env;
+    } else {
+      dbEnv = null;
+    }
   }
 
   private void forceUpdate() {
+    if (dbEnv == null) return;
+
     EnvironmentStats stats;
     try {
       stats = dbEnv.getStats();
