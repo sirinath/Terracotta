@@ -234,6 +234,43 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     verify(objects);
   }
 
+  public void testCreateAndDeleteInSameBatch() throws Exception {
+    // wait for background retrieving persistent data
+    this.objectStore.getAllObjectIDs();
+
+    // publish data
+    final Collection objects = createRandomObjects(20, false);
+    PersistenceTransaction ptx = this.persistenceTransactionProvider.newTransaction();
+    try {
+      this.managedObjectPersistor.saveAllObjects(ptx, objects);
+    } finally {
+      ptx.commit();
+    }
+
+    final TreeSet<ObjectID> objectIds = new TreeSet<ObjectID>();
+    for (final Iterator i = objects.iterator(); i.hasNext();) {
+      final ManagedObject mo = (ManagedObject) i.next();
+      objectIds.add(mo.getID());
+    }
+    ptx = this.persistenceTransactionProvider.newTransaction();
+    try {
+      this.managedObjectPersistor.removeAllObjectIDs(objectIds);
+      this.managedObjectPersistor.deleteAllObjects(objectIds);
+    } finally {
+      ptx.commit();
+    }
+
+    try {
+      runCheckpointToCompressedStorage();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    objects.clear();
+    verify(objects);
+
+  }
+
   public void testOidBitsArrayDeleteAll() throws Exception {
     // wait for background retrieving persistent data
     this.objectStore.getAllObjectIDs();
