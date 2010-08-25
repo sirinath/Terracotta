@@ -837,10 +837,10 @@ public interface TCPropertiesConsts {
 
   public static final String   L2_OFFHEAP_CACHE_ENABLED                                      = "l2.offHeapCache.enabled";
   public static final String   L2_OFFHEAP_CACHE_MAX_DATASIZE                                 = "l2.offHeapCache.maxDataSize";
-  public static final String   L2_OFFHEAP_CACHE_INITIAL_DATASIZE                             = "l2.offHeapCache.initialDataSize";
-  public static final String   L2_OFFHEAP_CACHE_TABLESIZE                                    = "l2.offHeapCache.tableSize";
+  public static final String   L2_OFFHEAP_OBJECT_CACHE_INITIAL_DATASIZE                      = "l2.offHeapCache.object.initialDataSize";
+  public static final String   L2_OFFHEAP_OBJECT_CACHE_TABLESIZE                             = "l2.offHeapCache.object.tableSize";
+  public static final String   L2_OFFHEAP_OBJECT_CACHE_CONCURRENCY                           = "l2.offHeapCache.object.concurrency";
   public static final String   L2_OFFHEAP_MAP_CACHE_INITIAL_DATASIZE                         = "l2.offHeapCache.map.initialDataSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_TABLESIZE                                = "l2.offHeapCache.map.tableSize";
-  public static final String   L2_OFFHEAP_CACHE_CONCURRENCY                                  = "l2.offHeapCache.concurrency";
 
 }
