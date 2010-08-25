@@ -46,7 +46,7 @@ public interface TCMapsDatabase {
   throws TCDatabaseException;
 
   /**
-   * Used in tests TODO:: Document what this method does - TODO for Nihit
+   * Return the number of entries in the database. Used in tests.
    */
   public long count();
 
