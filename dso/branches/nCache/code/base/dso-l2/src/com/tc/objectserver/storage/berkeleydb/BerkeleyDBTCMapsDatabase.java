@@ -75,7 +75,8 @@ public class BerkeleyDBTCMapsDatabase extends BerkeleyDBTCBytesBytesDatabase imp
                     final TCCollectionsSerializer serializer) throws TCDatabaseException, IOException {
     final byte[] k = serializer.serialize(id, key);
     final int written = k.length;
-    final boolean status = super.delete(k, tx) == Status.SUCCESS;
+    Status delStatus = super.delete(k, tx);
+    final boolean status = (delStatus == Status.SUCCESS || delStatus == Status.NOT_FOUND);
     if (!status) { throw new TCDatabaseException("Unable to remove Map Entry for object id: " + id + ", status: "
                                                  + status + ", key: " + k); }
     return written;
