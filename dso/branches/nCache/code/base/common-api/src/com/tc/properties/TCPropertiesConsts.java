@@ -840,6 +840,7 @@ public interface TCPropertiesConsts {
    ********************************************************************************************************************/
 
   public static final String   L2_OFFHEAP_CACHE_ENABLED                                      = "l2.offHeapCache.enabled";
+  public static final String   L2_OFFHEAP_CACHE_STATS_ENABLED                                = "l2.offHeapCache.stats.enabled";
   public static final String   L2_OFFHEAP_CACHE_MAX_DATASIZE                                 = "l2.offHeapCache.maxDataSize";
   public static final String   L2_OFFHEAP_OBJECT_CACHE_INITIAL_DATASIZE                      = "l2.offHeapCache.object.initialDataSize";
   public static final String   L2_OFFHEAP_OBJECT_CACHE_TABLESIZE                             = "l2.offHeapCache.object.tableSize";
