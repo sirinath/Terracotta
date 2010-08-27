@@ -41,7 +41,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
   private final ClientStateManager             stateManager;
   private final ObjectManager                  objectManager;
 
-  private State                                state                      = GC_SLEEP;
+  private volatile State                       state                      = GC_SLEEP;
   private volatile ChangeCollector             referenceCollector         = ChangeCollector.NULL_CHANGE_COLLECTOR;
   private volatile YoungGenChangeCollector     youngGenReferenceCollector = YoungGenChangeCollector.NULL_YOUNG_CHANGE_COLLECTOR;
   private volatile LifeCycleState              gcState                    = new NullLifeCycleState();
@@ -211,7 +211,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     this.state = GC_PAUSING;
   }
 
-  public synchronized boolean isPausingOrPaused() {
+  public boolean isPausingOrPaused() {
     return GC_PAUSED == this.state || GC_PAUSING == this.state;
   }
 
