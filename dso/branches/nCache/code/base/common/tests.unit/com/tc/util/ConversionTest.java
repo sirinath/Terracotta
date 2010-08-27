@@ -1,7 +1,10 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util;
+
+import com.tc.util.Conversion.MetricsFormatException;
 
 import java.util.Arrays;
 
@@ -252,6 +255,41 @@ public class ConversionTest extends TestCase {
 
   public void testShort2Bytes() {
     //
+  }
+
+  public void testMetrics() {
+
+    try {
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("101010"), 101010);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("101010 "), 101010);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 101010 "), 101010);
+
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10m"), 10485760);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10 m"), 10485760);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10 m "), 10485760);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10  m "), 10485760);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 10  m "), 10485760);
+
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10g"), 10737418240L);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10.1 m"), 10590617);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("0.75 g "), 805306368);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("10.5  g "), 11274289152L);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 10.0  g "), 10737418240L);
+    } catch (MetricsFormatException mfe) {
+      Assert.fail("Not suppose to reach here : " + mfe);
+    }
+
+    String[] errStr = { "10 10", " 10 1 ", " 1 0  m ", "10giga", " 10 mega", "100 100 g", "100.0 ki lo", "mega 10 ",
+        "m 10", " k10" };
+
+    for (int i = 0; i < errStr.length; i++) {
+      try {
+        Conversion.memorySizeAsLongBytes(errStr[i]);
+        Assert.fail("Shouldn't have come here");
+      } catch (MetricsFormatException mfe) {
+        System.out.println("XXX got the expected exception during metrics conversion for " + errStr[i] + ": " + mfe);
+      }
+    }
   }
 
 }

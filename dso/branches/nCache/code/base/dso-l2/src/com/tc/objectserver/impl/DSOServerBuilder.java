@@ -6,6 +6,7 @@ package com.tc.objectserver.impl;
 import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
+import com.tc.config.schema.OffHeapConfigObject;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
@@ -129,6 +130,6 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                  TerracottaOperatorEventHistoryProvider operatorEventHistoryProvider,
                                  MBeanServer l2MbeanServer);
 
-  DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome)
-      throws IOException;
+  DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
+                                    final OffHeapConfigObject offHeapConfigSchemaObject) throws IOException;
 }

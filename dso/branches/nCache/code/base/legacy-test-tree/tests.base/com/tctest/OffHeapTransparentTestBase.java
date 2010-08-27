@@ -15,7 +15,7 @@ public abstract class OffHeapTransparentTestBase extends TransparentTestBase {
 
   @Override
   protected void setExtraJvmArgs(ArrayList jvmArgs) {
-    jvmArgs.add("-XX:MaxDirectMemorySize=" + getMaxDirectMemorySize());
+    jvmArgs.add("-XX:MaxDirectMemorySize=" + getJVMArgsMaxDirectMemorySize());
 
     jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_OFFHEAP_CACHE_ENABLED + "=true");
     jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_OFFHEAP_CACHE_MAX_DATASIZE + "=209715200"); // 200m
@@ -28,7 +28,7 @@ public abstract class OffHeapTransparentTestBase extends TransparentTestBase {
     jvmArgs.add("-Dcom.tc." + TCPropertiesConsts.L2_OFFHEAP_MAP_CACHE_TABLESIZE + "=1024"); // 1k
   }
 
-  protected String getMaxDirectMemorySize() {
+  protected String getJVMArgsMaxDirectMemorySize() {
     return "256m";
   }
 
