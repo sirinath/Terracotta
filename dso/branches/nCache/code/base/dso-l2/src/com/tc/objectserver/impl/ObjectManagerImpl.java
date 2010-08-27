@@ -291,7 +291,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   /**
-   * Retrieves materialized references-- if not materialized, will initiate a request to materialize them from the
+   * Retrieves materialized references -- if not materialized, will initiate a request to materialize them from the
    * object store.
    * 
    * @return null if the object is missing
@@ -380,14 +380,14 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   private ManagedObjectReference addNewReference(final ManagedObjectReference newReference,
-                                                 final boolean isRemoveOnRelease,
-                                                 final ManagedObjectReference expectedOld) {
-    newReference.setRemoveOnRelease(isRemoveOnRelease);
+                                                 final boolean removeOnRelease, final ManagedObjectReference expectedOld) {
     final Object oldRef = this.references.put(newReference.getObjectID(), newReference);
     if (oldRef != expectedOld) { throw new AssertionError("Object was not as expected. Reference was not equal to : = "
                                                           + expectedOld + " but was : " + oldRef + " : new = "
                                                           + newReference); }
-    if (!isRemoveOnRelease) {
+    if (removeOnRelease) {
+      newReference.setRemoveOnRelease(removeOnRelease);
+    } else {
       this.evictionPolicy.add(newReference);
     }
     return newReference;
