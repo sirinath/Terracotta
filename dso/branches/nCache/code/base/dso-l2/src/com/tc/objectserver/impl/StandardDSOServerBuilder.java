@@ -8,6 +8,7 @@ import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.config.HaConfig;
+import com.tc.config.schema.OffHeapConfigObject;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
@@ -215,8 +216,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     // NOP
   }
 
-  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome)
-      throws IOException {
+  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
+                                           final OffHeapConfigObject offHeapConfigItem) throws IOException {
     return dbFactory.createEnvironment(persistent, dbhome);
   }
 }
