@@ -191,7 +191,7 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     }
   }
 
-  public void notifyGCComplete() {
+  public synchronized void notifyGCComplete() {
     this.state = GC_SLEEP;
   }
 
@@ -207,20 +207,19 @@ public class MarkAndSweepGarbageCollector implements GarbageCollector {
     return false;
   }
 
-  public void requestGCPause() {
+  public synchronized void requestGCPause() {
     this.state = GC_PAUSING;
   }
 
   public boolean isPausingOrPaused() {
-    State localState = this.state;
-    return GC_PAUSED == localState || GC_PAUSING == localState;
+    return GC_PAUSED == this.state || GC_PAUSING == this.state;
   }
 
-  public boolean isPaused() {
+  public synchronized boolean isPaused() {
     return this.state == GC_PAUSED;
   }
 
-  public boolean isDisabled() {
+  public synchronized boolean isDisabled() {
     return GC_DISABLED == this.state;
   }
 

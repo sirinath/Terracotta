@@ -635,9 +635,7 @@ public interface TCPropertiesConsts {
   public static final String   EHCACHE_STORAGESTRATEGY_DCV2_PERELEMENT_TTI_TTL_ENABLED       = "ehcache.storageStrategy.dcv2.perElementTTITTL.enabled";
   public static final String   EHCACHE_STORAGESTRATEGY_DCV2_PERIODICEVICTION_ENABLED         = "ehcache.storageStrategy.dcv2.periodicEviction.enabled";
   public static final String   EHCACHE_STORAGESTRATEGY_DCV2_LOCALCACHE_INCOHERENT_ITEMS_RECYCLE_TIME    = "ehcache.storageStrategy.dcv2.localcache.incoherentCachedItemsRecycleMillis";
-  public static final String   EHCACHE_STORAGESTRATEGY_DCV2_PINSEGMENTS_ENABLED              = "ehcache.storageStrategy.dcv2.pinSegments.enabled";
-  public static final String   EHCACHE_STORAGESTRATEGY_DCV2_OFFHEAP_CACHEENTRIES_ENABLED     = "ehcache.storageStrategy.dcv2.offHeap.cacheEntries.enabled";
- /*********************************************************************************************************************
+  /*********************************************************************************************************************
    * <code>
    * Section : L1 Lock Manager Properties
    * Description       : This section contains the defaults for the client lock manager for the L1

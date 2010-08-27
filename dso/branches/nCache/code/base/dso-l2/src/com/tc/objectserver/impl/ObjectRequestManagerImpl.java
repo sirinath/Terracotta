@@ -594,10 +594,6 @@ public class ObjectRequestManagerImpl implements ObjectRequestManager {
              + " , requestedObjectIDs = " + this.requestedObjectIDs + " , missingObjectIDs = " + this.missingObjectIDs
              + " , serverInitiated = " + this.serverInitiated + " ] ";
     }
-
-    public Object getKey() {
-      return requestedNodeID;
-    }
   }
 
   // delegating all ObjectManagerMbean requests to the object manager

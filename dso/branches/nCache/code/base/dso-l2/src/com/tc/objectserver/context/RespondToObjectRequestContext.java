@@ -4,13 +4,13 @@
  */
 package com.tc.objectserver.context;
 
-import com.tc.async.api.MultiThreadedEventContext;
+import com.tc.async.api.EventContext;
 import com.tc.net.ClientID;
 import com.tc.util.ObjectIDSet;
 
 import java.util.Collection;
 
-public interface RespondToObjectRequestContext extends MultiThreadedEventContext {
+public interface RespondToObjectRequestContext extends EventContext {
 
   public ClientID getRequestedNodeID();
 
