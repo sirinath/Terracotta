@@ -275,12 +275,18 @@ public class ConversionTest extends TestCase {
       Assert.assertEquals(Conversion.memorySizeAsLongBytes("0.75 g "), 805306368);
       Assert.assertEquals(Conversion.memorySizeAsLongBytes("10.5  g "), 11274289152L);
       Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 10.0  g "), 10737418240L);
+
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 10.01   g "), 10748155658L);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(" 10.01g "), 10748155658L);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes("0.5g"), 536870912);
+      Assert.assertEquals(Conversion.memorySizeAsLongBytes(".5g"), 536870912);
+
     } catch (MetricsFormatException mfe) {
       Assert.fail("Not suppose to reach here : " + mfe);
     }
 
-    String[] errStr = { "10 10", " 10 1 ", " 1 0  m ", "10giga", " 10 mega", "100 100 g", "100.0 ki lo", "mega 10 ",
-        "m 10", " k10" };
+    String[] errStr = { "10 10", " 10 1 ", "10.0ag", " 1 0  m ", "10giga", " 10 mega", "100 100 g", "100.0 ki lo",
+        "mega 10 ", "m 10", " k10" };
 
     for (int i = 0; i < errStr.length; i++) {
       try {

@@ -387,9 +387,10 @@ public class Conversion {
   public static long memorySizeAsLongBytes(final String memorySizeInUnits) throws MetricsFormatException {
     final String input = memorySizeInUnits.toLowerCase().trim();
     // XXX: review pattern matcher regex
-    if (!Pattern.matches("[0-9]+.*([kmg])?", input)) { throw new MetricsFormatException("Unexpectes metrics: " + input); }
+    if (!Pattern.matches("[0-9]*([.][0-9]+)? *([kmg])?", input)) { throw new MetricsFormatException("Unexpected Size: "
+                                                                                                    + input); }
     String[] str = input.split("[kmg]");
-    if (str.length > 1) { throw new MetricsFormatException("Unexpectes metrics: " + input); }
+    if (str.length > 1) { throw new MetricsFormatException("Unexpected size: " + input); }
 
     double base = 0;
     try {
