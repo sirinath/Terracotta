@@ -8,7 +8,6 @@ import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.config.HaConfig;
-import com.tc.config.schema.OffHeapConfigObject;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
@@ -19,6 +18,7 @@ import com.tc.logging.TCLogging;
 import com.tc.management.L2Management;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.net.GroupID;
 import com.tc.net.ServerID;
 import com.tc.net.groups.GroupManager;
@@ -27,6 +27,7 @@ import com.tc.net.groups.StripeIDStateManager;
 import com.tc.net.groups.TCGroupManagerImpl;
 import com.tc.net.protocol.tcm.ChannelManager;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
@@ -51,6 +52,7 @@ import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
+import com.tc.objectserver.storage.berkeleydb.BerkeleyDBFactory;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
 import com.tc.objectserver.tx.PassThruTransactionFilter;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -58,6 +60,7 @@ import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
+import com.tc.properties.TCProperties;
 import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -69,6 +72,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Properties;
 
 import javax.management.MBeanServer;
 
@@ -204,8 +208,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                          L2TVSConfigurationSetupManager configSetupManager,
                                          DistributedObjectServer distributedObjectServer, InetAddress bind,
                                          int jmxPort, Sink remoteEventsSink,
-                                         ServerConnectionValidator serverConnectionValidator, DBFactory dbFactory)
-      throws Exception {
+                                         ServerConnectionValidator serverConnectionValidator,
+                                         ServerDBBackupMBean serverDBBackupMBean) throws Exception {
     return new L2Management(tcServerInfoMBean, lockStatisticsMBean, statisticsAgentSubSystem, statisticsGateway,
                             configSetupManager, distributedObjectServer, bind, jmxPort, remoteEventsSink);
   }
@@ -216,8 +220,13 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
     // NOP
   }
 
-  public DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
-                                           final OffHeapConfigObject offHeapConfigItem) throws IOException {
+  public DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome,
+                                           final TCProperties l2Properties, final NewL2DSOConfig l2DSOCofig)
+      throws IOException {
+
+    // XXX: one day DB selection will be from tc.props
+    final DBFactory dbFactory = new BerkeleyDBFactory(l2Properties.getPropertiesFor("berkeleydb")
+        .addAllPropertiesTo(new Properties()));
     return dbFactory.createEnvironment(persistent, dbhome);
   }
 }

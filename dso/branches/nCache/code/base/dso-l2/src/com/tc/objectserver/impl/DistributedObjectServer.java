@@ -54,6 +54,7 @@ import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor.ObjectIdsFetcher;
+import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
 import com.tc.management.lock.stats.LockStatisticsMessage;
 import com.tc.management.lock.stats.LockStatisticsResponseMessageImpl;
@@ -218,9 +219,7 @@ import com.tc.objectserver.persistence.inmemory.NullPersistenceTransactionProvid
 import com.tc.objectserver.persistence.inmemory.NullTransactionPersistor;
 import com.tc.objectserver.persistence.inmemory.TransactionStoreImpl;
 import com.tc.objectserver.storage.api.DBEnvironment;
-import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
-import com.tc.objectserver.storage.berkeleydb.BerkeleyDBFactory;
 import com.tc.objectserver.tx.CommitTransactionMessageRecycler;
 import com.tc.objectserver.tx.ServerTransactionManagerConfig;
 import com.tc.objectserver.tx.ServerTransactionManagerImpl;
@@ -308,7 +307,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 
@@ -463,7 +461,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     }
 
     final InetAddress jmxBind = InetAddress.getByName(bindAddress);
-
     final AddressChecker addressChecker = new AddressChecker();
     if (!addressChecker.isLegalBindAddress(jmxBind)) { throw new IOException("Invalid bind address [" + jmxBind
                                                                              + "]. Local addresses are "
@@ -487,33 +484,14 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     }
 
     NIOWorkarounds.solaris10Workaround();
-
     this.l2Properties = TCPropertiesImpl.getProperties().getPropertiesFor("l2");
-    final DBFactory dbFactory = new BerkeleyDBFactory(this.l2Properties.getPropertiesFor("berkeleydb")
-        .addAllPropertiesTo(new Properties()));
-
-    // start the JMX server
-    try {
-      startJMXServer(jmxBind, this.configSetupManager.commonl2Config().jmxPort().getBindPort(),
-                     new RemoteJMXProcessor(), dbFactory);
-    } catch (final Exception e) {
-      final String msg = "Unable to start the JMX server. Do you have another Terracotta Server instance running?";
-      consoleLogger.error(msg);
-      logger.error(msg, e);
-      System.exit(-1);
-    }
-
     this.configSetupManager.commonl2Config().changesInItemIgnored(this.configSetupManager.commonl2Config().dataPath());
     l2DSOConfig.changesInItemIgnored(l2DSOConfig.persistenceMode());
     final PersistenceMode persistenceMode = (PersistenceMode) l2DSOConfig.persistenceMode().getObject();
-
     final TCProperties objManagerProperties = this.l2Properties.getPropertiesFor("objectmanager");
-
     this.l1ReconnectConfig = new L1ReconnectConfigImpl();
-
     final boolean swapEnabled = true;
     final boolean persistent = persistenceMode.equals(PersistenceMode.PERMANENT_STORE);
-
     final TCFile location = new TCFileImpl(this.configSetupManager.commonl2Config().dataPath().getFile());
     this.startupLock = new StartupLock(location, this.l2Properties.getBoolean("startuplock.retries.enabled"));
 
@@ -527,7 +505,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     }
 
     final int maxStageSize = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_STAGE_SINK_CAPACITY);
-
     final StageManager stageManager = this.seda.getStageManager();
     final SessionManager sessionManager = new NullSessionManager();
 
@@ -541,8 +518,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final ManagedObjectChangeListenerProviderImpl managedObjectChangeListenerProvider = new ManagedObjectChangeListenerProviderImpl();
     StatisticRetrievalAction sraForDb = null;
 
-    final DBEnvironment dbenv;
     if (swapEnabled) {
+      final DBEnvironment dbenv;
       final File dbhome = new File(this.configSetupManager.commonl2Config().dataPath().getFile(),
                                    NewL2DSOConfig.OBJECTDB_DIRNAME);
       logger.debug("persistent: " + persistent);
@@ -557,16 +534,25 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
       final CallbackOnExitHandler dirtydbHandler = new CallbackDatabaseDirtyAlertAdapter(logger, consoleLogger);
       this.threadGroup.addCallbackOnExitExceptionHandler(DatabaseDirtyException.class, dirtydbHandler);
-
-      dbenv = this.serverBuilder.createDBEnvironment(dbFactory, persistent, dbhome, l2DSOConfig.offHeapConfig()
-          .getOffHeapConfigObject());
-
+      dbenv = this.serverBuilder.createDBEnvironment(persistent, dbhome, l2Properties, l2DSOConfig);
       final SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
-
       this.persistor = new DBPersistorImpl(TCLogging.getLogger(DBPersistorImpl.class), dbenv,
                                            serializationAdapterFactory, this.configSetupManager.commonl2Config()
                                                .dataPath().getFile(), this.objectStatsRecorder);
       sraForDb = dbenv.getSRA();
+
+      // final DBFactory dbFactory = new BerkeleyDBFactory(this.l2Properties.getPropertiesFor("berkeleydb")
+      // .addAllPropertiesTo(new Properties()));
+      // start the JMX server
+      try {
+        startJMXServer(jmxBind, this.configSetupManager.commonl2Config().jmxPort().getBindPort(),
+                       new RemoteJMXProcessor(), dbenv.getServerDBBackupMBean(this.configSetupManager));
+      } catch (final Exception e) {
+        final String msg = "Unable to start the JMX server. Do you have another Terracotta Server instance running?";
+        consoleLogger.error(msg);
+        logger.error(msg, e);
+        System.exit(-1);
+      }
 
       // Setting the DB environment for the bean which takes backup of the active server
       if (persistent) {
@@ -1556,7 +1542,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   }
 
   private void startJMXServer(final InetAddress bind, int jmxPort, final Sink remoteEventsSink,
-                              final DBFactory dbFactory) throws Exception {
+                              final ServerDBBackupMBean serverDBBackupMBean) throws Exception {
     if (jmxPort == 0) {
       jmxPort = new PortChooser().chooseRandomPort();
     }
@@ -1564,7 +1550,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.l2Management = this.serverBuilder.createL2Management(this.tcServerInfoMBean, this.lockStatisticsMBean,
                                                               this.statisticsAgentSubSystem, this.statisticsGateway,
                                                               this.configSetupManager, this, bind, jmxPort,
-                                                              remoteEventsSink, this, dbFactory);
+                                                              remoteEventsSink, this, serverDBBackupMBean);
 
     this.l2Management.start();
   }

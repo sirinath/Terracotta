@@ -3,6 +3,7 @@
  */
 package com.tc.objectserver.storage.api;
 
+import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.logging.TCLogger;
 import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
@@ -10,6 +11,8 @@ import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.util.sequence.MutableSequence;
 
 import java.io.File;
+
+import javax.management.NotCompliantMBeanException;
 
 // This should be the class which should be used by Derby Db environment and Berkeley db env
 public interface DBEnvironment {
@@ -120,4 +123,7 @@ public interface DBEnvironment {
                                               int startValue);
 
   public StatisticRetrievalAction getSRA();
+
+  public ServerDBBackupMBean getServerDBBackupMBean(final L2TVSConfigurationSetupManager configurationSetupManager)
+      throws NotCompliantMBeanException;
 }

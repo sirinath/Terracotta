@@ -6,7 +6,6 @@ package com.tc.objectserver.impl;
 import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
-import com.tc.config.schema.OffHeapConfigObject;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
@@ -16,11 +15,13 @@ import com.tc.management.L2Management;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.TCDumper;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.net.ServerID;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.StripeIDStateManager;
 import com.tc.net.protocol.tcm.ChannelManager;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
+import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
@@ -41,12 +42,12 @@ import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.storage.api.DBEnvironment;
-import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
+import com.tc.properties.TCProperties;
 import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -124,12 +125,12 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                   L2TVSConfigurationSetupManager configSetupManager,
                                   DistributedObjectServer distributedObjectServer, InetAddress bind, int jmxPort,
                                   Sink remoteEventsSink, ServerConnectionValidator serverConnectionValidator,
-                                  DBFactory dbFactory) throws Exception;
+                                  ServerDBBackupMBean serverDBBackupMBean) throws Exception;
 
   void registerForOperatorEvents(L2Management l2Management,
                                  TerracottaOperatorEventHistoryProvider operatorEventHistoryProvider,
                                  MBeanServer l2MbeanServer);
 
-  DBEnvironment createDBEnvironment(final DBFactory dbFactory, final boolean persistent, final File dbhome,
-                                    final OffHeapConfigObject offHeapConfigSchemaObject) throws IOException;
+  DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome, final TCProperties l2Properties,
+                                    final NewL2DSOConfig l2DSOCofig) throws IOException;
 }
