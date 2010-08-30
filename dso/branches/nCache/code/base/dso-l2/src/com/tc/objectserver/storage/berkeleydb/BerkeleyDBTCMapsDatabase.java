@@ -26,10 +26,10 @@ import java.util.Map;
 public class BerkeleyDBTCMapsDatabase extends BerkeleyDBTCBytesBytesDatabase implements TCMapsDatabase {
 
   private final BackingMapFactory factory = new BackingMapFactory() {
-    public Map createBackingMapFor(final ObjectID mapID) {
-      return new HashMap(0);
-    }
-  };
+                                            public Map createBackingMapFor(final ObjectID mapID) {
+                                              return new HashMap(0);
+                                            }
+                                          };
 
   public BerkeleyDBTCMapsDatabase(final Database db) {
     super(db);
@@ -197,4 +197,10 @@ public class BerkeleyDBTCMapsDatabase extends BerkeleyDBTCBytesBytesDatabase imp
       return status.equals(OperationStatus.SUCCESS);
     }
   }
+
+  @Override
+  public String toString() {
+    return "BerkeleyDB-TCMapsDatabase";
+  }
+
 }

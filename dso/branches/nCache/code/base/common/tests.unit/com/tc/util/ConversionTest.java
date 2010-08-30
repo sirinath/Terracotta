@@ -4,6 +4,7 @@
  */
 package com.tc.util;
 
+import com.tc.util.Conversion.MemorySizeUnits;
 import com.tc.util.Conversion.MetricsFormatException;
 
 import java.util.Arrays;
@@ -257,8 +258,7 @@ public class ConversionTest extends TestCase {
     //
   }
 
-  public void testMetrics() {
-
+  public void testMemorySizeAsBytes() {
     try {
       Assert.assertEquals(Conversion.memorySizeAsLongBytes("101010"), 101010);
       Assert.assertEquals(Conversion.memorySizeAsLongBytes("101010 "), 101010);
@@ -306,6 +306,25 @@ public class ConversionTest extends TestCase {
         System.out.println("XXX got the expected exception during metrics conversion for " + errStr[i] + ": " + mfe);
       }
     }
+  }
+
+  public void testMemoryBytesAsSize() throws MetricsFormatException {
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes()));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes()));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes()));
+
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() * 4));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() * 8));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() * 10));
+
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 1));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() - 1));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 1));
+
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 123));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() - 2344));
+    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 94534540));
+
   }
 
 }
