@@ -134,7 +134,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                            managedObjectRequestSink);
   }
 
-  public ServerConfigurationContext createServerConfigurationContext(StageManager stageManager,
+  public ServerConfigurationContext createServerConfigurationContext(
+                                                                     StageManager stageManager,
                                                                      ObjectManager objMgr,
                                                                      ObjectRequestManager objRequestMgr,
                                                                      ServerMapRequestManager serverTCMapRequestManager,
@@ -221,8 +222,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   }
 
   public DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome,
-                                           final TCProperties l2Properties, final NewL2DSOConfig l2DSOCofig)
-      throws IOException {
+                                           final TCProperties l2Properties, final NewL2DSOConfig l2DSOCofig,
+                                           DumpHandlerStore dumpHandlerStore) throws IOException {
 
     // XXX: one day DB selection will be from tc.props
     final DBFactory dbFactory = new BerkeleyDBFactory(l2Properties.getPropertiesFor("berkeleydb")
