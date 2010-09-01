@@ -17,6 +17,8 @@ public interface NewCommonL2Config extends NewConfig, NewStatisticsConfig {
   public static final int   MIN_PORTNUMBER                      = 0x0FFF;
   public static final int   MAX_PORTNUMBER                      = 0xFFFF;
 
+  FileConfigItem indexPath();
+
   FileConfigItem dataPath();
 
   FileConfigItem logsPath();
@@ -24,7 +26,7 @@ public interface NewCommonL2Config extends NewConfig, NewStatisticsConfig {
   FileConfigItem serverDbBackupPath();
 
   BindPortConfigItem jmxPort();
-  
+
   StringConfigItem host();
 
   boolean authentication();
