@@ -132,5 +132,5 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                  MBeanServer l2MbeanServer);
 
   DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome, final TCProperties l2Properties,
-                                    final NewL2DSOConfig l2DSOCofig) throws IOException;
+                                    final NewL2DSOConfig l2DSOCofig, DumpHandlerStore dumpHandlerStore) throws IOException;
 }
