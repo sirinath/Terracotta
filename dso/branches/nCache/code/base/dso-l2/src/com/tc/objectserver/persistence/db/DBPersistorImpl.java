@@ -66,7 +66,8 @@ public class DBPersistorImpl implements Persistor {
                                                              .getStringIndexDatabase());
     this.stringIndex = new StringIndexImpl(this.stringIndexPersistor, DEFAULT_CAPACITY);
     final TCCollectionsSerializer serializer = new TCCollectionsSerializerImpl();
-    this.sleepycatCollectionFactory = new PersistableCollectionFactory(env.getMapsDatabase().getBackingMapFactory(serializer));
+    this.sleepycatCollectionFactory = new PersistableCollectionFactory(env.getMapsDatabase().getBackingMapFactory(serializer),
+                                                                       env.isParanoidMode());
     this.sleepycatCollectionsPersistor = new TCCollectionsPersistor(logger, env.getMapsDatabase(),
                                                                     this.sleepycatCollectionFactory, serializer);
     this.managedObjectPersistor = new ManagedObjectPersistorImpl(logger, serializationAdapterFactory, env, env

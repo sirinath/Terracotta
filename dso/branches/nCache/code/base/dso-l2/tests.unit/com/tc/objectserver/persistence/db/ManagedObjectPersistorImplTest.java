@@ -63,7 +63,8 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
     this.env = newDBEnvironment(paranoid);
     this.env.open();
     this.persistenceTransactionProvider = new BerkeleyDBPersistenceTransactionProvider(this.env.getEnvironment());
-    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory(new HashMapBackingMapFactory());
+    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory(new HashMapBackingMapFactory(),
+                                                                                                     this.env.isParanoidMode());
     this.testSleepycatCollectionsPersistor = new TestSleepycatCollectionsPersistor(logger, this.env.getMapsDatabase(),
                                                                                    sleepycatCollectionFactory,
                                                                                    new TCCollectionsSerializerImpl());
@@ -262,7 +263,7 @@ public class ManagedObjectPersistorImplTest extends TCTestCase {
 
     try {
       runCheckpointToCompressedStorage();
-    } catch (Exception e) {
+    } catch (final Exception e) {
       throw new RuntimeException(e);
     }
 

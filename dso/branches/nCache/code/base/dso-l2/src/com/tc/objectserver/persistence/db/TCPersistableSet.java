@@ -24,6 +24,10 @@ class TCPersistableSet extends AbstractSet implements PersistableCollection {
     this.map = new TCPersistableMap(id, backingMap);
   }
 
+  TCPersistableSet(final ObjectID id, final Map backingMap, final Map deltaMap) {
+    this.map = new TCPersistableMap(id, backingMap, deltaMap);
+  }
+
   @Override
   public boolean add(final Object obj) {
     return this.map.put(obj, VALUE) == null;

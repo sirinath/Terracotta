@@ -14,17 +14,27 @@ import java.util.Set;
 public class PersistableCollectionFactory implements PersistentCollectionFactory {
 
   private final BackingMapFactory factory;
+  private final boolean           paranoid;
 
-  public PersistableCollectionFactory(final BackingMapFactory factory) {
+  public PersistableCollectionFactory(final BackingMapFactory factory, final boolean paranoid) {
     this.factory = factory;
+    this.paranoid = paranoid;
   }
 
   public Map createPersistentMap(final ObjectID id) {
-    return new TCPersistableMap(id, this.factory.createBackingMapFor(id));
+    if(this.paranoid) {
+      return new TCPersistableMap(id, this.factory.createBackingMapFor(id));
+    } else {
+      return new TCPersistableMap(id, this.factory.createBackingMapFor(id), this.factory.createBackingMapFor(id));
+    }
   }
 
   public Set createPersistentSet(final ObjectID id) {
-    return new TCPersistableSet(id, this.factory.createBackingMapFor(id));
+    if(this.paranoid) {
+      return new TCPersistableSet(id, this.factory.createBackingMapFor(id));
+    } else {
+      return new TCPersistableSet(id, this.factory.createBackingMapFor(id), this.factory.createBackingMapFor(id));
+    }
   }
 
 }
