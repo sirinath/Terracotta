@@ -428,7 +428,7 @@ public class Conversion {
     }
   }
 
-  static class MetricsFormatException extends TCException {
+  public static class MetricsFormatException extends TCException {
     public MetricsFormatException(String message) {
       super(message);
     }
