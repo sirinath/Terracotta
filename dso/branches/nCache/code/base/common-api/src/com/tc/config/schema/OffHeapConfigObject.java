@@ -11,19 +11,18 @@ public class OffHeapConfigObject {
   public OffHeapConfigObject(final boolean enabled, final String maxDataSize) {
     this.enabled = enabled;
     this.maxDataSize = maxDataSize;
-    System.out.println(this);
   }
 
   public String getMaxDataSize() {
-    return maxDataSize;
+    return this.maxDataSize;
   }
 
   public boolean isEnabled() {
-    return enabled;
+    return this.enabled;
   }
 
   @Override
   public String toString() {
-    return ("XXX OffHpCfgObject : " + isEnabled() + "/" + getMaxDataSize());
+    return ("OffHeapConfigObject : Enabled : " + isEnabled() + " Max data size : " + getMaxDataSize());
   }
 }
