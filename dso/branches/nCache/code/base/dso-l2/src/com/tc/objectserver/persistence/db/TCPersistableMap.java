@@ -19,7 +19,9 @@ import java.util.Set;
 // TODO::FIXME:: Need unit tests
 class TCPersistableMap implements Map, PersistableCollection {
 
-  private static final Object REMOVED     = new Object();
+  // This is a carefully selected ObjectID that will never be assigned to any object.
+  // TODO:: Move this Object ID to ObjectID class
+  private static final ObjectID REMOVED     = new ObjectID(-2);
 
   /*
    * This map contains the mappings already in the database
@@ -29,15 +31,27 @@ class TCPersistableMap implements Map, PersistableCollection {
   /*
    * This map contains the newly added mappings or removed mapping that are not in the database yet
    */
-  private final Map           delta       = new HashMap(0);
+  private final Map           delta;
 
   private final long          id;
 
   private int                 removeCount = 0;
   private boolean             clear       = false;
 
+  /**
+   * This constructor is used when in permanent store mode
+   */
   TCPersistableMap(final ObjectID id, final Map backingMap) {
+    this(id, backingMap, new HashMap(0));
+  }
+
+  /**
+   * This constructor is used when in temporary swap (useful when using off-heap to store both delta and map entries off
+   * heap).
+   */
+  TCPersistableMap(final ObjectID id, final Map backingMap, final Map deltaMap) {
     this.map = backingMap;
+    this.delta = deltaMap;
     this.id = id.toLong();
   }
 
@@ -52,7 +66,7 @@ class TCPersistableMap implements Map, PersistableCollection {
   public boolean containsKey(final Object key) {
     // NOTE:: map can't have mapping to null, it is always mapped to ObjectID.NULL_ID
     final Object value = this.delta.get(key);
-    if (value == REMOVED) {
+    if (REMOVED.equals(value)) {
       return false;
     } else if (value != null) {
       return true;
@@ -67,7 +81,7 @@ class TCPersistableMap implements Map, PersistableCollection {
 
   public Object get(final Object key) {
     final Object value = this.delta.get(key);
-    if (value == REMOVED) {
+    if (REMOVED.equals(value)) {
       return null;
     } else if (value != null) {
       return value;
@@ -78,7 +92,7 @@ class TCPersistableMap implements Map, PersistableCollection {
 
   public Object put(final Object key, final Object value) {
     final Object old = this.delta.put(key, value);
-    if (old == REMOVED) {
+    if (REMOVED.equals(old)) {
       return null;
     } else if (old != null) {
       return old;
@@ -89,7 +103,7 @@ class TCPersistableMap implements Map, PersistableCollection {
 
   public Object remove(final Object key) {
     final Object old = this.delta.put(key, REMOVED);
-    if (old == REMOVED) {
+    if (REMOVED.equals(old)) {
       return null;
     } else if (old != null) {
       this.removeCount++;
@@ -129,7 +143,7 @@ class TCPersistableMap implements Map, PersistableCollection {
   }
 
   public int commit(final TCCollectionsSerializer serializer, final PersistenceTransaction tx, final TCMapsDatabase db)
-      throws IOException, TCDatabaseException {
+  throws IOException, TCDatabaseException {
 
     int written = 0;
     // Clear the map first if necessary
@@ -145,7 +159,7 @@ class TCPersistableMap implements Map, PersistableCollection {
         final Map.Entry e = (Entry) i.next();
         final Object key = e.getKey();
         final Object value = e.getValue();
-        if (value == REMOVED) {
+        if (REMOVED.equals(value)) {
           written += db.delete(tx, this.id, key, serializer);
           this.map.remove(key);
         } else {
@@ -179,11 +193,11 @@ class TCPersistableMap implements Map, PersistableCollection {
   @Override
   public String toString() {
     return "TCPersistableMap(" + this.id + ")={ Map.size() = " + this.map.size() + ", delta.size() = "
-           + this.delta.size() + ", removeCount = " + this.removeCount + " }";
+    + this.delta.size() + ", removeCount = " + this.removeCount + " }";
   }
 
   public void load(final TCCollectionsSerializer serializer, final PersistenceTransaction tx, final TCMapsDatabase db)
-      throws TCDatabaseException {
+  throws TCDatabaseException {
     Assert.assertTrue(this.map.isEmpty());
     db.loadMap(tx, this.id, this.map, serializer);
   }
@@ -306,7 +320,7 @@ class TCPersistableMap implements Map, PersistableCollection {
     private void moveToNext() {
       while (this.current.hasNext()) {
         this.next = (Entry) this.current.next();
-        if (!this.isDelta || this.next.getValue() != REMOVED) { return; }
+        if (!this.isDelta || !REMOVED.equals(this.next.getValue()) ) { return; }
       }
       if (this.isDelta) {
         this.next = null;

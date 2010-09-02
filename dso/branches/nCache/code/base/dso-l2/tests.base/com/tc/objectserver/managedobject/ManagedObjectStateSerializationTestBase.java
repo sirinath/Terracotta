@@ -50,7 +50,8 @@ public class ManagedObjectStateSerializationTestBase extends TCTestCase {
                                                           sleepycatSerializationAdapterFactory);
 
     this.ptp = new TestPersistenceTransactionProvider();
-    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory(new HashMapBackingMapFactory());
+    final PersistableCollectionFactory sleepycatCollectionFactory = new PersistableCollectionFactory(new HashMapBackingMapFactory(),
+                                                                                                     this.env.isParanoidMode());
     final TCCollectionsPersistor sleepycatCollectionsPersistor = new TCCollectionsPersistor(this.logger, this.env
                                                                                             .getMapsDatabase(), sleepycatCollectionFactory,
                                                                                             new TCCollectionsSerializerImpl());
