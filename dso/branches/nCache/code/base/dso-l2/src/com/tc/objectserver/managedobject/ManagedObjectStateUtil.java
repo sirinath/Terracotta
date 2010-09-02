@@ -16,7 +16,7 @@ public class ManagedObjectStateUtil {
                                                  .getProperties()
                                                  .getBoolean(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PINSEGMENTS_ENABLED);
 
-  public static ManagedObjectCacheStrategy getCacheStragety(final ManagedObjectState state) {
+  public static ManagedObjectCacheStrategy getCacheStrategy(final ManagedObjectState state) {
     final byte type = state.getType();
     if (PIN_SEGMENTS && type == ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE) {
       return ManagedObjectCacheStrategy.PINNED;
