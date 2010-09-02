@@ -204,7 +204,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     if (this.state != null) { throw new AssertionError("Trying to set state on already initialized object : " + this
                                                        + " state : " + this.state); }
     this.state = newState;
-    final ManagedObjectCacheStrategy strategy = ManagedObjectStateUtil.getCacheStragety(newState);
+    final ManagedObjectCacheStrategy strategy = ManagedObjectStateUtil.getCacheStrategy(newState);
     if (strategy == ManagedObjectCacheStrategy.PINNED) {
       pin();
     } else if (strategy == ManagedObjectCacheStrategy.NOT_CACHED) {
