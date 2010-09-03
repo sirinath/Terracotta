@@ -534,7 +534,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
       final CallbackOnExitHandler dirtydbHandler = new CallbackDatabaseDirtyAlertAdapter(logger, consoleLogger);
       this.threadGroup.addCallbackOnExitExceptionHandler(DatabaseDirtyException.class, dirtydbHandler);
-      dbenv = this.serverBuilder.createDBEnvironment(persistent, dbhome, l2Properties, l2DSOConfig, this);
+
+      dbenv = this.serverBuilder.createDBEnvironment(persistent, dbhome, l2Properties, l2DSOConfig, this, stageManager);
       final SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
       this.persistor = new DBPersistorImpl(TCLogging.getLogger(DBPersistorImpl.class), dbenv,
                                            serializationAdapterFactory, this.configSetupManager.commonl2Config()

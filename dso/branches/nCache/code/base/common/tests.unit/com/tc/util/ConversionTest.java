@@ -308,23 +308,25 @@ public class ConversionTest extends TestCase {
     }
   }
 
-  public void testMemoryBytesAsSize() throws MetricsFormatException {
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes()));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes()));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes()));
+  public void testMemoryBytesAsSize() {
 
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() * 4));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() * 8));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() * 10));
+    try {
+      Assert.assertEquals("1.0k", Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes()));
+      Assert.assertEquals("1.0m", Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes()));
+      Assert.assertEquals("1.0g", Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes()));
 
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 1));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() - 1));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 1));
+      Assert.assertEquals("4.0k", Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() * 4));
+      Assert.assertEquals("8.0m", Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() * 8));
+      Assert.assertEquals("10.0g", Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() * 10));
 
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 123));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() - 2344));
-    System.out.println("XXX " + Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 94534540));
+      Assert.assertEquals("924b", Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 100));
+      Assert.assertEquals("1024.0m", Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 100));
+      Assert.assertEquals("901b", Conversion.memoryBytesAsSize(MemorySizeUnits.KILO.getInBytes() - 123));
+      Assert.assertEquals("1021.71k", Conversion.memoryBytesAsSize(MemorySizeUnits.MEGA.getInBytes() - 2344));
+      Assert.assertEquals("933.84m", Conversion.memoryBytesAsSize(MemorySizeUnits.GIGA.getInBytes() - 94534540));
+    } catch (MetricsFormatException mfe) {
+      Assert.fail("failed: " + mfe);
+    }
 
   }
-
 }

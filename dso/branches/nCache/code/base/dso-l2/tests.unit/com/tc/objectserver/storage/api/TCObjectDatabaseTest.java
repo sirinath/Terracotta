@@ -5,7 +5,6 @@ package com.tc.objectserver.storage.api;
 
 import org.apache.commons.io.FileUtils;
 
-import com.tc.object.ObjectID;
 import com.tc.object.config.schema.NewL2DSOConfig;
 import com.tc.objectserver.storage.api.TCDatabaseReturnConstants.Status;
 import com.tc.test.TCTestCase;
@@ -15,7 +14,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
-import java.util.Set;
 
 public class TCObjectDatabaseTest extends TCTestCase {
   private final Random                   random = new Random();
@@ -86,30 +84,6 @@ public class TCObjectDatabaseTest extends TCTestCase {
     status = database.delete(objectId1, tx);
     tx.commit();
     Assert.assertEquals(Status.NOT_FOUND, status);
-  }
-
-  public void testGetAllObjectIDs() {
-    long[] objectIds = new long[1000];
-    for (int i = 0; i < objectIds.length; i++) {
-      objectIds[i] = i;
-    }
-    byte[] value = getRandomlyFilledByteArray();
-
-    for (int i = 0; i < objectIds.length; i++) {
-      PersistenceTransaction tx = ptp.newTransaction();
-      Status status = database.insert(objectIds[i], value, tx);
-      tx.commit();
-      Assert.assertEquals(Status.SUCCESS, status);
-    }
-
-    PersistenceTransaction tx = ptp.newTransaction();
-    Set<ObjectID> objectIDsFeteched = database.getAllObjectIds(tx);
-
-    Assert.assertEquals(objectIds.length, objectIDsFeteched.size());
-
-    for (int i = 0; i < objectIds.length; i++) {
-      Assert.assertTrue(objectIDsFeteched.contains(new ObjectID(i)));
-    }
   }
 
   private byte[] getRandomlyFilledByteArray() {

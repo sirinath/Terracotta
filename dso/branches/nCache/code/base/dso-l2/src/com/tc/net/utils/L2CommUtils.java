@@ -3,6 +3,7 @@
  */
 package com.tc.net.utils;
 
+import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 
 public class L2CommUtils {
@@ -13,4 +14,14 @@ public class L2CommUtils {
     return TCPropertiesImpl.getProperties().getInt("l2.tccom.workerthreads", def);
   }
 
+  public static long getMaxDirectMemmoryConsumable() {
+    // L2<==L1, L2<==>L2
+    int totalCommsThreads = getNumCommWorkerThreads() * 2;
+    int maxPossbileMessageBytesSend = (TCPropertiesImpl.getProperties()
+        .getBoolean(TCPropertiesConsts.TC_MESSAGE_GROUPING_ENABLED) ? TCPropertiesImpl.getProperties()
+        .getInt(TCPropertiesConsts.TC_MESSAGE_GROUPING_MAXSIZE_KB) * 1024 : 1);
+
+    // twice of reads and writes
+    return totalCommsThreads * maxPossbileMessageBytesSend * 4;
+  }
 }
