@@ -41,6 +41,7 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
@@ -132,5 +133,6 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                  MBeanServer l2MbeanServer);
 
   DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome, final TCProperties l2Properties,
-                                    final NewL2DSOConfig l2DSOCofig, DumpHandlerStore dumpHandlerStore) throws IOException;
+                                    final NewL2DSOConfig l2DSOCofig, DumpHandlerStore dumpHandlerStore,
+                                    final StageManager stageManager) throws IOException, TCDatabaseException;
 }

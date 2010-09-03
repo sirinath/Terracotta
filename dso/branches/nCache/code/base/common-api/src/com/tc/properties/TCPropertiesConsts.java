@@ -849,4 +849,7 @@ public interface TCPropertiesConsts {
   public static final String   L2_OFFHEAP_MAP_CACHE_INITIAL_DATASIZE                           = "l2.offHeapCache.map.initialDataSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_TABLESIZE                                  = "l2.offHeapCache.map.tableSize";
 
+  // for tests
+  public static final String   L2_OFFHEAP_SKIP_JVMARG_CHECK                                    = "l2.offHeapCache.skip.jvmarg.check";
+
 }
