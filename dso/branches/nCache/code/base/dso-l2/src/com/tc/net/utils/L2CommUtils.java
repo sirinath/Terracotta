@@ -22,6 +22,8 @@ public class L2CommUtils {
         .getInt(TCPropertiesConsts.TC_MESSAGE_GROUPING_MAXSIZE_KB) * 1024 : 1);
 
     // twice of reads and writes; and, max 32m is sufficient
-    return Math.max((totalCommsThreads * maxPossbileMessageBytesSend * 4), (32 * 1024 * 1024));
+    long totalMemNeeded = totalCommsThreads * maxPossbileMessageBytesSend * 4;
+    long sufficientMem = 32 * 1024 * 1024;
+    return (totalMemNeeded > sufficientMem ? sufficientMem : totalMemNeeded);
   }
 }
