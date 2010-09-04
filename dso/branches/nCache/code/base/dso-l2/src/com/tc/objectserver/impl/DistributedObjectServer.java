@@ -1263,7 +1263,11 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   }
 
   private ServerID makeServerNodeID(final NewL2DSOConfig l2DSOConfig) {
-    final Node node = new Node(l2DSOConfig.host().getString(), l2DSOConfig.dsoPort().getBindPort());
+    String host = l2DSOConfig.l2GroupPort().getBindAddress();
+    if (TCSocketAddress.WILDCARD_IP.equals(host) || TCSocketAddress.LOOPBACK_IP.equals(host)) {
+      host = l2DSOConfig.host().getString();
+    }
+    final Node node = new Node(host, l2DSOConfig.dsoPort().getBindPort());
     final ServerID aNodeID = new ServerID(node.getServerNodeName(), UUID.getUUID().toString().getBytes());
     logger.info("Creating server nodeID: " + aNodeID);
     return aNodeID;
