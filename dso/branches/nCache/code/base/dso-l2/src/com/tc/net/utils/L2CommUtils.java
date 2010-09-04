@@ -21,7 +21,7 @@ public class L2CommUtils {
         .getBoolean(TCPropertiesConsts.TC_MESSAGE_GROUPING_ENABLED) ? TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.TC_MESSAGE_GROUPING_MAXSIZE_KB) * 1024 : 1);
 
-    // twice of reads and writes
-    return totalCommsThreads * maxPossbileMessageBytesSend * 4;
+    // twice of reads and writes; and, max 32m is sufficient
+    return Math.max((totalCommsThreads * maxPossbileMessageBytesSend * 4), (32 * 1024 * 1024));
   }
 }
