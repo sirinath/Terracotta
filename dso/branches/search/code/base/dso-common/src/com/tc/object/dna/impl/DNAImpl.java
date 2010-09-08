@@ -255,6 +255,9 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
 
     if (this.actionCount < 0) { throw new IOException("Invalid action count:" + this.actionCount); }
 
+    // skip over meta data offset for now
+    this.input.readInt();
+
     final byte flags = this.input.readByte();
 
     this.id = new ObjectID(this.input.readLong());
