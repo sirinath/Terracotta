@@ -29,7 +29,6 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessage;
 import com.tc.object.msg.BroadcastTransactionMessage;
 import com.tc.object.net.ChannelStats;
@@ -42,9 +41,9 @@ import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectManagerTest.TestDateDNA;
 import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.api.ServerMapRequestManager;
-import com.tc.objectserver.api.ObjectManagerTest.TestDateDNA;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.context.BroadcastChangeContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -133,10 +132,6 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     public DmiDescriptor[] getDmiDescriptors() {
       return new DmiDescriptor[0];
-    }
-    
-    public MetaDataDescriptor[] getMetaDataDescriptors() {
-      return new MetaDataDescriptor[0];
     }
 
     public long[] getHighWaterMarks() {

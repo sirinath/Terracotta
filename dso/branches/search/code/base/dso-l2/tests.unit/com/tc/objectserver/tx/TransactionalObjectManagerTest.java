@@ -9,7 +9,6 @@ import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -66,8 +65,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
     List txns = new ArrayList();
     txns.add(stxn1);
 
@@ -98,9 +96,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
-
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
 
     txns.clear();
     txns.add(stxn2);
@@ -214,8 +210,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
 
     List txns = new ArrayList();
     txns.add(stxn1);
@@ -247,9 +242,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
-
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
 
     txns.clear();
     txns.add(stxn2);
@@ -327,9 +320,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
-
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
 
     txns.clear();
     txns.add(stxn3);
@@ -359,9 +350,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new LockID[0], new ClientID(2),
                                                         new ArrayList(changes.values()), new ObjectStringSerializer(),
                                                         Collections.EMPTY_MAP, TxnType.NORMAL, new LinkedList(),
-                                                        DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                        1, new long[0]);
-
+                                                        DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
 
     txns.clear();
     txns.add(stxn4);

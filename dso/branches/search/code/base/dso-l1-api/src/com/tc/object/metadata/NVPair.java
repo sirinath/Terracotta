@@ -3,7 +3,6 @@
  */
 package com.tc.object.metadata;
 
-import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
@@ -15,6 +14,7 @@ import java.util.List;
 
 public abstract class NVPair implements TCSerializable {
 
+  private static final NVPair      TEMPLATE  = new Template();
   private static final ValueType[] ALL_TYPES = ValueType.values();
 
   private final String             name;
@@ -42,11 +42,35 @@ public abstract class NVPair implements TCSerializable {
 
   public void serializeTo(TCByteBufferOutput out) {
     out.writeString(getName());
-    out.writeByte(getType().ordinal());
-    throw new ImplementMe();
+
+    ValueType type = getType();
+
+    out.writeByte(type.ordinal());
+    type.serializeTo(this, out);
   }
 
   public abstract ValueType getType();
+
+  public static NVPair deserializeInstance(TCByteBufferInput in) throws IOException {
+    return (NVPair) TEMPLATE.deserializeFrom(in);
+  }
+
+  private static class Template extends NVPair {
+
+    Template() {
+      super("");
+    }
+
+    @Override
+    String valueAsString() {
+      throw new AssertionError();
+    }
+
+    @Override
+    public ValueType getType() {
+      throw new AssertionError();
+    }
+  }
 
   public static class ByteNVPair extends NVPair {
     private final byte value;
@@ -92,6 +116,7 @@ public abstract class NVPair implements TCSerializable {
     String valueAsString() {
       return String.valueOf(value);
     }
+
   }
 
   public static class CharNVPair extends NVPair {
@@ -254,6 +279,7 @@ public abstract class NVPair implements TCSerializable {
     public ValueType getType() {
       return ValueType.STRING;
     }
+
   }
 
   public static class ByteArrayNVPair extends NVPair {
@@ -281,6 +307,7 @@ public abstract class NVPair implements TCSerializable {
     public ValueType getType() {
       return ValueType.BYTE_ARRAY;
     }
+
   }
 
   public static class DateNVPair extends NVPair {

@@ -18,7 +18,6 @@ import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionIDAlreadySetException;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.StringLockID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.msg.NullMessageRecycler;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -58,8 +57,10 @@ public class ReplicatedTransactionManagerTest extends TestCase {
     this.grpMgr = new SingleNodeGroupManager();
     this.txnMgr = new TestServerTransactionManager();
     this.gtxm = new TestGlobalTransactionManager();
-    this.rtm = new ReplicatedTransactionManagerImpl(this.grpMgr, new OrderedSink(TCLogging
-        .getLogger(ReplicatedTransactionManagerTest.class), new MockSink()), this.txnMgr, this.gtxm,
+    this.rtm = new ReplicatedTransactionManagerImpl(this.grpMgr,
+                                                    new OrderedSink(TCLogging
+                                                        .getLogger(ReplicatedTransactionManagerTest.class),
+                                                                    new MockSink()), this.txnMgr, this.gtxm,
                                                     new NullMessageRecycler());
   }
 
@@ -228,8 +229,7 @@ public class ReplicatedTransactionManagerTest extends TestCase {
       }
       ServerTransaction tx = new ServerTransactionImpl(batchID, txID, sequenceID, lockIDs, this.clientID, dnas,
                                                        serializer, newRoots, txnType, notifies,
-                                                       DmiDescriptor.EMPTY_ARRAY, MetaDataDescriptor.EMPTY_ARRAY,
-                                                       1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
       map.put(tx.getServerTransactionID(), tx);
       try {
         tx.setGlobalTransactionID(this.gtxm.getOrCreateGlobalTransactionID(tx.getServerTransactionID()));

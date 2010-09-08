@@ -676,9 +676,9 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager, P
   public void addDmiDescriptor(final DmiDescriptor dd) {
     getTransaction().addDmiDescriptor(dd);
   }
-  
-  public void addMetaDataDescriptor(final MetaDataDescriptor md) {
-    getTransaction().addMetaDataDescriptor(md);
+
+  public void addMetaDataDescriptor(final TCObject tco, final MetaDataDescriptor md) {
+    getTransaction().addMetaDataDescriptor(tco, md);
   }
 
   public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {

@@ -8,7 +8,6 @@ import com.tc.net.NodeID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -23,10 +22,10 @@ public class PassiveServerTransactionImpl extends ServerTransactionImpl implemen
 
   public PassiveServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                       NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
-                                      TxnType transactionType, Collection notifies, DmiDescriptor[] dmis, 
-                                      MetaDataDescriptor [] metaDatas, int numApplicationTxn, long[] highWaterMarks) {
+                                      TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
+                                      int numApplicationTxn, long[] highWaterMarks) {
     super(batchID, txID, sequenceID, lockIDs, source, dnas, serializer, newRoots, transactionType, notifies, dmis,
-          metaDatas, numApplicationTxn, highWaterMarks);
+          numApplicationTxn, highWaterMarks);
   }
 
   @Override

@@ -16,7 +16,6 @@ import com.tc.object.locks.NotifyImpl;
 import com.tc.object.locks.StringLockID;
 import com.tc.object.locks.TestLockManager;
 import com.tc.object.locks.ThreadID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -92,8 +91,8 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
     }
     SequenceID sequenceID = new SequenceID(1);
     ServerTransaction tx = new ServerTransactionImpl(batchID, txID, sequenceID, lockIDs, cid, dnas, serializer,
-                                                     newRoots, txnType, notifies, DmiDescriptor.EMPTY_ARRAY, 
-                                                     MetaDataDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                     newRoots, txnType, notifies, DmiDescriptor.EMPTY_ARRAY, 1,
+                                                     new long[0]);
     // call handleEvent with the global transaction reporting that it doesn't need an apply...
     assertTrue(this.lockManager.notifyCalls.isEmpty());
     assertTrue(this.broadcastSink.queue.isEmpty());
