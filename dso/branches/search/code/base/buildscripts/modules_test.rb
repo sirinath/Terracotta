@@ -28,7 +28,7 @@ end
 
 class BuildSubtree
   include PropertyUtils
-
+  
   # Creates a SubtreeTestRun object for this subtree and returns it. Most of the arguments
   # are self-explanatory (they're the obvious instances of the classes with the same names);
   # test_patterns is an array of Ant-style patterns (e.g., "**/*Test") that indicates
@@ -271,6 +271,7 @@ end
 # whatever you want with it.
 class SubtreeTestRun
   include PropertyUtils
+  include BuildData
 
   # The default timeout for tests, in seconds. Currently, this is 15 minutes.
   DEFAULT_TEST_TIMEOUT_SECONDS = 15 * 60
@@ -358,6 +359,16 @@ class SubtreeTestRun
     puts "PREPARING to run tests (#{@test_patterns.join(", ")}) on subtree '#{@subtree.module_subtree_name}'..."
     puts ""
 
+    # We run the tests with CWD set to the temporary directory, just in case the
+    # test decides to just new up files directly (without using the temporary-directory
+    # stuff) and write them.
+    @cwd = @testrun_results.temp_dir(@subtree)
+    @classpath = @subtree.classpath(@build_results, :full, :runtime)
+
+    edition = (@classpath.to_s =~ /ent-common/) ? 'Enterprise' : 'Opensource'
+    @build_data_dir = FilePath.new(@cwd, "builddata").ensure_directory
+    create_data_file(@config_source, @build_data_dir, :build_data, edition)
+    
     # Build a DSO boot JAR, if necessary.
     boot_jar = nil
     if @needs_dso_boot_jar
@@ -378,6 +389,7 @@ class SubtreeTestRun
         end
 
         boot_jar = BootJar.new(tests_jvm, boot_jar_dir, module_set, boot_jar_config_file.to_s)
+        boot_jar.add_extra_classpath(@build_data_dir)
 
         reuse_boot_jars = (@config_source[STATIC_PROPERTIES_PREFIX + 'reuse_boot_jars'] =~ /true/i) ? true : false
         boot_jar_up_to_date = boot_jar.exist? &&
@@ -453,12 +465,6 @@ class SubtreeTestRun
           'tc.dso.globalmode' => false
         })
     end
-
-    # We run the tests with CWD set to the temporary directory, just in case the
-    # test decides to just new up files directly (without using the temporary-directory
-    # stuff) and write them.
-    @cwd = @testrun_results.temp_dir(@subtree)
-    @classpath = @subtree.classpath(@build_results, :full, :runtime)
 
     # This is *quite* important. If something goes really wrong with a test, to the point where it
     # crashes, doesn't even get started, hangs hard-core, or otherwise can't write out its result
@@ -682,6 +688,7 @@ class SubtreeTestRun
         @ant.classpath {
           # add path to TCJUnitFormatter class
           @ant.pathelement( :path => junit_formatter_classpath)
+          @ant.pathelement( :path => @build_data_dir.to_s)
         }
         splice_into_ant_junit
 
