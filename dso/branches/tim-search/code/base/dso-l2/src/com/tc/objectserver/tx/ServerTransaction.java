@@ -9,6 +9,7 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransaction;
 import com.tc.object.locks.LockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -50,6 +51,8 @@ public interface ServerTransaction extends GlobalTransaction {
   public Collection getNotifies();
 
   public DmiDescriptor[] getDmiDescriptors();
+  
+  public MetaDataDescriptor [] getMetaDataDescriptors();
 
   public boolean needsBroadcast();
 

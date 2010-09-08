@@ -8,6 +8,7 @@ import com.tc.net.NodeID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
@@ -21,10 +22,10 @@ public final class ActiveServerTransactionFactory implements ServerTransactionFa
   public ServerTransaction createServerTransaction(TxnBatchID batchID, TransactionID txnID, SequenceID sequenceID,
                                                    LockID[] locks, NodeID source, List dnas,
                                                    ObjectStringSerializer serializer, Map newRoots, TxnType txnType,
-                                                   List notifies, DmiDescriptor[] dmis, int numApplicationTxn,
-                                                   long[] highWaterMarks) {
+                                                   List notifies, DmiDescriptor[] dmis, MetaDataDescriptor [] metaDatas,
+                                                   int numApplicationTxn, long[] highWaterMarks) {
     return new ServerTransactionImpl(batchID, txnID, sequenceID, locks, source, dnas, serializer, newRoots, txnType,
-                                     notifies, dmis, numApplicationTxn, highWaterMarks);
+                                     notifies, dmis, metaDatas, numApplicationTxn, highWaterMarks);
   }
 
 }

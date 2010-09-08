@@ -8,6 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.Notify;
+import com.tc.object.metadata.MetaDataDescriptor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -84,15 +85,19 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return;
   }
 
-  public boolean hasDmiDescriptors() {
-    return false;
-  }
-
   public List getDmiDescriptors() {
     return Collections.EMPTY_LIST;
   }
 
   public List getNotifies() {
+    return Collections.EMPTY_LIST;
+  }
+
+  public void addMetaDataDescriptor(MetaDataDescriptor md) {
+   return;
+  }
+
+  public List getMetaDataDescriptors() {
     return Collections.EMPTY_LIST;
   }
 
