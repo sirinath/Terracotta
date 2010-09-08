@@ -36,6 +36,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
   private int                            lastStreamPos        = UNINITIALIZED_LENGTH;
   private int                            actionCount          = 0;
   private boolean                        contiguous           = true;
+  private boolean                        hasMetaData          = false;
 
   public DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
                        ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, boolean isDelta) {
@@ -52,6 +53,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
     this.headerMark = output.mark();
     output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for total length of this DNA
     output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for # of actions
+    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for offset of meta data
     output.writeByte(flags);
     output.writeLong(id.toLong());
 
@@ -70,7 +72,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
 
   public DNAWriter createAppender() {
     if (contiguous) {
-      contiguous = (output.getBytesWritten() == lastStreamPos);
+      contiguous = !hasMetaData && (output.getBytesWritten() == lastStreamPos);
     }
     Appender appender = new Appender(this, output);
     appenders.add(appender);
@@ -96,7 +98,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addLogicalAction(int method, Object[] parameters) {
-    actionCount++;
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE);
     output.writeInt(method); // XXX: use a short instead?
     output.writeByte(parameters.length);
@@ -107,14 +109,14 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addSubArrayAction(int start, Object array, int length) {
-    actionCount++;
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE);
     output.writeInt(start);
     encoding.encodeArray(array, output, length);
   }
 
   public void addClassLoaderAction(String classLoaderFieldName, ClassLoader value) {
-    actionCount++;
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE);
     serializer.writeFieldName(output, classLoaderFieldName);
     encoding.encodeClassLoader(value, output);
@@ -143,7 +145,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
       canBeReferenced = true;
     }
 
-    actionCount++;
+    incrementActionCount();
     if (canBeReferenced) {
       // An Object reference can be set to a literal instance, like
       // Object o = new Integer(10);
@@ -158,20 +160,28 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addArrayElementAction(int index, Object value) {
-    actionCount++;
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE);
     output.writeInt(index);
     encoding.encode(value, output);
   }
 
-  public void addEntireArray(Object value) {
+  private void incrementActionCount() {
+    if (hasMetaData) {
+      // the logic in copyTo that puts all the meta data at the end depends on this
+      throw new AssertionError("actions should not be added after any meta is present");
+    }
     actionCount++;
+  }
+
+  public void addEntireArray(Object value) {
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE);
     encoding.encodeArray(value, output);
   }
 
   public void addLiteralValue(Object value) {
-    actionCount++;
+    incrementActionCount();
     output.writeByte(BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE);
     encoding.encode(value, output);
   }
@@ -182,10 +192,11 @@ public class DNAWriterImpl implements DNAWriterInternal {
       throw new AssertionError("sending delta DNA with no actions!");
     }
 
-    byte[] lengths = new byte[9];
+    byte[] lengths = new byte[13];
     Conversion.writeInt(totalLength, lengths, 0);
     Conversion.writeInt(actionCount, lengths, 4);
-    lengths[8] = flags;
+    Conversion.writeInt(UNINITIALIZED_LENGTH, lengths, 8);
+    lengths[12] = flags;
     this.headerMark.write(lengths);
   }
 
@@ -220,6 +231,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addMetaData(MetaDataDescriptor md) {
+    hasMetaData = true;
     output.writeByte(BaseDNAEncodingImpl.META_DATA_ACTION_TYPE);
     Mark lengthMark = output.mark();
     output.writeInt(-1);
