@@ -33,22 +33,27 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return Collections.EMPTY_MAP;
   }
 
+  @Override
   protected void basicCreate(TCObject source) {
     // null do nothing
   }
 
+  @Override
   protected void basicCreateRoot(String name, ObjectID rootID) {
     // null do nothing
   }
 
+  @Override
   protected void basicFieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
     // null do nothing
   }
 
+  @Override
   protected void basicLogicalInvoke(TCObject source, int method, Object[] parameters) {
     // null do nothing
   }
 
+  @Override
   public boolean isNull() {
     return true;
   }
@@ -65,6 +70,7 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return false;
   }
 
+  @Override
   protected void basicArrayChanged(TCObject source, int startPos, Object array, int length) {
     // null do nothing
   }
@@ -73,6 +79,7 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return 0;
   }
 
+  @Override
   protected void basicLiteralValueChanged(TCObject source, Object newValue, Object oldValue) {
     // do nothing
   }
@@ -93,12 +100,8 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return Collections.EMPTY_LIST;
   }
 
-  public void addMetaDataDescriptor(MetaDataDescriptor md) {
-   return;
+  @Override
+  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+    return;
   }
-
-  public List getMetaDataDescriptors() {
-    return Collections.EMPTY_LIST;
-  }
-
 }

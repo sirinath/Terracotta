@@ -26,7 +26,6 @@ import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.locks.Notify;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.properties.TCProperties;
@@ -47,14 +46,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class TransactionBatchWriter implements ClientTransactionBatch {
   private static final boolean                  DEBUG                  = TCPropertiesImpl
                                                                            .getProperties()
-                                                                           .getBoolean(
-                                                                                       TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_DEBUG);
+                                                                           .getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_DEBUG);
 
   private static final TCLogger                 logger                 = TCLogging
                                                                            .getLogger(TransactionBatchWriter.class);
@@ -245,13 +243,12 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       logger.info("NOT folding, created new sequence " + sid);
     }
 
-    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding, txn
-        .getTransactionID());
+    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding,
+                                                          txn.getTransactionID());
 
     if (this.foldingEnabled) {
 
-      FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), new HashSet(txn
-          .getChangeBuffers().keySet()));
+      FoldingKey key = new FoldingKey(txnBuffer, txn.getLockType(), new HashSet(txn.getChangeBuffers().keySet()));
       ++this.numTxnsAfterFolding;
       registerKeyForOids(txn.getChangeBuffers().keySet(), key);
     }
@@ -282,9 +279,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private void log_incomingTxn(final ClientTransaction txn, final boolean exceedsLimits, final boolean scanForClose) {
     logger.info("incoming txn@" + System.identityHashCode(txn) + "[" + txn.getTransactionID() + " locks="
                 + txn.getAllLockIDs() + ", oids=" + txn.getChangeBuffers().keySet() + ", dmi="
-                + txn.getDmiDescriptors() + ", metadatas= " + txn.getMetaDataDescriptors() +  ", roots=" 
-                + txn.getNewRoots() + ", notifies=" + txn.getNotifies() + ", type=" + txn.getLockType()
-                + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
+                + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots() + ", notifies=" + txn.getNotifies()
+                + ", type=" + txn.getLockType() + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
   }
 
   private void closeDependentKeys(final Collection dependentKeys) {
@@ -617,13 +613,6 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
         dd.serializeTo(this.output);
       }
 
-      final List metaDatas = txn.getMetaDataDescriptors();
-      this.output.writeInt(metaDatas.size());
-      for (final Iterator i = metaDatas.iterator(); i.hasNext();) {
-        final MetaDataDescriptor dd = (MetaDataDescriptor) i.next();
-        dd.serializeTo(this.output);
-      }
-
       writeAdditionalHeaderInformation(this.output, txn);
 
       this.changesCountMark = this.output.mark();
@@ -733,9 +722,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     public static FoldingConfig createFromProperties(final TCProperties props) {
-      return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED), props
-          .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT), props
-          .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
+      return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED),
+                               props.getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT),
+                               props.getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
     }
   }
 

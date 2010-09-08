@@ -31,7 +31,7 @@ public class TestClientTransaction implements ClientTransaction {
   private SequenceID   sequenceID;
   public Map           newRoots             = new HashMap();
   public Map           changeBuffers        = new HashMap();
-  private List         notifies             = new ArrayList();
+  private final List   notifies             = new ArrayList();
 
   public TestClientTransaction() {
     super();
@@ -137,13 +137,12 @@ public class TestClientTransaction implements ClientTransaction {
     return Collections.EMPTY_LIST;
   }
 
-  
   public List getMetaDataDescriptors() {
     return Collections.EMPTY_LIST;
   }
-  
-  public void addMetaDataDescriptor(MetaDataDescriptor md) {
-    throw new ImplementMe();  
+
+  public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+    throw new ImplementMe();
   }
 
   public List getNotifies() {

@@ -175,7 +175,7 @@ public class MockTransactionManager implements ClientTransactionManager {
   public boolean isObjectCreationInProgress() {
     return false;
   }
-  
+
   public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
     throw new ImplementMe();
   }
@@ -204,8 +204,8 @@ public class MockTransactionManager implements ClientTransactionManager {
     throw new ImplementMe();
   }
 
-  public void addMetaDataDescriptor(MetaDataDescriptor md) {
+  public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
     throw new ImplementMe();
-    
+
   }
 }

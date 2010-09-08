@@ -27,16 +27,15 @@ import java.util.Map;
  * Client side transaction : Collects all changes by a single thread under a lock
  */
 public class ClientTransactionImpl extends AbstractClientTransaction {
-  private final RuntimeLogger runtimeLogger;
-  private final Map           objectChanges = new LinkedHashMap();
+  private final RuntimeLogger                 runtimeLogger;
+  private final Map<ObjectID, TCChangeBuffer> objectChanges = new LinkedHashMap<ObjectID, TCChangeBuffer>();
 
-  private Map                 newRoots;
-  private List                notifies;
-  private List                dmis;
-  private List                metaDataDescriptors;
+  private Map                                 newRoots;
+  private List                                notifies;
+  private List                                dmis;
 
   // used to keep things referenced until the transaction is completely ACKED
-  private final Map           referenced    = new IdentityHashMap();
+  private final Map                           referenced    = new IdentityHashMap();
 
   public ClientTransactionImpl(RuntimeLogger logger) {
     super();
@@ -58,7 +57,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   public Map getNewRoots() {
     return newRoots == null ? Collections.EMPTY_MAP : newRoots;
   }
-  
+
   public List getNotifies() {
     return notifies == null ? Collections.EMPTY_LIST : notifies;
   }
@@ -120,7 +119,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
 
     ObjectID oid = object.getObjectID();
 
-    TCChangeBuffer cb = (TCChangeBuffer) objectChanges.get(oid);
+    TCChangeBuffer cb = objectChanges.get(oid);
     if (cb == null) {
       cb = new TCChangeBufferImpl(object);
       objectChanges.put(oid, cb);
@@ -163,20 +162,14 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
     }
     dmis.add(dd);
   }
-  
-  public void addMetaDataDescriptor(MetaDataDescriptor md) {
-    if (metaDataDescriptors == null) {
-      metaDataDescriptors = new ArrayList();
-    }
-    metaDataDescriptors.add(md);
+
+  @Override
+  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+    getOrCreateChangeBuffer(tco).addMetaDataDescriptor(md);
   }
 
   public List getDmiDescriptors() {
     return dmis == null ? Collections.EMPTY_LIST : dmis;
-  }
-
-  public List getMetaDataDescriptors() {
-    return metaDataDescriptors == null ? Collections.EMPTY_LIST : metaDataDescriptors;
   }
 
 }

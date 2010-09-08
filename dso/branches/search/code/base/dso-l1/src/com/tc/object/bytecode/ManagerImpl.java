@@ -215,8 +215,9 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   private void startClient(final boolean forTests) {
-    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(TCLogging
-        .getLogger(DistributedObjectClient.class)));
+    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(
+                                                                       TCLogging
+                                                                           .getLogger(DistributedObjectClient.class)));
 
     final StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
@@ -292,12 +293,12 @@ public class ManagerImpl implements ManagerInternal {
             logicalAddAllInvoke(this.serializer.methodToID(methodSignature), methodSignature, (Collection) params[0],
                                 tco);
           } else if (SerializationUtil.ADD_ALL_AT_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
-                .intValue(), (Collection) params[1], tco);
+            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature,
+                                  ((Integer) params[0]).intValue(), (Collection) params[1], tco);
           } else {
             adjustForJava1ParametersIfNecessary(methodSignature, params);
-            tco.logicalInvoke(this.serializer.methodToID(methodSignature), this.methodDisplay
-                .getDisplayForSignature(methodSignature), params);
+            tco.logicalInvoke(this.serializer.methodToID(methodSignature),
+                              this.methodDisplay.getDisplayForSignature(methodSignature), params);
           }
         }
       } catch (final Throwable t) {
@@ -305,9 +306,9 @@ public class ManagerImpl implements ManagerInternal {
       }
     }
   }
- 
-  public void attachMetaData(MetaDataDescriptor descriptor) {
-    this.objectManager.getTransactionManager().addMetaDataDescriptor(descriptor);
+
+  public void attachMetaData(TCObject tco, MetaDataDescriptor descriptor) {
+    this.objectManager.getTransactionManager().addMetaDataDescriptor(tco, descriptor);
   }
 
   public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,

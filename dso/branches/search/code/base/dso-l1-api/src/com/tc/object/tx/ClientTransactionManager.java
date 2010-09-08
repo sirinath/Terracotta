@@ -184,13 +184,13 @@ public interface ClientTransactionManager {
    * @param d Descriptor
    */
   public void addDmiDescriptor(DmiDescriptor d);
-  
+
   /**
    * Add meta data descriptor to current transaction
    * 
-   * @ md Descriptor
+   * @param md Descriptor
    */
-  public void addMetaDataDescriptor(final MetaDataDescriptor md);
+  public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptor md);
 
   /**
    * Check if lockID is on top of the transaction stack

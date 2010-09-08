@@ -9,7 +9,6 @@ import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.locks.LockID;
-import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -56,10 +55,6 @@ public class PrunedServerTransaction implements ServerTransaction {
 
   public DmiDescriptor[] getDmiDescriptors() {
     return this.orgTxn.getDmiDescriptors();
-  }
-  
-  public MetaDataDescriptor [] getMetaDataDescriptors() {
-    return this.orgTxn.getMetaDataDescriptors();
   }
 
   public LockID[] getLockIDs() {

@@ -11,6 +11,8 @@ import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.dna.api.DNAWriterInternal;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
@@ -18,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class DNAWriterImpl implements DNAWriter {
+public class DNAWriterImpl implements DNAWriterInternal {
 
   private static final int               UNINITIALIZED_LENGTH = -1;
 
@@ -99,8 +101,8 @@ public class DNAWriterImpl implements DNAWriter {
     output.writeInt(method); // XXX: use a short instead?
     output.writeByte(parameters.length);
 
-    for (int i = 0; i < parameters.length; i++) {
-      encoding.encode(parameters[i], output);
+    for (Object parameter : parameters) {
+      encoding.encode(parameter, output);
     }
   }
 
@@ -217,7 +219,15 @@ public class DNAWriterImpl implements DNAWriter {
     }
   }
 
-  private static class Appender implements DNAWriter {
+  public void addMetaData(MetaDataDescriptor md) {
+    output.writeByte(BaseDNAEncodingImpl.META_DATA_ACTION_TYPE);
+    Mark lengthMark = output.mark();
+    output.writeInt(-1);
+    md.serializeTo(output);
+    lengthMark.write(Conversion.int2Bytes(output.getBytesWritten() - lengthMark.getPosition()));
+  }
+
+  private static class Appender implements DNAWriterInternal {
     private final DNAWriterImpl            parent;
     private final TCByteBufferOutputStream output;
     private final Mark                     startMark;
@@ -259,6 +269,10 @@ public class DNAWriterImpl implements DNAWriter {
 
     public void addSubArrayAction(int start, Object array, int length) {
       parent.addSubArrayAction(start, array, length);
+    }
+
+    public void addMetaData(MetaDataDescriptor md) {
+      parent.addMetaData(md);
     }
 
     public int getActionCount() {
