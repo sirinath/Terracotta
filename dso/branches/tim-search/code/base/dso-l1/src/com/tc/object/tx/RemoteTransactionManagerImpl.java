@@ -291,7 +291,7 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
   }
 
   public void commit(final ClientTransaction txn) {
-    if (!txn.hasChangesOrNotifies() && txn.getDmiDescriptors().isEmpty() && txn.getNewRoots().isEmpty()) { throw new AssertionError(
+    if (!txn.hasChangesOrNotifies() && txn.getDmiDescriptors().isEmpty() && txn.getMetaDataDescriptors().isEmpty() && txn.getNewRoots().isEmpty()) { throw new AssertionError(
                                                                                                                                     "Attempt to commit an empty transaction."); }
     if (!txn.getTransactionID().isNull()) { throw new AssertionError(
                                                                      "Transaction already committed as TransactionID is already assigned"); }

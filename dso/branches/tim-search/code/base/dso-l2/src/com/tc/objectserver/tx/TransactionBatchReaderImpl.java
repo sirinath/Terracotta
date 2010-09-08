@@ -19,6 +19,7 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.locks.Notify;
 import com.tc.object.locks.NotifyImpl;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -141,6 +142,15 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
       dd.deserializeFrom(this.in);
       dmis[i] = dd;
     }
+    
+    final int metaDataCount = this.in.readInt();
+    final MetaDataDescriptor[] metaDatas = new MetaDataDescriptor[metaDataCount];
+    for (int i = 0; i < metaDataCount; i++) {
+      MetaDataDescriptor md = new MetaDataDescriptor();
+      md.deserializeFrom(this.in);
+      metaDatas[i] = md;
+    }
+
 
     long[] highwaterMarks = readLongArray(this.in);
 
@@ -166,7 +176,7 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.txnToRead--;
     return this.txnFactory.createServerTransaction(getBatchID(), txnID, sequenceID, locks, this.source, dnas,
                                                    this.serializer, newRoots, txnType, notifies, dmis,
-                                                   numApplictionTxn, highwaterMarks);
+                                                   metaDatas, numApplictionTxn, highwaterMarks);
   }
 
   public TxnBatchID getBatchID() {

@@ -11,6 +11,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionIDAlreadySetException;
 import com.tc.object.locks.LockID;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
@@ -39,6 +40,7 @@ public class ServerTransactionImpl implements ServerTransaction {
   private final ObjectStringSerializer serializer;
   private final Collection             notifies;
   private final DmiDescriptor[]        dmis;
+  private final MetaDataDescriptor []  metaDatas;
   private final ObjectIDSet            objectIDs;
   private final ObjectIDSet            newObjectIDs;
   private final TxnBatchID             batchID;
@@ -50,7 +52,7 @@ public class ServerTransactionImpl implements ServerTransaction {
   public ServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
                                TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
-                               int numApplicationTxn, long[] highWaterMarks) {
+                               MetaDataDescriptor[] metaDatas, int numApplicationTxn, long[] highWaterMarks) {
     this.batchID = batchID;
     this.txID = txID;
     this.seqID = sequenceID;
@@ -63,6 +65,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     this.transactionType = transactionType;
     this.notifies = notifies;
     this.dmis = dmis;
+    this.metaDatas = metaDatas;
     this.changes = dnas;
     this.serializer = serializer;
     ObjectIDSet ids = new ObjectIDSet();
@@ -140,6 +143,10 @@ public class ServerTransactionImpl implements ServerTransaction {
 
   public DmiDescriptor[] getDmiDescriptors() {
     return this.dmis;
+  }
+  
+  public MetaDataDescriptor [] getMetaDataDescriptors() {
+    return this.metaDatas;
   }
 
   @Override

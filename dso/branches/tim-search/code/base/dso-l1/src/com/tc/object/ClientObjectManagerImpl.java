@@ -90,6 +90,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private static final State                    RUNNING                      = new State("RUNNING");
   private static final State                    STARTING                     = new State("STARTING");
 
+  //
   private static final TCLogger                 staticLogger                 = TCLogging
                                                                                  .getLogger(ClientObjectManager.class);
 

@@ -26,6 +26,7 @@ import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.locks.Notify;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.CommitTransactionMessageFactory;
 import com.tc.properties.TCProperties;
@@ -281,8 +282,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private void log_incomingTxn(final ClientTransaction txn, final boolean exceedsLimits, final boolean scanForClose) {
     logger.info("incoming txn@" + System.identityHashCode(txn) + "[" + txn.getTransactionID() + " locks="
                 + txn.getAllLockIDs() + ", oids=" + txn.getChangeBuffers().keySet() + ", dmi="
-                + txn.getDmiDescriptors() + ", roots=" + txn.getNewRoots() + ", notifies=" + txn.getNotifies()
-                + ", type=" + txn.getLockType() + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
+                + txn.getDmiDescriptors() + ", metadatas= " + txn.getMetaDataDescriptors() +  ", roots=" 
+                + txn.getNewRoots() + ", notifies=" + txn.getNotifies() + ", type=" + txn.getLockType()
+                + "] exceedsLimit=" + exceedsLimits + ", scanForClose=" + scanForClose);
   }
 
   private void closeDependentKeys(final Collection dependentKeys) {
@@ -612,6 +614,13 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       this.output.writeInt(dmis.size());
       for (final Iterator i = dmis.iterator(); i.hasNext();) {
         final DmiDescriptor dd = (DmiDescriptor) i.next();
+        dd.serializeTo(this.output);
+      }
+
+      final List metaDatas = txn.getMetaDataDescriptors();
+      this.output.writeInt(metaDatas.size());
+      for (final Iterator i = metaDatas.iterator(); i.hasNext();) {
+        final MetaDataDescriptor dd = (MetaDataDescriptor) i.next();
         dd.serializeTo(this.output);
       }
 

@@ -11,6 +11,7 @@ import com.tc.object.change.TCChangeBufferImpl;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.Notify;
 import com.tc.object.logging.RuntimeLogger;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.util.Assert;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   private Map                 newRoots;
   private List                notifies;
   private List                dmis;
+  private List                metaDataDescriptors;
 
   // used to keep things referenced until the transaction is completely ACKED
   private final Map           referenced    = new IdentityHashMap();
@@ -56,7 +58,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   public Map getNewRoots() {
     return newRoots == null ? Collections.EMPTY_MAP : newRoots;
   }
-
+  
   public List getNotifies() {
     return notifies == null ? Collections.EMPTY_LIST : notifies;
   }
@@ -161,9 +163,20 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
     }
     dmis.add(dd);
   }
+  
+  public void addMetaDataDescriptor(MetaDataDescriptor md) {
+    if (metaDataDescriptors == null) {
+      metaDataDescriptors = new ArrayList();
+    }
+    metaDataDescriptors.add(md);
+  }
 
   public List getDmiDescriptors() {
     return dmis == null ? Collections.EMPTY_LIST : dmis;
+  }
+
+  public List getMetaDataDescriptors() {
+    return metaDataDescriptors == null ? Collections.EMPTY_LIST : metaDataDescriptors;
   }
 
 }

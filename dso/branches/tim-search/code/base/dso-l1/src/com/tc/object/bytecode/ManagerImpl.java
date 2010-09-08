@@ -46,6 +46,7 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
@@ -303,6 +304,10 @@ public class ManagerImpl implements ManagerInternal {
         Util.printLogAndRethrowError(t, logger);
       }
     }
+  }
+ 
+  public void attachMetaData(MetaDataDescriptor descriptor) {
+    this.objectManager.getTransactionManager().addMetaDataDescriptor(descriptor);
   }
 
   public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final String methodName,
