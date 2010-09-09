@@ -16,27 +16,28 @@ import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
+import java.nio.channels.IllegalSelectorException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class DNAWriterImpl implements DNAWriterInternal {
 
-  private static final int               UNINITIALIZED_LENGTH = -1;
+  private static final int               UNINITIALIZED  = -1;
 
   private final TCByteBufferOutputStream output;
   private final Mark                     headerMark;
   private final ObjectStringSerializer   serializer;
   private final DNAEncoding              encoding;
-  private final List                     appenders            = new ArrayList(5);
+  private final List<Appender>           appenders      = new ArrayList<Appender>(5);
 
-  private byte                           flags                = 0;
-  private int                            firstLength          = UNINITIALIZED_LENGTH;
-  private int                            totalLength          = UNINITIALIZED_LENGTH;
-  private int                            lastStreamPos        = UNINITIALIZED_LENGTH;
-  private int                            actionCount          = 0;
-  private boolean                        contiguous           = true;
-  private boolean                        hasMetaData          = false;
+  private byte                           flags          = 0;
+  private int                            firstLength    = UNINITIALIZED;
+  private int                            totalLength    = UNINITIALIZED;
+  private int                            lastStreamPos  = UNINITIALIZED;
+  private int                            actionCount    = 0;
+  private boolean                        contiguous     = true;
+  private boolean                        hasMetaData    = false;
+  private int                            metaDataOffset = UNINITIALIZED;
 
   public DNAWriterImpl(TCByteBufferOutputStream output, ObjectID id, String className,
                        ObjectStringSerializer serializer, DNAEncoding encoding, String loaderDesc, boolean isDelta) {
@@ -51,9 +52,9 @@ public class DNAWriterImpl implements DNAWriterInternal {
     this.serializer = serializer;
 
     this.headerMark = output.mark();
-    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for total length of this DNA
-    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for # of actions
-    output.writeInt(UNINITIALIZED_LENGTH); // reserve 4 bytes for offset of meta data
+    output.writeInt(UNINITIALIZED); // reserve 4 bytes for total length of this DNA
+    output.writeInt(UNINITIALIZED); // reserve 4 bytes for # of actions
+    output.writeInt(UNINITIALIZED); // reserve 4 bytes for offset of meta data
     output.writeByte(flags);
     output.writeLong(id.toLong());
 
@@ -84,8 +85,8 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void markSectionEnd() {
-    if (lastStreamPos != UNINITIALIZED_LENGTH) { throw new IllegalStateException("lastStreamPos=" + lastStreamPos); }
-    if (totalLength != UNINITIALIZED_LENGTH) { throw new IllegalStateException("totalLength=" + totalLength); }
+    if (lastStreamPos != UNINITIALIZED) { throw new IllegalStateException("lastStreamPos=" + lastStreamPos); }
+    if (totalLength != UNINITIALIZED) { throw new IllegalStateException("totalLength=" + totalLength); }
     lastStreamPos = output.getBytesWritten();
     firstLength = totalLength = output.getBytesWritten() - headerMark.getPosition();
   }
@@ -98,9 +99,9 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addLogicalAction(int method, Object[] parameters) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE);
-    output.writeInt(method); // XXX: use a short instead?
+    output.writeInt(method); // use a short instead?
     output.writeByte(parameters.length);
 
     for (Object parameter : parameters) {
@@ -109,21 +110,21 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addSubArrayAction(int start, Object array, int length) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE);
     output.writeInt(start);
     encoding.encodeArray(array, output, length);
   }
 
   public void addClassLoaderAction(String classLoaderFieldName, ClassLoader value) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE);
     serializer.writeFieldName(output, classLoaderFieldName);
     encoding.encodeClassLoader(value, output);
   }
 
   /**
-   * XXX::This method is uses the value to decide if the field is actually a referencable fields (meaning it is a non
+   * NOTE::This method is uses the value to decide if the field is actually a referencable fields (meaning it is a non
    * literal type.) This implementation is slightly flawed as you can set an instance of Integer or String to Object.
    * But since that can only happens in Physical applicator and it correctly calls the other interface, this is left
    * intact for now.
@@ -133,7 +134,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   /**
-   * NOTE::README:XXX: This method is called from instrumented code in the L2.
+   * NOTE::README This method is called from instrumented code in the L2.
    * 
    * @see PhysicalStateClassLoader.createBasicDehydrateMethod()
    */
@@ -145,11 +146,11 @@ public class DNAWriterImpl implements DNAWriterInternal {
       canBeReferenced = true;
     }
 
-    incrementActionCount();
+    actionCount++;
     if (canBeReferenced) {
       // An Object reference can be set to a literal instance, like
       // Object o = new Integer(10);
-      // XXX::Earlier we used to also check LiteralValues.isLiteralInstance(value) before entering this block, but I
+      // NOTE::Earlier we used to also check LiteralValues.isLiteralInstance(value) before entering this block, but I
       // think that is unnecessary and wrong when we optimize later to store ObjectIDs as longs in most cases in the L2
       output.writeByte(BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT);
     } else {
@@ -160,30 +161,35 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void addArrayElementAction(int index, Object value) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE);
     output.writeInt(index);
     encoding.encode(value, output);
   }
 
-  private void incrementActionCount() {
-    if (hasMetaData) {
-      // the logic in copyTo that puts all the meta data at the end depends on this
-      throw new AssertionError("actions should not be added after any meta is present");
-    }
-    actionCount++;
-  }
-
   public void addEntireArray(Object value) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE);
     encoding.encodeArray(value, output);
   }
 
   public void addLiteralValue(Object value) {
-    incrementActionCount();
+    actionCount++;
     output.writeByte(BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE);
     encoding.encode(value, output);
+  }
+
+  public void addMetaData(MetaDataDescriptor md) {
+    if (!hasMetaData) {
+      metaDataOffset = output.getBytesWritten() - headerMark.getPosition();
+      hasMetaData = true;
+    }
+
+    output.writeByte(BaseDNAEncodingImpl.META_DATA_ACTION_TYPE);
+    Mark lengthMark = output.mark();
+    output.writeInt(-1);
+    md.serializeTo(output);
+    lengthMark.write(Conversion.int2Bytes(output.getBytesWritten() - lengthMark.getPosition()));
   }
 
   public void finalizeHeader() {
@@ -195,7 +201,18 @@ public class DNAWriterImpl implements DNAWriterInternal {
     byte[] lengths = new byte[13];
     Conversion.writeInt(totalLength, lengths, 0);
     Conversion.writeInt(actionCount, lengths, 4);
-    Conversion.writeInt(UNINITIALIZED_LENGTH, lengths, 8);
+
+    int totalMetaDataLength = hasMetaData ? (firstLength - metaDataOffset) : 0;
+    for (Appender a : appenders) {
+      if (a.metaDataOffset != UNINITIALIZED) {
+        totalMetaDataLength += (a.appendSectionLength - a.metaDataOffset);
+      }
+    }
+
+    if (totalMetaDataLength != 0) {
+      Conversion.writeInt(totalLength - totalMetaDataLength, lengths, 8);
+    }
+
     lengths[12] = flags;
     this.headerMark.write(lengths);
   }
@@ -223,32 +240,60 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   public void copyTo(TCByteBufferOutput dest) {
-    headerMark.copyTo(dest, firstLength);
-    for (Iterator i = appenders.iterator(); i.hasNext();) {
-      Appender appender = (Appender) i.next();
-      appender.copyTo(dest);
-    }
-  }
+    if (hasMetaData) {
+      headerMark.copyTo(dest, 0, metaDataOffset);
 
-  public void addMetaData(MetaDataDescriptor md) {
-    hasMetaData = true;
-    output.writeByte(BaseDNAEncodingImpl.META_DATA_ACTION_TYPE);
-    Mark lengthMark = output.mark();
-    output.writeInt(-1);
-    md.serializeTo(output);
-    lengthMark.write(Conversion.int2Bytes(output.getBytesWritten() - lengthMark.getPosition()));
+      // copy all appender actions
+      for (Appender appender : appenders) {
+        appender.copyActionsTo(dest);
+      }
+
+      // copy this metadata
+      headerMark.copyTo(dest, metaDataOffset, firstLength - metaDataOffset);
+
+      // copy all appender metadata
+      for (Appender appender : appenders) {
+        appender.copyMetaDataTo(dest);
+      }
+    } else {
+      headerMark.copyTo(dest, firstLength);
+
+      for (Appender appender : appenders) {
+        appender.copyTo(dest);
+      }
+    }
   }
 
   private static class Appender implements DNAWriterInternal {
     private final DNAWriterImpl            parent;
     private final TCByteBufferOutputStream output;
     private final Mark                     startMark;
-    private int                            appendSectionLength = UNINITIALIZED_LENGTH;
+    private int                            appendSectionLength = UNINITIALIZED;
+    private int                            metaDataOffset      = UNINITIALIZED;
 
     Appender(DNAWriterImpl parent, TCByteBufferOutputStream output) {
       this.parent = parent;
       this.output = output;
       this.startMark = output.mark();
+    }
+
+    void copyMetaDataTo(TCByteBufferOutput dest) {
+      if (metaDataOffset != UNINITIALIZED) {
+        startMark.copyTo(dest, metaDataOffset, metaDataLength());
+      }
+    }
+
+    void copyActionsTo(TCByteBufferOutput dest) {
+      int length = appendSectionLength - metaDataLength();
+      startMark.copyTo(dest, 0, length);
+    }
+
+    private int metaDataLength() {
+      if (appendSectionLength == UNINITIALIZED) { throw new IllegalSelectorException(); }
+
+      if (metaDataOffset == UNINITIALIZED) { return 0; }
+
+      return appendSectionLength - metaDataOffset;
     }
 
     public void addArrayElementAction(int index, Object value) {
@@ -284,6 +329,9 @@ public class DNAWriterImpl implements DNAWriterInternal {
     }
 
     public void addMetaData(MetaDataDescriptor md) {
+      if (metaDataOffset == UNINITIALIZED) {
+        metaDataOffset = output.getBytesWritten() - startMark.getPosition();
+      }
       parent.addMetaData(md);
     }
 

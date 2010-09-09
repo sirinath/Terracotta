@@ -10,13 +10,15 @@ import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.dna.api.DNAWriterInternal;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.DNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.loaders.ClassProvider;
+import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.NVPair;
 import com.tc.util.Assert;
 
 import java.util.Arrays;
@@ -40,7 +42,7 @@ public class DNAImplTest extends TestCase {
   }
 
   protected void serializeDeserialize(final boolean parentID, final boolean isDelta) throws Exception {
-    final TCByteBufferOutputStream out = new TCByteBufferOutputStream();
+    TCByteBufferOutputStream out = new TCByteBufferOutputStream();
 
     final ObjectID id = new ObjectID(1);
     final ObjectID pid = new ObjectID(2);
@@ -50,10 +52,18 @@ public class DNAImplTest extends TestCase {
     final ObjectStringSerializer serializer = new ObjectStringSerializer();
     final ClassProvider classProvider = new MockClassProvider();
     final DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
-    final DNAWriter dnaWriter = createDNAWriter(out, id, type, serializer, encoding, isDelta);
+    final DNAWriterInternal dnaWriter = createDNAWriter(out, id, type, serializer, encoding, isDelta);
     final PhysicalAction action1 = new PhysicalAction("class.field1", new Integer(1), false);
     final LogicalAction action2 = new LogicalAction(12, new Object[] { "key", "value" });
     final PhysicalAction action3 = new PhysicalAction("class.field2", new ObjectID(3), true);
+    final PhysicalAction action4 = new PhysicalAction("class.field3", new ObjectID(4), true);
+    final PhysicalAction action5 = new PhysicalAction("class.field4", new ObjectID(5), true);
+
+    MetaDataDescriptor md = new MetaDataDescriptor("cat1");
+    md.addNameValuePair(new NVPair.IntNVPair("name1", 42));
+
+    MetaDataDescriptor md2 = new MetaDataDescriptor("cat2");
+    md2.addNameValuePair(new NVPair.IntNVPair("name2", 666));
 
     if (parentID) {
       dnaWriter.setParentObjectID(pid);
@@ -63,8 +73,27 @@ public class DNAImplTest extends TestCase {
     dnaWriter.addPhysicalAction(action1.getFieldName(), action1.getObject());
     dnaWriter.addLogicalAction(action2.getMethod(), action2.getParameters());
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
+    assertTrue(dnaWriter.isContiguous());
+    dnaWriter.addMetaData(md);
+    assertTrue(dnaWriter.isContiguous());
     dnaWriter.markSectionEnd();
+
+    // simulate folding
+    DNAWriterInternal appender = (DNAWriterInternal) dnaWriter.createAppender();
+    assertFalse(dnaWriter.isContiguous());
+    appender.addPhysicalAction(action4.getFieldName(), action4.getObject());
+    appender.addMetaData(md2);
+    appender.markSectionEnd();
+
+    // fold in more actions without any meta data
+    appender = (DNAWriterInternal) dnaWriter.createAppender();
+    appender.addPhysicalAction(action5.getFieldName(), action5.getObject());
+    appender.markSectionEnd();
+
+    // collapse this folded DNA into contiguous buffer
     dnaWriter.finalizeHeader();
+    out = new TCByteBufferOutputStream();
+    dnaWriter.copyTo(out);
 
     final TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
     this.dna = createDNAImpl(serializer, true);
@@ -82,6 +111,12 @@ public class DNAImplTest extends TestCase {
           break;
         case 3:
           compareAction(action3, cursor.getPhysicalAction());
+          break;
+        case 4:
+          compareAction(action4, cursor.getPhysicalAction());
+          break;
+        case 5:
+          compareAction(action5, cursor.getPhysicalAction());
           break;
         default:
           fail("count got to " + count);
@@ -112,9 +147,9 @@ public class DNAImplTest extends TestCase {
     return new DNAImpl(serializer, b);
   }
 
-  protected DNAWriter createDNAWriter(final TCByteBufferOutputStream out, final ObjectID id, final String type,
-                                      final ObjectStringSerializer serializer, final DNAEncoding encoding,
-                                      final boolean isDelta) {
+  protected DNAWriterInternal createDNAWriter(final TCByteBufferOutputStream out, final ObjectID id, final String type,
+                                              final ObjectStringSerializer serializer, final DNAEncoding encoding,
+                                              final boolean isDelta) {
     return new DNAWriterImpl(out, id, type, serializer, encoding, "loader description", isDelta);
   }
 
