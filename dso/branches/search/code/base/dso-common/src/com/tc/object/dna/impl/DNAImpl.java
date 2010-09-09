@@ -42,6 +42,8 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
   private int                          arrayLength;
   private String                       loaderDesc;
   private long                         version;
+  private int                          dnaLength;
+  private int                          metaDataOffset;
 
   // XXX: cleanup type of this field
   private Object                       currentAction;
@@ -91,51 +93,49 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       parseNext(encoding);
       this.actionCount--;
     } else {
-      if (this.input.available() > 0) { throw new IOException(this.input.available() + " bytes remaining (expect 0)"); }
+      int expect = 0;
+      if (metaDataOffset > 0) {
+        expect = dnaLength - metaDataOffset;
+      }
+
+      if (this.input.available() != expect) {
+        //
+        throw new IOException(this.input.available() + " bytes remaining (expect " + expect + ")");
+      }
     }
     return hasNext;
   }
 
   private void parseNext(final DNAEncoding encoding) throws IOException, ClassNotFoundException {
-    while (true) {
-      final byte recordType = this.input.readByte();
+    final byte recordType = this.input.readByte();
 
-      switch (recordType) {
-        case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE:
-          parsePhysical(encoding, false);
-          return;
-        case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT:
-          parsePhysical(encoding, true);
-          return;
-        case BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE:
-          parseLogical(encoding);
-          return;
-        case BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE:
-          parseArrayElement(encoding);
-          return;
-        case BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE:
-          parseEntireArray(encoding);
-          return;
-        case BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE:
-          parseLiteralValue(encoding);
-          return;
-        case BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE:
-          parseSubArray(encoding);
-          return;
-        case BaseDNAEncodingImpl.META_DATA_ACTION_TYPE:
-          skipMetaData();
-          continue;
-        default:
-          throw new IOException("Invalid record type: " + recordType);
-      }
+    switch (recordType) {
+      case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE:
+        parsePhysical(encoding, false);
+        return;
+      case BaseDNAEncodingImpl.PHYSICAL_ACTION_TYPE_REF_OBJECT:
+        parsePhysical(encoding, true);
+        return;
+      case BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE:
+        parseLogical(encoding);
+        return;
+      case BaseDNAEncodingImpl.ARRAY_ELEMENT_ACTION_TYPE:
+        parseArrayElement(encoding);
+        return;
+      case BaseDNAEncodingImpl.ENTIRE_ARRAY_ACTION_TYPE:
+        parseEntireArray(encoding);
+        return;
+      case BaseDNAEncodingImpl.LITERAL_VALUE_ACTION_TYPE:
+        parseLiteralValue(encoding);
+        return;
+      case BaseDNAEncodingImpl.SUB_ARRAY_ACTION_TYPE:
+        parseSubArray(encoding);
+        return;
+      default:
+        throw new IOException("Invalid record type: " + recordType);
     }
 
     // unreachable
-  }
-
-  private void skipMetaData() throws IOException {
-    int length = input.readInt();
-    input.skip(length);
   }
 
   private void parseSubArray(final DNAEncoding encoding) throws IOException, ClassNotFoundException {
@@ -234,7 +234,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
     this.wasDeserialized = true;
 
     final Mark mark = serialInput.mark();
-    final int dnaLength = serialInput.readInt();
+    dnaLength = serialInput.readInt();
     if (dnaLength <= 0) { throw new IOException("Invalid length:" + dnaLength); }
 
     serialInput.tcReset(mark);
@@ -255,8 +255,8 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
 
     if (this.actionCount < 0) { throw new IOException("Invalid action count:" + this.actionCount); }
 
-    // skip over meta data offset for now
-    this.input.readInt();
+    // read meta data offset
+    metaDataOffset = this.input.readInt();
 
     final byte flags = this.input.readByte();
 
