@@ -37,7 +37,7 @@ public class TransactionAccountImpl implements TransactionAccount {
     return sourceID;
   }
 
-  public void incommingTransactions(Set txnIDs) {
+  public void incomingTransactions(Set txnIDs) {
     Assert.assertFalse(dead);
     for (Iterator i = txnIDs.iterator(); i.hasNext();) {
       ServerTransactionID stxnID = (ServerTransactionID) i.next();
@@ -95,6 +95,14 @@ public class TransactionAccountImpl implements TransactionAccount {
     TransactionRecord transactionRecord = getRecord(requestID);
     synchronized (transactionRecord) {
       transactionRecord.broadcastCompleted();
+      return checkCompletedAndRemove(requestID, transactionRecord);
+    }
+  }
+  
+  public boolean processMetaDataCompleted(TransactionID requestID) {
+    TransactionRecord transactionRecord = getRecord(requestID);
+    synchronized (transactionRecord) {
+      transactionRecord.processMetaDataCompleted();
       return checkCompletedAndRemove(requestID, transactionRecord);
     }
   }

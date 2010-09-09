@@ -33,6 +33,10 @@ public class TransactionRecord {
   public void broadcastCompleted() {
     state.broadcastCompleted();
   }
+  
+  public void processMetaDataCompleted() {
+    state.processMetaDataCompleted();
+  }
 
   public boolean isComplete() {
     return state.isComplete() && waitees.isEmpty();

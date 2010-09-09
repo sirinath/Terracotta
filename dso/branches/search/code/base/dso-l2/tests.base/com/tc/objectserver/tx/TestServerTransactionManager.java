@@ -94,7 +94,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
-  public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
+  public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionListener l) {
     throw new ImplementMe();
   }
 
@@ -110,7 +110,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
-  public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionLister l) {
+  public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionListener l) {
     throw new ImplementMe();
   }
 
