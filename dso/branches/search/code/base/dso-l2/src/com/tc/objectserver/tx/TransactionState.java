@@ -5,13 +5,14 @@
 package com.tc.objectserver.tx;
 
 public class TransactionState {
-  private static final int APPLY_COMMITTED         = 0x01;
-  private static final int BROADCAST_COMPLETED     = 0x02;
-  private static final int TXN_RELAYED             = 0x04;
+  private static final int APPLY_COMMITTED            = 0x01;
+  private static final int BROADCAST_COMPLETED        = 0x02;
+  private static final int TXN_RELAYED                = 0x04;
+  private static final int PROCESS_METADATA_COMPLETED = 0x08;
 
-  private static final int TXN_PROCESSING_COMPLETE = (APPLY_COMMITTED | BROADCAST_COMPLETED | TXN_RELAYED);
+  private static final int TXN_PROCESSING_COMPLETE    = (APPLY_COMMITTED | BROADCAST_COMPLETED | TXN_RELAYED | PROCESS_METADATA_COMPLETED);
 
-  private int              state                   = 0x00;
+  private int              state                      = 0x00;
 
   public void applyAndCommitSkipped() {
     state |= APPLY_COMMITTED;
@@ -24,19 +25,25 @@ public class TransactionState {
   public void broadcastCompleted() {
     state |= BROADCAST_COMPLETED;
   }
+  
+  public void processMetaDataCompleted() {
+    state |= PROCESS_METADATA_COMPLETED;
+  }
 
   public void applyCommitted() {
     state |= APPLY_COMMITTED;
   }
-
-  public String toString() {
-    return "TransactionState = [ " + ((state & APPLY_COMMITTED) == APPLY_COMMITTED ? " APPLY_COMMITED : " : " : ")
-           + ((state & TXN_RELAYED) == TXN_RELAYED ? " TXN_RELAYED : " : " : ")
-           + ((state & BROADCAST_COMPLETED) == BROADCAST_COMPLETED ? " BROADCAST_COMPLETE } " : " ]");
-  }
-
+  
   public void relayTransactionComplete() {
     state |= TXN_RELAYED;
+  }
+
+  public String toString() {
+    return "TransactionState = [ " 
+           + ((state & APPLY_COMMITTED) == APPLY_COMMITTED ? " APPLY_COMMITED : " : " : ")
+           + ((state & TXN_RELAYED) == TXN_RELAYED ? " TXN_RELAYED : " : " : ")
+           + ((state & BROADCAST_COMPLETED) == BROADCAST_COMPLETED ? " BROADCAST_COMPLETE } " : " : ")
+           + ((state & PROCESS_METADATA_COMPLETED) == PROCESS_METADATA_COMPLETED ? " PROCESS_METADATA_COMPLETED } " : " ]");
   }
 
 }

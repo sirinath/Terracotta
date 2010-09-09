@@ -232,7 +232,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private void waitForTxnsToComplete() {
     final Latch latch = new Latch();
     logger.info("Waiting for txns to complete");
-    callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionLister() {
+    callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
       public void onCompletion() {
         logger.info("No more txns in the system.");
         latch.release();
@@ -356,6 +356,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
     this.transactionRateCounter.increment(txn.getNumApplicationTxn());
 
+    //TODO: Index somewhere in apply, since metadata is written as part of DNA
+    //Going to call processedMetaData for now.
+    
+    final TransactionAccount transactionAccount = getTransactionAccount(sourceID);
+    transactionAccount.processMetaDataCompleted(txnID);
+    
     fireTransactionAppliedEvent(stxnID, txn.getNewObjectIDs());
   }
 
@@ -422,7 +428,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   public void incomingTransactions(final NodeID source, final Set txnIDs, final Collection txns, final boolean relayed) {
     final boolean active = isActive();
     final TransactionAccount ci = getOrCreateTransactionAccount(source);
-    ci.incommingTransactions(txnIDs);
+    ci.incomingTransactions(txnIDs);
     this.totalPendingTransactions.addAndGet(txnIDs.size());
     if (isActive()) {
       this.totalNumOfActiveTransactions.addAndGet(txnIDs.size());
@@ -496,7 +502,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
                                                                     + this.state); }
       TransactionAccount ta = this.transactionAccounts.get(localID);
       if (ta == null) {
-        this.transactionAccounts.put(localID, (ta = new ObjectSynchTransactionAccount(localID)));
+        this.transactionAccounts.put(localID, (ta = new ObjectSyncTransactionAccount(localID)));
       }
       return ta;
     }
@@ -505,7 +511,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private TransactionAccount getOrCreateTransactionAccount(final NodeID source) {
     synchronized (this.transactionAccounts) {
       TransactionAccount ta = this.transactionAccounts.get(source);
-      if (ta != null && ta instanceof ObjectSynchTransactionAccount) { throw new AssertionError(
+      if (ta != null && ta instanceof ObjectSyncTransactionAccount) { throw new AssertionError(
                                                                                                 "Transaction Account is of type ObjectSyncTransactionAccount : "
                                                                                                     + ta
                                                                                                     + " source Id  : "
@@ -563,7 +569,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     this.txnEventListeners.remove(listener);
   }
 
-  public void callBackOnTxnsInSystemCompletion(final TxnsInSystemCompletionLister l) {
+  public void callBackOnTxnsInSystemCompletion(final TxnsInSystemCompletionListener l) {
     final TxnsInSystemCompletionListenerCallback callBack = new TxnsInSystemCompletionListenerCallback(l);
     final Set txnsInSystem = callBack.getTxnsInSystem();
     synchronized (this.transactionAccounts) {
@@ -581,7 +587,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   /*
    * This method calls back the listener when all the resent TXNs are complete.
    */
-  public void callBackOnResentTxnsInSystemCompletion(final TxnsInSystemCompletionLister l) {
+  public void callBackOnResentTxnsInSystemCompletion(final TxnsInSystemCompletionListener l) {
     this.resentTxnSequencer.callBackOnResentTxnsInSystemCompletion(l);
   }
 
@@ -669,13 +675,13 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private final class TxnsInSystemCompletionListenerCallback extends AbstractServerTransactionListener {
 
-    private final TxnsInSystemCompletionLister callback;
+    private final TxnsInSystemCompletionListener callback;
     private final Set<ServerTransactionID>     txnsInSystem;
     private boolean                            initialized = false;
     private int                                count       = 0;
     private int                                lastSize    = -1;
 
-    public TxnsInSystemCompletionListenerCallback(final TxnsInSystemCompletionLister callback) {
+    public TxnsInSystemCompletionListenerCallback(final TxnsInSystemCompletionListener callback) {
       this.callback = callback;
       this.txnsInSystem = Collections.synchronizedSet(new HashSet<ServerTransactionID>());
     }

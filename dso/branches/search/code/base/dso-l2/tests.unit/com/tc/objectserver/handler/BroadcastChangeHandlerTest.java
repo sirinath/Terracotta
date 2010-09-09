@@ -62,7 +62,7 @@ import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
 import com.tc.objectserver.tx.TransactionalObjectManager;
-import com.tc.objectserver.tx.TxnsInSystemCompletionLister;
+import com.tc.objectserver.tx.TxnsInSystemCompletionListener;
 import com.tc.stats.Stats;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterImpl;
@@ -672,11 +672,11 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       //
     }
 
-    public void callBackOnResentTxnsInSystemCompletion(final TxnsInSystemCompletionLister l) {
+    public void callBackOnResentTxnsInSystemCompletion(final TxnsInSystemCompletionListener l) {
       throw new ImplementMe();
     }
 
-    public void callBackOnTxnsInSystemCompletion(final TxnsInSystemCompletionLister l) {
+    public void callBackOnTxnsInSystemCompletion(final TxnsInSystemCompletionListener l) {
       throw new ImplementMe();
     }
 
