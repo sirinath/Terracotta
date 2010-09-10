@@ -21,15 +21,14 @@ public class IncomingTransactionBatchContext implements TransactionBatchContext 
   private final TCByteBuffer[]           buffers;
   private final Set<ServerTransactionID> txnIDs;
 
-  public IncomingTransactionBatchContext(final NodeID nodeID, final Set<ServerTransactionID> txnIDs,
-                                         final TransactionBatchReader reader, final List<ServerTransaction> txns,
-                                         final Set<ObjectID> newObjectIDs) {
+  public IncomingTransactionBatchContext(NodeID nodeID, Set<ServerTransactionID> txnIDs, TransactionBatchReader reader,
+                                         List<ServerTransaction> txns, Set<ObjectID> newObjectIDs) {
     this(nodeID, txnIDs, reader, txns, newObjectIDs, reader.getBackingBuffers());
   }
 
-  public IncomingTransactionBatchContext(final NodeID nodeID, final Set<ServerTransactionID> txnIDs,
-                                         final TransactionBatchReader reader, final List<ServerTransaction> txns,
-                                         final Set<ObjectID> newObjectIDs, final TCByteBuffer buffers[]) {
+  public IncomingTransactionBatchContext(NodeID nodeID, Set<ServerTransactionID> txnIDs, TransactionBatchReader reader,
+                                         List<ServerTransaction> txns, Set<ObjectID> newObjectIDs,
+                                         TCByteBuffer buffers[]) {
     this.txnIDs = txnIDs;
     this.buffers = buffers;
     this.nodeID = nodeID;

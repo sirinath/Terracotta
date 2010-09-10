@@ -29,7 +29,7 @@ bundled_components:
           - RELEASE-NOTES
           - THIRD-PARTY-LICENSES
           - DISCLAIMER
-          - TERRACOTTA-TRIAL-LICENSE
+          - LICENSE
           - INSTALL
         guides:
           - QUICK-START

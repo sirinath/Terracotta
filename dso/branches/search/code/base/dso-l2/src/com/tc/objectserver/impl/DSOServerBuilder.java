@@ -54,7 +54,6 @@ import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.stats.counter.sampled.SampledCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -135,7 +134,5 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
 
   DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome, final TCProperties l2Properties,
                                     final NewL2DSOConfig l2DSOCofig, DumpHandlerStore dumpHandlerStore,
-                                    final StageManager stageManager, SampledCounter l2FaultFromDisk,
-                                    SampledCounter l2FaultFromOffheap, SampledCounter l2FlushFromOffheap)
-      throws IOException, TCDatabaseException;
+                                    final StageManager stageManager) throws IOException, TCDatabaseException;
 }

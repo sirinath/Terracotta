@@ -66,7 +66,6 @@ import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.statistics.beans.impl.StatisticsGatewayMBeanImpl;
 import com.tc.statistics.retrieval.StatisticsRetrievalRegistry;
-import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.util.runtime.ThreadDumpUtil;
 
 import java.io.File;
@@ -135,8 +134,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                            managedObjectRequestSink);
   }
 
-  public ServerConfigurationContext createServerConfigurationContext(
-                                                                     StageManager stageManager,
+  public ServerConfigurationContext createServerConfigurationContext(StageManager stageManager,
                                                                      ObjectManager objMgr,
                                                                      ObjectRequestManager objRequestMgr,
                                                                      ServerMapRequestManager serverTCMapRequestManager,
@@ -224,12 +222,11 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
 
   public DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome,
                                            final TCProperties l2Properties, final NewL2DSOConfig l2DSOCofig,
-                                           DumpHandlerStore dumpHandlerStore, final StageManager stageManager,
-                                           final SampledCounter l2FaultFromDisk, SampledCounter l2FaultFromOffheap,
-                                           SampledCounter l2FlushFromOffheap) throws IOException {
+                                           DumpHandlerStore dumpHandlerStore, final StageManager stageManager)
+      throws IOException {
     // XXX: one day DB selection will be from tc.props
     final DBFactory dbFactory = new BerkeleyDBFactory(l2Properties.getPropertiesFor("berkeleydb")
         .addAllPropertiesTo(new Properties()));
-    return dbFactory.createEnvironment(persistent, dbhome, l2FaultFromDisk);
+    return dbFactory.createEnvironment(persistent, dbhome);
   }
 }

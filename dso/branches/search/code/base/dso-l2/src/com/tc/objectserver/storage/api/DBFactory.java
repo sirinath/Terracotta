@@ -3,8 +3,6 @@
  */
 package com.tc.objectserver.storage.api;
 
-import com.tc.stats.counter.sampled.SampledCounter;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -13,6 +11,6 @@ import java.io.IOException;
  */
 public interface DBFactory {
 
-  DBEnvironment createEnvironment(boolean paranoid, File envHome, SampledCounter l2FaultFromDisk) throws IOException;
+  DBEnvironment createEnvironment(boolean paranoid, File envHome) throws IOException;
 
 }

@@ -30,7 +30,6 @@ import com.tc.objectserver.persistence.db.DatabaseNotOpenException;
 import com.tc.objectserver.persistence.db.DatabaseOpenException;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.storage.api.DBEnvironment;
-import com.tc.objectserver.storage.api.OffheapStats;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.objectserver.storage.api.TCBytesToBytesDatabase;
 import com.tc.objectserver.storage.api.TCIntToBytesDatabase;
@@ -42,7 +41,6 @@ import com.tc.objectserver.storage.api.TCRootDatabase;
 import com.tc.objectserver.storage.api.TCStringToStringDatabase;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAForBerkeleyDB;
-import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.sequence.MutableSequence;
 
@@ -84,15 +82,13 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   private boolean                    openResult                  = false;
 
   private final boolean              paranoid;
-  private final SampledCounter       l2FaultFromDisk;
 
   public BerkeleyDBEnvironment(boolean paranoid, File envHome) throws IOException {
-    this(paranoid, envHome, new Properties(), SampledCounter.NULL_SAMPLED_COUNTER);
+    this(paranoid, envHome, new Properties());
   }
 
-  public BerkeleyDBEnvironment(boolean paranoid, File envHome, Properties jeProperties, SampledCounter l2FaultFrmDisk)
-      throws IOException {
-    this(new HashMap(), new LinkedList(), paranoid, envHome, l2FaultFrmDisk);
+  public BerkeleyDBEnvironment(boolean paranoid, File envHome, Properties jeProperties) throws IOException {
+    this(new HashMap(), new LinkedList(), paranoid, envHome);
     this.ecfg = new EnvironmentConfig(jeProperties);
     this.ecfg.setTransactional(true);
     this.ecfg.setAllowCreate(true);
@@ -121,7 +117,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   // For tests
   public BerkeleyDBEnvironment(Map databasesByName, List createdDatabases, boolean paranoid, File envHome,
                                EnvironmentConfig ecfg, DatabaseConfig dbcfg) throws IOException {
-    this(databasesByName, createdDatabases, paranoid, envHome, SampledCounter.NULL_SAMPLED_COUNTER);
+    this(databasesByName, createdDatabases, paranoid, envHome);
     this.ecfg = ecfg;
     this.dbcfg = dbcfg;
   }
@@ -131,13 +127,12 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
    * supposed to keep more than one process from opening a writable handle to the same database, but it allows you to
    * create more than one writable handle within the same process. So, don't do that.
    */
-  private BerkeleyDBEnvironment(Map databasesByName, List createdDatabases, boolean paranoid, File envHome,
-                                final SampledCounter l2FaultFrmDisk) throws IOException {
+  private BerkeleyDBEnvironment(Map databasesByName, List createdDatabases, boolean paranoid, File envHome)
+      throws IOException {
     this.databasesByName = databasesByName;
     this.createdDatabases = createdDatabases;
     this.paranoid = paranoid;
     this.envHome = envHome;
-    this.l2FaultFromDisk = l2FaultFrmDisk;
     FileUtils.forceMkdir(this.envHome);
   }
 
@@ -456,7 +451,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   private void newObjectDB(Environment e, String name) throws TCDatabaseException {
     try {
       Database db = e.openDatabase(null, name, dbcfg);
-      BerkeleyDBTCObjectDatabase objectDatabse = new BerkeleyDBTCObjectDatabase(db, this.l2FaultFromDisk);
+      BerkeleyDBTCObjectDatabase objectDatabse = new BerkeleyDBTCObjectDatabase(db);
 
       createdDatabases.add(objectDatabse);
       databasesByName.put(name, objectDatabse);
@@ -595,8 +590,8 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
 
   public MutableSequence getSequence(PersistenceTransactionProvider ptxp, TCLogger log, String sequenceID,
                                      int startValue) {
-    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue, (Database) databasesByName
-        .get(GLOBAL_SEQUENCE_DATABASE));
+    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue,
+                                  (Database) databasesByName.get(GLOBAL_SEQUENCE_DATABASE));
   }
 
   public PersistenceTransactionProvider getPersistenceTransactionProvider() {
@@ -605,9 +600,5 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     } catch (TCDatabaseException e) {
       throw new DBException(e);
     }
-  }
-
-  public OffheapStats getOffheapStats() {
-    return OffheapStats.NULL_OFFHEAP_STATS;
   }
 }

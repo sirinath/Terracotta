@@ -45,9 +45,8 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
   private final Queue<ObjectRequestServerContext> pendingRequests      = new LinkedBlockingQueue<ObjectRequestServerContext>();
   private volatile State                          state                = INIT;
 
-  public ObjectRequestManagerRestartImpl(final ObjectManager objectMgr,
-                                         final ServerTransactionManager transactionManager,
-                                         final ObjectRequestManager delegate) {
+  public ObjectRequestManagerRestartImpl(ObjectManager objectMgr, ServerTransactionManager transactionManager,
+                                         ObjectRequestManager delegate) {
     this.objectManager = objectMgr;
     this.delegate = delegate;
     this.transactionManager = transactionManager;
@@ -55,7 +54,7 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
   }
 
   @Override
-  public void transactionManagerStarted(final Set cids) {
+  public void transactionManagerStarted(Set cids) {
     this.state = STARTING;
     this.objectManager.start();
     moveToStartedIfPossible();
@@ -70,7 +69,7 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
   }
 
   @Override
-  public void addResentServerTransactionIDs(final Collection sTxIDs) {
+  public void addResentServerTransactionIDs(Collection sTxIDs) {
     if (this.state != INIT) { throw new AssertionError("Cant add Resent transactions after start up ! " + sTxIDs.size()
                                                        + "Txns : " + this.state); }
     this.resentTransactionIDs.addAll(sTxIDs);
@@ -78,29 +77,17 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
   }
 
   @Override
-  public void transactionApplied(final ServerTransactionID stxID, final ObjectIDSet newObjectsCreated) {
-    processResentTxnComplete(stxID);
-  }
-
-  protected void processResentTxnComplete(final ServerTransactionID stxID) {
-    if (this.state != STARTING) { return; } // Skips in passive
+  public void transactionApplied(ServerTransactionID stxID, ObjectIDSet newObjectsCreated) {
     this.resentTransactionIDs.remove(stxID);
     moveToStartedIfPossible();
   }
 
-  protected void processResentTxnComplete(final Set<ServerTransactionID> incomingTxnIds) {
-    if (this.state == STARTED) { return; }
-    for (final ServerTransactionID txnID : incomingTxnIds) {
-      processResentTxnComplete(txnID);
-    }
-  }
-
   @Override
-  public void clearAllTransactionsFor(final NodeID client) {
+  public void clearAllTransactionsFor(NodeID client) {
     if (this.state == STARTED) { return; }
     synchronized (this.resentTransactionIDs) {
-      for (final Iterator iter = this.resentTransactionIDs.iterator(); iter.hasNext();) {
-        final ServerTransactionID stxID = (ServerTransactionID) iter.next();
+      for (Iterator iter = this.resentTransactionIDs.iterator(); iter.hasNext();) {
+        ServerTransactionID stxID = (ServerTransactionID) iter.next();
         if (stxID.getSourceID().equals(client)) {
           iter.remove();
         }
@@ -118,12 +105,12 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
     }
   }
 
-  public String toString(final ObjectRequestServerContext c) {
+  public String toString(ObjectRequestServerContext c) {
     return c.getClass().getName() + " [ " + c.getClientID() + " :  " + c.getRequestedObjectIDs() + " : "
            + c.getRequestID() + " : " + c.getRequestDepth() + " : " + c.getRequestingThreadName() + "] ";
   }
 
-  public void requestObjects(final ObjectRequestServerContext requestContext) {
+  public void requestObjects(ObjectRequestServerContext requestContext) {
     if (this.state != STARTED) {
       this.pendingRequests.add(requestContext);
       if (logger.isDebugEnabled()) {
@@ -135,20 +122,21 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
     this.delegate.requestObjects(requestContext);
   }
 
-  public void sendObjects(final ClientID requestedNodeID, final Collection objs, final ObjectIDSet requestedObjectIDs,
-                          final ObjectIDSet missingObjectIDs, final boolean isServerInitiated, final int maxRequestDepth) {
+  public void sendObjects(ClientID requestedNodeID, Collection objs, ObjectIDSet requestedObjectIDs,
+                          ObjectIDSet missingObjectIDs, boolean isServerInitiated, int maxRequestDepth) {
 
     this.delegate.sendObjects(requestedNodeID, objs, requestedObjectIDs, missingObjectIDs, isServerInitiated,
                               maxRequestDepth);
 
   }
 
-  public PrettyPrinter prettyPrint(final PrettyPrinter out) {
+  public PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.print(this.getClass().getSimpleName()).flush();
     out.indent().print("State: " + this.state).flush();
     out.indent().print("ResentTransactionIDs : " + this.resentTransactionIDs).flush();
     out.indent().print("PendingRequests: " + this.pendingRequests.size()).flush();
-    for (final ObjectRequestServerContext objReqServerContext : this.pendingRequests) {
+    for (Iterator<ObjectRequestServerContext> i = this.pendingRequests.iterator(); i.hasNext();) {
+      ObjectRequestServerContext objReqServerContext = i.next();
       out.duplicateAndIndent().indent().print(toString(objReqServerContext)).flush();
     }
     out.indent().print("ObjectRequestManager: ").visit(this.delegate).flush();
@@ -172,11 +160,11 @@ public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionLi
     return this.objectManager.getRoots();
   }
 
-  public ManagedObjectFacade lookupFacade(final ObjectID id, final int limit) throws NoSuchObjectException {
+  public ManagedObjectFacade lookupFacade(ObjectID id, int limit) throws NoSuchObjectException {
     return this.objectManager.lookupFacade(id, limit);
   }
 
-  public ObjectID lookupRootID(final String name) {
+  public ObjectID lookupRootID(String name) {
     return this.objectManager.lookupRootID(name);
   }
 

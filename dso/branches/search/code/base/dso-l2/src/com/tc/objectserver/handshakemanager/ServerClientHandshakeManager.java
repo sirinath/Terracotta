@@ -57,14 +57,12 @@ public class ServerClientHandshakeManager {
   private final TCLogger                 consoleLogger;
   private final TransactionBatchManager  transactionBatchManager;
 
-  public ServerClientHandshakeManager(final TCLogger logger, final DSOChannelManager channelManager,
-                                      final ServerTransactionManager transactionManager,
-                                      final TransactionBatchManager transactionBatchManager,
-                                      final SequenceValidator sequenceValidator,
-                                      final ClientStateManager clientStateManager, final LockManager lockManager,
-                                      final Sink lockResponseSink, final Sink oidRequestSink, final Timer timer,
-                                      final long reconnectTimeout, final boolean persistent,
-                                      final TCLogger consoleLogger) {
+  public ServerClientHandshakeManager(TCLogger logger, DSOChannelManager channelManager,
+                                      ServerTransactionManager transactionManager,
+                                      TransactionBatchManager transactionBatchManager,
+                                      SequenceValidator sequenceValidator, ClientStateManager clientStateManager,
+                                      LockManager lockManager, Sink lockResponseSink, Sink oidRequestSink, Timer timer,
+                                      long reconnectTimeout, boolean persistent, TCLogger consoleLogger) {
     this.logger = logger;
     this.channelManager = channelManager;
     this.transactionManager = transactionManager;
@@ -88,8 +86,8 @@ public class ServerClientHandshakeManager {
     return this.state == STARTED;
   }
 
-  public void notifyClientConnect(final ClientHandshakeMessage handshake) throws ClientHandshakeException {
-    final ClientID clientID = (ClientID) handshake.getSourceNodeID();
+  public void notifyClientConnect(ClientHandshakeMessage handshake) throws ClientHandshakeException {
+    ClientID clientID = (ClientID) handshake.getSourceNodeID();
     this.logger.info("Client connected " + clientID);
     synchronized (this) {
       this.logger.debug("Handling client handshake...");
@@ -101,7 +99,7 @@ public class ServerClientHandshakeManager {
                                              "Clients connected after startup should have no existing object references.");
         }
 
-        for (final ClientServerExchangeLockContext context : handshake.getLockContexts()) {
+        for (ClientServerExchangeLockContext context : handshake.getLockContexts()) {
           if (context.getState() == com.tc.object.locks.ServerLockContext.State.WAITER) { throw new ClientHandshakeException(
                                                                                                                              "Clients connected after startup should have no existing wait contexts."); }
         }
@@ -148,7 +146,7 @@ public class ServerClientHandshakeManager {
     }
   }
 
-  private void sendAckMessageFor(final ClientID clientID) {
+  private void sendAckMessageFor(ClientID clientID) {
     this.logger.debug("Sending handshake acknowledgement to " + clientID);
 
     // NOTE: handshake ack message initialize()/send() must be done atomically with making the channel active
@@ -166,8 +164,8 @@ public class ServerClientHandshakeManager {
           .info("Reconnect window closing.  Killing any previously connected clients that failed to connect in time: "
                 + this.existingUnconnectedClients);
       this.channelManager.closeAll(this.existingUnconnectedClients);
-      for (final Iterator i = this.existingUnconnectedClients.iterator(); i.hasNext();) {
-        final ClientID deadClient = (ClientID) i.next();
+      for (Iterator i = this.existingUnconnectedClients.iterator(); i.hasNext();) {
+        ClientID deadClient = (ClientID) i.next();
         this.clientStateManager.shutdownNode(deadClient);
         i.remove();
       }
@@ -182,23 +180,22 @@ public class ServerClientHandshakeManager {
   private void start() {
     this.logger.info("Starting DSO services...");
     this.lockManager.start();
-    final Set cids = Collections.unmodifiableSet(this.channelManager.getAllClientIDs());
+    Set cids = Collections.unmodifiableSet(this.channelManager.getAllClientIDs());
     this.transactionManager.start(cids);
-    // It is important to start all the managers before sending the ack to the clients
-    for (final Iterator i = cids.iterator(); i.hasNext();) {
-      final ClientID clientID = (ClientID) i.next();
+    for (Iterator i = cids.iterator(); i.hasNext();) {
+      ClientID clientID = (ClientID) i.next();
       sendAckMessageFor(clientID);
     }
     this.state = STARTED;
   }
 
-  public synchronized void setStarting(final Set existingConnections) {
+  public synchronized void setStarting(Set existingConnections) {
     assertInit();
     this.state = STARTING;
     if (existingConnections.isEmpty()) {
       start();
     } else {
-      for (final Iterator i = existingConnections.iterator(); i.hasNext();) {
+      for (Iterator i = existingConnections.iterator(); i.hasNext();) {
         this.existingUnconnectedClients.add(this.channelManager.getClientIDFor(new ChannelID(((ConnectionID) i.next())
             .getChannelID())));
       }
@@ -232,13 +229,13 @@ public class ServerClientHandshakeManager {
     private final ServerClientHandshakeManager handshakeManager;
     private long                               timeToWait;
 
-    private ReconnectTimerTask(final ServerClientHandshakeManager handshakeManager, final Timer timer) {
+    private ReconnectTimerTask(ServerClientHandshakeManager handshakeManager, Timer timer) {
       this.handshakeManager = handshakeManager;
       this.timer = timer;
       this.timeToWait = handshakeManager.reconnectTimeout;
     }
 
-    public void setTimeToWait(final long timeToWait) {
+    public void setTimeToWait(long timeToWait) {
       this.timeToWait = timeToWait;
     }
 
@@ -251,7 +248,7 @@ public class ServerClientHandshakeManager {
                                                  + " clients to connect. " + this.timeToWait + " ms remaining.");
         if (this.timeToWait < RECONNECT_WARN_INTERVAL) {
           cancel();
-          final ReconnectTimerTask task = new ReconnectTimerTask(this.handshakeManager, this.timer);
+          ReconnectTimerTask task = new ReconnectTimerTask(this.handshakeManager, this.timer);
           task.setTimeToWait(this.timeToWait);
           this.timer.schedule(task, this.timeToWait);
         }
@@ -265,7 +262,7 @@ public class ServerClientHandshakeManager {
   private static class State {
     private final String name;
 
-    private State(final String name) {
+    private State(String name) {
       this.name = name;
     }
 
@@ -280,7 +277,7 @@ public class ServerClientHandshakeManager {
     private final NodeID clientID;
     private final int    batchSize;
 
-    public ObjectIDBatchRequestImpl(final NodeID clientID, final int batchSize) {
+    public ObjectIDBatchRequestImpl(NodeID clientID, int batchSize) {
       this.clientID = clientID;
       this.batchSize = batchSize;
     }
