@@ -11,6 +11,7 @@ import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.dna.api.DNAInternal;
 import com.tc.object.dna.api.DNAWriterInternal;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.MetaDataReader;
@@ -54,7 +55,6 @@ public class DNAImplTest extends TestCase {
     final String type = getClass().getName();
     final int arrayLen = 42;
 
-    // DNAWriterInternal appender;
     final ObjectStringSerializer serializer = new ObjectStringSerializer();
     final ClassProvider classProvider = new MockClassProvider();
     final DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
@@ -192,8 +192,8 @@ public class DNAImplTest extends TestCase {
   private MetaDataReader createMetaDataReader(ObjectStringSerializer serializer, TCByteBuffer[] data)
       throws IOException {
     DNAImpl d = new DNAImpl(serializer, true, true);
-    d = (DNAImpl) d.deserializeFrom(new TCByteBufferInputStream(data));
-    return d.getMetaDataReader();
+    DNAInternal dint = (DNAInternal) d.deserializeFrom(new TCByteBufferInputStream(data));
+    return dint.getMetaDataReader();
   }
 
   protected DNAImpl createDNAImpl(final ObjectStringSerializer serializer) {
