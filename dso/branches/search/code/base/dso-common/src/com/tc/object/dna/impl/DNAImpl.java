@@ -7,6 +7,7 @@ package com.tc.object.dna.impl;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInput.Mark;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
@@ -14,15 +15,19 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAException;
+import com.tc.object.dna.api.DNAInternal;
 import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
 import java.io.IOException;
+import java.util.Iterator;
 
-public class DNAImpl implements DNA, DNACursor, TCSerializable {
+public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   private static final DNAEncoding     DNA_STORAGE_ENCODING = new StorageDNAEncodingImpl();
 
   private final ObjectStringSerializer serializer;
@@ -50,9 +55,16 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
 
   private boolean                      wasDeserialized      = false;
 
+  private final boolean                metaDataReader;
+
   public DNAImpl(final ObjectStringSerializer serializer, final boolean createOutput) {
+    this(serializer, createOutput, false);
+  }
+
+  public DNAImpl(final ObjectStringSerializer serializer, final boolean createOutput, final boolean metaDataReader) {
     this.serializer = serializer;
     this.createOutput = createOutput;
+    this.metaDataReader = metaDataReader;
   }
 
   public String getTypeName() {
@@ -75,7 +87,13 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
   }
 
   public DNACursor getCursor() {
+    if (metaDataReader) throw new IllegalStateException("not a DNA cursor");
     return this;
+  }
+
+  public MetaDataReader getMetaDataReader() {
+    if (!metaDataReader) throw new IllegalStateException("not a meta data reader");
+    return new MetaDataReaderImpl();
   }
 
   public boolean next() throws IOException {
@@ -204,6 +222,7 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       buf.append("  actionCount->" + this.actionCount + "\n");
       buf.append("  actionCount (orig)->" + this.origActionCount + "\n");
       buf.append("  deserialized?->" + this.wasDeserialized + "\n");
+      buf.append("  metadatareader?->" + this.metaDataReader + "\n");
       buf.append("}\n");
       return buf.toString();
     } catch (final Exception e) {
@@ -287,6 +306,11 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
       this.arrayLength = DNA.NULL_ARRAY_SIZE;
     }
 
+    if (metaDataReader) {
+      // skip ahead to the meta data
+      this.input.skip(metaDataOffset - (this.input.getTotalLength() - this.input.available()));
+    }
+
     return this;
   }
 
@@ -304,6 +328,39 @@ public class DNAImpl implements DNA, DNACursor, TCSerializable {
 
   public void reset() throws UnsupportedOperationException {
     throw new UnsupportedOperationException("Reset is not supported by this class");
+  }
+
+  private class MetaDataReaderImpl implements MetaDataReader {
+    public Iterator<MetaDataDescriptor> iterator() {
+      return new MetaDataIterator();
+    }
+  }
+
+  private class MetaDataIterator implements Iterator<MetaDataDescriptor> {
+
+    public boolean hasNext() {
+      return input.available() > 0;
+    }
+
+    public MetaDataDescriptor next() {
+      try {
+        input.readByte(); // consume type byte
+        int length = input.readInt();
+
+        Mark start = input.mark();
+        input.skip(length - 4); // length includes the "length" int (thus -4)
+        Mark end = input.mark();
+
+        return MetaDataDescriptor.deserializeInstance(new TCByteBufferInputStream(input.toArray(start, end)));
+      } catch (IOException e) {
+        // XXX: don't like this runtime exception
+        throw new RuntimeException(e);
+      }
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
   }
 
 }

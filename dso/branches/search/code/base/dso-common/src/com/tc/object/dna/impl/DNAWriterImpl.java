@@ -241,6 +241,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
 
   public void copyTo(TCByteBufferOutput dest) {
     if (hasMetaData) {
+
       headerMark.copyTo(dest, 0, metaDataOffset);
 
       // copy all appender actions

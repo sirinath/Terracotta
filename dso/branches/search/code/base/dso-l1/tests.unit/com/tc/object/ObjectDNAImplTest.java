@@ -29,8 +29,8 @@ public class ObjectDNAImplTest extends DNAImplTest {
   }
 
   @Override
-  protected DNAImpl createDNAImpl(ObjectStringSerializer serializer, boolean b) {
-    return new ObjectDNAImpl(serializer, b);
+  protected DNAImpl createDNAImpl(ObjectStringSerializer serializer) {
+    return new ObjectDNAImpl(serializer, true);
   }
 
   @Override
