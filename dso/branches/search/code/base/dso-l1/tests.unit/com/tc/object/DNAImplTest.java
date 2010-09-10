@@ -4,6 +4,7 @@
  */
 package com.tc.object;
 
+import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.bytecode.MockClassProvider;
@@ -12,6 +13,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriterInternal;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.DNAWriterImpl;
@@ -19,9 +21,12 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
+import com.tc.object.metadata.ValueType;
 import com.tc.util.Assert;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 
 import junit.framework.TestCase;
 
@@ -49,6 +54,7 @@ public class DNAImplTest extends TestCase {
     final String type = getClass().getName();
     final int arrayLen = 42;
 
+    // DNAWriterInternal appender;
     final ObjectStringSerializer serializer = new ObjectStringSerializer();
     final ClassProvider classProvider = new MockClassProvider();
     final DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
@@ -63,7 +69,20 @@ public class DNAImplTest extends TestCase {
     md.addNameValuePair(new NVPair.IntNVPair("name1", 42));
 
     MetaDataDescriptor md2 = new MetaDataDescriptor("cat2");
-    md2.addNameValuePair(new NVPair.IntNVPair("name2", 666));
+    md2.addNameValuePair(new NVPair.BooleanNVPair("name2", true));
+    md2.addNameValuePair(new NVPair.ByteArrayNVPair("name3", "sdfsdfsdf".getBytes()));
+    md2.addNameValuePair(new NVPair.ByteNVPair("name4", (byte) 4));
+    md2.addNameValuePair(new NVPair.CharNVPair("name5", 'q'));
+    md2.addNameValuePair(new NVPair.DateNVPair("name6", new Date()));
+    md2.addNameValuePair(new NVPair.DoubleNVPair("name7", Math.PI));
+    md2.addNameValuePair(new NVPair.FloatNVPair("name8", 4.0296432F));
+    md2.addNameValuePair(new NVPair.IntNVPair("name9", 42));
+    md2.addNameValuePair(new NVPair.LongNVPair("name10", 666L));
+    md2.addNameValuePair(new NVPair.ShortNVPair("steve", (short) 53));
+    md2.addNameValuePair(new NVPair.StringNVPair("tim", "rulez"));
+
+    // make sure we cover all the types (if you add a new type and this is going off then add it to this test) :-)
+    assertEquals(ValueType.values().length, md2.getMetaDatas().size());
 
     if (parentID) {
       dnaWriter.setParentObjectID(pid);
@@ -96,7 +115,7 @@ public class DNAImplTest extends TestCase {
     dnaWriter.copyTo(out);
 
     final TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
-    this.dna = createDNAImpl(serializer, true);
+    this.dna = createDNAImpl(serializer);
     assertSame(this.dna, this.dna.deserializeFrom(in));
     assertEquals(0, in.available());
     final DNACursor cursor = this.dna.getCursor();
@@ -124,6 +143,8 @@ public class DNAImplTest extends TestCase {
       count++;
     }
 
+    if (count != 6) { throw new AssertionError("not enough action seen: " + count); }
+
     assertEquals(id, this.dna.getObjectID());
     if (parentID) {
       assertEquals(pid, this.dna.getParentObjectID());
@@ -141,10 +162,42 @@ public class DNAImplTest extends TestCase {
       assertEquals(type, this.dna.getTypeName());
       assertEquals("loader description", this.dna.getDefiningLoaderDescription());
     }
+
+    // verify meta data
+    count = 1;
+    MetaDataReader metaReader = createMetaDataReader(serializer, out.toArray());
+    for (MetaDataDescriptor meta : metaReader) {
+      switch (count) {
+        case 1: {
+          verifyMetaData(md, meta);
+          break;
+        }
+        case 2: {
+          verifyMetaData(md2, meta);
+          break;
+        }
+        default: {
+          throw new AssertionError(count);
+        }
+      }
+      count++;
+    }
   }
 
-  protected DNAImpl createDNAImpl(final ObjectStringSerializer serializer, final boolean b) {
-    return new DNAImpl(serializer, b);
+  private void verifyMetaData(MetaDataDescriptor expect, MetaDataDescriptor actual) {
+    assertEquals(expect.getCategory(), actual.getCategory());
+    assertEquals(expect.getMetaDatas(), actual.getMetaDatas());
+  }
+
+  private MetaDataReader createMetaDataReader(ObjectStringSerializer serializer, TCByteBuffer[] data)
+      throws IOException {
+    DNAImpl d = new DNAImpl(serializer, true, true);
+    d = (DNAImpl) d.deserializeFrom(new TCByteBufferInputStream(data));
+    return d.getMetaDataReader();
+  }
+
+  protected DNAImpl createDNAImpl(final ObjectStringSerializer serializer) {
+    return new DNAImpl(serializer, true);
   }
 
   protected DNAWriterInternal createDNAWriter(final TCByteBufferOutputStream out, final ObjectID id, final String type,

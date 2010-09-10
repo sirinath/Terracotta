@@ -68,7 +68,7 @@ public class MetaDataDescriptor implements TCSerializable {
 
   @Override
   public String toString() {
-    return metaDatas.toString();
+    return getClass().getSimpleName() + "(" + category + "): " + metaDatas.toString();
   }
 
   public static MetaDataDescriptor deserializeInstance(TCByteBufferInputStream in) throws IOException {

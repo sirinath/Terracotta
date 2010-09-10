@@ -152,7 +152,9 @@ public enum ValueType {
 
     @Override
     void serializeTo(NVPair nvPair, TCByteBufferOutput out) {
-      out.write(((ByteArrayNVPair) nvPair).getValue());
+      byte[] val = ((ByteArrayNVPair) nvPair).getValue();
+      out.writeInt(val.length);
+      out.write(val);
     }
   };
 
@@ -162,11 +164,6 @@ public enum ValueType {
       // The encoding logic could support all 256 values in the encoded byte or we could expand to 2 bytes if needed
       throw new AssertionError("Current implementation does not allow for more 127 types");
     }
-  }
-
-  NVPair deserializeFrom(TCByteBufferInput in) throws IOException {
-    String name = in.readString();
-    return deserializeFrom(name, in);
   }
 
   abstract NVPair deserializeFrom(String name, TCByteBufferInput in) throws IOException;

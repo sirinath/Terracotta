@@ -479,6 +479,11 @@ public final class TCByteBufferOutputStream extends OutputStream implements TCBy
         int num = Math.min(array.length - pos, offset);
         offset -= num;
         if (offset == 0) {
+          if (index > this.bufferIndex) {
+            pos = num;
+          } else {
+            pos += num;
+          }
           break;
         }
 

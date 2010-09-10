@@ -9,6 +9,7 @@ import com.tc.io.TCSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -32,12 +33,29 @@ public abstract class NVPair implements TCSerializable {
     return getType() + "(" + getName() + "," + valueAsString() + ")";
   }
 
+  @Override
+  public final boolean equals(Object obj) {
+    if (obj instanceof NVPair) {
+      NVPair other = (NVPair) obj;
+      if (other.getName().equals(getName())) { return basicEquals(other); }
+    }
+    return false;
+  }
+
+  abstract boolean basicEquals(NVPair other);
+
+  @Override
+  public final int hashCode() {
+    return getType().hashCode() ^ name.hashCode() ^ valueAsString().hashCode();
+  }
+
   abstract String valueAsString();
 
   public Object deserializeFrom(TCByteBufferInput in) throws IOException {
+    String readName = in.readString();
     byte ordinal = in.readByte();
     ValueType type = ALL_TYPES[ordinal];
-    return type.deserializeFrom(in);
+    return type.deserializeFrom(readName, in);
   }
 
   public void serializeTo(TCByteBufferOutput out) {
@@ -70,6 +88,11 @@ public abstract class NVPair implements TCSerializable {
     public ValueType getType() {
       throw new AssertionError();
     }
+
+    @Override
+    boolean basicEquals(NVPair other) {
+      throw new AssertionError();
+    }
   }
 
   public static class ByteNVPair extends NVPair {
@@ -92,6 +115,12 @@ public abstract class NVPair implements TCSerializable {
     @Override
     String valueAsString() {
       return String.valueOf(value);
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof ByteNVPair) { return value == ((ByteNVPair) obj).value; }
+      return false;
     }
   }
 
@@ -117,6 +146,11 @@ public abstract class NVPair implements TCSerializable {
       return String.valueOf(value);
     }
 
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof BooleanNVPair) { return value == ((BooleanNVPair) obj).value; }
+      return false;
+    }
   }
 
   public static class CharNVPair extends NVPair {
@@ -139,6 +173,12 @@ public abstract class NVPair implements TCSerializable {
     @Override
     public ValueType getType() {
       return ValueType.CHAR;
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof CharNVPair) { return value == ((CharNVPair) obj).value; }
+      return false;
     }
   }
 
@@ -163,6 +203,12 @@ public abstract class NVPair implements TCSerializable {
     public ValueType getType() {
       return ValueType.DOUBLE;
     }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof DoubleNVPair) { return value == ((DoubleNVPair) obj).value; }
+      return false;
+    }
   }
 
   public static class FloatNVPair extends NVPair {
@@ -186,6 +232,12 @@ public abstract class NVPair implements TCSerializable {
     public ValueType getType() {
       return ValueType.FLOAT;
     }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof FloatNVPair) { return value == ((FloatNVPair) obj).value; }
+      return false;
+    }
   }
 
   public static class IntNVPair extends NVPair {
@@ -208,6 +260,12 @@ public abstract class NVPair implements TCSerializable {
     @Override
     public ValueType getType() {
       return ValueType.INT;
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof IntNVPair) { return value == ((IntNVPair) obj).value; }
+      return false;
     }
   }
 
@@ -233,6 +291,11 @@ public abstract class NVPair implements TCSerializable {
       return ValueType.SHORT;
     }
 
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof ShortNVPair) { return value == ((ShortNVPair) obj).value; }
+      return false;
+    }
   }
 
   public static class LongNVPair extends NVPair {
@@ -255,6 +318,12 @@ public abstract class NVPair implements TCSerializable {
     @Override
     public ValueType getType() {
       return ValueType.LONG;
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof LongNVPair) { return value == ((LongNVPair) obj).value; }
+      return false;
     }
   }
 
@@ -280,6 +349,11 @@ public abstract class NVPair implements TCSerializable {
       return ValueType.STRING;
     }
 
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof StringNVPair) { return value.equals(((StringNVPair) obj).value); }
+      return false;
+    }
   }
 
   public static class ByteArrayNVPair extends NVPair {
@@ -308,6 +382,11 @@ public abstract class NVPair implements TCSerializable {
       return ValueType.BYTE_ARRAY;
     }
 
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof ByteArrayNVPair) { return Arrays.equals(value, ((ByteArrayNVPair) obj).value); }
+      return false;
+    }
   }
 
   public static class DateNVPair extends NVPair {
@@ -330,6 +409,12 @@ public abstract class NVPair implements TCSerializable {
     @Override
     public ValueType getType() {
       return ValueType.DATE;
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof DateNVPair) { return value.equals(((DateNVPair) obj).value); }
+      return false;
     }
   }
 
