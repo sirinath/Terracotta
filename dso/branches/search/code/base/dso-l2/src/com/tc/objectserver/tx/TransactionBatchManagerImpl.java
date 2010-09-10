@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -290,10 +291,11 @@ public class TransactionBatchManagerImpl implements TransactionBatchManager, Pos
     }
   }
 
-  public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
+  public synchronized PrettyPrinter prettyPrint(PrettyPrinter out) {
     out.print(this.getClass().getName()).flush();
     out.print("BatchStats: " + this.map.size()).flush();
-    for (final Entry<NodeID, BatchStats> e : this.map.entrySet()) {
+    for (Iterator<Entry<NodeID, BatchStats>> i = this.map.entrySet().iterator(); i.hasNext();) {
+      Entry<NodeID, BatchStats> e = i.next();
       out.duplicateAndIndent().indent().print(e.getKey() + " => " + e.getValue()).flush();
     }
     return out;

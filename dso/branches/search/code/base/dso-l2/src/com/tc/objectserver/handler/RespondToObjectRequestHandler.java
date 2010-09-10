@@ -16,8 +16,8 @@ public class RespondToObjectRequestHandler extends AbstractEventHandler {
   private ObjectRequestManager objectRequestManager;
 
   @Override
-  public void handleEvent(final EventContext context) {
-    final RespondToObjectRequestContext rtorc = (RespondToObjectRequestContext) context;
+  public void handleEvent(EventContext context) {
+    RespondToObjectRequestContext rtorc = (RespondToObjectRequestContext) context;
     this.objectRequestManager.sendObjects(rtorc.getRequestedNodeID(), rtorc.getObjs(), rtorc.getRequestedObjectIDs(),
                                           rtorc.getMissingObjectIDs(), rtorc.isServerInitiated(), rtorc
                                               .getRequestDepth());
@@ -25,9 +25,9 @@ public class RespondToObjectRequestHandler extends AbstractEventHandler {
   }
 
   @Override
-  public void initialize(final ConfigurationContext context) {
+  public void initialize(ConfigurationContext context) {
     super.initialize(context);
-    final ServerConfigurationContext oscc = (ServerConfigurationContext) context;
+    ServerConfigurationContext oscc = (ServerConfigurationContext) context;
     this.objectRequestManager = oscc.getObjectRequestManager();
   }
 }

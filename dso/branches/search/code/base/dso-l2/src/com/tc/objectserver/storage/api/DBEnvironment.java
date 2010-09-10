@@ -126,6 +126,4 @@ public interface DBEnvironment {
 
   public ServerDBBackupMBean getServerDBBackupMBean(final L2TVSConfigurationSetupManager configurationSetupManager)
       throws NotCompliantMBeanException;
-
-  public abstract OffheapStats getOffheapStats();
 }

@@ -13,27 +13,27 @@ import java.util.Set;
 
 public abstract class AbstractServerTransactionListener implements ServerTransactionListener {
 
-  public void addResentServerTransactionIDs(final Collection stxIDs) {
+  public void addResentServerTransactionIDs(Collection stxIDs) {
     // Override if you want
   }
 
-  public void clearAllTransactionsFor(final NodeID deadNode) {
+  public void clearAllTransactionsFor(NodeID deadNode) {
     // Override if you want
   }
 
-  public void incomingTransactions(final NodeID source, final Set serverTxnIDs) {
+  public void incomingTransactions(NodeID source, Set serverTxnIDs) {
     // Override if you want
   }
 
-  public void transactionApplied(final ServerTransactionID stxID, final ObjectIDSet newObjectsCreated) {
+  public void transactionApplied(ServerTransactionID stxID, ObjectIDSet newObjectsCreated) {
     // Override if you want
   }
 
-  public void transactionCompleted(final ServerTransactionID stxID) {
+  public void transactionCompleted(ServerTransactionID stxID) {
     // Override if you want
   }
 
-  public void transactionManagerStarted(final Set cids) {
+  public void transactionManagerStarted(Set cids) {
     // Override if you want
   }
 }

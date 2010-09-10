@@ -25,9 +25,7 @@ public interface DSOStats {
   long getTransactionSizeRate();
 
   long getBroadcastRate();
-
-  long getL2DiskFaultRate();
-
+  
   long getGlobalServerMapGetSizeRequestsCount();
 
   long getGlobalServerMapGetValueRequestsCount();
