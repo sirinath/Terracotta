@@ -791,13 +791,13 @@ public interface TCPropertiesConsts {
   /*********************************************************************************************************************
    * <code>
    * Section :  EnterpriseLicenseResovler
-   * license.resource.path                       - Resource path to license key
-   * license.url                                 - URL to license key
+   * license.path                                - path to license key
    * </code>
    ********************************************************************************************************************/
   public static final String   PRODUCTKEY_RESOURCE_PATH                                        = "productkey.resource.path";
-  public static final String   PRODUCTKEY_URL                                                  = "productkey.url";
   public static final String   PRODUCTKEY_PATH                                                 = "productkey.path";
+  public static final String   LICENSE_PATH                                                    = "license.path";
+  
 
   /*********************************************************************************************************************
    * <code>
@@ -847,6 +847,7 @@ public interface TCPropertiesConsts {
   public static final String   L2_OFFHEAP_OBJECT_CACHE_CONCURRENCY                             = "l2.offHeapCache.object.concurrency";
   public static final String   L2_OFFHEAP_MAP_CACHE_INITIAL_DATASIZE                           = "l2.offHeapCache.map.initialDataSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_TABLESIZE                                  = "l2.offHeapCache.map.tableSize";
+  public static final String   L2_OFFHEAP_MAP_CACHE_CONCURRENCY                                = "l2.offHeapCache.map.concurrency";
 
   // for tests
   public static final String   L2_OFFHEAP_SKIP_JVMARG_CHECK                                    = "l2.offHeapCache.skip.jvmarg.check";
