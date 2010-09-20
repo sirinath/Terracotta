@@ -25,6 +25,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.locks.LockID;
@@ -132,6 +133,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     public DmiDescriptor[] getDmiDescriptors() {
       return new DmiDescriptor[0];
+    }
+    
+    public MetaDataReader[] getMetaDataReaders() {
+      return new MetaDataReader[0];
     }
 
     public long[] getHighWaterMarks() {
@@ -549,6 +554,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     public List getDmiDescriptors() {
       throw new ImplementMe();
     }
+   
 
     public GlobalTransactionID getGlobalTransactionID() {
       throw new ImplementMe();

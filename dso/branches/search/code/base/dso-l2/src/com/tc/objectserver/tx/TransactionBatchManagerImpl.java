@@ -16,12 +16,14 @@ import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnType;
+import com.tc.objectserver.api.MetaDataManager;
 import com.tc.objectserver.context.SyncWriteTransactionReceivedContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
@@ -56,14 +58,17 @@ public class TransactionBatchManagerImpl implements TransactionBatchManager, Pos
   private ServerGlobalTransactionManager       gtxm;
   private DSOChannelManager                    dsoChannelManager;
   private final List<TransactionBatchListener> txnListeners = new CopyOnWriteArrayList<TransactionBatchListener>();
+  private final MetaDataManager                metaDataManager;
   private final Sink                           syncWriteTxnRecvdSink;
 
   public TransactionBatchManagerImpl(final SequenceValidator sequenceValidator, final MessageRecycler recycler,
-                                     final TransactionFilter txnFilter, final Sink syncWriteTxnRecvdSink) {
+                                     final TransactionFilter txnFilter, final Sink syncWriteTxnRecvdSink,
+                                     final MetaDataManager metaDataManager) {
     this.sequenceValidator = sequenceValidator;
     this.messageRecycler = recycler;
     this.filter = txnFilter;
     this.syncWriteTxnRecvdSink = syncWriteTxnRecvdSink;
+    this.metaDataManager = metaDataManager;
   }
 
   public void initializeContext(final ConfigurationContext context) {
@@ -100,6 +105,9 @@ public class TransactionBatchManagerImpl implements TransactionBatchManager, Pos
         newObjectIDs.addAll(txn.getNewObjectIDs());
         if (txn.getTransactionType().equals(TxnType.SYNC_WRITE)) {
           syncWriteTxns.add(txn.getTransactionID());
+        }
+        for(MetaDataReader metaDataReader : txn.getMetaDataReaders()) {
+          this.metaDataManager.processMetaData(metaDataReader);
         }
       }
 

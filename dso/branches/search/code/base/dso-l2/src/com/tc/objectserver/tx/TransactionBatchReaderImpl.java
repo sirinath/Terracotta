@@ -13,6 +13,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
@@ -146,10 +147,14 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
 
     final List dnas = new ArrayList();
     final int numDNA = this.in.readInt();
+    final MetaDataReader [] metaDataReaders = new MetaDataReader[numDNA];
+    
     for (int i = 0; i < numDNA; i++) {
       final DNAImpl dna = new DNAImpl(this.serializer, true);
       dna.deserializeFrom(this.in);
 
+      metaDataReaders[i] = dna.getMetaDataReader();
+      
       if (dna.isDelta() && dna.getActionCount() < 1) {
         // This is really unexpected and indicates an error in the client, but the server
         // should not be harmed by it (other than extra processing)
@@ -166,7 +171,7 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.txnToRead--;
     return this.txnFactory.createServerTransaction(getBatchID(), txnID, sequenceID, locks, this.source, dnas,
                                                    this.serializer, newRoots, txnType, notifies, dmis,
-                                                   numApplictionTxn, highwaterMarks);
+                                                   metaDataReaders, numApplictionTxn, highwaterMarks);
   }
 
   public TxnBatchID getBatchID() {

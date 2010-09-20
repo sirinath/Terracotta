@@ -26,6 +26,7 @@ import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.objectserver.api.MetaDataManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.api.ServerMapRequestManager;
@@ -42,6 +43,7 @@ import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
+import com.tc.objectserver.search.IndexManager;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManagerImpl;
@@ -66,6 +68,10 @@ import javax.management.MBeanServer;
 public interface DSOServerBuilder extends TCDumper, PostInit {
 
   TransactionFilter getTransactionFilter(List<PostInit> toInit, StageManager stageManager, int maxStageSize);
+  
+  MetaDataManager createMetaDataManager(Sink sink);
+  
+  IndexManager createIndexManager(L2TVSConfigurationSetupManager configSetupManager) throws IOException;
 
   ServerMapRequestManager createServerMapRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
                                                         Sink respondToServerTCMapSink, Sink managedObjectRequestSink);
