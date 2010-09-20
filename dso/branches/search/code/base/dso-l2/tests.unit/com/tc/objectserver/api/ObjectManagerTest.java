@@ -26,6 +26,7 @@ import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
@@ -1352,7 +1353,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0],1, new long[0]);
 
     final List<ServerTransaction> txns = new ArrayList<ServerTransaction>();
     txns.add(stxn1);
@@ -1402,7 +1403,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0],1, new long[0]);
 
     txns.clear();
     txns.add(stxn2);
@@ -1435,7 +1436,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ArrayList<DNA>(changes.values()),
                                                               new ObjectStringSerializer(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
-                                                              DmiDescriptor.EMPTY_ARRAY, 1, new long[0]);
+                                                              DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1, new long[0]);
 
     txns.clear();
     txns.add(stxn3);

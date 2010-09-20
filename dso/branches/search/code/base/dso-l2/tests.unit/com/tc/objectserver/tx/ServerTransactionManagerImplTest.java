@@ -14,6 +14,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerMapRequestType;
 import com.tc.object.dmi.DmiDescriptor;
+import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionIDAlreadySetException;
 import com.tc.object.locks.LockID;
@@ -501,7 +502,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                      ObjectStringSerializer serializer, Map newRoots, TxnType txnType,
                                                      Collection notifies, DmiDescriptor[] dmis, int numAppTxns) {
     ServerTransaction txn = new ServerTransactionImpl(txnBatchID, tid, sequenceID, lockIDs, cid, dnas, serializer,
-                                                      newRoots, txnType, notifies, dmis, numAppTxns, new long[0]);
+                                                      newRoots, txnType, notifies, dmis, new MetaDataReader[0], numAppTxns, new long[0]);
     try {
       txn.setGlobalTransactionID(this.gtxm.getOrCreateGlobalTransactionID(txn.getServerTransactionID()));
     } catch (GlobalTransactionIDAlreadySetException e) {

@@ -218,6 +218,8 @@ import com.tc.objectserver.persistence.inmemory.InMemorySequenceProvider;
 import com.tc.objectserver.persistence.inmemory.NullPersistenceTransactionProvider;
 import com.tc.objectserver.persistence.inmemory.NullTransactionPersistor;
 import com.tc.objectserver.persistence.inmemory.TransactionStoreImpl;
+import com.tc.objectserver.search.IndexManager;
+import com.tc.objectserver.search.SearchEventHandler;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.OffheapStats;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
@@ -375,6 +377,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private Stage                                  hydrateStage;
   private StripeIDStateManagerImpl               stripeIDStateManager;
   private DBEnvironment                          dbenv;
+  private IndexManager                           indexManager;
 
   private final CallbackDumpHandler              dumpHandler      = new CallbackDumpHandler();
 
@@ -429,6 +432,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     this.threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));
     this.thisServerNodeID = makeServerNodeID(this.configSetupManager.dsoL2Config());
+    this.indexManager = this.serverBuilder.createIndexManager(this.configSetupManager);
 
     TerracottaOperatorEventLogging.setNodeNameProvider(new ServerNameProvider(this.configSetupManager.dsoL2Config()
         .serverName().getString()));
@@ -806,10 +810,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final Stage syncWriteTxnRecvdAckStage = stageManager
         .createStage(ServerConfigurationContext.SYNC_WRITE_TXN_RECVD_STAGE,
                      new SyncWriteTransactionReceivedHandler(channelManager), 4, maxStageSize);
+    
+    final Stage searchEventStage = stageManager.createStage(ServerConfigurationContext.SEARCH_EVENT_STAGE,
+                     new SearchEventHandler(this.indexManager), 1, maxStageSize);
+    
+    final Sink searchEventSink = searchEventStage.getSink();
     final TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator,
                                                                                                 recycler, txnFilter,
                                                                                                 syncWriteTxnRecvdAckStage
-                                                                                                    .getSink());
+                                                                                                    .getSink(), this.serverBuilder.createMetaDataManager(searchEventSink));
     toInit.add(transactionBatchManager);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(transactionBatchManager));
 
@@ -1420,6 +1429,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   }
 
   public synchronized void stop() {
+    
+    this.indexManager.shutdown();
+    
     try {
       this.statisticsAgentSubSystem.cleanup();
     } catch (final Throwable e) {
