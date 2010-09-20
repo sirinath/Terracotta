@@ -25,10 +25,12 @@ import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
-  private static final DNAEncoding     DNA_STORAGE_ENCODING = new StorageDNAEncodingImpl();
+  private static final DNAEncoding     DNA_STORAGE_ENCODING  = new StorageDNAEncodingImpl();
+  private static final MetaDataReader  NULL_META_DATA_READER = new NullMetaDataReader();
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
@@ -36,7 +38,7 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   protected TCByteBufferInput          input;
   protected TCByteBuffer[]             dataOut;
 
-  private int                          actionCount          = 0;
+  private int                          actionCount           = 0;
   private int                          origActionCount;
   private boolean                      isDelta;
 
@@ -53,18 +55,13 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   // XXX: cleanup type of this field
   private Object                       currentAction;
 
-  private boolean                      wasDeserialized      = false;
+  private boolean                      wasDeserialized       = false;
 
-  private final boolean                metaDataReader;
+  private MetaDataReader               metaDataReader        = NULL_META_DATA_READER;
 
   public DNAImpl(final ObjectStringSerializer serializer, final boolean createOutput) {
-    this(serializer, createOutput, false);
-  }
-
-  public DNAImpl(final ObjectStringSerializer serializer, final boolean createOutput, final boolean metaDataReader) {
     this.serializer = serializer;
     this.createOutput = createOutput;
-    this.metaDataReader = metaDataReader;
   }
 
   public String getTypeName() {
@@ -87,13 +84,15 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   }
 
   public DNACursor getCursor() {
-    if (metaDataReader) throw new IllegalStateException("not a DNA cursor");
     return this;
   }
 
   public MetaDataReader getMetaDataReader() {
-    if (!metaDataReader) throw new IllegalStateException("not a meta data reader");
-    return new MetaDataReaderImpl();
+    return metaDataReader;
+  }
+
+  public boolean hasMetaData() {
+    return metaDataOffset > 0;
   }
 
   public boolean next() throws IOException {
@@ -222,7 +221,6 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
       buf.append("  actionCount->" + this.actionCount + "\n");
       buf.append("  actionCount (orig)->" + this.origActionCount + "\n");
       buf.append("  deserialized?->" + this.wasDeserialized + "\n");
-      buf.append("  metadatareader?->" + this.metaDataReader + "\n");
       buf.append("}\n");
       return buf.toString();
     } catch (final Exception e) {
@@ -306,9 +304,10 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
       this.arrayLength = DNA.NULL_ARRAY_SIZE;
     }
 
-    if (metaDataReader) {
-      // skip ahead to the meta data
-      this.input.skip(metaDataOffset - (this.input.getTotalLength() - this.input.available()));
+    if (hasMetaData()) {
+      TCByteBufferInput metaDataInput = this.input.duplicate();
+      metaDataInput.skip(metaDataOffset - (this.input.getTotalLength() - this.input.available()));
+      this.metaDataReader = new MetaDataReaderImpl(metaDataInput);
     }
 
     return this;
@@ -330,13 +329,25 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
     throw new UnsupportedOperationException("Reset is not supported by this class");
   }
 
-  private class MetaDataReaderImpl implements MetaDataReader {
+  private static class MetaDataReaderImpl implements MetaDataReader {
+    private final TCByteBufferInput input;
+
+    MetaDataReaderImpl(TCByteBufferInput input) {
+      this.input = input;
+    }
+
     public Iterator<MetaDataDescriptor> iterator() {
-      return new MetaDataIterator();
+      return new MetaDataIterator(input);
     }
   }
 
-  private class MetaDataIterator implements Iterator<MetaDataDescriptor> {
+  private static class MetaDataIterator implements Iterator<MetaDataDescriptor> {
+
+    private final TCByteBufferInput input;
+
+    MetaDataIterator(TCByteBufferInput input) {
+      this.input = input;
+    }
 
     public boolean hasNext() {
       return input.available() > 0;
@@ -361,6 +372,14 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
     public void remove() {
       throw new UnsupportedOperationException();
     }
+  }
+
+  private static class NullMetaDataReader implements MetaDataReader {
+
+    public Iterator<MetaDataDescriptor> iterator() {
+      return Collections.EMPTY_LIST.iterator();
+    }
+
   }
 
 }
