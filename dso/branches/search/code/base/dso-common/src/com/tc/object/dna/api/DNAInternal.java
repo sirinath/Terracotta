@@ -7,4 +7,6 @@ public interface DNAInternal extends DNA {
 
   MetaDataReader getMetaDataReader();
 
+  boolean hasMetaData();
+
 }
