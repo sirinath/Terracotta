@@ -36,6 +36,25 @@ public class DNAImplTest extends TestCase {
     serializeDeserialize(true, false);
   }
 
+  public void testEmptyMetaDataReader() throws Exception {
+    TCByteBufferOutputStream out = new TCByteBufferOutputStream();
+
+    final ObjectStringSerializer serializer = new ObjectStringSerializer();
+    final ClassProvider classProvider = new MockClassProvider();
+    final DNAEncoding encoding = new ApplicatorDNAEncodingImpl(classProvider);
+    final DNAWriterInternal dnaWriter = createDNAWriter(out, new ObjectID(1), "foo", serializer, encoding, false);
+
+    dnaWriter.addPhysicalAction("sdfsdf", "bar");
+    dnaWriter.markSectionEnd();
+    dnaWriter.finalizeHeader();
+
+    this.dna = createDNAImpl(serializer);
+    dna.deserializeFrom(new TCByteBufferInputStream(out.toArray()));
+
+    MetaDataReader metaDataReader = dna.getMetaDataReader();
+    assertFalse(metaDataReader.iterator().hasNext());
+  }
+
   public void testArrayLength() throws Exception {
     serializeDeserialize(false, false);
   }
