@@ -4,14 +4,12 @@
  */
 package com.tc.object;
 
-import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.api.DNAInternal;
 import com.tc.object.dna.api.DNAWriterInternal;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.MetaDataReader;
@@ -25,7 +23,6 @@ import com.tc.object.metadata.NVPair;
 import com.tc.object.metadata.ValueType;
 import com.tc.util.Assert;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -165,7 +162,7 @@ public class DNAImplTest extends TestCase {
 
     // verify meta data
     count = 1;
-    MetaDataReader metaReader = createMetaDataReader(serializer, out.toArray());
+    MetaDataReader metaReader = dna.getMetaDataReader();
     for (MetaDataDescriptor meta : metaReader) {
       switch (count) {
         case 1: {
@@ -187,13 +184,6 @@ public class DNAImplTest extends TestCase {
   private void verifyMetaData(MetaDataDescriptor expect, MetaDataDescriptor actual) {
     assertEquals(expect.getCategory(), actual.getCategory());
     assertEquals(expect.getMetaDatas(), actual.getMetaDatas());
-  }
-
-  private MetaDataReader createMetaDataReader(ObjectStringSerializer serializer, TCByteBuffer[] data)
-      throws IOException {
-    DNAImpl d = new DNAImpl(serializer, true, true);
-    DNAInternal dint = (DNAInternal) d.deserializeFrom(new TCByteBufferInputStream(data));
-    return dint.getMetaDataReader();
   }
 
   protected DNAImpl createDNAImpl(final ObjectStringSerializer serializer) {
