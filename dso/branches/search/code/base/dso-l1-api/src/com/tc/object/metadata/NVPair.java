@@ -24,7 +24,7 @@ public abstract class NVPair implements TCSerializable {
     this.name = name;
   }
 
-  public String getName() {
+  public final String getName() {
     return name;
   }
 
@@ -415,6 +415,50 @@ public abstract class NVPair implements TCSerializable {
     boolean basicEquals(NVPair obj) {
       if (obj instanceof DateNVPair) { return value.equals(((DateNVPair) obj).value); }
       return false;
+    }
+  }
+
+  public static class EnumNVPair extends NVPair {
+
+    private final String enumClass;
+    private final String enumName;
+
+    public EnumNVPair(String name, Enum e) {
+      this(name, e.getClass().getName(), e.name());
+    }
+
+    public EnumNVPair(String name, String enumClass, String enumName) {
+      super(name);
+      this.enumClass = enumClass;
+      this.enumName = enumName;
+    }
+
+    @Override
+    boolean basicEquals(NVPair obj) {
+      if (obj instanceof EnumNVPair) {
+        EnumNVPair other = (EnumNVPair) obj;
+        return enumClass.equals(other.enumClass) && enumName.equals(other.enumName);
+      }
+
+      return false;
+    }
+
+    @Override
+    String valueAsString() {
+      return enumClass + "(" + enumName + ")";
+    }
+
+    @Override
+    public ValueType getType() {
+      return ValueType.ENUM;
+    }
+
+    public String getEnumClass() {
+      return enumClass;
+    }
+
+    public String getEnumName() {
+      return enumName;
     }
   }
 
