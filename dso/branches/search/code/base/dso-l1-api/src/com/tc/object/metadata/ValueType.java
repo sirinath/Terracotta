@@ -11,6 +11,7 @@ import com.tc.object.metadata.NVPair.ByteNVPair;
 import com.tc.object.metadata.NVPair.CharNVPair;
 import com.tc.object.metadata.NVPair.DateNVPair;
 import com.tc.object.metadata.NVPair.DoubleNVPair;
+import com.tc.object.metadata.NVPair.EnumNVPair;
 import com.tc.object.metadata.NVPair.FloatNVPair;
 import com.tc.object.metadata.NVPair.IntNVPair;
 import com.tc.object.metadata.NVPair.LongNVPair;
@@ -156,6 +157,24 @@ public enum ValueType {
       out.writeInt(val.length);
       out.write(val);
     }
+  },
+
+  ENUM {
+    @Override
+    NVPair deserializeFrom(String name, TCByteBufferInput in) throws IOException {
+      String enumClass = in.readString();
+      String enumName = in.readString();
+
+      return new EnumNVPair(name, enumClass, enumName);
+    }
+
+    @Override
+    void serializeTo(NVPair nvPair, TCByteBufferOutput out) {
+      EnumNVPair enumPair = (EnumNVPair) nvPair;
+      out.writeString(enumPair.getEnumClass());
+      out.writeString(enumPair.getEnumName());
+    }
+
   };
 
   static {
