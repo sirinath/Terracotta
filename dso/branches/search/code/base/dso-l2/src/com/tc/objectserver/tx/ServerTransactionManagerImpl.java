@@ -356,12 +356,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
     this.transactionRateCounter.increment(txn.getNumApplicationTxn());
 
-    //TODO: Index somewhere in apply, since metadata is written as part of DNA
-    //Going to call processedMetaData for now.
-    
-    final TransactionAccount transactionAccount = getTransactionAccount(sourceID);
-    transactionAccount.processMetaDataCompleted(txnID);
-    
+    if (active) {
+      // TODO: Index somewhere in apply, since metadata is written as part of DNA
+      // Going to call processedMetaData for now.
+      final TransactionAccount transactionAccount = getTransactionAccount(sourceID);
+      transactionAccount.processMetaDataCompleted(txnID);
+    }
     fireTransactionAppliedEvent(stxnID, txn.getNewObjectIDs());
   }
 
@@ -512,10 +512,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     synchronized (this.transactionAccounts) {
       TransactionAccount ta = this.transactionAccounts.get(source);
       if (ta != null && ta instanceof ObjectSyncTransactionAccount) { throw new AssertionError(
-                                                                                                "Transaction Account is of type ObjectSyncTransactionAccount : "
-                                                                                                    + ta
-                                                                                                    + " source Id  : "
-                                                                                                    + source); }
+                                                                                               "Transaction Account is of type ObjectSyncTransactionAccount : "
+                                                                                                   + ta
+                                                                                                   + " source Id  : "
+                                                                                                   + source); }
       if (this.state == ACTIVE_MODE) {
         if ((ta == null) || (ta instanceof PassiveTransactionAccount)) {
           final Object old = this.transactionAccounts.put(source, (ta = new TransactionAccountImpl(source)));
@@ -676,10 +676,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   private final class TxnsInSystemCompletionListenerCallback extends AbstractServerTransactionListener {
 
     private final TxnsInSystemCompletionListener callback;
-    private final Set<ServerTransactionID>     txnsInSystem;
-    private boolean                            initialized = false;
-    private int                                count       = 0;
-    private int                                lastSize    = -1;
+    private final Set<ServerTransactionID>       txnsInSystem;
+    private boolean                              initialized = false;
+    private int                                  count       = 0;
+    private int                                  lastSize    = -1;
 
     public TxnsInSystemCompletionListenerCallback(final TxnsInSystemCompletionListener callback) {
       this.callback = callback;
