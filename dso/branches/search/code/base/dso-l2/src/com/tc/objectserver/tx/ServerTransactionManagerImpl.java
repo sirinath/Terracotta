@@ -29,6 +29,7 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
+import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
@@ -96,13 +97,15 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private final ObjectStatsRecorder                     objectStatsRecorder;
 
+  private final MetaDataManager                         metaDataManager;
+
   public ServerTransactionManagerImpl(final ServerGlobalTransactionManager gtxm,
                                       final TransactionStore transactionStore, final LockManager lockManager,
                                       final ClientStateManager stateManager, final ObjectManager objectManager,
                                       final TransactionalObjectManager txnObjectManager,
                                       final TransactionAcknowledgeAction action, final Counter transactionRateCounter,
                                       final ChannelStats channelStats, final ServerTransactionManagerConfig config,
-                                      final ObjectStatsRecorder objectStatsRecorder) {
+                                      final ObjectStatsRecorder objectStatsRecorder, final MetaDataManager metaDataManager) {
     this.gtxm = gtxm;
     this.lockManager = lockManager;
     this.objectManager = objectManager;
@@ -119,6 +122,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     this.commitLoggingEnabled = config.isPrintCommitsEnabled();
     this.broadcastStatsLoggingEnabled = config.isPrintBroadcastStatsEnabled();
     this.objectStatsRecorder = objectStatsRecorder;
+    this.metaDataManager = metaDataManager;
   }
 
   public void enableTransactionLogger() {
@@ -356,12 +360,6 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
     this.transactionRateCounter.increment(txn.getNumApplicationTxn());
 
-    if (active) {
-      // TODO: Index somewhere in apply, since metadata is written as part of DNA
-      // Going to call processedMetaData for now.
-      final TransactionAccount transactionAccount = getTransactionAccount(sourceID);
-      transactionAccount.processMetaDataCompleted(txnID);
-    }
     fireTransactionAppliedEvent(stxnID, txn.getNewObjectIDs());
   }
 
@@ -437,14 +435,27 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       final ServerTransaction txn = (ServerTransaction) i.next();
       final ServerTransactionID stxnID = txn.getServerTransactionID();
       final TransactionID txnID = stxnID.getClientTransactionID();
+      if(active) {
+       processMetaData(txn);
+      }
       if (active && !relayed) {
         ci.relayTransactionComplete(txnID);
       } else if (!active) {
         this.gtxm.createGlobalTransactionDescIfNeeded(stxnID, txn.getGlobalTransactionID());
       }
+      
     }
     fireIncomingTransactionsEvent(source, txnIDs);
     this.resentTxnSequencer.addTransactions(txns);
+  }
+
+  private void processMetaData(ServerTransaction txn) {
+    final int metaDataSize = txn.getMetaDataReaders().length;
+    if (metaDataSize > 0) {
+      this.metaDataManager.processMetaDatas(txn, txn.getMetaDataReaders());
+    } else {
+      processingMetaDataCompleted(txn.getSourceID(), txn.getTransactionID());
+    }
   }
 
   public long getTotalNumOfActiveTransactions() {
@@ -492,6 +503,13 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
     if (ci != null && ci.broadcastCompleted(txnID)) {
       acknowledge(waiter, txnID);
+    }
+  }
+
+  public void processingMetaDataCompleted(final NodeID sourceID, final TransactionID txnID) {
+    if (isActive()) {
+      final TransactionAccount transactionAccount = getTransactionAccount(sourceID);
+      transactionAccount.processMetaDataCompleted(txnID);
     }
   }
 

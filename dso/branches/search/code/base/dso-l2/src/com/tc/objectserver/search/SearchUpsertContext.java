@@ -4,8 +4,11 @@
 package com.tc.objectserver.search;
 
 import com.tc.async.api.MultiThreadedEventContext;
+import com.tc.net.NodeID;
 import com.tc.object.metadata.NVPair;
 import com.tc.object.metadata.ValueType;
+import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.metadata.AbstractMetaDataContext;
 
 import java.util.List;
 import java.util.Map;
@@ -15,16 +18,18 @@ import java.util.Map;
  *  
  * @author Nabib El-Rahman
  */
-public class SearchUpsertContext implements MultiThreadedEventContext {
+public class SearchUpsertContext extends AbstractMetaDataContext implements MultiThreadedEventContext {
   
-  private final String name;
+   private final String name;
   private final Map<String, ValueType> schema;
   private final List<NVPair> attributes;
-  private final Object key;
+  private final String cacheKey;
   
-  public SearchUpsertContext(String name, Object key, Map<String,ValueType> schema, List<NVPair> attributes ) {
+  public SearchUpsertContext(NodeID id, TransactionID transactionID, String name, 
+                             String cacheKey, Map<String,ValueType> schema, List<NVPair> attributes ) {
+    super(id, transactionID);
     this.name = name;
-    this.key = key;
+    this.cacheKey = cacheKey;
     this.schema = schema;
     this.attributes = attributes;
   }
@@ -41,8 +46,8 @@ public class SearchUpsertContext implements MultiThreadedEventContext {
   /**
    * Key for cache entry.
    */
-  public Object getKey() {
-    return key;
+  public String getCacheKey() {
+    return cacheKey;
   }
   
   
@@ -62,6 +67,13 @@ public class SearchUpsertContext implements MultiThreadedEventContext {
    */
   public List<NVPair> getAttributes() {
     return attributes;
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  public Object getKey() {
+    return getSourceID();
   }
   
  

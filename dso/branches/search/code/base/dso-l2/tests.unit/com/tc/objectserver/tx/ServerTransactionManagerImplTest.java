@@ -31,6 +31,7 @@ import com.tc.objectserver.impl.TestObjectManager;
 import com.tc.objectserver.l1.api.TestClientStateManager;
 import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
+import com.tc.objectserver.metadata.NullMetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.impl.TestTransactionStore;
 import com.tc.objectserver.persistence.inmemory.NullPersistenceTransactionProvider;
@@ -94,7 +95,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                                new NullTransactionalObjectManager(), this.action,
                                                                this.transactionRateCounter, this.channelStats,
                                                                new ServerTransactionManagerConfig(),
-                                                               new ObjectStatsRecorder());
+                                                               new ObjectStatsRecorder(),  new NullMetaDataManager());
     this.transactionManager.goToActiveMode();
     this.transactionManager.start(Collections.EMPTY_SET);
   }

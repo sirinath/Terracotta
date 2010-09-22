@@ -30,7 +30,7 @@ import java.util.Iterator;
 
 public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   private static final DNAEncoding     DNA_STORAGE_ENCODING  = new StorageDNAEncodingImpl();
-  private static final MetaDataReader  NULL_META_DATA_READER = new NullMetaDataReader();
+  public static final MetaDataReader  NULL_META_DATA_READER = new NullMetaDataReader();
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
