@@ -74,6 +74,8 @@ public interface ServerTransactionManager {
    * The broadcast stage is completed. This could potentially trigger an acknowledgment to the originating client.
    */
   public void broadcasted(NodeID waiter, TransactionID requestID);
+  
+  public void processingMetaDataCompleted(final NodeID sourceID, final TransactionID txnID);
 
   /**
    * Notifies the transaction managed that the given transaction is being skipped

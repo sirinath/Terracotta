@@ -147,13 +147,15 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
 
     final List dnas = new ArrayList();
     final int numDNA = this.in.readInt();
-    final MetaDataReader [] metaDataReaders = new MetaDataReader[numDNA];
+    final List<MetaDataReader> metaDataReaders = new ArrayList<MetaDataReader>();
     
     for (int i = 0; i < numDNA; i++) {
       final DNAImpl dna = new DNAImpl(this.serializer, true);
       dna.deserializeFrom(this.in);
 
-      metaDataReaders[i] = dna.getMetaDataReader();
+     if( dna.getMetaDataReader() != DNAImpl.NULL_META_DATA_READER) {
+       metaDataReaders.add(dna.getMetaDataReader());
+     }
       
       if (dna.isDelta() && dna.getActionCount() < 1) {
         // This is really unexpected and indicates an error in the client, but the server
@@ -169,9 +171,10 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.marks.put(txnID, new MarkInfo(this.numTxns - this.txnToRead, start, end));
 
     this.txnToRead--;
+    MetaDataReader [] metaDataReadersArr = metaDataReaders.toArray(new MetaDataReader[metaDataReaders.size()]);
     return this.txnFactory.createServerTransaction(getBatchID(), txnID, sequenceID, locks, this.source, dnas,
                                                    this.serializer, newRoots, txnType, notifies, dmis,
-                                                   metaDataReaders, numApplictionTxn, highwaterMarks);
+                                                   metaDataReadersArr, numApplictionTxn, highwaterMarks);
   }
 
   public TxnBatchID getBatchID() {

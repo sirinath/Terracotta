@@ -200,6 +200,7 @@ import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.locks.LockManagerMBean;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProviderImpl;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
+import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ClientStatePersistor;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
@@ -378,6 +379,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private StripeIDStateManagerImpl               stripeIDStateManager;
   private DBEnvironment                          dbenv;
   private IndexManager                           indexManager;
+  private MetaDataManager                        metaDataManager;
 
   private final CallbackDumpHandler              dumpHandler      = new CallbackDumpHandler();
 
@@ -812,13 +814,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                      new SyncWriteTransactionReceivedHandler(channelManager), 4, maxStageSize);
     
     final Stage searchEventStage = stageManager.createStage(ServerConfigurationContext.SEARCH_EVENT_STAGE,
-                     new SearchEventHandler(this.indexManager), 1, maxStageSize);
+                     new SearchEventHandler(), 1, maxStageSize);
     
     final Sink searchEventSink = searchEventStage.getSink();
+    
+    this.metaDataManager = this.serverBuilder.createMetaDataManager(searchEventSink);
     final TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator,
                                                                                                 recycler, txnFilter,
                                                                                                 syncWriteTxnRecvdAckStage
-                                                                                                    .getSink(), this.serverBuilder.createMetaDataManager(searchEventSink));
+                                                                                                    .getSink());
     toInit.add(transactionBatchManager);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(transactionBatchManager));
 
@@ -886,7 +890,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                channelStats,
                                                                new ServerTransactionManagerConfig(this.l2Properties
                                                                    .getPropertiesFor("transactionmanager")),
-                                                               this.objectStatsRecorder);
+                                                               this.objectStatsRecorder, this.metaDataManager );
     final CallbackDumpAdapter txnMgrDumpAdapter = new CallbackDumpAdapter(this.transactionManager);
     this.threadGroup.addCallbackOnExitDefaultHandler(txnMgrDumpAdapter);
     this.dumpHandler.registerForDump(txnMgrDumpAdapter);
@@ -1111,7 +1115,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                        clientHandshakeManager, clusterMetaDataManager,
                                                                        serverStats, this.connectionIdFactory,
                                                                        maxStageSize, this.l1Listener
-                                                                           .getChannelManager(), this);
+                                                                           .getChannelManager(), this, metaDataManager, indexManager);
     toInit.add(this.serverBuilder);
 
     stageManager.startAll(this.context, toInit);

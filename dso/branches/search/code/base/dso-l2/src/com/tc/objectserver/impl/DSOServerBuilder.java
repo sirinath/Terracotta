@@ -26,7 +26,6 @@ import com.tc.object.msg.MessageRecycler;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.persistence.api.PersistentMapStore;
-import com.tc.objectserver.api.MetaDataManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.api.ServerMapRequestManager;
@@ -40,6 +39,7 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
+import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
@@ -113,7 +113,9 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                               DSOGlobalServerStats serverStats,
                                                               ConnectionIDFactory connectionIdFactory,
                                                               int maxStageSize, ChannelManager genericChannelManager,
-                                                              DumpHandlerStore dumpHandlerStore);
+                                                              DumpHandlerStore dumpHandlerStore,
+                                                              MetaDataManager metaDataManager,
+                                                              IndexManager indexManager);
 
   GroupManager getClusterGroupCommManager();
 

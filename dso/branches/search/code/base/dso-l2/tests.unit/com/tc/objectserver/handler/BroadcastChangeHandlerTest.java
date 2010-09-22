@@ -54,8 +54,10 @@ import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
+import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
+import com.tc.objectserver.search.IndexManager;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionListener;
@@ -285,6 +287,14 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     }
 
     public ServerMapRequestManager getServerMapRequestManager() {
+      throw new ImplementMe();
+    }
+
+    public IndexManager getIndexManager() {
+      throw new ImplementMe();
+    }
+
+    public MetaDataManager getMetaDataManager() {
       throw new ImplementMe();
     }
 
@@ -741,6 +751,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     public long getTotalNumOfActiveTransactions() {
       throw new ImplementMe();
+    }
+
+    public void processingMetaDataCompleted(NodeID sourceID, TransactionID txnID) {
+      //
     }
   }
 }

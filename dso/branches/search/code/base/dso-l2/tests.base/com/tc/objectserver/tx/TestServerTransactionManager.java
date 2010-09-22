@@ -118,4 +118,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
+  public void processingMetaDataCompleted(NodeID sourceID, TransactionID txnID) {
+    throw new ImplementMe();
+  }
+
 }

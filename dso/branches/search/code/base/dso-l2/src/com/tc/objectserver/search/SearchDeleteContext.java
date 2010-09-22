@@ -4,6 +4,9 @@
 package com.tc.objectserver.search;
 
 import com.tc.async.api.MultiThreadedEventContext;
+import com.tc.net.NodeID;
+import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.metadata.AbstractMetaDataContext;
 
 
 /**
@@ -11,14 +14,15 @@ import com.tc.async.api.MultiThreadedEventContext;
  *  
  * @author Nabib El-Rahman
  */
-public class SearchDeleteContext implements MultiThreadedEventContext {
+public class SearchDeleteContext extends AbstractMetaDataContext implements MultiThreadedEventContext {
   
   private final String name;
-  private final Object key;
+  private final String cacheKey;
   
-  public SearchDeleteContext(String name, Object key) {
+  public SearchDeleteContext(NodeID id, TransactionID transactionID, String name, String cacheKey) {
+    super(id, transactionID);
     this.name = name;
-    this.key = key;
+    this.cacheKey = cacheKey;
   }
   
   /**
@@ -31,8 +35,15 @@ public class SearchDeleteContext implements MultiThreadedEventContext {
   /**
    * key of cache entry.
    */
+  public String getCacheKey() {
+    return cacheKey;
+  }
+    
+  /**
+   * {@inheritDoc}
+   */
   public Object getKey() {
-    return key;
+    return getSourceID();
   }
   
 }

@@ -4,6 +4,7 @@
 package com.tc.objectserver.search;
 
 import com.tc.async.api.MultiThreadedEventContext;
+import com.tc.net.NodeID;
 
 /**
  * Context holding search queury search information.
@@ -11,18 +12,39 @@ import com.tc.async.api.MultiThreadedEventContext;
  * 
  * @author Nabib El-Rahman
  */
-public interface SearchQueryContext extends MultiThreadedEventContext {
+public class SearchQueryContext implements MultiThreadedEventContext {
+  
+  private final NodeID id;
+  private final String cacheName;
+  private final String queryString;
+  
+  public SearchQueryContext(NodeID id, String cacheName, String queryString) {
+    this.id = id;
+    this.cacheName = cacheName;
+    this.queryString = queryString;
+  }
 
   /**
    * Query string
    * 
    * @return String string
    */
-  public String getQueryString();
+  public String getQueryString() {
+    return this.queryString;
+  }
   
+  /**
+   * 
+   */
+  public Object getCacheName() {
+    return cacheName;
+  }
+
   /**
    * {@inheritDoc}
    */
-  public Object getKey();
+  public Object getKey() {
+    return id;
+  }
 
 }
