@@ -56,7 +56,6 @@ import com.tc.objectserver.search.IndexManager;
 import com.tc.objectserver.search.NullIndexManager;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
-import com.tc.objectserver.storage.berkeleydb.BerkeleyDBFactory;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
 import com.tc.objectserver.tx.PassThruTransactionFilter;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -64,7 +63,6 @@ import com.tc.objectserver.tx.TransactionBatchManagerImpl;
 import com.tc.objectserver.tx.TransactionFilter;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
-import com.tc.properties.TCProperties;
 import com.tc.server.ServerConnectionValidator;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -77,7 +75,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.Properties;
 
 import javax.management.MBeanServer;
 
@@ -237,13 +234,10 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   }
 
   public DBEnvironment createDBEnvironment(final boolean persistent, final File dbhome,
-                                           final TCProperties l2Properties, final NewL2DSOConfig l2DSOCofig,
-                                           DumpHandlerStore dumpHandlerStore, final StageManager stageManager,
-                                           final SampledCounter l2FaultFromDisk, SampledCounter l2FaultFromOffheap,
-                                           SampledCounter l2FlushFromOffheap) throws IOException {
-    // XXX: one day DB selection will be from tc.props
-    final DBFactory dbFactory = new BerkeleyDBFactory(l2Properties.getPropertiesFor("berkeleydb")
-        .addAllPropertiesTo(new Properties()));
-    return dbFactory.createEnvironment(persistent, dbhome, l2FaultFromDisk);
+                                           final NewL2DSOConfig l2DSOCofig, DumpHandlerStore dumpHandlerStore,
+                                           final StageManager stageManager, final SampledCounter l2FaultFromDisk,
+                                           SampledCounter l2FaultFromOffheap, SampledCounter l2FlushFromOffheap,
+                                           DBFactory factory) throws IOException {
+    return factory.createEnvironment(persistent, dbhome, l2FaultFromDisk);
   }
 }
