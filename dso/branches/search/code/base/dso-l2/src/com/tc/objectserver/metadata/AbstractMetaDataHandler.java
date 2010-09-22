@@ -26,7 +26,7 @@ public abstract class AbstractMetaDataHandler extends AbstractEventHandler {
     if (context instanceof AbstractMetaDataContext) {
       AbstractMetaDataContext metaDataContext = (AbstractMetaDataContext) context;
       if (this.manager.metaDataProcessingCompleted(metaDataContext.getTransactionID())) {
-        this.txnManager.processingMetaDataCompleted(metaDataContext.getSourceID(), metaDataContext.getTransactionID());
+          this.txnManager.processingMetaDataCompleted(metaDataContext.getSourceID(), metaDataContext.getTransactionID());
       }
     }
   }
