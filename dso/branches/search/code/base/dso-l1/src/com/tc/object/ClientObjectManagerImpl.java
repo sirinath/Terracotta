@@ -24,8 +24,8 @@ import com.tc.object.appevent.NonPortableRootContext;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
 import com.tc.object.cache.CacheStats;
+import com.tc.object.cache.ConcurrentClockEvictionPolicy;
 import com.tc.object.cache.Evictable;
-import com.tc.object.cache.EvictionPolicy;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 
@@ -104,14 +105,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private State                                 state                        = RUNNING;
   private final Object                          shutdownLock                 = new Object();
   private final Map                             roots                        = new HashMap();
-  private final Map                             idToManaged                  = new HashMap();
+  private final ObjectStore                     objectStore                  = new ObjectStore();
   private final ConcurrentMap<Object, TCObject> pojoToManaged                = new MapMaker()
                                                                                  .concurrencyLevel(REFERENCE_MAP_SEGS)
                                                                                  .weakKeys().makeMap();
 
   private final ClassProvider                   classProvider;
   private final RemoteObjectManager             remoteObjectManager;
-  private final EvictionPolicy                  cache;
   private final Traverser                       traverser;
   private final TraverseTest                    traverseTest;
   private final DSOClientConfigHelper           clientConfiguration;
@@ -147,13 +147,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager,
                                  final DSOClientConfigHelper clientConfiguration, final ObjectIDProvider idProvider,
-                                 final EvictionPolicy cache, final RuntimeLogger runtimeLogger,
-                                 final ClientIDProvider provider, final ClassProvider classProvider,
-                                 final TCClassFactory classFactory, final TCObjectFactory objectFactory,
-                                 final Portability portability, final DSOClientMessageChannel channel,
+                                 final RuntimeLogger runtimeLogger, final ClientIDProvider provider,
+                                 final ClassProvider classProvider, final TCClassFactory classFactory,
+                                 final TCObjectFactory objectFactory, final Portability portability,
+                                 final DSOClientMessageChannel channel,
                                  final ToggleableReferenceManager referenceManager) {
     this.remoteObjectManager = remoteObjectManager;
-    this.cache = cache;
     this.clientConfiguration = clientConfiguration;
     this.idProvider = idProvider;
     this.runtimeLogger = runtimeLogger;
@@ -169,10 +168,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     this.factory.setObjectManager(this);
     this.appEventContextFactory = new NonPortableEventContextFactory(provider);
 
-    if (this.logger.isDebugEnabled()) {
-      this.logger.debug("Starting up ClientObjectManager:" + System.identityHashCode(this) + ". Cache SIZE = "
-                        + cache.getCacheCapacity());
-    }
     startReaper();
     ensureKeyClassesLoaded();
   }
@@ -182,8 +177,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     new LocalLookupContext();
 
     /*
-     *  Exercise isManaged path early to preload classes and avoid ClassCircularityError
-     *  during any subsequent calls
+     * Exercise isManaged path early to preload classes and avoid ClassCircularityError during any subsequent calls
      */
     isManaged(new Object());
   }
@@ -195,7 +189,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public synchronized boolean isLocal(final ObjectID objectID) {
     if (null == objectID) { return false; }
 
-    if (this.idToManaged.containsKey(objectID)) { return true; }
+    if (this.objectStore.contains(objectID)) { return true; }
 
     return this.remoteObjectManager.isInDNACache(objectID);
   }
@@ -306,7 +300,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return this.objectLatchStateMap;
   }
 
-  private TCObject create(final Object pojo, final NonPortableEventContext context, GroupID gid) {
+  private TCObject create(final Object pojo, final NonPortableEventContext context, final GroupID gid) {
     traverse(pojo, context, new AddManagedObjectAction(), gid);
     return basicLookup(pojo);
   }
@@ -339,7 +333,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                                     GroupID.NULL_ID);
   }
 
-  public TCObject lookupOrCreate(final Object pojo, GroupID gid) {
+  public TCObject lookupOrCreate(final Object pojo, final GroupID gid) {
     if (pojo == null) { return TCObjectFactory.NULL_TC_OBJECT; }
     return lookupOrCreateIfNecesary(pojo, this.appEventContextFactory.createNonPortableEventContext(pojo), gid);
   }
@@ -349,7 +343,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return lookupOrCreateIfNecesary(pojo, context, GroupID.NULL_ID);
   }
 
-  private TCObject lookupOrCreateIfNecesary(final Object pojo, final NonPortableEventContext context, GroupID gid) {
+  private TCObject lookupOrCreateIfNecesary(final Object pojo, final NonPortableEventContext context, final GroupID gid) {
     Assert.assertNotNull(pojo);
     TCObject obj = basicLookup(pojo);
     if (obj == null || obj.isNew()) {
@@ -463,8 +457,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         }
       } else {
         if (tcobj.isNull()) {
-          this.idToManaged.remove(objectID);
-          this.cache.remove(tcobj);
+          this.objectStore.remove(tcobj);
           this.remoteObjectManager.removed(objectID);
         }
       }
@@ -602,10 +595,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   synchronized Set addAllObjectIDs(final Set oids) {
-    for (final Iterator i = this.idToManaged.keySet().iterator(); i.hasNext();) {
-      oids.add(i.next());
-    }
-    return oids;
+    return this.objectStore.addAllObjectIDs(oids);
   }
 
   public Object lookupRoot(final String rootName) {
@@ -906,7 +896,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private TCObject basicLookupByID(final ObjectID id) {
-    return (TCObject) this.idToManaged.get(id);
+    return this.objectStore.get(id);
   }
 
   private boolean basicHasLocal(final ObjectID id) {
@@ -927,7 +917,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       if (basicHasLocal(id)) { throw Assert.failure("Attempt to add an object that already exists: Object of class "
                                                     + obj.getClass() + " [Identity Hashcode : 0x"
                                                     + Integer.toHexString(System.identityHashCode(obj)) + "] "); }
-      this.idToManaged.put(id, obj);
+      this.objectStore.add(obj);
 
       final Object pojo = obj.getPeerObject();
 
@@ -949,14 +939,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
           }
         }
       }
-      this.cache.add(obj);
       lookupDone(id, fromLookup);
       notifyAll();
     }
   }
 
   private void traverse(final Object root, final NonPortableEventContext context, final TraversalAction action,
-                        GroupID gid) {
+                        final GroupID gid) {
     // if set this will be final exception thrown
     Throwable exception = null;
 
@@ -1036,7 +1025,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private class AddManagedObjectAction implements TraversalAction, PostCreateMethodGatherer {
     private final Map<Object, List<Method>> toCall = new IdentityHashMap<Object, List<Method>>();
 
-    public final void visit(final List objects, GroupID gid) {
+    public final void visit(final List objects, final GroupID gid) {
       for (final Object pojo : objects) {
         final List<Method> postCreateMethods = ClientObjectManagerImpl.this.clazzFactory
             .getOrCreate(pojo.getClass(), ClientObjectManagerImpl.this).getPostCreateMethods();
@@ -1075,7 +1064,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  private TCObject basicCreateIfNecessary(final Object pojo, GroupID gid) {
+  private TCObject basicCreateIfNecessary(final Object pojo, final GroupID gid) {
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
@@ -1090,11 +1079,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return obj;
   }
 
-  private List basicCreateIfNecessary(final List pojos, GroupID gid) {
+  private List basicCreateIfNecessary(final List pojos, final GroupID gid) {
     canCreate();
     try {
       reserveObjectIds(pojos.size(), gid);
-  
+
       synchronized (this) {
         waitUntilRunning();
         final List tcObjects = new ArrayList(pojos.size());
@@ -1109,18 +1098,18 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void allowCreation() {
-    creationSemaphore.release();
+    this.creationSemaphore.release();
   }
 
   private void canCreate() {
-    creationSemaphore.acquireUninterruptibly();
+    this.creationSemaphore.acquireUninterruptibly();
   }
 
-  private void reserveObjectIds(int size, GroupID gid) {
+  private void reserveObjectIds(final int size, final GroupID gid) {
     this.idProvider.reserve(size, gid);
   }
 
-  private ObjectID nextObjectID(final ClientTransaction txn, final Object pojo, GroupID gid) {
+  private ObjectID nextObjectID(final ClientTransaction txn, final Object pojo, final GroupID gid) {
     return this.idProvider.next(txn, pojo, gid);
   }
 
@@ -1207,9 +1196,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     this.runtimeLogger.updateFlushStats(className);
   }
 
-  // XXX::: Cache eviction doesnt clear it from the cache. it happens in reap().
+  // XXX::: Cache eviction doesn't clear it from the cache. it happens in reap().
   public void evictCache(final CacheStats stat) {
-    final int size = idToManaged_size();
+    final int size = objectStore_size();
     int toEvict = stat.getObjectCountToEvict(size);
     if (toEvict <= 0) { return; }
     // Cache is full
@@ -1218,7 +1207,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     int toClear = toEvict;
     while (toEvict > 0 && toClear > 0) {
       final int maxCount = Math.min(COMMIT_SIZE, toClear);
-      final Collection removalCandidates = this.cache.getRemovalCandidates(maxCount);
+      final Collection removalCandidates = this.objectStore.getRemovalCandidates(maxCount);
       if (removalCandidates.isEmpty()) {
         break; // couldnt find any more
       }
@@ -1249,12 +1238,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       toEvict -= removalCandidates.size();
     }
     // TODO:: Send the correct set of targetObjects2GC
-    stat.objectEvicted(totalReferencesCleared, idToManaged_size(), Collections.EMPTY_LIST, false);
+    stat.objectEvicted(totalReferencesCleared, objectStore_size(), Collections.EMPTY_LIST, false);
   }
 
-  // XXX:: Not synchronizing to improve performance, should be called only during cache eviction
-  private int idToManaged_size() {
-    return this.idToManaged.size();
+  private int objectStore_size() {
+    return this.objectStore.size();
   }
 
   public void dumpToLogger() {
@@ -1269,9 +1257,65 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
     out.print(this.getClass().getName()).flush();
     out.indent().print("roots Map: ").print(new Integer(this.roots.size())).flush();
-    out.indent().print("idToManaged size: ").print(new Integer(this.idToManaged.size())).flush();
+    out.indent().print("idToManaged size: ").print(new Integer(this.objectStore.size())).flush();
     out.indent().print("pojoToManaged size: ").print(new Integer(this.pojoToManaged.size())).flush();
     return out;
+  }
+
+  private static final class ObjectStore {
+
+    private final ConcurrentHashMap             cacheManaged   = new ConcurrentHashMap<ObjectID, TCObject>(10240,
+                                                                                                           0.75f, 128);
+    private final ConcurrentHashMap             cacheUnmanaged = new ConcurrentHashMap<ObjectID, TCObject>(10240,
+                                                                                                           0.75f, 128);
+    private final ConcurrentClockEvictionPolicy cache;
+
+    ObjectStore() {
+      this.cache = new ConcurrentClockEvictionPolicy(this.cacheManaged);
+    }
+
+    public int size() {
+      return this.cacheManaged.size() + this.cacheUnmanaged.size();
+    }
+
+    public Collection getRemovalCandidates(final int maxCount) {
+      return this.cache.getRemovalCandidates(maxCount);
+    }
+
+    public void add(final TCObject obj) {
+      if (obj.isCacheManaged()) {
+        this.cache.add(obj);
+      } else {
+        this.cacheUnmanaged.put(obj.getObjectID(), obj);
+      }
+    }
+
+    public TCObject get(final ObjectID id) {
+      TCObject tc = (TCObject) this.cacheUnmanaged.get(id);
+      if (tc == null) {
+        tc = (TCObject) this.cacheManaged.get(id);
+      }
+      return tc;
+    }
+
+    public Set addAllObjectIDs(final Set oids) {
+      oids.addAll(this.cacheManaged.keySet());
+      oids.addAll(this.cacheUnmanaged.keySet());
+      return oids;
+    }
+
+    public void remove(final TCObject tcobj) {
+      if (tcobj.isCacheManaged()) {
+        this.cache.remove(tcobj);
+      } else {
+        this.cacheUnmanaged.remove(tcobj.getObjectID());
+      }
+    }
+
+    public boolean contains(final ObjectID objectID) {
+      return this.cacheUnmanaged.containsKey(objectID) || this.cacheManaged.containsKey(objectID);
+    }
+
   }
 
   private static class LocalLookupContext {
