@@ -19,6 +19,7 @@ public class ObjectRequestServerContextImpl implements ObjectRequestServerContex
   private final String              requestingThreadName;
   private final int                 requestDepth;
   private final boolean             serverInitiated;
+  private int                       heartbeat;
 
   public ObjectRequestServerContextImpl(final ClientID requestNodeID, final ObjectRequestID objectRequestID,
                                         final SortedSet<ObjectID> lookupObjectIDs, final String requestingThreadName,
@@ -60,5 +61,9 @@ public class ObjectRequestServerContextImpl implements ObjectRequestServerContex
 
   public Object getKey() {
     return this.requestedNodeID;
+  }
+
+  public int heartbeat() {
+    return ++heartbeat;
   }
 }

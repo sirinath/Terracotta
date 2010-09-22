@@ -6,6 +6,7 @@ package com.tc.objectserver.tx;
 
 import com.tc.net.NodeID;
 import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.tx.ServerTransactionManagerImpl.ServerTransactionHeartBeat;
 
 import java.util.Set;
 
@@ -42,4 +43,9 @@ public interface TransactionAccount {
     public void onComplete(NodeID dead);
   }
 
+  public void heartbeat(ServerTransactionHeartBeat beatworker);
+  
+  public interface CallBackOnDeadTransaction {
+    public void onStuck(TransactionID txnID);
+  }
 }

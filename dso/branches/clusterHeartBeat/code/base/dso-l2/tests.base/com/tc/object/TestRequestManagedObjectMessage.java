@@ -5,6 +5,7 @@
 package com.tc.object;
 
 import com.tc.async.api.EventContext;
+import com.tc.exception.ImplementMe;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -83,6 +84,10 @@ public class TestRequestManagedObjectMessage implements RequestManagedObjectMess
 
   public Object getKey() {
     return this.channel.getRemoteNodeID();
+  }
+
+  public int heartbeat() {
+    throw new ImplementMe();
   }
 
 }

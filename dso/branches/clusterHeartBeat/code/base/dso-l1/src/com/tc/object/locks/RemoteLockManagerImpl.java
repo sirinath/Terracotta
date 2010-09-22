@@ -34,6 +34,8 @@ public class RemoteLockManagerImpl implements RemoteLockManager {
   @Deprecated
   private final ClientLockStatManager          statManager;
 
+  private volatile boolean                     flushPaused                 = false;
+
   public RemoteLockManagerImpl(final ClientIDProvider clientIdProvider, final GroupID group,
                                final LockRequestMessageFactory messageFactory,
                                final ClientGlobalTransactionManager globalTxManager,

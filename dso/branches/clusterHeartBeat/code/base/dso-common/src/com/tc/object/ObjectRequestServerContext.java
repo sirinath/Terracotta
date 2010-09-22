@@ -12,4 +12,6 @@ public interface ObjectRequestServerContext extends ObjectRequestContext, MultiT
 
   public abstract boolean isServerInitiated();
 
+  public int heartbeat();
+
 }

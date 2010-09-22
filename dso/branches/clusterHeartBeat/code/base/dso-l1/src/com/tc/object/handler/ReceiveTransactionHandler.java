@@ -9,6 +9,7 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.exception.TCClassNotFoundException;
+import com.tc.heartbeat.ClusterSignalHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
@@ -47,6 +48,7 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   private final ClientIDProvider                     cidProvider;
   private final Sink                                 dmiSink;
   private final DmiManager                           dmiManager;
+  private final ClusterSignalHandler                 clusterSignalHandler;
 
   public ReceiveTransactionHandler(ClientIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
@@ -57,10 +59,12 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     this.sessionManager = sessionManager;
     this.dmiSink = dmiSink;
     this.dmiManager = dmiManager;
+    clusterSignalHandler = ClusterSignalHandler.install("CONT", "ReceiveTransactionHandler");
   }
 
   @Override
   public void handleEvent(EventContext context) {
+    clusterSignalHandler.checkPause();
     final BroadcastTransactionMessageImpl btm = (BroadcastTransactionMessageImpl) context;
 
     if (false) {

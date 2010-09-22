@@ -7,6 +7,7 @@ import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.heartbeat.ClusterHeartBeat;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.logging.DumpHandlerStore;
@@ -75,7 +76,7 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                   ServerTransactionManager transactionMgr, Sink objectRequestSink,
                                                   Sink respondObjectRequestSink, ObjectStatsRecorder statsRecorder,
                                                   List<PostInit> toInit, StageManager stageManager, int maxStageSize,
-                                                  DumpHandlerStore dumpHandlerStore);
+                                                  DumpHandlerStore dumpHandlerStore, ClusterHeartBeat clusterHeartBeat);
 
   void populateAdditionalStatisticsRetrivalRegistry(StatisticsRetrievalRegistry registry);
 

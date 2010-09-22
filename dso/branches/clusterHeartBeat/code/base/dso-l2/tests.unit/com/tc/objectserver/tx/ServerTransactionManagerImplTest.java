@@ -8,6 +8,7 @@ import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
+import com.tc.heartbeat.DummyClusterHeartBeat;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -93,7 +94,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                                new NullTransactionalObjectManager(), this.action,
                                                                this.transactionRateCounter, this.channelStats,
                                                                new ServerTransactionManagerConfig(),
-                                                               new ObjectStatsRecorder());
+                                                               new ObjectStatsRecorder(), new DummyClusterHeartBeat());
     this.transactionManager.goToActiveMode();
     this.transactionManager.start(Collections.EMPTY_SET);
   }

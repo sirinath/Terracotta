@@ -6,6 +6,7 @@ package com.tc.object.msg;
 
 import com.tc.async.api.EventContext;
 import com.tc.bytes.TCByteBuffer;
+import com.tc.exception.ImplementMe;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -122,6 +123,10 @@ public class RequestManagedObjectMessageImpl extends DSOMessageBase implements E
 
   public Object getKey() {
     return getSourceNodeID();
+  }
+
+  public int heartbeat() {
+    throw new ImplementMe();
   }
 
 }

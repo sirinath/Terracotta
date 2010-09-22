@@ -29,6 +29,9 @@ import com.tc.handler.CallbackGroupExceptionHandler;
 import com.tc.handler.CallbackZapDirtyDbExceptionAdapter;
 import com.tc.handler.CallbackZapServerNodeExceptionAdapter;
 import com.tc.handler.LockInfoDumpHandler;
+import com.tc.heartbeat.ClusterHeartBeat;
+import com.tc.heartbeat.ClusterHeartBeatImpl;
+import com.tc.heartbeat.DummyClusterHeartBeat;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
@@ -332,10 +335,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private final Sink                             httpSink;
   protected final HaConfig                       haConfig;
 
-  private static final TCLogger                  logger           = CustomerLogging.getDSOGenericLogger();
-  private static final TCLogger                  consoleLogger    = CustomerLogging.getConsoleLogger();
+  private static final TCLogger                  logger                     = CustomerLogging.getDSOGenericLogger();
+  private static final TCLogger                  consoleLogger              = CustomerLogging.getConsoleLogger();
 
-  private ServerID                               thisServerNodeID = ServerID.NULL_ID;
+  private ServerID                               thisServerNodeID           = ServerID.NULL_ID;
   protected NetworkListener                      l1Listener;
   protected GCStatsEventPublisher                gcStatsEventPublisher;
   private TerracottaOperatorEventHistoryProvider operatorEventHistoryProvider;
@@ -379,7 +382,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private StripeIDStateManagerImpl               stripeIDStateManager;
   private DBEnvironment                          dbenv;
 
-  private final CallbackDumpHandler              dumpHandler      = new CallbackDumpHandler();
+  private final CallbackDumpHandler              dumpHandler                = new CallbackDumpHandler();
+
+  private final ClusterHeartBeat                 clusterHeartBeat;
+
+  private static final boolean                   CLUSTER_HEART_BEAT_ENABLED = TCPropertiesImpl
+                                                                                .getProperties()
+                                                                                .getBoolean(
+                                                                                            TCPropertiesConsts.CLUSTER_HEART_BEAT_ENABLED,
+                                                                                            true);
 
   // used by a test
   public DistributedObjectServer(final L2TVSConfigurationSetupManager configSetupManager,
@@ -401,6 +412,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     // Even in tests, we probably don't want different thread group configurations
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
+    clusterHeartBeat = CLUSTER_HEART_BEAT_ENABLED ? new ClusterHeartBeatImpl() : new DummyClusterHeartBeat();
+
     this.configSetupManager = configSetupManager;
     this.haConfig = new HaConfigImpl(this.configSetupManager);
     this.connectionPolicy = connectionPolicy;
@@ -420,6 +433,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
   protected DSOServerBuilder getServerBuilder() {
     return this.serverBuilder;
+  }
+
+  protected ClusterHeartBeat getClusterHeartBeat() {
+    return this.clusterHeartBeat;
   }
 
   public void dump() {
@@ -885,7 +902,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                channelStats,
                                                                new ServerTransactionManagerConfig(this.l2Properties
                                                                    .getPropertiesFor("transactionmanager")),
-                                                               this.objectStatsRecorder);
+                                                               this.objectStatsRecorder, this.clusterHeartBeat);
     final CallbackDumpAdapter txnMgrDumpAdapter = new CallbackDumpAdapter(this.transactionManager);
     this.threadGroup.addCallbackOnExitDefaultHandler(txnMgrDumpAdapter);
     this.dumpHandler.registerForDump(txnMgrDumpAdapter);
@@ -980,7 +997,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                               objectRequestStage.getSink(),
                                                                               respondToObjectRequestStage.getSink(),
                                                                               this.objectStatsRecorder, toInit,
-                                                                              stageManager, maxStageSize, this);
+                                                                              stageManager, maxStageSize, this,
+                                                                              this.clusterHeartBeat);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.objectRequestManager));
     final Stage oidRequest = stageManager.createStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE,
                                                       new RequestObjectIDBatchHandler(this.objectStore), 1,
