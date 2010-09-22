@@ -12,6 +12,7 @@ import java.util.Set;
 public class TransactionRecord {
   private final TransactionState state;
   private final Set<NodeID>      waitees;
+  private int                    heartbeatCount = 0;
 
   public TransactionRecord() {
     this.state = new TransactionState();
@@ -40,7 +41,8 @@ public class TransactionRecord {
 
   @Override
   public String toString() {
-    return "TransactionRecord@" + System.identityHashCode(this) + " = " + state + "  :: waitees = " + waitees;
+    return "TransactionRecord@" + System.identityHashCode(this) + " = " + state + "  :: waitees = " + waitees
+           + " :: heartbeat = " + this.heartbeatCount;
   }
 
   public boolean addWaitee(NodeID waitee) {
@@ -57,6 +59,14 @@ public class TransactionRecord {
 
   public boolean contains(NodeID waitee) {
     return waitees.contains(waitee);
+  }
+
+  public int heartbeat() {
+    return ++this.heartbeatCount;
+  }
+
+  public int getHeartBeat() {
+    return this.heartbeatCount;
   }
 
 }

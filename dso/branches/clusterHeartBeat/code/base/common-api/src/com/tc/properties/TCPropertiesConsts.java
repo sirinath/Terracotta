@@ -850,6 +850,12 @@ public interface TCPropertiesConsts {
   public static final String   L2_OFFHEAP_MAP_CACHE_TABLESIZE                                  = "l2.offHeapCache.map.tableSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_CONCURRENCY                                = "l2.offHeapCache.map.concurrency";
 
+  public static final String   CLUSTER_HEART_BEAT_ENABLED                                      = "cluster.heartbeat.enabled";
+  public static final String   CLUSTER_HEART_BEAT_INTERVAL                                     = "cluster.heartbeat.interval";
+  public static final String   CLUSTER_HEART_BEAT_STXN_THRESHOLD                               = "cluster.heartbeat.servertxn.threshold";
+  public static final String   CLUSTER_HEART_BEAT_AATXN_THRESHOLD                              = "cluster.heartbeat.aatxn.threshold";
+  public static final String   CLUSTER_HEART_BEAT_OBJREQUEST_THRESHOLD                         = "cluster.heartbeat.objrequest.threshold";
+
   // for tests
   public static final String   L2_OFFHEAP_SKIP_JVMARG_CHECK                                    = "l2.offHeapCache.skip.jvmarg.check";
 

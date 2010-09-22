@@ -3,8 +3,12 @@
  */
 package com.tc.objectserver.impl;
 
+import com.tc.heartbeat.ClusterHeartBeat;
+import com.tc.heartbeat.ClusterHeartBeatListener;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.logging.TerracottaOperatorEventLogger;
+import com.tc.logging.TerracottaOperatorEventLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
@@ -16,6 +20,9 @@ import com.tc.objectserver.api.ObjectRequestManager;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.tx.AbstractServerTransactionListener;
 import com.tc.objectserver.tx.ServerTransactionManager;
+import com.tc.operatorevent.TerracottaOperatorEventFactory;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
@@ -30,28 +37,56 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ObjectRequestManagerRestartImpl extends AbstractServerTransactionListener implements ObjectRequestManager {
 
-  private final static State                      INIT                 = new State("INITIAL");
-  private final static State                      STARTING             = new State("STARTING");
-  private final static State                      STARTED              = new State("STARTED");
+  private final static State                      INIT                                    = new State("INITIAL");
+  private final static State                      STARTING                                = new State("STARTING");
+  private final static State                      STARTED                                 = new State("STARTED");
 
-  private final static TCLogger                   logger               = TCLogging
-                                                                           .getLogger(ObjectRequestManagerRestartImpl.class);
+  private final static TCLogger                   logger                                  = TCLogging
+                                                                                              .getLogger(ObjectRequestManagerRestartImpl.class);
 
   private final ObjectRequestManager              delegate;
   private final ServerTransactionManager          transactionManager;
   private final ObjectManager                     objectManager;
 
-  private final Set                               resentTransactionIDs = Collections.synchronizedSet(new HashSet());
-  private final Queue<ObjectRequestServerContext> pendingRequests      = new LinkedBlockingQueue<ObjectRequestServerContext>();
-  private volatile State                          state                = INIT;
+  private final Set                               resentTransactionIDs                    = Collections
+                                                                                              .synchronizedSet(new HashSet());
+  private final Queue<ObjectRequestServerContext> pendingRequests                         = new LinkedBlockingQueue<ObjectRequestServerContext>();
+  private volatile State                          state                                   = INIT;
+  private static final int                        CLUSTER_HEART_BEAT_OBJREQUEST_THRESHOLD = TCPropertiesImpl
+                                                                                              .getProperties()
+                                                                                              .getInt(
+                                                                                                      TCPropertiesConsts.CLUSTER_HEART_BEAT_OBJREQUEST_THRESHOLD,
+                                                                                                      6);
 
   public ObjectRequestManagerRestartImpl(final ObjectManager objectMgr,
                                          final ServerTransactionManager transactionManager,
-                                         final ObjectRequestManager delegate) {
+                                         final ObjectRequestManager delegate, final ClusterHeartBeat clusterHeartBeat) {
     this.objectManager = objectMgr;
     this.delegate = delegate;
     this.transactionManager = transactionManager;
+    clusterHeartBeat.register(new ObjectRequestHeartBeatListener());
     transactionManager.addTransactionListener(this);
+  }
+
+  private class ObjectRequestHeartBeatListener implements ClusterHeartBeatListener {
+    private final TerracottaOperatorEventLogger operatorEventLogger = TerracottaOperatorEventLogging.getEventLogger();
+    private final int                           beatThreshold;
+
+    public ObjectRequestHeartBeatListener() {
+      beatThreshold = CLUSTER_HEART_BEAT_OBJREQUEST_THRESHOLD;
+    }
+
+    public void heartbeat() {
+      for (final ObjectRequestServerContext objReqServerContext : pendingRequests) {
+        if (objReqServerContext.heartbeat() > this.beatThreshold) {
+          logger.error("Stuck object request from " + objReqServerContext.getClientID() + " "
+                       + objReqServerContext.getRequestID() + " " + objReqServerContext.getRequestedObjectIDs());
+          operatorEventLogger.fireOperatorEvent(TerracottaOperatorEventFactory
+              .createHeartBeatObjectRequestEvent(new Object[] { objReqServerContext.getClientID(),
+                  objReqServerContext.getRequestID() }));
+        }
+      }
+    }
   }
 
   @Override

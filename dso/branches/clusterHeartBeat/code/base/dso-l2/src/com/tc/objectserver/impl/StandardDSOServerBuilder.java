@@ -9,6 +9,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.config.HaConfig;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
+import com.tc.heartbeat.ClusterHeartBeat;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.ha.L2HACoordinator;
 import com.tc.l2.ha.WeightGeneratorFactory;
@@ -117,11 +118,12 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                                          Sink objectRequestSink, Sink respondObjectRequestSink,
                                                          ObjectStatsRecorder statsRecorder, List<PostInit> toInit,
                                                          StageManager stageManager, int maxStageSize,
-                                                         DumpHandlerStore dumpHandlerStore) {
+                                                         DumpHandlerStore dumpHandlerStore,
+                                                         ClusterHeartBeat clusterHeartBeat) {
     ObjectRequestManagerImpl orm = new ObjectRequestManagerImpl(objectMgr, channelManager, clientStateMgr,
                                                                 objectRequestSink, respondObjectRequestSink,
                                                                 statsRecorder);
-    return new ObjectRequestManagerRestartImpl(objectMgr, transactionMgr, orm);
+    return new ObjectRequestManagerRestartImpl(objectMgr, transactionMgr, orm, clusterHeartBeat);
   }
 
   public ServerMapRequestManager createServerMapRequestManager(ObjectManager objectMgr,

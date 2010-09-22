@@ -639,6 +639,10 @@ public class RemoteObjectManagerImplTest extends TCTestCase {
       return new ClientID(1);
     }
 
+    public int heartbeat() {
+      throw new ImplementMe();
+    }
+
   }
 
 }

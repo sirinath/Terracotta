@@ -7,6 +7,7 @@ package com.tc.objectserver.tx;
 import com.tc.net.NodeID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.tx.ServerTransactionManagerImpl.ServerTransactionHeartBeat;
 import com.tc.util.Assert;
 
 import java.util.Collections;
@@ -155,6 +156,14 @@ public class TransactionAccountImpl implements TransactionAccount {
       this.callBack = cb;
       this.dead = true;
       invokeCallBackOnCompleteIfNecessary();
+    }
+  }
+  
+  public void heartbeat(ServerTransactionHeartBeat beatworker) {
+    synchronized (waitees) {
+      for(TransactionRecord rcd: waitees.values()) {
+        beatworker.check(rcd);
+      }
     }
   }
 

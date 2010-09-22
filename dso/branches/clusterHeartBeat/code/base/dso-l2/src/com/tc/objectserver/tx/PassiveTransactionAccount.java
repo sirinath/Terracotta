@@ -4,9 +4,11 @@
  */
 package com.tc.objectserver.tx;
 
+import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.tx.ServerTransactionManagerImpl.ServerTransactionHeartBeat;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,7 +19,7 @@ public class PassiveTransactionAccount implements TransactionAccount {
   private final NodeID       nodeID;
   private final Set          txnIDs = Collections.synchronizedSet(new HashSet());
   private CallBackOnComplete callback;
-  private boolean            dead = false;
+  private boolean            dead   = false;
 
   public PassiveTransactionAccount(NodeID source) {
     this.nodeID = source;
@@ -91,9 +93,13 @@ public class PassiveTransactionAccount implements TransactionAccount {
       callback.onComplete(nodeID);
     }
   }
-  
+
   @Override
   public String toString() {
     return "PassiveTransactionAccount [ " + nodeID + " ] = " + txnIDs;
+  }
+
+  public void heartbeat(ServerTransactionHeartBeat beatworker) {
+    throw new ImplementMe();
   }
 }

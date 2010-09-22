@@ -84,4 +84,24 @@ public class TerracottaOperatorEventFactory {
     return new TerracottaOperatorEventImpl(EventType.ERROR, EventSubsystem.HA, MessageFormat
         .format(TerracottaOperatorEventResources.getDirtyDBMessage(), new Object[] { restart }));
   }
+  
+  /**
+   * Cluster heart beat events
+   */
+  public static TerracottaOperatorEvent createHeartBeatServerTransactionEvent(Object[] arguments) {
+    return new TerracottaOperatorEventImpl(EventType.ERROR, EventSubsystem.HEART_BEAT, MessageFormat
+        .format(TerracottaOperatorEventResources.getHeartBeatServerTransactionMessage(), arguments));
+  }
+  
+  public static TerracottaOperatorEvent createHeartBeatAATransactionEvent(Object[] arguments) {
+    return new TerracottaOperatorEventImpl(EventType.ERROR, EventSubsystem.HEART_BEAT, MessageFormat
+        .format(TerracottaOperatorEventResources.getHeartBeatAATransactionMessage(), arguments));
+  }
+
+  public static TerracottaOperatorEvent createHeartBeatObjectRequestEvent(Object[] arguments) {
+    return new TerracottaOperatorEventImpl(EventType.ERROR, EventSubsystem.HEART_BEAT, MessageFormat
+        .format(TerracottaOperatorEventResources.getHeartBeatObjectRequestMessage(), arguments));
+  }
+
+
 }

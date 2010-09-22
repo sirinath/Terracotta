@@ -7,8 +7,12 @@ package com.tc.objectserver.tx;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArrayList;
 import EDU.oswego.cs.dl.util.concurrent.Latch;
 
+import com.tc.heartbeat.ClusterHeartBeat;
+import com.tc.heartbeat.ClusterHeartBeatListener;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.logging.TerracottaOperatorEventLogger;
+import com.tc.logging.TerracottaOperatorEventLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
@@ -33,6 +37,9 @@ import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.TransactionStore;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
+import com.tc.operatorevent.TerracottaOperatorEventFactory;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.stats.counter.Counter;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
@@ -56,22 +63,24 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ServerTransactionManagerImpl implements ServerTransactionManager, ServerTransactionManagerMBean,
     GlobalTransactionManager, PrettyPrintable {
 
-  private static final TCLogger                         logger                       = TCLogging
-                                                                                         .getLogger(ServerTransactionManager.class);
+  private static final TCLogger                         logger                                 = TCLogging
+                                                                                                   .getLogger(ServerTransactionManager.class);
 
-  private static final State                            PASSIVE_MODE                 = new State("PASSIVE-MODE");
-  private static final State                            ACTIVE_MODE                  = new State("ACTIVE-MODE");
+  private static final State                            PASSIVE_MODE                           = new State(
+                                                                                                           "PASSIVE-MODE");
+  private static final State                            ACTIVE_MODE                            = new State(
+                                                                                                           "ACTIVE-MODE");
 
   // TODO::FIXME::Change this to concurrent HashMap
-  private final Map<NodeID, TransactionAccount>         transactionAccounts          = Collections
-                                                                                         .synchronizedMap(new HashMap<NodeID, TransactionAccount>());
+  private final Map<NodeID, TransactionAccount>         transactionAccounts                    = Collections
+                                                                                                   .synchronizedMap(new HashMap<NodeID, TransactionAccount>());
   private final ClientStateManager                      stateManager;
   private final ObjectManager                           objectManager;
   private final ResentTransactionSequencer              resentTxnSequencer;
   private final TransactionAcknowledgeAction            action;
   private final LockManager                             lockManager;
-  private final List                                    rootEventListeners           = new CopyOnWriteArrayList();
-  private final List                                    txnEventListeners            = new CopyOnWriteArrayList();
+  private final List                                    rootEventListeners                     = new CopyOnWriteArrayList();
+  private final List                                    txnEventListeners                      = new CopyOnWriteArrayList();
   private final GlobalTransactionIDLowWaterMarkProvider lwmProvider;
 
   private final Counter                                 transactionRateCounter;
@@ -82,19 +91,25 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   private final ServerTransactionLogger                 txnLogger;
 
-  private volatile State                                state                        = PASSIVE_MODE;
-  private final AtomicInteger                           totalPendingTransactions     = new AtomicInteger(0);
-  private final AtomicInteger                           txnsCommitted                = new AtomicInteger(0);
-  private final AtomicInteger                           objectsCommitted             = new AtomicInteger(0);
-  private final AtomicInteger                           noOfCommits                  = new AtomicInteger(0);
-  private final AtomicLong                              totalNumOfActiveTransactions = new AtomicLong(0);
+  private volatile State                                state                                  = PASSIVE_MODE;
+  private final AtomicInteger                           totalPendingTransactions               = new AtomicInteger(0);
+  private final AtomicInteger                           txnsCommitted                          = new AtomicInteger(0);
+  private final AtomicInteger                           objectsCommitted                       = new AtomicInteger(0);
+  private final AtomicInteger                           noOfCommits                            = new AtomicInteger(0);
+  private final AtomicLong                              totalNumOfActiveTransactions           = new AtomicLong(0);
   private final boolean                                 commitLoggingEnabled;
   private final boolean                                 broadcastStatsLoggingEnabled;
 
-  private volatile long                                 lastStatsTime                = 0;
-  private final Object                                  statsLock                    = new Object();
+  private volatile long                                 lastStatsTime                          = 0;
+  private final Object                                  statsLock                              = new Object();
 
   private final ObjectStatsRecorder                     objectStatsRecorder;
+
+  private static final int                              CLUSTER_HEART_BEAT_SERVERTXN_THRESHOLD = TCPropertiesImpl
+                                                                                                   .getProperties()
+                                                                                                   .getInt(
+                                                                                                           TCPropertiesConsts.CLUSTER_HEART_BEAT_STXN_THRESHOLD,
+                                                                                                           6);
 
   public ServerTransactionManagerImpl(final ServerGlobalTransactionManager gtxm,
                                       final TransactionStore transactionStore, final LockManager lockManager,
@@ -102,7 +117,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
                                       final TransactionalObjectManager txnObjectManager,
                                       final TransactionAcknowledgeAction action, final Counter transactionRateCounter,
                                       final ChannelStats channelStats, final ServerTransactionManagerConfig config,
-                                      final ObjectStatsRecorder objectStatsRecorder) {
+                                      final ObjectStatsRecorder objectStatsRecorder,
+                                      final ClusterHeartBeat clusterHeartBeat) {
     this.gtxm = gtxm;
     this.lockManager = lockManager;
     this.objectManager = objectManager;
@@ -119,6 +135,60 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     this.commitLoggingEnabled = config.isPrintCommitsEnabled();
     this.broadcastStatsLoggingEnabled = config.isPrintBroadcastStatsEnabled();
     this.objectStatsRecorder = objectStatsRecorder;
+    clusterHeartBeat.register(new ServerTransactionHeartBeatListener());
+  }
+
+  private class ServerTransactionHeartBeatListener implements ClusterHeartBeatListener {
+    private final ServerTransactionHeartBeatImpl serverTxnBeat;
+
+    public ServerTransactionHeartBeatListener() {
+      serverTxnBeat = new ServerTransactionHeartBeatImpl(CLUSTER_HEART_BEAT_SERVERTXN_THRESHOLD);
+    }
+
+    public void heartbeat() {
+      synchronized (transactionAccounts) {
+        for (final TransactionAccount account : transactionAccounts.values()) {
+          serverTxnBeat.setClientID(account.getNodeID());
+          account.heartbeat(serverTxnBeat);
+          serverTxnBeat.reportToOperator();
+        }
+      }
+    }
+
+  }
+
+  public interface ServerTransactionHeartBeat {
+    public void check(TransactionRecord rcd);
+  }
+
+  private class ServerTransactionHeartBeatImpl implements ServerTransactionHeartBeat {
+    private final TerracottaOperatorEventLogger operatorEventLogger = TerracottaOperatorEventLogging.getEventLogger();
+    private final int                           beatThreshold;
+    private NodeID                              clientID;
+    private int                                 errCount;
+
+    public ServerTransactionHeartBeatImpl(int beatThresHold) {
+      this.beatThreshold = beatThresHold;
+    }
+
+    public void check(TransactionRecord rcd) {
+      if (rcd.heartbeat() > this.beatThreshold) {
+        logger.error("Stuck transaction from " + this.clientID + " " + rcd.toString());
+        ++errCount;
+      }
+    }
+
+    public void setClientID(NodeID nid) {
+      this.clientID = nid;
+      errCount = 0;
+    }
+
+    public void reportToOperator() {
+      if (errCount > 0) {
+        operatorEventLogger.fireOperatorEvent(TerracottaOperatorEventFactory
+            .createHeartBeatServerTransactionEvent(new Object[] { this.clientID.toString(), errCount }));
+      }
+    }
   }
 
   public void enableTransactionLogger() {

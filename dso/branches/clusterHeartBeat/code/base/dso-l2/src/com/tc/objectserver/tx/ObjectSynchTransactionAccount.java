@@ -4,9 +4,11 @@
  */
 package com.tc.objectserver.tx;
 
+import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.objectserver.tx.ServerTransactionManagerImpl.ServerTransactionHeartBeat;
 import com.tc.util.Assert;
 
 import java.util.Collections;
@@ -125,6 +127,10 @@ public class ObjectSynchTransactionAccount implements TransactionAccount {
     }
     strBuffer.append(" }\n");
     return strBuffer.toString();
+  }
+
+  public void heartbeat(ServerTransactionHeartBeat beatworker) {
+    throw new ImplementMe();
   }
 
 }

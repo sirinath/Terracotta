@@ -72,5 +72,21 @@ class TerracottaOperatorEventResources {
   static String getDirtyDBMessage() {
     return instance.resources.getString("dirty.db");
   }
+  
+  /**
+   * Heart Beat Message
+   */
+  static String getHeartBeatServerTransactionMessage() {
+    return instance.resources.getString("heartbeat.servertransaction");
+  }
+  
+  static String getHeartBeatAATransactionMessage() {
+    return instance.resources.getString("heartbeat.aatransaction");
+  }
+  
+  static String getHeartBeatObjectRequestMessage() {
+    return instance.resources.getString("heartbeat.objectrequest");
+  }
+
 }
 

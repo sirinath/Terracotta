@@ -162,6 +162,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "operator.events.subsystem.dgc", "DGC" },
         { "operator.events.subsystem.ha", "HA" },
         { "operator.events.subsystem.lockManager", "LOCK MANAGER" },
+        { "operator.events.subsystem.heartbeat", "HEART BEAT" },
         { "map.entry", "MapEntry" },
         { "log.error", "ERROR" },
         { "log.warn", "WARN" },
