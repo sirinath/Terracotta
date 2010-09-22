@@ -8,6 +8,7 @@ import com.tc.object.metadata.ValueType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class NullIndexManager implements IndexManager {
 
@@ -21,6 +22,10 @@ public class NullIndexManager implements IndexManager {
 
   public Index getIndex(String name) {
     return new NullIndex();
+  }
+  
+  public Set<String> searchIndex(String name, String attributeName, String attributeValue) {
+    return null;
   }
 
   public void shutdown() {
@@ -39,6 +44,10 @@ public class NullIndexManager implements IndexManager {
 
     public void upsert(Object key, List<NVPair> attributes) {//
       
+    }
+
+    public Set<String> search(String attributeName, String attributeValue) {
+      return null;
     }
     
   }
