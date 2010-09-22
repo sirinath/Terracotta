@@ -16,23 +16,34 @@ public class SearchQueryContext implements MultiThreadedEventContext {
   
   private final NodeID id;
   private final String cacheName;
-  private final String queryString;
+  private final String attributeName;
+  private final String attributeValue;
   
-  public SearchQueryContext(NodeID id, String cacheName, String queryString) {
+  public SearchQueryContext(NodeID id, String cacheName, String attributeName, String attributeValue) {
     this.id = id;
     this.cacheName = cacheName;
-    this.queryString = queryString;
+    this.attributeName = attributeName;
+    this.attributeValue = attributeValue;
   }
 
   /**
-   * Query string
+   * Attribute name.
    * 
    * @return String string
    */
-  public String getQueryString() {
-    return this.queryString;
+  public String getAttributeName() {
+    return attributeName;
   }
-  
+
+
+  /**
+   * 
+   */
+  public String getAttributeValue() {
+    return attributeValue;
+  }
+
+
   /**
    * 
    */
