@@ -49,7 +49,7 @@ public abstract class NVPair implements TCSerializable {
     return getType().hashCode() ^ name.hashCode() ^ valueAsString().hashCode();
   }
 
-  abstract String valueAsString();
+  public abstract String valueAsString();
 
   public Object deserializeFrom(TCByteBufferInput in) throws IOException {
     String readName = in.readString();
@@ -80,7 +80,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       throw new AssertionError();
     }
 
@@ -113,7 +113,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -142,7 +142,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -166,7 +166,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -195,7 +195,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -224,7 +224,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -253,7 +253,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -282,7 +282,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -311,7 +311,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return String.valueOf(value);
     }
 
@@ -340,7 +340,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return value;
     }
 
@@ -369,7 +369,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       List<Byte> list = new ArrayList<Byte>(value.length);
       for (byte b : value) {
         list.add(b);
@@ -402,7 +402,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return value.toString();
     }
 
@@ -444,7 +444,7 @@ public abstract class NVPair implements TCSerializable {
     }
 
     @Override
-    String valueAsString() {
+    public String valueAsString() {
       return enumClass + "(" + enumName + ")";
     }
 
