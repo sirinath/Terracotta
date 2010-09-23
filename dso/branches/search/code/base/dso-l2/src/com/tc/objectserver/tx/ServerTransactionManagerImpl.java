@@ -435,9 +435,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       final ServerTransaction txn = (ServerTransaction) i.next();
       final ServerTransactionID stxnID = txn.getServerTransactionID();
       final TransactionID txnID = stxnID.getClientTransactionID();
-      if(active) {
-       processMetaData(txn);
-      }
+      processMetaData(txn);
       if (active && !relayed) {
         ci.relayTransactionComplete(txnID);
       } else if (!active) {
