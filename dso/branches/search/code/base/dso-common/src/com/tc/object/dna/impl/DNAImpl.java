@@ -20,7 +20,8 @@ import com.tc.object.dna.api.LiteralAction;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.api.PhysicalAction;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorImpl;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
@@ -30,7 +31,7 @@ import java.util.Iterator;
 
 public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
   private static final DNAEncoding     DNA_STORAGE_ENCODING  = new StorageDNAEncodingImpl();
-  public static final MetaDataReader  NULL_META_DATA_READER = new NullMetaDataReader();
+  public static final MetaDataReader   NULL_META_DATA_READER = new NullMetaDataReader();
 
   private final ObjectStringSerializer serializer;
   private final boolean                createOutput;
@@ -336,12 +337,12 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
       this.input = input;
     }
 
-    public Iterator<MetaDataDescriptor> iterator() {
+    public Iterator<MetaDataDescriptorInternal> iterator() {
       return new MetaDataIterator(input);
     }
   }
 
-  private static class MetaDataIterator implements Iterator<MetaDataDescriptor> {
+  private static class MetaDataIterator implements Iterator<MetaDataDescriptorInternal> {
 
     private final TCByteBufferInput input;
 
@@ -353,7 +354,7 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
       return input.available() > 0;
     }
 
-    public MetaDataDescriptor next() {
+    public MetaDataDescriptorInternal next() {
       try {
         input.readByte(); // consume type byte
         int length = input.readInt();
@@ -362,7 +363,7 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
         input.skip(length - 4); // length includes the "length" int (thus -4)
         Mark end = input.mark();
 
-        return MetaDataDescriptor.deserializeInstance(new TCByteBufferInputStream(input.toArray(start, end)));
+        return MetaDataDescriptorImpl.deserializeInstance(new TCByteBufferInputStream(input.toArray(start, end)));
       } catch (IOException e) {
         // XXX: don't like this runtime exception
         throw new RuntimeException(e);
@@ -376,7 +377,7 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
 
   private static class NullMetaDataReader implements MetaDataReader {
 
-    public Iterator<MetaDataDescriptor> iterator() {
+    public Iterator<MetaDataDescriptorInternal> iterator() {
       return Collections.EMPTY_LIST.iterator();
     }
 

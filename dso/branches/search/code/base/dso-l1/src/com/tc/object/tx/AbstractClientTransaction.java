@@ -7,7 +7,7 @@ package com.tc.object.tx;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.locks.LockID;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.Assert;
 import com.tc.util.SequenceID;
 
@@ -108,7 +108,7 @@ abstract class AbstractClientTransaction implements ClientTransaction {
     basicLogicalInvoke(source, method, parameters);
   }
 
-  public final void addMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+  public final void addMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     alreadyCommittedCheck();
     basicAddMetaDataDescriptor(tco, md);
   }
@@ -139,6 +139,6 @@ abstract class AbstractClientTransaction implements ClientTransaction {
 
   abstract protected void basicLogicalInvoke(TCObject source, int method, Object[] parameters);
 
-  abstract protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptor md);
+  abstract protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md);
 
 }

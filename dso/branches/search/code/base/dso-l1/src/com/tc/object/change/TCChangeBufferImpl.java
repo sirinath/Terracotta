@@ -14,7 +14,7 @@ import com.tc.object.change.event.LogicalChangeEvent;
 import com.tc.object.change.event.PhysicalChangeEvent;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.DNAWriterInternal;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
 
@@ -31,16 +31,16 @@ import java.util.Map;
  * @author orion
  */
 public class TCChangeBufferImpl implements TCChangeBuffer {
-  private static final TCLogger          logger     = TCLogging.getLogger(TCChangeBuffer.class);
+  private static final TCLogger                  logger     = TCLogging.getLogger(TCChangeBuffer.class);
 
-  private final SetOnceFlag              dnaCreated = new SetOnceFlag();
-  private final TCObject                 tcObject;
+  private final SetOnceFlag                      dnaCreated = new SetOnceFlag();
+  private final TCObject                         tcObject;
 
-  private final Map                      physicalEvents;
-  private final List                     logicalEvents;
-  private final Map                      arrayEvents;
-  private final List                     literalValueChangedEvents;
-  private final List<MetaDataDescriptor> metaData;
+  private final Map                              physicalEvents;
+  private final List                             logicalEvents;
+  private final Map                              arrayEvents;
+  private final List                             literalValueChangedEvents;
+  private final List<MetaDataDescriptorInternal> metaData;
 
   public TCChangeBufferImpl(TCObject object) {
     this.tcObject = object;
@@ -65,7 +65,7 @@ public class TCChangeBufferImpl implements TCChangeBuffer {
       arrayEvents = null;
     }
 
-    metaData = new ArrayList<MetaDataDescriptor>();
+    metaData = new ArrayList<MetaDataDescriptorInternal>();
   }
 
   public boolean isEmpty() {
@@ -93,7 +93,7 @@ public class TCChangeBufferImpl implements TCChangeBuffer {
         writeEventsToDNA(literalValueChangedEvents, writer);
       }
 
-      for (MetaDataDescriptor md : metaData) {
+      for (MetaDataDescriptorInternal md : metaData) {
         ((DNAWriterInternal) writer).addMetaData(md);
       }
 
@@ -175,7 +175,7 @@ public class TCChangeBufferImpl implements TCChangeBuffer {
     return tcObject;
   }
 
-  public void addMetaDataDescriptor(MetaDataDescriptor md) {
+  public void addMetaDataDescriptor(MetaDataDescriptorInternal md) {
     metaData.add(md);
   }
 

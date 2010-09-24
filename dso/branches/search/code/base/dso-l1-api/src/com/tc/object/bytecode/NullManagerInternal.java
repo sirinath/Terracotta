@@ -12,6 +12,7 @@ import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.Notify;
 import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.properties.TCProperties;
 import com.tc.statistics.StatisticRetrievalAction;
 
@@ -292,5 +293,9 @@ public class NullManagerInternal implements ManagerInternal {
 
   public LockID generateLockIdentifier(long lockId) {
     return UnclusteredLockID.UNCLUSTERED_LOCK_ID;
+  }
+
+  public MetaDataDescriptor createMetaDataDescriptor(String category) {
+    throw new UnsupportedOperationException();
   }
 }

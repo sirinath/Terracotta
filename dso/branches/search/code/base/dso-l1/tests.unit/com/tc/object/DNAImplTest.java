@@ -18,8 +18,8 @@ import com.tc.object.dna.impl.DNAImpl;
 import com.tc.object.dna.impl.DNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.metadata.MetaDataDescriptor;
-import com.tc.object.metadata.NVPair;
+import com.tc.object.metadata.MetaDataDescriptorImpl;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.object.metadata.ValueType;
 import com.tc.util.Assert;
 
@@ -81,22 +81,22 @@ public class DNAImplTest extends TestCase {
     final PhysicalAction action4 = new PhysicalAction("class.field3", new ObjectID(4), true);
     final PhysicalAction action5 = new PhysicalAction("class.field4", new ObjectID(5), true);
 
-    MetaDataDescriptor md = new MetaDataDescriptor("cat1");
-    md.addNameValuePair(new NVPair.IntNVPair("name1", 42));
+    MetaDataDescriptorInternal md = new MetaDataDescriptorImpl("cat1");
+    md.add("name1", 42);
 
-    MetaDataDescriptor md2 = new MetaDataDescriptor("cat2");
-    md2.addNameValuePair(new NVPair.BooleanNVPair("name2", true));
-    md2.addNameValuePair(new NVPair.ByteArrayNVPair("name3", "sdfsdfsdf".getBytes()));
-    md2.addNameValuePair(new NVPair.ByteNVPair("name4", (byte) 4));
-    md2.addNameValuePair(new NVPair.CharNVPair("name5", 'q'));
-    md2.addNameValuePair(new NVPair.DateNVPair("name6", new Date()));
-    md2.addNameValuePair(new NVPair.DoubleNVPair("name7", Math.PI));
-    md2.addNameValuePair(new NVPair.FloatNVPair("name8", 4.0296432F));
-    md2.addNameValuePair(new NVPair.IntNVPair("name9", 42));
-    md2.addNameValuePair(new NVPair.LongNVPair("name10", 666L));
-    md2.addNameValuePair(new NVPair.ShortNVPair("steve", (short) 53));
-    md2.addNameValuePair(new NVPair.StringNVPair("tim", "rulez"));
-    md2.addNameValuePair(new NVPair.EnumNVPair("e-noom", TestEnum.FOO));
+    MetaDataDescriptorInternal md2 = new MetaDataDescriptorImpl("cat2");
+    md2.add("name2", true);
+    md2.add("name3", "sdfsdfsdf".getBytes());
+    md2.add("name4", (byte) 4);
+    md2.add("name5", 'q');
+    md2.add("name6", new Date());
+    md2.add("name7", Math.PI);
+    md2.add("name8", 4.0296432F);
+    md2.add("name9", 42);
+    md2.add("name10", 666L);
+    md2.add("steve", (short) 53);
+    md2.add("tim", "rulez");
+    md2.add("e-noom", TestEnum.FOO);
 
     // make sure we cover all the types (if you add a new type and this is going off then add it to this test) :-)
     assertEquals(ValueType.values().length, md2.getMetaDatas().size());
@@ -183,7 +183,7 @@ public class DNAImplTest extends TestCase {
     // verify meta data
     count = 1;
     MetaDataReader metaReader = dna.getMetaDataReader();
-    for (MetaDataDescriptor meta : metaReader) {
+    for (MetaDataDescriptorInternal meta : metaReader) {
       switch (count) {
         case 1: {
           verifyMetaData(md, meta);
@@ -201,7 +201,7 @@ public class DNAImplTest extends TestCase {
     }
   }
 
-  private void verifyMetaData(MetaDataDescriptor expect, MetaDataDescriptor actual) {
+  private void verifyMetaData(MetaDataDescriptorInternal expect, MetaDataDescriptorInternal actual) {
     assertEquals(expect.getCategory(), actual.getCategory());
     assertEquals(expect.getMetaDatas(), actual.getMetaDatas());
   }
