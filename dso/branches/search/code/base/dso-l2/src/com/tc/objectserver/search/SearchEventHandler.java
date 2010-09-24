@@ -31,13 +31,8 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
       try {
         Index index = this.indexManager.getIndex(sicc.getName());
         if (index == null) {
-          boolean created = this.indexManager.createIndex(sicc.getName(), sicc.getSchema());
-          if (!created) {
-            index = this.indexManager.getIndex(sicc.getName());
-          } else {
-            // TODO: Return for now, Figure out what do to.
-            return;
-          }
+          this.indexManager.createIndex(sicc.getName(), sicc.getSchema());
+          index = this.indexManager.getIndex(sicc.getName());
         }
         index.upsert(sicc.getCacheKey(), sicc.getAttributes());
       } catch (IndexException e) {
@@ -48,7 +43,11 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
       SearchDeleteContext sidc = (SearchDeleteContext) context;
       try {
         Index index = this.indexManager.getIndex(sidc.getName());
-        index.remove(sidc.getCacheKey());
+        if (index != null) {
+          index.remove(sidc.getCacheKey());
+        } else {
+          // TODO: at least log something here
+        }
       } catch (IndexException e) {
         // TODO: figure out what to do with IndexException, rethrow for now.
         throw new EventHandlerException(e);
