@@ -114,11 +114,12 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
       return new SingleNodeGroupManager();
     }
   }
-  
+
   public MetaDataManager createMetaDataManager(Sink sink) {
     return new NullMetaDataManager();
   }
-  
+
+  @SuppressWarnings("unused")
   public IndexManager createIndexManager(L2TVSConfigurationSetupManager configSetupManager) throws IOException {
     return new NullIndexManager();
   }
@@ -144,8 +145,7 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                            managedObjectRequestSink);
   }
 
-  public ServerConfigurationContext createServerConfigurationContext(
-                                                                     StageManager stageManager,
+  public ServerConfigurationContext createServerConfigurationContext(StageManager stageManager,
                                                                      ObjectManager objMgr,
                                                                      ObjectRequestManager objRequestMgr,
                                                                      ServerMapRequestManager serverTCMapRequestManager,
@@ -172,7 +172,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                               lockMgr, channelManager, clientStateMgr, txnMgr, txnObjectMgr,
                                               clientHandshakeManager, channelStats, coordinator,
                                               new CommitTransactionMessageToTransactionBatchReader(serverStats),
-                                              transactionBatchManager, gtxm, clusterMetaDataManager, metaDataManager, indexManager);
+                                              transactionBatchManager, gtxm, clusterMetaDataManager, metaDataManager,
+                                              indexManager);
   }
 
   public TransactionFilter getTransactionFilter(List<PostInit> toInit, StageManager stageManager, int maxStageSize) {
