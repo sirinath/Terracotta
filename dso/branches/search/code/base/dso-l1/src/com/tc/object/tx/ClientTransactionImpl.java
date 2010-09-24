@@ -11,7 +11,7 @@ import com.tc.object.change.TCChangeBufferImpl;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.Notify;
 import com.tc.object.logging.RuntimeLogger;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.Assert;
 
 import java.util.ArrayList;
@@ -164,7 +164,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   }
 
   @Override
-  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     getOrCreateChangeBuffer(tco).addMetaDataDescriptor(md);
   }
 

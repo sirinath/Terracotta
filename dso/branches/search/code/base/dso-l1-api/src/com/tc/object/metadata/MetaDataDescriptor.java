@@ -3,76 +3,43 @@
  */
 package com.tc.object.metadata;
 
-import com.tc.io.TCByteBufferInput;
-import com.tc.io.TCByteBufferInputStream;
-import com.tc.io.TCByteBufferOutput;
-import com.tc.io.TCSerializable;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 /**
  * This class hold the Metadata information associated with a shared object.
  * 
  * @author Nabib
  */
-public class MetaDataDescriptor implements TCSerializable {
+public interface MetaDataDescriptor {
 
-  private static final MetaDataDescriptor  TEMPLATE    = new MetaDataDescriptor("template");
-  public static final MetaDataDescriptor[] EMPTY_ARRAY = new MetaDataDescriptor[0];
+  void add(String name, boolean value);
 
-  private final String                     category;
-  private final List<NVPair>               metaDatas;
+  void add(String name, byte value);
 
-  public MetaDataDescriptor(String category) {
-    this(category, new ArrayList<NVPair>());
-  }
+  void add(String name, char value);
 
-  private MetaDataDescriptor(String category, List<NVPair> metaDatas) {
-    this.category = category;
-    this.metaDatas = metaDatas;
-  }
+  void add(String name, double value);
 
-  public List<NVPair> getMetaDatas() {
-    return metaDatas;
-  }
+  void add(String name, float value);
 
-  public void addNameValuePair(NVPair nvPair) {
-    this.metaDatas.add(nvPair);
-  }
+  void add(String name, int value);
 
-  public String getCategory() {
-    return this.category;
-  }
+  void add(String name, long value);
 
-  public Object deserializeFrom(TCByteBufferInput in) throws IOException {
-    final String cat = in.readString();
-    final int size = in.readInt();
-    List<NVPair> data = new ArrayList<NVPair>(size);
+  void add(String name, short value);
 
-    for (int i = 0; i < size; i++) {
-      data.add(NVPair.deserializeInstance(in));
-    }
+  void add(String name, Date value);
 
-    return new MetaDataDescriptor(cat, data);
-  }
+  void add(String name, Enum value);
 
-  public void serializeTo(TCByteBufferOutput out) {
-    out.writeString(category);
-    out.writeInt(metaDatas.size());
-    for (NVPair nvpair : metaDatas) {
-      nvpair.serializeTo(out);
-    }
-  }
+  void add(String name, String value);
 
-  @Override
-  public String toString() {
-    return getClass().getSimpleName() + "(" + category + "): " + metaDatas.toString();
-  }
+  void add(String name, byte[] value);
 
-  public static MetaDataDescriptor deserializeInstance(TCByteBufferInputStream in) throws IOException {
-    return (MetaDataDescriptor) TEMPLATE.deserializeFrom(in);
-  }
+  void add(String name, Object value);
+
+  String getCategory();
+
+  int size();
 
 }

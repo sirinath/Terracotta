@@ -6,7 +6,7 @@ package com.tc.object.change;
 
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 
 /**
  * @author orion
@@ -27,6 +27,6 @@ public interface TCChangeBuffer {
 
   public TCObject getTCObject();
 
-  public void addMetaDataDescriptor(MetaDataDescriptor md);
+  public void addMetaDataDescriptor(MetaDataDescriptorInternal md);
 
 }

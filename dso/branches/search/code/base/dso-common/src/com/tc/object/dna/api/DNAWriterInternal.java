@@ -3,10 +3,10 @@
  */
 package com.tc.object.dna.api;
 
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 
 public interface DNAWriterInternal extends DNAWriter {
 
-  void addMetaData(MetaDataDescriptor md);
+  void addMetaData(MetaDataDescriptorInternal md);
 
 }

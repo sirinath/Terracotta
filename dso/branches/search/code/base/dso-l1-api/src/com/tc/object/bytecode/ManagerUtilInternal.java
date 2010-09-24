@@ -6,6 +6,7 @@ package com.tc.object.bytecode;
 
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.metadata.MetaDataDescriptor;
 
 public class ManagerUtilInternal {
 
@@ -19,6 +20,10 @@ public class ManagerUtilInternal {
     Manager manager = ManagerUtil.getManager();
     if (manager instanceof NullManager) { return NULL_MANAGER_INTERNAL; }
     return (ManagerInternal) manager;
+  }
+
+  public static MetaDataDescriptor createMetaDataDescriptor(String category) {
+    return getInternalManager().createMetaDataDescriptor(category);
   }
 
   /**

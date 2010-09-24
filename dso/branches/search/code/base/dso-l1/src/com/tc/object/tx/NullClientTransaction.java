@@ -8,7 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.Notify;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -101,7 +101,7 @@ public class NullClientTransaction extends AbstractClientTransaction {
   }
 
   @Override
-  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+  protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     return;
   }
 }

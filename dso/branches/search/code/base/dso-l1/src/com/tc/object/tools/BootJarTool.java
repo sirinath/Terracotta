@@ -151,6 +151,7 @@ import com.tc.object.loaders.StandardClassLoaderAdapter;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.NullInstrumentationLogger;
+import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.util.OverrideCheck;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
@@ -549,6 +550,7 @@ public class BootJarTool {
       loadTerracottaClass(StringCompressionUtil.class.getName());
       loadTerracottaClass(CompressedData.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
+      loadTerracottaClass(MetaDataDescriptor.class.getName());
 
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
       loadTerracottaClass(ProxyInstance.class.getName());

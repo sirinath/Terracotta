@@ -46,6 +46,8 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
+import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorImpl;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
@@ -909,5 +911,9 @@ public class ManagerImpl implements ManagerInternal {
 
   public void waitForAllCurrentTransactionsToComplete() {
     this.txManager.waitForAllCurrentTransactionsToComplete();
+  }
+
+  public MetaDataDescriptor createMetaDataDescriptor(String category) {
+    return new MetaDataDescriptorImpl(category);
   }
 }

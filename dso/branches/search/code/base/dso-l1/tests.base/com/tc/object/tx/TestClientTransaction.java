@@ -10,7 +10,7 @@ import com.tc.object.TCObject;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.Notify;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.SequenceID;
 
 import java.util.ArrayList;
@@ -141,7 +141,7 @@ public class TestClientTransaction implements ClientTransaction {
     return Collections.EMPTY_LIST;
   }
 
-  public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptor md) {
+  public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     throw new ImplementMe();
   }
 

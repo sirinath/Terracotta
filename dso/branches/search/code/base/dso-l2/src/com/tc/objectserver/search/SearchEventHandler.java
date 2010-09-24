@@ -39,7 +39,7 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
             return;
           }
         }
-        index.upsert(sicc.getName(), sicc.getAttributes());
+        index.upsert(sicc.getCacheKey(), sicc.getAttributes());
       } catch (IndexException e) {
         // TODO: figure out what to do with IndexException, rethrow for now.
         throw new EventHandlerException(e);
@@ -48,7 +48,7 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
       SearchDeleteContext sidc = (SearchDeleteContext) context;
       try {
         Index index = this.indexManager.getIndex(sidc.getName());
-        index.remove(sidc.getName());
+        index.remove(sidc.getCacheKey());
       } catch (IndexException e) {
         // TODO: figure out what to do with IndexException, rethrow for now.
         throw new EventHandlerException(e);

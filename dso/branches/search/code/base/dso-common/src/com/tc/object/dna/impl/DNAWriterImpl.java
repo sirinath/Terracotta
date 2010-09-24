@@ -12,7 +12,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.DNAWriterInternal;
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
 
@@ -179,7 +179,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
     encoding.encode(value, output);
   }
 
-  public void addMetaData(MetaDataDescriptor md) {
+  public void addMetaData(MetaDataDescriptorInternal md) {
     if (!hasMetaData) {
       metaDataOffset = output.getBytesWritten() - headerMark.getPosition();
       hasMetaData = true;
@@ -329,7 +329,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
       parent.addSubArrayAction(start, array, length);
     }
 
-    public void addMetaData(MetaDataDescriptor md) {
+    public void addMetaData(MetaDataDescriptorInternal md) {
       if (metaDataOffset == UNINITIALIZED) {
         metaDataOffset = output.getBytesWritten() - startMark.getPosition();
       }

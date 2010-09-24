@@ -3,9 +3,8 @@
  */
 package com.tc.object.dna.api;
 
-import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.MetaDataDescriptorInternal;
 
-public interface MetaDataReader extends Iterable<MetaDataDescriptor> {
-  
+public interface MetaDataReader extends Iterable<MetaDataDescriptorInternal> {
   //
 }
