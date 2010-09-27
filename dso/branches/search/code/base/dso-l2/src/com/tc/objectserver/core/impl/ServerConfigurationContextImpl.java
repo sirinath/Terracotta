@@ -21,6 +21,7 @@ import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.search.IndexManager;
+import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
@@ -51,6 +52,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
   private final ServerClusterMetaDataManager   serverClusterMetaDataManager;
   private final MetaDataManager                metaDataManager;
   private final IndexManager                   indexManager;
+  private final SearchRequestManager           searchRequestManager;
 
   public ServerConfigurationContextImpl(final StageManager stageManager, final ObjectManager objectManager,
                                         final ObjectRequestManager objectRequestManager,
@@ -67,7 +69,8 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
                                         final ServerGlobalTransactionManager serverGlobalTransactionManager,
                                         final ServerClusterMetaDataManager serverClusterMetaDataManager,
                                         final MetaDataManager metaDataManager,
-                                        final IndexManager indexManager) {
+                                        final IndexManager indexManager,
+                                        final SearchRequestManager searchRequestManager) {
     super(stageManager);
     this.objectManager = objectManager;
     this.objectRequestManager = objectRequestManager;
@@ -87,6 +90,7 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
     this.serverClusterMetaDataManager = serverClusterMetaDataManager;
     this.metaDataManager = metaDataManager;
     this.indexManager = indexManager;
+    this.searchRequestManager = searchRequestManager;
   }
 
   public L2Coordinator getL2Coordinator() {
@@ -159,6 +163,10 @@ public class ServerConfigurationContextImpl extends ConfigurationContextImpl imp
 
   public IndexManager getIndexManager() {
     return indexManager;
+  }
+  
+  public SearchRequestManager getSearchRequestManager() {
+    return searchRequestManager;
   }
   
   

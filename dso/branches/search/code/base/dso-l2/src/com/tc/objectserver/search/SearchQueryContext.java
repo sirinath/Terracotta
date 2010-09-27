@@ -4,7 +4,8 @@
 package com.tc.objectserver.search;
 
 import com.tc.async.api.MultiThreadedEventContext;
-import com.tc.net.NodeID;
+import com.tc.net.ClientID;
+import com.tc.object.SearchRequestID;
 
 /**
  * Context holding search queury search information.
@@ -14,13 +15,15 @@ import com.tc.net.NodeID;
  */
 public class SearchQueryContext implements MultiThreadedEventContext {
   
-  private final NodeID id;
+  private final ClientID clientID;
+  private final SearchRequestID requestID;
   private final String cacheName;
   private final String attributeName;
   private final String attributeValue;
   
-  public SearchQueryContext(NodeID id, String cacheName, String attributeName, String attributeValue) {
-    this.id = id;
+  public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, String attributeName, String attributeValue) {
+    this.clientID = clientID;
+    this.requestID = requestID;
     this.cacheName = cacheName;
     this.attributeName = attributeName;
     this.attributeValue = attributeValue;
@@ -32,30 +35,52 @@ public class SearchQueryContext implements MultiThreadedEventContext {
    * @return String string
    */
   public String getAttributeName() {
-    return attributeName;
+    return this.attributeName;
   }
 
 
   /**
+   * Attribute value
    * 
+   * @return String string
    */
   public String getAttributeValue() {
-    return attributeValue;
+    return this.attributeValue;
   }
 
 
   /**
+   * Cachename/Index name
    * 
+   * @return String string
    */
-  public Object getCacheName() {
-    return cacheName;
+  public String getCacheName() {
+    return this.cacheName;
   }
-
+  
+  /**
+   * Return clientID
+   * 
+   * @return ClientID clientID
+   */
+  public ClientID getClientID() {
+    return this.clientID;
+  }
+  
+  /**
+   * SearchRequestID requestID
+   * 
+   * @return SearchRequestID requestID
+   */
+  public SearchRequestID getRequestID() {
+    return this.requestID;
+  }
+  
   /**
    * {@inheritDoc}
    */
   public Object getKey() {
-    return id;
+    return clientID;
   }
 
 }

@@ -44,6 +44,7 @@ import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.search.IndexManager;
+import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -82,6 +83,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                   Sink respondObjectRequestSink, ObjectStatsRecorder statsRecorder,
                                                   List<PostInit> toInit, StageManager stageManager, int maxStageSize,
                                                   DumpHandlerStore dumpHandlerStore);
+  
+  SearchRequestManager createSearchRequestManager(DSOChannelManager channelManager, Sink searchEventSink);
 
   void populateAdditionalStatisticsRetrivalRegistry(StatisticsRetrievalRegistry registry);
 
@@ -115,7 +118,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                                               int maxStageSize, ChannelManager genericChannelManager,
                                                               DumpHandlerStore dumpHandlerStore,
                                                               MetaDataManager metaDataManager,
-                                                              IndexManager indexManager);
+                                                              IndexManager indexManager,
+                                                              SearchRequestManager searchRequestManager);
 
   GroupManager getClusterGroupCommManager();
 

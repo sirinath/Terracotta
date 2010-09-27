@@ -19,6 +19,7 @@ import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.search.IndexManager;
+import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.objectserver.tx.TransactionBatchReaderFactory;
@@ -81,6 +82,8 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String SERVER_MAP_EVICTION_PROCESSOR_STAGE                = "server_map_eviction_processor_stage";
   public static final String SERVER_MAP_EVICTION_BROADCAST_STAGE                = "server_map_eviction_broadcast_stage";
   public static final String SEARCH_EVENT_STAGE                                 = "search_event_stage";
+  public static final String SEARCH_QUERY_REQUEST_STAGE                         = "search_query_request_stage";
+  
   // TODO::Move to enterprise
   public static final String AA_TRANSACTION_WATERMARK_BROADCAST_STAGE           = "aa_transaction_watermark_broadcast_stage";
   public static final String AA_TRANSACTION_WATERMARK_RECEIVE_STAGE             = "aa_transaction_watermark_receive_stage";
@@ -122,4 +125,6 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public MetaDataManager getMetaDataManager();
   
   public IndexManager getIndexManager();
+  
+  public SearchRequestManager getSearchRequestManager();
 }
