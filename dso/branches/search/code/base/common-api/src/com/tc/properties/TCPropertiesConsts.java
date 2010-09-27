@@ -841,7 +841,6 @@ public interface TCPropertiesConsts {
    * </code>
    ********************************************************************************************************************/
 
-  public static final String   L2_OFFHEAP_CACHE_STATS_ENABLED                                  = "l2.offHeapCache.stats.enabled";
   public static final String   L2_OFFHEAP_CACHE_MAP_PERCENTAGE                                 = "l2.offHeapCache.map.percentage";
   public static final String   L2_OFFHEAP_OBJECT_CACHE_INITIAL_DATASIZE                        = "l2.offHeapCache.object.initialDataSize";
   public static final String   L2_OFFHEAP_OBJECT_CACHE_TABLESIZE                               = "l2.offHeapCache.object.tableSize";
@@ -849,6 +848,8 @@ public interface TCPropertiesConsts {
   public static final String   L2_OFFHEAP_MAP_CACHE_INITIAL_DATASIZE                           = "l2.offHeapCache.map.initialDataSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_TABLESIZE                                  = "l2.offHeapCache.map.tableSize";
   public static final String   L2_OFFHEAP_MAP_CACHE_CONCURRENCY                                = "l2.offHeapCache.map.concurrency";
+  public static final String   L2_OFFHEAP_EVENT_GENERATOR_THRESHOLD                            = "l2.offHeapCache.operator.event.generator.threshold";
+  public static final String   L2_OFFHEAP_EVENT_GENERATOR_SLEEP_INTERVAL                       = "l2.offHeapCache.operator.event.generator.sleepInterval";
 
   // for tests
   public static final String   L2_OFFHEAP_SKIP_JVMARG_CHECK                                    = "l2.offHeapCache.skip.jvmarg.check";

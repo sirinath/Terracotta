@@ -117,6 +117,14 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     mvn_install(ENTERPRISE)
   end
 
+  def dist_maven_all
+    @internal_config_source['dev_dist'] = 'true'
+    mvn_install(OPENSOURCE)
+    @flavor = ENTERPRISE
+    load_config
+    mvn_install(ENTERPRISE)
+  end
+
   def dist_dev(product_code = 'DSO', flavor = nil)
     flavor ||= @build_environment.is_ee_branch? ? ENTERPRISE : OPENSOURCE
     if flavor == ENTERPRISE then dist_maven_ee else dist_maven end
@@ -338,8 +346,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
         :snapshot => @config_source[MAVEN_SNAPSHOT_CONFIG_KEY])
 
       # rudimentary check to make sure we're not missing an artifact by mistake
-      artifact_count = args.shift
-      expected_count = artifact_count['artifact_count']
+      expected_count = args.shift['artifact_count']
       fail("Expecting to deploy #{expected_count} TC maven artifacts but found only #{args.size}") unless args.size == expected_count
 
       args.each do |arg|

@@ -440,6 +440,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
       FileNotCreatedException {
 
     this.threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));
+    this.threadGroup.addCallbackOnExitDefaultHandler(this.dumpHandler);
+
     this.thisServerNodeID = makeServerNodeID(this.configSetupManager.dsoL2Config());
     this.indexManager = this.serverBuilder.createIndexManager(this.configSetupManager);
 
@@ -548,7 +550,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final GarbageCollectionInfoPublisher gcPublisher = new GarbageCollectionInfoPublisherImpl();
     logger.debug("server swap enabled: " + swapEnabled);
     final ManagedObjectChangeListenerProviderImpl managedObjectChangeListenerProvider = new ManagedObjectChangeListenerProviderImpl();
-    StatisticRetrievalAction sraForDb = null;
+    StatisticRetrievalAction[] sraForDbEnv = null;
 
     this.sampledCounterManager = new CounterManagerImpl();
     final SampledCounterConfig sampledCounterConfig = new SampledCounterConfig(1, 300, true, 0L);
@@ -582,7 +584,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
       this.persistor = new DBPersistorImpl(TCLogging.getLogger(DBPersistorImpl.class), dbenv,
                                            serializationAdapterFactory, this.configSetupManager.commonl2Config()
                                                .dataPath().getFile(), this.objectStatsRecorder);
-      sraForDb = dbenv.getSRA();
+      sraForDbEnv = dbenv.getSRAs();
 
       // Setting the DB environment for the bean which takes backup of the active server
       if (persistent) {
@@ -751,7 +753,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.gcStatsEventPublisher = new GCStatsEventPublisher();
     managedObjectChangeListenerProvider.setListener(this.objectManager);
     final CallbackDumpAdapter objMgrDumpAdapter = new CallbackDumpAdapter(this.objectManager);
-    this.threadGroup.addCallbackOnExitDefaultHandler(objMgrDumpAdapter);
     this.dumpHandler.registerForDump(objMgrDumpAdapter);
 
     final TCProperties cacheManagerProperties = this.l2Properties.getPropertiesFor("cachemanager");
@@ -814,7 +815,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.lockStatisticsMBean.addL2LockStatisticsEnableDisableListener(this.lockManager);
 
     final CallbackDumpAdapter lockDumpAdapter = new CallbackDumpAdapter(this.lockManager);
-    this.threadGroup.addCallbackOnExitDefaultHandler(lockDumpAdapter);
     this.dumpHandler.registerForDump(lockDumpAdapter);
     final ObjectInstanceMonitorImpl instanceMonitor = new ObjectInstanceMonitorImpl();
 
@@ -897,7 +897,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                gtxm, txnStageCoordinator);
 
     final CallbackDumpAdapter txnObjMgrDumpAdapter = new CallbackDumpAdapter(this.txnObjectManager);
-    this.threadGroup.addCallbackOnExitDefaultHandler(txnObjMgrDumpAdapter);
     this.dumpHandler.registerForDump(txnObjMgrDumpAdapter);
     this.objectManager.setTransactionalObjectManager(this.txnObjectManager);
 
@@ -909,7 +908,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                    .getPropertiesFor("transactionmanager")),
                                                                this.objectStatsRecorder, this.metaDataManager );
     final CallbackDumpAdapter txnMgrDumpAdapter = new CallbackDumpAdapter(this.transactionManager);
-    this.threadGroup.addCallbackOnExitDefaultHandler(txnMgrDumpAdapter);
     this.dumpHandler.registerForDump(txnMgrDumpAdapter);
 
     final ServerClusterMetaDataManager clusterMetaDataManager = new ServerClusterMetaDataManagerImpl(
@@ -1141,7 +1139,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     // populate the statistics retrieval register
     populateStatisticsRetrievalRegistry(serverStats, this.seda.getStageManager(), mm, this.transactionManager,
-                                        serverTransactionSequencerImpl, sraForDb);
+                                        serverTransactionSequencerImpl, sraForDbEnv);
 
     // XXX: yucky casts
     this.managementContext = new ServerManagementContext(this.transactionManager, this.objectRequestManager,
@@ -1342,7 +1340,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                    final MessageMonitor messageMonitor,
                                                    final ServerTransactionManagerImpl txnManager,
                                                    final ServerTransactionSequencerStats serverTransactionSequencerStats,
-                                                   final StatisticRetrievalAction sraBdb) {
+                                                   final StatisticRetrievalAction[] srasForDbEnv) {
     if (this.statisticsAgentSubSystem.isActive()) {
       final StatisticsRetrievalRegistry registry = this.statisticsAgentSubSystem.getStatisticsRetrievalRegistry();
       registry.registerActionInstance(new SRAL2ToL1FaultRate(serverStats));
@@ -1373,8 +1371,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
       registry.registerActionInstance(new SRAL2ServerMapGetSizeRequestsRate(serverStats));
       registry.registerActionInstance(new SRAL2ServerMapGetValueRequestsCount(serverStats));
       registry.registerActionInstance(new SRAL2ServerMapGetValueRequestsRate(serverStats));
-      if (sraBdb != null) {
-        registry.registerActionInstance(sraBdb);
+      for (StatisticRetrievalAction sraForDbEnv : srasForDbEnv) {
+        registry.registerActionInstance(sraForDbEnv);
       }
 
       this.serverBuilder.populateAdditionalStatisticsRetrivalRegistry(registry);
