@@ -10,6 +10,9 @@ import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.metadata.AbstractMetaDataHandler;
 
+import java.io.IOException;
+import java.util.Set;
+
 /**
  * All search request are processed through this handler. Every context should implement
  * {@link MultiThreadedEventContext} so that order can be maintained per client.
@@ -18,13 +21,15 @@ import com.tc.objectserver.metadata.AbstractMetaDataHandler;
  */
 public class SearchEventHandler extends AbstractMetaDataHandler {
 
-  private volatile IndexManager indexManager;
+  private IndexManager indexManager;
+  private SearchRequestManager searchRequestManager;
 
   /**
    * {@inheritDoc}
+   * @throws IOException 
    */
   @Override
-  public void handleMetaDataEvent(EventContext context) throws EventHandlerException {
+  public void handleMetaDataEvent(EventContext context) throws EventHandlerException, IOException {
     if (context instanceof SearchUpsertContext) {
       SearchUpsertContext sicc = (SearchUpsertContext) context;
 
@@ -53,7 +58,11 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
         throw new EventHandlerException(e);
       }
     } else if (context instanceof SearchQueryContext) {
-      // TODO: search lucene index.
+      SearchQueryContext sqc = (SearchQueryContext) context;
+
+      Set<String> keys = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getAttributeName(), sqc
+          .getAttributeValue());
+      this.searchRequestManager.queryResponse(sqc, keys);
     } else {
       throw new AssertionError("Unknown context: " + context);
     }
@@ -64,6 +73,7 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
     super.initialize(context);
     ServerConfigurationContext serverContext = (ServerConfigurationContext) context;
     this.indexManager = serverContext.getIndexManager();
+    this.searchRequestManager = serverContext.getSearchRequestManager();
   }
 
 }

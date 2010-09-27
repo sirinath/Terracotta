@@ -10,6 +10,8 @@ import com.tc.async.api.EventHandlerException;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.tx.ServerTransactionManager;
 
+import java.io.IOException;
+
 /**
  * 
  */
@@ -21,7 +23,11 @@ public abstract class AbstractMetaDataHandler extends AbstractEventHandler {
   @Override
   public void handleEvent(EventContext context) throws EventHandlerException {
 
-    handleMetaDataEvent(context);
+    try {
+      handleMetaDataEvent(context);
+    } catch (IOException e) {
+      throw new EventHandlerException(e);
+    }
 
     if (context instanceof AbstractMetaDataContext) {
       AbstractMetaDataContext metaDataContext = (AbstractMetaDataContext) context;
@@ -31,7 +37,7 @@ public abstract class AbstractMetaDataHandler extends AbstractEventHandler {
     }
   }
 
-  public abstract void handleMetaDataEvent(EventContext context) throws EventHandlerException;
+  public abstract void handleMetaDataEvent(EventContext context) throws EventHandlerException, IOException;
 
   @Override
   protected void initialize(ConfigurationContext context) {

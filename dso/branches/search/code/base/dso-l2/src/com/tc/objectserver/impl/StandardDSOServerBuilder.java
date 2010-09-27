@@ -54,6 +54,8 @@ import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.search.IndexManager;
 import com.tc.objectserver.search.NullIndexManager;
+import com.tc.objectserver.search.NullSearchRequestManager;
+import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.tx.CommitTransactionMessageToTransactionBatchReader;
@@ -123,6 +125,10 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   public IndexManager createIndexManager(L2TVSConfigurationSetupManager configSetupManager) throws IOException {
     return new NullIndexManager();
   }
+  
+  public SearchRequestManager createSearchRequestManager(DSOChannelManager channelManager, Sink searchEventSink) {
+    return new NullSearchRequestManager();
+  }
 
   public ObjectRequestManager createObjectRequestManager(ObjectManager objectMgr, DSOChannelManager channelManager,
                                                          ClientStateManager clientStateMgr,
@@ -167,13 +173,14 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                                                      ChannelManager genericChannelManager,
                                                                      DumpHandlerStore dumpHandlerStore,
                                                                      MetaDataManager metaDataManager,
-                                                                     IndexManager indexManager) {
+                                                                     IndexManager indexManager,
+                                                                     SearchRequestManager searchRequestManager) {
     return new ServerConfigurationContextImpl(stageManager, objMgr, objRequestMgr, serverTCMapRequestManager, objStore,
                                               lockMgr, channelManager, clientStateMgr, txnMgr, txnObjectMgr,
                                               clientHandshakeManager, channelStats, coordinator,
                                               new CommitTransactionMessageToTransactionBatchReader(serverStats),
                                               transactionBatchManager, gtxm, clusterMetaDataManager, metaDataManager,
-                                              indexManager);
+                                              indexManager, searchRequestManager);
   }
 
   public TransactionFilter getTransactionFilter(List<PostInit> toInit, StageManager stageManager, int maxStageSize) {

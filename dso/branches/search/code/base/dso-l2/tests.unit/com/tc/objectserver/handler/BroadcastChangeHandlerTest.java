@@ -58,6 +58,7 @@ import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
 import com.tc.objectserver.persistence.api.ManagedObjectStore;
 import com.tc.objectserver.search.IndexManager;
+import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionListener;
@@ -295,6 +296,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     }
 
     public MetaDataManager getMetaDataManager() {
+      throw new ImplementMe();
+    }
+
+    public SearchRequestManager getSearchRequestManager() {
       throw new ImplementMe();
     }
 
