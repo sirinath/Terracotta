@@ -6,7 +6,6 @@ package com.tc.objectserver.search;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.async.api.EventHandlerException;
 import com.tc.net.ClientID;
 import com.tc.object.msg.SearchQueryRequestMessage;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
@@ -24,14 +23,13 @@ public class SearchQueryRequestHandler extends AbstractEventHandler {
    * {@inheritDoc}
    */
   @Override
-  public void handleEvent(EventContext context) throws EventHandlerException {
-    
-    if(context instanceof SearchQueryRequestMessage) {
-      SearchQueryRequestMessage message = (SearchQueryRequestMessage)context;
-      this.searchRequestManager.queryRequest((ClientID)message.getSourceNodeID(), message.getRequestID(),
-                                             message.getCachename(),message.getAttributeName(),
+  public void handleEvent(EventContext context) {
+    if (context instanceof SearchQueryRequestMessage) {
+      SearchQueryRequestMessage message = (SearchQueryRequestMessage) context;
+      this.searchRequestManager.queryRequest((ClientID) message.getSourceNodeID(), message.getRequestID(),
+                                             message.getCachename(), message.getAttributeName(),
                                              message.getAttributeValue());
-      
+
     } else {
       throw new AssertionError("Unknown context: " + context);
     }
