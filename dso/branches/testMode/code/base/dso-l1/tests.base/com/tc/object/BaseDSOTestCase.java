@@ -21,6 +21,7 @@ import com.tc.test.TCTestCase;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.BindPort;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -101,13 +102,18 @@ public class BaseDSOTestCase extends TCTestCase implements TestClientConfigHelpe
   protected synchronized void setupConfigLogDataStatisticsPaths(TestTVSConfigurationSetupManagerFactory out)
       throws ConfigurationSetupException {
     try {
-      ((SettableConfigItem) out.l2CommonConfig().dataPath()).setValue(getTempFile("l2-data").toString());
-      ((SettableConfigItem) out.l2CommonConfig().logsPath()).setValue(getTempFile("l2-logs").toString());
-      ((SettableConfigItem) out.l2CommonConfig().statisticsPath()).setValue(getTempFile("l2-statistics").toString());
-      ((SettableConfigItem) out.l1CommonConfig().logsPath()).setValue(getTempFile("l1-logs").toString());
+      ((SettableConfigItem) out.l2CommonConfig().dataPath()).setValue(getL2L1InfoString("l2-data"));
+      ((SettableConfigItem) out.l2CommonConfig().logsPath()).setValue(getL2L1InfoString("l2-logs"));
+      ((SettableConfigItem) out.l2CommonConfig().statisticsPath()).setValue(getL2L1InfoString("l2-statistics"));
+      ((SettableConfigItem) out.l1CommonConfig().logsPath()).setValue(getL2L1InfoString("l1-logs"));
     } catch (IOException ioe) {
       throw new ConfigurationSetupException("Can't set up log, data and statistics paths", ioe);
     }
+  }
+
+  private String getL2L1InfoString(String str) throws IOException {
+    File f = new File(getTempDirectory().getAbsolutePath() + File.separator + this.getTestName() + File.separator + str);
+    return f.toString();
   }
 
   protected synchronized final TestTVSConfigurationSetupManagerFactory createCentralizedConfigFactory()
@@ -158,5 +164,13 @@ public class BaseDSOTestCase extends TCTestCase implements TestClientConfigHelpe
     this.configFactory = null;
     this.configHelper = null;
     this.l1ConfigManager = null;
+  }
+
+  protected String getTestName() {
+    return "default";
+  }
+
+  protected boolean cleanTempDir() {
+    return false;
   }
 }

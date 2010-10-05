@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +74,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private TransparentAppConfig              transparentAppConfig;
   private ApplicationConfigBuilder          possibleApplicationConfigBuilder;
 
-  private String                            mode;
+  private String                            currentRunningMode;
+  private static String                     modeExpected                    = TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL;
+  private boolean                           isCurrentRunPossible            = false;
+
   private ServerControl                     serverControl;
   protected boolean                         controlledCrashMode             = false;
   private ServerCrasher                     crasher;
@@ -91,6 +95,22 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private int                               adminPort                       = -1;
   private int                               groupPort                       = -1;
   private final List                        postActions                     = new ArrayList();
+
+  private String                            testName                        = "default";
+
+  private static final LinkedList<String>   modesToRun                      = new LinkedList<String>();
+
+  static {
+    String mode = TestConfigObject.getInstance().transparentTestsMode();
+    if (mode == null) {
+      modesToRun.add(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL);
+      modesToRun.add(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH);
+      modesToRun.add(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE);
+      modesToRun.add(TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE);
+    } else {
+      modesToRun.add(mode);
+    }
+  }
 
   protected TestConfigObject getTestConfigObject() {
     return TestConfigObject.getInstance();
@@ -163,6 +183,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   @Override
   protected void setUp() throws Exception {
+    setCurrentRunningMode();
+    isCurrentRunPossible = currentRunningMode != null && currentRunningMode.equals(modeExpected);
+    if (!isCurrentRunPossible) { return; }
+    this.testName = "test-" + this.currentRunningMode;
+
     setUpTransparent(configFactory(), configHelper());
 
     // config should be set up before tc-config for external L2s are written out
@@ -191,7 +216,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     RestartTestHelper helper = null;
     PortChooser portChooser = new PortChooser();
-    if ((isCrashy() && canRunCrash()) || useExternalProcess()) {
+    if (((isCrashy() && canRunCrash()) || useExternalProcess()) && !isMultipleServerTest()) {
       // javaHome is set here only to enforce that java home is defined in the test config
       // javaHome is set again inside RestartTestEnvironment because how that class is used
       // TODO: clean this up
@@ -199,8 +224,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
       helper = new RestartTestHelper(mode().equals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH),
                                      new RestartTestEnvironment(getTempDirectory(), portChooser,
-                                                                RestartTestEnvironment.PROD_MODE, configFactory()),
-                                     jvmArgs);
+                                                                RestartTestEnvironment.PROD_MODE, configFactory(),
+                                                                this.testName), jvmArgs);
       dsoPort = helper.getServerPort();
       adminPort = helper.getAdminPort();
       groupPort = helper.getGroupPort();
@@ -259,6 +284,14 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
                                   helper.getServerCrasherConfig().isCrashy(), crashTestState, proxyMgr);
       if (canRunL1ProxyConnect()) crasher.setProxyConnectMode(true);
       crasher.startAutocrash();
+    }
+  }
+
+  private void setCurrentRunningMode() {
+    if (modesToRun.size() > 0) {
+      currentRunningMode = modesToRun.getFirst();
+    } else {
+      currentRunningMode = null;
     }
   }
 
@@ -394,8 +427,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     disableL1L2ConfigValidationCheck();
   }
 
-  protected boolean useExternalProcess() {
-    return getTestConfigObject().isL2StartupModeExternal();
+  private boolean useExternalProcess() {
+    return true;// getTestConfigObject().isL2StartupModeExternal();
   }
 
   // only used by regular system tests (not crash or active-passive)
@@ -492,11 +525,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected synchronized final String mode() {
-    if (mode == null) {
-      mode = getTestConfigObject().transparentTestsMode();
-    }
-
-    return mode;
+    return currentRunningMode;
   }
 
   public void doSetUp(TransparentTestIface t) throws Exception {
@@ -653,7 +682,39 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return t;
   }
 
-  public void test() throws Exception {
+  public void testNormal() throws Exception {
+    try {
+      if (!isCurrentRunPossible) { return; }
+      Assert.assertEquals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL, currentRunningMode);
+
+      startTest();
+
+    } finally {
+      if (modesToRun.size() > 0 && isCurrentRunPossible) {
+        modesToRun.removeFirst();
+      }
+      modeExpected = TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH;
+    }
+  }
+
+  public void testCrash() throws Exception {
+    try {
+      if (!isCurrentRunPossible) { return; }
+      Assert.assertEquals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH, currentRunningMode);
+
+      startTest();
+
+    } finally {
+      if (modesToRun.size() > 0 && isCurrentRunPossible) {
+        modesToRun.removeFirst();
+      }
+      modeExpected = TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE;
+    }
+  }
+
+  private void startTest() throws Exception {
+    System.err.println("XXX Starting mode " + currentRunningMode);
+
     if (canRun()) {
       if (controlledCrashMode && serverControls != null) {
         startServerControlsAndProxies();
@@ -748,6 +809,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   @Override
   protected void tearDown() throws Exception {
+    if (!isCurrentRunPossible) { return; }
+
     if (controlledCrashMode) {
       if (isCrashy() && canRunCrash()) {
         synchronized (crashTestState) {
@@ -843,6 +906,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     out.getServers().getL2s()[0].setJMXPort(administratorPort);
 
     return out;
+  }
+
+  protected String getTestName() {
+    return this.testName;
   }
 
   /*
