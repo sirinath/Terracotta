@@ -415,7 +415,9 @@ public class TestConfigObject {
   private static File        baseDir;
 
   public String transparentTestsMode() {
-    return getProperty(TRANSPARENT_TESTS_MODE, TRANSPARENT_TESTS_MODE_NORMAL);
+    String str = getProperty(TRANSPARENT_TESTS_MODE, TRANSPARENT_TESTS_MODE_NORMAL);
+    if (TRANSPARENT_TESTS_MODE_NORMAL.equals(str)) { return null; }
+    return str;
   }
 
   private void assertValidClasspath(String out) {
@@ -438,9 +440,9 @@ public class TestConfigObject {
   public void setSpringTest(boolean springTest) {
     this.springTest = springTest;
   }
-  
+
   public boolean isExpressModeForAppserver() {
     return "express".equals(properties.getProperty(APP_SERVER_TEST_MODE, "custom"));
   }
-  
+
 }

@@ -44,9 +44,9 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
     }
   }
 
-  public void test() throws Exception {
+  public void testNormal() throws Exception {
     if (isMultipleServerTest()) runMultipleServersTest();
-    super.test();
+    super.testNormal();
   }
 
   protected abstract void runMultipleServersTest() throws Exception;

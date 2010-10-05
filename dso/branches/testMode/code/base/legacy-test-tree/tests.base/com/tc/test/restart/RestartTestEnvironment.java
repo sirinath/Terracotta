@@ -26,6 +26,7 @@ import com.terracottatech.config.PersistenceMode;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,18 +60,25 @@ public class RestartTestEnvironment {
   private final TestTVSConfigurationSetupManagerFactory configFactory;
 
   public RestartTestEnvironment(File tempDirectory, PortChooser portChooser, OperatingMode operatingMode) {
-    this(tempDirectory, portChooser, operatingMode, null);
+    this(tempDirectory, portChooser, operatingMode, null, "default");
   }
 
   public RestartTestEnvironment(File tempDirectory, PortChooser portChooser, OperatingMode operatingMode,
-                                TestTVSConfigurationSetupManagerFactory configFactory) {
-    this.tempDirectory = tempDirectory;
+                                TestTVSConfigurationSetupManagerFactory configFactory, String testName) {
     this.portChooser = portChooser;
     this.operatingMode = operatingMode;
     this.configFactory = configFactory;
     if (!tempDirectory.isDirectory()) {
       //
       throw new AssertionError("Temp directory is not a directory: " + tempDirectory);
+    }
+
+    try {
+      String fileName = tempDirectory.getAbsolutePath() + File.separator + testName;
+      this.tempDirectory = new File(fileName);
+      FileUtils.forceMkdir(this.tempDirectory);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
     this.configFile = new File(this.tempDirectory, "restart-test-config.xml");
   }
@@ -229,8 +237,8 @@ public class RestartTestEnvironment {
     } catch (Exception e) {
       // ignore, leaving javaHome as null
     }
-    this.server = new ExtraProcessServerControl(new DebugParams(), "localhost", serverPort, adminPort,
-                                                this.configFile.getAbsolutePath(), mergeServerOutput, javaHome, jvmArgs);
+    this.server = new ExtraProcessServerControl(new DebugParams(), "localhost", serverPort, adminPort, this.configFile
+        .getAbsolutePath(), mergeServerOutput, javaHome, jvmArgs);
     return serverWrapper;
   }
 
