@@ -27,8 +27,7 @@ public interface SearchRequestManager {
    * @param String attributeName
    * @param String attributeValue
    */
-  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, String attributeName,
-                           String attributeValue);
+  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, String query);
   
   /**
    * Query response.

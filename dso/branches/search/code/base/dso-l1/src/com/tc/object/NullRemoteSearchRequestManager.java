@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public class NullRemoteSearchRequestManager implements RemoteSearchRequestManager {
 
-  public Set<String> query(String cachename, String attributeName, String attributeValue) {
+  public Set<String> query(String cachename, String query) {
      return Collections.EMPTY_SET;
   }
 

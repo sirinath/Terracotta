@@ -16,7 +16,7 @@ public interface IndexManager {
 
   boolean deleteIndex(String name) throws IndexException;
   
-  public Set<String> searchIndex(String name, String attributeName, String attributeValue) throws IOException;
+  public Set<String> searchIndex(String name, String query) throws IOException;
 
   void shutdown();
 }

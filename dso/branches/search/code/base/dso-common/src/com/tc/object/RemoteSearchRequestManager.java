@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public interface RemoteSearchRequestManager extends ClientHandshakeCallback {
   
-  public Set<String> query(String cachename, String attributeName, String attributeValue);
+  public Set<String> query(String cachename, String query);
   
   public void addResponseForQuery(final SessionID sessionID, final SearchRequestID requestID,
                                                final Set<String> keys, final NodeID nodeID);
