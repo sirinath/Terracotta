@@ -24,7 +24,7 @@ public class NullIndexManager implements IndexManager {
     return new NullIndex();
   }
   
-  public Set<String> searchIndex(String name, String attributeName, String attributeValue) {
+  public Set<String> searchIndex(String name, String query) {
     return null;
   }
 
@@ -46,7 +46,7 @@ public class NullIndexManager implements IndexManager {
       
     }
 
-    public Set<String> search(String attributeName, String attributeValue) {
+    public Set<String> search(String query) {
       return null;
     }
     

@@ -10,8 +10,7 @@ import java.util.Set;
 
 public class NullSearchRequestManager implements SearchRequestManager {
 
-  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, String attributeName,
-                           String attributeValue) {
+  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, String query) {
    //Do nothing
   }
 

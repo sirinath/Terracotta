@@ -15,7 +15,7 @@ public interface Index {
 
   void upsert(Object key, List<NVPair> attributes) throws IndexException;
   
-  Set<String> search(String attributeName, String attributeValue) throws IOException;
+  Set<String> search(String query) throws IOException;
 
   void close();
 

@@ -19,14 +19,11 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
   private final static byte SEARCH_REQUEST_ID = 0;
   private final static byte CACHENAME         = 1;
-  private final static byte ATTR_NAME         = 2;
-  private final static byte ATTR_VALUE        = 3;
+  private final static byte QUERY             = 2;
   
   private SearchRequestID requestID;
   private String          cachename;
-  private String          attributeName;
-  private String          attributeValue;
-  
+  private String          query;
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
                                        TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
@@ -34,19 +31,17 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
   
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final String attribute, final String value) {
+                                          final String queryString) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
-    this.attributeName = attribute;
-    this.attributeValue = attribute;
+    this.query = queryString;
   }
 
   @Override
   protected void dehydrateValues() {
     putNVPair(SEARCH_REQUEST_ID, this.requestID.toLong());
     putNVPair(CACHENAME, this.cachename);
-    putNVPair(ATTR_NAME, this.attributeName);
-    putNVPair(ATTR_VALUE, this.attributeValue);
+    putNVPair(QUERY, this.query);
   }
 
   @Override
@@ -60,12 +55,8 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
         this.cachename = getStringValue();
         return true;
       
-      case ATTR_NAME:
-        this.attributeName = getStringValue();
-        return true;
-      
-      case ATTR_VALUE:
-        this.attributeValue = getStringValue();
+      case QUERY:
+        this.query = getStringValue();
         return true;
         
       default:
@@ -83,15 +74,8 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   /**
    * {@inheritDoc}
    */
-  public String getAttributeName() {
-    return this.attributeName;
-  }
-  
-  /**
-   * {@inheritDoc}
-   */
-  public String getAttributeValue() {
-    return this.attributeValue;
+  public String getQuery() {
+    return this.query;
   }
 
   /**

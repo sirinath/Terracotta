@@ -25,11 +25,10 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * 
    * @param SearchRequestID searchRequestID
    * @param String cacheName
-   * @param String attribute
-   * @param String value
+   * @param String queryString
    */
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final String attribute, final String value);
+                                          final String queryString);
 
   /**
    * Name of cache to query against.
@@ -39,17 +38,10 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
   public String getCachename();
 
   /**
-   * String attribute name to search
+   * Query string to search
    * 
    * @return String string
    */
-  public String getAttributeName();
-
-  /**
-   * String attribute value to search
-   * 
-   * @return String string
-   */
-  public String getAttributeValue();
+  public String getQuery();
 
 }
