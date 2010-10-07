@@ -14,7 +14,7 @@ import com.tc.properties.TCPropertiesImpl;
 public class ReceiveServerMapEvictionBroadcastHandler extends AbstractEventHandler {
 
   private static final boolean      EVICTOR_LOGGING = TCPropertiesImpl.getProperties()
-                                                        .getBoolean(TCPropertiesConsts.EHCAHCE_EVICTOR_LOGGING_ENABLED);
+                                                        .getBoolean(TCPropertiesConsts.EHCACHE_EVICTOR_LOGGING_ENABLED);
   private final ClientObjectManager clientObjectManager;
 
   public ReceiveServerMapEvictionBroadcastHandler(final ClientObjectManager clientObjectManager) {

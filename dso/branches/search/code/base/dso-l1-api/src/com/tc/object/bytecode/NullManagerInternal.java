@@ -17,6 +17,7 @@ import com.tc.properties.TCProperties;
 import com.tc.statistics.StatisticRetrievalAction;
 
 import java.lang.reflect.Field;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 
@@ -296,6 +297,10 @@ public class NullManagerInternal implements ManagerInternal {
   }
 
   public MetaDataDescriptor createMetaDataDescriptor(String category) {
+    throw new UnsupportedOperationException();
+  }
+  
+  public Set<String> executeQuery(String cachename, String queryString) {
     throw new UnsupportedOperationException();
   }
 }

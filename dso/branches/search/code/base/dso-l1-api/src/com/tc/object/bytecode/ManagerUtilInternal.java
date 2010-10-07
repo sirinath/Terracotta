@@ -8,6 +8,8 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
 
+import java.util.Set;
+
 public class ManagerUtilInternal {
 
   private static final ManagerInternal NULL_MANAGER_INTERNAL = new NullManagerInternal();
@@ -24,6 +26,10 @@ public class ManagerUtilInternal {
 
   public static MetaDataDescriptor createMetaDataDescriptor(String category) {
     return getInternalManager().createMetaDataDescriptor(category);
+  }
+  
+  public static Set<String> executeQuery(String cachename, String queryString) {
+    return getInternalManager().executeQuery(cachename, queryString);
   }
 
   /**
