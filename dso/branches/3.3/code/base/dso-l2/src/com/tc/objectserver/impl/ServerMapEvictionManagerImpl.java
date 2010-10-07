@@ -97,9 +97,10 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     if (PERIODIC_EVICTOR_ENABLED && !this.isStarted.getAndSet(true)) {
       logger.info("Server Map Eviction : Evictor will run every " + this.evictionSleepTime + " ms");
       this.evictor.schedule(new EvictorTask(this), this.evictionSleepTime, this.evictionSleepTime);
-    } 
+    }
     logger.info(TCPropertiesConsts.EHCAHCE_EVICTOR_LOGGING_ENABLED + " : " + EVICTOR_LOGGING);
-    logger.info(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERIODICEVICTION_ENABLED + " : " + PERIODIC_EVICTOR_ENABLED);
+    logger.info(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERIODICEVICTION_ENABLED + " : "
+                + PERIODIC_EVICTOR_ENABLED);
     logger.info(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERELEMENT_TTI_TTL_ENABLED + " : "
                 + ELEMENT_BASED_TTI_TTL_ENABLED);
 
@@ -131,6 +132,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
   }
 
   public void doEvictionOn(final ObjectID oid, final SortedSet<ObjectID> faultedInClients) {
+    if (!this.isStarted.get()) { throw new AssertionError("Evictor is not started yet"); }
     if (!markEvictionInProgress(oid)) {
       logger.info("Ignoring eviction request as its already in progress : " + oid);
       return;
@@ -284,7 +286,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     }
   }
 
-  public PrettyPrinter prettyPrint(PrettyPrinter out) {
+  public PrettyPrinter prettyPrint(final PrettyPrinter out) {
     out.print(this.getClass().getName()).flush();
     out.indent().print("isStarted:" + this.isStarted).flush();
     out.indent().print("currentlyEvicting:" + this.currentlyEvicting).flush();

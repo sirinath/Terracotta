@@ -63,7 +63,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     NotifiedWaiters notifiedWaiters = new NotifiedWaiters();
     final ServerTransactionID stxnID = txn.getServerTransactionID();
-    final ApplyTransactionInfo applyInfo = new ApplyTransactionInfo();
+    final ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn());
 
     if (atc.needsApply()) {
       this.transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
@@ -81,12 +81,12 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
                                                 allOrOne, notifiedWaiters);
     }
 
-    final Set initiateEviction = applyInfo.getObjectIDsToInitateEviction();
-    if (!initiateEviction.isEmpty()) {
-      this.evictionInitiateSink.add(new ServerMapEvictionInitiateContext(initiateEviction));
-    }
+    if (txn.isActiveTxn()) {
+      final Set initiateEviction = applyInfo.getObjectIDsToInitateEviction();
+      if (!initiateEviction.isEmpty()) {
+        this.evictionInitiateSink.add(new ServerMapEvictionInitiateContext(initiateEviction));
+      }
 
-    if (txn.needsBroadcast()) {
       if (this.count == 0) {
         this.lowWaterMark = this.gtxm.getLowGlobalTransactionIDWatermark();
       }
