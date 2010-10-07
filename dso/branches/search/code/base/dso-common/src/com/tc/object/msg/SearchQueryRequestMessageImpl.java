@@ -24,6 +24,7 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   private SearchRequestID requestID;
   private String          cachename;
   private String          query;
+  
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
                                        TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);

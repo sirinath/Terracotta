@@ -232,6 +232,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private DSOClientMessageChannel                    channel;
   private ClientLockManager                          lockManager;
   private ClientObjectManagerImpl                    objectManager;
+  private RemoteSearchRequestManager                 searchRequestManager;
   private ClientTransactionManagerImpl               txManager;
   private CommunicationsManager                      communicationsManager;
   private RemoteTransactionManager                   rtxManager;
@@ -514,7 +515,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage ttiTTLEvictionStage = stageManager.createStage(ClientConfigurationContext.TTI_TTL_EVICTION_STAGE,
                                                                new TimeBasedEvictionHandler(), 8, maxSize);
     
-    final RemoteSearchRequestManager searchRequestManager = this.dsoClientBuilder.createRemoteSearchRequestManager(
+    searchRequestManager = this.dsoClientBuilder.createRemoteSearchRequestManager(
                                                     new ClientIDLogger(this.channel.getClientIDProvider(),
                                             TCLogging.getLogger(RemoteObjectManager.class)), this.channel, sessionManager);
 
@@ -946,6 +947,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
   public ClientObjectManager getObjectManager() {
     return this.objectManager;
+  }
+  
+  public RemoteSearchRequestManager getSearchRequestManager() {
+    return this.searchRequestManager;
   }
 
   public RemoteTransactionManager getRemoteTransactionManager() {
