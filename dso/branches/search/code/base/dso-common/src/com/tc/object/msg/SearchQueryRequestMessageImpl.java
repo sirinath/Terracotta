@@ -4,9 +4,11 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.SearchRequestID;
 import com.tc.object.session.SessionID;
 
@@ -20,17 +22,21 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   private final static byte SEARCH_REQUEST_ID = 0;
   private final static byte CACHENAME         = 1;
   private final static byte QUERY             = 2;
-  
-  private SearchRequestID requestID;
-  private String          cachename;
-  private String          query;
-  
+
+  private SearchRequestID   requestID;
+  private String            cachename;
+  private String            query;
+
+  public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+                                       MessageChannel channel, TCMessageType type) {
+    super(sessionID, monitor, out, channel, type);
+  }
+
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
                                        TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
-  
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final String queryString) {
     this.requestID = searchRequestID;
@@ -55,11 +61,11 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
       case CACHENAME:
         this.cachename = getStringValue();
         return true;
-      
+
       case QUERY:
         this.query = getStringValue();
         return true;
-        
+
       default:
         return false;
     }
