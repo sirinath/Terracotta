@@ -243,6 +243,7 @@ public class ManagerImpl implements ManagerInternal {
         ManagerImpl.this.objectManager = ManagerImpl.this.dso.getObjectManager();
         ManagerImpl.this.txManager = ManagerImpl.this.dso.getTransactionManager();
         ManagerImpl.this.lockManager = ManagerImpl.this.dso.getLockManager();
+        ManagerImpl.this.searchRequestManager = ManagerImpl.this.dso.getSearchRequestManager();
         ManagerImpl.this.methodCallManager = ManagerImpl.this.dso.getDmiManager();
 
         ManagerImpl.this.shutdownManager = new ClientShutdownManager(ManagerImpl.this.objectManager,
