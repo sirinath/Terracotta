@@ -26,6 +26,7 @@ import com.tc.object.DistributedObjectClient;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
+import com.tc.object.RemoteSearchRequestManager;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
@@ -67,6 +68,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 
@@ -91,6 +93,7 @@ public class ManagerImpl implements ManagerInternal {
   private ClientShutdownManager                    shutdownManager;
   private ClientTransactionManager                 txManager;
   private ClientLockManager                        lockManager;
+  private RemoteSearchRequestManager               searchRequestManager;
   private DistributedObjectClient                  dso;
   private DmiManager                               methodCallManager;
 
@@ -98,24 +101,27 @@ public class ManagerImpl implements ManagerInternal {
   private final MethodDisplayNames                 methodDisplay = new MethodDisplayNames(this.serializer);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, null, config, connectionComponents, true, null, null, false);
+    this(true, null, null, null, null, config, connectionComponents, true, null, null, false);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final ClientLockManager lockManager,
+                     final RemoteSearchRequestManager searchRequestManager,
                      final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, lockManager, config, connectionComponents, true, null, null, false);
+    this(startClient, objectManager, txManager, lockManager, searchRequestManager, config, connectionComponents, true, null, null, false);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final ClientLockManager lockManager,
-                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
+                     final RemoteSearchRequestManager searchRequestManager, final DSOClientConfigHelper config,
+                     final PreparedComponentsFromL2Connection connectionComponents,
                      final boolean shutdownActionRequired, final RuntimeLogger runtimeLogger,
                      final ClassProvider classProvider, final boolean isExpressMode) {
     this.objectManager = objectManager;
     this.portability = config.getPortability();
     this.txManager = txManager;
     this.lockManager = lockManager;
+    this.searchRequestManager = searchRequestManager;
     this.config = config;
     this.instrumentationLogger = new InstrumentationLoggerImpl(config.instrumentationLoggingOptions());
     this.startClient = startClient;
@@ -916,4 +922,9 @@ public class ManagerImpl implements ManagerInternal {
   public MetaDataDescriptor createMetaDataDescriptor(String category) {
     return new MetaDataDescriptorImpl(category);
   }
+  
+  public Set<String> executeQuery(String cachename, String queryString) {
+    return searchRequestManager.query(cachename, queryString);
+  }
+  
 }

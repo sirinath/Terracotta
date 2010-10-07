@@ -50,7 +50,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
   private static final boolean                 EVICTOR_LOGGING               = TCPropertiesImpl
                                                                                  .getProperties()
                                                                                  .getBoolean(
-                                                                                             TCPropertiesConsts.EHCAHCE_EVICTOR_LOGGING_ENABLED);
+                                                                                             TCPropertiesConsts.EHCACHE_EVICTOR_LOGGING_ENABLED);
   private static final boolean                 ELEMENT_BASED_TTI_TTL_ENABLED = TCPropertiesImpl
                                                                                  .getProperties()
                                                                                  .getBoolean(
@@ -101,7 +101,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
       logger.info("Server Map Eviction : Evictor will run every " + this.evictionSleepTime + " ms");
       this.evictor.schedule(new EvictorTask(this), this.evictionSleepTime, this.evictionSleepTime);
     } 
-    logger.info(TCPropertiesConsts.EHCAHCE_EVICTOR_LOGGING_ENABLED + " : " + EVICTOR_LOGGING);
+    logger.info(TCPropertiesConsts.EHCACHE_EVICTOR_LOGGING_ENABLED + " : " + EVICTOR_LOGGING);
     logger.info(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERIODICEVICTION_ENABLED + " : " + PERIODIC_EVICTOR_ENABLED);
     logger.info(TCPropertiesConsts.EHCACHE_STORAGESTRATEGY_DCV2_PERELEMENT_TTI_TTL_ENABLED + " : "
                 + ELEMENT_BASED_TTI_TTL_ENABLED);
