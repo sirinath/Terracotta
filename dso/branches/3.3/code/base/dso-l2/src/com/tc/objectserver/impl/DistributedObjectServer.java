@@ -37,6 +37,7 @@ import com.tc.l2.ha.L2HADisabledCooridinator;
 import com.tc.l2.ha.StripeIDStateManagerImpl;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.l2.ha.ZapNodeProcessorWeightGeneratorFactory;
+import com.tc.l2.objectserver.ServerTransactionFactory;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.TCThreadGroup;
 import com.tc.logging.CallbackOnExitHandler;
@@ -949,12 +950,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                        objectRequestStage.getSink());
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapRequestManager));
 
-    this.serverMapEvictor = new ServerMapEvictionManagerImpl(this.objectManager, this.objectStore,
-                                                             this.clientStateManager, objectManagerConfig
-                                                                 .gcThreadSleepTime() > 0 ? ((objectManagerConfig
+    final ServerTransactionFactory serverTransactionFactory = new ServerTransactionFactory();
+    this.serverMapEvictor = new ServerMapEvictionManagerImpl(
+                                                             this.objectManager,
+                                                             this.objectStore,
+                                                             this.clientStateManager,
+                                                             serverTransactionFactory,
+                                                             objectManagerConfig.gcThreadSleepTime() > 0 ? ((objectManagerConfig
                                                                  .gcThreadSleepTime() + 1) / 2)
-                                                                 : ServerMapEvictionManagerImpl.DEFAULT_SLEEP_TIME,
-                                                             transactionStorePTP);
+                                                                 : ServerMapEvictionManagerImpl.DEFAULT_SLEEP_TIME);
     toInit.add(this.serverMapEvictor);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapEvictor));
     stageManager.createStage(ServerConfigurationContext.SERVER_MAP_EVICTION_PROCESSOR_STAGE,
@@ -1022,6 +1026,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                                  sequenceValidator,
                                                                                                  this.clientStateManager,
                                                                                                  this.lockManager,
+                                                                                                 this.serverMapEvictor,
                                                                                                  stageManager
                                                                                                      .getStage(
                                                                                                                ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
@@ -1079,7 +1084,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                         .getPersistentStateStore(), this.objectManager,
                                                                     this.transactionManager, gtxm,
                                                                     weightGeneratorFactory, this.configSetupManager,
-                                                                    recycler, this.stripeIDStateManager);
+                                                                    recycler, this.stripeIDStateManager,
+                                                                    serverTransactionFactory);
       this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2State);
     } else {
       this.l2State.setState(StateManager.ACTIVE_COORDINATOR);
@@ -1334,7 +1340,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
   public void startActiveMode() {
     this.transactionManager.goToActiveMode();
-    this.serverMapEvictor.startEvictor();
   }
 
   public void startL1Listener() throws IOException {

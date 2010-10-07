@@ -16,6 +16,7 @@ import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.ObjectIDBatchRequest;
 import com.tc.object.net.DSOChannelManager;
+import com.tc.objectserver.api.ServerMapEvictionManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -56,13 +57,16 @@ public class ServerClientHandshakeManager {
   private final ServerTransactionManager transactionManager;
   private final TCLogger                 consoleLogger;
   private final TransactionBatchManager  transactionBatchManager;
+  private final ServerMapEvictionManager serverMapEvictor;
 
-  public ServerClientHandshakeManager(TCLogger logger, DSOChannelManager channelManager,
-                                      ServerTransactionManager transactionManager,
-                                      TransactionBatchManager transactionBatchManager,
-                                      SequenceValidator sequenceValidator, ClientStateManager clientStateManager,
-                                      LockManager lockManager, Sink lockResponseSink, Sink oidRequestSink, Timer timer,
-                                      long reconnectTimeout, boolean persistent, TCLogger consoleLogger) {
+  public ServerClientHandshakeManager(final TCLogger logger, final DSOChannelManager channelManager,
+                                      final ServerTransactionManager transactionManager,
+                                      final TransactionBatchManager transactionBatchManager,
+                                      final SequenceValidator sequenceValidator,
+                                      final ClientStateManager clientStateManager, final LockManager lockManager,
+                                      final ServerMapEvictionManager serverMapEvictor, final Sink lockResponseSink,
+                                      final Sink oidRequestSink, final Timer timer, final long reconnectTimeout,
+                                      final boolean persistent, final TCLogger consoleLogger) {
     this.logger = logger;
     this.channelManager = channelManager;
     this.transactionManager = transactionManager;
@@ -70,6 +74,7 @@ public class ServerClientHandshakeManager {
     this.sequenceValidator = sequenceValidator;
     this.clientStateManager = clientStateManager;
     this.lockManager = lockManager;
+    this.serverMapEvictor = serverMapEvictor;
     this.oidRequestSink = oidRequestSink;
     this.reconnectTimeout = reconnectTimeout;
     this.timer = timer;
@@ -186,6 +191,7 @@ public class ServerClientHandshakeManager {
       ClientID clientID = (ClientID) i.next();
       sendAckMessageFor(clientID);
     }
+    this.serverMapEvictor.startEvictor();
     this.state = STARTED;
   }
 
