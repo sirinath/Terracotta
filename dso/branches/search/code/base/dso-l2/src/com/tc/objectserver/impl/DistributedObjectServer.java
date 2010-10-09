@@ -131,7 +131,7 @@ import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
 import com.tc.object.msg.RequestRootResponseMessage;
 import com.tc.object.msg.SearchQueryRequestMessageImpl;
-import com.tc.object.msg.SearchQueryResponseMessage;
+import com.tc.object.msg.SearchQueryResponseMessageImpl;
 import com.tc.object.msg.ServerMapEvictionBroadcastMessageImpl;
 import com.tc.object.msg.SyncWriteTransactionReceivedMessage;
 import com.tc.object.net.ChannelStatsImpl;
@@ -224,6 +224,7 @@ import com.tc.objectserver.persistence.inmemory.TransactionStoreImpl;
 import com.tc.objectserver.search.IndexManager;
 import com.tc.objectserver.search.SearchEventHandler;
 import com.tc.objectserver.search.SearchRequestManager;
+import com.tc.objectserver.search.SearchRequestMessageHandler;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.storage.api.OffheapStats;
@@ -831,9 +832,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     final Stage searchEventStage = stageManager.createStage(ServerConfigurationContext.SEARCH_EVENT_STAGE,
                                                             new SearchEventHandler(), 1, maxStageSize);
-
+   
     final Stage searchQueryRequestStage = stageManager
-        .createStage(ServerConfigurationContext.SEARCH_QUERY_REQUEST_STAGE, new SearchEventHandler(), 1, maxStageSize);
+        .createStage(ServerConfigurationContext.SEARCH_QUERY_REQUEST_STAGE, new SearchRequestMessageHandler(), 1, maxStageSize);
 
     final Sink searchEventSink = searchEventStage.getSink();
 
@@ -1297,7 +1298,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.l1Listener.addClassMapping(TCMessageType.EVICTION_SERVER_MAP_BROADCAST_MESSAGE,
                                     ServerMapEvictionBroadcastMessageImpl.class);
     this.l1Listener.addClassMapping(TCMessageType.SEARCH_QUERY_REQUEST_MESSAGE, SearchQueryRequestMessageImpl.class);
-    this.l1Listener.addClassMapping(TCMessageType.SEARCH_QUERY_RESPONSE_MESSAGE, SearchQueryResponseMessage.class);
+    this.l1Listener.addClassMapping(TCMessageType.SEARCH_QUERY_RESPONSE_MESSAGE, SearchQueryResponseMessageImpl.class);
   }
 
   protected TCLogger getLogger() {

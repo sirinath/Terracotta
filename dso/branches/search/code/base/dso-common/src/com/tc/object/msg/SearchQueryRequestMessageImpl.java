@@ -5,6 +5,7 @@ package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -96,6 +97,13 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
    * {@inheritDoc}
    */
   public Object getKey() {
+    return getSourceNodeID();
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  public NodeID getClientID() {
     return getSourceNodeID();
   }
 

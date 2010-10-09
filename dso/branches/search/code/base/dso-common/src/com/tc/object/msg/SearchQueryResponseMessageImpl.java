@@ -8,6 +8,7 @@ import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.SearchRequestID;
 import com.tc.object.session.SessionID;
 import com.tc.util.Assert;
@@ -28,9 +29,14 @@ public class SearchQueryResponseMessageImpl extends DSOMessageBase implements Se
 
   private SearchRequestID   requestID;
   private Set<String>       keys;
+  
+  public SearchQueryResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
+                                       MessageChannel channel, TCMessageType type) {
+    super(sessionID, monitor, out, channel, type);
+  }
 
   public SearchQueryResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                        TCMessageHeader header, TCByteBuffer[] data) {
+                                       TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 

@@ -4,6 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.async.api.MultiThreadedEventContext;
+import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
 
@@ -14,6 +15,11 @@ import com.tc.object.SearchRequestID;
  * @author Nabib El-Rahman
  */
 public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEventContext {
+  
+  /**
+   * ClientID
+   */
+  public NodeID getClientID();
 
   /**
    * Search Identifier. return SearchRequestID requestID
