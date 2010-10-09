@@ -181,8 +181,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     new LocalLookupContext();
 
     /*
-     *  Exercise isManaged path early to preload classes and avoid ClassCircularityError
-     *  during any subsequent calls
+     * Exercise isManaged path early to preload classes and avoid ClassCircularityError during any subsequent calls
      */
     isManaged(new Object());
   }
@@ -454,6 +453,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void reap(final ObjectID objectID) {
+    boolean remove = false;
     synchronized (this) {
       final TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
       if (tcobj == null) {
@@ -464,9 +464,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         if (tcobj.isNull()) {
           this.idToManaged.remove(objectID);
           this.cache.remove(tcobj);
-          this.remoteObjectManager.removed(objectID);
+          remove = true;
         }
       }
+    }
+    if (remove) {
+      this.remoteObjectManager.removed(objectID);
     }
   }
 
