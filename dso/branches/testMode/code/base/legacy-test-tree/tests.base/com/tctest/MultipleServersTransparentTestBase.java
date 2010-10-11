@@ -18,7 +18,7 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
    * The server manager which currently takes care of active-passive and active-active tests
    */
   protected MultipleServerManager multipleServerManager;
- 
+
   public void initializeTestRunner(boolean isMutateValidateTest, TransparentAppConfig transparentAppCfg,
                                    DistributedTestRunnerConfig runnerCfg) throws Exception {
     if (!isMultipleServerTest()) {
@@ -29,7 +29,7 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
                                        getOptionalAttributes(), getApplicationConfigBuilder().newApplicationConfig(),
                                        false, isMutateValidateTest, isMultipleServerTest(), multipleServerManager,
                                        transparentAppCfg);
-    
+
   }
 
   protected boolean canRun() {
@@ -44,9 +44,9 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
     }
   }
 
-  public void testNormal() throws Exception {
+  public void test_1() throws Exception {
     if (isMultipleServerTest()) runMultipleServersTest();
-    super.testNormal();
+    super.test_1();
   }
 
   protected abstract void runMultipleServersTest() throws Exception;
@@ -65,15 +65,15 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
     }
     super.tearDown();
   }
-  
+
   public String getConfigFileLocation() {
     return multipleServerManager.getConfigFileLocation();
   }
-  
+
   public int getDsoPort() {
     return multipleServerManager.getDsoPort();
   }
-  
+
   public int getJMXPort() {
     return multipleServerManager.getJMXPort();
   }
@@ -81,5 +81,5 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
   public int getL2GroupPort() {
     return multipleServerManager.getL2GroupPort();
   }
-  
+
 }

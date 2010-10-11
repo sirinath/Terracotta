@@ -8,6 +8,7 @@ import org.apache.commons.io.CopyUtils;
 import org.apache.commons.lang.ClassUtils;
 
 import com.tc.config.schema.SettableConfigItem;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.TestTVSConfigurationSetupManagerFactory;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
 import com.tc.management.beans.L2DumperMBean;
@@ -34,12 +35,18 @@ import com.tc.util.Assert;
 import com.tc.util.PortChooser;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
+import com.tctest.modes.CrashTestMode;
+import com.tctest.modes.NormalTestMode;
+import com.tctest.modes.NormalTestSetupManager;
+import com.tctest.modes.TestMode;
+import com.tctest.modes.TestMode.Mode;
 import com.tctest.runner.DistributedTestRunner;
 import com.tctest.runner.DistributedTestRunnerConfig;
 import com.tctest.runner.PostAction;
 import com.tctest.runner.TestGlobalIdGenerator;
 import com.tctest.runner.TransparentAppConfig;
 import com.terracottatech.config.BindPort;
+import com.terracottatech.config.PersistenceMode;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -75,7 +82,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private ApplicationConfigBuilder          possibleApplicationConfigBuilder;
 
   private String                            currentRunningMode;
-  private static String                     modeExpected                    = TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL;
   private boolean                           isCurrentRunPossible            = false;
 
   private ServerControl                     serverControl;
@@ -99,6 +105,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private String                            testName                        = "default";
 
   private static final LinkedList<String>   modesToRun                      = new LinkedList<String>();
+  private static TestModesHandler           handler;
 
   static {
     String mode = TestConfigObject.getInstance().transparentTestsMode();
@@ -183,10 +190,9 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   @Override
   protected void setUp() throws Exception {
-    setCurrentRunningMode();
-    isCurrentRunPossible = currentRunningMode != null && currentRunningMode.equals(modeExpected);
+    setUpConfigThisMode();
+
     if (!isCurrentRunPossible) { return; }
-    this.testName = "test-" + this.currentRunningMode;
 
     setUpTransparent(configFactory(), configHelper());
 
@@ -287,11 +293,53 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
-  private void setCurrentRunningMode() {
-    if (modesToRun.size() > 0) {
-      currentRunningMode = modesToRun.getFirst();
-    } else {
-      currentRunningMode = null;
+  private void setUpConfigThisMode() throws ConfigurationSetupException {
+    initHandler();
+
+    TestMode mode = null;
+    do {
+      if (modesToRun.size() == 0) {
+        currentRunningMode = null;
+        isCurrentRunPossible = false;
+        return;
+      } else {
+        currentRunningMode = modesToRun.getFirst();
+      }
+      mode = handler.getTestModeFor(currentRunningMode);
+      if (mode == null) {
+        modesToRun.removeFirst();
+      }
+    } while (mode == null);
+
+    isCurrentRunPossible = true;
+    this.testName = "test-" + this.currentRunningMode + "-" + handler.getIndexFor(this.currentRunningMode);
+
+    switch (mode.getMode()) {
+      case NORMAL:
+        NormalTestSetupManager normalSetupManager = (NormalTestSetupManager) mode.getSetupManager();
+        if (normalSetupManager.isPersistent()) {
+          configFactory().setPersistenceMode(PersistenceMode.PERMANENT_STORE);
+        } else {
+          configFactory().setPersistenceMode(PersistenceMode.TEMPORARY_SWAP_ONLY);
+        }
+        break;
+      case CRASH:
+        // CrashTestSetupManager crashSetupManager = (CrashTestSetupManager) mode.getSetupManager();
+        // if (crashSetupManager.isPersistent()) {
+        // configFactory().setPersistenceMode(PersistenceMode.PERMANENT_STORE);
+        // } else {
+        // configFactory().setPersistenceMode(PersistenceMode.TEMPORARY_SWAP_ONLY);
+        // }
+        break;
+      case ACTIVE_ACTIVE:
+      case ACTIVE_PASSIVE:
+        throw new AssertionError("Still to handle");
+    }
+  }
+
+  private void initHandler() {
+    if (handler == null) {
+      handler = new TestModesHandler(getTestModes());
     }
   }
 
@@ -682,38 +730,30 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return t;
   }
 
-  public void testNormal() throws Exception {
-    try {
-      if (!isCurrentRunPossible) { return; }
-      Assert.assertEquals(TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL, currentRunningMode);
-
-      startTest();
-
-    } finally {
-      if (modesToRun.size() > 0 && isCurrentRunPossible) {
-        modesToRun.removeFirst();
-      }
-      modeExpected = TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH;
-    }
+  public void test_1() throws Exception {
+    startTest();
   }
 
-  public void testCrash() throws Exception {
-    try {
-      if (!isCurrentRunPossible) { return; }
-      Assert.assertEquals(TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH, currentRunningMode);
+  public void test_2() throws Exception {
+    startTest();
+  }
 
-      startTest();
+  public void test_3() throws Exception {
+    startTest();
+  }
 
-    } finally {
-      if (modesToRun.size() > 0 && isCurrentRunPossible) {
-        modesToRun.removeFirst();
-      }
-      modeExpected = TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE;
-    }
+  public void test_4() throws Exception {
+    startTest();
+  }
+
+  public void test_5() throws Exception {
+    startTest();
   }
 
   private void startTest() throws Exception {
-    System.err.println("XXX Starting mode " + currentRunningMode);
+    if (!isCurrentRunPossible) { return; }
+
+    System.err.println("XXX Starting test run = " + testName);
 
     if (canRun()) {
       if (controlledCrashMode && serverControls != null) {
@@ -809,15 +849,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   @Override
   protected void tearDown() throws Exception {
-    if (!isCurrentRunPossible) { return; }
-
-    if (controlledCrashMode) {
-      if (isCrashy() && canRunCrash()) {
-        synchronized (crashTestState) {
-          crashTestState.setTestState(TestState.STOPPING);
-          if (serverControl.isRunning()) {
-            serverControl.shutdown();
-          }
+    if (controlledCrashMode && isCrashy() && canRunCrash() && crashTestState != null) {
+      synchronized (crashTestState) {
+        crashTestState.setTestState(TestState.STOPPING);
+        if (serverControl != null && serverControl.isRunning()) {
+          serverControl.shutdown();
         }
       }
     }
@@ -912,8 +948,105 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return this.testName;
   }
 
-  /*
-   * State inner class
+  /**
+   * Returns the modes associated with a setup manager
    */
+  public TestMode[] getTestModes() {
+    TestMode[] modes = new TestMode[2];
+    modes[0] = new NormalTestMode();
+    modes[1] = new CrashTestMode();
+    return modes;
+  }
 
+  public static class TestModesHandler {
+    private ArrayList<TestMode> normalRuns               = new ArrayList<TestMode>();
+    private ArrayList<TestMode> crashRuns                = new ArrayList<TestMode>();
+    private ArrayList<TestMode> activePassiveRuns        = new ArrayList<TestMode>();
+    private ArrayList<TestMode> activeActiveRuns         = new ArrayList<TestMode>();
+
+    private int                 indexOfNormalRuns        = 0;
+    private int                 indexOfCrashRuns         = 0;
+    private int                 indexOfActivePassiveRuns = 0;
+    private int                 indexOfActiveActiveRuns  = 0;
+
+    public TestModesHandler(TestMode[] modes) {
+      for (TestMode mode : modes) {
+        switch (mode.getMode()) {
+          case ACTIVE_ACTIVE:
+            activeActiveRuns.add(mode);
+            break;
+          case ACTIVE_PASSIVE:
+            activePassiveRuns.add(mode);
+            break;
+          case CRASH:
+            crashRuns.add(mode);
+            break;
+          case NORMAL:
+            normalRuns.add(mode);
+            break;
+        }
+      }
+    }
+
+    public int getIndexFor(String strMode) {
+      Mode mode = Mode.fromString(strMode);
+      switch (mode) {
+        case ACTIVE_ACTIVE:
+          return indexOfActiveActiveRuns;
+        case ACTIVE_PASSIVE:
+          return indexOfActivePassiveRuns;
+        case CRASH:
+          return indexOfCrashRuns;
+        case NORMAL:
+          return indexOfNormalRuns;
+      }
+      throw new AssertionError("No index found");
+    }
+
+    private boolean canRunMode(String strMode) {
+      Mode mode = Mode.fromString(strMode);
+      switch (mode) {
+        case ACTIVE_ACTIVE:
+          if (activeActiveRuns.size() <= indexOfActiveActiveRuns) { return false; }
+          break;
+        case ACTIVE_PASSIVE:
+          if (activePassiveRuns.size() <= indexOfActivePassiveRuns) { return false; }
+          break;
+        case CRASH:
+          if (crashRuns.size() <= indexOfCrashRuns) { return false; }
+          break;
+        case NORMAL:
+          if (normalRuns.size() <= indexOfNormalRuns) { return false; }
+          break;
+      }
+      return true;
+    }
+
+    public TestMode getTestModeFor(String strMode) {
+      Mode mode = Mode.fromString(strMode);
+      TestMode testMode = null;
+      if (!canRunMode(strMode)) { return null; }
+
+      switch (mode) {
+        case ACTIVE_ACTIVE:
+          testMode = activeActiveRuns.get(indexOfActiveActiveRuns);
+          indexOfActiveActiveRuns++;
+          break;
+        case ACTIVE_PASSIVE:
+          testMode = activePassiveRuns.get(indexOfActivePassiveRuns);
+          indexOfActivePassiveRuns++;
+          break;
+        case CRASH:
+          testMode = crashRuns.get(indexOfCrashRuns);
+          indexOfCrashRuns++;
+          break;
+        case NORMAL:
+          testMode = normalRuns.get(indexOfNormalRuns);
+          indexOfNormalRuns++;
+          break;
+      }
+
+      return testMode;
+    }
+  }
 }
