@@ -81,7 +81,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   }
 
   @Override
-  public void apply(final ObjectID objectID, final DNACursor cursor, final ApplyTransactionInfo includeIDs)
+  public void apply(final ObjectID objectID, final DNACursor cursor, final ApplyTransactionInfo applyInfo)
       throws IOException {
     boolean broadcast = false;
     while (cursor.next()) {
@@ -111,7 +111,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
         final LogicalAction logicalAction = (LogicalAction) action;
         final int method = logicalAction.getMethod();
         final Object[] params = logicalAction.getParameters();
-        applyMethod(objectID, includeIDs, method, params);
+        applyMethod(objectID, applyInfo, method, params);
         if (method == SerializationUtil.CLEAR || method == SerializationUtil.CLEAR_LOCAL_CACHE) {
           // clear needs to be broadcasted so local caches can be cleared elsewhere
           broadcast = true;
@@ -119,21 +119,34 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
       }
     }
     if (!broadcast) {
-      includeIDs.ignoreBroadcastFor(objectID);
+      applyInfo.ignoreBroadcastFor(objectID);
     }
   }
 
   @Override
-  protected void applyMethod(final ObjectID objectID, final ApplyTransactionInfo includeIDs, final int method,
+  protected void applyMethod(final ObjectID objectID, final ApplyTransactionInfo applyInfo, final int method,
                              final Object[] params) {
-    if (method != SerializationUtil.CLEAR_LOCAL_CACHE) {
+    if (method == SerializationUtil.REMOVE_IF_VALUE_EQUAL) {
+      // This is currently used by evictor, in future we may support all of ConcurrentMap operations at the server
+      // directly
+      applyRemoveIfValueEqual(params);
+    } else if (method != SerializationUtil.CLEAR_LOCAL_CACHE) {
       // ignore CLEAR_LOCAL_CACHE, nothing to do, but broadcast
-      super.applyMethod(objectID, includeIDs, method, params);
+      super.applyMethod(objectID, applyInfo, method, params);
     }
-    if (method == SerializationUtil.PUT && this.targetMaxTotalCount > 0 && !this.evictionInitiated
-        && this.references.size() > this.targetMaxTotalCount * 1.15) { // 15 % overshoot
+    if (applyInfo.isActiveTxn() && method == SerializationUtil.PUT && this.targetMaxTotalCount > 0
+        && !this.evictionInitiated && this.references.size() > this.targetMaxTotalCount * 1.15) { // 15 % overshoot
       this.evictionInitiated = true;
-      includeIDs.initiateEvictionFor(objectID);
+      applyInfo.initiateEvictionFor(objectID);
+    }
+  }
+
+  private void applyRemoveIfValueEqual(final Object[] params) {
+    final Object key = getKey(params);
+    final Object value = getValue(params);
+    final Object valueInMap = this.references.get(key);
+    if (value.equals(valueInMap)) {
+      this.references.remove(key);
     }
   }
 
@@ -176,7 +189,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   public int getSize() {
     return this.references.size();
   }
-  
+
   public Set getAllKeys() {
     return new HashSet(this.references.keySet());
   }
@@ -217,12 +230,5 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
       }
     }
     return samples;
-  }
-
-  public void evict(final Map candidates) {
-    // Note :: Not calling removeAll on the keySet directly because SleepycatPersistableMap doesn't implement it.
-    for (final Iterator i = candidates.keySet().iterator(); i.hasNext();) {
-      this.references.remove(i.next());
-    }
   }
 }

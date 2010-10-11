@@ -38,12 +38,13 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core-ee-kit
     classifier: distribution
-    version: 2.3-BETA
+    version: 2.3.0-SNAPSHOT
     destination: ehcache
     type: tar.gz
     kit_edition: enterprise
     explode: true
     remove_root_folder: true
+    excludes: **/TERRACOTTA-TRIAL-LICENSE.txt,**/SUBSCRIPTION-AGREEMENT.pdf
     
   - maven_artifact: true
     groupId: net.sf.ehcache
@@ -120,12 +121,6 @@ artifacts:
     name: EHCACHE-CORE-LICENSE.txt
     destination: ehcache/licenses
     url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/EHCACHE-CORE-LICENSE.txt
-    kit_edition: opensource
-
-  - maven_artifact: false
-    name: THIRD-PARTY-LICENSES.txt
-    destination: ehcache/licenses
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/THIRD-PARTY-LICENSES.txt
     kit_edition: opensource
 
   - maven_artifact: false
