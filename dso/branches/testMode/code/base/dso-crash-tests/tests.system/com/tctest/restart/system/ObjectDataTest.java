@@ -14,6 +14,10 @@ import com.tctest.ActivePassiveTransparentTestBase;
 import com.tctest.Memory;
 import com.tctest.TestConfigurator;
 import com.tctest.TransparentTestIface;
+import com.tctest.modes.CrashTestMode;
+import com.tctest.modes.NormalTestMode;
+import com.tctest.modes.NormalTestSetupManager;
+import com.tctest.modes.TestMode;
 
 public class ObjectDataTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
@@ -30,13 +34,28 @@ public class ObjectDataTest extends ActivePassiveTransparentTestBase implements 
 
   @Override
   protected long getRestartInterval(RestartTestHelper helper) {
-    if(Os.isSolaris() || Memory.isMemoryLow()) {
+    if (Os.isSolaris() || Memory.isMemoryLow()) {
       return super.getRestartInterval(helper) * 3;
     } else {
       return super.getRestartInterval(helper);
     }
   }
-  
+
+  @Override
+  public TestMode[] getTestModes() {
+    TestMode[] modes = new TestMode[3];
+
+    modes[0] = new NormalTestMode();
+    ((NormalTestSetupManager) modes[0].getSetupManager()).setPersistent(true);
+
+    modes[1] = new NormalTestMode();
+    ((NormalTestSetupManager) modes[1].getSetupManager()).setPersistent(false);
+
+    modes[2] = new CrashTestMode();
+
+    return modes;
+  }
+
   protected boolean canRunCrash() {
     return true;
   }
