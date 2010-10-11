@@ -13,7 +13,6 @@ import static org.terracotta.license.LicenseConstants.CAPABILITY_TERRACOTTA_SERV
 import static org.terracotta.license.LicenseConstants.LICENSE_CAPABILITIES;
 import static org.terracotta.license.LicenseConstants.LICENSE_KEY_FILENAME;
 import static org.terracotta.license.LicenseConstants.LICENSE_PATH_KEY;
-import static org.terracotta.license.LicenseConstants.TERRACOTTA_MAX_CLIENT_COUNT;
 import static org.terracotta.license.LicenseConstants.TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP;
 
 import org.terracotta.license.AbstractLicenseResolverFactory;
@@ -80,16 +79,18 @@ public class LicenseManager {
   public static void assertLicenseValid() {
     if (getLicense() == null) {
       //
-      throw new LicenseException(
-                                 "Terracotta license key is required for Enterprise capabilities. Please place "
-                                     + LICENSE_KEY_FILENAME
-                                     + " in Terracotta installed directory or in resource path. You could also specify it through system property -D"
-                                     + LICENSE_PATH_KEY + "=/path/to/key");
+      LOGGER
+          .error("Terracotta license key is required for Enterprise capabilities. Please place "
+                 + LICENSE_KEY_FILENAME
+                 + " in Terracotta installed directory or in resource path. You could also specify it through system property -D"
+                 + LICENSE_PATH_KEY + "=/path/to/key");
+      System.exit(1);
     }
     Date expirationDate = getLicense().expirationDate();
     if (expirationDate != null && expirationDate.before(new Date())) {
       //
-      throw new LicenseException("Your Terracotta license has expired on " + expirationDate);
+      LOGGER.error("Your Terracotta license has expired on " + expirationDate);
+      System.exit(1);
     }
   }
 
@@ -127,8 +128,7 @@ public class LicenseManager {
 
   public static int maxClientCount() {
     assertLicenseValid();
-    String maxClientCount = getLicense().getRequiredProperty(TERRACOTTA_MAX_CLIENT_COUNT);
-    return Integer.valueOf(maxClientCount);
+    return getLicense().maxClientCount();
   }
 
   public static String licensedCapabilities() {
