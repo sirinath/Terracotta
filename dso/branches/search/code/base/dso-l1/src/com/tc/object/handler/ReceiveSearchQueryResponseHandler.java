@@ -20,7 +20,7 @@ public class ReceiveSearchQueryResponseHandler extends AbstractEventHandler {
   public void handleEvent(final EventContext context) {
     if (context instanceof SearchQueryResponseMessage) {
       final SearchQueryResponseMessage responseMsg = (SearchQueryResponseMessage) context;
-
+      System.out.println("RECEIVED SEARCH REQUEST RESPONSE: " + responseMsg);
       this.remoteSearchRequestManager.addResponseForQuery(responseMsg.getLocalSessionID(),
                                                         responseMsg.getRequestID(), responseMsg.getKeys(), responseMsg
                                                             .getSourceNodeID());

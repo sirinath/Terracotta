@@ -17,8 +17,11 @@ public abstract class NVPair implements TCSerializable {
 
   private static final NVPair      TEMPLATE  = new Template();
   private static final ValueType[] ALL_TYPES = ValueType.values();
+  
+  //TODO: Just a hack for now, figure out a long-term solution to this.
+  final static String                                    ATTR_PREFIX    = "ATTR@";
 
-  private final String             name;
+  private String             name;
 
   NVPair(String name) {
     this.name = name;
@@ -26,6 +29,10 @@ public abstract class NVPair implements TCSerializable {
 
   public final String getName() {
     return name;
+  }
+  
+  public void setName(String aName) {
+    this.name = aName;
   }
 
   @Override
