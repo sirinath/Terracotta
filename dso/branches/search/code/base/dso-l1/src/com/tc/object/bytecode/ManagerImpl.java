@@ -925,6 +925,7 @@ public class ManagerImpl implements ManagerInternal {
   }
   
   public Set<String> executeQuery(String cachename, String queryString) {
+    waitForAllCurrentTransactionsToComplete();
     return searchRequestManager.query(cachename, queryString);
   }
   
