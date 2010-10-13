@@ -46,13 +46,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
-public class TransactionBatchWriter implements ClientTransactionBatch {
+public class TransactionBatchWriter { // implements ClientTransactionBatch {
   private static final boolean                  DEBUG                  = TCPropertiesImpl
                                                                            .getProperties()
-                                                                           .getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_DEBUG);
+                                                                           .getBoolean(
+                                                                                       TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_DEBUG);
 
   private static final TCLogger                 logger                 = TCLogging
                                                                            .getLogger(TransactionBatchWriter.class);
@@ -71,10 +72,10 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
   private final int                             foldingLockLimit;
 
   private short                                 outstandingWriteCount  = 0;
-  private int                                   bytesWritten           = 0;
-  private int                                   numTxnsBeforeFolding   = 0;
+  private final int                             bytesWritten           = 0;
+  private final int                             numTxnsBeforeFolding   = 0;
   private int                                   numTxnsAfterFolding    = 0;
-  private boolean                               containsSyncWriteTxn   = false;
+  private final boolean                         containsSyncWriteTxn   = false;
 
   public TransactionBatchWriter(final GroupID groupID, final TxnBatchID batchID,
                                 final ObjectStringSerializer serializer, final DNAEncoding encoding,
@@ -243,8 +244,8 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
       logger.info("NOT folding, created new sequence " + sid);
     }
 
-    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding,
-                                                          txn.getTransactionID());
+    TransactionBuffer txnBuffer = createTransactionBuffer(sid, newOutputStream(), this.serializer, this.encoding, txn
+        .getTransactionID());
 
     if (this.foldingEnabled) {
 
@@ -316,32 +317,32 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     return false;
   }
 
-  public synchronized FoldedInfo addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
-                                                TransactionIDGenerator tidGenerator) {
-    this.numTxnsBeforeFolding++;
-
-    if (txn.getLockType().equals(TxnType.SYNC_WRITE)) {
-      this.containsSyncWriteTxn = true;
-    }
-
-    removeEmptyDeltaDna(txn);
-
-    final TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator, tidGenerator);
-
-    this.bytesWritten += txnBuffer.write(txn);
-
-    return new FoldedInfo(txnBuffer.getFoldedTransactionID(), txnBuffer.getTxnCount() > 1);
-  }
-
-  private void removeEmptyDeltaDna(final ClientTransaction txn) {
-    for (final Iterator i = txn.getChangeBuffers().entrySet().iterator(); i.hasNext();) {
-      final Map.Entry entry = (Entry) i.next();
-      final TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
-      if ((!buffer.getTCObject().isNew()) && buffer.isEmpty()) {
-        i.remove();
-      }
-    }
-  }
+  // public synchronized FoldedInfo addTransaction(ClientTransaction txn, SequenceGenerator sequenceGenerator,
+  // TransactionIDGenerator tidGenerator) {
+  // this.numTxnsBeforeFolding++;
+  //
+  // if (txn.getLockType().equals(TxnType.SYNC_WRITE)) {
+  // this.containsSyncWriteTxn = true;
+  // }
+  //
+  // removeEmptyDeltaDna(txn);
+  //
+  // final TransactionBuffer txnBuffer = getOrCreateBuffer(txn, sequenceGenerator, tidGenerator);
+  //
+  // this.bytesWritten += txnBuffer.write(txn);
+  //
+  // return new FoldedInfo(txnBuffer.getFoldedTransactionID(), txnBuffer.getTxnCount() > 1);
+  // }
+  //
+  // private void removeEmptyDeltaDna(final ClientTransaction txn) {
+  // for (final Iterator i = txn.getChangeBuffers().entrySet().iterator(); i.hasNext();) {
+  // final Map.Entry entry = (Entry) i.next();
+  // final TCChangeBuffer buffer = (TCChangeBuffer) entry.getValue();
+  // if ((!buffer.getTCObject().isNew()) && buffer.isEmpty()) {
+  // i.remove();
+  // }
+  // }
+  // }
 
   // Called from CommitTransactionMessageImpl
   public synchronized TCByteBuffer[] getData() {
@@ -370,7 +371,7 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
 
   public synchronized void send() {
     final CommitTransactionMessage msg = this.commitTransactionMessageFactory.newCommitTransactionMessage(this.groupID);
-    msg.setBatch(this, this.serializer);
+    // msg.setBatch(this, this.serializer);
     msg.send();
   }
 
@@ -722,9 +723,9 @@ public class TransactionBatchWriter implements ClientTransactionBatch {
     }
 
     public static FoldingConfig createFromProperties(final TCProperties props) {
-      return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED),
-                               props.getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT),
-                               props.getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
+      return new FoldingConfig(props.getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_ENABLED), props
+          .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_OBJECT_LIMIT), props
+          .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_FOLDING_LOCK_LIMIT));
     }
   }
 

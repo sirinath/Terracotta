@@ -54,7 +54,7 @@ public interface ServerTransaction extends GlobalTransaction {
   
   public MetaDataReader[] getMetaDataReaders();
 
-  public boolean needsBroadcast();
+  public boolean isActiveTxn();
 
   /**
    * Number of actual client/application transactions that this server transaction contains. Txn folding on the client

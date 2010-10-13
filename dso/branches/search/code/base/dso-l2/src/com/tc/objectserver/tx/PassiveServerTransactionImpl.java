@@ -45,7 +45,7 @@ public class PassiveServerTransactionImpl extends ServerTransactionImpl implemen
   }
 
   @Override
-  public boolean needsBroadcast() {
+  public boolean isActiveTxn() {
     return false;
   }
 
