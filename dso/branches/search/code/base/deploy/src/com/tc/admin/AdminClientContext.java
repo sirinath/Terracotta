@@ -7,6 +7,7 @@ package com.tc.admin;
 import com.tc.admin.options.IOption;
 import com.tc.util.ResourceBundleHelper;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,9 +15,15 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.prefs.Preferences;
 
-public class AdminClientContext implements IAdminClientContext {
+public class AdminClientContext implements IAdminClientContext, Thread.UncaughtExceptionHandler {
+  private static Logger              logger;
+
   private final AdminClient          client;
   private AdminClientController      controller;
   private final ResourceBundleHelper bundleHelper;
@@ -25,11 +32,25 @@ public class AdminClientContext implements IAdminClientContext {
   private final ExecutorService      executorService = Executors.newCachedThreadPool();
   private final Map<String, IOption> optionMap;
 
+  static {
+    try {
+      boolean append = true;
+      FileHandler fh = new FileHandler("%h/.devconsole.log.%g", 1000000, 3, append);
+      fh.setFormatter(new SimpleFormatter());
+      logger = Logger.getLogger("DevConsole");
+      logger.addHandler(fh);
+      logger.setLevel(Level.ALL);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   public AdminClientContext(AdminClient client) {
     this.client = client;
     this.bundleHelper = new ResourceBundleHelper(client.getClass());
     this.prefs = client.loadPrefs();
     this.optionMap = new LinkedHashMap<String, IOption>();
+    Thread.setDefaultUncaughtExceptionHandler(this);
   }
 
   public void setAdminClientController(AdminClientController controller) {
@@ -116,10 +137,12 @@ public class AdminClientContext implements IAdminClientContext {
 
   public void log(String msg) {
     controller.log(msg);
+    logger.info(msg);
   }
 
   public void log(Throwable t) {
     controller.log(t);
+    logger.throwing(null, null, t);
   }
 
   public void setStatus(String msg) {
@@ -144,5 +167,9 @@ public class AdminClientContext implements IAdminClientContext {
     if (this.controller != null) {
       this.controller.unblock();
     }
+  }
+
+  public void uncaughtException(Thread t, Throwable e) {
+    log(e);
   }
 }
