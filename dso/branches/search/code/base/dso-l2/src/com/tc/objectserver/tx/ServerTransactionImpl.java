@@ -41,7 +41,7 @@ public class ServerTransactionImpl implements ServerTransaction {
   private final ObjectStringSerializer serializer;
   private final Collection             notifies;
   private final DmiDescriptor[]        dmis;
-  private final MetaDataReader []      metaDataReaders;
+  private final MetaDataReader[]       metaDataReaders;
   private final ObjectIDSet            objectIDs;
   private final ObjectIDSet            newObjectIDs;
   private final TxnBatchID             batchID;
@@ -53,7 +53,7 @@ public class ServerTransactionImpl implements ServerTransaction {
   public ServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
                                TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
-                               MetaDataReader [] metaDataReaders, int numApplicationTxn, long[] highWaterMarks) {
+                               MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks) {
     this.batchID = batchID;
     this.txID = txID;
     this.seqID = sequenceID;
@@ -69,11 +69,11 @@ public class ServerTransactionImpl implements ServerTransaction {
     this.metaDataReaders = metaDataReaders;
     this.changes = dnas;
     this.serializer = serializer;
-    ObjectIDSet ids = new ObjectIDSet();
-    ObjectIDSet newIDs = new ObjectIDSet();
+    final ObjectIDSet ids = new ObjectIDSet();
+    final ObjectIDSet newIDs = new ObjectIDSet();
     boolean added = true;
-    for (Iterator i = this.changes.iterator(); i.hasNext();) {
-      DNA dna = (DNA) i.next();
+    for (final Iterator i = this.changes.iterator(); i.hasNext();) {
+      final DNA dna = (DNA) i.next();
       added &= ids.add(dna.getObjectID());
       if (!dna.isDelta()) {
         newIDs.add(dna.getObjectID());
@@ -88,7 +88,7 @@ public class ServerTransactionImpl implements ServerTransaction {
   // re-ordered before apply. This is not a problem because for an transaction to be re-ordered, it should not
   // have any common objects between them. hence if g1 is the first txn and g2 is the second txn, g2 can be applied
   // before g1 only when g2 has no common objects(or locks) with g1. If this is not true then we cant assign gid here.
-  public void setGlobalTransactionID(GlobalTransactionID gid) throws GlobalTransactionIDAlreadySetException {
+  public void setGlobalTransactionID(final GlobalTransactionID gid) throws GlobalTransactionIDAlreadySetException {
     if (this.globalTxnID != null) { throw new GlobalTransactionIDAlreadySetException("Gid already assigned : " + this
                                                                                      + " gid : " + gid); }
     this.globalTxnID = gid;
@@ -145,8 +145,8 @@ public class ServerTransactionImpl implements ServerTransaction {
   public DmiDescriptor[] getDmiDescriptors() {
     return this.dmis;
   }
-  
-  public MetaDataReader [] getMetaDataReaders() {
+
+  public MetaDataReader[] getMetaDataReaders() {
     return this.metaDataReaders;
   }
 
@@ -160,9 +160,9 @@ public class ServerTransactionImpl implements ServerTransaction {
   }
 
   private String getChangesDetails() {
-    StringBuilder sb = new StringBuilder();
-    for (Iterator i = this.changes.iterator(); i.hasNext();) {
-      DNA dna = (DNA) i.next();
+    final StringBuilder sb = new StringBuilder();
+    for (final Iterator i = this.changes.iterator(); i.hasNext();) {
+      final DNA dna = (DNA) i.next();
       sb.append("\t").append(dna.toString()).append("\n");
     }
     return sb.toString();
@@ -181,7 +181,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     return this.globalTxnID;
   }
 
-  public boolean needsBroadcast() {
+  public boolean isActiveTxn() {
     return true;
   }
 
