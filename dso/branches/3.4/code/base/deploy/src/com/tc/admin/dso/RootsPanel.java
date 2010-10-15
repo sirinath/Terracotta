@@ -270,7 +270,6 @@ public class RootsPanel extends XContainer implements PropertyChangeListener {
       String kitID = getKitID();
       String loc = adminClientContext.format("console.guide.url", kitID, "ConsoleGuide")
                    + "#TerracottaDeveloperConsole-Roots";
-      System.out.println(loc);
       BrowserLauncher.openURL(loc);
     }
   }
