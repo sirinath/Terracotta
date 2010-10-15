@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 
@@ -453,7 +454,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void reap(final ObjectID objectID) {
-    boolean remove = false;
     synchronized (this) {
       final TCObjectImpl tcobj = (TCObjectImpl) basicLookupByID(objectID);
       if (tcobj == null) {
@@ -464,12 +464,11 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         if (tcobj.isNull()) {
           this.idToManaged.remove(objectID);
           this.cache.remove(tcobj);
-          remove = true;
+          // Calling remove from within the synchronized block to make sure there are no races between the lookups and
+          // remove.
+          this.remoteObjectManager.removed(objectID);
         }
       }
-    }
-    if (remove) {
-      this.remoteObjectManager.removed(objectID);
     }
   }
 
