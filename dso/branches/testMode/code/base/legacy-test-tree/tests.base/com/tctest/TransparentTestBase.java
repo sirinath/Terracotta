@@ -33,6 +33,7 @@ import com.tc.test.restart.RestartTestHelper;
 import com.tc.test.restart.ServerCrasher;
 import com.tc.util.Assert;
 import com.tc.util.PortChooser;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.ThreadDump;
 import com.tctest.modes.CrashTestMode;
@@ -849,10 +850,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   @Override
   protected void tearDown() throws Exception {
-    if (controlledCrashMode && isCrashy() && canRunCrash() && crashTestState != null) {
+    if (isCrashy() && canRunCrash() && crashTestState != null) {
       synchronized (crashTestState) {
         crashTestState.setTestState(TestState.STOPPING);
-        if (serverControl != null && serverControl.isRunning()) {
+        if (controlledCrashMode && serverControl != null && serverControl.isRunning()) {
           serverControl.shutdown();
         }
       }
@@ -871,6 +872,11 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
 
     super.tearDown();
+
+    if (isCurrentRunPossible && handler.hasMoreRuns(modesToRun)) {
+      System.err.println("XXX Sleeping for 10 seconds before starting a new test");
+      ThreadUtil.reallySleep(10 * 1000);
+    }
   }
 
   @Override
@@ -944,6 +950,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return out;
   }
 
+  @Override
   protected String getTestName() {
     return this.testName;
   }
@@ -959,15 +966,15 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   public static class TestModesHandler {
-    private ArrayList<TestMode> normalRuns               = new ArrayList<TestMode>();
-    private ArrayList<TestMode> crashRuns                = new ArrayList<TestMode>();
-    private ArrayList<TestMode> activePassiveRuns        = new ArrayList<TestMode>();
-    private ArrayList<TestMode> activeActiveRuns         = new ArrayList<TestMode>();
+    private final ArrayList<TestMode> normalRuns               = new ArrayList<TestMode>();
+    private final ArrayList<TestMode> crashRuns                = new ArrayList<TestMode>();
+    private final ArrayList<TestMode> activePassiveRuns        = new ArrayList<TestMode>();
+    private final ArrayList<TestMode> activeActiveRuns         = new ArrayList<TestMode>();
 
-    private int                 indexOfNormalRuns        = 0;
-    private int                 indexOfCrashRuns         = 0;
-    private int                 indexOfActivePassiveRuns = 0;
-    private int                 indexOfActiveActiveRuns  = 0;
+    private int                       indexOfNormalRuns        = 0;
+    private int                       indexOfCrashRuns         = 0;
+    private int                       indexOfActivePassiveRuns = 0;
+    private int                       indexOfActiveActiveRuns  = 0;
 
     public TestModesHandler(TestMode[] modes) {
       for (TestMode mode : modes) {
@@ -1001,6 +1008,14 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
           return indexOfNormalRuns;
       }
       throw new AssertionError("No index found");
+    }
+
+    public boolean hasMoreRuns(List<String> modes) {
+      for (String strMode : modes) {
+        if (canRunMode(strMode)) { return true; }
+      }
+
+      return false;
     }
 
     private boolean canRunMode(String strMode) {
