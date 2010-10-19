@@ -7,6 +7,7 @@ package com.tc.object.bytecode;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.search.SearchQueryResult;
 
 import java.util.Set;
 
@@ -27,9 +28,10 @@ public class ManagerUtilInternal {
   public static MetaDataDescriptor createMetaDataDescriptor(String category) {
     return getInternalManager().createMetaDataDescriptor(category);
   }
-  
-  public static Set<String> executeQuery(String cachename, String queryString) {
-    return getInternalManager().executeQuery(cachename, queryString);
+
+  public static Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+                                                    Set<String> attributeSet) {
+    return getInternalManager().executeQuery(cachename, queryString, includeKeys, attributeSet);
   }
 
   /**

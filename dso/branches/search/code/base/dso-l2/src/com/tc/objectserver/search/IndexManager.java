@@ -4,6 +4,7 @@
 package com.tc.objectserver.search;
 
 import com.tc.object.metadata.ValueType;
+import com.tc.search.SearchQueryResult;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,9 +16,9 @@ public interface IndexManager {
   boolean createIndex(String name, Map<String, ValueType> schema) throws IndexException;
 
   boolean deleteIndex(String name) throws IndexException;
-  
-  public Set<String> searchIndex(String name, String query) throws IOException;
+
+  public Set<SearchQueryResult> searchIndex(String name, String query, boolean includeKeys, Set<String> attributeSet)
+      throws IOException;
 
   void shutdown();
 }
-

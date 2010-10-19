@@ -5,9 +5,9 @@ package com.tc.object.msg;
 
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
+import com.tc.search.SearchQueryResult;
 
 import java.util.Set;
-
 
 /**
  * Response message for object requests.
@@ -15,27 +15,23 @@ import java.util.Set;
  * @author Nabib El-Rahman
  */
 public interface SearchQueryResponseMessage extends TCMessage {
-  
+
   /**
-   * Search Identifier.
-   * 
-   * return SearchRequestID requestID
+   * Search Identifier. return SearchRequestID requestID
    */
   public SearchRequestID getRequestID();
-  
+
   /**
    * Initialize message.
    * 
    * @param SearchRequestID searchRequestID
-   * @param Set<String> keys
+   * @param Set<SearchQueryResult> results
    */
-  public void initialSearchResponseMessage(final SearchRequestID searchRequestID, final Set<String> keys);
-  
-  
+  public void initialSearchResponseMessage(SearchRequestID searchRequestID, Set<SearchQueryResult> results);
+
   /**
-   * 
-   * @return Set<String> keys.
+   * @return Set<SearchQueryResult> results.
    */
-  public Set<String> getKeys();
+  public Set<SearchQueryResult> getResults();
 
 }

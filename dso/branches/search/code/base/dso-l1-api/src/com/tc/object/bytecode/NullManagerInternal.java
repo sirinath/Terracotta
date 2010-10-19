@@ -14,6 +14,7 @@ import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.properties.TCProperties;
+import com.tc.search.SearchQueryResult;
 import com.tc.statistics.StatisticRetrievalAction;
 
 import java.lang.reflect.Field;
@@ -299,8 +300,9 @@ public class NullManagerInternal implements ManagerInternal {
   public MetaDataDescriptor createMetaDataDescriptor(String category) {
     throw new UnsupportedOperationException();
   }
-  
-  public Set<String> executeQuery(String cachename, String queryString) {
+
+  public Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+                                             Set<String> attributeSet) {
     throw new UnsupportedOperationException();
   }
 }

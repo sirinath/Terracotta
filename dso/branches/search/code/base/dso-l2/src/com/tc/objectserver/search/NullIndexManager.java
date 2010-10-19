@@ -5,6 +5,7 @@ package com.tc.objectserver.search;
 
 import com.tc.object.metadata.NVPair;
 import com.tc.object.metadata.ValueType;
+import com.tc.search.SearchQueryResult;
 
 import java.util.List;
 import java.util.Map;
@@ -23,33 +24,33 @@ public class NullIndexManager implements IndexManager {
   public Index getIndex(String name) {
     return new NullIndex();
   }
-  
-  public Set<String> searchIndex(String name, String query) {
+
+  public Set<SearchQueryResult> searchIndex(String name, String query, boolean includeKeys, Set<String> attributeSet) {
     return null;
   }
 
   public void shutdown() {
     // no nothing
   }
-  
+
   private static final class NullIndex implements Index {
 
     public void close() {//
-      
+
     }
 
     public void remove(Object key) {//
-      
+
     }
 
     public void upsert(Object key, List<NVPair> attributes) {//
-      
+
     }
 
-    public Set<String> search(String query) {
+    public Set<SearchQueryResult> search(String query, boolean includeKeys, Set<String> attributeSet) {
       return null;
     }
-    
+
   }
 
 }

@@ -14,6 +14,8 @@ import com.tc.object.SearchRequestID;
 import com.tc.object.session.SessionID;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Nabib El-Rahman
@@ -23,10 +25,13 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   private final static byte SEARCH_REQUEST_ID = 0;
   private final static byte CACHENAME         = 1;
   private final static byte QUERY             = 2;
+  private final static byte INCLUDE_KEYS      = 3;
 
   private SearchRequestID   requestID;
   private String            cachename;
   private String            query;
+  private boolean           includeKeys;
+  private Set<String>       attributes;
 
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                        MessageChannel channel, TCMessageType type) {
@@ -39,10 +44,12 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   }
 
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final String queryString) {
+                                          final String queryString, boolean keys, Set<String> attributeSet) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
     this.query = queryString;
+    this.includeKeys = keys;
+    this.attributes = attributeSet;
   }
 
   @Override
@@ -50,6 +57,14 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
     putNVPair(SEARCH_REQUEST_ID, this.requestID.toLong());
     putNVPair(CACHENAME, this.cachename);
     putNVPair(QUERY, this.query);
+    putNVPair(INCLUDE_KEYS, this.includeKeys);
+    final TCByteBufferOutputStream outStream = getOutputStream();
+
+    outStream.writeInt(this.attributes.size());
+    for (final String attribute : this.attributes) {
+      outStream.writeString(attribute);
+    }
+
   }
 
   @Override
@@ -65,6 +80,17 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
       case QUERY:
         this.query = getStringValue();
+        return true;
+
+      case INCLUDE_KEYS:
+        this.includeKeys = getBooleanValue();
+        this.attributes = new HashSet<String>();
+        int count = getIntValue();
+        // Directly decode the key
+        while (count-- > 0) {
+          String attribute = getStringValue();
+          this.attributes.add(attribute);
+        }
         return true;
 
       default:
@@ -99,12 +125,26 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   public Object getKey() {
     return getSourceNodeID();
   }
-  
+
   /**
    * {@inheritDoc}
    */
   public NodeID getClientID() {
     return getSourceNodeID();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public Set<String> getAttributes() {
+    return this.attributes;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public boolean includeKeys() {
+    return this.includeKeys;
   }
 
 }

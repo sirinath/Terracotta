@@ -9,6 +9,7 @@ import com.tc.async.api.EventHandlerException;
 import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.metadata.AbstractMetaDataHandler;
+import com.tc.search.SearchQueryResult;
 
 import java.io.IOException;
 import java.util.Set;
@@ -21,12 +22,13 @@ import java.util.Set;
  */
 public class SearchEventHandler extends AbstractMetaDataHandler {
 
-  private IndexManager indexManager;
+  private IndexManager         indexManager;
   private SearchRequestManager searchRequestManager;
 
   /**
    * {@inheritDoc}
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   @Override
   public void handleMetaDataEvent(EventContext context) throws EventHandlerException, IOException {
@@ -60,8 +62,9 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
     } else if (context instanceof SearchQueryContext) {
       SearchQueryContext sqc = (SearchQueryContext) context;
 
-      Set<String> keys = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQuery());
-      this.searchRequestManager.queryResponse(sqc, keys);
+      Set<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQuery(), sqc
+          .includeKeys(), sqc.getAttributeSet());
+      this.searchRequestManager.queryResponse(sqc, results);
     } else {
       throw new AssertionError("Unknown context: " + context);
     }

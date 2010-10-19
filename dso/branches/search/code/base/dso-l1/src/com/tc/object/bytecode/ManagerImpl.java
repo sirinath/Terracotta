@@ -14,9 +14,9 @@ import com.tc.cluster.DsoClusterImpl;
 import com.tc.exception.ExceptionWrapper;
 import com.tc.exception.ExceptionWrapperImpl;
 import com.tc.lang.StartupHelper;
-import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.TunneledDomainUpdater;
@@ -53,6 +53,7 @@ import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.search.SearchQueryResult;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -106,9 +107,10 @@ public class ManagerImpl implements ManagerInternal {
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final ClientLockManager lockManager,
-                     final RemoteSearchRequestManager searchRequestManager,
-                     final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(startClient, objectManager, txManager, lockManager, searchRequestManager, config, connectionComponents, true, null, null, false);
+                     final RemoteSearchRequestManager searchRequestManager, final DSOClientConfigHelper config,
+                     final PreparedComponentsFromL2Connection connectionComponents) {
+    this(startClient, objectManager, txManager, lockManager, searchRequestManager, config, connectionComponents, true,
+         null, null, false);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
@@ -222,9 +224,8 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   private void startClient(final boolean forTests) {
-    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(
-                                                                       TCLogging
-                                                                           .getLogger(DistributedObjectClient.class)));
+    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(TCLogging
+        .getLogger(DistributedObjectClient.class)));
 
     final StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
@@ -301,12 +302,12 @@ public class ManagerImpl implements ManagerInternal {
             logicalAddAllInvoke(this.serializer.methodToID(methodSignature), methodSignature, (Collection) params[0],
                                 tco);
           } else if (SerializationUtil.ADD_ALL_AT_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature,
-                                  ((Integer) params[0]).intValue(), (Collection) params[1], tco);
+            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
+                .intValue(), (Collection) params[1], tco);
           } else {
             adjustForJava1ParametersIfNecessary(methodSignature, params);
-            tco.logicalInvoke(this.serializer.methodToID(methodSignature),
-                              this.methodDisplay.getDisplayForSignature(methodSignature), params);
+            tco.logicalInvoke(this.serializer.methodToID(methodSignature), this.methodDisplay
+                .getDisplayForSignature(methodSignature), params);
           }
         }
       } catch (final Throwable t) {
@@ -923,10 +924,11 @@ public class ManagerImpl implements ManagerInternal {
   public MetaDataDescriptor createMetaDataDescriptor(String category) {
     return new MetaDataDescriptorImpl(category);
   }
-  
-  public Set<String> executeQuery(String cachename, String queryString) {
+
+  public Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+                                             Set<String> attributeSet) {
     waitForAllCurrentTransactionsToComplete();
-    return searchRequestManager.query(cachename, queryString);
+    return searchRequestManager.query(cachename, queryString, includeKeys, attributeSet);
   }
-  
+
 }
