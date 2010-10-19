@@ -9,7 +9,7 @@ import com.tc.object.RemoteSearchRequestManager;
 import com.tc.object.msg.SearchQueryResponseMessage;
 
 public class ReceiveSearchQueryResponseHandler extends AbstractEventHandler {
-  
+
   private final RemoteSearchRequestManager remoteSearchRequestManager;
 
   public ReceiveSearchQueryResponseHandler(final RemoteSearchRequestManager remoteSearchRequestManager) {
@@ -20,10 +20,8 @@ public class ReceiveSearchQueryResponseHandler extends AbstractEventHandler {
   public void handleEvent(final EventContext context) {
     if (context instanceof SearchQueryResponseMessage) {
       final SearchQueryResponseMessage responseMsg = (SearchQueryResponseMessage) context;
-      System.out.println("RECEIVED SEARCH REQUEST RESPONSE: " + responseMsg);
-      this.remoteSearchRequestManager.addResponseForQuery(responseMsg.getLocalSessionID(),
-                                                        responseMsg.getRequestID(), responseMsg.getKeys(), responseMsg
-                                                            .getSourceNodeID());
+      this.remoteSearchRequestManager.addResponseForQuery(responseMsg.getLocalSessionID(), responseMsg.getRequestID(),
+                                                          responseMsg.getResults(), responseMsg.getSourceNodeID());
     } else {
       throw new AssertionError("Unknown message type received from server - " + context.getClass().getName());
     }

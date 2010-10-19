@@ -4,6 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
@@ -11,11 +12,11 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.SearchRequestID;
 import com.tc.object.session.SessionID;
+import com.tc.search.SearchQueryResult;
 import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -24,28 +25,28 @@ import java.util.Set;
  */
 public class SearchQueryResponseMessageImpl extends DSOMessageBase implements SearchQueryResponseMessage {
 
-  private final static byte SEARCH_REQUEST_ID = 0;
-  private final static byte KEYS_SIZE         = 1;
+  private final static byte      SEARCH_REQUEST_ID = 0;
+  private final static byte      RESULTS_SIZE      = 1;
 
-  private SearchRequestID   requestID;
-  private Set<String>       keys;
-  
+  private SearchRequestID        requestID;
+  private Set<SearchQueryResult> results;
+
   public SearchQueryResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
-                                       MessageChannel channel, TCMessageType type) {
+                                        MessageChannel channel, TCMessageType type) {
     super(sessionID, monitor, out, channel, type);
   }
 
   public SearchQueryResponseMessageImpl(SessionID sessionID, MessageMonitor monitor, MessageChannel channel,
-                                       TCMessageHeader header, TCByteBuffer[] data) {
+                                        TCMessageHeader header, TCByteBuffer[] data) {
     super(sessionID, monitor, channel, header, data);
   }
 
   /**
    * {@inheritDoc}
    */
-  public void initialSearchResponseMessage(SearchRequestID searchRequestID, Set<String> keySet) {
+  public void initialSearchResponseMessage(SearchRequestID searchRequestID, Set<SearchQueryResult> searchResults) {
     this.requestID = searchRequestID;
-    this.keys = keySet;
+    this.results = searchResults;
   }
 
   /**
@@ -58,23 +59,23 @@ public class SearchQueryResponseMessageImpl extends DSOMessageBase implements Se
   /**
    * {@inheritDoc}
    */
-  public Set<String> getKeys() {
-    return this.keys;
+  public Set<SearchQueryResult> getResults() {
+    return this.results;
   }
 
   @Override
   protected void dehydrateValues() {
     putNVPair(SEARCH_REQUEST_ID, this.requestID.toLong());
-    putNVPair(KEYS_SIZE, this.keys.size());
+    putNVPair(RESULTS_SIZE, this.results.size());
     int count = 0;
 
     final TCByteBufferOutputStream outStream = getOutputStream();
-    for (Iterator<String> iter = this.keys.iterator(); iter.hasNext();) {
+    for (SearchQueryResult result : this.results) {
       // TODO: does the key need to be encoded?
-      outStream.writeString(iter.next());
+      result.serializeTo(outStream);
       count++;
     }
-    Assert.assertEquals(this.keys.size(), count);
+    Assert.assertEquals(this.results.size(), count);
   }
 
   @Override
@@ -84,16 +85,17 @@ public class SearchQueryResponseMessageImpl extends DSOMessageBase implements Se
         this.requestID = new SearchRequestID(getLongValue());
         return true;
 
-      case KEYS_SIZE:
+      case RESULTS_SIZE:
         int size = getIntValue();
-        this.keys = new HashSet((int) (size * 1.5));
+        this.results = new HashSet((int) (size * 1.5));
+        TCByteBufferInput input = getInputStream();
         while (size-- > 0) {
           // TODO: Do we need to decode?
-          final String key = getStringValue();
-          this.keys.add(key);
+          SearchQueryResult result = new SearchQueryResultImpl();
+          result.deserializeFrom(input);
+          this.results.add(result);
         }
         return true;
-
       default:
         return false;
     }

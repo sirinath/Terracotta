@@ -6,13 +6,15 @@ package com.tc.object;
 import com.tc.net.NodeID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.session.SessionID;
+import com.tc.search.SearchQueryResult;
 
 import java.util.Collections;
 import java.util.Set;
 
 public class MockRemoteSearchRequestManager implements RemoteSearchRequestManager {
 
-  public void addResponseForQuery(SessionID sessionID, SearchRequestID requestID, Set<String> keys, NodeID nodeID) {
+  public void addResponseForQuery(final SessionID sessionID, final SearchRequestID requestID,
+                                  final Set<SearchQueryResult> results, final NodeID nodeID) {
     //
   }
 
@@ -20,12 +22,12 @@ public class MockRemoteSearchRequestManager implements RemoteSearchRequestManage
     return false;
   }
 
-  public Set<String> query(String cachename, String query) {
+  public Set<SearchQueryResult> query(String cachename, String query, boolean includeKeys, Set<String> attributeSet) {
     return Collections.EMPTY_SET;
   }
 
   public void initializeHandshake(NodeID thisNode, NodeID remoteNode, ClientHandshakeMessage handshakeMessage) {
-   //
+    //
   }
 
   public void pause(NodeID remoteNode, int disconnected) {

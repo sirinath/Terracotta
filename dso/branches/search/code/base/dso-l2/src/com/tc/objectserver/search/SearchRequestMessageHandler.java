@@ -21,13 +21,13 @@ public class SearchRequestMessageHandler extends AbstractEventHandler {
 
   private SearchRequestManager searchRequestManager;
 
- 
   @Override
   public void handleEvent(EventContext context) {
-    if(context instanceof SearchQueryRequestMessage) {
-      SearchQueryRequestMessage msg = (SearchQueryRequestMessage)context;
-      this.searchRequestManager.queryRequest((ClientID)msg.getClientID(), msg.getRequestID(), msg.getCachename(), msg.getQuery());
-      
+    if (context instanceof SearchQueryRequestMessage) {
+      SearchQueryRequestMessage msg = (SearchQueryRequestMessage) context;
+      this.searchRequestManager.queryRequest((ClientID) msg.getClientID(), msg.getRequestID(), msg.getCachename(), msg
+          .getQuery(), msg.includeKeys(), msg.getAttributes());
+
     } else {
       throw new AssertionError("Unknown context " + context);
     }
@@ -39,6 +39,5 @@ public class SearchRequestMessageHandler extends AbstractEventHandler {
     ServerConfigurationContext serverContext = (ServerConfigurationContext) context;
     this.searchRequestManager = serverContext.getSearchRequestManager();
   }
-
 
 }

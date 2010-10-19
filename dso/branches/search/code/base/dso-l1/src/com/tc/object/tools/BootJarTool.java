@@ -156,6 +156,7 @@ import com.tc.object.util.OverrideCheck;
 import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
+import com.tc.search.SearchQueryResult;
 import com.tc.statistics.LazilyInitializedSRA;
 import com.tc.statistics.StatisticData;
 import com.tc.statistics.StatisticDataCSVParser;
@@ -497,6 +498,7 @@ public class BootJarTool {
       loadTerracottaClass(Clearable.class.getName());
       loadTerracottaClass(NotClearable.class.getName());
       loadTerracottaClass(TCServerMap.class.getName());
+      loadTerracottaClass(SearchQueryResult.class.getName());
       loadTerracottaClass(ExpirableEntry.class.getName());
       loadTerracottaClass(OverridesHashCode.class.getName());
       loadTerracottaClass(Manager.class.getName());

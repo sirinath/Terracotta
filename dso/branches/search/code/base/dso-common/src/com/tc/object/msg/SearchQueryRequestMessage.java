@@ -8,6 +8,8 @@ import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
 
+import java.util.Set;
+
 /**
  * The class represents a query request from the client. the cachename is to identify the index and the query string is
  * our client side query in string form.
@@ -15,7 +17,7 @@ import com.tc.object.SearchRequestID;
  * @author Nabib El-Rahman
  */
 public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEventContext {
-  
+
   /**
    * ClientID
    */
@@ -32,9 +34,11 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @param SearchRequestID searchRequestID
    * @param String cacheName
    * @param String queryString
+   * @param boolean keys
+   * @param Set<String> attributeSet
    */
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final String queryString);
+                                          final String queryString, final boolean keys, final Set<String> attributeSet);
 
   /**
    * Name of cache to query against.
@@ -49,5 +53,19 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @return String string
    */
   public String getQuery();
+
+  /**
+   * Return map of attributes ask for.
+   * 
+   * @return Set<String>
+   */
+  public Set<String> getAttributes();
+
+  /**
+   * Result should include keys
+   * 
+   * @return boolean
+   */
+  public boolean includeKeys();
 
 }
