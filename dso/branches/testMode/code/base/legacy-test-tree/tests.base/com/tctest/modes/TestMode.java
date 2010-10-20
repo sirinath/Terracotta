@@ -20,6 +20,22 @@ public interface TestMode {
 
       throw new AssertionError(mode + " Not Supported");
     }
+
+    @Override
+    public String toString() {
+      switch (this) {
+        case NORMAL:
+          return TestConfigObject.TRANSPARENT_TESTS_MODE_NORMAL;
+        case CRASH:
+          return TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH;
+        case ACTIVE_PASSIVE:
+          return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_PASSIVE;
+        case ACTIVE_ACTIVE:
+          return TestConfigObject.TRANSPARENT_TESTS_MODE_ACTIVE_ACTIVE;
+      }
+
+      throw new AssertionError();
+    }
   }
 
   Mode getMode();
