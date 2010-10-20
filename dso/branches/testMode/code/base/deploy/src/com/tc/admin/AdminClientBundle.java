@@ -17,7 +17,7 @@ public class AdminClientBundle extends ListResourceBundle {
   @Override
   public Object[][] getContents() {
     return new Object[][] {
-        { "console.guide.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID=ConsoleGuide" },
+        { "console.guide.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID={1}" },
         { "get.svt.url", "http://www.terracotta.org/kit/reflector?kitID={0}&pageID=GetSVT" },
         { "show.svt.label", "Show SVT..." },
         { "cluster.node.label", "Terracotta cluster" },
@@ -152,16 +152,7 @@ public class AdminClientBundle extends ListResourceBundle {
         { "operator.events.aggregate.view", "Aggregate View" },
         { "operator.events.level.all", "All Events" },
         { "operator.events.level.view", "View By Event Type" },
-        { "operator.events.level.info", "INFO" },
-        { "operator.events.level.warn", "WARN" },
-        { "operator.events.level.debug", "DEBUG" },
-        { "operator.events.level.error", "ERROR" },
-        { "operator.events.level.critical", "CRITICAL" },
         { "operator.events.subsystem.view", "View By Event System" },
-        { "operator.events.subsystem.memoryManager", "MEMORY MANAGER" },
-        { "operator.events.subsystem.dgc", "DGC" },
-        { "operator.events.subsystem.cluster.topology", "CLUSTER_TOPLOLGY" },
-        { "operator.events.subsystem.lockManager", "LOCK MANAGER" },
         { "map.entry", "MapEntry" },
         { "log.error", "ERROR" },
         { "log.warn", "WARN" },
