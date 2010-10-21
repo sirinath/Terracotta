@@ -66,7 +66,7 @@ public class TCTestCase extends TestCase {
   // the timer for each test method given this
   private static final Timer               timeoutTimer              = new Timer("Timeout Thread", true);
   private static final SynchronizedBoolean timeoutTaskAdded          = new SynchronizedBoolean(false);
-
+  private static TimerTask                 timeoutTask;
   private static boolean                   printedProcess            = false;
 
   // If you want to customize this, you have to do it in the constructor of your test case (setUp() is too late)
@@ -236,14 +236,15 @@ public class TCTestCase extends TestCase {
 
     final long delay = junitTimeout - timeoutThreshold;
 
-    System.err.println("Timeout task is scheduled to run in " + millisToMinutes(delay) + " minutes");
+    System.err.println("XXX Timeout task is scheduled to run in " + millisToMinutes(delay) + " minutes");
 
-    timeoutTimer.schedule(new TimerTask() {
+    timeoutTask = new TimerTask() {
       @Override
       public void run() {
         timeoutCallback(delay);
       }
-    }, delay);
+    };
+    timeoutTimer.schedule(timeoutTask, delay);
   }
 
   private long millisToMinutes(final long timeInMilliseconds) {
@@ -562,8 +563,8 @@ public class TCTestCase extends TestCase {
       assertEquals("Object and [de]serialized object failed equals() comparison", obj, deserializedObj);
     }
     if (checkHashCode) {
-      assertEquals("Object and [de]serialized object failed hashCode() comparison", obj.hashCode(),
-                   deserializedObj.hashCode());
+      assertEquals("Object and [de]serialized object failed hashCode() comparison", obj.hashCode(), deserializedObj
+          .hashCode());
     }
   }
 
@@ -591,5 +592,13 @@ public class TCTestCase extends TestCase {
 
   protected long getThreadDumpInterval() {
     return dumpInterval;
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (timeoutTaskAdded.commit(true, false)) {
+      System.err.println("XXX Cancelling timeout");
+      timeoutTask.cancel();
+    }
   }
 }
