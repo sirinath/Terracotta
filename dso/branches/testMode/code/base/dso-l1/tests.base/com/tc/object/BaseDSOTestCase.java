@@ -164,12 +164,14 @@ public class BaseDSOTestCase extends TCTestCase implements TestClientConfigHelpe
     this.configFactory = null;
     this.configHelper = null;
     this.l1ConfigManager = null;
+    super.tearDown();
   }
 
   protected String getTestName() {
     return "default";
   }
 
+  @Override
   protected boolean cleanTempDir() {
     return false;
   }
