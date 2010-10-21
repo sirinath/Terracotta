@@ -3,7 +3,7 @@
  */
 package com.tctest.modes;
 
-public class NormalTestSetupManager implements TestSetupManager {
+public class NormalTestSetupManager extends TestSetupManager {
   private boolean isPersistent = false;
 
   public void setPersistent(boolean isPersistent) {

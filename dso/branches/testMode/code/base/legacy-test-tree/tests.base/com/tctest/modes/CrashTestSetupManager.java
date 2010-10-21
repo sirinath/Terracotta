@@ -3,7 +3,7 @@
  */
 package com.tctest.modes;
 
-public class CrashTestSetupManager implements TestSetupManager {
+public class CrashTestSetupManager extends TestSetupManager {
   private int crashTimeInSeconds = 30;
 
   public int getCrashTimeInSeconds() {
