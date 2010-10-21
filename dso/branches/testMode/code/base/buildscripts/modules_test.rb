@@ -438,6 +438,11 @@ class SubtreeTestRun
     if mode = @config_source['test.mode']
       @internal_config_source['tc.tests.configuration.transparent-tests.mode'] = mode
     end
+    
+    # Set the tc.tests.configuration.transparent-tests.index property if necessary
+    if testIndex = @config_source['test.index']
+      @internal_config_source['tc.tests.configuration.transparent-tests.index'] = testIndex
+    end
 
     # This creates the file that TestConfigObject reads.
     @subtree.create_build_configuration_file(@static_resources, @testrun_results, @build_results, @build_environment, @config_source, boot_jar, @ant, tests_jvm, all_jvmargs, @timeout)

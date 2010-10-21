@@ -86,6 +86,8 @@ public class TestConfigObject {
 
   private static final String     TRANSPARENT_TESTS_MODE           = STATIC_PROPERTIES_PREFIX
                                                                      + "transparent-tests.mode";
+  private static final String     TRANSPARENT_TESTS_INDEX          = STATIC_PROPERTIES_PREFIX
+                                                                     + "transparent-tests.index";
 
   private static final String     SYSTEM_PROPERTIES_RESOURCE_NAME  = "/test-system-properties.properties";
 
@@ -418,6 +420,13 @@ public class TestConfigObject {
     String str = getProperty(TRANSPARENT_TESTS_MODE, TRANSPARENT_TESTS_MODE_NORMAL);
     if (TRANSPARENT_TESTS_MODE_NORMAL.equals(str)) { return null; }
     return str;
+  }
+
+  public int transparentTestsIndex() {
+    String strIndex = getProperty(TRANSPARENT_TESTS_INDEX, null);
+    if (strIndex == null) { return -1; }
+
+    return Integer.parseInt(strIndex);
   }
 
   private void assertValidClasspath(String out) {
