@@ -20,7 +20,13 @@ public class TestModesHandler {
   private int                       indexOfActivePassiveRuns = 0;
   private int                       indexOfActiveActiveRuns  = 0;
 
-  public TestModesHandler(TestMode[] modes) {
+  public TestModesHandler(TestMode[] modes, int index) {
+    System.err.println("XXX Only this index will be run: " + index);
+
+    if (index > 0) {
+      modes = new TestMode[] { modes[index] };
+    }
+
     for (TestMode mode : modes) {
       switch (mode.getMode()) {
         case ACTIVE_ACTIVE:

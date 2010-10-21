@@ -54,7 +54,6 @@ import com.tctest.runner.PostAction;
 import com.tctest.runner.TestGlobalIdGenerator;
 import com.tctest.runner.TransparentAppConfig;
 import com.terracottatech.config.BindPort;
-import com.terracottatech.config.PersistenceMode;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -208,7 +207,6 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   @Override
   protected void setUp() throws Exception {
     setUpConfigThisMode();
-
     if (!isCurrentRunPossible) { return; }
 
     setUpTransparent(configFactory(), configHelper());
@@ -313,41 +311,17 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   private void setUpConfigThisMode() throws ConfigurationSetupException {
     initHandler();
 
-    String currentRunningMode = null;
+    if (!setNextMode()) { return; }
 
-    do {
-      if (modesToRun.size() == 0) {
-        currentTestMode = null;
-        isCurrentRunPossible = false;
-        return;
-      } else {
-        currentRunningMode = modesToRun.getFirst();
-      }
-      currentTestMode = handler.getTestModeFor(currentRunningMode);
-      if (currentTestMode == null) {
-        modesToRun.removeFirst();
-      }
-    } while (currentTestMode == null);
-
-    isCurrentRunPossible = true;
-    this.testName = "test-" + currentRunningMode + "-" + handler.getIndexFor(currentRunningMode);
+    this.testName = "test-" + mode() + "-" + handler.getIndexFor(mode());
 
     switch (currentTestMode.getMode()) {
       case NORMAL:
         NormalTestSetupManager normalSetupManager = (NormalTestSetupManager) currentTestMode.getSetupManager();
-        if (normalSetupManager.isPersistent()) {
-          configFactory().setPersistenceMode(PersistenceMode.PERMANENT_STORE);
-        } else {
-          configFactory().setPersistenceMode(PersistenceMode.TEMPORARY_SWAP_ONLY);
-        }
+        normalSetupManager.setInConfig(configFactory());
         break;
       case CRASH:
-        // CrashTestSetupManager crashSetupManager = (CrashTestSetupManager) mode.getSetupManager();
-        // if (crashSetupManager.isPersistent()) {
-        // configFactory().setPersistenceMode(PersistenceMode.PERMANENT_STORE);
-        // } else {
-        // configFactory().setPersistenceMode(PersistenceMode.TEMPORARY_SWAP_ONLY);
-        // }
+        // TODO
         break;
       case ACTIVE_ACTIVE:
       case ACTIVE_PASSIVE:
@@ -355,9 +329,31 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     }
   }
 
+  /**
+   * Sets currentTestMode and isCurrentRunPossible
+   */
+  private boolean setNextMode() {
+    do {
+      if (modesToRun.size() == 0) {
+        currentTestMode = null;
+        isCurrentRunPossible = false;
+        return false;
+      }
+
+      currentTestMode = handler.getTestModeFor(modesToRun.getFirst());
+      if (currentTestMode == null) {
+        modesToRun.removeFirst();
+      } else {
+        isCurrentRunPossible = true;
+      }
+    } while (currentTestMode == null);
+
+    return true;
+  }
+
   private void initHandler() {
     if (handler == null) {
-      handler = new TestModesHandler(getTestModes());
+      handler = new TestModesHandler(getTestModes(), TestConfigObject.getInstance().transparentTestsIndex());
     }
   }
 
