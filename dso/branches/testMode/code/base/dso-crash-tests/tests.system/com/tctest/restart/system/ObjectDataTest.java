@@ -46,7 +46,7 @@ public class ObjectDataTest extends TransparentTestBase implements TestConfigura
 
   @Override
   public TestMode[] getTestModes() {
-    TestMode[] modes = new TestMode[4];
+    TestMode[] modes = new TestMode[5];
 
     modes[0] = new NormalTestMode();
     ((NormalTestSetupManager) modes[0].getSetupManager()).setPersistent(true);
@@ -57,16 +57,33 @@ public class ObjectDataTest extends TransparentTestBase implements TestConfigura
     modes[2] = new CrashTestMode();
 
     modes[3] = new ActivePassiveTestMode();
-    setupActivePassiveTest((ActivePassiveTestSetupManager) modes[3].getSetupManager());
+    setupActivePassiveTest1((ActivePassiveTestSetupManager) modes[3].getSetupManager());
+
+    modes[4] = new ActivePassiveTestMode();
+    setupActivePassiveTest2((ActivePassiveTestSetupManager) modes[4].getSetupManager());
 
     return modes;
   }
 
+  @Override
   protected boolean canRunCrash() {
     return true;
   }
 
-  public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
+  public void setupActivePassiveTest1(ActivePassiveTestSetupManager setupManager) {
+    setupManager.setServerCount(2);
+    setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
+    setupManager.setServerCrashWaitTimeInSec(30);
+    setupManager.setServerShareDataMode(MultipleServersSharedDataMode.NETWORK);
+    setupManager.setServerPersistenceMode(MultipleServersPersistenceMode.TEMPORARY_SWAP_ONLY);
+  }
+
+  /**
+   * L1 Reconnect test
+   */
+  public void setupActivePassiveTest2(ActivePassiveTestSetupManager setupManager) {
+    setupManager.setCanRunL1ProxyConnect(true).setEnableL1Reconnect(true);
+
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
     setupManager.setServerCrashWaitTimeInSec(30);

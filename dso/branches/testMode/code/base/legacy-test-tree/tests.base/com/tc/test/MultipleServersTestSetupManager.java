@@ -6,7 +6,7 @@ package com.tc.test;
 
 import com.tctest.modes.TestSetupManager;
 
-public abstract class MultipleServersTestSetupManager implements TestSetupManager {
+public abstract class MultipleServersTestSetupManager extends TestSetupManager {
 
   private int                            serverCount;
   private long                           serverCrashWaitTimeInSec = 15;
