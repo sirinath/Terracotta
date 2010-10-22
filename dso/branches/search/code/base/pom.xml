@@ -157,12 +157,12 @@
         <groupId>jfree</groupId>
         <artifactId>jfreechart</artifactId>
         <version>1.0.13</version>
-       <exclusions>
-         <exclusion>
-           <groupId>gnujaxp</groupId>
-           <artifactId>gnujaxp</artifactId>
-         </exclusion>
-       </exclusions>
+        <exclusions>
+          <exclusion>
+            <groupId>gnujaxp</groupId>
+            <artifactId>gnujaxp</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>treemap</groupId>
@@ -175,9 +175,9 @@
         <version>1.0.67</version>
       </dependency>
       <dependency>
-         <groupId>net.sourceforge</groupId>
-         <artifactId>yamlbeans</artifactId>
-         <version>0.9.2</version>
+        <groupId>net.sourceforge</groupId>
+        <artifactId>yamlbeans</artifactId>
+        <version>0.9.2</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.guice</groupId>
