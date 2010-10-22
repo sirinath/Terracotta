@@ -7,6 +7,7 @@ import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
 
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -20,27 +21,27 @@ public class SearchQueryContext implements MultiThreadedEventContext {
   private final ClientID        clientID;
   private final SearchRequestID requestID;
   private final String          cacheName;
-  private final String          query;
+  private final LinkedList      queryStack;
   private final boolean         includeKeys;
   private final Set<String>     attributeSet;
 
-  public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, String query,
+  public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, LinkedList queryStack,
                             boolean includeKeys, Set<String> attributeSet) {
     this.clientID = clientID;
     this.requestID = requestID;
     this.cacheName = cacheName;
-    this.query = query;
+    this.queryStack = queryStack;
     this.includeKeys = includeKeys;
     this.attributeSet = attributeSet;
   }
 
   /**
-   * Query string.
+   * Query stack.
    * 
-   * @return String string
+   * @return LinkedList linkedList
    */
-  public String getQuery() {
-    return this.query;
+  public LinkedList getQueryStack() {
+    return this.queryStack;
   }
 
   /**

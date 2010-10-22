@@ -4,6 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -11,10 +12,14 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.SearchRequestID;
+import com.tc.object.metadata.AbstractNVPair;
+import com.tc.object.metadata.NVPair;
 import com.tc.object.session.SessionID;
+import com.tc.search.StackOperations;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -22,14 +27,15 @@ import java.util.Set;
  */
 public class SearchQueryRequestMessageImpl extends DSOMessageBase implements SearchQueryRequestMessage {
 
-  private final static byte SEARCH_REQUEST_ID = 0;
-  private final static byte CACHENAME         = 1;
-  private final static byte QUERY             = 2;
-  private final static byte INCLUDE_KEYS      = 3;
+  private final static byte SEARCH_REQUEST_ID      = 0;
+  private final static byte CACHENAME              = 1;
+  private final static byte INCLUDE_KEYS           = 3;
+  private final static byte STACK_OPERATION_MARKER = 4;
+  private final static byte STACK_NVPAIR_MARKER    = 5;
 
   private SearchRequestID   requestID;
   private String            cachename;
-  private String            query;
+  private LinkedList        queryStack;
   private boolean           includeKeys;
   private Set<String>       attributes;
 
@@ -44,10 +50,10 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   }
 
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final String queryString, boolean keys, Set<String> attributeSet) {
+                                          final LinkedList stack, boolean keys, Set<String> attributeSet) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
-    this.query = queryString;
+    this.queryStack = stack;
     this.includeKeys = keys;
     this.attributes = attributeSet;
   }
@@ -56,7 +62,6 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   protected void dehydrateValues() {
     putNVPair(SEARCH_REQUEST_ID, this.requestID.toLong());
     putNVPair(CACHENAME, this.cachename);
-    putNVPair(QUERY, this.query);
     putNVPair(INCLUDE_KEYS, this.includeKeys);
     final TCByteBufferOutputStream outStream = getOutputStream();
 
@@ -65,10 +70,30 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
       outStream.writeString(attribute);
     }
 
+    System.out.println("[queryStack size ] = " + queryStack.size());
+    while (queryStack.size() > 0) {
+      Object obj = queryStack.removeLast();
+      System.out.println("[queryStack obj ] = " + obj);
+      if (obj instanceof StackOperations) {
+        StackOperations operation = (StackOperations) obj;
+        System.out.println("[queryStack stackoperation ] = " + operation);
+        System.out.println("[queryStack operation name] = " + operation.name());
+        putNVPair(STACK_OPERATION_MARKER, operation.name());
+      } else if (obj instanceof NVPair) {
+        AbstractNVPair pair = (AbstractNVPair) obj;
+        System.out.println("[queryStack pair ] = " + pair);
+        putNVPair(STACK_NVPAIR_MARKER, pair);
+      }
+    }
+
   }
 
   @Override
   protected boolean hydrateValue(final byte name) throws IOException {
+    if (queryStack == null) {
+      queryStack = new LinkedList();
+    }
+    final TCByteBufferInputStream inputStream = getInputStream();
     switch (name) {
       case SEARCH_REQUEST_ID:
         this.requestID = new SearchRequestID(getLongValue());
@@ -76,10 +101,6 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
       case CACHENAME:
         this.cachename = getStringValue();
-        return true;
-
-      case QUERY:
-        this.query = getStringValue();
         return true;
 
       case INCLUDE_KEYS:
@@ -91,6 +112,18 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
           String attribute = getStringValue();
           this.attributes.add(attribute);
         }
+        return true;
+
+      case STACK_OPERATION_MARKER:
+        StackOperations operation = StackOperations.valueOf(getStringValue());
+        System.out.println("[stackMarker] = " + operation);
+        queryStack.addFirst(operation);
+        return true;
+
+      case STACK_NVPAIR_MARKER:
+        NVPair pair = AbstractNVPair.deserializeInstance(inputStream);
+        System.out.println("[stackPair] = " + pair);
+        queryStack.addFirst(pair);
         return true;
 
       default:
@@ -108,8 +141,8 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   /**
    * {@inheritDoc}
    */
-  public String getQuery() {
-    return this.query;
+  public LinkedList getQueryStack() {
+    return this.queryStack;
   }
 
   /**

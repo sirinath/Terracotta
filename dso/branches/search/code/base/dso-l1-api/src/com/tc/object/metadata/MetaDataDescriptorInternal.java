@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface MetaDataDescriptorInternal extends MetaDataDescriptor, TCSerializable {
 
-  List<NVPair> getMetaDatas();
+  List<AbstractNVPair> getMetaDatas();
 
 }

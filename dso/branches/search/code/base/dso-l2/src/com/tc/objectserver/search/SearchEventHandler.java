@@ -62,7 +62,7 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
     } else if (context instanceof SearchQueryContext) {
       SearchQueryContext sqc = (SearchQueryContext) context;
 
-      Set<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQuery(), sqc
+      Set<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
           .includeKeys(), sqc.getAttributeSet());
       this.searchRequestManager.queryResponse(sqc, results);
     } else {

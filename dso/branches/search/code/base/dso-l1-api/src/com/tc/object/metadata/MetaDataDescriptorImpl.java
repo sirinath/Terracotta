@@ -7,7 +7,7 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
-import com.tc.object.metadata.NVPair.EnumNVPair;
+import com.tc.object.metadata.AbstractNVPair.EnumNVPair;
 import com.tc.util.ClassUtils;
 
 import java.io.IOException;
@@ -28,18 +28,18 @@ public class MetaDataDescriptorImpl implements TCSerializable, MetaDataDescripto
   public static final MetaDataDescriptor[]    EMPTY_ARRAY = new MetaDataDescriptor[] {};
 
   private final String                        category;
-  private final List<NVPair>                  metaDatas;
+  private final List<AbstractNVPair>                  metaDatas;
 
   public MetaDataDescriptorImpl(String category) {
-    this(category, new ArrayList<NVPair>());
+    this(category, new ArrayList<AbstractNVPair>());
   }
 
-  private MetaDataDescriptorImpl(String category, List<NVPair> metaDatas) {
+  private MetaDataDescriptorImpl(String category, List<AbstractNVPair> metaDatas) {
     this.category = category;
     this.metaDatas = metaDatas;
   }
 
-  public List<NVPair> getMetaDatas() {
+  public List<AbstractNVPair> getMetaDatas() {
     return metaDatas;
   }
 
@@ -50,10 +50,10 @@ public class MetaDataDescriptorImpl implements TCSerializable, MetaDataDescripto
   public Object deserializeFrom(TCByteBufferInput in) throws IOException {
     final String cat = in.readString();
     final int size = in.readInt();
-    List<NVPair> data = new ArrayList<NVPair>(size);
+    List<AbstractNVPair> data = new ArrayList<AbstractNVPair>(size);
 
     for (int i = 0; i < size; i++) {
-      data.add(NVPair.deserializeInstance(in));
+      data.add(AbstractNVPair.deserializeInstance(in));
     }
 
     return new MetaDataDescriptorImpl(cat, data);
@@ -62,7 +62,7 @@ public class MetaDataDescriptorImpl implements TCSerializable, MetaDataDescripto
   public void serializeTo(TCByteBufferOutput out) {
     out.writeString(category);
     out.writeInt(metaDatas.size());
-    for (NVPair nvpair : metaDatas) {
+    for (AbstractNVPair nvpair : metaDatas) {
       nvpair.serializeTo(out);
     }
   }
@@ -77,43 +77,43 @@ public class MetaDataDescriptorImpl implements TCSerializable, MetaDataDescripto
   }
 
   public void add(String name, boolean value) {
-    metaDatas.add(new NVPair.BooleanNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.BooleanNVPair(name, value));
   }
 
   public void add(String name, byte value) {
-    metaDatas.add(new NVPair.ByteNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.ByteNVPair(name, value));
   }
 
   public void add(String name, char value) {
-    metaDatas.add(new NVPair.CharNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.CharNVPair(name, value));
   }
 
   public void add(String name, double value) {
-    metaDatas.add(new NVPair.DoubleNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.DoubleNVPair(name, value));
   }
 
   public void add(String name, float value) {
-    metaDatas.add(new NVPair.FloatNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.FloatNVPair(name, value));
   }
 
   public void add(String name, int value) {
-    metaDatas.add(new NVPair.IntNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.IntNVPair(name, value));
   }
 
   public void add(String name, long value) {
-    metaDatas.add(new NVPair.LongNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.LongNVPair(name, value));
   }
 
   public void add(String name, short value) {
-    metaDatas.add(new NVPair.ShortNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.ShortNVPair(name, value));
   }
 
   public void add(String name, String value) {
-    metaDatas.add(new NVPair.StringNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.StringNVPair(name, value));
   }
 
   public void add(String name, byte[] value) {
-    metaDatas.add(new NVPair.ByteArrayNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.ByteArrayNVPair(name, value));
   }
 
   public void add(String name, Enum value) {
@@ -121,7 +121,7 @@ public class MetaDataDescriptorImpl implements TCSerializable, MetaDataDescripto
   }
 
   public void add(String name, Date value) {
-    metaDatas.add(new NVPair.DateNVPair(name, value));
+    metaDatas.add(new AbstractNVPair.DateNVPair(name, value));
   }
 
   public void add(String name, Object value) {

@@ -13,11 +13,13 @@ import com.tc.object.locks.Notify;
 import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.NVPair;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResult;
 import com.tc.statistics.StatisticRetrievalAction;
 
 import java.lang.reflect.Field;
+import java.util.LinkedList;
 import java.util.Set;
 
 import javax.management.MBeanServer;
@@ -301,8 +303,12 @@ public class NullManagerInternal implements ManagerInternal {
     throw new UnsupportedOperationException();
   }
 
-  public Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+  public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
                                              Set<String> attributeSet) {
+    throw new UnsupportedOperationException();
+  }
+
+  public NVPair createNVPair(String name, Object value) {
     throw new UnsupportedOperationException();
   }
 }

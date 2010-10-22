@@ -9,6 +9,7 @@ import com.tc.object.session.SessionID;
 import com.tc.search.SearchQueryResult;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class MockRemoteSearchRequestManager implements RemoteSearchRequestManager {
@@ -22,7 +23,8 @@ public class MockRemoteSearchRequestManager implements RemoteSearchRequestManage
     return false;
   }
 
-  public Set<SearchQueryResult> query(String cachename, String query, boolean includeKeys, Set<String> attributeSet) {
+  public Set<SearchQueryResult> query(String cachename, LinkedList queryStack, boolean includeKeys,
+                                      Set<String> attributeSet) {
     return Collections.EMPTY_SET;
   }
 
