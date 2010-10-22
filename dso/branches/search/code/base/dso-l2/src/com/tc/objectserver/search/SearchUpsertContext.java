@@ -5,7 +5,7 @@ package com.tc.objectserver.search;
 
 import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.net.NodeID;
-import com.tc.object.metadata.NVPair;
+import com.tc.object.metadata.AbstractNVPair;
 import com.tc.object.metadata.ValueType;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.metadata.AbstractMetaDataContext;
@@ -22,11 +22,11 @@ public class SearchUpsertContext extends AbstractMetaDataContext implements Mult
   
    private final String name;
   private final Map<String, ValueType> schema;
-  private final List<NVPair> attributes;
+  private final List<AbstractNVPair> attributes;
   private final String cacheKey;
   
   public SearchUpsertContext(NodeID id, TransactionID transactionID, String name, 
-                             String cacheKey, Map<String,ValueType> schema, List<NVPair> attributes ) {
+                             String cacheKey, Map<String,ValueType> schema, List<AbstractNVPair> attributes ) {
     super(id, transactionID);
     this.name = name;
     this.cacheKey = cacheKey;
@@ -65,7 +65,7 @@ public class SearchUpsertContext extends AbstractMetaDataContext implements Mult
    * Return List of attributes-value associated with the key.
    * 
    */
-  public List<NVPair> getAttributes() {
+  public List<AbstractNVPair> getAttributes() {
     return attributes;
   }
   

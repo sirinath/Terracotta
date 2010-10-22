@@ -49,6 +49,8 @@ import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.MetaDataDescriptorImpl;
+import com.tc.object.metadata.AbstractNVPair;
+import com.tc.object.metadata.NVPair;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
@@ -68,6 +70,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -925,10 +928,14 @@ public class ManagerImpl implements ManagerInternal {
     return new MetaDataDescriptorImpl(category);
   }
 
-  public Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+  public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
                                              Set<String> attributeSet) {
     waitForAllCurrentTransactionsToComplete();
-    return searchRequestManager.query(cachename, queryString, includeKeys, attributeSet);
+    return searchRequestManager.query(cachename, queryStack, includeKeys, attributeSet);
+  }
+
+  public NVPair createNVPair(String name, Object value) {
+    return AbstractNVPair.createNVPair(name, value);
   }
 
 }

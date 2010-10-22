@@ -3,10 +3,11 @@
  */
 package com.tc.objectserver.search;
 
-import com.tc.object.metadata.NVPair;
+import com.tc.object.metadata.AbstractNVPair;
 import com.tc.object.metadata.ValueType;
 import com.tc.search.SearchQueryResult;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,8 @@ public class NullIndexManager implements IndexManager {
     return new NullIndex();
   }
 
-  public Set<SearchQueryResult> searchIndex(String name, String query, boolean includeKeys, Set<String> attributeSet) {
+  public Set<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
+                                            Set<String> attributeSet) {
     return null;
   }
 
@@ -43,11 +45,11 @@ public class NullIndexManager implements IndexManager {
 
     }
 
-    public void upsert(Object key, List<NVPair> attributes) {//
+    public void upsert(Object key, List<AbstractNVPair> attributes) {//
 
     }
 
-    public Set<SearchQueryResult> search(String query, boolean includeKeys, Set<String> attributeSet) {
+    public Set<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet) {
       return null;
     }
 

@@ -7,6 +7,7 @@ import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
 import com.tc.search.SearchQueryResult;
 
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -23,11 +24,11 @@ public interface SearchRequestManager {
    * @param ClientID clientID
    * @param SearchRequestID requestID
    * @param String cachename
-   * @param String query
+   * @param LinkedList queryStack
    * @param boolean includeKeys
    * @param Set<String> attributeSet
    */
-  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, String query,
+  public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, LinkedList queryStack,
                            boolean includeKeys, Set<String> attributeSet);
 
   /**

@@ -7,8 +7,10 @@ package com.tc.object.bytecode;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResult;
 
+import java.util.LinkedList;
 import java.util.Set;
 
 public class ManagerUtilInternal {
@@ -29,9 +31,13 @@ public class ManagerUtilInternal {
     return getInternalManager().createMetaDataDescriptor(category);
   }
 
-  public static Set<SearchQueryResult> executeQuery(String cachename, String queryString, boolean includeKeys,
+  public static Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
                                                     Set<String> attributeSet) {
-    return getInternalManager().executeQuery(cachename, queryString, includeKeys, attributeSet);
+    return getInternalManager().executeQuery(cachename, queryStack, includeKeys, attributeSet);
+  }
+
+  public static NVPair createNVPair(String name, Object value) {
+    return getInternalManager().createNVPair(name, value);
   }
 
   /**
