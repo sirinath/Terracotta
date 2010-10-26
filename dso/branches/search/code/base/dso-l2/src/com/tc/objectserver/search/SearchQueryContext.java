@@ -8,6 +8,7 @@ import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,21 +19,23 @@ import java.util.Set;
  */
 public class SearchQueryContext implements MultiThreadedEventContext {
 
-  private final ClientID        clientID;
-  private final SearchRequestID requestID;
-  private final String          cacheName;
-  private final LinkedList      queryStack;
-  private final boolean         includeKeys;
-  private final Set<String>     attributeSet;
+  private final ClientID             clientID;
+  private final SearchRequestID      requestID;
+  private final String               cacheName;
+  private final LinkedList           queryStack;
+  private final boolean              includeKeys;
+  private final Set<String>          attributeSet;
+  private final Map<String, Boolean> sortAttributes;
 
   public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, LinkedList queryStack,
-                            boolean includeKeys, Set<String> attributeSet) {
+                            boolean includeKeys, Set<String> attributeSet, Map<String, Boolean> sortAttributes) {
     this.clientID = clientID;
     this.requestID = requestID;
     this.cacheName = cacheName;
     this.queryStack = queryStack;
     this.includeKeys = includeKeys;
     this.attributeSet = attributeSet;
+    this.sortAttributes = sortAttributes;
   }
 
   /**
@@ -87,6 +90,15 @@ public class SearchQueryContext implements MultiThreadedEventContext {
    */
   public Set<String> getAttributeSet() {
     return attributeSet;
+  }
+
+  /**
+   * sorted attributes, pair of attributes if ascending, true
+   * 
+   * @return Map<String,Boolean) sortAttributes.
+   */
+  public Map<String, Boolean> getSortAttributes() {
+    return sortAttributes;
   }
 
   /**

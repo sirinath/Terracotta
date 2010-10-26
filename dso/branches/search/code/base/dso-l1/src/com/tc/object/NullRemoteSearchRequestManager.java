@@ -10,6 +10,7 @@ import com.tc.search.SearchQueryResult;
 
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,7 +21,7 @@ import java.util.Set;
 public class NullRemoteSearchRequestManager implements RemoteSearchRequestManager {
 
   public Set<SearchQueryResult> query(String cachename, LinkedList queryStack, boolean includeKeys,
-                                      Set<String> attributeSet) {
+                                      Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
     return Collections.EMPTY_SET;
   }
 

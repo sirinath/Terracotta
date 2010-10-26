@@ -11,6 +11,7 @@ import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResult;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 public class ManagerUtilInternal {
@@ -32,8 +33,8 @@ public class ManagerUtilInternal {
   }
 
   public static Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                                    Set<String> attributeSet) {
-    return getInternalManager().executeQuery(cachename, queryStack, includeKeys, attributeSet);
+                                                    Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
+    return getInternalManager().executeQuery(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap);
   }
 
   public static NVPair createNVPair(String name, Object value) {

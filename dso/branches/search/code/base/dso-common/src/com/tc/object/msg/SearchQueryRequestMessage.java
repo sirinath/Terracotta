@@ -9,6 +9,7 @@ import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,10 +38,11 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @param LinkedList queryStack
    * @param boolean keys
    * @param Set<String> attributeSet
+   * @param Map<String,Boolean< sortAttributeMap
    */
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final LinkedList queryStack, final boolean keys,
-                                          final Set<String> attributeSet);
+                                          final Set<String> attributeSet, final Map<String, Boolean> sortAttributesMap);
 
   /**
    * Name of cache to query against.
@@ -57,11 +59,18 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
   public LinkedList getQueryStack();
 
   /**
-   * Return map of attributes ask for.
+   * Return set of attributes ask for.
    * 
    * @return Set<String>
    */
   public Set<String> getAttributes();
+
+  /**
+   * Return a map of sort attributes
+   * 
+   * @return Map<String, Boolean>
+   */
+  public Map<String, Boolean> getSortAttributes();
 
   /**
    * Result should include keys

@@ -9,6 +9,7 @@ import com.tc.search.SearchQueryResult;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface Index {
@@ -17,8 +18,8 @@ public interface Index {
 
   void upsert(Object key, List<AbstractNVPair> attributes) throws IndexException;
 
-  Set<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet)
-      throws IOException;
+  Set<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet,
+                                Map<String, Boolean> sortAttributes) throws IOException;
 
   void close();
 

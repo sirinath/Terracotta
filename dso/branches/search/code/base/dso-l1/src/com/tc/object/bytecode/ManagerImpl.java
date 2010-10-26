@@ -48,9 +48,9 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.logging.InstrumentationLoggerImpl;
 import com.tc.object.logging.RuntimeLogger;
 import com.tc.object.logging.RuntimeLoggerImpl;
+import com.tc.object.metadata.AbstractNVPair;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.MetaDataDescriptorImpl;
-import com.tc.object.metadata.AbstractNVPair;
 import com.tc.object.metadata.NVPair;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
@@ -932,9 +932,9 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet) {
+                                             Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
     waitForAllCurrentTransactionsToComplete();
-    return searchRequestManager.query(cachename, queryStack, includeKeys, attributeSet);
+    return searchRequestManager.query(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap);
   }
 
   public NVPair createNVPair(String name, Object value) {
