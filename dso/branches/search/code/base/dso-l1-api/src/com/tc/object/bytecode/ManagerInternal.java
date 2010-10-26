@@ -9,6 +9,7 @@ import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResult;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 public interface ManagerInternal extends Manager, TerracottaLockingInternal {
@@ -16,7 +17,7 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
   MetaDataDescriptor createMetaDataDescriptor(String category);
 
   public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet);
+                                             Set<String> attributeSet, Map<String, Boolean> sortAttributeMap);
 
   public NVPair createNVPair(String name, Object value);
 

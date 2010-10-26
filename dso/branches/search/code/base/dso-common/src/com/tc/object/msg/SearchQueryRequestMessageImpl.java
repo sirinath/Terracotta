@@ -18,8 +18,10 @@ import com.tc.object.session.SessionID;
 import com.tc.search.StackOperations;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,17 +29,20 @@ import java.util.Set;
  */
 public class SearchQueryRequestMessageImpl extends DSOMessageBase implements SearchQueryRequestMessage {
 
-  private final static byte SEARCH_REQUEST_ID      = 0;
-  private final static byte CACHENAME              = 1;
-  private final static byte INCLUDE_KEYS           = 3;
-  private final static byte STACK_OPERATION_MARKER = 4;
-  private final static byte STACK_NVPAIR_MARKER    = 5;
+  private final static byte    SEARCH_REQUEST_ID      = 0;
+  private final static byte    CACHENAME              = 1;
+  private final static byte    INCLUDE_KEYS           = 3;
+  private final static byte    ATTRIBUTES             = 4;
+  private final static byte    SORT_ATTRIBUTES        = 5;
+  private final static byte    STACK_OPERATION_MARKER = 6;
+  private final static byte    STACK_NVPAIR_MARKER    = 7;
 
-  private SearchRequestID   requestID;
-  private String            cachename;
-  private LinkedList        queryStack;
-  private boolean           includeKeys;
-  private Set<String>       attributes;
+  private SearchRequestID      requestID;
+  private String               cachename;
+  private LinkedList           queryStack;
+  private boolean              includeKeys;
+  private Set<String>          attributes;
+  private Map<String, Boolean> sortAttributes;
 
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                        MessageChannel channel, TCMessageType type) {
@@ -50,26 +55,33 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   }
 
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
-                                          final LinkedList stack, boolean keys, Set<String> attributeSet) {
+                                          final LinkedList stack, boolean keys, Set<String> attributeSet,
+                                          Map<String, Boolean> sortAttributesMap) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
     this.queryStack = stack;
     this.includeKeys = keys;
     this.attributes = attributeSet;
+    this.sortAttributes = sortAttributesMap;
   }
 
   @Override
   protected void dehydrateValues() {
+    final TCByteBufferOutputStream outStream = getOutputStream();
+
     putNVPair(SEARCH_REQUEST_ID, this.requestID.toLong());
     putNVPair(CACHENAME, this.cachename);
     putNVPair(INCLUDE_KEYS, this.includeKeys);
-    final TCByteBufferOutputStream outStream = getOutputStream();
-
-    outStream.writeInt(this.attributes.size());
+    putNVPair(ATTRIBUTES, this.attributes.size());
     for (final String attribute : this.attributes) {
       outStream.writeString(attribute);
     }
 
+    putNVPair(SORT_ATTRIBUTES, this.sortAttributes.size());
+    for (final Map.Entry<String, Boolean> sortAttribute : this.sortAttributes.entrySet()) {
+      outStream.writeString(sortAttribute.getKey());
+      outStream.writeBoolean(sortAttribute.getValue());
+    }
     System.out.println("[queryStack size ] = " + queryStack.size());
     while (queryStack.size() > 0) {
       Object obj = queryStack.removeLast();
@@ -105,12 +117,26 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
       case INCLUDE_KEYS:
         this.includeKeys = getBooleanValue();
+        return true;
+
+      case ATTRIBUTES:
         this.attributes = new HashSet<String>();
         int count = getIntValue();
         // Directly decode the key
         while (count-- > 0) {
           String attribute = getStringValue();
           this.attributes.add(attribute);
+        }
+        return true;
+
+      case SORT_ATTRIBUTES:
+        this.sortAttributes = new HashMap<String, Boolean>();
+        int sortCount = getIntValue();
+
+        while (sortCount-- > 0) {
+          String key = getStringValue();
+          Boolean value = getBooleanValue();
+          this.sortAttributes.put(key, value);
         }
         return true;
 
@@ -171,6 +197,13 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
    */
   public Set<String> getAttributes() {
     return this.attributes;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public Map<String, Boolean> getSortAttributes() {
+    return sortAttributes;
   }
 
   /**

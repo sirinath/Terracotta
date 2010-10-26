@@ -20,6 +20,7 @@ import com.tc.statistics.StatisticRetrievalAction;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 import javax.management.MBeanServer;
@@ -304,7 +305,7 @@ public class NullManagerInternal implements ManagerInternal {
   }
 
   public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet) {
+                                             Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
     throw new UnsupportedOperationException();
   }
 

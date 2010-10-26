@@ -9,6 +9,7 @@ import com.tc.object.session.SessionID;
 import com.tc.search.SearchQueryResult;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,7 +19,7 @@ import java.util.Set;
 public interface RemoteSearchRequestManager extends ClientHandshakeCallback {
 
   public Set<SearchQueryResult> query(String cachename, LinkedList queryStack, boolean includeKeys,
-                                      Set<String> attributeSet);
+                                      Set<String> attributeSet, Map<String, Boolean> sortAttributeMap);
 
   public void addResponseForQuery(final SessionID sessionID, final SearchRequestID requestID,
                                   final Set<SearchQueryResult> results, final NodeID nodeID);

@@ -19,7 +19,8 @@ public interface IndexManager {
   boolean deleteIndex(String name) throws IndexException;
 
   public Set<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
-                                            Set<String> attributeSet) throws IOException;
+                                            Set<String> attributeSet, Map<String, Boolean> sortAttributed)
+      throws IOException;
 
   void shutdown();
 }
