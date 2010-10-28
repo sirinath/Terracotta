@@ -7,7 +7,7 @@ import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
 import com.tc.search.SearchQueryResult;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Response message for object requests.
@@ -24,14 +24,21 @@ public interface SearchQueryResponseMessage extends TCMessage {
   /**
    * Initialize message.
    * 
+   * @param aggregatorResults
    * @param SearchRequestID searchRequestID
    * @param Set<SearchQueryResult> results
    */
-  public void initialSearchResponseMessage(SearchRequestID searchRequestID, Set<SearchQueryResult> results);
+  public void initialSearchResponseMessage(SearchRequestID searchRequestID, List<SearchQueryResult> results,
+                                           List<Integer> aggregatorResults);
 
   /**
-   * @return Set<SearchQueryResult> results.
+   * @return List<SearchQueryResult> results.
    */
-  public Set<SearchQueryResult> getResults();
+  public List<SearchQueryResult> getResults();
+
+  /**
+   * @return List<Integer> aggregator results.
+   */
+  public List<Integer> getAggregatorResults();
 
 }

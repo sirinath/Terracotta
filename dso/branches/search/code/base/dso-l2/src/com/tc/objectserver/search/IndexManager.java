@@ -8,6 +8,7 @@ import com.tc.search.SearchQueryResult;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,9 +19,9 @@ public interface IndexManager {
 
   boolean deleteIndex(String name) throws IndexException;
 
-  public Set<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
-                                            Set<String> attributeSet, Map<String, Boolean> sortAttributed)
-      throws IOException;
+  public List<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
+                                             Set<String> attributeSet, Map<String, Boolean> sortAttributes,
+                                             Set<String> aggregatorAttributes) throws IOException;
 
   void shutdown();
 }

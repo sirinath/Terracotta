@@ -6,7 +6,7 @@ package com.tc.object.bytecode;
 import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
-import com.tc.search.SearchQueryResult;
+import com.tc.search.SearchQueryResults;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -16,8 +16,9 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
 
   MetaDataDescriptor createMetaDataDescriptor(String category);
 
-  public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet, Map<String, Boolean> sortAttributeMap);
+  public SearchQueryResults executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
+                                         Set<String> attributeSet, Map<String, Boolean> sortAttributeMap,
+                                         Map<String, String> attributeAggregatorMap);
 
   public NVPair createNVPair(String name, Object value);
 

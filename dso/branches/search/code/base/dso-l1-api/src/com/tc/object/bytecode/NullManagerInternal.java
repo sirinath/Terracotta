@@ -15,7 +15,7 @@ import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
 import com.tc.properties.TCProperties;
-import com.tc.search.SearchQueryResult;
+import com.tc.search.SearchQueryResults;
 import com.tc.statistics.StatisticRetrievalAction;
 
 import java.lang.reflect.Field;
@@ -304,8 +304,9 @@ public class NullManagerInternal implements ManagerInternal {
     throw new UnsupportedOperationException();
   }
 
-  public Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
+  public SearchQueryResults executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
+                                         Set<String> attributeSet, Map<String, Boolean> sortAttributeMap,
+                                         Map<String, String> attributeAggregatorMap) {
     throw new UnsupportedOperationException();
   }
 
