@@ -26,9 +26,11 @@ public class SearchQueryContext implements MultiThreadedEventContext {
   private final boolean              includeKeys;
   private final Set<String>          attributeSet;
   private final Map<String, Boolean> sortAttributes;
+  private final Map<String, String>  attributeAggregators;
 
   public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, LinkedList queryStack,
-                            boolean includeKeys, Set<String> attributeSet, Map<String, Boolean> sortAttributes) {
+                            boolean includeKeys, Set<String> attributeSet, Map<String, Boolean> sortAttributes,
+                            Map<String, String> attributeAggregators) {
     this.clientID = clientID;
     this.requestID = requestID;
     this.cacheName = cacheName;
@@ -36,6 +38,7 @@ public class SearchQueryContext implements MultiThreadedEventContext {
     this.includeKeys = includeKeys;
     this.attributeSet = attributeSet;
     this.sortAttributes = sortAttributes;
+    this.attributeAggregators = attributeAggregators;
   }
 
   /**
@@ -93,12 +96,21 @@ public class SearchQueryContext implements MultiThreadedEventContext {
   }
 
   /**
-   * sorted attributes, pair of attributes if ascending, true
+   * Sorted attributes, pair of attributes if ascending, true
    * 
-   * @return Map<String,Boolean) sortAttributes.
+   * @return Map<String,Boolean> sortAttributes.
    */
   public Map<String, Boolean> getSortAttributes() {
     return sortAttributes;
+  }
+
+  /**
+   * Attribute aggregators, returns a attribute->aggregator type pairs.
+   * 
+   * @return Map<String,String>
+   */
+  public Map<String, String> getAttributeAggregators() {
+    return attributeAggregators;
   }
 
   /**

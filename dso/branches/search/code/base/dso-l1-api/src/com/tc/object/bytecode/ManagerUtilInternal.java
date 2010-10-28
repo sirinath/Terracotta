@@ -8,7 +8,7 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
-import com.tc.search.SearchQueryResult;
+import com.tc.search.SearchQueryResults;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -32,9 +32,11 @@ public class ManagerUtilInternal {
     return getInternalManager().createMetaDataDescriptor(category);
   }
 
-  public static Set<SearchQueryResult> executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                                    Set<String> attributeSet, Map<String, Boolean> sortAttributeMap) {
-    return getInternalManager().executeQuery(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap);
+  public static SearchQueryResults executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
+                                                Set<String> attributeSet, Map<String, Boolean> sortAttributeMap,
+                                                Map<String, String> attributeAggregatorMap) {
+    return getInternalManager().executeQuery(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap,
+                                             attributeAggregatorMap);
   }
 
   public static NVPair createNVPair(String name, Object value) {

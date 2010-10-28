@@ -13,4 +13,6 @@ public interface SearchQueryResult extends TCSerializable {
 
   public Map<String, String> getAttributes();
 
+  public Map<String, String> getAggregatorAttributes();
+
 }

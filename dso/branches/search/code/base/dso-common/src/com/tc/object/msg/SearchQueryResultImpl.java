@@ -14,7 +14,9 @@ import java.util.Map;
 
 public class SearchQueryResultImpl implements SearchQueryResult {
 
-  private final Map<String, String> attributes = new HashMap<String, String>();
+  private final Map<String, String> attributes           = new HashMap<String, String>();
+  // Does not need to be serialized.
+  private final Map<String, String> aggregatorAttributes = new HashMap<String, String>();
 
   private String                    key;
 
@@ -22,13 +24,18 @@ public class SearchQueryResultImpl implements SearchQueryResult {
     // do nothing
   }
 
-  public SearchQueryResultImpl(String key, Map<String, String> attributeMap) {
+  public SearchQueryResultImpl(String key, Map<String, String> attributeMap, Map<String, String> localAttributeMap) {
     this.key = key;
     this.attributes.putAll(attributeMap);
+    this.aggregatorAttributes.putAll(localAttributeMap);
   }
 
   public Map<String, String> getAttributes() {
     return Collections.unmodifiableMap(this.attributes);
+  }
+
+  public Map<String, String> getAggregatorAttributes() {
+    return aggregatorAttributes;
   }
 
   public String getKey() {
@@ -61,10 +68,7 @@ public class SearchQueryResultImpl implements SearchQueryResult {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((key == null) ? 0 : key.hashCode());
-    return result;
+    return key.hashCode();
   }
 
   @Override

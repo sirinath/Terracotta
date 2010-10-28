@@ -12,7 +12,7 @@ import com.tc.objectserver.metadata.AbstractMetaDataHandler;
 import com.tc.search.SearchQueryResult;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 /**
  * All search request are processed through this handler. Every context should implement
@@ -62,9 +62,11 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
     } else if (context instanceof SearchQueryContext) {
       SearchQueryContext sqc = (SearchQueryContext) context;
 
-      Set<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
-          .includeKeys(), sqc.getAttributeSet(), sqc.getSortAttributes());
-      this.searchRequestManager.queryResponse(sqc, results);
+      List<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
+          .includeKeys(), sqc.getAttributeSet(), sqc.getSortAttributes(), sqc.getAttributeAggregators().keySet());
+      List<Integer> aggregatorResults = this.searchRequestManager.processAttributeAggregators(results, sqc
+          .getAttributeAggregators());
+      this.searchRequestManager.queryResponse(sqc, results, aggregatorResults);
     } else {
       throw new AssertionError("Unknown context: " + context);
     }

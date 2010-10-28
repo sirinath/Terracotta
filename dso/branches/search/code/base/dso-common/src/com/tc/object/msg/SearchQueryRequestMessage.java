@@ -39,10 +39,12 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @param boolean keys
    * @param Set<String> attributeSet
    * @param Map<String,Boolean< sortAttributeMap
+   * @param Map<String, String> attributeAggregators
    */
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final LinkedList queryStack, final boolean keys,
-                                          final Set<String> attributeSet, final Map<String, Boolean> sortAttributesMap);
+                                          final Set<String> attributeSet, final Map<String, Boolean> sortAttributesMap,
+                                          final Map<String, String> attributeAggregators);
 
   /**
    * Name of cache to query against.
@@ -71,6 +73,13 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @return Map<String, Boolean>
    */
   public Map<String, Boolean> getSortAttributes();
+
+  /**
+   * Return a map of attribute aggregators
+   * 
+   * @return Map<String, String>
+   */
+  public Map<String, String> getAttributeAggregators();
 
   /**
    * Result should include keys

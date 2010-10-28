@@ -34,8 +34,9 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   private final static byte    INCLUDE_KEYS           = 3;
   private final static byte    ATTRIBUTES             = 4;
   private final static byte    SORT_ATTRIBUTES        = 5;
-  private final static byte    STACK_OPERATION_MARKER = 6;
-  private final static byte    STACK_NVPAIR_MARKER    = 7;
+  private final static byte    ATTRIBUTE_AGGREGATORS  = 6;
+  private final static byte    STACK_OPERATION_MARKER = 7;
+  private final static byte    STACK_NVPAIR_MARKER    = 8;
 
   private SearchRequestID      requestID;
   private String               cachename;
@@ -43,6 +44,7 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   private boolean              includeKeys;
   private Set<String>          attributes;
   private Map<String, Boolean> sortAttributes;
+  private Map<String, String>  attributeAggregators;
 
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                        MessageChannel channel, TCMessageType type) {
@@ -56,13 +58,15 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final LinkedList stack, boolean keys, Set<String> attributeSet,
-                                          Map<String, Boolean> sortAttributesMap) {
+                                          Map<String, Boolean> sortAttributesMap,
+                                          Map<String, String> attributeAggregatorMap) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
     this.queryStack = stack;
     this.includeKeys = keys;
     this.attributes = attributeSet;
     this.sortAttributes = sortAttributesMap;
+    this.attributeAggregators = attributeAggregatorMap;
   }
 
   @Override
@@ -82,6 +86,13 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
       outStream.writeString(sortAttribute.getKey());
       outStream.writeBoolean(sortAttribute.getValue());
     }
+
+    putNVPair(ATTRIBUTE_AGGREGATORS, this.attributeAggregators.size());
+    for (final Map.Entry<String, String> attributeAggregator : this.attributeAggregators.entrySet()) {
+      outStream.writeString(attributeAggregator.getKey());
+      outStream.writeString(attributeAggregator.getValue());
+    }
+
     System.out.println("[queryStack size ] = " + queryStack.size());
     while (queryStack.size() > 0) {
       Object obj = queryStack.removeLast();
@@ -137,6 +148,17 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
           String key = getStringValue();
           Boolean value = getBooleanValue();
           this.sortAttributes.put(key, value);
+        }
+        return true;
+
+      case ATTRIBUTE_AGGREGATORS:
+        this.attributeAggregators = new HashMap<String, String>();
+        int attributeAggregatorCount = getIntValue();
+
+        while (attributeAggregatorCount-- > 0) {
+          String key = getStringValue();
+          String value = getStringValue();
+          this.attributeAggregators.put(key, value);
         }
         return true;
 
@@ -204,6 +226,13 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
    */
   public Map<String, Boolean> getSortAttributes() {
     return sortAttributes;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public Map<String, String> getAttributeAggregators() {
+    return attributeAggregators;
   }
 
   /**

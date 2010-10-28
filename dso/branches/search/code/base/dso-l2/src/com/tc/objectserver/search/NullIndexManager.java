@@ -26,8 +26,9 @@ public class NullIndexManager implements IndexManager {
     return new NullIndex();
   }
 
-  public Set<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
-                                            Set<String> attributeSet, Map<String, Boolean> sortAttributes) {
+  public List<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
+                                             Set<String> attributeSet, Map<String, Boolean> sortAttributes,
+                                             Set<String> aggregatorAttributes) {
     return null;
   }
 
@@ -49,8 +50,8 @@ public class NullIndexManager implements IndexManager {
 
     }
 
-    public Set<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet,
-                                         Map<String, Boolean> sortAttributes) {
+    public List<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet,
+                                          Map<String, Boolean> sortAttributes, Set<String> aggregatorAttributes) {
       return null;
     }
 
