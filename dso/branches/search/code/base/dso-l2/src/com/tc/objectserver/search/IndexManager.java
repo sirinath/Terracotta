@@ -3,8 +3,10 @@
  */
 package com.tc.objectserver.search;
 
+import com.tc.object.metadata.NVPair;
 import com.tc.object.metadata.ValueType;
 import com.tc.search.SearchQueryResult;
+import com.tc.search.SortOperations;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -13,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface IndexManager {
+
   Index getIndex(String name);
 
   boolean createIndex(String name, Map<String, ValueType> schema) throws IndexException;
@@ -20,8 +23,8 @@ public interface IndexManager {
   boolean deleteIndex(String name) throws IndexException;
 
   public List<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet, Map<String, Boolean> sortAttributes,
-                                             Set<String> aggregatorAttributes) throws IOException;
+                                             Set<String> attributeSet, Map<String, SortOperations> sortAttributes,
+                                             List<NVPair> aggregators) throws IOException;
 
   void shutdown();
 }

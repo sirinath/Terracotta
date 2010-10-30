@@ -15,12 +15,14 @@ import com.tc.object.SearchRequestID;
 import com.tc.object.metadata.AbstractNVPair;
 import com.tc.object.metadata.NVPair;
 import com.tc.object.session.SessionID;
+import com.tc.search.SortOperations;
 import com.tc.search.StackOperations;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,22 +31,22 @@ import java.util.Set;
  */
 public class SearchQueryRequestMessageImpl extends DSOMessageBase implements SearchQueryRequestMessage {
 
-  private final static byte    SEARCH_REQUEST_ID      = 0;
-  private final static byte    CACHENAME              = 1;
-  private final static byte    INCLUDE_KEYS           = 3;
-  private final static byte    ATTRIBUTES             = 4;
-  private final static byte    SORT_ATTRIBUTES        = 5;
-  private final static byte    ATTRIBUTE_AGGREGATORS  = 6;
-  private final static byte    STACK_OPERATION_MARKER = 7;
-  private final static byte    STACK_NVPAIR_MARKER    = 8;
+  private final static byte           SEARCH_REQUEST_ID      = 0;
+  private final static byte           CACHENAME              = 1;
+  private final static byte           INCLUDE_KEYS           = 3;
+  private final static byte           ATTRIBUTES             = 4;
+  private final static byte           SORT_ATTRIBUTES        = 5;
+  private final static byte           AGGREGATORS            = 6;
+  private final static byte           STACK_OPERATION_MARKER = 7;
+  private final static byte           STACK_NVPAIR_MARKER    = 8;
 
-  private SearchRequestID      requestID;
-  private String               cachename;
-  private LinkedList           queryStack;
-  private boolean              includeKeys;
-  private Set<String>          attributes;
-  private Map<String, Boolean> sortAttributes;
-  private Map<String, String>  attributeAggregators;
+  private SearchRequestID             requestID;
+  private String                      cachename;
+  private LinkedList                  queryStack;
+  private boolean                     includeKeys;
+  private Set<String>                 attributes;
+  private Map<String, SortOperations> sortAttributes;
+  private List<NVPair>                aggregators;
 
   public SearchQueryRequestMessageImpl(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
                                        MessageChannel channel, TCMessageType type) {
@@ -58,15 +60,15 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
 
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final LinkedList stack, boolean keys, Set<String> attributeSet,
-                                          Map<String, Boolean> sortAttributesMap,
-                                          Map<String, String> attributeAggregatorMap) {
+                                          Map<String, SortOperations> sortAttributesMap,
+                                          List<NVPair> attributeAggregators) {
     this.requestID = searchRequestID;
     this.cachename = cacheName;
     this.queryStack = stack;
     this.includeKeys = keys;
     this.attributes = attributeSet;
     this.sortAttributes = sortAttributesMap;
-    this.attributeAggregators = attributeAggregatorMap;
+    this.aggregators = attributeAggregators;
   }
 
   @Override
@@ -82,15 +84,14 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
     }
 
     putNVPair(SORT_ATTRIBUTES, this.sortAttributes.size());
-    for (final Map.Entry<String, Boolean> sortAttribute : this.sortAttributes.entrySet()) {
+    for (final Map.Entry<String, SortOperations> sortAttribute : this.sortAttributes.entrySet()) {
       outStream.writeString(sortAttribute.getKey());
-      outStream.writeBoolean(sortAttribute.getValue());
+      outStream.writeString(sortAttribute.getValue().name());
     }
 
-    putNVPair(ATTRIBUTE_AGGREGATORS, this.attributeAggregators.size());
-    for (final Map.Entry<String, String> attributeAggregator : this.attributeAggregators.entrySet()) {
-      outStream.writeString(attributeAggregator.getKey());
-      outStream.writeString(attributeAggregator.getValue());
+    putNVPair(AGGREGATORS, this.aggregators.size());
+    for (final NVPair attributeAggregator : this.aggregators) {
+      attributeAggregator.serializeTo(outStream);
     }
 
     System.out.println("[queryStack size ] = " + queryStack.size());
@@ -141,24 +142,23 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
         return true;
 
       case SORT_ATTRIBUTES:
-        this.sortAttributes = new HashMap<String, Boolean>();
+        this.sortAttributes = new HashMap<String, SortOperations>();
         int sortCount = getIntValue();
 
         while (sortCount-- > 0) {
           String key = getStringValue();
-          Boolean value = getBooleanValue();
-          this.sortAttributes.put(key, value);
+          String value = getStringValue();
+          this.sortAttributes.put(key, SortOperations.valueOf(value));
         }
         return true;
 
-      case ATTRIBUTE_AGGREGATORS:
-        this.attributeAggregators = new HashMap<String, String>();
+      case AGGREGATORS:
+        this.aggregators = new LinkedList();
         int attributeAggregatorCount = getIntValue();
 
         while (attributeAggregatorCount-- > 0) {
-          String key = getStringValue();
-          String value = getStringValue();
-          this.attributeAggregators.put(key, value);
+          NVPair pair = AbstractNVPair.deserializeInstance(inputStream);
+          this.aggregators.add(pair);
         }
         return true;
 
@@ -224,15 +224,15 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
   /**
    * {@inheritDoc}
    */
-  public Map<String, Boolean> getSortAttributes() {
+  public Map<String, SortOperations> getSortAttributes() {
     return sortAttributes;
   }
 
   /**
    * {@inheritDoc}
    */
-  public Map<String, String> getAttributeAggregators() {
-    return attributeAggregators;
+  public List<NVPair> getAggregators() {
+    return aggregators;
   }
 
   /**

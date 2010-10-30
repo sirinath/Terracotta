@@ -5,7 +5,6 @@ package com.tc.object.metadata;
 
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
-import com.tc.io.TCSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,15 +12,15 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-public abstract class AbstractNVPair implements TCSerializable, NVPair {
+public abstract class AbstractNVPair implements NVPair {
 
-  private static final AbstractNVPair      TEMPLATE    = new Template();
-  private static final ValueType[] ALL_TYPES   = ValueType.values();
+  private static final AbstractNVPair TEMPLATE    = new Template();
+  private static final ValueType[]    ALL_TYPES   = ValueType.values();
 
   // TODO: Just a hack for now, figure out a long-term solution to this.
-  final static String              ATTR_PREFIX = "ATTR@";
+  final static String                 ATTR_PREFIX = "ATTR@";
 
-  private String                   name;
+  private String                      name;
 
   AbstractNVPair(String name) {
     this.name = name;

@@ -4,7 +4,9 @@
 package com.tc.objectserver.search;
 
 import com.tc.object.metadata.AbstractNVPair;
+import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResult;
+import com.tc.search.SortOperations;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -19,7 +21,7 @@ public interface Index {
   void upsert(Object key, List<AbstractNVPair> attributes) throws IndexException;
 
   List<SearchQueryResult> search(LinkedList queryStack, boolean includeKeys, Set<String> attributeSet,
-                                 Map<String, Boolean> sortAttributes, Set<String> aggregatorAttributes)
+                                 Map<String, SortOperations> sortAttributes, List<NVPair> aggregators)
       throws IOException;
 
   void close();

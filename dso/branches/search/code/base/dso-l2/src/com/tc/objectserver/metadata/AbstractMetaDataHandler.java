@@ -21,7 +21,7 @@ public abstract class AbstractMetaDataHandler extends AbstractEventHandler {
   private volatile ServerTransactionManager txnManager;
 
   @Override
-  public void handleEvent(EventContext context) throws EventHandlerException {
+  public final void handleEvent(EventContext context) throws EventHandlerException {
 
     try {
       handleMetaDataEvent(context);
@@ -32,7 +32,7 @@ public abstract class AbstractMetaDataHandler extends AbstractEventHandler {
     if (context instanceof AbstractMetaDataContext) {
       AbstractMetaDataContext metaDataContext = (AbstractMetaDataContext) context;
       if (this.manager.metaDataProcessingCompleted(metaDataContext.getTransactionID())) {
-          this.txnManager.processingMetaDataCompleted(metaDataContext.getSourceID(), metaDataContext.getTransactionID());
+        this.txnManager.processingMetaDataCompleted(metaDataContext.getSourceID(), metaDataContext.getTransactionID());
       }
     }
   }

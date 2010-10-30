@@ -63,9 +63,10 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
       SearchQueryContext sqc = (SearchQueryContext) context;
 
       List<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
-          .includeKeys(), sqc.getAttributeSet(), sqc.getSortAttributes(), sqc.getAttributeAggregators().keySet());
+          .includeKeys(), sqc.getAttributeSet(), sqc.getSortAttributes(), sqc.getAggregators());
+      // TODO: need to fix return types.
       List<Integer> aggregatorResults = this.searchRequestManager.processAttributeAggregators(results, sqc
-          .getAttributeAggregators());
+          .getAggregators());
       this.searchRequestManager.queryResponse(sqc, results, aggregatorResults);
     } else {
       throw new AssertionError("Unknown context: " + context);

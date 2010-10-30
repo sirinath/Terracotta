@@ -6,31 +6,33 @@ package com.tc.objectserver.search;
 import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
+import com.tc.object.metadata.NVPair;
+import com.tc.search.SortOperations;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Context holding search queury search information. TODO: This is just a strawman, need to put actual query string /or
- * classes.
+ * Context holding search queury search information.
  * 
  * @author Nabib El-Rahman
  */
 public class SearchQueryContext implements MultiThreadedEventContext {
 
-  private final ClientID             clientID;
-  private final SearchRequestID      requestID;
-  private final String               cacheName;
-  private final LinkedList           queryStack;
-  private final boolean              includeKeys;
-  private final Set<String>          attributeSet;
-  private final Map<String, Boolean> sortAttributes;
-  private final Map<String, String>  attributeAggregators;
+  private final ClientID                    clientID;
+  private final SearchRequestID             requestID;
+  private final String                      cacheName;
+  private final LinkedList                  queryStack;
+  private final boolean                     includeKeys;
+  private final Set<String>                 attributeSet;
+  private final Map<String, SortOperations> sortAttributes;
+  private final List<NVPair>                aggregators;
 
   public SearchQueryContext(ClientID clientID, SearchRequestID requestID, String cacheName, LinkedList queryStack,
-                            boolean includeKeys, Set<String> attributeSet, Map<String, Boolean> sortAttributes,
-                            Map<String, String> attributeAggregators) {
+                            boolean includeKeys, Set<String> attributeSet, Map<String, SortOperations> sortAttributes,
+                            List<NVPair> aggregators) {
     this.clientID = clientID;
     this.requestID = requestID;
     this.cacheName = cacheName;
@@ -38,7 +40,7 @@ public class SearchQueryContext implements MultiThreadedEventContext {
     this.includeKeys = includeKeys;
     this.attributeSet = attributeSet;
     this.sortAttributes = sortAttributes;
-    this.attributeAggregators = attributeAggregators;
+    this.aggregators = aggregators;
   }
 
   /**
@@ -98,19 +100,19 @@ public class SearchQueryContext implements MultiThreadedEventContext {
   /**
    * Sorted attributes, pair of attributes if ascending, true
    * 
-   * @return Map<String,Boolean> sortAttributes.
+   * @return Map<String,SortOperations> sortAttributes.
    */
-  public Map<String, Boolean> getSortAttributes() {
+  public Map<String, SortOperations> getSortAttributes() {
     return sortAttributes;
   }
 
   /**
    * Attribute aggregators, returns a attribute->aggregator type pairs.
    * 
-   * @return Map<String,String>
+   * @return List<NVPair>
    */
-  public Map<String, String> getAttributeAggregators() {
-    return attributeAggregators;
+  public List<NVPair> getAggregators() {
+    return aggregators;
   }
 
   /**
