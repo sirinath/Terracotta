@@ -5,7 +5,9 @@ package com.tc.objectserver.search;
 
 import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
+import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResult;
+import com.tc.search.SortOperations;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,21 +31,20 @@ public interface SearchRequestManager {
    * @param LinkedList queryStack
    * @param boolean includeKeys
    * @param Set<String> attributeSet
-   * @param Map<String,Boolean> sortAttributes
-   * @param Map<String,String> attributeAggregators
+   * @param Map<String,SortOperations> sortAttributes
+   * @param List<NVPair> aggregators
    */
   public void queryRequest(ClientID clientID, SearchRequestID requestID, String cachename, LinkedList queryStack,
-                           boolean includeKeys, Set<String> attributeSet, Map<String, Boolean> sortAttributes,
-                           Map<String, String> attributeAggregators);
+                           boolean includeKeys, Set<String> attributeSet, Map<String, SortOperations> sortAttributes,
+                           List<NVPair> aggregators);
 
   /**
    * Process attributed aggregators on result set.
    * 
    * @param List<SearchQueryResult> results
-   * @param Map<String, String> attributeAggregators
+   * @param List<NVPair> attributeAggregators
    */
-  public List<Integer> processAttributeAggregators(List<SearchQueryResult> results,
-                                                   Map<String, String> attributeAggregators);
+  public List<Integer> processAttributeAggregators(List<SearchQueryResult> results, List<NVPair> aggregators);
 
   /**
    * Query response.

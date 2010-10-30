@@ -28,7 +28,7 @@ public class SearchQueryRequestHandler extends AbstractEventHandler {
       SearchQueryRequestMessage message = (SearchQueryRequestMessage) context;
       this.searchRequestManager.queryRequest((ClientID) message.getSourceNodeID(), message.getRequestID(), message
           .getCachename(), message.getQueryStack(), message.includeKeys(), message.getAttributes(), message
-          .getSortAttributes(), message.getAttributeAggregators());
+          .getSortAttributes(), message.getAggregators());
 
     } else {
       throw new AssertionError("Unknown context: " + context);

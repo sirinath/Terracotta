@@ -3,7 +3,9 @@
  */
 package com.tc.object.metadata;
 
-public interface NVPair {
+import com.tc.io.TCSerializable;
+
+public interface NVPair extends TCSerializable {
 
   public abstract String getName();
 

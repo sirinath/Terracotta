@@ -57,6 +57,7 @@ import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.search.SearchQueryResults;
+import com.tc.search.SortOperations;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
@@ -72,6 +73,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -932,11 +934,10 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   public SearchQueryResults executeQuery(String cachename, LinkedList queryStack, boolean includeKeys,
-                                         Set<String> attributeSet, Map<String, Boolean> sortAttributeMap,
-                                         Map<String, String> attributeAggregatorMap) {
+                                         Set<String> attributeSet, Map<String, SortOperations> sortAttributeMap,
+                                         List<NVPair> aggregators) {
     waitForAllCurrentTransactionsToComplete();
-    return searchRequestManager.query(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap,
-                                      attributeAggregatorMap);
+    return searchRequestManager.query(cachename, queryStack, includeKeys, attributeSet, sortAttributeMap, aggregators);
   }
 
   public NVPair createNVPair(String name, Object value) {

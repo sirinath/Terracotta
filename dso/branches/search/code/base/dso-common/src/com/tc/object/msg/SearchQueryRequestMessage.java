@@ -7,8 +7,11 @@ import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
+import com.tc.object.metadata.NVPair;
+import com.tc.search.SortOperations;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,13 +41,14 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
    * @param LinkedList queryStack
    * @param boolean keys
    * @param Set<String> attributeSet
-   * @param Map<String,Boolean< sortAttributeMap
-   * @param Map<String, String> attributeAggregators
+   * @param Map<String,SortOperations> sortAttributeMap
+   * @param List<NVPair> aggregators
    */
   public void initialSearchRequestMessage(final SearchRequestID searchRequestID, final String cacheName,
                                           final LinkedList queryStack, final boolean keys,
-                                          final Set<String> attributeSet, final Map<String, Boolean> sortAttributesMap,
-                                          final Map<String, String> attributeAggregators);
+                                          final Set<String> attributeSet,
+                                          final Map<String, SortOperations> sortAttributesMap,
+                                          final List<NVPair> aggregators);
 
   /**
    * Name of cache to query against.
@@ -70,16 +74,16 @@ public interface SearchQueryRequestMessage extends TCMessage, MultiThreadedEvent
   /**
    * Return a map of sort attributes
    * 
-   * @return Map<String, Boolean>
+   * @return Map<String, SortOperations>
    */
-  public Map<String, Boolean> getSortAttributes();
+  public Map<String, SortOperations> getSortAttributes();
 
   /**
    * Return a map of attribute aggregators
    * 
-   * @return Map<String, String>
+   * @return List<NVPair>
    */
-  public Map<String, String> getAttributeAggregators();
+  public List<NVPair> getAggregators();
 
   /**
    * Result should include keys
