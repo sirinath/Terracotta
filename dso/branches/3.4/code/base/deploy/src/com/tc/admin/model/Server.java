@@ -1782,6 +1782,11 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   public void startupClusterStats() {
     StatisticsLocalGathererMBean theClusterStatsBean = getClusterStatsBean();
     if (theClusterStatsBean != null) {
+      String[] credentials = getConnectionCredentials();
+      if (credentials != null && credentials.length == 2) {
+        theClusterStatsBean.setUsername(credentials[0]);
+        theClusterStatsBean.setPassword(credentials[1]);
+      }
       theClusterStatsBean.startup();
     } else {
       throw new RuntimeException("startupClusterStats: ClusterStatsBean not initialized.");

@@ -42,7 +42,6 @@ public class ClusterLog extends XContainer implements ActionListener {
   private ClusterListener     clusterListener;
   private ElementChooser      elementChooser;
   private PagedView           pagedView;
-  private boolean             inited;
 
   private static final String EMPTY_PAGE = "EmptyPage";
 
@@ -81,7 +80,7 @@ public class ClusterLog extends XContainer implements ActionListener {
 
     clusterModel.addPropertyChangeListener(clusterListener = new ClusterListener(clusterModel));
     if (clusterModel.isReady()) {
-      elementChooser.setupTreeModel();
+      init();
     }
   }
 
@@ -93,18 +92,6 @@ public class ClusterLog extends XContainer implements ActionListener {
     @Override
     protected XTreeNode[] createTopLevelNodes() {
       return new XTreeNode[] { new ServerGroupsNode(appContext, clusterModel) };
-    }
-
-    @Override
-    public void setupTreeModel() {
-      super.setupTreeModel();
-      if (!inited) {
-        addNodePanels();
-      }
-      IServer activeCoord = clusterModel.getActiveCoordinator();
-      if (activeCoord != null) {
-        setSelectedPath(activeCoord.toString());
-      }
     }
 
     @Override
@@ -135,27 +122,10 @@ public class ClusterLog extends XContainer implements ActionListener {
       IClusterModel theClusterModel = getClusterModel();
       if (theClusterModel == null) { return; }
 
-      if (!inited && theClusterModel.isReady()) {
-        elementChooser.setupTreeModel();
-        addNodePanels();
-      } else if (inited && !theClusterModel.isReady()) {
+      if (theClusterModel.isReady()) {
+        init();
+      } else {
         reset();
-      }
-    }
-
-    @Override
-    protected void handleActiveCoordinator(IServer oldActive, IServer newActive) {
-      IClusterModel theClusterModel = getClusterModel();
-      if (theClusterModel == null) { return; }
-
-      if (newActive != null) {
-        if (!inited) {
-          elementChooser.setupTreeModel();
-          addNodePanels();
-        }
-        if (elementChooser != null) {
-          elementChooser.setSelectedPath(newActive.toString());
-        }
       }
     }
 
@@ -171,10 +141,11 @@ public class ClusterLog extends XContainer implements ActionListener {
 
   private void reset() {
     pagedView.removeAll();
-    inited = false;
   }
 
-  private void addNodePanels() {
+  private void init() {
+    elementChooser.setupTreeModel();
+
     pagedView.removeAll();
     XLabel emptyPage = new XLabel();
     emptyPage.setName(EMPTY_PAGE);
@@ -185,13 +156,10 @@ public class ClusterLog extends XContainer implements ActionListener {
         pagedView.addPage(createServerLog(server));
       }
     }
-    if (elementChooser != null) {
-      IServer activeCoord = clusterModel.getActiveCoordinator();
-      if (activeCoord != null) {
-        elementChooser.setSelectedPath(activeCoord.toString());
-      }
+    IServer activeCoord = clusterModel.getActiveCoordinator();
+    if (activeCoord != null) {
+      elementChooser.setSelectedPath(activeCoord.toString());
     }
-    inited = true;
   }
 
   private JScrollPane createServerLog(IServer server) {
