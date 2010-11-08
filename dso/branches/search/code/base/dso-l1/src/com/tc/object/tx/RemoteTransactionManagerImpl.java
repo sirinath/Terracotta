@@ -219,8 +219,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
           final long now = System.currentTimeMillis();
           if ((now - start) > FLUSH_WAIT_INTERVAL && (now - lastPrinted) > FLUSH_WAIT_INTERVAL / 3) {
             this.logger.info("Flush for " + lockID + " took longer than: " + (FLUSH_WAIT_INTERVAL / 1000)
-                             + " sec. Took : " + (now - start) + " ms. # Transactions not yet Acked = " + c.size()
-                             + "\n");
+                             + " sec. Took : " + (now - start) + " ms. # Transactions not yet Acked = "
+                             + (c.size() + (c.size() < 50 ? (". " + c) : "")) + "\n");
             lastPrinted = now;
           }
         } catch (final InterruptedException e) {
@@ -550,6 +550,8 @@ public class RemoteTransactionManagerImpl implements RemoteTransactionManager, P
             .newCompletedTransactionLowWaterMarkMessage(RemoteTransactionManagerImpl.this.groupID);
         ctm.initialize(lwm);
         ctm.send();
+      } catch (final TCNotRunningException e) {
+        RemoteTransactionManagerImpl.this.logger.info("Ignoring TCNotRunningException while sending Low water mark : ");
       } catch (final Exception e) {
         RemoteTransactionManagerImpl.this.logger.error("Error sending Low water mark : ", e);
         throw new AssertionError(e);
