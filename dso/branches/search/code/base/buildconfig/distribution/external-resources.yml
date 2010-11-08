@@ -38,7 +38,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core-ee-kit
     classifier: distribution
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache
     type: tar.gz
     kit_edition: enterprise
@@ -49,21 +49,21 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache/lib
     kit_edition: opensource
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-terracotta
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache/lib
     kit_edition: opensource
 
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-terracotta-ee
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache/lib
     kit_edition: enterprise
     
@@ -85,7 +85,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache/javadoc
     explode: true
     kit_edition: opensource
@@ -94,7 +94,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 2.3.1-SNAPSHOT
+    version: 2.4.0-SNAPSHOT
     destination: ehcache/src
     explode: true
     kit_edition: opensource
@@ -111,11 +111,11 @@ artifacts:
     url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html
     kit_edition: opensource
     
-  - maven_artifact: false
-    name: CHANGELOG.txt
-    destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/CHANGELOG.txt
-    kit_edition: opensource
+#  - maven_artifact: false
+#    name: CHANGELOG.txt
+#    destination: ehcache
+#    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/CHANGELOG.txt
+#    kit_edition: opensource
     
   - maven_artifact: false
     name: EHCACHE-CORE-LICENSE.txt
@@ -144,14 +144,14 @@ artifacts:
 # begin toolkit runtime
   - maven_artifact: true
     groupId: org.terracotta
-    artifactId: terracotta-toolkit-1.1-runtime-ee
+    artifactId: terracotta-toolkit-1.2-runtime-ee
     version: 3.0.0-SNAPSHOT
     destination: common
     kit_edition: enterprise
 
   - maven_artifact: true
     groupId: org.terracotta
-    artifactId: terracotta-toolkit-1.1-runtime-ee
+    artifactId: terracotta-toolkit-1.2-runtime-ee
     version: 3.0.0-SNAPSHOT
     classifier: javadoc
     destination: common/docs/javadoc
@@ -160,14 +160,14 @@ artifacts:
 
   - maven_artifact: true
     groupId: org.terracotta
-    artifactId: terracotta-toolkit-1.1-runtime
+    artifactId: terracotta-toolkit-1.2-runtime
     version: 3.0.0-SNAPSHOT
     destination: common
     kit_edition: opensource
 
   - maven_artifact: true
     groupId: org.terracotta
-    artifactId: terracotta-toolkit-1.1-runtime
+    artifactId: terracotta-toolkit-1.2-runtime
     version: 3.0.0-SNAPSHOT
     classifier: javadoc
     destination: common/docs/javadoc
