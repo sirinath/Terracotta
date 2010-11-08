@@ -9,10 +9,8 @@ import com.tc.async.api.EventHandlerException;
 import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.metadata.AbstractMetaDataHandler;
-import com.tc.search.SearchQueryResult;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * All search request are processed through this handler. Every context should implement
@@ -62,12 +60,9 @@ public class SearchEventHandler extends AbstractMetaDataHandler {
     } else if (context instanceof SearchQueryContext) {
       SearchQueryContext sqc = (SearchQueryContext) context;
 
-      List<SearchQueryResult> results = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
+      IndexContext indexContext = this.indexManager.searchIndex(sqc.getCacheName(), sqc.getQueryStack(), sqc
           .includeKeys(), sqc.getAttributeSet(), sqc.getSortAttributes(), sqc.getAggregators());
-      // TODO: need to fix return types.
-      List<Integer> aggregatorResults = this.searchRequestManager.processAttributeAggregators(results, sqc
-          .getAggregators());
-      this.searchRequestManager.queryResponse(sqc, results, aggregatorResults);
+      this.searchRequestManager.queryResponse(sqc, indexContext.getQueryResults(), indexContext.getAggregatorResults());
     } else {
       throw new AssertionError("Unknown context: " + context);
     }

@@ -15,4 +15,6 @@ public interface NVPair extends TCSerializable {
 
   public abstract ValueType getType();
 
+  public abstract Object getObjectValue();
+
 }

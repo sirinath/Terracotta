@@ -7,6 +7,7 @@ import com.tc.net.NodeID;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.metadata.NVPair;
 import com.tc.object.session.SessionID;
+import com.tc.search.IndexQueryResult;
 import com.tc.search.SearchQueryResults;
 import com.tc.search.SortOperations;
 
@@ -26,7 +27,8 @@ public interface RemoteSearchRequestManager extends ClientHandshakeCallback {
                                   List<NVPair> aggregators);
 
   public void addResponseForQuery(final SessionID sessionID, final SearchRequestID requestID,
-                                  final SearchQueryResults results, final NodeID nodeID);
+                                  final List<IndexQueryResult> queryResults, final List<NVPair> aggregatorResults,
+                                  final NodeID nodeID);
 
   public boolean hasRequestID(SearchRequestID requestID);
 

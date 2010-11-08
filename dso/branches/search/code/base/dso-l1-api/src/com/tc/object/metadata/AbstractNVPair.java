@@ -99,6 +99,11 @@ public abstract class AbstractNVPair implements NVPair {
     boolean basicEquals(NVPair other) {
       throw new AssertionError();
     }
+
+    public Object getObjectValue() {
+      throw new AssertionError();
+    }
+
   }
 
   public static class ByteNVPair extends AbstractNVPair {
@@ -110,6 +115,10 @@ public abstract class AbstractNVPair implements NVPair {
     }
 
     public byte getValue() {
+      return value;
+    }
+
+    public Object getObjectValue() {
       return value;
     }
 
@@ -142,6 +151,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public ValueType getType() {
       return ValueType.BOOLEAN;
@@ -168,6 +181,10 @@ public abstract class AbstractNVPair implements NVPair {
     }
 
     public char getValue() {
+      return value;
+    }
+
+    public Object getObjectValue() {
       return value;
     }
 
@@ -200,6 +217,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public String valueAsString() {
       return String.valueOf(value);
@@ -226,6 +247,10 @@ public abstract class AbstractNVPair implements NVPair {
     }
 
     public float getValue() {
+      return value;
+    }
+
+    public Object getObjectValue() {
       return value;
     }
 
@@ -258,6 +283,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public String valueAsString() {
       return String.valueOf(value);
@@ -284,6 +313,10 @@ public abstract class AbstractNVPair implements NVPair {
     }
 
     public short getValue() {
+      return value;
+    }
+
+    public Object getObjectValue() {
       return value;
     }
 
@@ -316,6 +349,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public String valueAsString() {
       return String.valueOf(value);
@@ -345,6 +382,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public String valueAsString() {
       return value;
@@ -371,6 +412,10 @@ public abstract class AbstractNVPair implements NVPair {
     }
 
     public byte[] getValue() {
+      return value;
+    }
+
+    public Object getObjectValue() {
       return value;
     }
 
@@ -407,6 +452,10 @@ public abstract class AbstractNVPair implements NVPair {
       return value;
     }
 
+    public Object getObjectValue() {
+      return value;
+    }
+
     @Override
     public String valueAsString() {
       return value.toString();
@@ -431,6 +480,10 @@ public abstract class AbstractNVPair implements NVPair {
 
     public EnumNVPair(String name, Enum e) {
       this(name, e.getClass().getName(), e.name());
+    }
+
+    public Object getObjectValue() {
+      return getEnumName();
     }
 
     public EnumNVPair(String name, String enumClass, String enumName) {
