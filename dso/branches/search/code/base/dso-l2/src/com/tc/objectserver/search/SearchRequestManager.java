@@ -6,7 +6,7 @@ package com.tc.objectserver.search;
 import com.tc.net.ClientID;
 import com.tc.object.SearchRequestID;
 import com.tc.object.metadata.NVPair;
-import com.tc.search.SearchQueryResult;
+import com.tc.search.IndexQueryResult;
 import com.tc.search.SortOperations;
 
 import java.util.LinkedList;
@@ -39,21 +39,13 @@ public interface SearchRequestManager {
                            List<NVPair> aggregators);
 
   /**
-   * Process attributed aggregators on result set.
-   * 
-   * @param List<SearchQueryResult> results
-   * @param List<NVPair> attributeAggregators
-   */
-  public List<Integer> processAttributeAggregators(List<SearchQueryResult> results, List<NVPair> aggregators);
-
-  /**
    * Query response.
    * 
    * @param SearchQueryContext queriedContext
    * @param List<SearchQueryResult> results
    * @param aggregatorResults
    */
-  public void queryResponse(SearchQueryContext queriedContext, List<SearchQueryResult> results,
-                            List<Integer> aggregatorResults);
+  public void queryResponse(SearchQueryContext queriedContext, List<IndexQueryResult> results,
+                            List<NVPair> aggregatorResults);
 
 }

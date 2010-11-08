@@ -159,7 +159,7 @@ import com.tc.object.util.ToggleableStrongReference;
 import com.tc.plugins.ModulesLoader;
 import com.tc.properties.TCProperties;
 import com.tc.search.AggregatorOperations;
-import com.tc.search.SearchQueryResult;
+import com.tc.search.IndexQueryResult;
 import com.tc.search.SearchQueryResults;
 import com.tc.search.SortOperations;
 import com.tc.search.StackOperations;
@@ -505,7 +505,7 @@ public class BootJarTool {
       loadTerracottaClass(Clearable.class.getName());
       loadTerracottaClass(NotClearable.class.getName());
       loadTerracottaClass(TCServerMap.class.getName());
-      loadTerracottaClass(SearchQueryResult.class.getName());
+      loadTerracottaClass(IndexQueryResult.class.getName());
       loadTerracottaClass(SearchQueryResults.class.getName());
       loadTerracottaClass(ExpirableEntry.class.getName());
       loadTerracottaClass(OverridesHashCode.class.getName());

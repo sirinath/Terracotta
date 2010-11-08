@@ -5,7 +5,8 @@ package com.tc.object.msg;
 
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.SearchRequestID;
-import com.tc.search.SearchQueryResult;
+import com.tc.object.metadata.NVPair;
+import com.tc.search.IndexQueryResult;
 
 import java.util.List;
 
@@ -26,19 +27,19 @@ public interface SearchQueryResponseMessage extends TCMessage {
    * 
    * @param aggregatorResults
    * @param SearchRequestID searchRequestID
-   * @param Set<SearchQueryResult> results
+   * @param List<NVPair> aggregatorResults
    */
-  public void initialSearchResponseMessage(SearchRequestID searchRequestID, List<SearchQueryResult> results,
-                                           List<Integer> aggregatorResults);
+  public void initialSearchResponseMessage(SearchRequestID searchRequestID, List<IndexQueryResult> results,
+                                           List<NVPair> aggregatorResults);
 
   /**
    * @return List<SearchQueryResult> results.
    */
-  public List<SearchQueryResult> getResults();
+  public List<IndexQueryResult> getResults();
 
   /**
-   * @return List<Integer> aggregator results.
+   * @return List<NVPair> aggregator results.
    */
-  public List<Integer> getAggregatorResults();
+  public List<NVPair> getAggregatorResults();
 
 }

@@ -5,7 +5,6 @@ package com.tc.objectserver.search;
 
 import com.tc.object.metadata.NVPair;
 import com.tc.object.metadata.ValueType;
-import com.tc.search.SearchQueryResult;
 import com.tc.search.SortOperations;
 
 import java.io.IOException;
@@ -22,9 +21,9 @@ public interface IndexManager {
 
   boolean deleteIndex(String name) throws IndexException;
 
-  public List<SearchQueryResult> searchIndex(String name, LinkedList queryStack, boolean includeKeys,
-                                             Set<String> attributeSet, Map<String, SortOperations> sortAttributes,
-                                             List<NVPair> aggregators) throws IOException;
+  public IndexContext searchIndex(String name, LinkedList queryStack, boolean includeKeys, Set<String> attributeSet,
+                                  Map<String, SortOperations> sortAttributes, List<NVPair> aggregators)
+      throws IOException;
 
   void shutdown();
 }
