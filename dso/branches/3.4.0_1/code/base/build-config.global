@@ -16,3 +16,5 @@ maven.snapshot=false
 # the TIM API for this kit line
 tim-api.version=1.3.0
 
+kit.version=1
+
