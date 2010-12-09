@@ -114,7 +114,7 @@ artifacts:
   - maven_artifact: false
     name: CHANGELOG.txt
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/branches/magnum/core/src/assemble/CHANGELOG.txt
+    url: http://svn.terracotta.org/svn/ehcache/tags/ehcache-core-2.3.0/src/assemble/CHANGELOG.txt
     kit_edition: opensource
     
   - maven_artifact: false
