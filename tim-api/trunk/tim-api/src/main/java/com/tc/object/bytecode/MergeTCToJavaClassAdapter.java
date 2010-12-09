@@ -27,7 +27,7 @@ import java.util.Set;
 public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter implements Opcodes {
   private static final String                TC_INIT          = ByteCodeUtil.TC_METHOD_PREFIX + "$$_init_$$";
 
-  private final List                         jInnerClassNames = new ArrayList();
+  private final List<String>                 jInnerClassNames = new ArrayList<String>();
   private final ClassNode                    tcClassNode;
   private final String                       jFullClassSlashes;
   private final String                       tcFullClassSlashes;
@@ -46,12 +46,6 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
 
     if (insertTCinit) {
       createTCInit(tcClassNode);
-    }
-
-    List jInnerClasses = tcClassNode.innerClasses;
-    for (Iterator i = jInnerClasses.iterator(); i.hasNext();) {
-      InnerClassNode jInnerClass = (InnerClassNode) i.next();
-      jInnerClassNames.add(jInnerClass.name);
     }
 
     this.tcClassNode = tcClassNode;
@@ -203,6 +197,12 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
   }
 
   @Override
+  public void visitInnerClass(String name, String outerName, String innerName, int access) {
+    jInnerClassNames.add(name);
+    super.visitInnerClass(name, outerName, innerName, access);
+  }
+  
+  @Override
   public void visitEnd() {
     addTCFields();
     addTCMethods();
@@ -246,7 +246,34 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
   }
 
   private boolean tcInnerClassExistInJavaClass(InnerClassNode tcInnerClass) {
-    return jInnerClassNames.contains(tcInnerClass.name);
+    return jInnerClassNames.contains(replaceClassName(tcInnerClass.name));
+  }
+
+  private String replaceClassName(String classNameDots) {
+    return replaceClassName(classNameDots, tcFullClassSlashes, jFullClassSlashes);
+  }
+
+  private String replaceClassName(String classNameDots, String srcClassNameDots, String targetClassNameDots) {
+    if (classNameDots == null || classNameDots.length() == 0) { return classNameDots; }
+
+    classNameDots = classNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
+    srcClassNameDots = srcClassNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
+    targetClassNameDots = targetClassNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
+
+    int index = classNameDots.indexOf(srcClassNameDots);
+    if (index == -1) { return classNameDots; }
+
+    StringBuffer newClassName = new StringBuffer();
+    while (index != -1) {
+      if (index > 0) {
+        newClassName.append(classNameDots.substring(0, index));
+      }
+      newClassName.append(targetClassNameDots);
+      classNameDots = classNameDots.substring(index + srcClassNameDots.length());
+      index = classNameDots.indexOf(srcClassNameDots);
+    }
+    newClassName.append(classNameDots);
+    return newClassName.toString();
   }
 
   private class TCSuperClassAdapter extends ClassAdapter implements Opcodes {
@@ -272,33 +299,11 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
       }
     }
 
-    private String replaceClassName(String classNameDots) {
-      return replaceClassName(classNameDots, tcFullClassSlashes, jFullClassSlashes);
+    @Override
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+      super.visitInnerClass(replaceClassName(name), replaceClassName(outerName), replaceClassName(innerName), access);
     }
-
-    private String replaceClassName(String classNameDots, String srcClassNameDots, String targetClassNameDots) {
-      if (classNameDots == null || classNameDots.length() == 0) { return classNameDots; }
-
-      classNameDots = classNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
-      srcClassNameDots = srcClassNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
-      targetClassNameDots = targetClassNameDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
-
-      int index = classNameDots.indexOf(srcClassNameDots);
-      if (index == -1) { return classNameDots; }
-
-      StringBuffer newClassName = new StringBuffer();
-      while (index != -1) {
-        if (index > 0) {
-          newClassName.append(classNameDots.substring(0, index));
-        }
-        newClassName.append(targetClassNameDots);
-        classNameDots = classNameDots.substring(index + srcClassNameDots.length());
-        index = classNameDots.indexOf(srcClassNameDots);
-      }
-      newClassName.append(classNameDots);
-      return newClassName.toString();
-    }
-
+    
     private class TCSuperMethodAdapter extends MethodAdapter implements Opcodes {
       public TCSuperMethodAdapter(MethodVisitor mv) {
         super(mv);
