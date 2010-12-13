@@ -173,7 +173,10 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     final String loaderDesc = state.getLoaderDescription();
     try {
       final EvictableMap ev = getEvictableMapFrom(mo.getID(), state);
-      doEviction(oid, ev, faultedInClients, className, loaderDesc, periodicEvictor);
+      final boolean evictionInitiated = doEviction(oid, ev, faultedInClients, className, loaderDesc, periodicEvictor);
+      if (!evictionInitiated) {
+        ev.evictionCompleted();
+      }
     } finally {
       this.objectManager.releaseReadOnly(mo);
     }
@@ -195,15 +198,20 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     return (EvictableMap) state;
   }
 
-  private void doEviction(final ObjectID oid, final EvictableMap ev, final SortedSet<ObjectID> faultedInClients,
-                          final String className, final String loaderDesc, final boolean periodicEvictor) {
+  /**
+   * Collects random samples and initiates eviction
+   * 
+   * @return true, if eviction is initiated, false otherwise
+   */
+  private boolean doEviction(final ObjectID oid, final EvictableMap ev, final SortedSet<ObjectID> faultedInClients,
+                             final String className, final String loaderDesc, final boolean periodicEvictor) {
     final int targetMaxTotalCount = ev.getMaxTotalCount();
     final int currentSize = ev.getSize();
     if (targetMaxTotalCount <= 0 || currentSize <= targetMaxTotalCount) {
       if (periodicEvictor) {
         evictionStats.evictionNotRequired(oid, ev, targetMaxTotalCount, currentSize);
       }
-      return;
+      return false;
     }
     final int overshoot = currentSize - targetMaxTotalCount;
     if (EVICTOR_LOGGING) {
@@ -220,7 +228,8 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
       logger.info("Server Map Eviction  : Got Random samples to evict : " + oid + " : Random Samples : "
                   + samples.size() + " overshoot : " + overshoot);
     }
-    if (!samples.isEmpty()) {
+    final boolean initiateEviction = !samples.isEmpty();
+    if (initiateEviction) {
       final ServerMapEvictionContext context = new ServerMapEvictionContext(oid, targetMaxTotalCount, tti, ttl,
                                                                             samples, overshoot, className, loaderDesc);
       this.evictorSink.add(context);
@@ -228,6 +237,7 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
     if (periodicEvictor) {
       evictionStats.evictionRequested(oid, ev, targetMaxTotalCount, overshoot, samples.size());
     }
+    return initiateEviction;
   }
 
   private boolean isInterestedInTTIOrTTL(final int tti, final int ttl) {
@@ -255,8 +265,22 @@ public class ServerMapEvictionManagerImpl implements ServerMapEvictionManager {
       evictFrom(oid, Collections.unmodifiableMap(candidates), className, loaderDesc);
       // TODO:: Come back for broadcast evicted entries as this is done after apply
       broadcastEvictedEntries(oid, candidates);
+    } else {
+      notifyEvictionCompletedFor(oid);
     }
     evictionStats.entriesEvicted(oid, overshoot, samples.size(), candidates.size());
+  }
+
+  private void notifyEvictionCompletedFor(ObjectID oid) {
+    final ManagedObject mo = this.objectManager.getObjectByIDOrNull(oid);
+    if (mo == null) { return; }
+    final ManagedObjectState state = mo.getManagedObjectState();
+    try {
+      final EvictableMap ev = getEvictableMapFrom(mo.getID(), state);
+      ev.evictionCompleted();
+    } finally {
+      this.objectManager.releaseReadOnly(mo);
+    }
   }
 
   private void broadcastEvictedEntries(final ObjectID oid, final HashMap candidates) {
