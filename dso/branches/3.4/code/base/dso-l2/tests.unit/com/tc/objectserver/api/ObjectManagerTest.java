@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.api;
 
+import EDU.oswego.cs.dl.util.concurrent.Latch;
+
 import com.tc.async.impl.MockSink;
 import com.tc.exception.ImplementMe;
 import com.tc.lang.TCThreadGroup;
@@ -189,6 +191,22 @@ public class ObjectManagerTest extends TCTestCase {
     this.testFaultSinkContext = new TestSinkContext();
     new TestMOFaulter(this.objectManager, store, faultSink, this.testFaultSinkContext).start();
     new TestMOFlusher(this.objectManager, flushSink, new NullSinkContext()).start();
+  }
+
+  private TestMOFlusherWithLatch initObjectManagerAndGetFlusher(final ThreadGroup threadGroup,
+                                                                final EvictionPolicy cache) {
+    final TestSink faultSink = new TestSink();
+    final TestSink flushSink = new TestSink();
+    this.objectStore = new InMemoryManagedObjectStore(this.managed);
+    this.objectManager = new ObjectManagerImpl(this.config, this.clientStateManager, this.objectStore, cache,
+                                               this.persistenceTransactionProvider, faultSink, flushSink,
+                                               this.objectStatsRecorder);
+    this.testFaultSinkContext = new TestSinkContext();
+    new TestMOFaulter(this.objectManager, this.objectStore, faultSink, this.testFaultSinkContext).start();
+    TestMOFlusherWithLatch flusherWithLatch = new TestMOFlusherWithLatch(objectManager, flushSink,
+                                                                         this.testFaultSinkContext);
+    flusherWithLatch.start();
+    return flusherWithLatch;
   }
 
   private void initTransactionObjectManager() {
@@ -1259,6 +1277,63 @@ public class ObjectManagerTest extends TCTestCase {
     } catch (final NoSuchObjectException e) {
       // expected
     }
+  }
+
+  /**
+   * DEV-5113
+   */
+  public void testEvictCacheAndGCRunParallel() throws Exception {
+    this.config.paranoid = false;
+    TestMOFlusherWithLatch flushWithLatch = initObjectManagerAndGetFlusher(createThreadGroup(),
+                                                                           new LRUEvictionPolicy(-1));
+    this.config.myGCThreadSleepTime = -1;
+    final TestGarbageCollector gc = new TestGarbageCollector(this.objectManager);
+    this.objectManager.setGarbageCollector(gc);
+    this.objectManager.start();
+
+    ArrayList<ManagedObject> managedObjects = new ArrayList<ManagedObject>();
+    ObjectIDSet objectIDset = new ObjectIDSet();
+    for (int i = 0; i < 10000; i++) {
+      ObjectID id = new ObjectID(i);
+      ManagedObject mo = new TestManagedObject(id, new ArrayList<ObjectID>(3));
+
+      mo.setIsDirty(true);
+      this.objectManager.createObject(mo);
+
+      managedObjects.add(mo);
+      objectIDset.add(id);
+    }
+
+    Thread evictor = new Thread() {
+      @Override
+      public void run() {
+        objectManager.evictCache(new CacheStats() {
+          public void objectEvicted(int evictedCount, int currentCount, List targetObjects4GC, boolean printNewObjects) {
+            //
+          }
+
+          public int getObjectCountToEvict(int currentCount) {
+            return 10000;
+          }
+        });
+
+      }
+    };
+    evictor.start();
+
+    ThreadUtil.reallySleep(5000);
+
+    final Thread gcCaller = new Thread(new GCCaller(), "GCCaller");
+    gcCaller.start();
+    gc.collectedObjects = objectIDset;
+
+    // FLUSHER and the EVICTOR are running in parallel now. High chance of race in removing the references
+    flushWithLatch.getLatch().release();
+    gc.allow_blockUntilReadyToGC_ToProceed();
+
+    assertTrue(gc.waitFor_notifyGCComplete_ToBeCalled(150000));
+    gcCaller.join();
+    evictor.join();
   }
 
   public void testObjectManagerGC() throws Exception {
@@ -2335,9 +2410,9 @@ public class ObjectManagerTest extends TCTestCase {
 
   private static class TestMOFlusher extends Thread {
 
-    private final ObjectManagerImpl objectManager;
-    private final TestSink          flushSink;
-    private final SinkContext       sinkContext;
+    final ObjectManagerImpl objectManager;
+    final TestSink          flushSink;
+    final SinkContext       sinkContext;
 
     public TestMOFlusher(final ObjectManagerImpl objectManager, final TestSink flushSink, final SinkContext sinkContext) {
       this.objectManager = objectManager;
@@ -2349,6 +2424,38 @@ public class ObjectManagerTest extends TCTestCase {
 
     @Override
     public void run() {
+      while (true) {
+        try {
+          final ManagedObjectFlushingContext ec = (ManagedObjectFlushingContext) this.flushSink.take();
+          this.objectManager.flushAndEvict(ec.getObjectToFlush());
+          this.sinkContext.postProcess();
+        } catch (final InterruptedException e) {
+          throw new AssertionError(e);
+        }
+      }
+    }
+  }
+
+  private static class TestMOFlusherWithLatch extends TestMOFlusher {
+
+    private final Latch latch = new Latch();
+
+    public TestMOFlusherWithLatch(final ObjectManagerImpl objectManager, final TestSink flushSink,
+                                  final SinkContext sinkContext) {
+      super(objectManager, flushSink, sinkContext);
+    }
+
+    public Latch getLatch() {
+      return latch;
+    }
+
+    @Override
+    public void run() {
+      try {
+        latch.acquire();
+      } catch (InterruptedException e1) {
+        throw new AssertionError(e1);
+      }
       while (true) {
         try {
           final ManagedObjectFlushingContext ec = (ManagedObjectFlushingContext) this.flushSink.take();
