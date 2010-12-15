@@ -13,6 +13,7 @@ import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.properties.ReconnectConfig;
 import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
+import com.tc.util.Util;
 
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -222,11 +223,22 @@ public class SendStateMachine extends AbstractStateMachine {
   }
 
   private static TCNetworkMessage dequeue(BoundedLinkedQueue q) {
-    try {
-      return (TCNetworkMessage) q.take();
-    } catch (InterruptedException e) {
-      throw new AssertionError(e);
+    TCNetworkMessage rv;
+    boolean interrupted = false;
+    do {
+      try {
+        rv = (TCNetworkMessage) q.take();
+        break;
+      } catch (InterruptedException e) {
+        interrupted = true;
+      }
+    } while (true);
+
+    if (interrupted) {
+      Util.selfInterruptIfNeeded(true);
     }
+
+    return rv;
   }
 
   public void put(TCNetworkMessage message) throws InterruptedException {
