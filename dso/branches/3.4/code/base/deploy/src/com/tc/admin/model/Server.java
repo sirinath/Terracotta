@@ -1960,7 +1960,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
 
   public void setAttribute(Set<ObjectName> onSet, String attrName, Object attrValue) throws Exception {
     DSOMBean theDsoBean = getDSOBean();
-    if (theDsoBean != null && isReady()) {
+    if (theDsoBean != null && isConnected()) {
       theDsoBean.setAttribute(onSet, attrName, attrValue);
     }
   }
@@ -1974,7 +1974,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   public Map<ObjectName, Map<String, Object>> getAttributeMap(Map<ObjectName, Set<String>> attributeMap, long timeout,
                                                               TimeUnit unit) {
     DSOMBean theDsoBean = getDSOBean();
-    if (theDsoBean != null && isReady()) { return theDsoBean.getAttributeMap(attributeMap, timeout, unit); }
+    if (theDsoBean != null && isConnected()) { return theDsoBean.getAttributeMap(attributeMap, timeout, unit); }
     return Collections.emptyMap();
   }
 
@@ -1993,7 +1993,7 @@ public class Server extends BaseClusterNode implements IServer, NotificationList
   public Map<ObjectName, Object> invoke(Set<ObjectName> onSet, String operation, long timeout, TimeUnit unit,
                                         Object[] args, String[] sigs) {
     DSOMBean theDsoBean = getDSOBean();
-    if (theDsoBean != null && isReady()) { return theDsoBean.invoke(onSet, operation, timeout, unit, args, sigs); }
+    if (theDsoBean != null && isConnected()) { return theDsoBean.invoke(onSet, operation, timeout, unit, args, sigs); }
     return Collections.emptyMap();
   }
 
