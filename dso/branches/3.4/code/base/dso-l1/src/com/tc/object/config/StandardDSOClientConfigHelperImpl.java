@@ -10,6 +10,7 @@ import org.terracotta.groupConfigForL1.ServerGroup;
 import org.terracotta.groupConfigForL1.ServerGroupsDocument;
 import org.terracotta.groupConfigForL1.ServerGroupsDocument.ServerGroups;
 import org.terracotta.groupConfigForL1.ServerInfo;
+import org.terracotta.license.LicenseException;
 
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
@@ -186,13 +187,15 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private int                                                faultCount                         = -1;
 
-  private Collection<ModuleSpec>                             moduleSpecs                        = Collections.synchronizedList(new ArrayList<ModuleSpec>());
+  private final Collection<ModuleSpec>                       moduleSpecs                        = Collections
+                                                                                                    .synchronizedList(new ArrayList<ModuleSpec>());
 
   private MBeanSpec[]                                        mbeanSpecs                         = null;
 
   private SRASpec[]                                          sraSpecs                           = null;
 
-  private Set<String>                                        tunneledMBeanDomains               = Collections.synchronizedSet(new HashSet<String>());
+  private final Set<String>                                  tunneledMBeanDomains               = Collections
+                                                                                                    .synchronizedSet(new HashSet<String>());
 
   private final ModulesContext                               modulesContext                     = new ModulesContext();
 
@@ -330,8 +333,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     clearAdaptableCache();
   }
-  
-  public void addIncludePattern(String expression, boolean honorTransient, String methodToCallOnLoad, boolean honorVolatile) {
+
+  public void addIncludePattern(String expression, boolean honorTransient, String methodToCallOnLoad,
+                                boolean honorVolatile) {
     IncludeOnLoad onLoad = new IncludeOnLoad(IncludeOnLoad.METHOD, methodToCallOnLoad);
     addInstrumentationDescriptor(new IncludedInstrumentedClass(expression, honorTransient, honorVolatile, onLoad));
 
@@ -677,8 +681,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       type = fi.getType().getName();
     }
     InjectionInstrumentation instrumentation = injectionRegistry.lookupInstrumentation(type);
-    if (null == instrumentation) { throw new UnsupportedInjectedDsoInstanceTypeException(classInfo.getName(), fi
-        .getName(), fi.getType().getName()); }
+    if (null == instrumentation) { throw new UnsupportedInjectedDsoInstanceTypeException(classInfo.getName(),
+                                                                                         fi.getName(), fi.getType()
+                                                                                             .getName()); }
 
     TransparencyClassSpec spec = getOrCreateSpec(classInfo.getName());
     spec.setHasOnLoadInjection(true);
@@ -1386,9 +1391,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     if (moduleSpecs != null) {
       for (ModuleSpec moduleSpec : moduleSpecs) {
         Class klass = moduleSpec.getPeerClass(clazz);
-        if (klass != null) {
-           return klass;
-        }
+        if (klass != null) { return klass; }
       }
     }
     return clazz;
@@ -1571,11 +1574,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public SRASpec[] getSRASpecs() {
     return this.sraSpecs;
   }
-  
+
   public void addTunneledMBeanDomain(final String tunneledMBeanDomain) {
     this.tunneledMBeanDomains.add(tunneledMBeanDomain);
   }
-  
 
   /*
    * public String getChangeApplicatorClassNameFor(String className) { TransparencyClassSpec spec = getSpec(className);
@@ -1845,9 +1847,14 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   public SessionConfiguration getSessionConfiguration(String name) {
     if (ProductInfo.getInstance().isEnterprise()) {
-      LicenseManager.verifySessionCapability();
+      try {
+        LicenseManager.verifySessionCapability();
+      } catch (LicenseException e) {
+        logger.error(e);
+        System.exit(1);
+      }
     }
-    
+
     name = ClassProcessorHelper.computeAppName(name);
 
     for (Entry<String, SessionConfiguration> entry : webApplications.entrySet()) {
@@ -1858,12 +1865,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         return config;
       }
     }
-    
+
     // log this for custom mode only
     if (hasBootJar) {
       logger.info("Clustered HTTP sessions is NOT enabled for [" + name + "]");
     }
-    
+
     return null;
   }
 
@@ -1958,8 +1965,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       ConnectionInfo[] connectionInfo = (ConnectionInfo[]) connectionInfoItems[i].getObject();
       for (int j = 0; j < connectionInfo.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(connectionInfo[j].getHostname()),
-                                                         connectionInfo[j].getPort(), i * j + j, connectionInfo[j]
-                                                             .getGroupName());
+                                                         connectionInfo[j].getPort(), i * j + j,
+                                                         connectionInfo[j].getGroupName());
         connInfoFromL1.add(connectionIn);
       }
     }
@@ -2133,7 +2140,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   public UUID getUUID() {
     return id;
   }
-  
+
   public String[] getTunneledDomains() {
     synchronized (tunneledMBeanDomains) {
       String[] result = new String[tunneledMBeanDomains.size()];
