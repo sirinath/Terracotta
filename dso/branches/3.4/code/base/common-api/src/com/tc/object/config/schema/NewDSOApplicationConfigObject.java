@@ -12,6 +12,7 @@ import com.tc.config.schema.dynamic.BooleanConfigItem;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.dynamic.StringArrayConfigItem;
 import com.tc.config.schema.dynamic.XPathBasedConfigItem;
+import com.tc.license.LicenseManager;
 import com.terracottatech.config.DsoApplication;
 import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
@@ -31,18 +32,21 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
     this.context.ensureRepositoryProvides(DsoApplication.class);
 
     this.instrumentedClasses = new XPathBasedConfigItem(this.context, "instrumented-classes") {
+      @Override
       protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
         return ConfigTranslationHelper.translateIncludes(xmlObject);
       }
     };
 
     this.locks = new XPathBasedConfigItem(this.context, "locks") {
+      @Override
       protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
         return ConfigTranslationHelper.translateLocks(xmlObject);
       }
     };
 
     this.roots = new XPathBasedConfigItem(this.context, "roots") {
+      @Override
       protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
         return translateRoots(xmlObject);
       }
@@ -91,6 +95,10 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
     for (int i = 0; i < out.length; ++i) {
       out[i] = new com.tc.object.config.schema.Root(theRoots[i].getRootName(), theRoots[i].getFieldName());
     }
+    if (LicenseManager.enterpriseEdition() && out.length > 0) {
+      LicenseManager.verifyRootCapability();
+    }
+
     return out;
   }
 }
