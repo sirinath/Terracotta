@@ -9,7 +9,6 @@ import com.tc.config.schema.dynamic.BindPortConfigItem;
 import com.tc.config.schema.dynamic.FileConfigItem;
 import com.tc.config.schema.dynamic.ParameterSubstituter;
 import com.tc.config.schema.dynamic.StringConfigItem;
-import com.tc.license.LicenseManager;
 import com.terracottatech.config.Authentication;
 import com.terracottatech.config.AuthenticationMode;
 import com.terracottatech.config.BindPort;
@@ -63,7 +62,6 @@ public class NewCommonL2ConfigObject extends BaseNewConfigObject implements NewC
     }
 
     if (authentication) {
-      LicenseManager.verifyAuthenticationCapability();
       if (server.getAuthentication().isSetMode()) {
         if (server.getAuthentication().getMode().isSetLoginConfigName()) {
           loginConfig = server.getAuthentication().getMode().getLoginConfigName();
