@@ -26,6 +26,7 @@ import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.L2Info;
 import com.tc.config.schema.NewCommonL2Config;
 import com.tc.config.schema.NewHaConfig;
+import com.tc.config.schema.OffHeapConfigObject;
 import com.tc.config.schema.ServerGroupInfo;
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.messaging.http.ConfigServlet;
@@ -34,9 +35,9 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2TVSConfigurationSetupManager;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.StartupHelper;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -128,14 +129,31 @@ public class TCServerImpl extends SEDA implements TCServer {
   public TCServerImpl(final L2TVSConfigurationSetupManager manager, final TCThreadGroup group,
                       final ConnectionPolicy connectionPolicy) {
     super(group, LinkedBlockingQueue.class.getName());
+
     this.connectionPolicy = connectionPolicy;
     Assert.assertNotNull(manager);
+    validateEnterpriseFeatures(manager);
     this.configurationSetupManager = manager;
 
     this.statisticsGathererSubSystem = new StatisticsGathererSubSystem();
     if (!this.statisticsGathererSubSystem.setup(manager.commonl2Config())) {
       notifyShutdown();
       System.exit(1);
+    }
+
+  }
+
+  private void validateEnterpriseFeatures(final L2TVSConfigurationSetupManager manager) {
+    if (!LicenseManager.enterpriseEdition()) return;
+    OffHeapConfigObject offheapConfig = manager.dsoL2Config().offHeapConfig().getOffHeapConfigObject();
+    if (offheapConfig.isEnabled()) {
+      LicenseManager.verifyServerArrayOffheapCapability(offheapConfig.getMaxDataSize());
+    }
+    if (manager.commonl2Config().authentication()) {
+      LicenseManager.verifyAuthenticationCapability();
+    }
+    if (manager.activeServerGroupsConfig().getActiveServerGroupCount() > 1) {
+      LicenseManager.verifyServerStripingCapability();
     }
   }
 
@@ -459,12 +477,17 @@ public class TCServerImpl extends SEDA implements TCServer {
   private void startDSOServer(final Sink httpSink) throws Exception {
     Assert.assertTrue(this.state.isStartState());
     TCProperties tcProps = TCPropertiesImpl.getProperties();
-    ObjectStatsRecorder objectStatsRecorder = new ObjectStatsRecorder(tcProps
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED), tcProps
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED), tcProps
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED), tcProps
-        .getBoolean(TCPropertiesConsts.L2_TRANSACTIONMANAGER_LOGGING_PRINT_BROADCAST_STATS), tcProps
-        .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED));
+    ObjectStatsRecorder objectStatsRecorder = new ObjectStatsRecorder(
+                                                                      tcProps
+                                                                          .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_FAULT_LOGGING_ENABLED),
+                                                                      tcProps
+                                                                          .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_REQUEST_LOGGING_ENABLED),
+                                                                      tcProps
+                                                                          .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_FLUSH_LOGGING_ENABLED),
+                                                                      tcProps
+                                                                          .getBoolean(TCPropertiesConsts.L2_TRANSACTIONMANAGER_LOGGING_PRINT_BROADCAST_STATS),
+                                                                      tcProps
+                                                                          .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_PERSISTOR_LOGGING_ENABLED));
 
     this.dsoServer = createDistributedObjectServer(this.configurationSetupManager, this.connectionPolicy, httpSink,
                                                    new TCServerInfo(this, this.state, objectStatsRecorder),

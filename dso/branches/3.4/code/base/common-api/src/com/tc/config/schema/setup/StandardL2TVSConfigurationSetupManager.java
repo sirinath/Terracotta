@@ -31,7 +31,6 @@ import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.repository.MutableBeanRepository;
 import com.tc.config.schema.repository.StandardBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
-import com.tc.license.LicenseManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.schema.NewL2DSOConfig;
@@ -143,7 +142,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
     // do this after servers and groups have been processed
     validateGroups();
     validateDSOClusterPersistenceMode();
-    validateLicenseCapabilities();
     validateHaConfiguration();
   }
 
@@ -572,12 +570,6 @@ public class StandardL2TVSConfigurationSetupManager extends BaseTVSConfiguration
                                                   + "\nHigh Availability for that mirror group.\n\n"
                                                   + "See the Terracotta documentation for more details.");
       }
-    }
-  }
-
-  public void validateLicenseCapabilities() {
-    if (activeServerGroupsConfig.getActiveServerGroupCount() > 1) {
-      LicenseManager.verifyServerStripingCapability();
     }
   }
 
