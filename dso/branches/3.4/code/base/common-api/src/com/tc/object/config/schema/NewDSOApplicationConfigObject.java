@@ -33,7 +33,7 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
 
     DsoApplication dsoApplication = (DsoApplication) this.context.bean();
     int rootCount = 0;
-    if (dsoApplication.getRoots() != null) {
+    if (dsoApplication != null && dsoApplication.getRoots() != null) {
       rootCount = dsoApplication.getRoots().sizeOfRootArray();
     }
     if (LicenseManager.enterpriseEdition() && rootCount > 0) {
