@@ -32,7 +32,10 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
     this.context.ensureRepositoryProvides(DsoApplication.class);
 
     DsoApplication dsoApplication = (DsoApplication) this.context.bean();
-    int rootCount = dsoApplication.getRoots().sizeOfRootArray();
+    int rootCount = 0;
+    if (dsoApplication.getRoots() != null) {
+      rootCount = dsoApplication.getRoots().sizeOfRootArray();
+    }
     if (LicenseManager.enterpriseEdition() && rootCount > 0) {
       LicenseManager.verifyRootCapability();
     }
