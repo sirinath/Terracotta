@@ -31,6 +31,12 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
 
     this.context.ensureRepositoryProvides(DsoApplication.class);
 
+    DsoApplication dsoApplication = (DsoApplication) this.context.bean();
+    int rootCount = dsoApplication.getRoots().sizeOfRootArray();
+    if (LicenseManager.enterpriseEdition() && rootCount > 0) {
+      LicenseManager.verifyRootCapability();
+    }
+
     this.instrumentedClasses = new XPathBasedConfigItem(this.context, "instrumented-classes") {
       @Override
       protected Object fetchDataFromXmlObject(XmlObject xmlObject) {
@@ -95,10 +101,6 @@ public class NewDSOApplicationConfigObject extends BaseNewConfigObject implement
     for (int i = 0; i < out.length; ++i) {
       out[i] = new com.tc.object.config.schema.Root(theRoots[i].getRootName(), theRoots[i].getFieldName());
     }
-    if (LicenseManager.enterpriseEdition() && out.length > 0) {
-      LicenseManager.verifyRootCapability();
-    }
-
     return out;
   }
 }
