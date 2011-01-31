@@ -38,7 +38,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core-ee-kit
     classifier: distribution
-    version: 2.4.0-SNAPSHOT
+    version: 2.4.0
     destination: ehcache
     type: tar.gz
     kit_edition: enterprise
@@ -49,7 +49,7 @@ artifacts:
   - maven_artifact: true
     groupId: net.sf.ehcache
     artifactId: ehcache-core
-    version: 2.4.0-SNAPSHOT
+    version: 2.4.0
     destination: ehcache/lib
     kit_edition: opensource
 
@@ -85,7 +85,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: javadoc
-    version: 2.4.0-SNAPSHOT
+    version: 2.4.0
     destination: ehcache/javadoc
     explode: true
     kit_edition: opensource
@@ -94,7 +94,7 @@ artifacts:
     groupId: net.sf.ehcache
     artifactId: ehcache-core
     classifier: sources
-    version: 2.4.0-SNAPSHOT
+    version: 2.4.0
     destination: ehcache/src
     explode: true
     kit_edition: opensource
@@ -111,11 +111,11 @@ artifacts:
     url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html
     kit_edition: opensource
     
-#  - maven_artifact: false
-#    name: CHANGELOG.txt
-#    destination: ehcache
-#    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/CHANGELOG.txt
-#    kit_edition: opensource
+  - maven_artifact: false
+    name: CHANGELOG.txt
+    destination: ehcache
+    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/changes/changes.xml
+    kit_edition: opensource
     
   - maven_artifact: false
     name: EHCACHE-CORE-LICENSE.txt
