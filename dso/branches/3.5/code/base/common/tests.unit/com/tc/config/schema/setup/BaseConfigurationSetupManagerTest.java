@@ -19,6 +19,7 @@ import com.tc.config.schema.utils.StandardXmlObjectComparator;
 import com.tc.object.config.schema.L2DSOConfigObject;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
+import com.tc.util.runtime.Os;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.ConfigurationModel;
@@ -74,8 +75,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
 
     Assert.assertEquals(InetAddress.getLocalHost().getHostAddress(), server.getHost());
     Assert.assertEquals("0.0.0.0", server.getBind());
-    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(),
-                        server.getName());
+    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(), server
+        .getName());
 
     Assert.assertEquals(9510, server.getDsoPort().getIntValue());
     Assert.assertEquals(server.getBind(), server.getDsoPort().getBind());
@@ -162,8 +163,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
 
     Assert.assertEquals(InetAddress.getLocalHost().getHostAddress(), server.getHost());
     Assert.assertEquals("0.0.0.0", server.getBind());
-    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(),
-                        server.getName());
+    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(), server
+        .getName());
 
     int dsoPort = 8513;
     String dsoBind = "1.2.3.4";
@@ -210,8 +211,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
 
     Assert.assertEquals(InetAddress.getLocalHost().getHostAddress(), server.getHost());
     Assert.assertEquals("0.0.0.0", server.getBind());
-    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(),
-                        server.getName());
+    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(), server
+        .getName());
 
     int dsoPort = 8513;
     String dsoBind = "1.2.3.4";
@@ -258,8 +259,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
 
     Assert.assertEquals(InetAddress.getLocalHost().getHostAddress(), server.getHost());
     Assert.assertEquals("0.0.0.0", server.getBind());
-    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(),
-                        server.getName());
+    Assert.assertEquals(InetAddress.getLocalHost().getHostAddress() + ":" + server.getDsoPort().getIntValue(), server
+        .getName());
 
     int dsoPort = 8513;
     String dsoBind = "1.2.3.4";
@@ -350,11 +351,28 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
     Assert.assertEquals(1, servers.getServerArray().length);
     Server server = servers.getServerArray(0);
 
-    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "abc/xyz/123").getAbsolutePath(), server.getData());
-    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "xyz/abc/451").getAbsolutePath(), server.getLogs());
-    Assert.assertEquals("/qrt/opt/pqr", server.getDataBackup());
-    Assert.assertEquals("/opq/pqr/123/or", server.getStatistics());
-    Assert.assertEquals("/rta/try/456", server.getIndex());
+    Assert
+        .assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "abc"
+                               + File.separator + "xyz" + File.separator + "123").getAbsolutePath(), server.getData());
+    Assert
+        .assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "xyz"
+                               + File.separator + "abc" + File.separator + "451").getAbsolutePath(), server.getLogs());
+    if (Os.isWindows()) {
+      // for windows box
+      Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "qrt"
+                                   + File.separator + "opt" + File.separator + "pqr").getAbsolutePath(), server
+          .getDataBackup());
+      Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "opq"
+                                   + File.separator + "pqr" + File.separator + "123" + File.separator + "or")
+          .getAbsolutePath(), server.getStatistics());
+      Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + "rta"
+                                   + File.separator + "try" + File.separator + "456").getAbsolutePath(), server
+          .getIndex());
+    } else {
+      Assert.assertEquals("/qrt/opt/pqr", server.getDataBackup());
+      Assert.assertEquals("/opq/pqr/123/or", server.getStatistics());
+      Assert.assertEquals("/rta/try/456", server.getIndex());
+    }
   }
 
   public void testServerSubsitutedDirtctoryPaths() throws IOException, ConfigurationSetupException {
@@ -379,10 +397,10 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
     Assert.assertEquals(1, servers.getServerArray().length);
     Server server = servers.getServerArray(0);
 
-    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + InetAddress.getLocalHost().getHostName())
-    .getAbsolutePath(), server.getData());
-    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator + InetAddress.getLocalHost().getHostAddress())
-    .getAbsolutePath(), server.getLogs());
+    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator
+                                 + InetAddress.getLocalHost().getHostName()).getAbsolutePath(), server.getData());
+    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator
+                                 + InetAddress.getLocalHost().getHostAddress()).getAbsolutePath(), server.getLogs());
     Assert.assertEquals(System.getProperty("user.home"), server.getDataBackup());
     Assert.assertEquals(System.getProperty("user.name"), server.getStatistics());
   }
@@ -787,18 +805,18 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
     Assert.assertEquals(false, servers.getUpdateCheck().getEnabled());
     Assert.assertEquals(14, servers.getUpdateCheck().getPeriodDays());
   }
-  
-  public void testClientNotInitialized() throws Exception{
+
+  public void testClientNotInitialized() throws Exception {
     this.tcConfig = getTempFile("default-config.xml");
     String config = "<tc:tc-config xmlns:tc=\"http://www.terracotta.org/config\">" + "</tc:tc-config>";
 
     writeConfigFile(config);
-    
+
     BaseConfigurationSetupManager configSetupMgr = initializeAndGetBaseTVSConfigSetupManager(false);
 
     Client client = (Client) configSetupMgr.clientBeanRepository().bean();
     Assert.assertNull(client);
-    
+
     configSetupMgr = initializeAndGetBaseTVSConfigSetupManager(true);
     client = (Client) configSetupMgr.clientBeanRepository().bean();
     Assert.assertNotNull(client);
@@ -848,7 +866,7 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
     Assert.assertEquals(ParameterSubstituter.substitute("%i"), client.getLogs());
   }
 
-  public void testTcNodeNameClientLogDirectory() throws Exception{
+  public void testTcNodeNameClientLogDirectory() throws Exception {
     this.tcConfig = getTempFile("default-config.xml");
     System.setProperty("tc.nodeName", "node123");
     String config = "<tc:tc-config xmlns:tc=\"http://www.terracotta.org/config\">" 
@@ -1215,9 +1233,11 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
       throws ConfigurationSetupException {
     String[] args = new String[] { "-f", tcConfig.getAbsolutePath() };
 
-    String effectiveConfigSpec = getEffectiveConfigSpec(System
+    String effectiveConfigSpec = getEffectiveConfigSpec(
+                                                        System
                                                             .getProperty(ConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME),
-                                                        parseDefaultCommandLine(args,
+                                                        parseDefaultCommandLine(
+                                                                                args,
                                                                                 StandardConfigurationSetupManagerFactory.ConfigMode.L2),
                                                         StandardConfigurationSetupManagerFactory.ConfigMode.L2);
     String cwdAsString = System.getProperty("user.dir");
@@ -1227,10 +1247,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
                                                                                       + (cwdAsString == null ? "null"
                                                                                           : "'" + cwdAsString + "'")
                                                                                       + ".)"); }
-    ConfigurationSpec configurationSpec = new ConfigurationSpec(
-                                                                effectiveConfigSpec,
-                                                                System
-                                                                    .getProperty(ConfigurationSetupManagerFactory.SERVER_CONFIG_FILE_PROPERTY_NAME),
+    ConfigurationSpec configurationSpec = new ConfigurationSpec(effectiveConfigSpec, System
+        .getProperty(ConfigurationSetupManagerFactory.SERVER_CONFIG_FILE_PROPERTY_NAME),
                                                                 StandardConfigurationSetupManagerFactory.ConfigMode.L2,
                                                                 new File(cwdAsString));
 
@@ -1239,10 +1257,10 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
                                                                                         new TerracottaDomainConfigurationDocumentBeanFactory());
 
     BaseConfigurationSetupManager configSetupMgr = new BaseConfigurationSetupManager(
-                                                                                           configurationCreator,
-                                                                                           new SchemaDefaultValueProvider(),
-                                                                                           new StandardXmlObjectComparator(),
-                                                                                           new FatalIllegalConfigurationChangeHandler());
+                                                                                     configurationCreator,
+                                                                                     new SchemaDefaultValueProvider(),
+                                                                                     new StandardXmlObjectComparator(),
+                                                                                     new FatalIllegalConfigurationChangeHandler());
     configSetupMgr.runConfigurationCreator(isClient);
 
     return configSetupMgr;
