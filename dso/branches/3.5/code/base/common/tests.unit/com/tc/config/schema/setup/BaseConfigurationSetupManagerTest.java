@@ -402,7 +402,8 @@ public class BaseConfigurationSetupManagerTest extends TCTestCase {
     Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator
                                  + InetAddress.getLocalHost().getHostAddress()).getAbsolutePath(), server.getLogs());
     Assert.assertEquals(System.getProperty("user.home"), server.getDataBackup());
-    Assert.assertEquals(System.getProperty("user.name"), server.getStatistics());
+    Assert.assertEquals(new File(BaseConfigurationSetupManagerTest.class.getSimpleName() + File.separator
+                                 + System.getProperty("user.name")).getAbsolutePath(), server.getStatistics());
   }
 
   public void testDefaultDso() throws IOException, ConfigurationSetupException {
