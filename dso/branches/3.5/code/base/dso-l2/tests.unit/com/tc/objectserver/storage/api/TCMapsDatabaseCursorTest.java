@@ -34,7 +34,7 @@ public class TCMapsDatabaseCursorTest extends TCTestCase {
     dbHome = new File(dataPath.getAbsolutePath(), L2DSOConfig.OBJECTDB_DIRNAME);
     dbHome.mkdir();
 
-    dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, dbHome, null);
+    dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, dbHome, null, false);
     dbenv.open();
 
     ptp = dbenv.getPersistenceTransactionProvider();
@@ -56,18 +56,18 @@ public class TCMapsDatabaseCursorTest extends TCTestCase {
     database.put(tx, objectId2, key2, value2, serializer);
     tx.commit();
 
-    Assert.assertEquals(2, database.count());
+    Assert.assertEquals(2, database.count(ptp.newTransaction()));
 
     tx = ptp.newTransaction();
     HashMap<byte[], byte[]> map = new HashMap<byte[], byte[]>();
     database.loadMap(tx, objectId1, map, serializer);
+    tx.commit();
     int count = 0;
     for (Entry<byte[], byte[]> entry : map.entrySet()) {
       Assert.assertTrue(Arrays.equals(key1, entry.getKey()));
       Assert.assertTrue(Arrays.equals(value1, entry.getValue()));
       count++;
     }
-    tx.commit();
 
     Assert.assertEquals(1, count);
   }
@@ -88,7 +88,7 @@ public class TCMapsDatabaseCursorTest extends TCTestCase {
     database.put(tx, objectId2, key2, value2, serializer);
     tx.commit();
 
-    Assert.assertEquals(2, database.count());
+    Assert.assertEquals(2, database.count(ptp.newTransaction()));
 
     tx = ptp.newTransaction();
     HashMap<byte[], byte[]> map = new HashMap<byte[], byte[]>();
@@ -103,7 +103,7 @@ public class TCMapsDatabaseCursorTest extends TCTestCase {
     int countDeleted = database.deleteCollectionBatched(objectId1, tx, 1);
     tx.commit();
 
-    Assert.assertEquals(1, database.count());
+    Assert.assertEquals(1, database.count(ptp.newTransaction()));
     Assert.assertEquals(1, countDeleted);
 
     tx = ptp.newTransaction();

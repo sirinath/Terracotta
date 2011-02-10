@@ -31,5 +31,4 @@ public final class TestPersistenceTransaction implements PersistenceTransaction 
   public Object getTransaction() {
     return null;
   }
-
 }

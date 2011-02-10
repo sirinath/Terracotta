@@ -191,13 +191,14 @@ public final class FastObjectIDManagerImpl extends DBPersistorBase implements Ob
     synchronized (objectIDUpdateLock) {
       if (stoppedFlag.isStopped()) return isAllFlushed;
       final OidBitsArrayMapDiskStoreImpl oidStoreMap = new OidBitsArrayMapDiskStoreImpl(this.longsPerDiskEntry,
-                                                                                        this.objectOidStoreDB);
+                                                                                        this.objectOidStoreDB, ptp);
       final OidBitsArrayMapDiskStoreImpl mapOidStoreMap = new OidBitsArrayMapDiskStoreImpl(this.longsPerStateEntry,
-                                                                                           this.mapsOidStoreDB);
+                                                                                           this.mapsOidStoreDB, ptp);
 
       final OidBitsArrayMapDiskStoreImpl evictableOidStoreMap = new OidBitsArrayMapDiskStoreImpl(
                                                                                                  this.longsPerStateEntry,
-                                                                                                 this.evictableOidStoreDB);
+                                                                                                 this.evictableOidStoreDB,
+                                                                                                 ptp);
       PersistenceTransaction tx = null;
       try {
         tx = ptp.newTransaction();
@@ -222,20 +223,20 @@ public final class FastObjectIDManagerImpl extends DBPersistorBase implements Ob
               final ObjectID objectID = new ObjectID(Conversion.bytes2Long(oids, offset));
               final byte idByte = oids[offset + OidLongArray.BYTES_PER_LONG];
               if (isAddOper) {
-                oidStoreMap.getAndSet(objectID);
+                oidStoreMap.getAndSet(objectID, tx);
                 if ((idByte & this.PERSISTABLE_COLLECTION) == this.PERSISTABLE_COLLECTION) {
-                  mapOidStoreMap.getAndSet(objectID);
+                  mapOidStoreMap.getAndSet(objectID, tx);
                 }
                 if ((idByte & this.EVICTABLE_OBJECT) == this.EVICTABLE_OBJECT) {
-                  evictableOidStoreMap.getAndSet(objectID);
+                  evictableOidStoreMap.getAndSet(objectID, tx);
                 }
               } else {
-                oidStoreMap.getAndClr(objectID);
+                oidStoreMap.getAndClr(objectID, tx);
                 if ((idByte & this.PERSISTABLE_COLLECTION) == this.PERSISTABLE_COLLECTION) {
-                  mapOidStoreMap.getAndClr(objectID);
+                  mapOidStoreMap.getAndClr(objectID, tx);
                 }
                 if ((idByte & this.EVICTABLE_OBJECT) == this.EVICTABLE_OBJECT) {
-                  evictableOidStoreMap.getAndClr(objectID);
+                  evictableOidStoreMap.getAndClr(objectID, tx);
                 }
               }
 
@@ -266,7 +267,7 @@ public final class FastObjectIDManagerImpl extends DBPersistorBase implements Ob
         tx.commit();
         logger.debug("Checkpoint updated " + changes + " objectIDs");
       } catch (final TCDatabaseException e) {
-        logger.error("Error ojectID checkpoint: " + e);
+        logger.error("Error ojectID checkpoint: ", e);
         abortOnError(tx);
         throw new TCRuntimeException(e);
       }

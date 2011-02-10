@@ -8,6 +8,7 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
+import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.objectserver.storage.api.TCBytesToBytesDatabase;
 import com.tc.objectserver.storage.api.TCDatabaseReturnConstants.Status;
 import com.tc.util.Conversion;
@@ -29,31 +30,33 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
   /*
    * Compressed bits array for ObjectIDs, backed up by a database. If null database, then only in-memory representation.
    */
-  public OidBitsArrayMapDiskStoreImpl(int longsPerDiskUnit, TCBytesToBytesDatabase oidDB) {
-    this(longsPerDiskUnit, oidDB, 0);
+  public OidBitsArrayMapDiskStoreImpl(int longsPerDiskUnit, TCBytesToBytesDatabase oidDB,
+                                      PersistenceTransactionProvider ptp) {
+    this(longsPerDiskUnit, oidDB, 0, ptp);
   }
 
   /*
    * auxKey: (main key + auxKey) to store different data entry to same db.
    */
-  public OidBitsArrayMapDiskStoreImpl(int longsPerDiskUnit, TCBytesToBytesDatabase oidDB, int auxKey) {
+  public OidBitsArrayMapDiskStoreImpl(int longsPerDiskUnit, TCBytesToBytesDatabase oidDB, int auxKey,
+                                      PersistenceTransactionProvider ptp) {
     super(longsPerDiskUnit);
     this.oidDB = oidDB;
     this.auxKey = auxKey;
   }
 
   @Override
-  protected OidLongArray loadArray(long oid, int lPerDiskUnit, long mapIndex) {
+  protected OidLongArray loadArray(long oid, int lPerDiskUnit, long mapIndex, PersistenceTransaction tx) {
     OidLongArray longAry = null;
     try {
       if (oidDB != null) {
-        longAry = readDiskEntry(null, oid);
+        longAry = readDiskEntry(tx, oid);
       }
     } catch (TCDatabaseException e) {
       logger.error("Reading object ID " + oid + ":" + e.getMessage());
       throw new TCRuntimeException(e);
     }
-    if (longAry == null) longAry = super.loadArray(oid, lPerDiskUnit, mapIndex);
+    if (longAry == null) longAry = super.loadArray(oid, lPerDiskUnit, mapIndex, tx);
     return longAry;
   }
 
@@ -65,10 +68,6 @@ public class OidBitsArrayMapDiskStoreImpl extends OidBitsArrayMapImpl implements
       return null;
     } catch (Exception e) {
       throw new TCDatabaseException(e.getMessage());
-    } finally {
-      if (txn != null) {
-        txn.commit();
-      }
     }
   }
 

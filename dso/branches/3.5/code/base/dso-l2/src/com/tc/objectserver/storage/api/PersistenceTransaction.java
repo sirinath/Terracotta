@@ -4,7 +4,6 @@
  */
 package com.tc.objectserver.storage.api;
 
-
 /**
  * A transaction wrapper for the database transactions.
  */
