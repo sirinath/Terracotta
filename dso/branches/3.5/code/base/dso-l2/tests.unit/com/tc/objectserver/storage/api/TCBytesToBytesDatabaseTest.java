@@ -6,6 +6,7 @@ package com.tc.objectserver.storage.api;
 import org.apache.commons.io.FileUtils;
 
 import com.tc.object.config.schema.L2DSOConfig;
+import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.storage.api.TCDatabaseReturnConstants.Status;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
@@ -31,7 +32,7 @@ public class TCBytesToBytesDatabaseTest extends TCTestCase {
     dbHome = new File(dataPath.getAbsolutePath(), L2DSOConfig.OBJECTDB_DIRNAME);
     dbHome.mkdir();
 
-    dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, dbHome, null);
+    dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, dbHome, null, false);
     dbenv.open();
 
     ptp = dbenv.getPersistenceTransactionProvider();
@@ -106,6 +107,51 @@ public class TCBytesToBytesDatabaseTest extends TCTestCase {
     tx.commit();
 
     Assert.assertNull(valueReturned);
+  }
+
+  public void testCursorWithConcurrentRead() {
+    byte[][] keys = { getRandomlyFilledByteArray(), getRandomlyFilledByteArray(), getRandomlyFilledByteArray(),
+        getRandomlyFilledByteArray() };
+    byte[][] values = { getRandomlyFilledByteArray(), getRandomlyFilledByteArray(), getRandomlyFilledByteArray(),
+        getRandomlyFilledByteArray() };
+
+    byte[] key1 = getRandomlyFilledByteArray();
+    byte[] value1 = getRandomlyFilledByteArray();
+
+    TCBytesToBytesDatabase bytesToBytesDatabase = null;
+    try {
+      bytesToBytesDatabase = dbenv.getObjectOidStoreDatabase();
+    } catch (TCDatabaseException e) {
+      throw new AssertionError(e);
+    }
+
+    PersistenceTransaction tx = ptp.newTransaction();
+    for (int i = 0; i < keys.length; i++) {
+      byte[] key = keys[i];
+      byte[] value = values[i];
+      database.put(key, value, tx);
+    }
+    bytesToBytesDatabase.put(key1, value1, tx);
+    tx.commit();
+
+    tx = ptp.newTransaction();
+    TCDatabaseCursor<byte[], byte[]> cursor = database.openCursorUpdatable(tx);
+    int count = 0;
+    while (cursor.hasNext()) {
+      cursor.next();
+      // get
+      bytesToBytesDatabase.get(key1, tx);
+      cursor.delete();
+      count++;
+    }
+    cursor.close();
+    tx.commit();
+
+    tx = ptp.newTransaction();
+    cursor = database.openCursorUpdatable(tx);
+    Assert.assertFalse(cursor.hasNext());
+    cursor.close();
+    tx.commit();
   }
 
   private byte[] getRandomlyFilledByteArray() {

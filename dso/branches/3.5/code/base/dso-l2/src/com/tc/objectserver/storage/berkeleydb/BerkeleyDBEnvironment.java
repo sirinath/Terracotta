@@ -29,6 +29,7 @@ import com.tc.objectserver.persistence.db.DBException;
 import com.tc.objectserver.persistence.db.DatabaseNotOpenException;
 import com.tc.objectserver.persistence.db.DatabaseOpenException;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
+import com.tc.objectserver.persistence.inmemory.NullPersistenceTransactionProvider;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.OffheapStats;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
@@ -86,12 +87,20 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   private final SRAForBerkeleyDB     sraBerkeleyDB;
 
   public BerkeleyDBEnvironment(boolean paranoid, File envHome) throws IOException {
-    this(paranoid, envHome, new Properties(), SampledCounter.NULL_SAMPLED_COUNTER);
+    this(paranoid, envHome, new Properties(), SampledCounter.NULL_SAMPLED_COUNTER, false);
   }
 
-  public BerkeleyDBEnvironment(boolean paranoid, File envHome, Properties jeProperties, SampledCounter l2FaultFrmDisk)
-      throws IOException {
+  public BerkeleyDBEnvironment(boolean paranoid, File envHome, Properties jeProperties, SampledCounter l2FaultFrmDisk,
+                               boolean offheapEnabled) throws IOException {
     this(new HashMap(), new LinkedList(), paranoid, envHome, l2FaultFrmDisk);
+
+    if (!isParanoidMode() && offheapEnabled) {
+      final Integer newBDBMemPercentage = Integer.parseInt(jeProperties.getProperty("je.maxMemoryPercent")) / 3;
+      jeProperties.setProperty("je.maxMemoryPercent", newBDBMemPercentage.toString());
+      logger.info("Since running OffHeap in temp-swap mode, setting je.maxMemoryPercent to "
+                  + newBDBMemPercentage.toString());
+    }
+
     this.ecfg = new EnvironmentConfig(jeProperties);
     this.ecfg.setTransactional(true);
     this.ecfg.setAllowCreate(true);
@@ -341,32 +350,32 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     return (BerkeleyDBTCRootDatabase) databasesByName.get(ROOT_DB_NAME);
   }
 
-  public TCLongDatabase getClientStateDatabase() throws TCDatabaseException {
+  public synchronized TCLongDatabase getClientStateDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCLongDatabase) databasesByName.get(CLIENT_STATE_DB_NAME);
   }
 
-  public TCBytesToBytesDatabase getTransactionDatabase() throws TCDatabaseException {
+  public synchronized TCBytesToBytesDatabase getTransactionDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCBytesBytesDatabase) databasesByName.get(TRANSACTION_DB_NAME);
   }
 
-  public TCIntToBytesDatabase getClassDatabase() throws TCDatabaseException {
+  public synchronized TCIntToBytesDatabase getClassDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCIntToBytesDatabase) databasesByName.get(CLASS_DB_NAME);
   }
 
-  public TCMapsDatabase getMapsDatabase() throws TCDatabaseException {
+  public synchronized TCMapsDatabase getMapsDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCMapsDatabase) databasesByName.get(MAP_DB_NAME);
   }
 
-  public TCLongToStringDatabase getStringIndexDatabase() throws TCDatabaseException {
+  public synchronized TCLongToStringDatabase getStringIndexDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCLongToStringDatabase) databasesByName.get(STRING_INDEX_DB_NAME);
   }
 
-  public TCStringToStringDatabase getClusterStateStoreDatabase() throws TCDatabaseException {
+  public synchronized TCStringToStringDatabase getClusterStateStoreDatabase() throws TCDatabaseException {
     assertOpen();
     return (BerkeleyDBTCStringtoStringDatabase) databasesByName.get(CLUSTER_STATE_STORE);
   }
@@ -614,5 +623,9 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
 
   public OffheapStats getOffheapStats() {
     return OffheapStats.NULL_OFFHEAP_STATS;
+  }
+
+  public PersistenceTransactionProvider getNullPersistenceTransactionProvider() {
+    return new NullPersistenceTransactionProvider();
   }
 }

@@ -9,6 +9,4 @@ package com.tc.objectserver.storage.api;
  */
 public interface PersistenceTransactionProvider {
   public PersistenceTransaction newTransaction();
-
-  public PersistenceTransaction nullTransaction();
 }

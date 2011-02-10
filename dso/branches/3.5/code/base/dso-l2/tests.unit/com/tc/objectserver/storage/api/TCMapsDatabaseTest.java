@@ -35,7 +35,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
     this.dbHome = new File(dataPath.getAbsolutePath(), L2DSOConfig.OBJECTDB_DIRNAME);
     this.dbHome.mkdir();
 
-    this.dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, this.dbHome, null);
+    this.dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, this.dbHome, null, false);
     this.dbenv.open();
 
     this.ptp = this.dbenv.getPersistenceTransactionProvider();
@@ -74,7 +74,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
 
     Assert.assertTrue(written > 0);
 
-    Assert.assertEquals(0, database.count());
+    Assert.assertEquals(0, database.count(ptp.newTransaction()));
   }
 
   public void testDeleteCollections() throws Exception {
@@ -93,13 +93,13 @@ public class TCMapsDatabaseTest extends TCTestCase {
     database.put(tx, objectId2, key2, value2, serializer);
     tx.commit();
 
-    Assert.assertEquals(2, database.count());
+    Assert.assertEquals(2, database.count(ptp.newTransaction()));
 
     tx = ptp.newTransaction();
     database.deleteCollection(objectId1, tx);
     tx.commit();
 
-    Assert.assertEquals(1, database.count());
+    Assert.assertEquals(1, database.count(ptp.newTransaction()));
 
     tx = ptp.newTransaction();
     HashMap<byte[], byte[]> map = new HashMap<byte[], byte[]>();
