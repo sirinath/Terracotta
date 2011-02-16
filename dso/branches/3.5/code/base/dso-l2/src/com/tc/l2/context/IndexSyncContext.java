@@ -17,8 +17,14 @@ public interface IndexSyncContext extends OrderedEventContext {
 
   public File syncFile();
 
-  public String getCacheName();
+  public String getCachename();
+
+  public String getFilename();
 
   public boolean hasMore();
+
+  public int getTotalFilesToSync();
+
+  public int getTotalFilesSynced();
 
 }
