@@ -18,15 +18,25 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
-    <groupId>org.codehaus.cargo</groupId>
-    <artifactId>cargo-core</artifactId>
-    <version>0.9</version>
+    <artifactId>forge-parent</artifactId>
+    <groupId>org.terracotta.forge</groupId>
+    <version>2.2</version>
   </parent>
-  <artifactId>cargo-core-uberjar</artifactId>
+  
+  <groupId>org.terracotta</groupId>
+  <artifactId>tc-cargo-core-uberjar</artifactId>
+  <version>0.9.20110216</version>
+      
   <packaging>pom</packaging>
   <name>Cargo Core Uberjar</name>
   <description>The Cargo Core Uberjar</description>
+  
+  <properties>
+    <cargo.version>0.9</cargo.version>
+  </properties>
+  
   <dependencies>
     <!-- All dependencoes are defined with a test scope. Ideally they should be using a provided
          scope but doing this make them not being included in the uberjar. The reason we don't
@@ -36,55 +46,55 @@
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-api-generic</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-geronimo</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-jboss</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-jetty</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-jo</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-resin</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-tomcat</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-orion</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.cargo</groupId>
       <artifactId>cargo-core-container-weblogic</artifactId>
-      <version>${version}</version>
+      <version>${cargo.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

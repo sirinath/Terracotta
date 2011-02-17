@@ -294,7 +294,7 @@
             <bean class="org.jboss.services.binding.ServiceBindingMetadata">
                <property name="serviceName">jboss.web:service=WebServer</property>
                <property name="bindingName">HttpsConnector</property>
-               <property name="port">@jboss51x.http.connector.port@</property>
+               <property name="port">@cargo.jboss.http.connector.port@</property>
                <property name="description">JBoss Web HTTPS connector socket</property>
             </bean>
 
@@ -451,13 +451,13 @@
                <xsl:when test="(name() = 'port' and . = '@cargo.servlet.port@')">
                   <xsl:attribute name="port"><xsl:value-of select="$port" /></xsl:attribute>
                </xsl:when>
-               <xsl:when test="(name() = 'port' and . = '@jboss51x.ajp.connector.port@')">
+               <xsl:when test="(name() = 'port' and . = '@cargo.jboss.ajp.connector.port@')">
                   <xsl:attribute name="port"><xsl:value-of select="$portAJP" /></xsl:attribute>
                </xsl:when>
                <xsl:when test="(name() = 'redirectPort')">
                   <xsl:attribute name="redirectPort"><xsl:value-of select="$portHttps" /></xsl:attribute>
                </xsl:when>
-               <xsl:when test="(name() = 'port' and . = '@jboss51x.http.connector.port@')">
+               <xsl:when test="(name() = 'port' and . = '@cargo.jboss.http.connector.port@')">
                   <xsl:attribute name="port"><xsl:value-of select="$portHttps" /></xsl:attribute>
                </xsl:when>
                <xsl:otherwise>

@@ -44,5 +44,87 @@ public interface JBossPropertySet
     /**
      * Jboss 51x only, default to 8009
      */
-    String JBOSS51X_AJP_CONNECTOR_PORT = "jboss51x.ajp.connector.port"; 
+    String JBOSS51X_AJP_CONNECTOR_PORT = "jboss51x.ajp.connector.port";
+
+    /**
+     * Jboss 51x only, default to 8443
+     */
+    String JBOSS_HTTP_CONNECTOR_PORT = "cargo.jboss.http.connector.port";
+    
+    /**
+     * Jboss 51x only, default to 8009
+     */
+    String JBOSS_AJP_CONNECTOR_PORT = "cargo.jboss.ajp.connector.port";
+    
+    /**
+     * The user to use when calling JBoss server commands.
+     */
+    String JBOSS_USER = "cargo.jboss.user";
+    
+    /**
+     * The password to use when calling JBoss server commands.
+     */
+    String JBOSS_PASSWORD = "cargo.jboss.password";
+    
+    /**
+     * The port used for the JRMP service.
+     */
+    String JBOSS_JRMP_PORT = "cargo.jboss.jrmp.port";
+    
+    /**
+     * The port used for JBoss naming service.
+     */
+    String JBOSS_NAMING_PORT = "cargo.jboss.naming.port";
+    
+    /**
+     * The port used for the mini webserver used for dynamic and class and resource loading.
+     */
+    String JBOSS_CLASSLOADING_WEBSERVICE_PORT = "cargo.jboss.classloading.webservice.port";
+    
+    /**
+     * The port used for the JRMP invoker.
+     */
+    String JBOSS_JRMP_INVOKER_PORT = "cargo.jboss.jrmp.invoker.port";
+
+    /**
+     * The port used for the invoker pool.
+     */
+    String JBOSS_INVOKER_POOL_PORT = "cargo.jboss.invoker.pool.port";
+
+    /**
+     * The port used for the JBoss remoting transport connector.
+     */
+    String JBOSS_REMOTING_TRANSPORT_PORT = "cargo.jboss.remoting.transport.port";
+
+    /**
+     * The port used for the JBoss EJB3 remoting.
+     */
+    String JBOSS_EJB3_REMOTING_PORT = "cargo.jboss.ejb3.remoting.port";
+
+    /**
+     * The port used for the JBossTS Recovery Manager.
+     */
+    String JBOSS_TRANSACTION_RECOVERY_MANAGER_PORT =
+        "cargo.jboss.transaction.recoveryManager.port";
+
+    /**
+     * The port used for the JBossTS Transaction Status Manager.
+     */
+    String JBOSS_TRANSACTION_STATUS_MANAGER_PORT = "cargo.jboss.transaction.statusManager.port";
+
+
+    /**
+     * Port number to serve deployable through. Default is <code>1 +
+     * {@link ServletPropertySet#PORT}</code> (for example, <code>18080</code> if the JBoss servlet
+     * port was <code>8080</code>). This will be used by remote deployers who do not share
+     * filesystem with cargo.
+     */
+    String REMOTEDEPLOY_PORT = "cargo.jboss.remotedeploy.port";
+
+    /**
+     * Address to serve deployable through. Default is
+     * <code>InetAddress.getLocalHost().getCanonicalHostName()</code>. This will be used by remote
+     * deployers who do not share filesystem with cargo.
+     */
+    String REMOTEDEPLOY_HOSTNAME = "cargo.jboss.remotedeploy.hostname";
 }

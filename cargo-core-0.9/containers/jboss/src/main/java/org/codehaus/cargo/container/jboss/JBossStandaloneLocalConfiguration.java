@@ -1,7 +1,7 @@
 /*
  * ========================================================================
  *
- * Copyright 2005-2006 Vincent Massol.
+ * Codehaus CARGO, copyright 2004-2010 Vincent Massol.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 
 import org.apache.tools.ant.types.FilterChain;
 import org.codehaus.cargo.container.ContainerException;
+import org.codehaus.cargo.container.InstalledLocalContainer;
 import org.codehaus.cargo.container.LocalContainer;
 import org.codehaus.cargo.container.configuration.ConfigurationCapability;
 import org.codehaus.cargo.container.jboss.internal.JBossInstalledLocalContainer;
@@ -45,6 +44,7 @@ import org.codehaus.cargo.container.spi.configuration.AbstractStandaloneLocalCon
  */
 public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalConfiguration
 {
+
     /**
      * JBoss container capability.
      */
@@ -64,8 +64,17 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
     {
         super(dir);
 
-        setProperty(GeneralPropertySet.RMI_PORT, "1299");
+        setProperty(GeneralPropertySet.RMI_PORT, "1099");
         setProperty(JBossPropertySet.CONFIGURATION, "default");
+        setProperty(JBossPropertySet.JBOSS_NAMING_PORT, "1098");
+        setProperty(JBossPropertySet.JBOSS_CLASSLOADING_WEBSERVICE_PORT, "8083");
+        setProperty(JBossPropertySet.JBOSS_JRMP_PORT, "1090");
+        setProperty(JBossPropertySet.JBOSS_JRMP_INVOKER_PORT, "4444");
+        setProperty(JBossPropertySet.JBOSS_INVOKER_POOL_PORT, "4445");
+        setProperty(JBossPropertySet.JBOSS_REMOTING_TRANSPORT_PORT, "4446");
+        setProperty(JBossPropertySet.JBOSS_EJB3_REMOTING_PORT, "3873");
+        setProperty(JBossPropertySet.JBOSS_TRANSACTION_RECOVERY_MANAGER_PORT, "4712");
+        setProperty(JBossPropertySet.JBOSS_TRANSACTION_STATUS_MANAGER_PORT, "4713");
     }
 
     /**
@@ -89,6 +98,7 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
      * {@inheritDoc}
      * @see org.codehaus.cargo.container.spi.configuration.AbstractLocalConfiguration#configure(LocalContainer)
      */
+    @Override
     protected void doConfigure(LocalContainer container) throws Exception
     {
         getLogger().info("Configuring JBoss using the ["
@@ -100,20 +110,56 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
         jbossContainer = (JBossInstalledLocalContainer) container;
 
         FilterChain filterChain = createJBossFilterChain(jbossContainer);
+        
+        // Deploy with user defined deployables with the appropriate deployer
+        JBossInstalledLocalDeployer deployer = new JBossInstalledLocalDeployer(jbossContainer);
+        deployer.deploy(getDeployables());
 
-        getFileHandler().createDirectory(getHome(), "/deploy");
-        getFileHandler().createDirectory(getHome(), "/lib");
+        // Setup the shared class path
+        if (container instanceof InstalledLocalContainer)
+        {
+            InstalledLocalContainer installedContainer = (InstalledLocalContainer) container;
+            String[] sharedClassPath = installedContainer.getSharedClasspath();
+            StringBuilder tmp = new StringBuilder();
+            if (sharedClassPath != null)
+            {
+                for (String element : sharedClassPath)
+                {
+                    String fileName = getFileHandler().getName(element);
+                    String directoryName = getFileHandler().getParent(element);
 
+                    tmp.append("<classpath codebase=\"" + directoryName + "\" archives=\""
+                            + fileName + "\"/>");
+                    tmp.append("\n");
+                }
+            } 
+            String sharedClassPathString = tmp.toString();
+            getLogger().debug("Shared loader classpath is " + sharedClassPathString,
+                getClass().getName());
+            getAntUtils().addTokenToFilterChain(filterChain, "jboss.shared.classpath",
+                tmp.toString());
+        }
+
+        String deployDir = getFileHandler().createDirectory(getHome(), "/deploy");
+        String libDir = getFileHandler().createDirectory(getHome(), "/lib");
         String confDir = getFileHandler().createDirectory(getHome(), "/conf");
-
+        
+        String clustered = jbossContainer.getConfiguration().
+            getPropertyValue(JBossPropertySet.CLUSTERED);
+        
+        if (Boolean.valueOf(jbossContainer.getConfiguration().
+                getPropertyValue(JBossPropertySet.CLUSTERED)).booleanValue())
+        {
+            String farmDir = getFileHandler().createDirectory(getHome(), "/farm");        
+        }
+        
         // Copy configuration files from cargo resources directory with token replacement
-        String[] cargoFiles = new String[] {"cargo-binding.xml", "log4j.xml",
-            "jboss-service.xml"};
-        for (int i = 0; i < cargoFiles.length; i++)
+        String[] cargoFiles = new String[] {"cargo-binding.xml", "jboss-service.xml"};
+        for (String cargoFile : cargoFiles)
         {
             getResourceUtils().copyResource(
-                RESOURCE_PATH + jbossContainer.getId() + "/" + cargoFiles[i],
-                new File(confDir, cargoFiles[i]), filterChain);
+                RESOURCE_PATH + jbossContainer.getId() + "/" + cargoFile,
+                new File(confDir, cargoFile), filterChain);
         }
 
         // Copy resources from jboss installation folder and exclude files
@@ -121,16 +167,23 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
         copyExternalResources(
             new File(jbossContainer.getConfDir(getPropertyValue(JBossPropertySet.CONFIGURATION))),
             new File(confDir), cargoFiles);
-
+        
+        // Copy the files within the JBoss Deploy directory to the cargo deploy directory
+        copyExternalResources(
+                 new File(jbossContainer
+                 .getDeployDir(getPropertyValue(JBossPropertySet.CONFIGURATION))), new File(
+                     deployDir), new String[0]);
+        
         // Deploy the CPC (Cargo Ping Component) to the webapps directory
         getResourceUtils().copyResource(RESOURCE_PATH + "cargocpc.war",
-            new File(getHome(), "/deploy/cargocpc.war"));
+            new File(getHome(), "/deploy/cargocpc.war"));   
     }
 
     /**
      * {@inheritDoc}
      * @see org.codehaus.cargo.container.spi.configuration.AbstractStandaloneLocalConfiguration#verify()
      */
+    @Override
     public void verify()
     {
         super.verify();
@@ -171,21 +224,12 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
                     }
                     else
                     {
-                    	InputStream in = null;
-                    	OutputStream out = null;
-                    	try {
-                    		in = new FileInputStream(sourceFiles[i]);
-                    		out = new FileOutputStream(new File(destDir, sourceFiles[i].getName()));
-                    		getFileHandler().copy(in, out);
-                    	} finally {
-                    		if (in != null) {
-                    			in.close();
-                    		}
-                    		if (out != null) {
-                    			out.close();
-                    		}
-                    	}
-                        
+                        FileOutputStream fops = new FileOutputStream(new File(destDir,
+                                sourceFiles[i].getName()));
+                        FileInputStream fips = new FileInputStream(sourceFiles[i]);
+                        getFileHandler().copy(fips, fops);
+                        fips.close();
+                        fops.close();
                     }
 
                 }
@@ -202,9 +246,9 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
      */
     private boolean isExcluded(String[] cargoFiles, String filename)
     {
-        for (int i = 0; i < cargoFiles.length; i++)
+        for (String cargoFile : cargoFiles)
         {
-            if (cargoFiles[i].equals(filename))
+            if (cargoFile.equals(filename))
             {
                 return true;
             }
@@ -224,14 +268,37 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
     protected FilterChain createJBossFilterChain(JBossInstalledLocalContainer container)
         throws MalformedURLException
     {
-        FilterChain filterChain = new FilterChain();
+        FilterChain filterChain = createFilterChain();
         
         String[] version = jbossContainer.getName().split(" ");
-        String mayorVersion = version[1].substring(0, 1);
+        if (version.length < 2)
+        {
+            throw new IllegalArgumentException("Cannot read JBoss version number from name "
+                + jbossContainer.getName());
+        }
+
+        if (version[1].length() < 1)
+        {
+            throw new IllegalArgumentException("Cannot get the major version for version "
+                + version[1]);
+        }
+        String majorVersion = version[1].substring(0, 1);
+
+        if (version[1].length() < 3)
+        {
+            throw new IllegalArgumentException("Cannot get the minor version for version "
+                + version[1]);
+        }
         String minorVersion = version[1].substring(2, 3);
+
+        if (version[1].length() < 5)
+        {
+            throw new IllegalArgumentException("Cannot get the revision for version "
+                + version[1]);
+        }
         String revisionVersion = version[1].substring(4, 5);
         
-        if (!((Integer.valueOf(mayorVersion).intValue() <= 3)
+        if (!((Integer.valueOf(majorVersion).intValue() <= 3)
             && (Integer.valueOf(minorVersion).intValue() <= 2)
             && (Integer.valueOf(revisionVersion).intValue() <= 7)))
         {
@@ -246,6 +313,38 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
         getAntUtils().addTokenToFilterChain(filterChain, GeneralPropertySet.RMI_PORT,
             getPropertyValue(GeneralPropertySet.RMI_PORT));
 
+        getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_NAMING_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_NAMING_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain,
+            JBossPropertySet.JBOSS_CLASSLOADING_WEBSERVICE_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_CLASSLOADING_WEBSERVICE_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_JRMP_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_JRMP_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_JRMP_INVOKER_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_JRMP_INVOKER_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_INVOKER_POOL_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_INVOKER_POOL_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain,
+            JBossPropertySet.JBOSS_REMOTING_TRANSPORT_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_REMOTING_TRANSPORT_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain,
+            JBossPropertySet.JBOSS_EJB3_REMOTING_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_EJB3_REMOTING_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain,
+            JBossPropertySet.JBOSS_TRANSACTION_RECOVERY_MANAGER_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_TRANSACTION_RECOVERY_MANAGER_PORT));
+
+        getAntUtils().addTokenToFilterChain(filterChain,
+            JBossPropertySet.JBOSS_TRANSACTION_STATUS_MANAGER_PORT,
+            getPropertyValue(JBossPropertySet.JBOSS_TRANSACTION_STATUS_MANAGER_PORT));
+
         getAntUtils().addTokenToFilterChain(filterChain, ServletPropertySet.PORT,
             getPropertyValue(ServletPropertySet.PORT));
 
@@ -255,24 +354,24 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
         File libDir =
             new File(container.getLibDir(getPropertyValue(JBossPropertySet.CONFIGURATION)));
         getAntUtils().addTokenToFilterChain(filterChain, "cargo.server.lib.url",
-            libDir.toURL().toString());
+            libDir.toURI().toURL().toString());
 
         // String representation of scanned folder and archive
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         // Initiate the value of scanned folder or archive with cargo deploy
         // directory and existing jboss deploy directory
         File deployDir =
             new File(container.getDeployDir(getPropertyValue(JBossPropertySet.CONFIGURATION)));
-        buffer.append("deploy/, ").append(deployDir.toURL().toString());
-
-        // Deploy with user defined deployables with the appropriate deployer
-        JBossInstalledLocalDeployer deployer = new JBossInstalledLocalDeployer(jbossContainer);
-        deployer.deploy(getDeployables());
-
-        getAntUtils().addTokenToFilterChain(filterChain, "cargo.server.deploy.url",
-            buffer.toString());
-
+        buffer.append("deploy/, ").append(deployDir.toURI().toURL().toString());
+        
+        // just use the original deploy directory and copy all the deployables from the server
+        // deploy directory to the cargo one. This is due to JBoss having deployers and sars in 
+        // the deploy directory which contain config files used to configure the server.
+        // By placing these files in the cargo home directory we will now be able to configure them
+        // with cargo.
+        getAntUtils().addTokenToFilterChain(filterChain, "cargo.server.deploy.url", "deploy/");
+        
         // Terracotta: setting jvmRoute
         String[] jvmarg = getPropertyValue(GeneralPropertySet.JVMARGS).split("\\s");
         String jvmroute = getPropertyValue(GeneralPropertySet.HOSTNAME);
@@ -322,6 +421,7 @@ public class JBossStandaloneLocalConfiguration extends AbstractStandaloneLocalCo
      * {@inheritDoc}
      * @see Object#toString()
      */
+    @Override
     public String toString()
     {
         return "JBoss Standalone Configuration";
