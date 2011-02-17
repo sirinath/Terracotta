@@ -1,7 +1,7 @@
 /*
  * ========================================================================
  *
- * Copyright 2008 Vincent Massol.
+ * Codehaus CARGO, copyright 2004-2010 Vincent Massol.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,14 +31,14 @@ import org.codehaus.cargo.container.jboss.internal.JBoss5xInstalledLocalContaine
  * 
  *@version $Id$
  */
-public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalConfiguration
+public class JBoss6xStandaloneLocalConfiguration extends JBossStandaloneLocalConfiguration
 {
 
     /**
      * {@inheritDoc}
      * @see AbstractStandaloneLocalConfiguration#AbstractStandaloneLocalConfiguration(String)
      */
-    public JBoss51xStandaloneLocalConfiguration(String dir)
+    public JBoss6xStandaloneLocalConfiguration(String dir)
     {
         super(dir);
     }
@@ -50,21 +50,21 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
      * @return the filterchain  The filterchain
      * @throws MalformedURLException If a MalformedURLException occurs
      */
-    protected FilterChain createJBossFilterChain(JBoss51xInstalledLocalContainer container)
+    protected FilterChain createJBossFilterChain(JBoss6xInstalledLocalContainer container)
         throws MalformedURLException
     {
         FilterChain filterChain = super.createJBossFilterChain(container);
 
-        // add the deployer directory needed for JBoss51x
+        // add the deployer directory needed for JBoss6x
         File deployersDir =
             new File(container.getDeployersDir(getPropertyValue(JBossPropertySet.CONFIGURATION)));
         getAntUtils().addTokenToFilterChain(filterChain, "cargo.jboss.deployers.url",
-            deployersDir.toURL().toString());
-        // add the deploy directory needed for JBoss51x
+            deployersDir.toURI().toURL().toString());
+        // add the deploy directory needed for JBoss6x
         File deployDir =
             new File(container.getDeployDir(getPropertyValue(JBossPropertySet.CONFIGURATION)));
         getAntUtils().addTokenToFilterChain(filterChain, "cargo.jboss.deploy.url",
-            deployDir.toURL().toString());
+            deployDir.toURI().toURL().toString());
         
         // Terracotta
         String ajpPort = getPropertyValue(JBossPropertySet.JBOSS_AJP_CONNECTOR_PORT);
@@ -73,10 +73,10 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
         if (httpPort == null) httpPort = "8443";
         
         getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_AJP_CONNECTOR_PORT,
-        		ajpPort);
+            ajpPort);
         
         getAntUtils().addTokenToFilterChain(filterChain, JBossPropertySet.JBOSS_HTTP_CONNECTOR_PORT,
-        		httpPort);
+            httpPort);
         // end
         
         return filterChain;
@@ -86,6 +86,7 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
      * {@inheritDoc}
      * @see org.codehaus.cargo.container.spi.configuration.AbstractLocalConfiguration#configure(LocalContainer)
      */
+    @Override
     protected void doConfigure(LocalContainer container) throws Exception
     {
         getLogger().info("Configuring JBoss using the ["
@@ -94,10 +95,10 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
 
         setupConfigurationDir();
 
-        jbossContainer = (JBoss51xInstalledLocalContainer) container;
+        jbossContainer = (JBoss6xInstalledLocalContainer) container;
 
         FilterChain filterChain = createJBossFilterChain(
-                (JBoss51xInstalledLocalContainer) jbossContainer);
+                (JBoss6xInstalledLocalContainer) jbossContainer);
 
         // Deploy with user defined deployables with the appropriate deployer
         JBossInstalledLocalDeployer deployer = new JBossInstalledLocalDeployer(jbossContainer);
@@ -108,13 +109,13 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
         {
             InstalledLocalContainer installedContainer = (InstalledLocalContainer) container;
             String[] sharedClassPath = installedContainer.getSharedClasspath();
-            StringBuffer tmp = new StringBuffer();
+            StringBuilder tmp = new StringBuilder();
             if (sharedClassPath != null)
             {
-                for (int i = 0; i < sharedClassPath.length; i++)
+                for (String element : sharedClassPath)
                 {
-                    String fileName = getFileHandler().getName(sharedClassPath[i]);
-                    String directoryName = getFileHandler().getParent(sharedClassPath[i]);
+                    String fileName = getFileHandler().getName(element);
+                    String directoryName = getFileHandler().getParent(element);
 
                     tmp.append("<classpath codebase=\"" + directoryName + "\" archives=\""
                             + fileName + "\"/>");
@@ -142,42 +143,35 @@ public class JBoss51xStandaloneLocalConfiguration extends JBossStandaloneLocalCo
             String farmDir = getFileHandler().createDirectory(getHome(), "/farm");        
         }
        
-        String[] configFiles = new String[]
-        {"jboss-log4j.xml", "jboss-service.xml"};
-        
         // Copy configuration files from cargo resources directory with token replacement
-        String[] cargoConfigFiles = new String[] {"jboss-log4j.xml", "jboss-service.xml"};
-        for (int i = 0; i < cargoConfigFiles.length; i++)
+        String[] cargoConfigFiles = new String[] {"jboss-service.xml"};
+        for (String cargoConfigFile : cargoConfigFiles)
         {
             getResourceUtils().copyResource(
-                RESOURCE_PATH + jbossContainer.getId() + "/" + cargoConfigFiles[i],
-                new File(confDir, cargoConfigFiles[i]), filterChain);
+                RESOURCE_PATH + jbossContainer.getId() + "/" + cargoConfigFile,
+                new File(confDir, cargoConfigFile), filterChain);
         }
         
         // Copy resources from jboss installation folder and exclude files
         // that already copied from cargo resources folder
         copyExternalResources(new File(jbossContainer
                 .getConfDir(getPropertyValue(JBossPropertySet.CONFIGURATION))), new File(confDir),
-                configFiles);
+                cargoConfigFiles);
         
         // Copy the files within the JBoss Deploy directory to the cargo deploy directory
         copyExternalResources(
                  new File(jbossContainer
                  .getDeployDir(getPropertyValue(JBossPropertySet.CONFIGURATION))), new File(
                      deployDir), new String[0]);
-       
-        getResourceUtils().copyResource(
-               RESOURCE_PATH + jbossContainer.getId() + "/" + "server.xml",
-               new File(deployDir + "/jbossweb.sar/", "server.xml"), filterChain);
         
         getResourceUtils().copyResource(
                 RESOURCE_PATH + jbossContainer.getId() + "/" + "bindings-jboss-beans.xml",
                 new File(confDir + "/bindingservice.beans/META-INF", 
                         "bindings-jboss-beans.xml"), filterChain);
- 
+        
         // Copy the files within the JBoss Deployers directory to the cargo deployers directory
         copyExternalResources(
-                 new File(((JBoss5xInstalledLocalContainer) jbossContainer)
+                 new File(((JBoss6xInstalledLocalContainer) jbossContainer)
                  .getDeployersDir(getPropertyValue(JBossPropertySet.CONFIGURATION))), new File(
                      deployersDir), new String[0]);
         

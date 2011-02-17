@@ -84,15 +84,22 @@ public class DefaultContainerFactory extends AbstractIntrospectionGenericHintFac
             "org.codehaus.cargo.container.jboss.JBoss42xInstalledLocalContainer");
         registerContainer("jboss42x", ContainerType.REMOTE,
             "org.codehaus.cargo.container.jboss.JBoss42xRemoteContainer");
+        
         registerContainer("jboss5x", ContainerType.INSTALLED,
 	        "org.codehaus.cargo.container.jboss.JBoss5xInstalledLocalContainer");
-	    registerContainer("jboss5x", ContainerType.REMOTE,
+        registerContainer("jboss5x", ContainerType.REMOTE,
 	        "org.codehaus.cargo.container.jboss.JBoss5xRemoteContainer");
-	    registerContainer("jboss51x", ContainerType.INSTALLED,
+	    
+        registerContainer("jboss51x", ContainerType.INSTALLED,
 	        "org.codehaus.cargo.container.jboss.JBoss51xInstalledLocalContainer");
-	    registerContainer("jboss51x", ContainerType.REMOTE,
+        registerContainer("jboss51x", ContainerType.REMOTE,
 	        "org.codehaus.cargo.container.jboss.JBoss51xRemoteContainer");
 
+        registerContainer("jboss6x", ContainerType.INSTALLED,
+        "org.codehaus.cargo.container.jboss.JBoss6xInstalledLocalContainer");
+       registerContainer("jboss6x", ContainerType.REMOTE,
+        "org.codehaus.cargo.container.jboss.JBoss6xRemoteContainer");
+      
         registerContainer("jetty4x", ContainerType.EMBEDDED,
             "org.codehaus.cargo.container.jetty.Jetty4xEmbeddedLocalContainer");
         registerContainer("jetty5x", ContainerType.EMBEDDED,
