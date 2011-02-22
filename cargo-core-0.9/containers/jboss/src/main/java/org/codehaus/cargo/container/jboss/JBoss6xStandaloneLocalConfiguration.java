@@ -164,6 +164,11 @@ public class JBoss6xStandaloneLocalConfiguration extends JBossStandaloneLocalCon
                  .getDeployDir(getPropertyValue(JBossPropertySet.CONFIGURATION))), new File(
                      deployDir), new String[0]);
         
+        // Terracotta - our server.xml has jvmRoute setting in it 
+        getResourceUtils().copyResource(
+            RESOURCE_PATH + jbossContainer.getId() + "/" + "server.xml",
+            new File(deployDir + "/jbossweb.sar/", "server.xml"), filterChain);
+        
         getResourceUtils().copyResource(
                 RESOURCE_PATH + jbossContainer.getId() + "/" + "bindings-jboss-beans.xml",
                 new File(confDir + "/bindingservice.beans/META-INF", 
