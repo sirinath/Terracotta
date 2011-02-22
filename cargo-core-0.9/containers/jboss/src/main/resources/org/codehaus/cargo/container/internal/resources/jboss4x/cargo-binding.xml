@@ -173,6 +173,9 @@
 
      <xsl:output method="xml" />
      <xsl:param name="port"/>
+	 
+	 <!-- added for Terracotta - hhuynh -->
+     <xsl:param name="jvmRoute"/>
 
      <xsl:variable name="portAJP" select="$port - 71"/>
      <xsl:variable name="portHttps" select="$port + 363"/>
@@ -205,6 +208,18 @@
             <xsl:apply-templates/>
          </Connector>
       </xsl:template>
+	  
+     <!-- added for Terracotta - hhuynh -->
+     <xsl:template match="Engine">
+       <Engine>
+         <xsl:attribute name="jvmRoute">@jboss.jvmroute@</xsl:attribute>
+         <xsl:for-each select="@*">
+           <xsl:attribute name="{name()}"><xsl:value-of select="." /></xsl:attribute>
+         </xsl:for-each>
+         <xsl:apply-templates/>
+       </Engine>
+     </xsl:template>
+	  
 
      <xsl:template match="*|@*">
        <xsl:copy>
@@ -216,6 +231,10 @@
             </xslt-config>
          </delegate-config>
          <binding port="@cargo.servlet.port@"/>
+		 
+         <!-- added for Terracotta - hhuynh -->
+         <binding jvmRoute="@jboss.jvmroute@"/>
+		 
       </service-config>
 
    </server>

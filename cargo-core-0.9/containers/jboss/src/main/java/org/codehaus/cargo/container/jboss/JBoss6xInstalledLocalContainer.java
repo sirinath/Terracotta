@@ -81,7 +81,6 @@ public class JBoss6xInstalledLocalContainer extends AbstractJBoss5xInstalledLoca
                 + getConfiguration().getPropertyValue(GeneralPropertySet.HOSTNAME) + ":"
                 + getConfiguration().getPropertyValue(JBossPropertySet.JBOSS_JRMP_PORT)
                 + "/jmxrmi");
-        
         String jbossUser = getConfiguration().getPropertyValue(JBossPropertySet.JBOSS_USER);
         String jbossPassword = getConfiguration().getPropertyValue(JBossPropertySet.JBOSS_PASSWORD);
         if (jbossUser != null)
