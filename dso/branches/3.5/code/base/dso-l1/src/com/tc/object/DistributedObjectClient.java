@@ -1248,4 +1248,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       }
     }
   }
+
+  public String[] processArguments() {
+    return null;
+  }
 }
