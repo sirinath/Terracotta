@@ -1,0 +1,55 @@
+Team 1:
+
+	Machines :  L2 = eng01/eng06  L1s = perf04-perf09
+
+*) Manoj
+*) Scott
+*) Juris
+*) Walter
+
+==============================================================
+
+Team 2:
+
+	Machines :  L2 = eng02/eng07  L1s = perf10-perf15
+
+*) EY
+*) Abhishek
+*) Gary
+*) Nadeem
+
+==============================================================
+
+Team 3:
+
+	Machines :  L2 = eng03/eng08  L1s = perf15-perf19,perf21-perf22
+
+*) Nabib
+*) Alex
+*) Hung
+*) Jason
+
+==============================================================
+
+Team 4:
+
+	Machines :  L2 = eng04/perf01  L1s = perf23-perf28
+	(demo should be shown with eng04 as L2)
+
+*) Raghu
+*) Dana
+*) Tim
+*) Kalai
+
+==============================================================
+
+Team 5:
+
+	Machines :  L2 = eng05/perf02  L1s = perf29-perf34
+	(demo should be shown with eng05 as L2)
+
+*) Nihit
+*) Chris
+*) Geert
+*) Himadri
+

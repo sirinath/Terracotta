@@ -1,0 +1,40 @@
+<project name="perf-gena" default="jar" basedir=".">
+
+	<property name="src.dir" value="src"/>
+	<property name="classes.dir" value="classes"/>
+	<property name="lib.dir" value="lib"/>
+	<property name="resources.dir" value="${basedir}"/>
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="*.jar" />
+	</path>
+
+	<target name="init" depends="clean">
+		<mkdir dir="${classes.dir}"/>
+		<mkdir dir="${classes.dir}"/>
+	</target>
+
+	<target name="compile" depends="init" description="Compiling all source files">
+		<javac srcdir="${src.dir}"
+            deprecation="on" source="1.5" target="1.5"
+            destdir="${classes.dir}" debug="on">
+			<include name="**/*.java" />
+			<classpath refid="classpath"/>
+		</javac>
+		<copy todir="${classes.dir}" overwrite="true">
+			<fileset dir="${resources.dir}" excludes="**/*.bkp"/>
+		</copy>
+	</target>
+
+	<target name="clean" description="cleanup module">
+		<delete>
+			<fileset dir="${classes.dir}" includes="**/*"/>
+		</delete>
+	</target>
+
+	<target name="jar" depends="compile" description="Assembles library jar with benchmark classes">
+		<jar jarfile="${lib.dir}/dashboard.jar">
+			<fileset dir="${classes.dir}" includes="**/*.*"/>
+		</jar>
+	</target>
+</project>
