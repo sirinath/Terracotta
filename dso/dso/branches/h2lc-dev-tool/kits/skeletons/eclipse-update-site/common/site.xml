@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+-->
+<site>
+   <description url="http://eclipse.terracotta.org/update/">
+      Terracotta Integration
+   </description>
+
+   <feature url="features/org.terracotta.core_VERSION.jar" id="org.terracotta.core" version="VERSION">
+      <category name="Terracotta Integration"/>
+   </feature>
+   
+   <category-def name="Terracotta Integration" label="Terracotta Integration"/>
+</site>

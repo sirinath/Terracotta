@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tc:tc-config xsi:schemaLocation="http://www.terracotta.org/schema/terracotta-4.xsd" xmlns:tc="http://www.terracotta.org/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <system>
+    <configuration-model>development</configuration-model>
+  </system>
+  <servers>
+    <!--Tell DSO where the Terracotta server can be found.-->
+    <server name="primary" host="eng01">
+      <data>%(user.home)/local/perfcomp/terracotta/primary/server-data</data>
+      <logs>%(user.home)/local/perfcomp/terracotta/primary/server-logs</logs>
+      <statistics>%(user.home)/local/perfcomp/terracotta/primary/server-stats</statistics>
+      <!--<authentication>
+		<password-file>/somepath/jmxremote.password</password-file>
+		<access-file>/somepath/jmxremote.access</access-file>
+      </authentication>-->
+      <dso-port>9510</dso-port>
+      <jmx-port>9520</jmx-port>
+      <l2-group-port>9530</l2-group-port>
+      <dso>
+        <client-reconnect-window>120</client-reconnect-window>
+        <persistence>
+          <mode>permanent-store</mode>
+        </persistence>
+        <garbage-collection>
+          <enabled>true</enabled>
+          <verbose>false</verbose>
+          <interval>300</interval>
+        </garbage-collection>
+      </dso>
+    </server>
+    <!--Tell DSO where the Terracotta server can be found.-->
+    <!--<server name="secondary"  host="17.226.104.243" bind="17.226.104.243">
+      <data>%(user.home)/terracotta/secondary/server-data</data>
+      <logs>%(user.home)/terracotta/secondary/server-logs</logs>
+      <statistics>%(user.home)/terracotta/secondary/server-stats</statistics>
+      <dso-port>59510</dso-port>
+      <jmx-port>59520</jmx-port>
+      <l2-group-port>59530</l2-group-port>
+      <dso>	
+	<client-reconnect-window>120</client-reconnect-window>
+	<persistence>
+		<mode>permanent-store</mode>
+	</persistence>
+	<garbage-collection>
+		<enabled>true</enabled>
+		<verbose>false</verbose>
+		<interval>3600</interval>
+	</garbage-collection>
+      </dso>	
+    </server>-->
+    <ha>
+      <mode>networked-active-passive</mode>
+      <networked-active-passive>
+        <election-time>5</election-time>
+      </networked-active-passive>
+    </ha>
+  </servers>
+  <!--Tell DSO where to put the generated client logs-->
+  <clients>
+    <logs>%(user.home)/local/perfcomp/terracotta/clients/client-logs/client-logs-%h</logs>
+    <statistics>%(user.home)/local/perfcomp/terracotta/clients/client-stats-%h</statistics>
+    <dso>
+      <fault-count>500</fault-count>
+      <debugging>
+        <instrumentation-logging>
+          <class>true</class>
+          <roots>true</roots>
+          <locks>true</locks>
+          <transient-root>true</transient-root>
+          <distributed-methods>true</distributed-methods>
+        </instrumentation-logging>
+        <runtime-logging>
+          <non-portable-dump>true</non-portable-dump>
+          <lock-debug>false</lock-debug>
+          <wait-notify-debug>false</wait-notify-debug>
+          <distributed-method-debug>false</distributed-method-debug>
+          <new-object-debug>false</new-object-debug>
+        </runtime-logging>
+        <runtime-output-options>
+          <auto-lock-details>false</auto-lock-details>
+          <caller>false</caller>
+          <full-stack>false</full-stack>
+        </runtime-output-options>
+      </debugging>
+    </dso>
+  </clients>
+  <application>
+    <dso>
+      <!--INSTRUMENTED CLASSES-->
+      <instrumented-classes>
+        <include>
+          <class-expression>com.tctest.perf.dashboard.common..*</class-expression>
+        </include>
+        <include>
+          <class-expression>com.tctest.perf.dashboard.stats.app..*</class-expression>
+        </include>
+      </instrumented-classes>
+      <!--TRANSIENT FIELDS-->
+      <!--L O C K S-->
+      <!--R O O T S-->
+      <roots>
+        <root>
+          <field-name>com.tctest.perf.dashboard.stats.app.data.cache.AppDataCache.cache</field-name>
+          <root-name>ApplicationDataCache</root-name>
+        </root>
+      </roots>
+    </dso>
+  </application>
+</tc:tc-config>
