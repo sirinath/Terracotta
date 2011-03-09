@@ -22,16 +22,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
     @no_demo = true
     $patch = true
     
-    # Do error checking first, before going through the lengthy dist target
-    descriptor_file = self.patch_descriptor_file.to_s
-    unless File.readable?(descriptor_file)
-      raise("Patch descriptor file does not exist: #{descriptor_file}")
-    end
-
-    patch_descriptor = YAML.load_file(descriptor_file)
-    unless patch_descriptor['level'] && patch_descriptor['files'].is_a?(Array)
-      raise("Invalid patch descriptor file")
-    end
+    patch_descriptor = get_patch_descriptor
 
     patch_level = config_source['level'] || patch_descriptor['level']
     $XXX_patch_level = patch_level
@@ -123,6 +114,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   end
 
   def dist_dev(product_code = 'DSO', flavor = OPENSOURCE)
+    @internal_config_source[MAVEN_USE_LOCAL_REPO_KEY] = 'true'
     if flavor == ENTERPRISE then dist_maven_all else dist_maven end
     build_external
     
@@ -218,6 +210,13 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
 
     add_module_packages(component, destdir)
     create_data_file(@config_source, File.join(destdir.to_s, 'resources'), :build_data, @build_environment.edition(flavor))
+    
+    # generate patch-data.txt if operating under a patch branch
+    if @build_environment.patch_branch?
+      patch_descriptor = get_patch_descriptor
+      patch_level = @config_source['level'] || patch_descriptor['level']
+      create_patch_data(patch_level, @config_source, File.join(destdir.to_s, 'resources'))
+    end
   end
 
   def mvn_install(flavor=OPENSOURCE)
@@ -324,6 +323,11 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
   end
 
   def deploy_maven_artifacts(args)
+    patch_descriptor = get_patch_descriptor
+    if @build_environment.patch_branch?
+      loud_message("This is a patch branch. Patch level will be added to Maven artifacts as part of their version")
+    end
+    
     if repo = @config_source[MAVEN_REPO_CONFIG_KEY]
       maven = MavenDeploy.new(:repository_url => repo,
         :repository_id => @config_source[MAVEN_REPO_ID_CONFIG_KEY],
@@ -341,29 +345,33 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
           file = FilePath.new(arg['srcfile'])
         end
 
-        if arg['inject']
-          # Copy jar to tmp jar in same dir
-          replacement_file = FilePath.new(file.directoryname) << file.filename + '.tmp'
-          @ant.copy(:tofile => replacement_file.to_s, :file => file.to_s)
-          file = replacement_file
+        %w(inject inject_optional).each do |step|
+          if arg[step]
+            # Copy jar to tmp jar in same dir
+            replacement_file = FilePath.new(file.directoryname) << file.filename + '.tmp'
+            @ant.copy(:tofile => replacement_file.to_s, :file => file.to_s)
+            file = replacement_file
 
-          arg['inject'].each do |inject|
-            # Inject resource into jar
-            inject_file = FilePath.new(@basedir, interpolate(inject))
-            @ant.create_jar(replacement_file,
-              :update => 'true',
-              :basedir => inject_file.directoryname,
-              :includes => inject_file.filename)
+            arg[step].each do |inject|
+              # Inject resource into jar
+              inject_file = FilePath.new(@basedir, interpolate(inject))
+              next if step == 'inject_optional' && !inject_file.exist?
+              @ant.create_jar(replacement_file,
+                :update => 'true',
+                :basedir => inject_file.directoryname,
+                :includes => inject_file.filename)
+            end
           end
         end
-
+        
         group = arg['groupId']
         artifact = arg['artifact']
         classifier = arg['classifier']
         version = arg[MAVEN_VERSION_CONFIG_KEY] || @config_source[MAVEN_VERSION_CONFIG_KEY] ||
           @config_source['version'] || @build_environment.version
-        if (@config_source[MAVEN_CLASSIFIER_CONFIG_KEY])
-          version = version + "-" + @config_source[MAVEN_CLASSIFIER_CONFIG_KEY]
+        
+        if (@build_environment.patch_branch?)
+          version = version + "-patch#{patch_descriptor['level']}"
         end
 
         # Allow override of version if a version key is specified.  If so, the value of the key
@@ -381,5 +389,18 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
         end
       end
     end
+  end
+  
+  def get_patch_descriptor
+    descriptor_file = self.patch_descriptor_file.to_s
+    unless File.readable?(descriptor_file)
+      raise("Patch descriptor file does not exist: #{descriptor_file}")
+    end
+
+    patch_descriptor = YAML.load_file(descriptor_file)
+    unless patch_descriptor['level'] && patch_descriptor['files'].is_a?(Array)
+      raise("Invalid patch descriptor file")
+    end
+    patch_descriptor
   end
 end
