@@ -28,4 +28,6 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
 
   void fireOperatorEvent(EventType eventLevel, EventSubsystem subsystem, String eventMessage);
 
+  void stopImmediate();
+
 }
