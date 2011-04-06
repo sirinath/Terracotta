@@ -15,6 +15,7 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentStats;
+import com.sleepycat.je.JEVersion;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.StatsConfig;
@@ -154,6 +155,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     this.l2FaultFromDisk = l2FaultFrmDisk;
     this.sraBerkeleyDB = new SRAForBerkeleyDB(this);
     FileUtils.forceMkdir(this.envHome);
+    logger.info("Sleepy cat version being used " + JEVersion.CURRENT_VERSION.getVersionString());
   }
 
   public boolean isParanoidMode() {
