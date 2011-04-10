@@ -11,6 +11,18 @@
       <category name="dso"/>
    </feature>
 
+   <feature url="features/org.terracotta.dso_3.5.0.r17406_v20110326.jar" id="org.terracotta.dso" version="3.5.0.r17406_v20110326">
+      <category name="dso"/>
+   </feature>
+
+   <feature url="features/org.terracotta.dso_3.4.1.r17072_v20110131.jar" id="org.terracotta.dso" version="3.4.1.r17072_v20110131">
+      <category name="dso"/>
+   </feature>
+
+   <feature url="features/org.terracotta.dso_3.4.0.r16614_v20101104.jar" id="org.terracotta.dso" version="3.4.0.r16614_v20101104">
+      <category name="dso"/>
+   </feature>
+
    <feature url="features/org.terracotta.dso_3.3.0.r15922_v20100716.jar" id="org.terracotta.dso" version="3.3.0.r15922_v20100716">
       <category name="dso"/>
    </feature>
