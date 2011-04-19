@@ -5,6 +5,7 @@
 package com.tc.bundles;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
 import org.osgi.framework.BundleException;
 
 import com.tc.bundles.exception.MissingDefaultRepositoryException;
@@ -40,10 +41,6 @@ public class ResolverTest extends TestCase {
     tcVersion = info.mavenArtifactsVersion();
   }
 
-  public void testResolveBundle() throws IOException {
-    resolveBundles(new String[] { System.getProperty("com.tc.l1.modules.repositories") }, jarFiles(), PASS);
-  }
-
   public void testResolveBundleInFlatRepo() throws IOException {
     String flatRepoUrl = makeFlatRepo("modules.1");
     resolveBundles(new String[] { flatRepoUrl }, jarFiles(), PASS);
@@ -58,10 +55,12 @@ public class ResolverTest extends TestCase {
     resolveBundles(splitRepo("modules.2", "modules.3"), jarFiles(), PASS);
   }
 
+  @Ignore
   public void testFindJar() {
     resolveJars(new String[] { System.getProperty("com.tc.l1.modules.repositories") }, jarFiles(), PASS);
   }
 
+  @Ignore
   public void testFindJarInFlatRepo() throws IOException {
     String flatRepoUrl = makeFlatRepo("modules.1");
     resolveJars(new String[] { flatRepoUrl }, jarFiles(), PASS);
@@ -72,6 +71,7 @@ public class ResolverTest extends TestCase {
     resolve(repos, "foobar", "0.0.0-SNAPSHOT", FAIL);
   }
 
+  @Ignore
   public void testFindJarWithFlatAndMavenLikeRepos() throws IOException {
     resolveJars(splitRepo("modules.2", "modules.3"), jarFiles(), PASS);
   }
@@ -108,22 +108,22 @@ public class ResolverTest extends TestCase {
     for (String element : repo) {
       File repoDir = new File(element);
       assertFalse("repository location '" + element + "' should've been deleted.", repoDir.exists());
-      assertNull("non-existent repository location '" + element + "' was not ignored.", Resolver
-          .resolveRepositoryLocation(element));
+      assertNull("non-existent repository location '" + element + "' was not ignored.",
+                 Resolver.resolveRepositoryLocation(element));
     }
 
     for (int i = 0; i < repo.length; i++) {
       repo[i] = "file://" + repo[i];
       File repoDir = new File(repo[i]);
       assertFalse("repository URL '" + repo[i] + "' should've been deleted.", repoDir.exists());
-      assertNull("non-existent repository URL '" + repo[i] + "' was not ignored.", Resolver
-          .resolveRepositoryLocation(repo[i]));
+      assertNull("non-existent repository URL '" + repo[i] + "' was not ignored.",
+                 Resolver.resolveRepositoryLocation(repo[i]));
     }
 
     for (int i = 0; i < repo.length; i++) {
       repo[i] = "http://" + repo[i];
-      assertNull("bad protocol used to specify repository URL '" + repo[i] + "' but was not ignored.", Resolver
-          .resolveRepositoryLocation(repo[i]));
+      assertNull("bad protocol used to specify repository URL '" + repo[i] + "' but was not ignored.",
+                 Resolver.resolveRepositoryLocation(repo[i]));
     }
   }
 

@@ -4,31 +4,20 @@
  */
 package com.tc.bundles;
 
-import org.apache.commons.io.FileUtils;
 import org.osgi.framework.BundleException;
 
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.ProductInfo;
-import com.terracottatech.config.Module;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 import junit.framework.TestCase;
 
 public class KnopflerfishOSGiTest extends TestCase {
 
-  private static final String PRODUCT_VERSION_DASH_QUALIFIER = ProductInfo.getInstance().version();
-  private static final String PRODUCT_VERSION_DOT_QUALIFIER  = PRODUCT_VERSION_DASH_QUALIFIER.replace('-', '.');
-  private KnopflerfishOSGi    osgiRuntime                    = null;
+  private KnopflerfishOSGi osgiRuntime = null;
 
   @Override
   public void setUp() throws Exception {
@@ -38,88 +27,6 @@ public class KnopflerfishOSGiTest extends TestCase {
   @Override
   public void tearDown() {
     osgiRuntime = null;
-  }
-
-  /**
-   * Test that checks the Terracotta-RequireVersion embedded for all all the TIMs that are bundled with the kit.
-   * 
-   * @throws BundleException
-   * @throws IOException
-   */
-  public void testRequireVersionForAllModules() throws IOException, BundleException {
-    for (Iterator i = jarFiles().iterator(); i.hasNext();) {
-      File jar = new File(i.next().toString());
-      String version = PRODUCT_VERSION_DASH_QUALIFIER;
-      String name = jar.getName().replaceAll("-" + version + ".jar", "");
-
-      String[] repos = { System.getProperty("com.tc.l1.modules.repositories") };
-      Resolver resolver = new Resolver(repos, ProductInfo.getInstance().version(), ProductInfo.getInstance()
-          .timApiVersion());
-      Module module = Module.Factory.newInstance();
-      module.setName(name);
-      module.setVersion(version);
-      module.setGroupId("org.terracotta.modules");
-      File file = FileUtils.toFile(resolver.resolve(module));
-      assertEquals(file.getAbsolutePath().endsWith(name + "-" + version + ".jar"), true);
-
-      final JarFile bundle = new JarFile(file);
-      final Manifest manifest = bundle.getManifest();
-      final String requireversion = manifest.getMainAttributes().getValue("Terracotta-RequireVersion");
-      final String symbolicName = manifest.getMainAttributes().getValue("Bundle-SymbolicName");
-
-      assertNotNull("Terracotta-RequireVersion attribute for " + symbolicName + " module must not be null.",
-                    requireversion);
-      assertTrue("Terracotta-RequireVersion attribute for " + symbolicName + " module must not be empty.",
-                 requireversion.length() > 0);
-      assertEquals("Terracotta-RequireVersion attribute for " + symbolicName + " module mis expected to be "
-                   + PRODUCT_VERSION_DASH_QUALIFIER, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
-
-      String mode = IVersionCheck.OFF;
-      int actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
-      assertEquals(IVersionCheck.IGNORED, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DOT_QUALIFIER);
-      assertEquals(IVersionCheck.IGNORED, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, "9.9.9");
-      assertEquals(IVersionCheck.IGNORED, actual);
-
-      mode = IVersionCheck.WARN;
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DOT_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, "9.9.9");
-      assertEquals(IVersionCheck.WARN_INCORRECT_VERSION, actual);
-
-      mode = IVersionCheck.ENFORCE;
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DOT_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, "9.9.9");
-      assertEquals(IVersionCheck.ERROR_INCORRECT_VERSION, actual);
-
-      mode = IVersionCheck.STRICT;
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DASH_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, PRODUCT_VERSION_DOT_QUALIFIER);
-      assertEquals(IVersionCheck.OK, actual);
-      actual = osgiRuntime.versionCheck(mode, requireversion, "9.9.9");
-      assertEquals(IVersionCheck.ERROR_INCORRECT_VERSION, actual);
-    }
-  }
-
-  private Collection jarFiles() throws IOException {
-    String repo = System.getProperty("com.tc.l1.modules.repositories");
-    File file = null;
-    if (repo.startsWith("file:")) {
-      file = FileUtils.toFile(new URL(repo));
-    } else {
-      file = new File(repo);
-    }
-
-    Collection files = FileUtils.listFiles(file, new String[] { "jar" }, true);
-
-    return files;
   }
 
   /**
