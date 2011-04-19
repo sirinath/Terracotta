@@ -148,7 +148,7 @@
           <forkMode>pertest</forkMode>
           <argLine>-Xms64m -Xmx512m</argLine>
           <systemPropertyVariables>
-            <tc.base-dir>${basedir}/..</tc.base-dir>
+            <tc.base-dir>${project.build.directory}</tc.base-dir>
             <java.awt.headless>true</java.awt.headless>
             <com.tc.lock.statistics.enabled>true</com.tc.lock.statistics.enabled>
             <com.tc.lock.statistics.max>1000</com.tc.lock.statistics.max>
