@@ -243,6 +243,7 @@
           <skipTests>${skiptests}</skipTests>
           <forkMode>pertest</forkMode>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+          <workingDirectory>${project.build.directory}</workingDirectory>
           <argLine>-Xms128m -Xmx512m -Xbootclasspath/p:${project.build.directory}/dso-boot.jar -Dtc.config=${project.build.testOutputDirectory}/tc-config.xml -Dtc.dso.globalmode=false</argLine>
           <systemPropertyVariables>
             <tc.base-dir>${project.build.directory}</tc.base-dir>
