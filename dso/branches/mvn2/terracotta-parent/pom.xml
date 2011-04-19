@@ -354,7 +354,6 @@
           <fork>true</fork>
           <meminitial>128</meminitial>
           <maxmem>512</maxmem>
-          <!--compilerArgument>-XX:ReservedCodeCacheSize=64m</compilerArgument-->
           <source>1.5</source>
           <target>1.5</target>
         </configuration>
@@ -379,9 +378,9 @@
             <forkMode>pertest</forkMode>
             <argLine>-Xms64m -Xmx512m</argLine>
             <systemPropertyVariables>
-              <tc.base-dir>${basedir}/..</tc.base-dir>
+              <tc.base-dir>${project.build.directory}</tc.base-dir>
               <java.awt.headless>true</java.awt.headless>
-              <com.tc.l1.modules.repositories>${user.home}/.m2/repository</com.tc.l1.modules.repositories>
+              <com.tc.l1.modules.repositories>${project.build.directory}</com.tc.l1.modules.repositories>
             </systemPropertyVariables>
           </configuration>
         </plugin>
