@@ -376,6 +376,8 @@
               <exclude>**/*TestCase.java</exclude>
             </excludes>
             <forkMode>pertest</forkMode>
+            <forkedProcessTimeoutInSeconds>900</forkedProcessTimeoutInSeconds>
+            <workingDirectory>${project.build.directory}</workingDirectory>
             <argLine>-Xms64m -Xmx512m</argLine>
             <systemPropertyVariables>
               <tc.base-dir>${project.build.directory}</tc.base-dir>
