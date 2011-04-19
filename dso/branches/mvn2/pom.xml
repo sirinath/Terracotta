@@ -41,6 +41,8 @@
     <module>terracotta</module>
     
     <module>dso-unit-tests</module>
+    <module>dso-system-tests</module>
+    <module>dso-crash-tests</module>
   </modules>
 
 </project>
