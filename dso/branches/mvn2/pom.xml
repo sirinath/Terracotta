@@ -34,14 +34,14 @@
     <module>deploy-api</module>
     <module>dso-statistics</module>
     <module>dso-l1</module>
-    <module>dso-l2</module>
+    <!--module>dso-l2</module>
     <module>deploy</module>
     <module>simulator</module>
     <module>tim-get-tool</module>
     <module>clustered-surefire-2.3</module>
     <module>terracotta</module>
     
-    <module>legacy-test-tree</module>
+    <module>legacy-test-tree</module-->
   </modules>
 
 </project>
