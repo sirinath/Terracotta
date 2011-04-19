@@ -36,8 +36,8 @@ import com.terracottatech.config.PersistenceMode;
 import com.terracottatech.config.Property;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
-import com.terracottatech.config.TcProperties;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
+import com.terracottatech.config.TcProperties;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -185,8 +185,8 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
     super(illegalConfigurationChangeHandler);
 
     final ConfigBeanFactory configBeanFactory = new TerracottaDomainConfigurationDocumentBeanFactory();
-    final ConfigurationSpec configSpec = new ConfigurationSpec("default-tc-config.xml", ConfigMode.L2, new File(System
-        .getProperty("user.dir")));
+    final ConfigurationSpec configSpec = new ConfigurationSpec("default-tc-config.xml", ConfigMode.L2,
+                                                               new File(System.getProperty("tc.base-dir")));
     this.configurationCreator = new TestConfigurationCreator(configSpec, configBeanFactory, true);
 
     this.mode = mode;
@@ -354,8 +354,8 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
 
     TcConfig config = TcConfig.Factory.newInstance();
     config.setServers(servers);
-    L2DSOConfigObject.initializeServers(config, this.defaultValueProvider, this.configurationCreator
-        .directoryConfigurationLoadedFrom());
+    L2DSOConfigObject.initializeServers(config, this.defaultValueProvider,
+                                        this.configurationCreator.directoryConfigurationLoadedFrom());
 
     setServersBeanForL1s(config.getServers(), "From test froamework");
     isConfigDone = true;
@@ -402,8 +402,8 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
     TcConfig config = TcConfig.Factory.newInstance();
     Servers servers = (Servers) this.sampleL1Manager.serversBeanRepository().bean();
     config.setServers(servers);
-    L2DSOConfigObject.initializeServers(config, this.defaultValueProvider, this.configurationCreator
-        .directoryConfigurationLoadedFrom());
+    L2DSOConfigObject.initializeServers(config, this.defaultValueProvider,
+                                        this.configurationCreator.directoryConfigurationLoadedFrom());
     setServersBeanForL1s(config.getServers(), "From Test Framework");
   }
 
@@ -586,7 +586,6 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
                                                                                              this.defaultValueProvider,
                                                                                              this.xmlObjectComparator,
                                                                                              this.illegalChangeHandler);
-
     return configSetupManager;
   }
 
@@ -602,8 +601,14 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
   public L2ConfigurationSetupManager createL2TVSConfigurationSetupManager(File tcConfig, String l2Identifier)
       throws ConfigurationSetupException {
     String effectiveL2Identifier = l2Identifier == null ? this.defaultL2Identifier : l2Identifier;
-    ConfigurationCreator confiCreator = new StandardXMLFileConfigurationCreator(new ConfigurationSpec(tcConfig
-        .getAbsolutePath(), ConfigMode.L2, tcConfig.getParentFile()), this.beanFactory);
+    ConfigurationCreator confiCreator = new StandardXMLFileConfigurationCreator(
+                                                                                new ConfigurationSpec(
+                                                                                                      tcConfig
+                                                                                                          .getAbsolutePath(),
+                                                                                                      ConfigMode.L2,
+                                                                                                      tcConfig
+                                                                                                          .getParentFile()),
+                                                                                this.beanFactory);
     return new L2ConfigurationSetupManagerImpl(confiCreator, effectiveL2Identifier, this.defaultValueProvider,
                                                this.xmlObjectComparator, this.illegalChangeHandler);
   }
