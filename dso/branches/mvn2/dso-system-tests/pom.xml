@@ -254,7 +254,11 @@
             <com.tc.l1.cachemanager.logging.enabled>false</com.tc.l1.cachemanager.logging.enabled>
             <com.tc.l1.transactionmanager.logging.enabled>false</com.tc.l1.transactionmanager.logging.enabled>
             <com.tc.ehcache.logging.enabled>false</com.tc.ehcache.logging.enabled>
-            <com.tc.ehcache.evictor.logging.enabled>false</com.tc.ehcache.evictor.logging.enabled>            
+            <com.tc.ehcache.evictor.logging.enabled>false</com.tc.ehcache.evictor.logging.enabled>  
+            <com.tc.lock.statistics.enabled>true</com.tc.lock.statistics.enabled>
+            <com.tc.lock.statistics.max>1000</com.tc.lock.statistics.max>
+            <com.tc.l1.lock.stacktrace.defaultDepth>1</com.tc.l1.lock.stacktrace.defaultDepth>
+            <com.tc.l1.lock.collectFrequency>10</com.tc.l1.lock.collectFrequency>            
           </systemPropertyVariables>
         </configuration>
         <executions>
