@@ -218,6 +218,7 @@ public class TestConfigObject {
     String baseDirProp = System.getProperty(TC_BASE_DIR);
     if (baseDirProp == null || baseDirProp.trim().equals("")) invalidBaseDir();
     baseDir = new File(baseDirProp);
+    System.out.println("XXX: baseDir " + baseDir);
     if (!baseDir.isDirectory()) invalidBaseDir();
   }
 
