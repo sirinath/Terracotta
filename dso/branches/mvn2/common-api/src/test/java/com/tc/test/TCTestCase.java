@@ -27,11 +27,9 @@ import com.tc.util.runtime.Vm;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -150,7 +148,6 @@ public class TCTestCase extends TestCase {
 
   @Override
   public void runBare() throws Throwable {
-    printOutCurrentJavaProcesses();
     if (allDisabledUntil != null) {
       if (new Date().before(this.allDisabledUntil)) {
         System.out.println("NOTE: ALL tests in " + this.getClass().getName() + " are disabled until "
@@ -206,20 +203,6 @@ public class TCTestCase extends TestCase {
 
     // no errors -- woo-hoo!
     return;
-  }
-
-  private void printOutCurrentJavaProcesses() {
-    if (printedProcess) return;
-    printedProcess = true;
-    PrintWriter out = null;
-    try {
-      out = new PrintWriter(new FileWriter(this.getTempFile("javaprocesses.txt")));
-      out.println(ProcessInfo.ps_grep_java());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    } finally {
-      if (out != null) out.close();
-    }
   }
 
   public void scheduleTimeoutTask() {
