@@ -40,7 +40,7 @@
     <module>tim-get-tool</module>
     <module>terracotta</module>
     
-    <!--module>legacy-test-tree</module-->
+    <module>dso-unit-tests</module>
   </modules>
 
 </project>
