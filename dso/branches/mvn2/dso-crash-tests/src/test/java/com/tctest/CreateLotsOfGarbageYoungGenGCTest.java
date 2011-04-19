@@ -4,7 +4,6 @@
  */
 package com.tctest;
 
-
 import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
@@ -13,7 +12,7 @@ import com.tc.util.runtime.Os;
 
 import java.util.Date;
 
-public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassiveTest implements TestConfigurator {
+public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassiveTestBase implements TestConfigurator {
 
   public CreateLotsOfGarbageYoungGenGCTest() {
     if (Os.isSolaris()) {
@@ -21,6 +20,7 @@ public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassi
     }
   }
 
+  @Override
   protected Class getApplicationClass() {
     return CreateLotsOfGarbageGCTestApp.class;
   }
@@ -30,6 +30,7 @@ public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassi
     return 1;
   }
 
+  @Override
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
