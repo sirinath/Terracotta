@@ -335,7 +335,7 @@
         <groupId>org.terracotta</groupId>
         <artifactId>maven-forge-plugin</artifactId>
         <configuration>
-          <rootPath>${basedir}/../../..</rootPath>
+          <rootPath>${basedir}/..</rootPath>
         </configuration>
         <executions>
           <execution>
