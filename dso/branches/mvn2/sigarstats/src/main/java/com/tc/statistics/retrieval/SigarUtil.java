@@ -8,6 +8,8 @@ import org.hyperic.sigar.Sigar;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
@@ -88,22 +90,31 @@ public class SigarUtil {
   }
 
   private static String getSigarVersion() {
+    String result = System.getProperty("sigar.version");
+    if (result != null) { return result; }
+
     URL propsUrl = SigarUtil.class.getResource("/sigarstats.properties");
     if (propsUrl == null) { return ""; }
     Properties props = new Properties();
-    try {
-      props.load(propsUrl.openStream());
-    } catch (Exception e) {
-      return "";
-    }
+    InputStream in = null;
 
-    String result = props.getProperty("sigar.version");
-    if (result == null) {
-      result = System.getProperty("sigar.version");
-      if (result /* still */== null) {
-        result = "";
+    try {
+      in = propsUrl.openStream();
+      props.load(in);
+    } catch (IOException e) {
+      throw new RuntimeException("Can't find sigarstats.properties in classpath");
+    } finally {
+      if (in != null) {
+        try {
+          in.close();
+        } catch (IOException e) {
+          // ignore
+        }
       }
     }
+
+    result = props.getProperty("sigar.version");
+    if (result == null) { throw new RuntimeException("Can't determine sigar.version"); }
     return result;
   }
 
