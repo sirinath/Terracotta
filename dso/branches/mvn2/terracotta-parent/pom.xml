@@ -330,6 +330,16 @@
   </dependencyManagement>
   
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+      </resource>     
+      <resource>
+        <directory>src/main/filtered-resources</directory>
+        <filtering>true</filtering>
+      </resource>      
+    </resources>  
     <plugins>
       <plugin>
         <groupId>org.terracotta</groupId>
@@ -378,7 +388,7 @@
             <forkMode>always</forkMode>
             <forkedProcessTimeoutInSeconds>900</forkedProcessTimeoutInSeconds>
             <workingDirectory>${project.build.directory}</workingDirectory>
-            <argLine>-Xms64m -Xmx512m</argLine>
+            <argLine>-Xms64m -Xmx512m -Dtc.dso.globalmode=false</argLine>
             <systemPropertyVariables>
               <tc.base-dir>${project.build.directory}</tc.base-dir>
               <java.awt.headless>true</java.awt.headless>
