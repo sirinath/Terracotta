@@ -9,6 +9,7 @@
     <groupId>org.terracotta.forge</groupId>
     <artifactId>forge-parent</artifactId>
     <version>2.2</version>
+    <relativePath></relativePath>
   </parent>
   
   <groupId>org.terracotta</groupId>
