@@ -87,8 +87,39 @@
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
             </configuration>
           </execution>
+          <execution>
+            <id>unpack-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>unpack-dependencies</goal>
+            </goals>
+            <configuration>
+              <overwrite>false</overwrite>
+              <includeGroupIds>org.terracotta.internal</includeGroupIds>
+              <classifier>sources</classifier>
+              <outputDirectory>${project.build.directory}/sources</outputDirectory>
+            </configuration>
+          </execution>          
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>add-sources</id>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>     
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
