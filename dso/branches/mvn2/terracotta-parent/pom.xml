@@ -328,6 +328,11 @@
       
       <!-- tests -->
       <dependency>
+        <groupId>org.apache.ant</groupId>
+        <artifactId>ant</artifactId>
+        <version>1.7.1</version>
+      </dependency>      
+      <dependency>
         <groupId>hsqldb</groupId>
         <artifactId>hsqldb</artifactId>
         <version>1.7.2.2</version>     
