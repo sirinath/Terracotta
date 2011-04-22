@@ -61,7 +61,7 @@
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-amd64-solaris</artifactId>
       <type>so</type>
-      <scope>copmile</scope>
+      <scope>compile</scope>
     </dependency>      
     <dependency>
       <groupId>org.hyperic</groupId>
