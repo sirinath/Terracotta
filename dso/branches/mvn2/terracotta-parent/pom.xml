@@ -341,29 +341,41 @@
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
         <version>1.2</version>
-      </dependency>      
-    </dependencies>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.terracotta</groupId>
+        <artifactId>native-tool</artifactId>
+        <version>1.0.1</version>
+      </dependency>       
+    </dependencies>   
   </dependencyManagement>
   
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>linked-child-process</artifactId>
-      <version>1.0.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>native-tool</artifactId>
-      <version>1.0.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
+    </dependency>    
   </dependencies>
   
   <build>
@@ -451,6 +463,26 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.1.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>test-jar</goal>
+              </goals>
+              <configuration>
+                <excludeResources>true</excludeResources>
+                <excludes>
+                  <exclude>**/*Test.java</exclude>
+                  <exclude>**/*TestApp.java</exclude>
+                  <exclude>build-data.txt</exclude>
+                </excludes>
+              </configuration>            
+            </execution>
+          </executions>
+        </plugin>        
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
