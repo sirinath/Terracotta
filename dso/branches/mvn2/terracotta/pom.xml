@@ -24,32 +24,34 @@
   
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>deploy</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>simulator</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>tim-get-tool</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>     
-     
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>    
+       
   </dependencies>
 
   <build>
@@ -58,7 +60,7 @@
         <groupId>org.terracotta</groupId>
         <artifactId>maven-forge-plugin</artifactId>
         <configuration>
-          <rootPath>${basedir}/../../..</rootPath>
+          <rootPath>${basedir}/..</rootPath>
         </configuration>
         <executions>
           <execution>
@@ -75,6 +77,9 @@
         <version>2.3.1</version>
         <configuration>
           <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+            </manifest>
             <manifestFile>${project.build.directory}/MANIFEST.MF</manifestFile>
           </archive>
         </configuration>
@@ -92,8 +97,7 @@
             </goals>
             <configuration>
               <overwrite>false</overwrite>
-              <includeGroupIds>org.terracotta</includeGroupIds>
-              <includeScope>compile</includeScope>
+              <includeGroupIds>org.terracotta.internal</includeGroupIds>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
             </configuration>
           </execution>

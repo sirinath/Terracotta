@@ -11,30 +11,33 @@
     <relativePath>../terracotta-parent</relativePath>    
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>ui-eclipse</artifactId>
   <packaging>jar</packaging>
+
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
   
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-l1</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>org.terracotta</groupId>
+        <groupId>org.terracotta.internal</groupId>
         <artifactId>deploy</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>commons-io</groupId>
+        <groupId>commons-io.internal</groupId>
         <artifactId>commons-io</artifactId>
         <version>2.0.1</version>
     </dependency>
     <dependency>
         <groupId>org.apache.xmlbeans</groupId>
         <artifactId>xmlbeans</artifactId>
-        <version>2.4.0</version>
     </dependency>  
         <dependency>
             <groupId>org.eclipse.core</groupId>

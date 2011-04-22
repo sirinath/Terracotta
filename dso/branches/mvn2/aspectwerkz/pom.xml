@@ -16,33 +16,25 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>aspectwerkz</artifactId>
   <packaging>jar</packaging>
   <name>aspectwerkz</name>
 
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
+  
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>thirdparty</artifactId>
       <version>${project.version}</version>
-    </dependency>    
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant</artifactId>
-      <version>1.7.1</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

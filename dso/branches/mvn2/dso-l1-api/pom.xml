@@ -16,24 +16,28 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>dso-l1-api</artifactId>
   <packaging>jar</packaging>
   <name>dso-l1-api</name>
+
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
   
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>aspectwerkz</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics-api</artifactId>
       <version>${project.version}</version>
     </dependency>   
