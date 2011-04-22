@@ -38,7 +38,11 @@
     <module>deploy</module>
     <module>simulator</module>
     <module>tim-get-tool</module>
-    <module>terracotta</module>
+    
+    <module>terracotta-core-parent</module>
+    <module>terracotta-core</module>
+    <module>terracotta-core-l1</module>
+    <module>terracotta-l1</module>    
     
     <module>dso-unit-tests</module>
     <module>dso-system-tests</module>
