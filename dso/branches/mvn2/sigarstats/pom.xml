@@ -16,20 +16,24 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>sigarstats</artifactId>
   <packaging>jar</packaging>
   <version>3.6.0-SNAPSHOT</version>
   <name>sigarstats</name>
+
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
   
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>    
@@ -37,33 +41,19 @@
       <groupId>org.hyperic</groupId>
       <artifactId>sigar</artifactId>
     </dependency>
-      
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>common-api</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>    
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    
+        
     <!-- linux -->
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-amd64-linux</artifactId>
       <type>so</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-x86-linux</artifactId>
       <type>so</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
 
     <!-- solaris -->
@@ -71,19 +61,19 @@
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-amd64-solaris</artifactId>
       <type>so</type>
-      <scope>test</scope>
+      <scope>copmile</scope>
     </dependency>      
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-sparc-solaris</artifactId>
       <type>so</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-x86-solaris</artifactId>
       <type>so</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>      
     
     <!-- windows -->
@@ -91,19 +81,19 @@
       <groupId>org.hyperic</groupId>
       <artifactId>sigar-amd64-winnt</artifactId>
       <type>dll</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>      
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>sigar-x86-winnt</artifactId>
       <type>dll</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>sigar-x86-winnt</artifactId>
       <type>lib</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
 
     <!-- mac osx -->
@@ -111,14 +101,23 @@
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-universal-macosx</artifactId>
       <type>dylib</type>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
       <artifactId>libsigar-universal64-macosx</artifactId>
       <type>dylib</type>
+      <scope>compile</scope>
+    </dependency> 
+    
+    
+    <dependency>
+      <groupId>org.terracotta.internal</groupId>
+      <artifactId>common-api</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
-    </dependency>   
+    </dependency>    
   </dependencies>
   
 </project>

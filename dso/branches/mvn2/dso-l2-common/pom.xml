@@ -16,45 +16,37 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>dso-l2-common</artifactId>
   <packaging>jar</packaging>
   <version>3.6.0-SNAPSHOT</version>
   <name>dso-l2-common</name>
   
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
+  
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>management</artifactId>
       <version>${project.version}</version>
     </dependency> 
     
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>native-tool</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
-    </dependency>      
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>    
+    </dependency>   
   </dependencies>
   
 </project>

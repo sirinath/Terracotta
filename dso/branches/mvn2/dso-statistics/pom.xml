@@ -16,24 +16,28 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>dso-statistics</artifactId>
   <packaging>jar</packaging>
   <name>dso-statistics</name>
   
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>  
+  
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-l2-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-l1-api</artifactId>
       <version>${project.version}</version>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>management</artifactId>
       <version>${project.version}</version>
     </dependency>   
@@ -41,59 +45,42 @@
     <dependency>
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>
-      <version>3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>1.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <version>1.0.67</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>1.2.16</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.94</version>
       <scope>compile</scope>
     </dependency>
     
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>native-tool</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
-    </dependency>      
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>     
+    </dependency>    
   </dependencies>
 </project>

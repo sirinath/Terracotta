@@ -16,124 +16,108 @@
     <relativePath>../terracotta-parent</relativePath>
   </parent>
   
-  <groupId>org.terracotta</groupId>
+  <groupId>org.terracotta.internal</groupId>
   <artifactId>dso-l1</artifactId>
   <packaging>jar</packaging>
   <version>3.6.0-SNAPSHOT</version>
   <name>dso-l1</name>
+
+  <properties>  
+    <skip.deploy>true</skip.deploy>
+  </properties>
   
   <dependencies>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>aspectwerkz</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-common-jdk16</artifactId>
       <version>${project.version}</version>
     </dependency> 
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-l1-api</artifactId>
       <version>${project.version}</version>
     </dependency>     
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics</artifactId>
       <version>${project.version}</version>
     </dependency>    
         <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>management</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>sigarstats</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>thirdparty</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.terracotta.api</groupId>
       <artifactId>tim-api</artifactId>
-      <version>1.3.0</version>
     </dependency>     
     
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>    
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>     
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>native-tool</artifactId>
-      <version>1.0.1</version>
-      <scope>test</scope>
-    </dependency>      
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant-launcher</artifactId>
-      <version>1.7.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <version>1.8.2</version>
       <scope>test</scope>
     </dependency>    
   </dependencies>
