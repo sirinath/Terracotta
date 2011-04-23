@@ -351,6 +351,11 @@
         <groupId>org.terracotta</groupId>
         <artifactId>native-tool</artifactId>
         <version>1.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dspace.dependencies.jmockit</groupId>
+        <artifactId>dspace-jmockit</artifactId>
+        <version>0.999.4</version>
       </dependency>       
     </dependencies>   
   </dependencyManagement>
@@ -375,7 +380,7 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
   </dependencies>
   
   <build>
