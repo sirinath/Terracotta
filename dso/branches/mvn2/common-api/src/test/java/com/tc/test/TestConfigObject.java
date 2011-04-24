@@ -216,7 +216,17 @@ public class TestConfigObject {
 
   private static void initBaseDir() {
     String baseDirProp = System.getProperty(TC_BASE_DIR);
-    if (baseDirProp == null || baseDirProp.trim().equals("")) invalidBaseDir();
+    if (baseDirProp == null || baseDirProp.trim().equals("")) {
+      baseDirProp = System.getProperty("basedir");
+      if (baseDirProp != null) {
+        // point to maven target folder
+        baseDirProp = baseDirProp + File.separator + "target";
+        System.setProperty("tc.base-dir", baseDirProp);
+      } else {
+        // set to current working dir as a last resort
+        System.setProperty("tc.base-dir", System.getProperty("user.dir"));
+      }
+    }
     baseDir = new File(baseDirProp);
     if (!baseDir.isDirectory()) invalidBaseDir();
   }

@@ -221,19 +221,7 @@
           <workingDirectory>${project.build.directory}</workingDirectory>
           <argLine>-Xms128m -Xmx512m -Xbootclasspath/p:${project.build.directory}/dso-boot.jar -Dtc.config=${project.build.testOutputDirectory}/tc-config.xml -Dtc.dso.globalmode=false</argLine>
           <systemPropertyVariables>
-            <tc.base-dir>${project.build.directory}</tc.base-dir>
-            <java.awt.headless>true</java.awt.headless>
-            <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>
-            <com.tc.l2.cachemanager.logging.enabled>false</com.tc.l2.cachemanager.logging.enabled>
-            <com.tc.l2.objectmanager.fault.logging.enabled>false</com.tc.l2.objectmanager.fault.logging.enabled>
-            <com.tc.l1.cachemanager.logging.enabled>false</com.tc.l1.cachemanager.logging.enabled>
-            <com.tc.l1.transactionmanager.logging.enabled>false</com.tc.l1.transactionmanager.logging.enabled>
-            <com.tc.ehcache.logging.enabled>false</com.tc.ehcache.logging.enabled>
-            <com.tc.ehcache.evictor.logging.enabled>false</com.tc.ehcache.evictor.logging.enabled>  
-            <com.tc.lock.statistics.enabled>true</com.tc.lock.statistics.enabled>
-            <com.tc.lock.statistics.max>1000</com.tc.lock.statistics.max>
-            <com.tc.l1.lock.stacktrace.defaultDepth>1</com.tc.l1.lock.stacktrace.defaultDepth>
-            <com.tc.l1.lock.collectFrequency>10</com.tc.l1.lock.collectFrequency>            
+            <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>          
           </systemPropertyVariables>
         </configuration>
         <executions>

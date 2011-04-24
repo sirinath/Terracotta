@@ -182,10 +182,6 @@
         <configuration>
           <forkMode>pertest</forkMode>
           <argLine>-Xms64m -Xmx512m -Xbootclasspath/p:${project.build.directory}/dso-boot.jar -Dtc.config=${project.build.testOutputDirectory}/tc-config.xml -Dtc.dso.globalmode=false</argLine>
-          <systemPropertyVariables>
-            <tc.base-dir>${project.build.directory}</tc.base-dir>
-            <java.awt.headless>true</java.awt.headless>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

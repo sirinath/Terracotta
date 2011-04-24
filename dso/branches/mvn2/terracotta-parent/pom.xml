@@ -442,11 +442,12 @@
             <forkMode>always</forkMode>
             <forkedProcessTimeoutInSeconds>900</forkedProcessTimeoutInSeconds>
             <workingDirectory>${project.build.directory}</workingDirectory>
-            <argLine>-Xms64m -Xmx512m -Dtc.dso.globalmode=false</argLine>
+            <argLine>-Xms64m -Xmx512m</argLine>
             <systemPropertyVariables>
               <tc.base-dir>${project.build.directory}</tc.base-dir>
               <java.awt.headless>true</java.awt.headless>
               <com.tc.l1.modules.repositories>${project.build.directory}</com.tc.l1.modules.repositories>
+              <tc.tests.info.junit-test-timeout-inseconds>900</tc.tests.info.junit-test-timeout-inseconds>
             </systemPropertyVariables>
           </configuration>
         </plugin>

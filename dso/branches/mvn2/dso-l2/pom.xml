@@ -122,27 +122,5 @@
       <scope>test</scope>
     </dependency>    
   </dependencies>
-  
-  <build>
-    <plugins> 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.8</version>
-        <configuration>
-          <forkMode>always</forkMode>
-          <argLine>-Xms64m -Xmx512m</argLine>
-          <systemPropertyVariables>
-            <tc.base-dir>${project.build.directory}</tc.base-dir>
-            <java.awt.headless>true</java.awt.headless>
-            <com.tc.lock.statistics.enabled>true</com.tc.lock.statistics.enabled>
-            <com.tc.lock.statistics.max>1000</com.tc.lock.statistics.max>
-            <com.tc.l1.lock.stacktrace.defaultDepth>1</com.tc.l1.lock.stacktrace.defaultDepth>
-            <com.tc.l1.lock.collectFrequency>10</com.tc.l1.lock.collectFrequency>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-  
+   
 </project>
