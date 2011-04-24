@@ -226,12 +226,7 @@
           <workingDirectory>${project.build.directory}</workingDirectory>
           <argLine>-Xms128m -Xmx512m -Xbootclasspath/p:${project.build.directory}/dso-boot.jar -Dtc.config=${project.build.testOutputDirectory}/tc-config.xml -Dtc.dso.globalmode=false</argLine>
           <systemPropertyVariables>
-            <tc.base-dir>${project.build.directory}</tc.base-dir>
-            <java.awt.headless>true</java.awt.headless>
-            <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>
-            <tc.tests.configuration.transparent-tests.mode>${test.mode}</tc.tests.configuration.transparent-tests.mode>
-            <com.tc.l2.cachemanager.logging.enabled>true</com.tc.l2.cachemanager.logging.enabled>
-            <com.tc.l1.cachemanager.logging.enabled>true</com.tc.l1.cachemanager.logging.enabled>           
+            <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>    
           </systemPropertyVariables>
         </configuration>
         <executions>
