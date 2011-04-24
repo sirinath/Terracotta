@@ -16,6 +16,7 @@
   <groupId>org.terracotta</groupId>
   <artifactId>terracotta-l1</artifactId>
   <packaging>jar</packaging>
+  <name>terracotta-l1</name>
 
   <dependencies>
     <dependency>
