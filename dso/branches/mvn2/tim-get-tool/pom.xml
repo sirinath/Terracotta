@@ -38,7 +38,7 @@
     </dependency>
  
     <dependency>
-      <groupId>org.terracotta</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
