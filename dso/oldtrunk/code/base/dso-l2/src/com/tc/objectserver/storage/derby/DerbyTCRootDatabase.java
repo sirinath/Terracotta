@@ -7,8 +7,8 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.persistence.db.DBException;
 import com.tc.objectserver.persistence.db.TCDatabaseException;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
-import com.tc.objectserver.storage.api.TCDatabaseReturnConstants.Status;
 import com.tc.objectserver.storage.api.TCRootDatabase;
+import com.tc.objectserver.storage.api.TCDatabaseReturnConstants.Status;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -139,7 +139,6 @@ class DerbyTCRootDatabase extends AbstractDerbyTCDatabase implements TCRootDatab
       throw new DBException("Could not put root", e);
     }
     return Status.SUCCESS;
-
   }
 
   public long getIdFromName(byte[] rootName, PersistenceTransaction tx) {
