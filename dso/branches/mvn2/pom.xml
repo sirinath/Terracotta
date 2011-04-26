@@ -25,7 +25,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
-        <module>terracotta-parent</module>
+        <module>build-parent</module>
         <module>thirdparty</module>
         <module>common-api</module>
         <module>common</module>
