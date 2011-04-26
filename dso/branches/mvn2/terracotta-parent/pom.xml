@@ -13,9 +13,9 @@
   </parent>
 
   <groupId>org.terracotta</groupId>
-  <artifactId>terracotta-core-parent</artifactId>
+  <artifactId>terracotta-parent</artifactId>
   <packaging>pom</packaging>
-  <name>terracotta-core-parent</name>
+  <name>terracotta-parent</name>
 
   <dependencies>
     <!--
