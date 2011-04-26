@@ -46,7 +46,7 @@
         <module>simulator</module>
         <module>tim-get-tool</module>
         
-        <module>terracotta-core-parent</module>
+        <module>terracotta-parent</module>
         <module>terracotta</module>
         <module>terracotta-l1-parent</module>
         <module>terracotta-l1</module>
