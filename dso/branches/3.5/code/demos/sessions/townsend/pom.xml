@@ -6,7 +6,7 @@
 
   <groupId>org.terracotta.samples.sessions</groupId>
   <artifactId>townsend</artifactId>
-  <version>3.5.1</version>
+  <version>3.5.2-SNAPSHOT</version>
   <name>Townsend</name>
   <packaging>war</packaging>
 
