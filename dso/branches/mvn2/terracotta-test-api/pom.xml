@@ -150,29 +150,60 @@
       <artifactId>deploy</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.terracotta.internal</groupId>
       <artifactId>simulator</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.terracotta.internal</groupId>
       <artifactId>tim-get-tool</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-      <optional>true</optional>
     </dependency>    
     <dependency>
       <groupId>org.terracotta.internal</groupId>
       <artifactId>dso-statistics</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.test</groupId>
+      <artifactId>dso-unit-tests</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
     </dependency>    
+    <dependency>
+      <groupId>org.terracotta.test</groupId>
+      <artifactId>dso-system-tests</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.test</groupId>
+      <artifactId>dso-crash-tests</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.test</groupId>
+      <artifactId>dso-statistics-tests</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.test</groupId>
+      <artifactId>dso-alt-boot-jar-tests</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
+    </dependency>     
   </dependencies>
 
   <build>
@@ -205,9 +236,9 @@
             </goals>
             <configuration>
               <overwrite>false</overwrite>
-              <includeGroupIds>org.terracotta.internal</includeGroupIds>
+              <includeGroupIds>org.terracotta.internal,org.terracotta.test</includeGroupIds>
               <classifier>tests</classifier>
-              <excludes>tim-get.properties</excludes>
+              <excludes>tim-get.properties,**/**TestApp*.class,**/**Test$*class</excludes>
               <outputDirectory>${project.build.outputDirectory}</outputDirectory>
             </configuration>
           </execution>
@@ -219,8 +250,9 @@
             </goals>
             <configuration>
               <overwrite>false</overwrite>
-              <includeGroupIds>org.terracotta.internal</includeGroupIds>
+              <includeGroupIds>org.terracotta.internal,org.terracotta.test</includeGroupIds>
               <classifier>test-sources</classifier>
+              <excludes>tim-get.properties,**/**TestApp.java</excludes>
               <outputDirectory>${project.build.directory}/sources</outputDirectory>
             </configuration>
           </execution>          
