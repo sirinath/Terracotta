@@ -14,7 +14,7 @@
   <groupId>org.terracotta.api</groupId>
   <artifactId>test-api</artifactId>
   <packaging>jar</packaging>
-  <name>test-api</nanme>
+  <name>test-api</name>
 
   <dependencies>
     <!-- Version and scope for each dependency is declared in the dependencyManagement 
