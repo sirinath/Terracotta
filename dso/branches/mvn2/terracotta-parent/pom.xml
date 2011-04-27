@@ -29,6 +29,16 @@
     <dependency>
       <groupId>org.terracotta.api</groupId>
       <artifactId>tim-api</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.terracotta.api</groupId>
+          <artifactId>thirdparty-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.terracotta.api</groupId>
+          <artifactId>dso-cluster-api</artifactId>
+        </exclusion>        
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
@@ -38,6 +48,14 @@
       <groupId>org.terracotta</groupId>
       <artifactId>tcstats</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>google-collections-tc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.license</groupId>
+      <artifactId>terracotta-license</artifactId>
+    </dependency>     
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
@@ -140,15 +158,7 @@
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>google-collections-tc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta.license</groupId>
-      <artifactId>terracotta-license</artifactId>
-    </dependency> 
-    
+   
     <!-- SIGAR dependencies -->
     <dependency>
       <groupId>org.hyperic</groupId>
