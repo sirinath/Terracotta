@@ -28,8 +28,14 @@
   
   <dependencies>
     <dependency>
+      <groupId>org.terracotta.internal</groupId>
+      <artifactId>build-data</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>    
+    <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>tcconfig-xmlbeans</artifactId>
+      <artifactId>tcconfig</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>  
