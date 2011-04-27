@@ -25,6 +25,7 @@
       <version>${project.version}</version>
     </dependency>
     
+    <!-- for packaging purpose -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -32,13 +33,14 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-    </dependency>    
+    </dependency>
+    
   </dependencies>
   
-      <properties>
-        <skip.deploy>true</skip.deploy>
-        <rootDir>${project.build.directory}/${project.artifactId}-${project.version}</rootDir>
-      </properties>
+  <properties>
+    <skip.deploy>true</skip.deploy>
+    <rootDir>${project.build.directory}/${project.artifactId}-${project.version}</rootDir>
+  </properties>
       
   <build>
     <plugins>

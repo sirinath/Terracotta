@@ -1,7 +1,5 @@
 terracotta.build.productname=terracotta
-terracotta.build.edition=${build.edition}
 terracotta.build.version=${project.version}
-terracotta.build.maven.artifacts.version=${project.version}
 terracotta.build.host=${build.host}
 terracotta.build.user=${user.name}
 terracotta.build.timestamp=${build.timestamp}

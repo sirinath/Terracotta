@@ -18,56 +18,66 @@
   <name>terracotta-root</name>
   <packaging>pom</packaging>
 
+  <properties>
+    <build.edition>Opensource</build.edition>
+  </properties>
+  
+  <modules>
+    <module>build-parent</module>
+    <module>build-data</module>
+    <module>thirdparty</module>
+    <module>common-api</module>
+    <module>common</module>
+    <module>aspectwerkz</module>
+    <module>dso-statistics-api</module>
+    <module>dso-l1-api</module>
+    <module>sigarstats</module>
+    <module>dso-common</module>
+    <module>dso-common-jdk16</module>
+    <module>management-api</module>
+    <module>management</module>
+    <module>dso-l2-common</module> 
+    <module>deploy-api</module>
+    <module>dso-statistics</module>
+    <module>dso-l1</module>
+    <module>dso-l2</module>
+    <module>deploy</module>
+    <module>simulator</module>
+    <module>tim-get-tool</module>
+    
+    <module>terracotta-parent</module>
+    <module>terracotta</module>
+    <module>terracotta-l1-parent</module>
+    <module>terracotta-l1</module>
+    <module>terracotta-test-api</module>
+    
+    <module>dso-unit-tests</module>
+    <module>dso-system-tests</module>
+    <module>dso-crash-tests</module>
+    <module>dso-statistics-tests</module>
+    <module>dso-alt-boot-jar-tests</module>
+  </modules>
+  
   <profiles>
     <profile>
-      <id>all-modules</id>
+      <id>ee-modules</id>
+      <properties>
+        <build.edition>Enterprise</build.edition>
+      </properties>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <file>
+          <exists>../terracotta-ee</exists>
+        </file>
       </activation>
       <modules>
-        <module>build-parent</module>
-        <module>thirdparty</module>
-        <module>common-api</module>
-        <module>common</module>
-        <module>aspectwerkz</module>
-        <module>dso-statistics-api</module>
-        <module>dso-l1-api</module>
-        <module>sigarstats</module>
-        <module>dso-common</module>
-        <module>dso-common-jdk16</module>
-        <module>management-api</module>
-        <module>management</module>
-        <module>dso-l2-common</module> 
-        <module>deploy-api</module>
-        <module>dso-statistics</module>
-        <module>dso-l1</module>
-        <module>dso-l2</module>
-        <module>deploy</module>
-        <module>simulator</module>
-        <module>tim-get-tool</module>
-        
-        <module>terracotta-parent</module>
-        <module>terracotta</module>
-        <module>terracotta-l1-parent</module>
-        <module>terracotta-l1</module>
-        <module>terracotta-test-api</module>
-        
-        <module>dso-unit-tests</module>
-        <module>dso-system-tests</module>
-        <module>dso-crash-tests</module>
-        <module>dso-statistics-tests</module>
-        <module>dso-alt-boot-jar-tests</module>
-      </modules>
-    </profile>
-    
-    <profile>
-      <id>system-tests</id>
-      <modules>
-        <module>dso-system-tests</module>
-        <module>dso-crash-tests</module>
-        <module>dso-statistics-tests</module>
-        <module>dso-alt-boot-jar-tests</module>
-      </modules>
+        <module>../ent-common</module>
+        <module>../ent-dso-l1</module>
+        <module>../ent-dso-l2</module>
+        <module>../ent-deploy</module>
+        <module>../terracotta-ee</module>
+        <module>../ent-system-tests</module>
+        <module>../ent-active-active-tests</module>   
+      </modules>        
     </profile>
   </profiles>
 
