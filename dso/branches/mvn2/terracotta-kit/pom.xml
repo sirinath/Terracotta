@@ -63,8 +63,17 @@
               <targetPath>${rootDir}/lib</targetPath>
               <dependency>
                 <includeScope>compile</includeScope>
-                <excludeArtifactIds>thirdparty-api,dso-cluster-api,stax-api</excludeArtifactIds>
+                <excludeArtifactIds>terracotta,thirdparty-api,dso-cluster-api,stax-api</excludeArtifactIds>
               </dependency>
+            </resource>
+            
+            <resource>
+              <targetPath>${rootDir}/lib</targetPath>
+              <dependency>
+                <groupId>org.terracotta</groupId>
+                <artifactId>terracotta</artifactId>
+              </dependency>
+              <process>{{ ('zip -d ' + files.first() + ' build-data.txt').execute().text }}</process>
             </resource>
             
             <!-- package tar.gz kit -->

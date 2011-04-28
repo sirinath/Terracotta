@@ -48,7 +48,7 @@
     </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>tcstats-xmlbeans</artifactId>
+      <artifactId>tcstats</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
