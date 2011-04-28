@@ -27,19 +27,17 @@
     
     <!-- for packaging purpose -->
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-    </dependency>
+      <groupId>org.terracotta.internal</groupId>
+      <artifactId>build-data</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>    
     
   </dependencies>
   
   <properties>
     <skip.deploy>true</skip.deploy>
-    <rootDir>${project.build.directory}/${project.artifactId}-${project.version}</rootDir>
+    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>
   </properties>
       
   <build>
@@ -63,10 +61,12 @@
               <targetPath>${rootDir}/lib</targetPath>
               <dependency>
                 <includeScope>compile</includeScope>
-                <excludeArtifactIds>terracotta,thirdparty-api,dso-cluster-api,stax-api</excludeArtifactIds>
+                <excludeArtifactIds>terracotta,build-data,thirdparty-api,dso-cluster-api,stax-api</excludeArtifactIds>
               </dependency>
+              <dependenciesAtM2>true</dependenciesAtM2>
             </resource>
             
+            <!-- remove build-data.txt from terracotta jar -->
             <resource>
               <targetPath>${rootDir}/lib</targetPath>
               <dependency>
@@ -76,12 +76,26 @@
               <process>{{ ('zip -d ' + files.first() + ' build-data.txt').execute().text }}</process>
             </resource>
             
+            <resource>
+              <targetPath>${rootDir}/lib/resources</targetPath>
+              <dependency>
+                <groupId>org.terracotta.internal</groupId>
+                <artifactId>build-data</artifactId>
+              </dependency>
+              <zipEntries>
+                <zipEntry>build-data.txt</zipEntry>
+                <zipEntry>tim-get.properties</zipEntry>
+              </zipEntries>
+              <unpack>true</unpack>              
+            </resource>
+            
             <!-- package tar.gz kit -->
             <resource>
               <targetPath>${rootDir}.tar.gz</targetPath>
               <directory>${rootDir}</directory>
               <pack>true</pack>
             </resource>
+            
           </resources>
         </configuration>
       </plugin>
