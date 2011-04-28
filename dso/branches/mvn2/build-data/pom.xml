@@ -23,6 +23,55 @@
   
   <properties>
     <skip.deploy>true</skip.deploy>
+    <includeSnapshots>false</includeSnapshots>
+    <dataFileUrl>http://www.terracotta.org/download/reflector/releases/tim-get/3/index.xml.gz</dataFileUrl>
+    <relativeUrlBase>http://www.terracotta.org/download/reflector/releases</relativeUrlBase>
   </properties>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.goldin.plugins</groupId>
+        <artifactId>maven-properties-plugin</artifactId>
+        <version>0.2.1</version>
+        <executions>
+          <execution>
+            <id>set-properties</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>set-properties</goal>
+            </goals>
+            <configuration>
+              <properties>
+                <property>
+                  <name>includeSnapshots</name>
+                  <value>{{ project.version.endsWith( 'SNAPSHOT' ) }}</value>
+                </property>
+                <property>
+                  <name>dataFileUrl</name>
+                  <value>{{ if (project.version.endsWith('SNAPSHOT')) { 
+                              "http://www.terracotta.org/download/reflector/snapshots/tim-get/3/index.xml.gz" 
+                            } else {
+                              "http://www.terracotta.org/download/reflector/releases/tim-get/3/index.xml.gz"
+                            }
+                         }}
+                  </value>
+                </property>
+                <property>
+                  <name>relativeUrlBase</name>
+                  <value>{{ if (project.version.endsWith('SNAPSHOT')) { 
+                              "http://www.terracotta.org/download/reflector/snapshots" 
+                            } else {
+                              "http://www.terracotta.org/download/reflector/releases"
+                            }
+                         }}
+                  </value>
+                </property>             
+              </properties>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
