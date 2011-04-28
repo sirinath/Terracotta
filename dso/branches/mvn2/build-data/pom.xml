@@ -33,7 +33,7 @@
       <plugin>
         <groupId>com.goldin.plugins</groupId>
         <artifactId>maven-properties-plugin</artifactId>
-        <version>0.2.1</version>
+        <version>0.2.2</version>
         <executions>
           <execution>
             <id>set-properties</id>
@@ -42,30 +42,19 @@
               <goal>set-properties</goal>
             </goals>
             <configuration>
+              <runIf>{{ project.version.endsWith( 'SNAPSHOT' ) }}</runIf>
               <properties>
                 <property>
                   <name>includeSnapshots</name>
-                  <value>{{ project.version.endsWith( 'SNAPSHOT' ) }}</value>
+                  <value>true</value>
                 </property>
                 <property>
                   <name>dataFileUrl</name>
-                  <value>{{ if (project.version.endsWith('SNAPSHOT')) { 
-                              "http://www.terracotta.org/download/reflector/snapshots/tim-get/3/index.xml.gz" 
-                            } else {
-                              "http://www.terracotta.org/download/reflector/releases/tim-get/3/index.xml.gz"
-                            }
-                         }}
-                  </value>
+                  <value>http://www.terracotta.org/download/reflector/snapshots/tim-get/3/index.xml.gz</value>
                 </property>
                 <property>
                   <name>relativeUrlBase</name>
-                  <value>{{ if (project.version.endsWith('SNAPSHOT')) { 
-                              "http://www.terracotta.org/download/reflector/snapshots" 
-                            } else {
-                              "http://www.terracotta.org/download/reflector/releases"
-                            }
-                         }}
-                  </value>
+                  <value>http://www.terracotta.org/download/reflector/snapshots</value>
                 </property>             
               </properties>
             </configuration>
