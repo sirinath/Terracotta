@@ -17,6 +17,12 @@
   <artifactId>terracotta-kit</artifactId>
   <packaging>jar</packaging>
   <name>terracotta-kit</name>
+  
+  <properties>
+    <skip.deploy>true</skip.deploy>
+    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>  
+    <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>    
+  </properties>
 
   <dependencies>
     <dependency>
@@ -31,14 +37,33 @@
       <artifactId>build-data</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-    </dependency>    
+    </dependency>
+
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>terracotta-toolkit-1.3-runtime</artifactId>
+      <version>${toolkit.version}</version>
+      <scope>provided</scope>
+    </dependency>       
+    
+    <dependency>
+      <groupId>org.terracotta.samples.ehcache</groupId>
+      <artifactId>colorcache</artifactId>
+      <version>${project.version}</version>
+      <classifier>distribution</classifier>
+      <type>tar.gz</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.samples.ehcache.hibernate</groupId>
+      <artifactId>events</artifactId>
+      <version>${project.version}</version>
+      <classifier>distribution</classifier>
+      <type>tar.gz</type>
+      <scope>provided</scope>
+    </dependency>     
     
   </dependencies>
-  
-  <properties>
-    <skip.deploy>true</skip.deploy>
-    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>
-  </properties>
       
   <build>
     <plugins>
@@ -47,6 +72,9 @@
         <artifactId>maven-copy-plugin</artifactId>
         <version>0.2.2</version>
         <configuration>
+          <groovyConfig>
+              <classpath>${project.basedir}/src/scripts</classpath>
+          </groovyConfig>        
           <verbose>false</verbose>
           <resources>
             <!-- prepare skeleton structure of the kit -->
@@ -57,26 +85,27 @@
             </resource>
             
             <!-- populate lib folder -->
-            <resource>
+            <!--resource>
               <targetPath>${rootDir}/lib</targetPath>
               <dependency>
                 <includeScope>compile</includeScope>
                 <excludeArtifactIds>terracotta,build-data,thirdparty-api,dso-cluster-api,stax-api</excludeArtifactIds>
               </dependency>
               <dependenciesAtM2>true</dependenciesAtM2>
-            </resource>
+            </resource-->
             
             <!-- remove build-data.txt from terracotta jar -->
-            <resource>
+            <!--resource>
               <targetPath>${rootDir}/lib</targetPath>
               <dependency>
                 <groupId>org.terracotta</groupId>
                 <artifactId>terracotta</artifactId>
               </dependency>
               <process>{{ ('zip -d ' + files.first() + ' build-data.txt').execute().text }}</process>
-            </resource>
+            </resource-->
             
-            <resource>
+            <!-- build data -->
+            <!--resource>
               <targetPath>${rootDir}/lib/resources</targetPath>
               <dependency>
                 <groupId>org.terracotta.internal</groupId>
@@ -87,14 +116,55 @@
                 <zipEntry>tim-get.properties</zipEntry>
               </zipEntries>
               <unpack>true</unpack>              
+            </resource-->
+            
+            <!-- tookit -->
+            <!--resource>
+              <targetPath>${rootDir}/common</targetPath>
+              <dependency>
+                <groupId>org.terracotta</groupId>
+                <artifactId>terracotta-toolkit-1.3-runtime</artifactId>
+              </dependency>            
             </resource>
+            <resource>
+              <targetPath>${rootDir}/common/docs/javadoc</targetPath>
+              <dependency>
+                <groupId>org.terracotta</groupId>
+                <artifactId>terracotta-toolkit-1.3-runtime</artifactId>
+                <classifier>javadoc</classifier>
+              </dependency>
+              <unpack>true</unpack>
+            </resource-->            
+            
+            <!-- ehcache samples-->
+            <resource>
+              <targetPath>${rootDir}/ehcache/samples</targetPath>
+              <dependencies>
+                <dependency>
+                  <groupId>org.terracotta.samples.ehcache</groupId>
+                  <artifactId>colorcache</artifactId>
+                  <classifier>distribution</classifier>
+                  <type>tar.gz</type>
+                </dependency>
+                <dependency>
+                  <groupId>org.terracotta.samples.ehcache.hibernate</groupId>
+                  <artifactId>events</artifactId>
+                  <classifier>distribution</classifier>
+                  <type>tar.gz</type>
+                </dependency>
+              </dependencies>
+              <unpack>true</unpack>
+              <process>{{
+              Util.rename(project.properties['rootDir']  + "/ehcache/samples/colorcache-${project.version}", project.properties['rootDir']  + "/ehcache/samples/colorcache")              
+              Util.rename(project.properties['rootDir']  + "/ehcache/samples/events-${project.version}", project.properties['rootDir']  + "/ehcache/samples/hibernate") }}</process>
+            </resource>          
             
             <!-- package tar.gz kit -->
-            <resource>
+            <!--resource>
               <targetPath>${rootDir}.tar.gz</targetPath>
               <directory>${rootDir}</directory>
               <pack>true</pack>
-            </resource>
+            </resource-->
             
           </resources>
         </configuration>
