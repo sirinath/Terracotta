@@ -14,6 +14,9 @@ dso_notify_url=http://$dso_hudson_master_host/subversion/${uuid}/notifyCommit?re
 timeout=10
 tries=3
 
+log=/export1/svn-mirror/logs/$repo_name-post-commit.log
+echo "" > $log
+
 for url in $notify_url $dso_notify_url; do
   /usr/bin/wget \
     --header "Content-Type:text/plain;charset=UTF-8" \
@@ -23,8 +26,7 @@ for url in $notify_url $dso_notify_url; do
     $url
 
   timestamp=`/bin/date`
-  log=/export1/svn-mirror/logs/$repo_name-post-commit.log
-  echo "$timestamp: $url" > $log
+  echo "$timestamp: $url" >> $log
   echo "post data $repos: `svnlook changed --revision $rev $repos`" >> $log
   echo "">> $log
 
