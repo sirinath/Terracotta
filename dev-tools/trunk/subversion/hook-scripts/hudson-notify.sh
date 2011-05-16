@@ -21,11 +21,12 @@ for url in $notify_url $dso_notify_url; do
     --post-data "`svnlook changed --revision $rev $repos`" \
     --output-document "-" \
     $url
-done
 
-timestamp=`/bin/date`
-log=/export1/svn-mirror/logs/$repo_name-post-commit.log
-echo "$timestamp: $notify_url" > $log
-echo "post data $repos: `svnlook changed --revision $rev $repos`" >> $log
-echo "">> $log
+  timestamp=`/bin/date`
+  log=/export1/svn-mirror/logs/$repo_name-post-commit.log
+  echo "$timestamp: $url" > $log
+  echo "post data $repos: `svnlook changed --revision $rev $repos`" >> $log
+  echo "">> $log
+
+done
 
