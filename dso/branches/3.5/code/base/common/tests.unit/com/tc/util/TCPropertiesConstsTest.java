@@ -47,6 +47,18 @@ public class TCPropertiesConstsTest extends TCTestCase {
 
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_CACHE_MAX_CHUNK_SIZE);
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_CACHE_MIN_CHUNK_SIZE);
+
+    exemptedProperties.add(TCPropertiesConsts.DERBY_STORAGE_PAGESIZE);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_STORAGE_PAGECACHESIZE);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_MAXMEMORYPERCENT);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_SYSTEM_DURABILITY);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_LOG_DEVICE);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_LOG_BUFFER_SIZE);
+    exemptedProperties.add(TCPropertiesConsts.L2_DERBYDB_DERBY_STORAGE_LOG_BUFFER_SIZE);
+    exemptedProperties.add(TCPropertiesConsts.L2_DERBYDB_DERBY_STORAGE_PAGECACHESIZE);
+    exemptedProperties.add(TCPropertiesConsts.L2_DERBYDB_DERBY_SYSTEM_DURABILITY);
+    exemptedProperties.add(TCPropertiesConsts.L2_DERBYDB_LOG_DEVICE);
+    exemptedProperties.add(TCPropertiesConsts.DERBY_STREAM_ERROR_METHOD);
   }
 
   private void loadDefaults(String propFile) {

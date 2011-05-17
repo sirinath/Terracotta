@@ -15,13 +15,13 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
 
-public class TCObjectDatabaseTest extends TCTestCase {
+public class TCLongToBytesDatabaseTest extends TCTestCase {
   private final Random                   random = new Random();
   private File                           dbHome;
   private DBEnvironment                  dbenv;
   private PersistenceTransactionProvider ptp;
 
-  private TCObjectDatabase               database;
+  private TCLongToBytesDatabase          database;
 
   @Override
   protected void setUp() throws Exception {
@@ -53,7 +53,6 @@ public class TCObjectDatabaseTest extends TCTestCase {
     tx.commit();
     Assert.assertTrue(Arrays.equals(value1, valueFetched));
 
-    value1 = getRandomlyFilledByteArray();
     tx = ptp.newTransaction();
     status = database.update(objectId1, value2, tx);
     tx.commit();

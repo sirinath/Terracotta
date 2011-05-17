@@ -23,11 +23,15 @@ public class DerbyDBFactory implements DBFactory {
 
   public DBEnvironment createEnvironment(boolean paranoid, File envHome, SampledCounter l2FaultFromDisk,
                                          boolean offheapEnabled) throws IOException {
-    return new DerbyDBEnvironment(paranoid, envHome, properties, l2FaultFromDisk);
+    return new DerbyDBEnvironment(paranoid, envHome, properties, l2FaultFromDisk, offheapEnabled);
   }
 
   public ServerDBBackupMBean getServerDBBackupMBean(L2ConfigurationSetupManager configurationSetupManager) {
     // TODO
     return null;
+  }
+
+  public DBEnvironment createEnvironment(boolean paranoid, File envHome) throws IOException {
+    return new DerbyDBEnvironment(paranoid, envHome);
   }
 }

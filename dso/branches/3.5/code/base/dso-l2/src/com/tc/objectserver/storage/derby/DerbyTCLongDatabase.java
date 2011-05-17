@@ -28,7 +28,7 @@ class DerbyTCLongDatabase extends AbstractDerbyTCDatabase implements TCLongDatab
     containsQuery = "SELECT " + KEY + " FROM " + tableName + " WHERE " + KEY + " = ?";
     deleteQuery = "DELETE FROM " + tableName + " WHERE " + KEY + " = ?";
     getAllQuery = "SELECT " + KEY + " FROM " + tableName;
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?)";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ") VALUES (?)";
   }
 
   @Override
@@ -85,29 +85,22 @@ class DerbyTCLongDatabase extends AbstractDerbyTCDatabase implements TCLongDatab
     } catch (SQLException e) {
       throw new DBException(e);
     } finally {
+      closeResultSet(rs);
       tx.commit();
     }
   }
 
-  public Status put(long key, PersistenceTransaction tx) {
-    if (contains(key, tx)) {
-      return Status.NOT_SUCCESS;
-    } else {
-      return insert(key, tx);
-    }
-  }
-
-  private Status insert(long key, PersistenceTransaction tx) {
+  public Status insert(long key, PersistenceTransaction tx) {
     PreparedStatement psPut;
     try {
       // "INSERT INTO " + tableName + " VALUES (?)"
       psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setLong(1, key);
-      psPut.executeUpdate();
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
-    return Status.SUCCESS;
+    throw new DBException("Could not insert with key: " + key);
   }
 
 }

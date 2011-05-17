@@ -50,7 +50,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
     byte[] value = getRandomlyFilledByteArray(objectId);
 
     PersistenceTransaction tx = ptp.newTransaction();
-    int written = database.put(tx, objectId, key, value, serializer);
+    int written = database.insert(tx, objectId, key, value, serializer);
     tx.commit();
 
     Assert.assertTrue(written > 0);
@@ -89,8 +89,8 @@ public class TCMapsDatabaseTest extends TCTestCase {
     byte[] value2 = getRandomlyFilledByteArray(objectId2);
 
     PersistenceTransaction tx = ptp.newTransaction();
-    database.put(tx, objectId1, key1, value1, serializer);
-    database.put(tx, objectId2, key2, value2, serializer);
+    database.insert(tx, objectId1, key1, value1, serializer);
+    database.insert(tx, objectId2, key2, value2, serializer);
     tx.commit();
 
     Assert.assertEquals(2, database.count(ptp.newTransaction()));
@@ -124,6 +124,26 @@ public class TCMapsDatabaseTest extends TCTestCase {
       array[i] = temp[i];
     }
     return array;
+  }
+
+  public void testDelete() throws Exception {
+    long objectId1 = 1;
+    long objectId2 = 2;
+    TCCollectionsSerializer serializer = new TCCollectionsSerializerImpl();
+
+    String key = "key";
+    String value = "value";
+
+    PersistenceTransaction tx = ptp.newTransaction();
+    database.insert(tx, objectId1, key, value, serializer);
+    database.insert(tx, objectId2, key, value, serializer);
+    tx.commit();
+
+    tx = ptp.newTransaction();
+    database.delete(tx, objectId1, key, serializer);
+    tx.commit();
+
+    Assert.assertEquals(1, database.count(ptp.newTransaction()));
   }
 
   @Override

@@ -75,14 +75,9 @@ public interface DBEnvironment {
   public abstract PersistenceTransactionProvider getPersistenceTransactionProvider();
 
   /**
-   * Returns the persistence transaction provider which can be used to create new transactions.
-   */
-  public abstract PersistenceTransactionProvider getNullPersistenceTransactionProvider();
-
-  /**
    * Returns the Object Database to be used by Persistor classes.
    */
-  public abstract TCObjectDatabase getObjectDatabase() throws TCDatabaseException;
+  public abstract TCLongToBytesDatabase getObjectDatabase() throws TCDatabaseException;
 
   /**
    * Oid Stores which are used by FastObjectOidManagerImpl
@@ -108,7 +103,7 @@ public interface DBEnvironment {
   /**
    * Returns the transaction database.
    */
-  public abstract TCBytesToBytesDatabase getTransactionDatabase() throws TCDatabaseException;
+  public abstract TCTransactionStoreDatabase getTransactionDatabase() throws TCDatabaseException;
 
   /**
    * Returns the class database.

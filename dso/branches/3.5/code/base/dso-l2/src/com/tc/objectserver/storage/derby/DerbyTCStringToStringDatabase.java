@@ -27,7 +27,7 @@ class DerbyTCStringToStringDatabase extends AbstractDerbyTCDatabase implements T
     deleteQuery = "DELETE FROM " + tableName + " WHERE " + KEY + " = ?";
     getQuery = "SELECT " + VALUE + " FROM " + tableName + " WHERE " + KEY + " = ?";
     updateQuery = "UPDATE " + tableName + " SET " + VALUE + " = ? " + " WHERE " + KEY + " = ?";
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?, ?)";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ", " + VALUE + ") VALUES (?, ?)";
   }
 
   @Override
@@ -94,14 +94,11 @@ class DerbyTCStringToStringDatabase extends AbstractDerbyTCDatabase implements T
       PreparedStatement psUpdate = getOrCreatePreparedStatement(tx, updateQuery);
       psUpdate.setString(1, value);
       psUpdate.setString(2, key);
-      if (psUpdate.executeUpdate() > 0) {
-        return Status.SUCCESS;
-      } else {
-        return Status.NOT_SUCCESS;
-      }
+      if (psUpdate.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not update with String key: " + key);
   }
 
   private Status insert(String key, String value, PersistenceTransaction tx) {
@@ -111,13 +108,10 @@ class DerbyTCStringToStringDatabase extends AbstractDerbyTCDatabase implements T
       psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setString(1, key);
       psPut.setString(2, value);
-      if (psPut.executeUpdate() > 0) {
-        return Status.SUCCESS;
-      } else {
-        return Status.NOT_SUCCESS;
-      }
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not insert with String key: " + key);
   }
 }

@@ -448,7 +448,13 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, PrettyPrint
       final ObjectID oid = (ObjectID) i.next();
       final ObjectLookupState ols = this.objectLookupStates.get(oid);
       this.logger.warn("Received Missing Object ID from server : " + oid + " ObjectLookup State : " + ols);
-      if (ols.isPrefetch()) {
+      if (ols == null) {
+        /**
+         * DEV-5697 : This is possible if prefetch from the server and the look from the client are racing and the
+         * object gets removed, DGCed before the lookup from the client is actually processed.
+         */
+        continue;
+      } else if (ols.isPrefetch()) {
         // Ignoring prefetch requests, as it could made under incorrect locking, reset the data structures
         this.objectLookupStates.remove(oid);
       } else {
@@ -716,9 +722,6 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, PrettyPrint
     out.duplicateAndIndent().indent().print(getClass().getSimpleName()).flush();
     out.duplicateAndIndent().indent().print(this.groupID).flush();
     out.duplicateAndIndent().indent().print("dnaCache:").visit(this.dnaCache).flush();
-    final StringBuilder strBuffer = new StringBuilder();
-    out.duplicateAndIndent().indent().print("pending objects:").print(strBuffer.toString()).flush();
-
     // printing this.objectLookupStates.toString() as PrettyPrinter prints the size of the map otherwise
     out.duplicateAndIndent().indent().print("lookupstates:").print(this.objectLookupStates.toString()).flush();
     return out;

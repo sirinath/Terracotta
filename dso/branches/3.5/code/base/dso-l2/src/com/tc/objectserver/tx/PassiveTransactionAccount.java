@@ -49,7 +49,6 @@ public class PassiveTransactionAccount implements TransactionAccount {
       if (state.isComplete()) {
         this.txnIDsToState.remove(tempServerTransactionID);
         invokeCallBackOnCompleteIfNecessary();
-        return true;
       }
     }
     return false;

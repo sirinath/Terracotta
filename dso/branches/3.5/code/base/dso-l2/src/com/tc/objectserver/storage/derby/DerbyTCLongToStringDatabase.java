@@ -18,15 +18,13 @@ import java.sql.SQLException;
 
 class DerbyTCLongToStringDatabase extends AbstractDerbyTCDatabase implements TCLongToStringDatabase {
   private final String loadMappingsIntoQuery;
-  private final String getQuery;
   private final String insertQuery;
 
   public DerbyTCLongToStringDatabase(String tableName, Connection connection, QueryProvider queryProvider)
       throws TCDatabaseException {
     super(tableName, connection, queryProvider);
     loadMappingsIntoQuery = "SELECT " + KEY + "," + VALUE + " FROM " + tableName;
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?, ?)";
-    getQuery = "SELECT " + VALUE + " FROM " + tableName + " WHERE " + KEY + " = ?";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ", " + VALUE + ") VALUES (?, ?)";
   }
 
   @Override
@@ -56,40 +54,16 @@ class DerbyTCLongToStringDatabase extends AbstractDerbyTCDatabase implements TCL
     }
   }
 
-  public Status put(long id, String string, PersistenceTransaction tx) {
-    if (get(id, tx) == null) { return insert(id, string, tx); }
-    return Status.NOT_SUCCESS;
-  }
-
-  private Status insert(long id, String b, PersistenceTransaction tx) {
+  public Status insert(long id, String b, PersistenceTransaction tx) {
     try {
       // "INSERT INTO " + tableName + " VALUES (?, ?)"
       PreparedStatement psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setLong(1, id);
       psPut.setString(2, b);
-      psPut.executeUpdate();
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
-    return Status.SUCCESS;
-  }
-
-  private byte[] get(long id, PersistenceTransaction tx) {
-    ResultSet rs = null;
-    try {
-      // "SELECT " + VALUE + " FROM " + tableName + " WHERE "
-      // + KEY + " = ?"
-      PreparedStatement psSelect = getOrCreatePreparedStatement(tx, getQuery);
-      psSelect.setLong(1, id);
-      rs = psSelect.executeQuery();
-
-      if (!rs.next()) { return null; }
-      byte[] temp = rs.getBytes(1);
-      return temp;
-    } catch (SQLException e) {
-      throw new DBException(e);
-    } finally {
-      closeResultSet(rs);
-    }
+    throw new DBException("Could not insert with key: " + id);
   }
 }

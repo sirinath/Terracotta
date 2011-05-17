@@ -341,7 +341,7 @@ public class ClientConnectionEstablisher {
           cmt.logger.warn("Reconnection rejected. No more trying to reconnect.");
           return;
         } catch (Throwable t) {
-          cmt.logger.warn("Reconnect failed !", t);
+          if (cmt != null) cmt.logger.warn("Reconnect failed !", t);
         }
       }
     }

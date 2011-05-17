@@ -12,12 +12,22 @@ import java.util.Map;
 
 public interface TCMapsDatabase {
   /**
-   * Puts an entry<K,Y> for a particular map identified by id into the DB. The id here is the object id of the map.
+   * Updates an entry<K, V> for a particular map identified by id in the DB.
    * 
    * @throws IOException
+   * @throws TCDatabaseException
    */
-  public int put(PersistenceTransaction tx, long id, Object key, Object value, TCCollectionsSerializer serializer)
-      throws TCDatabaseException, IOException;
+  public int update(PersistenceTransaction tx, long id, Object key, Object value, TCCollectionsSerializer serializer)
+      throws IOException, TCDatabaseException;
+
+  /**
+   * Inserts an entry<K, V> for a particular map identified by id into the DB.
+   * 
+   * @throws IOException
+   * @throws TCDatabaseException
+   */
+  public int insert(PersistenceTransaction tx, long id, Object key, Object value, TCCollectionsSerializer serializer)
+      throws IOException, TCDatabaseException;
 
   /**
    * Deletes a key from the map whose object id is passed in as the parameter
