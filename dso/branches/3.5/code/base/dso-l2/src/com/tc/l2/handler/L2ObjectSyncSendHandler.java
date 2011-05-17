@@ -7,10 +7,8 @@ package com.tc.l2.handler;
 import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
-import com.tc.async.api.Sink;
 import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.ManagedObjectSyncContext;
-import com.tc.l2.context.SyncObjectsRequest;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.ObjectSyncCompleteAckMessage;
 import com.tc.l2.msg.ObjectSyncMessage;
@@ -52,7 +50,6 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
   private final L2ObjectStateManager     objectStateManager;
 
   private GroupManager                   groupManager;
-  private Sink                           syncRequestSink;
   private ServerTransactionManager       serverTxnMgr;
 
   public L2ObjectSyncSendHandler(final L2ObjectStateManager objectStateManager, final ServerTransactionFactory factory) {
@@ -67,7 +64,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
       if (sendObjects(mosc)) {
         if (mosc.hasMore()) {
           throttleOnObjectSync();
-          this.syncRequestSink.add(new SyncObjectsRequest(mosc.getNodeID()));
+          this.objectStateManager.syncMore(mosc.getNodeID());
         }
       }
     } else if (context instanceof ServerTxnAckMessage) {
@@ -196,7 +193,6 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
     this.serverTxnMgr = oscc.getTransactionManager();
     final L2Coordinator l2Coordinator = oscc.getL2Coordinator();
     this.groupManager = l2Coordinator.getGroupManager();
-    this.syncRequestSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_REQUEST_STAGE).getSink();
   }
 
   private static class SyncLogger {
