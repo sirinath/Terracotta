@@ -12,8 +12,8 @@ import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.gtx.GlobalTransactionDescriptor;
 import com.tc.objectserver.persistence.api.TransactionPersistor;
 import com.tc.objectserver.persistence.api.TransactionStore;
+import com.tc.objectserver.persistence.db.TransactionStoreImpl;
 import com.tc.objectserver.persistence.impl.TestPersistenceTransaction;
-import com.tc.objectserver.persistence.inmemory.TransactionStoreImpl;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
 import com.tc.test.TCTestCase;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
@@ -39,7 +39,7 @@ public class TransactionStoreTest extends TCTestCase {
   public void testDeleteByGlobalTransactionID() throws Exception {
     persistor = new TestTransactionPersistor();
     store = new TransactionStoreImpl(persistor, persistor);
-    List gtxs = new LinkedList();
+    List<GlobalTransactionDescriptor> gtxs = new LinkedList();
     for (int i = 0; i < 100; i++) {
       ServerTransactionID sid1 = new ServerTransactionID(new ClientID(i), new TransactionID(i));
       store.getOrCreateTransactionDescriptor(sid1);
@@ -48,38 +48,36 @@ public class TransactionStoreTest extends TCTestCase {
       assertNotNull(desc);
       gtxs.add(desc);
     }
-    final GlobalTransactionDescriptor originalMin = (GlobalTransactionDescriptor) gtxs.get(0);
+    final GlobalTransactionDescriptor originalMin = gtxs.get(0);
 
     assertEquals(getGlobalTransactionID(originalMin), store.getLeastGlobalTransactionID());
 
     // create a set of transactions to delete
-    Collection toDelete = new HashSet();
-    Collection toDeleteIDs = new HashSet();
+    Collection<GlobalTransactionDescriptor> toDelete = new HashSet<GlobalTransactionDescriptor>();
+    Collection<GlobalTransactionID> toDeleteIDs = new HashSet<GlobalTransactionID>();
     for (int i = 0; i < 10; i++) {
 
-      GlobalTransactionDescriptor o = (GlobalTransactionDescriptor) gtxs.remove(0);
+      GlobalTransactionDescriptor o = gtxs.remove(0);
       toDelete.add(o);
-      toDeleteIDs.add(o.getServerTransactionID());
+      toDeleteIDs.add(o.getGlobalTransactionID());
     }
     assertFalse(originalMin == gtxs.get(0));
 
     // delete the set
-    store.clearCommitedTransactionsBelowLowWaterMark(null, getGlobalTransactionID((GlobalTransactionDescriptor) gtxs
-        .get(0)));
+    store.clearCommitedTransactionsBelowLowWaterMark(null, getGlobalTransactionID(gtxs.get(0)));
 
-    GlobalTransactionDescriptor currentMin = (GlobalTransactionDescriptor) gtxs.get(0);
+    GlobalTransactionDescriptor currentMin = gtxs.get(0);
     // make sure the min has been adjusted properly
     assertEquals(getGlobalTransactionID(currentMin), store.getLeastGlobalTransactionID());
     // make sure the deleted set has actually been deleted
-    Set deletedSids = new HashSet();
-    for (Iterator i = toDelete.iterator(); i.hasNext();) {
-      GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) i.next();
+    Set<GlobalTransactionID> deletedGids = new HashSet<GlobalTransactionID>();
+    for (GlobalTransactionDescriptor desc : toDelete) {
       assertNull(store.getTransactionDescriptor(desc.getServerTransactionID()));
-      deletedSids.add(desc.getServerTransactionID());
+      deletedGids.add(desc.getGlobalTransactionID());
     }
 
     // make sure the persistor is told to delete them all
-    assertEquals(deletedSids, new HashSet((Collection) persistor.deleteQueue.poll(1)));
+    assertEquals(deletedGids, new HashSet((Collection) persistor.deleteQueue.poll(1)));
   }
 
   public void testLeastGlobalTransactionID() throws Exception {
@@ -347,7 +345,7 @@ public class TransactionStoreTest extends TCTestCase {
     int laterMax = 400;
     persistor = new TestTransactionPersistor();
     store = new TransactionStoreImpl(persistor, persistor);
-    Map sid2Gid = new HashMap();
+    Map<ServerTransactionID, GlobalTransactionDescriptor> sid2Gid = new HashMap<ServerTransactionID, GlobalTransactionDescriptor>();
     for (int i = initialMin; i < initialMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ClientID(i % 2), new TransactionID(i));
       GlobalTransactionDescriptor desc = store.getOrCreateTransactionDescriptor(stxid);
@@ -363,7 +361,7 @@ public class TransactionStoreTest extends TCTestCase {
     GlobalTransactionID maxID = GlobalTransactionID.NULL_ID;
     for (int i = initialMin; i < initialMax; i++) {
       ServerTransactionID stxid = new ServerTransactionID(new ClientID(i % 2), new TransactionID(i));
-      GlobalTransactionDescriptor desc = (GlobalTransactionDescriptor) sid2Gid.get(stxid);
+      GlobalTransactionDescriptor desc = sid2Gid.get(stxid);
       assertEquals(desc, store.getTransactionDescriptor(stxid));
       if (desc.getGlobalTransactionID().toLong() > maxID.toLong()) {
         maxID = desc.getGlobalTransactionID();
@@ -402,7 +400,7 @@ public class TransactionStoreTest extends TCTestCase {
 
     public void saveGlobalTransactionDescriptor(PersistenceTransaction tx, GlobalTransactionDescriptor gtx) {
       storeQueue.put(new Object[] { tx, gtx });
-      persisted.put(gtx.getServerTransactionID(), gtx);
+      persisted.put(gtx.getGlobalTransactionID(), gtx);
     }
 
     public long next() {
@@ -413,10 +411,9 @@ public class TransactionStoreTest extends TCTestCase {
       return sequence;
     }
 
-    public void deleteAllGlobalTransactionDescriptors(PersistenceTransaction tx, SortedSet<ServerTransactionID> toDelete) {
+    public void deleteAllGlobalTransactionDescriptors(PersistenceTransaction tx, SortedSet<GlobalTransactionID> toDelete) {
       deleteQueue.put(toDelete);
-      for (Iterator<ServerTransactionID> i = toDelete.iterator(); i.hasNext();) {
-        ServerTransactionID sid = i.next();
+      for (GlobalTransactionID sid : toDelete) {
         persisted.remove(sid);
       }
     }

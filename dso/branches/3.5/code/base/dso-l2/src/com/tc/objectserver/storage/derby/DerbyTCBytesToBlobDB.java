@@ -15,6 +15,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 class DerbyTCBytesToBlobDB extends AbstractDerbyTCDatabase implements TCBytesToBytesDatabase {
   private final String deleteQuery;
@@ -30,7 +32,7 @@ class DerbyTCBytesToBlobDB extends AbstractDerbyTCDatabase implements TCBytesToB
     getQuery = "SELECT " + VALUE + " FROM " + tableName + " WHERE " + KEY + " = ?";
     openCursorQuery = "SELECT " + KEY + "," + VALUE + " FROM " + tableName;
     updateQuery = "UPDATE " + tableName + " SET " + VALUE + " = ? " + " WHERE " + KEY + " = ?";
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?, ?)";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ", " + VALUE + ") VALUES (?, ?)";
   }
 
   @Override
@@ -101,31 +103,31 @@ class DerbyTCBytesToBlobDB extends AbstractDerbyTCDatabase implements TCBytesToB
     }
   }
 
-  private Status update(byte[] key, byte[] val, PersistenceTransaction tx) {
+  public Status update(byte[] key, byte[] val, PersistenceTransaction tx) {
     try {
       // "UPDATE " + tableName + " SET " + VALUE + " = ? " + " WHERE " + KEY + " = ?"
       PreparedStatement psUpdate = getOrCreatePreparedStatement(tx, updateQuery);
       psUpdate.setBytes(1, val);
       psUpdate.setBytes(2, key);
-      psUpdate.executeUpdate();
-      return Status.SUCCESS;
+      if (psUpdate.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not update with key: " + Arrays.toString(key));
   }
 
-  private Status insert(byte[] key, byte[] val, PersistenceTransaction tx) {
+  public Status insert(byte[] key, byte[] val, PersistenceTransaction tx) {
     PreparedStatement psPut;
     try {
       // "INSERT INTO " + tableName + " VALUES (?, ?)"
       psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setBytes(1, key);
       psPut.setBytes(2, val);
-      psPut.executeUpdate();
-      return Status.SUCCESS;
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not insert with key: " + Arrays.toString(key));
   }
 
   public Status putNoOverwrite(PersistenceTransaction tx, byte[] key, byte[] value) {
@@ -133,15 +135,13 @@ class DerbyTCBytesToBlobDB extends AbstractDerbyTCDatabase implements TCBytesToB
     return Status.NOT_SUCCESS;
   }
 
-  static class DerbyTCBytesBytesCursor implements TCDatabaseCursor<byte[], byte[]> {
-    private final ResultSet rs;
-
-    public DerbyTCBytesBytesCursor(ResultSet rs) {
-      this.rs = rs;
-    }
-
+  static class DerbyTCBytesBytesCursor extends AbstractDerbyTCDatabaseCursor<byte[], byte[]> {
     private TCDatabaseEntry<byte[], byte[]> entry    = null;
     private boolean                         finished = false;
+
+    public DerbyTCBytesBytesCursor(ResultSet rs) {
+      super(rs);
+    }
 
     public boolean hasNext() {
       if (entry != null) { return true; }
@@ -165,26 +165,13 @@ class DerbyTCBytesToBlobDB extends AbstractDerbyTCDatabase implements TCBytesToB
     }
 
     public TCDatabaseEntry<byte[], byte[]> next() {
-      if (entry == null) { throw new DBException("next call should be called only after checking hasNext."); }
+      if (entry == null) {
+        if (!hasNext()) { throw new NoSuchElementException("No Element left. Please do hasNext before calling next"); }
+      }
+
       TCDatabaseEntry<byte[], byte[]> temp = entry;
       entry = null;
       return temp;
-    }
-
-    public void close() {
-      try {
-        rs.close();
-      } catch (SQLException e) {
-        throw new DBException(e);
-      }
-    }
-
-    public void delete() {
-      try {
-        rs.deleteRow();
-      } catch (SQLException e) {
-        throw new DBException(e);
-      }
     }
   }
 }

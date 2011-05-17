@@ -42,5 +42,4 @@ public class BerkeleyDBTCStringtoStringDatabase extends BerkeleyDBTCBytesBytesDa
     byte[] keyInBytes = Conversion.string2Bytes(key);
     return delete(keyInBytes, tx);
   }
-
 }

@@ -26,8 +26,8 @@ class DerbyTCRootDatabase extends AbstractDerbyTCDatabase implements TCRootDatab
   private final String getQuery;
   private final String rootNamesToIDQuery;
   private final String insertQuery;
-  private final String rootIDsQuery;
   private final String updateQuery;
+  private final String rootIDsQuery;
   private final String idFromNameQuery;
 
   public DerbyTCRootDatabase(String tableName, Connection connection, QueryProvider queryProvider)
@@ -37,7 +37,7 @@ class DerbyTCRootDatabase extends AbstractDerbyTCDatabase implements TCRootDatab
     rootIDsQuery = "SELECT " + VALUE + " FROM " + tableName;
     rootNamesQuery = "SELECT " + KEY + " FROM " + tableName;
     rootNamesToIDQuery = "SELECT " + KEY + ", " + VALUE + " FROM " + tableName;
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?, ?)";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ", " + VALUE + ") VALUES (?, ?)";
     updateQuery = "UPDATE " + tableName + " SET " + VALUE + " = ? " + " WHERE " + KEY + " = ?";
     idFromNameQuery = "SELECT " + VALUE + " FROM " + tableName + " WHERE " + KEY + " = ?";
   }
@@ -144,12 +144,11 @@ class DerbyTCRootDatabase extends AbstractDerbyTCDatabase implements TCRootDatab
       PreparedStatement psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setBytes(1, rootName);
       psPut.setLong(2, id);
-      psPut.executeUpdate();
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException("Could not put root", e);
     }
-    return Status.SUCCESS;
-
+    throw new DBException("Could not insert with root id: " + id);
   }
 
   private Status update(byte[] rootName, long id, PersistenceTransaction tx) {
@@ -159,11 +158,11 @@ class DerbyTCRootDatabase extends AbstractDerbyTCDatabase implements TCRootDatab
       PreparedStatement psUpdate = getOrCreatePreparedStatement(tx, updateQuery);
       psUpdate.setLong(1, id);
       psUpdate.setBytes(2, rootName);
-      psUpdate.executeUpdate();
-      return Status.SUCCESS;
+      if (psUpdate.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not update with root id: " + id);
   }
 
   public long getIdFromName(byte[] rootName, PersistenceTransaction tx) {

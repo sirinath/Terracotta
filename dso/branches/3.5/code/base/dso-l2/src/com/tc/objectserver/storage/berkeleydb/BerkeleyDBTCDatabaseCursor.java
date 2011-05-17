@@ -7,20 +7,42 @@ import com.sleepycat.je.Cursor;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
-import com.tc.objectserver.persistence.db.DBException;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.objectserver.storage.api.TCDatabaseCursor;
 import com.tc.objectserver.storage.api.TCDatabaseEntry;
 
+import java.util.NoSuchElementException;
+
 public class BerkeleyDBTCDatabaseCursor implements TCDatabaseCursor<byte[], byte[]> {
+  private static final TCLogger             logger   = TCLogging.getLogger(BerkeleyDBTCDatabaseCursor.class);
   private final Cursor                      cursor;
-  protected TCDatabaseEntry<byte[], byte[]> entry = null;
+  protected final boolean                   fetchValue;
+  protected TCDatabaseEntry<byte[], byte[]> entry    = null;
+  private volatile boolean                  isClosed = false;
 
   public BerkeleyDBTCDatabaseCursor(Cursor cursor) {
+    this(cursor, true);
+  }
+
+  public BerkeleyDBTCDatabaseCursor(Cursor cursor, boolean fetchValue) {
     this.cursor = cursor;
+    this.fetchValue = fetchValue;
   }
 
   public void close() {
     cursor.close();
+    isClosed = true;
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    if (!isClosed) {
+      logger
+          .warn("Since the \"TCDatabaseCursor.close()\" for the cursor was not called. So calling it explicity in \"finalize\" method.");
+      close();
+    }
+    super.finalize();
   }
 
   public void delete() {
@@ -28,10 +50,6 @@ public class BerkeleyDBTCDatabaseCursor implements TCDatabaseCursor<byte[], byte
   }
 
   public boolean hasNext() {
-    return hasNext(true);
-  }
-
-  protected boolean hasNext(boolean fetchValue) {
     if (entry != null) { return true; }
 
     entry = new TCDatabaseEntry<byte[], byte[]>();
@@ -48,7 +66,9 @@ public class BerkeleyDBTCDatabaseCursor implements TCDatabaseCursor<byte[], byte
   }
 
   public TCDatabaseEntry<byte[], byte[]> next() {
-    if (entry == null) { throw new DBException("next call should be called only after checking hasNext."); }
+    if (entry == null) {
+      if (!hasNext()) { throw new NoSuchElementException("No Element left. Please do hasNext before calling next"); }
+    }
 
     TCDatabaseEntry<byte[], byte[]> tempEntry = entry;
     entry = null;

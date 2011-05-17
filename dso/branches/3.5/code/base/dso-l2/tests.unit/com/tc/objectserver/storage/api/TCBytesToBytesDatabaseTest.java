@@ -166,8 +166,8 @@ public class TCBytesToBytesDatabaseTest extends TCTestCase {
     try {
       dbenv.close();
       FileUtils.cleanDirectory(dbHome);
-    } catch (Throwable t) {
-      t.printStackTrace();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 }

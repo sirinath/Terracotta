@@ -28,7 +28,7 @@ class DerbyTCIntToBytesDatabase extends AbstractDerbyTCDatabase implements TCInt
     getQuery = "SELECT " + VALUE + " FROM " + tableName + " WHERE " + KEY + " = ?";
     getAllQuery = "SELECT " + KEY + "," + VALUE + " FROM " + tableName;
     updateQuery = "UPDATE " + tableName + " SET " + VALUE + " = ? " + " WHERE " + KEY + " = ?";
-    insertQuery = "INSERT INTO " + tableName + " VALUES (?, ?)";
+    insertQuery = "INSERT INTO " + tableName + " (" + KEY + ", " + VALUE + ") VALUES (?, ?)";
   }
 
   @Override
@@ -85,32 +85,32 @@ class DerbyTCIntToBytesDatabase extends AbstractDerbyTCDatabase implements TCInt
     }
   }
 
-  private Status update(int id, byte[] b, PersistenceTransaction tx) {
+  public Status update(int id, byte[] b, PersistenceTransaction tx) {
     try {
       // "UPDATE " + tableName + " SET " + VALUE + " = ? "
       // + " WHERE " + KEY + " = ?"
       PreparedStatement psUpdate = getOrCreatePreparedStatement(tx, updateQuery);
       psUpdate.setBytes(1, b);
       psUpdate.setInt(2, id);
-      psUpdate.executeUpdate();
-      return Status.SUCCESS;
+      if (psUpdate.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
+    throw new DBException("Could not update with id: " + id);
   }
 
-  private Status insert(int id, byte[] b, PersistenceTransaction tx) {
+  public Status insert(int id, byte[] b, PersistenceTransaction tx) {
     PreparedStatement psPut;
     try {
       // "INSERT INTO " + tableName + " VALUES (?, ?)"
       psPut = getOrCreatePreparedStatement(tx, insertQuery);
       psPut.setInt(1, id);
       psPut.setBytes(2, b);
-      psPut.executeUpdate();
+      if (psPut.executeUpdate() > 0) { return Status.SUCCESS; }
     } catch (SQLException e) {
       throw new DBException(e);
     }
-    return Status.SUCCESS;
+    throw new DBException("Could not insert with id: " + id);
   }
 
 }

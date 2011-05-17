@@ -12,6 +12,7 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentStats;
@@ -37,11 +38,12 @@ import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.objectserver.storage.api.TCBytesToBytesDatabase;
 import com.tc.objectserver.storage.api.TCIntToBytesDatabase;
 import com.tc.objectserver.storage.api.TCLongDatabase;
+import com.tc.objectserver.storage.api.TCLongToBytesDatabase;
 import com.tc.objectserver.storage.api.TCLongToStringDatabase;
 import com.tc.objectserver.storage.api.TCMapsDatabase;
-import com.tc.objectserver.storage.api.TCObjectDatabase;
 import com.tc.objectserver.storage.api.TCRootDatabase;
 import com.tc.objectserver.storage.api.TCStringToStringDatabase;
+import com.tc.objectserver.storage.api.TCTransactionStoreDatabase;
 import com.tc.statistics.StatisticRetrievalAction;
 import com.tc.statistics.retrieval.actions.SRAForBerkeleyDB;
 import com.tc.stats.counter.sampled.SampledCounter;
@@ -103,17 +105,15 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     }
 
     this.ecfg = new EnvironmentConfig(jeProperties);
-    this.ecfg.setTransactional(true);
+    this.ecfg.setTransactional(paranoid);
     this.ecfg.setAllowCreate(true);
     this.ecfg.setReadOnly(false);
-    this.ecfg.setTxnNoSync(!paranoid);
-    // if (!paranoid) {
-    // this.ecfg.setDurability(new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC, ReplicaAckPolicy.NONE));
-    // }
+    if (!paranoid) {
+      this.ecfg.setDurability(Durability.COMMIT_WRITE_NO_SYNC);
+    }
     this.dbcfg = new DatabaseConfig();
     this.dbcfg.setAllowCreate(true);
-    this.dbcfg.setTransactional(true);
-
+    this.dbcfg.setTransactional(paranoid);
     logger.info("Env config = " + this.ecfg + " DB Config = " + this.dbcfg + " JE Properties = " + jeProperties);
   }
 
@@ -191,7 +191,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
       newRootDB(env, ROOT_DB_NAME);
 
       newLongDB(env, CLIENT_STATE_DB_NAME);
-      newBytesBytesDB(env, TRANSACTION_DB_NAME);
+      newTransactionStoreDB(env, TRANSACTION_DB_NAME);
       newLongToStringDatabase(env, STRING_INDEX_DB_NAME);
       newIntToBytesDatabase(env, CLASS_DB_NAME);
       newMapsDatabase(env, MAP_DB_NAME);
@@ -317,9 +317,9 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     return new StatisticRetrievalAction[] { sraBerkeleyDB };
   }
 
-  public synchronized TCObjectDatabase getObjectDatabase() throws TCDatabaseException {
+  public synchronized TCLongToBytesDatabase getObjectDatabase() throws TCDatabaseException {
     assertOpen();
-    return (TCObjectDatabase) databasesByName.get(OBJECT_DB_NAME);
+    return (TCLongToBytesDatabase) databasesByName.get(OBJECT_DB_NAME);
   }
 
   public synchronized TCBytesToBytesDatabase getObjectOidStoreDatabase() throws TCDatabaseException {
@@ -357,9 +357,9 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     return (BerkeleyDBTCLongDatabase) databasesByName.get(CLIENT_STATE_DB_NAME);
   }
 
-  public synchronized TCBytesToBytesDatabase getTransactionDatabase() throws TCDatabaseException {
+  public synchronized TCTransactionStoreDatabase getTransactionDatabase() throws TCDatabaseException {
     assertOpen();
-    return (BerkeleyDBTCBytesBytesDatabase) databasesByName.get(TRANSACTION_DB_NAME);
+    return (TCTransactionStoreDatabase) databasesByName.get(TRANSACTION_DB_NAME);
   }
 
   public synchronized TCIntToBytesDatabase getClassDatabase() throws TCDatabaseException {
@@ -410,7 +410,9 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     OperationStatus stat;
     try {
       stat = controlDB.get(tx, CLEAN_FLAG_KEY, value, LockMode.DEFAULT);
-      tx.commit();
+      if (tx != null) {
+        tx.commit();
+      }
     } catch (Exception e) {
       throw new TCDatabaseException(e.getMessage());
     }
@@ -431,10 +433,8 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     if (!OperationStatus.SUCCESS.equals(stat)) throw new TCDatabaseException("Unexpected operation status "
                                                                              + "trying to unset clean flag: " + stat);
     try {
-      if (isParanoidMode()) {
+      if (tx != null) {
         tx.commitSync();
-      } else {
-        tx.commit();
       }
     } catch (Exception e) {
       throw new TCDatabaseException(e.getMessage());
@@ -442,6 +442,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   }
 
   private Transaction newTransaction() throws TCDatabaseException {
+    if (!paranoid) { return null; }
     try {
       Transaction tx = env.beginTransaction(null, null);
       return tx;
@@ -463,7 +464,9 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     if (!OperationStatus.SUCCESS.equals(stat)) throw new TCDatabaseException("Unexpected operation status "
                                                                              + "trying to set clean flag: " + stat);
     try {
-      tx.commitSync();
+      if (tx != null) {
+        tx.commitSync();
+      }
     } catch (Exception e) {
       throw new TCDatabaseException(e.getMessage());
     }
@@ -472,7 +475,7 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
   private void newObjectDB(Environment e, String name) throws TCDatabaseException {
     try {
       Database db = e.openDatabase(null, name, dbcfg);
-      BerkeleyDBTCObjectDatabase objectDatabse = new BerkeleyDBTCObjectDatabase(db, this.l2FaultFromDisk);
+      BerkeleyDBTCLongToBytesDatabase objectDatabse = new BerkeleyDBTCLongToBytesDatabase(db, this.l2FaultFromDisk);
 
       createdDatabases.add(objectDatabse);
       databasesByName.put(name, objectDatabse);
@@ -496,6 +499,17 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     try {
       Database db = e.openDatabase(null, name, dbcfg);
       BerkeleyDBTCBytesBytesDatabase bdb = new BerkeleyDBTCBytesBytesDatabase(db);
+      createdDatabases.add(bdb);
+      databasesByName.put(name, bdb);
+    } catch (Exception de) {
+      throw new TCDatabaseException(de.getMessage());
+    }
+  }
+
+  private void newTransactionStoreDB(Environment e, String name) throws TCDatabaseException {
+    try {
+      Database db = e.openDatabase(null, name, dbcfg);
+      TCTransactionStoreDatabase bdb = new BerkeleyDBTCLongToBytesDatabase(db);
       createdDatabases.add(bdb);
       databasesByName.put(name, bdb);
     } catch (Exception de) {
@@ -611,13 +625,17 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
 
   public MutableSequence getSequence(PersistenceTransactionProvider ptxp, TCLogger log, String sequenceID,
                                      int startValue) {
-    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue, (Database) databasesByName
-        .get(GLOBAL_SEQUENCE_DATABASE));
+    return new BerkeleyDBSequence(ptxp, log, sequenceID, startValue,
+                                  (Database) databasesByName.get(GLOBAL_SEQUENCE_DATABASE));
   }
 
   public PersistenceTransactionProvider getPersistenceTransactionProvider() {
     try {
-      return new BerkeleyDBPersistenceTransactionProvider(getEnvironment());
+      if (paranoid) {
+        return new BerkeleyDBPersistenceTransactionProvider(getEnvironment());
+      } else {
+        return new NullPersistenceTransactionProvider();
+      }
     } catch (TCDatabaseException e) {
       throw new DBException(e);
     }
@@ -627,7 +645,4 @@ public class BerkeleyDBEnvironment implements DBEnvironment {
     return OffheapStats.NULL_OFFHEAP_STATS;
   }
 
-  public PersistenceTransactionProvider getNullPersistenceTransactionProvider() {
-    return new NullPersistenceTransactionProvider();
-  }
 }

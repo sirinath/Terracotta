@@ -146,12 +146,12 @@
       <dependency>
         <groupId>com.sleepycat</groupId>
         <artifactId>je</artifactId>
-        <version>4.1.7</version>
+        <version>4.1.10</version>
       </dependency>
       <dependency>
         <groupId>org.apache.derby</groupId>
         <artifactId>derby</artifactId>
-        <version>10.7.1.1</version>
+        <version>10.8.1.2</version>
       </dependency>
       <dependency>
         <groupId>c3p0</groupId>
