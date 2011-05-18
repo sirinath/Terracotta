@@ -28,35 +28,39 @@ import java.util.Map;
 
 public abstract class BaseUtility {
 
-  private static final TCLogger logger                = TCLogging.getLogger(BaseUtility.class);
+  private static final TCLogger logger = TCLogging.getLogger(BaseUtility.class);
 
-  protected final Writer writer;
-  protected final Map    sleepycatPersistorMap;
-  protected final File   [] databaseDirs;
-  public BaseUtility(Writer writer, File[] databaseDirs)throws Exception {
+  protected final Writer        writer;
+  protected final Map           dbPersistorsMap;
+  protected final Map           dbEnvironmentsMap;
+  protected final File[]        databaseDirs;
+
+  public BaseUtility(Writer writer, File[] databaseDirs) throws Exception {
     this.writer = writer;
     this.databaseDirs = databaseDirs;
-    sleepycatPersistorMap = new HashMap(databaseDirs.length);
+    dbPersistorsMap = new HashMap(databaseDirs.length);
+    dbEnvironmentsMap = new HashMap(databaseDirs.length);
     initPersistors(databaseDirs.length);
   }
 
   private void initPersistors(int persistorCount) throws Exception {
     ManagedObjectStateFactory.disableSingleton(true);
     for (int i = 1; i <= persistorCount; i++) {
-      sleepycatPersistorMap.put(new Integer(i), createPersistor(i));
+      dbPersistorsMap.put(new Integer(i), createPersistor(i));
     }
   }
 
   private DBPersistorImpl createPersistor(int id) throws Exception {
     DBFactory factory = getDBFactory();
     DBEnvironment env = factory.createEnvironment(true, databaseDirs[id - 1]);
+    dbEnvironmentsMap.put(id, env);
     SerializationAdapterFactory serializationAdapterFactory = new CustomSerializationAdapterFactory();
     final TestManagedObjectChangeListenerProvider managedObjectChangeListenerProvider = new TestManagedObjectChangeListenerProvider();
     DBPersistorImpl persistor = new DBPersistorImpl(logger, env, serializationAdapterFactory);
-    ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor); 
+    ManagedObjectStateFactory.createInstance(managedObjectChangeListenerProvider, persistor);
     return persistor;
   }
-  
+
   private DBFactory getDBFactory() {
     String factoryName = TCPropertiesImpl.getProperties().getProperty(TCPropertiesConsts.L2_DB_FACTORY_NAME);
     DBFactory dbFactory = null;
@@ -71,13 +75,13 @@ public abstract class BaseUtility {
   }
 
   protected DBPersistorImpl getPersistor(int id) {
-    return (DBPersistorImpl)sleepycatPersistorMap.get(new Integer(id));
+    return (DBPersistorImpl) dbPersistorsMap.get(new Integer(id));
   }
 
   protected File getDatabaseDir(int id) {
     return databaseDirs[id - 1];
   }
-  
+
   protected void log(String message) {
     try {
       writer.write(message);
@@ -87,7 +91,7 @@ public abstract class BaseUtility {
       e.printStackTrace();
     }
   }
-  
+
   private static class TestManagedObjectChangeListenerProvider implements ManagedObjectChangeListenerProvider {
 
     public ManagedObjectChangeListener getListener() {
