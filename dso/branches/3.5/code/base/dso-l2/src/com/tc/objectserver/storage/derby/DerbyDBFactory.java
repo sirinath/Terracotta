@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
+import javax.management.NotCompliantMBeanException;
+
 public class DerbyDBFactory implements DBFactory {
   private final Properties properties;
 
@@ -26,9 +28,9 @@ public class DerbyDBFactory implements DBFactory {
     return new DerbyDBEnvironment(paranoid, envHome, properties, l2FaultFromDisk, offheapEnabled);
   }
 
-  public ServerDBBackupMBean getServerDBBackupMBean(L2ConfigurationSetupManager configurationSetupManager) {
-    // TODO
-    return null;
+  public ServerDBBackupMBean getServerDBBackupMBean(L2ConfigurationSetupManager configurationSetupManager)
+      throws NotCompliantMBeanException {
+    return new DerbyServerDBBackup(configurationSetupManager);
   }
 
   public DBEnvironment createEnvironment(boolean paranoid, File envHome) throws IOException {
