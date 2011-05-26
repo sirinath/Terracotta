@@ -10,7 +10,7 @@ tc.tests.configuration.variants.selected.spring=256
 tc.tests.configuration.reuse_boot_jars=true
 
 maven.version=3.5.2
-maven.snapshot=true
+maven.snapshot=false
 
 # This should be changed to a fixed value when finalize the version of
 # the TIM API for this kit line
