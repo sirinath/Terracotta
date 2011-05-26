@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>terracotta-l1-parent</artifactId>
-    <version>3.5.2-SNAPSHOT</version>
+    <version>3.5.2</version>
   </parent>
 
   <!-- artifact that contains classes for L1 -->
