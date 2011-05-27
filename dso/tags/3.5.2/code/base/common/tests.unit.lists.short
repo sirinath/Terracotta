@@ -1,0 +1,5 @@
+BundleSpecTest
+ResolverTest
+TCByteBufferInputStreamTest
+TCByteBufferOutputStreamTest
+KnopflerfishOSGiTest
