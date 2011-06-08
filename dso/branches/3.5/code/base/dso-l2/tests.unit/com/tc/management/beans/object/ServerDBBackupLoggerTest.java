@@ -12,13 +12,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import javax.management.NotCompliantMBeanException;
-
 import junit.framework.TestCase;
 
 public class ServerDBBackupLoggerTest extends TestCase {
 
-  private String[]            logMessages   = { "hi", "these", "are", "log", "messages" };
+  private final String[]      logMessages   = { "hi", "these", "are", "log", "messages" };
   private static final String EXCEPTION_MSG = "Exception in test";
 
   public void testLoggerFileExists() {
@@ -60,8 +58,8 @@ public class ServerDBBackupLoggerTest extends TestCase {
     BufferedReader reader = new BufferedReader(new FileReader(filePath));
 
     String line = null;
-    for (int i = 0; i < logMessages.length; i++)
-      assertEquals(logMessages[i], reader.readLine());
+    for (String logMessage : logMessages)
+      assertEquals(logMessage, reader.readLine());
 
     line = reader.readLine();
     assertTrue(line.startsWith(FileLoggerForBackup.BACKUP_STARTED_MSG));
@@ -76,8 +74,8 @@ public class ServerDBBackupLoggerTest extends TestCase {
   }
 
   private void logMessages(FileLoggerForBackup logger) {
-    for (int i = 0; i < logMessages.length; i++)
-      logger.logMessage(logMessages[i]);
+    for (String logMessage : logMessages)
+      logger.logMessage(logMessage);
 
     logger.logStartMessage();
     logger.logExceptions(new RuntimeException(EXCEPTION_MSG));
