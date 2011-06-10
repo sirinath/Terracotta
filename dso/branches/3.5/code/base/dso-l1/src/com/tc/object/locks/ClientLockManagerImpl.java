@@ -446,18 +446,16 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     }
   }
 
-  public void recall(final NodeID node, final SessionID session, final LockID lock, final ServerLockLevel level,
-                     final int lease) {
-    recall(node, session, lock, level, lease, false);
+  public void recall(final LockID lock, final ServerLockLevel level, final int lease) {
+    recall(lock, level, lease, false);
   }
 
-  public void recall(final NodeID node, final SessionID session, final LockID lock, final ServerLockLevel level,
-                     final int lease, final boolean batch) {
+  public void recall(final LockID lock, final ServerLockLevel level, final int lease, final boolean batch) {
     this.stateGuard.readLock().lock();
     try {
-      if (!running() || (node != null && session != null && !sessionManager.isCurrentSession(node, session))) {
-        this.logger.warn("Ignoring recall request from a dead server :" + session + ", " + this.sessionManager + " : "
-                         + lock + ", interestedLevel : " + level + " state: " + state);
+      if (paused() || isShutdown()) {
+        this.logger.warn("Ignoring recall request from dead server : " + lock + ", interestedLevel : " + level
+                         + " state: " + state);
         return;
       }
 
@@ -469,7 +467,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
             @Override
             public void run() {
               try {
-                ClientLockManagerImpl.this.recall(node, session, lock, level, -1, batch);
+                ClientLockManagerImpl.this.recall(lock, level, -1, batch);
               } catch (TCNotRunningException e) {
                 logger.info("Ignoring " + e.getMessage() + " in " + this.getClass().getName()
                             + " and cancelling timer task");
@@ -605,7 +603,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
   private void waitUntilRunning() {
     this.stateGuard.readLock().lock();
     try {
-      if (running()) { return; }
+      if (this.state == State.RUNNING) { return; }
     } finally {
       this.stateGuard.readLock().unlock();
     }
@@ -613,7 +611,7 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
     boolean interrupted = false;
     this.stateGuard.writeLock().lock();
     try {
-      while (!running()) {
+      while (this.state != State.RUNNING) {
         try {
           if (isShutdown()) { throw new TCNotRunningException(); }
           this.runningCondition.await();
@@ -643,10 +641,6 @@ public class ClientLockManagerImpl implements ClientLockManager, ClientLockManag
      * locked.
      */
     return this.state == State.PAUSED;
-  }
-
-  private boolean running() {
-    return this.state == State.RUNNING;
   }
 
   static enum State {
