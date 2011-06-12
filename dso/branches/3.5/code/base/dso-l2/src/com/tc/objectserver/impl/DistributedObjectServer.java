@@ -57,6 +57,8 @@ import com.tc.logging.ThreadDumpHandler;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.L2Management;
 import com.tc.management.RemoteJMXProcessor;
+import com.tc.management.beans.L2DumperMBean;
+import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.L2State;
 import com.tc.management.beans.LockStatisticsMonitor;
 import com.tc.management.beans.TCDumper;
@@ -1729,5 +1731,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   // for tests only
   public CommunicationsManager getCommunicationsManager() {
     return communicationsManager;
+  }
+
+  public void dumpClusterState() {
+    try {
+      L2DumperMBean mbean = (L2DumperMBean) l2Management.findMBean(L2MBeanNames.DUMPER, L2DumperMBean.class);
+      mbean.dumpClusterState();
+    } catch (Exception e) {
+      logger.warn("Could not take Cluster dump, hence taking server dump only");
+      dump();
+    }
   }
 }

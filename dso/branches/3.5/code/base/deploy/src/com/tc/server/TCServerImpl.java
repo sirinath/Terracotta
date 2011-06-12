@@ -690,4 +690,10 @@ public class TCServerImpl extends SEDA implements TCServer {
   public String[] processArguments() {
     return configurationSetupManager.processArguments();
   }
+
+  public void dumpClusterState() {
+    if (this.dsoServer != null) {
+      this.dsoServer.dumpClusterState();
+    }
+  }
 }
