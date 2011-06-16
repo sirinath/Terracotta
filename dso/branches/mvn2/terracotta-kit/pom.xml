@@ -21,7 +21,9 @@
   <properties>
     <skip.deploy>true</skip.deploy>
     <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>  
-    <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>    
+    <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>
+    <ehcache.version>2.4.3-SNAPSHOT</ehcache.version>
+    <quartz.version>2.0.2-SNAPSHOT</quartz.version>    
   </properties>
 
   <dependencies>
@@ -46,6 +48,13 @@
       <scope>provided</scope>
     </dependency>       
     
+    <!-- ehcache -->
+    <dependency>
+      <groupId>net.sf.ehcache</groupId>
+      <artifactId>ehcache-terracotta</artifactId>
+      <version>${ehcache.version}</version>
+      <scope>provided</scope>
+    </dependency>    
     <dependency>
       <groupId>org.terracotta.samples.ehcache</groupId>
       <artifactId>colorcache</artifactId>
@@ -61,7 +70,17 @@
       <classifier>distribution</classifier>
       <type>tar.gz</type>
       <scope>provided</scope>
-    </dependency>     
+    </dependency>
+
+    <!-- quartz -->
+    <dependency>
+      <groupId>org.quartz-scheduler</groupId>
+      <artifactId>quartz</artifactId>
+      <version>${quartz.version}</version>
+      <type>tar.gz</type>
+      <scope>provided</scope>
+    </dependency>
+      
     
   </dependencies>
       
@@ -154,10 +173,21 @@
                 </dependency>
               </dependencies>
               <unpack>true</unpack>
-              <process>{{
+              <!--process>{{
               Util.rename(project.properties['rootDir']  + "/ehcache/samples/colorcache-${project.version}", project.properties['rootDir']  + "/ehcache/samples/colorcache")              
-              Util.rename(project.properties['rootDir']  + "/ehcache/samples/events-${project.version}", project.properties['rootDir']  + "/ehcache/samples/hibernate") }}</process>
-            </resource>          
+              Util.rename(project.properties['rootDir']  + "/ehcache/samples/events-${project.version}", project.properties['rootDir']  + "/ehcache/samples/hibernate") }}</process-->
+            </resource>             
+            
+            <!-- ehcache terracotta -->
+            <resource>
+              <targetPath>${rootDir}/ehcache/lib</targetPath>
+              <dependencies>
+                <dependency>
+                  <groupId>net.sf.ehcache</groupId>
+                  <artifactId>ehcache-terracotta</artifactId>
+                </dependency>
+              </dependencies>
+            </resource>
             
             <!-- package tar.gz kit -->
             <!--resource>

@@ -31,7 +31,28 @@
     <sigar.version>1.6.4</sigar.version>
     <jetty.version>6.1.8</jetty.version>
     <slf4j.version>1.6.1</slf4j.version>
+    <linked-child-process.version>1.0.5</linked-child-process.version>
+    <gmaven-plugin.version>1.3</gmaven-plugin.version>
     <skip.deploy>false</skip.deploy>
+    <extra.jvm.args></extra.jvm.args>
+    <localMavenRepository>${user.home}/.m2/repository</localMavenRepository>
+	
+    <tc.tests.configuration.properties.file>${project.build.testOutputDirectory}/tc.tests.properties</tc.tests.configuration.properties.file>
+    <tc.system.tests.properties>${project.build.testOutputDirectory}/com/tc/properties/tests.properties</tc.system.tests.properties>
+    <tc.config>-Dtc.config=tc-config.xml</tc.config>
+    <tc.base-dir>${project.build.directory}</tc.base-dir>
+    <com.tc.l1.modules.repositories>${localMavenRepository}</com.tc.l1.modules.repositories>
+    <tc.tests.configuration.transparent-tests.mode>normal</tc.tests.configuration.transparent-tests.mode>
+    <tc.tests.info.bootjars.normal>${project.build.directory}/dso-boot.jar</tc.tests.info.bootjars.normal>
+    <tc.tests.info.property-files>${tc.tests.configuration.properties.file}</tc.tests.info.property-files>
+    <tc.tests.info.temp-root>${project.build.directory}/temp</tc.tests.info.temp-root>
+    <tc.tests.info.data-root>${project.build.directory}/data</tc.tests.info.data-root>
+    <tc.tests.info.linked-child-process-classpath>${localMavenRepository}/org/terracotta/linked-child-process/${linked-child-process.version}/linked-child-process-${linked-child-process.version}.jar</tc.tests.info.linked-child-process-classpath>
+    <tc.tests.info.junit-test-timeout-inseconds>900</tc.tests.info.junit-test-timeout-inseconds>
+    <tc.tests.info.l2.startup.mode>internal</tc.tests.info.l2.startup.mode>
+    <tc.bootclasspath>-Xbootclasspath/p:${tc.tests.info.bootjars.normal}</tc.bootclasspath>
+    <surefire.argLine>-server ${tc.bootclasspath} -Xms64m -Xmx128m -Dtc.base-dir=${tc.base-dir} ${tc.config} -Dtc.dso.globalmode=false -Dtc.tests.info.property-files=${tc.tests.info.property-files} -Dcom.tc.l1.modules.repositories=${localMavenRepository} -Dcom.tc.properties=${tc.system.tests.properties} -Dcom.sun.management.jmxremote ${extra.jvm.args}</surefire.argLine>
+    <skip.system.tests>false</skip.system.tests>	
   </properties>
 
   <dependencyManagement>
@@ -39,7 +60,7 @@
       <dependency>
         <groupId>org.terracotta</groupId>
         <artifactId>linked-child-process</artifactId>
-        <version>1.0.5</version>
+        <version>${linked-child-process.version}</version>
       </dependency>    
       <dependency>
         <groupId>org.apache.lucene</groupId>
@@ -144,7 +165,7 @@
       <dependency>
         <groupId>org.apache.derby</groupId>
         <artifactId>derby</artifactId>
-        <version>10.7.1.1</version>
+        <version>10.8.1.2-patch1</version>
       </dependency>
       <dependency>
         <groupId>c3p0</groupId>
@@ -353,9 +374,9 @@
         <version>1.0.1</version>
       </dependency>
       <dependency>
-        <groupId>org.dspace.dependencies.jmockit</groupId>
-        <artifactId>dspace-jmockit</artifactId>
-        <version>0.999.4</version>
+        <groupId>mockit</groupId>
+        <artifactId>jmockit</artifactId>
+        <version>0.999.9</version>
       </dependency>       
     </dependencies>   
   </dependencyManagement>
@@ -427,30 +448,66 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.terracotta</groupId>
-          <artifactId>maven-forge-plugin</artifactId>
-          <version>1.0.2-SNAPSHOT</version>
+          <groupId>org.codehaus.gmaven</groupId>
+          <artifactId>gmaven-plugin</artifactId>
+          <version>${gmaven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>generate-test-properties</id>
+              <phase>process-test-resources</phase>
+              <goals>
+                <goal>execute</goal>
+              </goals>
+              <configuration>
+                <source><![CDATA[
+                  Properties outputProperties = new Properties()
+                  project.properties.each { key, value ->
+                    if (key =~ /^tc\.tests\./) {
+                      outputProperties.setProperty(key, value)
+                    }
+                  }
+                  String propertiesFileName = project.properties.getProperty(
+                      "tc.tests.configuration.properties.file")
+                  File propertiesFile = new File(propertiesFileName)
+                  assert !propertiesFile.isDirectory()
+                  propertiesFile.parentFile.mkdirs()
+                  def outputStream = new FileOutputStream(propertiesFile)
+                  try {
+                    outputProperties.store(outputStream, "")
+                  }
+                  finally {
+                    outputStream.close()
+                  }
+                  ]]></source>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.8</version>
           <configuration>
-            <excludes>
-              <exclude>**/*TestCase.java</exclude>
-            </excludes>
+            <skipTests>${skip.system.tests}</skipTests>
             <forkMode>always</forkMode>
-            <forkedProcessTimeoutInSeconds>900</forkedProcessTimeoutInSeconds>
+            <forkedProcessTimeoutInSeconds>${tc.tests.info.junit-test-timeout-inseconds}</forkedProcessTimeoutInSeconds>
+            <useSystemClassLoader>true</useSystemClassLoader>
             <workingDirectory>${project.build.directory}</workingDirectory>
-            <argLine>-Xms64m -Xmx512m</argLine>
-            <systemPropertyVariables>
-              <tc.base-dir>${project.build.directory}</tc.base-dir>
-              <java.awt.headless>true</java.awt.headless>
-              <com.tc.l1.modules.repositories>${project.build.directory}</com.tc.l1.modules.repositories>
-              <tc.tests.info.junit-test-timeout-inseconds>900</tc.tests.info.junit-test-timeout-inseconds>
-            </systemPropertyVariables>
+            <argLine>${surefire.argLine}</argLine>		
           </configuration>
-        </plugin>
+          <executions>
+            <execution>
+              <id>surefire-integration-test</id>
+              <phase>integration-test</phase>
+              <goals>
+                <goal>test</goal>
+              </goals>
+              <configuration>
+                <skipTests>${skip.system.tests}</skipTests>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>		
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
@@ -497,9 +554,46 @@
             <skip>${skip.deploy}</skip>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.2</version>
+          <executions>
+            <execution>
+            <id>create-boot-jar</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <executable>${java.home}/bin/java</executable>
+            <arguments>
+              <argument>-Dcom.tc.l1.modules.repositories=${settings.localRepository}</argument>
+              <argument>-cp</argument>
+              <classpath/>
+              <argument>com.tc.object.tools.BootJarTool</argument>
+              <argument>-o</argument>
+              <argument>${project.build.directory}/dso-boot.jar</argument>
+            </arguments>
+          </configuration>
+        </plugin>  		
       </plugins>   
     </pluginManagement>    
-  </build>  
+  </build>
+  
+  <profiles>
+    <profile>
+      <id>workaround-windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <properties>
+        <localMavenRepository>C:\DOCUME~1\${user.name}\.m2\repository</localMavenRepository>
+      </properties>
+    </profile>
+  </profiles>	
 
   <repositories>
     <repository>
