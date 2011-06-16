@@ -22,8 +22,9 @@
   <name>dso-system-tests</name>
 
   <properties>
-    <skiptests>true</skiptests>
+    <skip.system.tests>true</skip.system.tests>
     <skip.deploy>true</skip.deploy>
+    <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>
   </properties>
   
   <dependencies>
@@ -144,7 +145,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2</version>
         <executions>
           <execution>
             <id>create-boot-jar</id>
@@ -152,40 +152,6 @@
             <goals>
               <goal>exec</goal>
             </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>${java.home}/bin/java</executable>
-          <arguments>
-            <argument>-Dcom.tc.l1.modules.repositories=${settings.localRepository}</argument>
-            <argument>-cp</argument>
-            <classpath/>
-            <argument>com.tc.object.tools.BootJarTool</argument>
-            <argument>-o</argument>
-            <argument>${project.build.directory}/dso-boot.jar</argument>
-          </arguments>
-        </configuration>
-      </plugin>    
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.8</version>
-        <configuration>
-          <skipTests>${skiptests}</skipTests>
-          <forkMode>always</forkMode>
-          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-          <workingDirectory>${project.build.directory}</workingDirectory>
-          <argLine>-Xms128m -Xmx512m -Xbootclasspath/p:${project.build.directory}/dso-boot.jar -Dtc.config=${project.build.testOutputDirectory}/tc-config.xml -Dtc.dso.globalmode=false</argLine>
-          <systemPropertyVariables>
-            <tc.tests.info.junit-test-timeout-inseconds>1800</tc.tests.info.junit-test-timeout-inseconds>          
-          </systemPropertyVariables>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <phase>integration-test</phase>
           </execution>
         </executions>
       </plugin>
@@ -196,7 +162,7 @@
     <profile>
       <id>system-tests</id>
       <properties>
-        <skiptests>false</skiptests>
+        <skip.system.tests>false</skip.system.tests>
       </properties>
     </profile>
   </profiles>
