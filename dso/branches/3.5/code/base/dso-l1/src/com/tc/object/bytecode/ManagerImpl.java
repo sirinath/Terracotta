@@ -15,9 +15,9 @@ import com.tc.exception.ExceptionWrapper;
 import com.tc.exception.ExceptionWrapperImpl;
 import com.tc.exception.TCNotRunningException;
 import com.tc.lang.StartupHelper;
-import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
+import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.license.LicenseManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -57,9 +57,9 @@ import com.tc.object.metadata.NVPair;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.operatorevent.TerracottaOperatorEvent;
+import com.tc.operatorevent.TerracottaOperatorEventImpl;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
-import com.tc.operatorevent.TerracottaOperatorEventImpl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -117,7 +117,8 @@ public class ManagerImpl implements ManagerInternal {
 
   private static final boolean                     QUERY_WAIT_FOR_TXNS = TCPropertiesImpl
                                                                            .getProperties()
-                                                                           .getBoolean(TCPropertiesConsts.SEARCH_QUERY_WAIT_FOR_TXNS);
+                                                                           .getBoolean(
+                                                                                       TCPropertiesConsts.SEARCH_QUERY_WAIT_FOR_TXNS);
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
     this(true, null, null, null, null, config, connectionComponents, true, null, null, false);
@@ -242,9 +243,8 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   private void startClient(final boolean forTests) {
-    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(
-                                                                       TCLogging
-                                                                           .getLogger(DistributedObjectClient.class)));
+    final TCThreadGroup group = new TCThreadGroup(new ThrowableHandler(TCLogging
+        .getLogger(DistributedObjectClient.class)));
 
     final StartupAction action = new StartupHelper.StartupAction() {
       public void execute() throws Throwable {
@@ -271,7 +271,7 @@ public class ManagerImpl implements ManagerInternal {
                                                                      ManagerImpl.this.connectionComponents);
 
         ManagerImpl.this.dsoCluster.init(ManagerImpl.this.dso.getClusterMetaDataManager(),
-                                         ManagerImpl.this.objectManager);
+                                         ManagerImpl.this.objectManager, ManagerImpl.this.dso.getClusterEventsStage());
       }
 
     };
@@ -335,12 +335,12 @@ public class ManagerImpl implements ManagerInternal {
             logicalAddAllInvoke(this.serializer.methodToID(methodSignature), methodSignature, (Collection) params[0],
                                 tco);
           } else if (SerializationUtil.ADD_ALL_AT_SIGNATURE.equals(methodSignature)) {
-            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature,
-                                  ((Integer) params[0]).intValue(), (Collection) params[1], tco);
+            logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature, ((Integer) params[0])
+                .intValue(), (Collection) params[1], tco);
           } else {
             adjustForJava1ParametersIfNecessary(methodSignature, params);
-            tco.logicalInvoke(this.serializer.methodToID(methodSignature),
-                              this.methodDisplay.getDisplayForSignature(methodSignature), params);
+            tco.logicalInvoke(this.serializer.methodToID(methodSignature), this.methodDisplay
+                .getDisplayForSignature(methodSignature), params);
           }
         }
       } catch (final Throwable t) {
