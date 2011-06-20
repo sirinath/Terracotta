@@ -27,7 +27,6 @@ import com.tctest.runner.TransparentAppConfig;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Date;
 
 public class ClusterEventsTest extends TransparentTestBase {
 
@@ -37,7 +36,6 @@ public class ClusterEventsTest extends TransparentTestBase {
 
   @Override
   protected Class getApplicationClass() {
-    disableAllUntil(new Date(Long.MAX_VALUE));
     return ClusterEventsTestApp.class;
   }
 
