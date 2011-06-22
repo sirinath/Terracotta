@@ -98,11 +98,10 @@
       <plugin>
         <groupId>com.goldin.plugins</groupId>
         <artifactId>maven-copy-plugin</artifactId>
-        <version>0.2.2</version>
         <executions>
           <execution>
             <id>create-source-archive</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>copy</goal>
             </goals>

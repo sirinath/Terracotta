@@ -52,11 +52,16 @@
     <tc.tests.info.l2.startup.mode>internal</tc.tests.info.l2.startup.mode>
     <tc.bootclasspath>-Xbootclasspath/p:${tc.tests.info.bootjars.normal}</tc.bootclasspath>
     <surefire.argLine>-server ${tc.bootclasspath} -Xms64m -Xmx128m -Dtc.base-dir=${tc.base-dir} ${tc.config} -Dtc.dso.globalmode=false -Dtc.tests.info.property-files=${tc.tests.info.property-files} -Dcom.tc.l1.modules.repositories=${localMavenRepository} -Dcom.tc.properties=${tc.system.tests.properties} -Dcom.sun.management.jmxremote ${extra.jvm.args}</surefire.argLine>
-    <skip.system.tests>false</skip.system.tests>	
+    <skip.system.tests>true</skip.system.tests>	
   </properties>
 
   <dependencyManagement>
     <dependencies>
+	  <dependency>
+        <groupId>com.goldin.plugins</groupId>
+        <artifactId>maven-copy-plugin</artifactId>
+		    <version>0.2.3</version>
+      </dependency>
       <dependency>
         <groupId>org.terracotta</groupId>
         <artifactId>linked-child-process</artifactId>
