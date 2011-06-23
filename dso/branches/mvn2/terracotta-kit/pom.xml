@@ -20,10 +20,19 @@
   
   <properties>
     <skip.deploy>true</skip.deploy>
-    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>  
+    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>
+    <toolkit.api>1.4</toolkit.api>    
     <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>
+    <toolkit.artifactId>terracotta-toolkit-${toolkit.api}-runtime</toolkit.artifactId>
     <ehcache.version>2.5.0-SNAPSHOT</ehcache.version>
-    <quartz.version>2.1.0-SNAPSHOT</quartz.version>    
+    <quartz.version>2.1.0-SNAPSHOT</quartz.version>
+    <terracotta-session.version>1.2.0-SNAPSHOT</terracotta-session.version>
+    <quartz-terracotta.artifactId>quartz-terracotta</quartz-terracotta.artifactId>
+    <quartz-terracotta.version>2.1.0-SNAPSHOT</quartz-terracotta.version>
+    <ehcache-core.readme.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html</ehcache-core.readme.url>
+    <ehcache-core.quickstart.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html</ehcache-core.quickstart.url>    
+    <ehcache-core.tclicense.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt</ehcache-core.tclicense.url>
+    <ehcache-core.tcschema.url>http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache-terracotta.xml</ehcache-core.tcschema.url>
   </properties>
 
   <dependencies>
@@ -43,7 +52,7 @@
 
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>terracotta-toolkit-1.4-runtime</artifactId>
+      <artifactId>${toolkit.artifactId}</artifactId>
       <version>${toolkit.version}</version>
       <scope>provided</scope>
     </dependency>       
@@ -88,7 +97,19 @@
       <type>tar.gz</type>
       <scope>provided</scope>
     </dependency-->
-      
+    <dependency>
+      <groupId>org.terracotta.quartz<groupId>
+      <artifactId>${quartz-terracotta.artifactId}</artifactId>
+      <version>${quartz-terracotta.version}</version>
+    </dependency>
+    
+    <!-- express session -->
+    <dependency>
+      <groupId>org.terracotta.session</groupId>
+      <artifactId>terracotta-session</artifactId>
+      <version>${terracotta-session.version}</version>
+    </dependency>
+ 
     
   </dependencies>
       
@@ -100,7 +121,7 @@
         <version>0.2.2</version>
         <configuration>
           <groovyConfig>
-              <classpath>${project.basedir}/src/scripts</classpath>
+            <classpath>${project.basedir}/src/scripts</classpath>
           </groovyConfig>        
           <verbose>false</verbose>
           <resources>
@@ -150,14 +171,14 @@
               <targetPath>${rootDir}/common</targetPath>
               <dependency>
                 <groupId>org.terracotta</groupId>
-                <artifactId>terracotta-toolkit-1.4-runtime</artifactId>
+                <artifactId>${toolkit.artifactId}</artifactId>
               </dependency>            
             </resource>
             <resource>
               <targetPath>${rootDir}/common/docs/javadoc</targetPath>
               <dependency>
                 <groupId>org.terracotta</groupId>
-                <artifactId>terracotta-toolkit-1.4-runtime</artifactId>
+                <artifactId>${toolkit.artifactId}</artifactId>
                 <classifier>javadoc</classifier>
               </dependency>
               <unpack>true</unpack>
@@ -165,21 +186,46 @@
             
             <!-- ehcache-core -->
             <resource>
+              <verbose>true</verbose>
               <targetPath>${rootDir}</targetPath>
-              <dependencies>
-                <dependency>
-                  <groupId>net.sf.ehcache</groupId>
-                  <artifactId>ehcache-core</artifactId>
-                  <classifier>distribution</classifier>
-                  <type>tar.gz</type>
-                </dependency>
-              </dependencies>
+              <dependency>
+                <groupId>net.sf.ehcache</groupId>
+                <artifactId>ehcache-core</artifactId>
+                <classifier>distribution</classifier>
+                <type>tar.gz</type>
+              </dependency>
+              <dependenciesAtM2>true</dependenciesAtM2>
               <unpack>true</unpack>
               <process>{{
-              Util.rename(project.properties['rootDir']  + "/ehcache-core-${ehcache.version}", project.properties['rootDir']  + "/ehcache") 
+              def rootDir = project.properties['rootDir']
+              def currentName =  rootDir + "/ehcache-core-${ehcache.version}"
+              def newName = rootDir  + "/ehcache"
+              Util.rename(currentName, newName) 
               }}
               </process>              
-            </resource> 
+            </resource>
+            <resource>
+              <directory>${rootDir}/ehcache</directory>
+              <include>**/SLF4J-LICENSE.txt</include>
+              <clean>true</clean>
+            </resource>
+            <resource>
+              <targetPath>${rootDir}/ehcache</targetPath>
+              <file>${ehcache-core.readme.url}</file>
+            </resource>
+            <resource>
+              <targetPath>${rootDir}/ehcache</targetPath>
+              <file>${ehcache-core.quickstart.url}</file>
+            </resource>
+            <resource>
+              <targetPath>${rootDir}/ehcache</targetPath>
+              <file>${ehcache-core.tcschema.url}</file>
+              <destFileName>ehcache.xml</destFileName>
+            </resource>
+            <resource>
+              <targetPath>${rootDir}/ehcache/licenses</targetPath>
+              <file>${ehcache-core.tclicense.url}</file>
+            </resource>            
             
             <!-- ehcache terracotta -->
             <resource>
@@ -211,6 +257,15 @@
               </dependencies>
               <unpack>true</unpack>
             </resource>             
+            
+            <!-- session express -->
+            <resource>
+              <targetPath>${rootDir}/sessions</targetPath>
+              <dependency>
+                <groupId>org.terracotta.session</groupId>
+                <artifactId>terracotta-session</artifactId>
+              </dependency>
+            </resource>
             
             <!-- package tar.gz kit -->
             <!--resource>
