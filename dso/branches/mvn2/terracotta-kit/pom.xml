@@ -33,6 +33,7 @@
     <ehcache-core.quickstart.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html</ehcache-core.quickstart.url>    
     <ehcache-core.tclicense.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt</ehcache-core.tclicense.url>
     <ehcache-core.tcschema.url>http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache-terracotta.xml</ehcache-core.tcschema.url>
+    <quartz-kit.url>http://download.terracotta.org/nightly/quartz/quartz-2.1.0-SNAPSHOT.tar.gz</quartz-kit.url>
   </properties>
 
   <dependencies>
@@ -98,7 +99,7 @@
       <scope>provided</scope>
     </dependency-->
     <dependency>
-      <groupId>org.terracotta.quartz<groupId>
+      <groupId>org.terracotta.quartz</groupId>
       <artifactId>${quartz-terracotta.artifactId}</artifactId>
       <version>${quartz-terracotta.version}</version>
     </dependency>
@@ -264,6 +265,27 @@
               <dependency>
                 <groupId>org.terracotta.session</groupId>
                 <artifactId>terracotta-session</artifactId>
+              </dependency>
+            </resource>
+            
+            <!-- quartz -->
+            <resource>
+              <targetPath>${rootDir}</targetPath>
+              <file>${quartz-kit.url}</file>
+              <unpack>true</unpack>
+              <process>{{
+              def rootDir = project.properties['rootDir']
+              def currentName =  rootDir + "/quartz-${quartz.version}"
+              def newName = rootDir  + "/quartz"
+              Util.rename(currentName, newName) 
+              }}
+              </process>
+            </resource>
+            <resource>
+              <targetPath>${rootDir}/quartz</targetPath>
+              <dependency>
+                <groupId>org.terracotta.quartz</groupId>
+                <artifactId>${quartz-terracotta.artifactId}</artifactId>
               </dependency>
             </resource>
             
