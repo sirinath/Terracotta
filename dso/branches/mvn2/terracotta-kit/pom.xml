@@ -20,15 +20,18 @@
   
   <properties>
     <skip.deploy>true</skip.deploy>
-    <rootDir>${project.build.directory}/terracotta-${project.version}</rootDir>
+	<kit.edition>opensource</kit.edition>
+	<ee.suffix></ee.suffix>
+    <rootDir>${project.build.directory}/terracotta${ee.suffix}-${project.version}</rootDir>
     <toolkit.api>1.4</toolkit.api>    
     <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>
-    <toolkit.artifactId>terracotta-toolkit-${toolkit.api}-runtime</toolkit.artifactId>
+    <toolkit.artifactId>terracotta-toolkit-${toolkit.api}-runtime${ee.suffix}</toolkit.artifactId>
     <ehcache.version>2.5.0-SNAPSHOT</ehcache.version>
     <quartz.version>2.1.0-SNAPSHOT</quartz.version>
     <terracotta-session.version>1.2.0-SNAPSHOT</terracotta-session.version>
-    <quartz-terracotta.artifactId>quartz-terracotta</quartz-terracotta.artifactId>
+    <quartz-terracotta.artifactId>quartz-terracotta${ee.suffix}</quartz-terracotta.artifactId>
     <quartz-terracotta.version>2.1.0-SNAPSHOT</quartz-terracotta.version>
+	<ehcache-core.artifactId>ehcache-core</ehcache-core.artifactId>
     <ehcache-core.readme.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html</ehcache-core.readme.url>
     <ehcache-core.quickstart.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html</ehcache-core.quickstart.url>    
     <ehcache-core.tclicense.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt</ehcache-core.tclicense.url>
@@ -36,10 +39,21 @@
     <quartz-kit.url>http://download.terracotta.org/nightly/quartz/quartz-2.1.0-SNAPSHOT.tar.gz</quartz-kit.url>
   </properties>
 
+  <profiles>
+    <profile>
+	  <id>enterprise</id>
+	  <properties>
+	    <kit.edition>enterprise</kit.edition>
+		<ee.suffix>-ee</ee.suffix>
+		<ehcache-core.artifactId>ehcache-core-ee-kit</ehcache-core.artifactId>
+	  </properties>
+	</profile>
+  </profiles>
+  
   <dependencies>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>terracotta</artifactId>
+      <artifactId>terracotta${ee.suffix}</artifactId>
       <version>${project.version}</version>
     </dependency>
     
@@ -61,7 +75,7 @@
     <!-- ehcache -->
     <dependency>
       <groupId>net.sf.ehcache</groupId>
-      <artifactId>ehcache-core</artifactId>
+      <artifactId>${ehcache-core.artifactId}</artifactId>
       <version>${ehcache.version}</version>
       <classifier>distribution</classifier>
       <type>tar.gz</type>
@@ -191,7 +205,7 @@
               <targetPath>${rootDir}</targetPath>
               <dependency>
                 <groupId>net.sf.ehcache</groupId>
-                <artifactId>ehcache-core</artifactId>
+                <artifactId>{ehcache-core.artifactId}</artifactId>
                 <classifier>distribution</classifier>
                 <type>tar.gz</type>
               </dependency>
@@ -207,7 +221,7 @@
             </resource>
             <resource>
               <directory>${rootDir}/ehcache</directory>
-              <include>**/SLF4J-LICENSE.txt</include>
+              <include>**/SLF4J-LICENSE.txt,**/TERRACOTTA-TRIAL-LICENSE.txt,**/SUBSCRIPTION-AGREEMENT.pdf</include>
               <clean>true</clean>
             </resource>
             <resource>
