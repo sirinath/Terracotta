@@ -15,14 +15,17 @@
 
   <groupId>org.terracotta.internal</groupId>
   <artifactId>terracotta-kit</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>terracotta-kit</name>
   
   <properties>
     <skip.deploy>true</skip.deploy>
+    <skip.testjar>true</skip.testjar>
 	  <kit.edition>opensource</kit.edition>
 	  <ee.suffix></ee.suffix>
-    <rootDir>${project.build.directory}/${terracotta.artifactId}-${project.version}</rootDir>
+    <packaging>dir</packaging>
+    <kit.name>${terracotta.artifactId}-${project.version}</kit.name>
+    <rootDir>${project.build.directory}/${kit.name}</rootDir>
     
     <toolkit.api>1.4</toolkit.api>    
     <toolkit.version>4.0.0-SNAPSHOT</toolkit.version>    
@@ -46,13 +49,19 @@
 
   <profiles>
     <profile>
-	  <id>enterprise</id>
-	  <properties>
-	    <kit.edition>enterprise</kit.edition>
-		  <ee.suffix>-ee</ee.suffix>
-		  <ehcache-core.artifactId>ehcache-core-ee-kit</ehcache-core.artifactId>
-	  </properties>
-	</profile>
+	    <id>enterprise</id>
+      <properties>
+        <kit.edition>enterprise</kit.edition>
+        <ee.suffix>-ee</ee.suffix>
+        <ehcache-core.artifactId>ehcache-core-ee-kit</ehcache-core.artifactId>
+      </properties>
+	  </profile>
+    <profile>
+	    <id>tarball</id>
+      <properties>
+        <packaging>tarball</packaging>
+      </properties>
+	  </profile>    
   </profiles>
   
   <dependencies>
@@ -130,7 +139,8 @@
     <plugins>
       <plugin>
         <groupId>com.goldin.plugins</groupId>
-        <artifactId>maven-copy-plugin</artifactId>   
+        <artifactId>maven-copy-plugin</artifactId>
+        <version>0.2.3</version>
         <configuration>
           <groovyConfig>
             <classpath>${project.basedir}/src/scripts</classpath>
@@ -198,7 +208,6 @@
             
             <!-- ehcache-core -->
             <resource>
-              <verbose>true</verbose>
               <targetPath>${rootDir}</targetPath>
               <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -310,14 +319,24 @@
             </resource>
             
             <!-- package tar.gz kit -->
-            <!--resource>
+            <resource>
+              <runIf>{{ "${packaging}" == "tarball" }}</runIf>
               <targetPath>${rootDir}.tar.gz</targetPath>
-              <directory>${rootDir}</directory>
+              <directory>${project.build.directory}</directory>
+              <include>${kit.name}/**</include>
               <pack>true</pack>
-            </resource-->
-            
+            </resource>
           </resources>
         </configuration>
+        <executions>
+          <execution>
+            <id>packaging-terracotta-kit</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
