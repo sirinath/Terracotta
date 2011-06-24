@@ -284,7 +284,7 @@
             </resource>
             
             <!-- quartz -->
-            <!--resource>
+            <resource>
               <targetPath>${rootDir}</targetPath>
               <file>${quartz-kit.url}</file>
               <unpack>true</unpack>
@@ -292,10 +292,15 @@
               def rootDir = project.properties['rootDir']
               def currentName =  rootDir + "/quartz-${quartz.version}"
               def newName = rootDir  + "/quartz"
-              Util.rename(currentName, newName) 
+              Util.rename(currentName, newName)
+              if ("${kit.edition}" == "enterprise") {
+                def ant = new AntBuilder()
+                ant.replace(dir: newName, includes: "**/example15/instance*.properties", 
+                            token: "TerracottaJobStore", value: "EnterpriseTerracottaJobStore")
+              }
               }}
               </process>
-            </resource-->
+            </resource>
             <resource>
               <targetPath>${rootDir}/quartz</targetPath>
               <dependency>
