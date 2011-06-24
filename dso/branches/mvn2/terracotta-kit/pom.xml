@@ -153,6 +153,12 @@
               <directory>${basedir}/src/packaging</directory>
               <preservePath>true</preservePath>
             </resource>
+            <resource>
+              <runIf>{{ "${kit.edition}" == "enterprise" }}</runIf>
+              <targetPath>${rootDir}</targetPath>
+              <directory>${basedir}/src/enterprise-packaging</directory>
+              <preservePath>true</preservePath>
+            </resource>            
             
             <!-- populate lib folder -->
             <resource>
