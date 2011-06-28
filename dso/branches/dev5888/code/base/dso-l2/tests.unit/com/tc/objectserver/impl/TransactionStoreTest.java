@@ -64,8 +64,8 @@ public class TransactionStoreTest extends TCTestCase {
     assertFalse(originalMin == gtxs.get(0));
 
     // delete the set
-    store.clearCommitedTransactionsBelowLowWaterMark(null, getGlobalTransactionID((GlobalTransactionDescriptor) gtxs
-        .get(0)));
+    store.clearCommitedTransactionsBelowLowWaterMark(null,
+                                                     getGlobalTransactionID((GlobalTransactionDescriptor) gtxs.get(0)));
 
     GlobalTransactionDescriptor currentMin = (GlobalTransactionDescriptor) gtxs.get(0);
     // make sure the min has been adjusted properly
@@ -255,13 +255,11 @@ public class TransactionStoreTest extends TCTestCase {
   }
 
   public void testClientShutdown() throws Exception {
-    long sequence = 0;
     int initialMin = 200;
     int initialMax = 300;
     int laterMax = 400;
     persistor = new TestTransactionPersistor();
     for (int i = initialMin; i < initialMax; i++) {
-      sequence++;
       ServerTransactionID stxid = new ServerTransactionID(new ClientID(i % 2), new TransactionID(i));
       persistor.persisted.put(stxid, new GlobalTransactionDescriptor(stxid, new GlobalTransactionID(persistor.next())));
     }
@@ -415,8 +413,7 @@ public class TransactionStoreTest extends TCTestCase {
 
     public void deleteAllGlobalTransactionDescriptors(PersistenceTransaction tx, SortedSet<ServerTransactionID> toDelete) {
       deleteQueue.put(toDelete);
-      for (Iterator<ServerTransactionID> i = toDelete.iterator(); i.hasNext();) {
-        ServerTransactionID sid = i.next();
+      for (ServerTransactionID sid : toDelete) {
         persisted.remove(sid);
       }
     }
