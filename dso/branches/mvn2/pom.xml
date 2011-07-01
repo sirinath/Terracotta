@@ -45,17 +45,17 @@
     <module>simulator</module>
     <module>tim-get-tool</module>
     
-    <module>terracotta-parent</module>
-    <module>terracotta</module>
-    <module>terracotta-l1-parent</module>
-    <module>terracotta-l1</module>
-    <module>terracotta-test-api</module>
-    
-    <module>dso-unit-tests</module>
+    <module>legacy-test-tree</module>
     <module>dso-system-tests</module>
     <module>dso-crash-tests</module>
     <module>dso-statistics-tests</module>
     <module>dso-alt-boot-jar-tests</module>
+    
+    <module>terracotta-parent</module>
+    <module>terracotta</module>
+    <module>terracotta-l1-parent</module>
+    <module>terracotta-l1</module>
+    <module>terracotta-test-api</module>    
   </modules>
   
   <profiles>
@@ -78,6 +78,15 @@
         <module>../ent-system-tests</module>
         <module>../ent-active-active-tests</module>   
       </modules>        
+    </profile>
+    
+    <profile>
+      <id>xmlbeans</id>
+      <modules>
+        <module>tcconfig</module>
+        <module>tc-l1-reconnect-properties</module>
+        <module>tcstats</module>
+      </modules>
     </profile>
   </profiles>
 
