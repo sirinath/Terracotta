@@ -7,6 +7,7 @@ package com.tctest.restart.system;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
 
+import com.tc.cli.CommandLineBuilder;
 import com.tc.cluster.DsoClusterEvent;
 import com.tc.cluster.DsoClusterListener;
 import com.tc.management.JMXConnectorProxy;
@@ -59,13 +60,19 @@ public class ClientAbscondAfterServerCrashTestApp extends AbstractTransparentApp
     // Extra L1s
     List jvmArgs = new ArrayList();
     client1 = new ExtraL1ProcessControl(appConfig.getAttribute(HOST_NAME), Integer.parseInt(appConfig
-        .getAttribute(DSO_PORT)), AbscondingClient.class, new File(appConfig.getAttribute(CONFIG_FILE))
-        .getAbsolutePath(), Arrays.asList("AbscondingClient"), new File(appConfig.getAttribute(CLIENT1_SPACE)),
+        .getAttribute(DSO_PORT)), AbscondingClient.class,
+                                        new File(appConfig.getAttribute(CONFIG_FILE)).getAbsolutePath(),
+                                        Arrays.asList("AbscondingClient"), new File(
+                                                                                    appConfig
+                                                                                        .getAttribute(CLIENT1_SPACE)),
                                         jvmArgs);
 
     client2 = new ExtraL1ProcessControl(appConfig.getAttribute(HOST_NAME), Integer.parseInt(appConfig
-        .getAttribute(DSO_PORT)), AbscondingClient.class, new File(appConfig.getAttribute(CONFIG_FILE))
-        .getAbsolutePath(), Arrays.asList("Resident Client"), new File(appConfig.getAttribute(CLIENT2_SPACE)),
+        .getAttribute(DSO_PORT)), AbscondingClient.class,
+                                        new File(appConfig.getAttribute(CONFIG_FILE)).getAbsolutePath(),
+                                        Arrays.asList("Resident Client"), new File(
+                                                                                   appConfig
+                                                                                       .getAttribute(CLIENT2_SPACE)),
                                         jvmArgs);
 
     try {
@@ -85,7 +92,7 @@ public class ClientAbscondAfterServerCrashTestApp extends AbstractTransparentApp
 
     // Wait till all clients join the game
     try {
-      //checkServerHasClients waits till the clients join
+      // checkServerHasClients waits till the clients join
       checkServerHasClients(3, jmxPort);
     } catch (Exception e) {
       throw new AssertionError(e);
@@ -143,7 +150,7 @@ public class ClientAbscondAfterServerCrashTestApp extends AbstractTransparentApp
   }
 
   private DSOMBean getDSOMbean(final int jmxPort) throws MalformedURLException, IOException {
-    JMXConnector jmxConnector = JMXUtils.getJMXConnector("localhost", jmxPort);
+    JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector("localhost", jmxPort);
     MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
     return (DSOMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DSO, DSOMBean.class, true);
   }
