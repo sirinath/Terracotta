@@ -144,6 +144,13 @@ public class DefaultContainerFactory extends AbstractIntrospectionGenericHintFac
         registerContainer("tomcat6x", ContainerType.EMBEDDED,
             "org.codehaus.cargo.container.tomcat.Tomcat6xEmbeddedLocalContainer");
         
+        registerContainer("tomcat7x", ContainerType.INSTALLED,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xInstalledLocalContainer");
+        registerContainer("tomcat7x", ContainerType.REMOTE,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xRemoteContainer");
+        registerContainer("tomcat7x", ContainerType.EMBEDDED,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xEmbeddedLocalContainer");        
+        
         registerContainer("weblogic8x", ContainerType.INSTALLED,
             "org.codehaus.cargo.container.weblogic.WebLogic8xInstalledLocalContainer");
         

@@ -26,8 +26,35 @@ package org.codehaus.cargo.container.tomcat;
  */
 public interface TomcatPropertySet
 {
-    /**
-     * The URL for calling the Tomcat Manager app.
-     */
-    String MANAGER_URL = "cargo.tomcat.manager.url";
+  /**
+   * The URL for calling the Tomcat Manager app.
+   * @deprecated Use {@link org.codehaus.cargo.container.property.RemotePropertySet#URI} instead.
+   */
+  @Deprecated
+  String MANAGER_URL = "cargo.tomcat.manager.url";
+
+  /**
+   * The boolean value for the empty session path connector property.
+   */
+  String CONNECTOR_EMPTY_SESSION_PATH = "cargo.tomcat.connector.emptySessionPath";
+
+  /**
+   * Port tomcat will listen on for AJP 1.3 requests.
+   */
+  String AJP_PORT = "cargo.tomcat.ajp.port";
+
+  /**
+   * Whether the contexts for deployed Web applications should be set as reloadable.
+   */
+  String CONTEXT_RELOADABLE = "cargo.tomcat.context.reloadable";
+
+  /**
+   * Whether WAR deployables should be copied or referenced.
+   */
+  String COPY_WARS = "cargo.tomcat.copywars";
+
+  /**
+   * The <code>webapps</code> directory of Tomcat.
+   */
+  String WEBAPPS_DIRECTORY = "cargo.tomcat.webappsDirectory";
 }

@@ -30,6 +30,7 @@ import org.codehaus.cargo.container.deployable.WAR;
 import org.codehaus.cargo.container.property.GeneralPropertySet;
 import org.codehaus.cargo.container.property.ServletPropertySet;
 import org.codehaus.cargo.container.tomcat.TomcatCopyingInstalledLocalDeployer;
+import org.codehaus.cargo.container.tomcat.TomcatPropertySet;
 import org.codehaus.cargo.container.tomcat.TomcatWAR;
 import org.codehaus.cargo.container.tomcat.Tomcat5xEmbeddedLocalDeployer;
 import org.codehaus.cargo.container.tomcat.Tomcat5xEmbeddedLocalContainer;
@@ -55,7 +56,12 @@ public abstract class AbstractCatalinaStandaloneLocalConfiguration
         super(dir);
 
         setProperty(ServletPropertySet.USERS, "admin::manager");
-        setProperty(GeneralPropertySet.RMI_PORT, "8205");
+        //setProperty(GeneralPropertySet.RMI_PORT, "8205");
+        setProperty(GeneralPropertySet.URI_ENCODING, "ISO-8859-1");
+        //setProperty(TomcatPropertySet.AJP_PORT, "8009");
+        setProperty(TomcatPropertySet.CONTEXT_RELOADABLE, "false");
+        setProperty(TomcatPropertySet.COPY_WARS, "true");
+        setProperty(TomcatPropertySet.WEBAPPS_DIRECTORY, "webapps");
     }
 
     /**
@@ -177,6 +183,10 @@ public abstract class AbstractCatalinaStandaloneLocalConfiguration
         getAntUtils().addTokenToFilterChain(filterChain, GeneralPropertySet.RMI_PORT,
             getPropertyValue(GeneralPropertySet.RMI_PORT));
 
+        // Add AJP connector port token
+        getAntUtils().addTokenToFilterChain(filterChain, TomcatPropertySet.AJP_PORT,
+            getPropertyValue(TomcatPropertySet.AJP_PORT));
+        
         // Add Catalina secure token, set to true if the protocol is https, false otherwise
         getAntUtils().addTokenToFilterChain(filterChain, "catalina.secure",
             String.valueOf("https".equalsIgnoreCase(getPropertyValue(
@@ -185,6 +195,9 @@ public abstract class AbstractCatalinaStandaloneLocalConfiguration
         // Add token filters for authenticated users
         getAntUtils().addTokenToFilterChain(filterChain, "tomcat.users", getSecurityToken());
 
+        getAntUtils().addTokenToFilterChain(filterChain, "catalina.servlet.uriencoding",
+            getPropertyValue(GeneralPropertySet.URI_ENCODING));
+        
         // Add webapp contexts in order to explicitely point to where the
         // wars are located.
         StringBuffer webappTokenValue = new StringBuffer(" ");

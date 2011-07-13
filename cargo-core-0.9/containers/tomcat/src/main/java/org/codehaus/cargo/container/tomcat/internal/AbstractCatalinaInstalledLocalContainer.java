@@ -113,7 +113,7 @@ public abstract class AbstractCatalinaInstalledLocalContainer
      * {@inheritDoc}
      * @see AbstractTomcatInstalledLocalContainer#invokeContainer(String, Java)
      */
-    protected final void invokeContainer(String action, Java java) throws Exception
+    protected void invokeContainer(String action, Java java) throws Exception
     {
         java.addSysproperty(getAntUtils().createSysProperty("catalina.home", getHome()));
         java.addSysproperty(getAntUtils().createSysProperty("catalina.base", 
