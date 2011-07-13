@@ -120,7 +120,12 @@ public class DefaultDeployerFactory extends AbstractIntrospectionGenericHintFact
         registerDeployer("tomcat6x", DeployerType.REMOTE,
             "org.codehaus.cargo.container.tomcat.Tomcat6xRemoteDeployer");
         registerDeployer("tomcat6x", DeployerType.EMBEDDED,
-            "org.codehaus.cargo.container.tomcat.Tomcat6xEmbeddedLocalDeployer");        
+            "org.codehaus.cargo.container.tomcat.Tomcat6xEmbeddedLocalDeployer");
+        
+        registerDeployer("tomcat7x", DeployerType.INSTALLED,
+            "org.codehaus.cargo.container.tomcat.TomcatCopyingInstalledLocalDeployer");
+        registerDeployer("tomcat7x", DeployerType.REMOTE,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xRemoteDeployer");         
     }
 
     /**

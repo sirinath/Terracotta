@@ -23,6 +23,7 @@ import java.io.File;
 
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.FilterChain;
 import org.codehaus.cargo.container.LocalContainer;
 import org.codehaus.cargo.container.InstalledLocalContainer;
 import org.codehaus.cargo.container.EmbeddedLocalContainer;
@@ -79,6 +80,7 @@ public class Tomcat5xStandaloneLocalConfiguration
             copy.execute();
         }
     }
+
 
     /**
      * @return the XML to be put into the server.xml file

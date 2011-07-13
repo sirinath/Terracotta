@@ -168,6 +168,17 @@ public class DefaultConfigurationFactory extends AbstractIntrospectionGenericHin
             "org.codehaus.cargo.container.tomcat.TomcatExistingLocalConfiguration");
         registerConfiguration("tomcat6x", ContainerType.REMOTE, ConfigurationType.RUNTIME,
             "org.codehaus.cargo.container.tomcat.TomcatRuntimeConfiguration");
+        
+        registerConfiguration("tomcat7x", ContainerType.INSTALLED, ConfigurationType.STANDALONE,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xStandaloneLocalConfiguration");
+        registerConfiguration("tomcat7x", ContainerType.EMBEDDED, ConfigurationType.STANDALONE,
+            "org.codehaus.cargo.container.tomcat.Tomcat7xStandaloneLocalConfiguration");
+        registerConfiguration("tomcat7x", ContainerType.INSTALLED, ConfigurationType.EXISTING,
+            "org.codehaus.cargo.container.tomcat.TomcatExistingLocalConfiguration");
+        registerConfiguration("tomcat7x", ContainerType.EMBEDDED, ConfigurationType.EXISTING,
+            "org.codehaus.cargo.container.tomcat.TomcatExistingLocalConfiguration");
+        registerConfiguration("tomcat7x", ContainerType.REMOTE, ConfigurationType.RUNTIME,
+            "org.codehaus.cargo.container.tomcat.TomcatRuntimeConfiguration");        
 
         // Terracotta
         registerConfiguration("weblogic8x", ContainerType.INSTALLED,

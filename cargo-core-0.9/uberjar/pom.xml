@@ -27,7 +27,7 @@
   
   <groupId>org.terracotta</groupId>
   <artifactId>tc-cargo-core-uberjar</artifactId>
-  <version>0.9.20110216</version>
+  <version>0.9.20110712</version>
       
   <packaging>pom</packaging>
   <name>Cargo Core Uberjar</name>
