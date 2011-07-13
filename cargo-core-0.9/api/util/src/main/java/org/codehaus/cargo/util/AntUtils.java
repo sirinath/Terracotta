@@ -159,6 +159,7 @@ public class AntUtils
     public void addTokenToFilterChain(FilterChain filterChain, String key,
         String value)
     {
+        if (value == null) value = "unknown";
         ReplaceTokens replaceToken = new ReplaceTokens();
         ReplaceTokens.Token token = new ReplaceTokens.Token();
         token.setKey(key);

@@ -94,7 +94,7 @@
     </pluginManagement>
   </build>
   <modules>
-    <!--module>api</module-->
+    <module>api</module>
     <module>containers</module>
     <module>uberjar</module>
   </modules>
