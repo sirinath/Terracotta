@@ -880,6 +880,7 @@ public interface TCPropertiesConsts {
   public static final String   SEARCH_LUCENE_MAX_THREAD_STATES                                 = "search.lucene.max.thread.states";
   public static final String   SEARCH_LUCENE_MERGEPOLICY_CLASS                                 = "search.lucene.mergePolicyClass";
   public static final String   SEARCH_LUCENE_MERGESCHEDULER_CLASS                              = "search.lucene.mergeSchedulerClass";
+  public static final String   SEARCH_LUCENE_USE_RAM_DIRECTORY                                 = "search.lucene.use.ram.directory";
 
   public static final String   SIGAR_ENABLED                                                   = "sigar.enabled";
 }
