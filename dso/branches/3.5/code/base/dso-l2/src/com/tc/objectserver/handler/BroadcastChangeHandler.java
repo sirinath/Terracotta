@@ -8,6 +8,8 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -42,6 +44,7 @@ import java.util.SortedSet;
  * Broadcast the change to all connected clients
  */
 public class BroadcastChangeHandler extends AbstractEventHandler {
+  private static final TCLogger         logger = TCLogging.getLogger(BroadcastChangeHandler.class);
 
   private DSOChannelManager             channelManager;
   private ClientStateManager            clientStateManager;
@@ -81,8 +84,10 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
       final SortedSet<ObjectID> invalidateObjectIDs = new ObjectIDSet();
 
       if (!clientID.equals(committerID)) {
-        prunedChanges = this.clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(), bcc
-            .getApplyInfo(), clientID, lookupObjectIDs, invalidateObjectIDs);
+        prunedChanges = this.clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(),
+                                                                                    bcc.getApplyInfo(), clientID,
+                                                                                    lookupObjectIDs,
+                                                                                    invalidateObjectIDs);
       }
 
       if (!invalidateObjectIDs.isEmpty()) {
@@ -116,10 +121,14 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
         final BroadcastTransactionMessage responseMessage = (BroadcastTransactionMessage) client
             .createMessage(TCMessageType.BROADCAST_TRANSACTION_MESSAGE);
         responseMessage.initialize(prunedChanges, bcc.getSerializer(), bcc.getLockIDs(), getNextChangeIDFor(clientID),
-                                   txnID, committerID, bcc.getGlobalTransactionID(), bcc.getTransactionType(), bcc
-                                       .getLowGlobalTransactionIDWatermark(), notifiedWaiters, newRoots, dmi);
+                                   txnID, committerID, bcc.getGlobalTransactionID(), bcc.getTransactionType(),
+                                   bcc.getLowGlobalTransactionIDWatermark(), notifiedWaiters, newRoots, dmi);
 
         responseMessage.send();
+
+        if (logger.isDebugEnabled() && !notifiedWaiters.isEmpty()) {
+          logger.debug("Notified waiters " + clientID + " " + notifiedWaiters);
+        }
 
         this.broadcastCounter.increment();
         // changesPerBroadcast = number of changes/number of broadcasts
