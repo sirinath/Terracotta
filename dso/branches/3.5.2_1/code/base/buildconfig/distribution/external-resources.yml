@@ -102,42 +102,42 @@ artifacts:
   - maven_artifact: false
     name: README.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/tags/release-2.4.4/ehcache-express-kit/src/assemble/README.html
     kit_edition: opensource
 
   - maven_artifact: false
     name: QUICK-START.html
     destination: ehcache
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/tags/release-2.4.4/ehcache-express-kit/src/assemble/QUICK-START.html
     kit_edition: opensource
     
   - maven_artifact: false
     name: CHANGELOG.txt
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/changes/changes.xml
+    url: http://svn.terracotta.org/svn/ehcache/tags/ehcache-core-2.4.4/src/changes/changes.xml
     kit_edition: opensource
     
   - maven_artifact: false
     name: EHCACHE-CORE-LICENSE.txt
     destination: ehcache/licenses
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/assemble/EHCACHE-CORE-LICENSE.txt
+    url: http://svn.terracotta.org/svn/ehcache/tags/ehcache-core-2.4.4/src/assemble/EHCACHE-CORE-LICENSE.txt
     kit_edition: opensource
 
   - maven_artifact: false
     name: EHCACHE-TERRACOTTA-LICENSE.txt
     destination: ehcache/licenses
-    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt 
+    url: http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/tags/release-2.4.4/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt 
 
   - maven_artifact: false
     name: ehcache.xml
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache-terracotta.xml
+    url: http://svn.terracotta.org/svn/ehcache/tags/ehcache-core-2.4.4/src/main/config/ehcache-terracotta.xml
     kit_edition: opensource
     
   - maven_artifact: false
     name: ehcache.xsd
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache.xsd
+    url: http://svn.terracotta.org/svn/ehcache/tags/ehcache-core-2.4.4/src/main/config/ehcache.xsd
     kit_edition: opensource
 # end EHCACHE
 
