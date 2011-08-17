@@ -13,6 +13,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
 import com.tc.object.ClientIDProvider;
+import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.event.DmiEventContext;
 import com.tc.object.event.DmiManager;
@@ -26,6 +27,7 @@ import com.tc.object.msg.BroadcastTransactionMessageImpl;
 import com.tc.object.session.SessionManager;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tcclient.object.DistributedMethodCall;
 
 import java.util.Collection;
@@ -37,6 +39,7 @@ import java.util.List;
  * @author steve
  */
 public class ReceiveTransactionHandler extends AbstractEventHandler {
+
   private static final TCLogger                      logger = TCLogging.getLogger(ReceiveTransactionHandler.class);
 
   private ClientTransactionManager                   txManager;
@@ -47,6 +50,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   private final ClientIDProvider                     cidProvider;
   private final Sink                                 dmiSink;
   private final DmiManager                           dmiManager;
+
+  private volatile boolean                           clientInitialized;
 
   public ReceiveTransactionHandler(ClientIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
@@ -62,6 +67,11 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   @Override
   public void handleEvent(EventContext context) {
     final BroadcastTransactionMessageImpl btm = (BroadcastTransactionMessageImpl) context;
+    List dmis = btm.getDmiDescriptors();
+
+    if (dmis.size() > 0) {
+      waitForClientInitialized();
+    }
 
     if (false) {
       System.err.println(this.cidProvider.getClientID() + ": ReceiveTransactionHandler: committer="
@@ -74,8 +84,8 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     if (!lowWaterMark.isNull()) {
       this.gtxManager.setLowWatermark(lowWaterMark, btm.getSourceNodeID());
     }
-    if (this.gtxManager.startApply(btm.getCommitterID(), btm.getTransactionID(), btm.getGlobalTransactionID(), btm
-        .getSourceNodeID())) {
+    if (this.gtxManager.startApply(btm.getCommitterID(), btm.getTransactionID(), btm.getGlobalTransactionID(),
+                                   btm.getSourceNodeID())) {
       Collection changes = btm.getObjectChanges();
       if (changes.size() > 0 || btm.getNewRoots().size() > 0) {
 
@@ -101,7 +111,6 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
       this.lockManager.notified(lc.getLockID(), lc.getThreadID());
     }
 
-    List dmis = btm.getDmiDescriptors();
     for (Iterator i = dmis.iterator(); i.hasNext();) {
       DmiDescriptor dd = (DmiDescriptor) i.next();
 
@@ -121,6 +130,17 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
       ack.send();
     }
     btm.recycle();
+  }
+
+  private void waitForClientInitialized() {
+    if (clientInitialized) { return; }
+
+    while (!ManagerUtil.isManagerEnabled()) {
+      logger.info("Waiting for manager initialization");
+      ThreadUtil.reallySleep(1000);
+    }
+
+    clientInitialized = true;
   }
 
   @Override
