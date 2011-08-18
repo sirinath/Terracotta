@@ -59,6 +59,18 @@ public class NIOWorkarounds {
   }
 
   /**
+   * Workaround for select() throwing IOException("Bad file number") in Solaris running on x86 arch. Couldn't find a
+   * exact bug reported on this.
+   */
+  public static boolean solarisOnX86SelectWorkaround(IOException ioe) {
+    if (Os.isSolaris() && Os.isArchx86()) {
+      String msg = ioe.getMessage();
+      if ((msg != null) && msg.contains("Bad file number")) { return true; }
+    }
+    return false;
+  }
+
+  /**
    * Force use of poll based NIO selector on Solaris 10 to work around Sun bug 6322825. This is done by setting the
    * System property java.nio.channels.spi.SelectorProvider to "sun.nio.ch.PollSelectorProvider". The workaround is only
    * applied on Solaris 10, JDK < 1.6. See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6322825

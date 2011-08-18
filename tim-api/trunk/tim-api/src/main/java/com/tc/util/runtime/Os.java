@@ -1,5 +1,6 @@
 /**
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.util.runtime;
 
@@ -7,7 +8,7 @@ import java.io.File;
 
 /**
  * O/S functions
- *
+ * 
  * @author teck
  */
 public class Os {
@@ -19,25 +20,24 @@ public class Os {
   public static String getOsName() {
     return System.getProperty("os.name", "unknown");
   }
-  
+
+  public static String getOsArch() {
+    return System.getProperty("os.arch", "unknown");
+  }
+
   public static String platform() {
     String osname = System.getProperty("os.name", "generic").toLowerCase();
     if (osname.startsWith("windows")) {
       return "win32";
-    }
-    else if (osname.startsWith("linux")) {
+    } else if (osname.startsWith("linux")) {
       return "linux";
-    }
-    else if (osname.startsWith("sunos")) {
+    } else if (osname.startsWith("sunos")) {
       return "solaris";
-    }
-    else if (osname.startsWith("mac") || osname.startsWith("darwin")) {
+    } else if (osname.startsWith("mac") || osname.startsWith("darwin")) {
       return "mac";
-    }
-    else if (osname.startsWith("aix")) {
+    } else if (osname.startsWith("aix")) {
       return "aix";
-    }
-    else return "generic";
+    } else return "generic";
   }
 
   public static boolean isWindows() {
@@ -71,6 +71,10 @@ public class Os {
 
   public static boolean isAix() {
     return getOsName().toLowerCase().indexOf("aix") >= 0;
+  }
+
+  public static boolean isArchx86() {
+    return getOsArch().toLowerCase().indexOf("x86") >= 0;
   }
 
   public static String findWindowsSystemRoot() {
