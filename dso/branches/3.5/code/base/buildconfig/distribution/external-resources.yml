@@ -114,13 +114,13 @@ artifacts:
   - maven_artifact: false
     name: CHANGELOG.txt
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-2.4.x/core/src/changes/changes.xml
+    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-core-2.4.x/src/changes/changes.xml
     kit_edition: opensource
     
   - maven_artifact: false
     name: EHCACHE-CORE-LICENSE.txt
     destination: ehcache/licenses
-    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-2.4.x/core/src/assemble/EHCACHE-CORE-LICENSE.txt
+    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-core-2.4.x/src/assemble/EHCACHE-CORE-LICENSE.txt
     kit_edition: opensource
 
   - maven_artifact: false
@@ -131,13 +131,13 @@ artifacts:
   - maven_artifact: false
     name: ehcache.xml
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-2.4.x/core/src/main/config/ehcache-terracotta.xml
+    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-core-2.4.x/src/main/config/ehcache-terracotta.xml
     kit_edition: opensource
     
   - maven_artifact: false
     name: ehcache.xsd
     destination: ehcache
-    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-2.4.x/core/src/main/config/ehcache.xsd
+    url: http://svn.terracotta.org/svn/ehcache/branches/ehcache-core-2.4.x/src/main/config/ehcache.xsd
     kit_edition: opensource
 # end EHCACHE
 
