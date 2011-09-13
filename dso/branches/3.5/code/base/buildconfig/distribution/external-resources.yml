@@ -181,7 +181,7 @@ artifacts:
     destination: quartz
     explode: true
     remove_root_folder: true
-    url: http://download.terracotta.org/quartz/quartz-2.0.2.tar.gz
+    url: http://download.terracotta.org/quartz/quartz-2.1.0.tar.gz
     post_actions:
       - kit_edition: enterprise
         ant: replace
@@ -197,14 +197,14 @@ artifacts:
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta
-    version: 2.0.2
+    version: 2.1.0-SNAPSHOT
     destination: quartz
     kit_edition: opensource
     
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta-ee
-    version: 2.0.2
+    version: 2.1.0-SNAPSHOT
     destination: quartz
     kit_edition: enterprise
 
