@@ -26,6 +26,8 @@ import com.tc.net.protocol.tcm.TCMessageRouter;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
+import com.tc.net.protocol.transport.ReconnectionRejectedHandler;
+import com.tc.net.protocol.transport.TransportHandshakeErrorHandlerForL1;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.ConnectionInfoConfig;
@@ -110,10 +112,12 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                            final int commThread,
                                                            final HealthCheckerConfig aConfig,
                                                            Map<TCMessageType, Class> messageTypeClassMapping,
-                                                           Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping) {
+                                                           Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
+                                                           ReconnectionRejectedHandler reconnectionRejectediHandler) {
     return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, messageRouter,
-                                         stackHarnessFactory, connectionPolicy, aConfig, messageTypeClassMapping,
-                                         messageTypeFactoryMapping);
+                                         stackHarnessFactory, null, connectionPolicy, 0, aConfig,
+                                         new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping,
+                                         messageTypeFactoryMapping, reconnectionRejectediHandler);
   }
 
   public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, final DSOMBeanConfig config) {
