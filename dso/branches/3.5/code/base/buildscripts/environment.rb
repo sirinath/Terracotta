@@ -179,7 +179,7 @@ class Environment
       if os_family == 'Windows' && ENV['PROCESSOR_ARCHITECTURE']
         @processor_type = ENV['PROCESSOR_ARCHITECTURE']
       else
-        @processor_type = @platform.exec("uname", (os_type(:nice) =~ /Windows/ ? '-m' : '-p')).strip
+        @processor_type = @platform.exec("uname", (os_type(:nice) =~ /Windows|HP-UX/ ? '-m' : '-p')).strip
       end
     end
     
