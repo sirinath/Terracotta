@@ -36,7 +36,7 @@
     </url>
     
     <url name="jboss" m2compatible="true">
-      <artifact pattern="http://repository.jboss.com/maven2/${m2_pattern}"/>
+      <artifact pattern="http://repository.jboss.org/nexus/content/groups/public/${m2_pattern}"/>
     </url>    
     
     <url name="oracle" m2compatible="true">
