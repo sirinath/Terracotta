@@ -39,6 +39,9 @@
       <artifact pattern="http://repository.jboss.com/maven2/${m2_pattern}"/>
     </url>    
     
+    <url name="oracle" m2compatible="true">
+      <artifact pattern="http://download.oracle.com/maven/${m2_pattern}"/>
+    </url>    
     
     <!-- by default, this is the chain of repos that ivy will look for an artifact
          All of these repos are Maven2 repo
@@ -51,6 +54,7 @@
       <resolver ref="repo2" />
       <resolver ref="java.net" />
       <resolver ref="jboss" />
+      <resolver ref="oracle" />
       <resolver ref="local-m2" />
     </chain>
     
