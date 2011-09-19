@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.List;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
@@ -417,4 +418,9 @@ public class MockServers implements Servers {
     throw new ImplementMe();
     
   }
+
+  public List<Server> getServerList() {
+    throw new ImplementMe();
+  }
+
 }
