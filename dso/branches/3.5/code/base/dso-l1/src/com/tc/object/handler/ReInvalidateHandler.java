@@ -10,16 +10,16 @@ import com.tc.util.ObjectIDSet;
 import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ReInvalidateHandler {
-  private final static long          EXPIRE_SET_TIMER_PERIOD    = 60 * 1000;
-  private final static long          RE_INVALIDATE_TIMER_PERIOD = 1 * 1000;
+  private final static long     EXPIRE_SET_TIMER_PERIOD    = 60 * 1000;
+  private final static long     RE_INVALIDATE_TIMER_PERIOD = 1 * 1000;
 
-  private final CachedItemStore      store;
+  private final CachedItemStore store;
   private ConcurrentObjectIDSet prev                       = null;
   private ConcurrentObjectIDSet current                    = new ConcurrentObjectIDSet();
-  private final Timer                timer                      = new Timer("Re-invalidation Timer", true);
+  private final Timer           timer                      = new Timer("Re-invalidation Timer", true);
 
   public ReInvalidateHandler(CachedItemStore store) {
     this.store = store;
@@ -34,7 +34,7 @@ public class ReInvalidateHandler {
   private class ExpireSetTimerTask extends TimerTask {
     @Override
     public void run() {
-      synchronized (this) {
+      synchronized (ReInvalidateHandler.this) {
         prev = current;
         current = new ConcurrentObjectIDSet();
       }
@@ -47,7 +47,7 @@ public class ReInvalidateHandler {
       final ConcurrentObjectIDSet tempPrev;
       final ConcurrentObjectIDSet tempCurrent;
 
-      synchronized (this) {
+      synchronized (ReInvalidateHandler.this) {
         tempPrev = prev;
         tempCurrent = current;
       }
@@ -63,25 +63,25 @@ public class ReInvalidateHandler {
   }
 
   private class ConcurrentObjectIDSet {
-    private static final int               CONCURRENCY = 4;
+    private static final int      CONCURRENCY = 4;
 
-    private final ReentrantReadWriteLock[] locks;
-    private final ObjectIDSet[]            oidSets;
+    private final ReentrantLock[] locks;
+    private final ObjectIDSet[]   oidSets;
 
     public ConcurrentObjectIDSet() {
       this(CONCURRENCY);
     }
 
     public ConcurrentObjectIDSet(int concurrency) {
-      locks = new ReentrantReadWriteLock[concurrency];
+      locks = new ReentrantLock[concurrency];
       oidSets = new ObjectIDSet[concurrency];
       for (int i = 0; i < concurrency; i++) {
         oidSets[i] = new ObjectIDSet();
-        locks[i] = new ReentrantReadWriteLock();
+        locks[i] = new ReentrantLock();
       }
     }
 
-    private ReentrantReadWriteLock getLock(ObjectID oid) {
+    private ReentrantLock getLock(ObjectID oid) {
       return locks[(int) (Math.abs(oid.toLong()) % CONCURRENCY)];
     }
 
@@ -91,10 +91,10 @@ public class ReInvalidateHandler {
 
     public void processInvalidations() {
       for (int i = 0; i < oidSets.length; i++) {
-        ReentrantReadWriteLock lock = locks[i];
+        ReentrantLock lock = locks[i];
         ObjectIDSet oidSet = oidSets[i];
 
-        lock.writeLock().lock();
+        lock.lock();
         try {
           if (oidSet.size() == 0) {
             continue;
@@ -108,20 +108,20 @@ public class ReInvalidateHandler {
             }
           }
         } finally {
-          lock.writeLock().unlock();
+          lock.unlock();
         }
       }
     }
 
     public void add(ObjectID oid) {
-      ReentrantReadWriteLock lock = getLock(oid);
+      ReentrantLock lock = getLock(oid);
       ObjectIDSet set = getSet(oid);
-      lock.writeLock().lock();
+      lock.lock();
 
       try {
         set.add(oid);
       } finally {
-        lock.writeLock().unlock();
+        lock.unlock();
       }
     }
   }
