@@ -35,16 +35,18 @@ public class CachedItemStore<L> {
     this.store.executeUnderWriteLock(id, item, this.removeCallback);
   }
 
-  public void flush(final L id) {
+  public boolean flush(final L id) {
     final CachedItem head = this.store.remove(id);
-    dispose(head);
+    return dispose(head);
   }
 
-  private void dispose(CachedItem head) {
+  private boolean dispose(CachedItem head) {
+    if (head == null) { return false; }
     while (head != null) {
       head.dispose();
       head = head.getNext();
     }
+    return true;
   }
 
   public Set addAllKeysTo(Set keySet) {

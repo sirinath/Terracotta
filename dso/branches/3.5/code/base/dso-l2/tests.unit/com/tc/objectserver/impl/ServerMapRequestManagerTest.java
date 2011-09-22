@@ -51,7 +51,8 @@ public class ServerMapRequestManagerTest extends TestCase {
                                                                                                 objManager,
                                                                                                 channelManager,
                                                                                                 respondToServerTCMapSink,
-                                                                                                managedObjectRequestSink);
+                                                                                                managedObjectRequestSink,
+                                                                                                null);
     final ArrayList requests = new ArrayList();
     requests.add(new ServerMapGetValueRequest(requestID, portableKey));
     serverMapRequestManager.requestValues(clientID, mapID, requests);
@@ -113,10 +114,12 @@ public class ServerMapRequestManagerTest extends TestCase {
     final Sink respondToServerMapSink = mock(Sink.class);
     final Sink managedObjectRequestSink = mock(Sink.class);
     final DSOChannelManager channelManager = mock(DSOChannelManager.class);
-    final ServerMapRequestManagerImpl serverMapRequestManager = new ServerMapRequestManagerImpl(objManager,
+    final ServerMapRequestManagerImpl serverMapRequestManager = new ServerMapRequestManagerImpl(
+                                                                                                objManager,
                                                                                                 channelManager,
                                                                                                 respondToServerMapSink,
-                                                                                                managedObjectRequestSink);
+                                                                                                managedObjectRequestSink,
+                                                                                                null);
     final ArrayList request1 = new ArrayList();
     request1.add(new ServerMapGetValueRequest(requestID1, portableKey1));
     final ArrayList request2 = new ArrayList();
@@ -163,23 +166,21 @@ public class ServerMapRequestManagerTest extends TestCase {
 
     verify(messageChannel, atLeastOnce()).createMessage(TCMessageType.GET_VALUE_SERVER_MAP_RESPONSE_MESSAGE);
 
-    final ArgumentCaptor<Collection> responsesArg = ArgumentCaptor
-    .forClass(Collection.class);
+    final ArgumentCaptor<Collection> responsesArg = ArgumentCaptor.forClass(Collection.class);
 
     final ArrayList responses = new ArrayList();
     verify(message, atLeastOnce()).initializeGetValueResponse(Matchers.eq(mapID), responsesArg.capture());
-   
+
     ServerMapGetValueResponse response2 = new ServerMapGetValueResponse(requestID1, portableValue1);
     ServerMapGetValueResponse response1 = new ServerMapGetValueResponse(requestID2, portableValue2);
-    
+
     responses.add(response1);
     responses.add(response2);
-  
 
     verify(message, atLeastOnce()).send();
     assertTrue(responsesArg.getValue().contains(response1));
     assertTrue(responsesArg.getValue().contains(response2));
-     
+
   }
 
 }
