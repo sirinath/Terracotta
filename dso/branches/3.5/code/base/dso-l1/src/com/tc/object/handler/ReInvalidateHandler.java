@@ -6,6 +6,7 @@ package com.tc.object.handler;
 import com.tc.object.ObjectID;
 import com.tc.object.cache.CachedItemStore;
 import com.tc.util.ObjectIDSet;
+import com.tc.util.TCTimerService;
 
 import java.util.Iterator;
 import java.util.Timer;
@@ -19,7 +20,8 @@ public class ReInvalidateHandler {
   private final CachedItemStore store;
   private ConcurrentObjectIDSet prev                       = null;
   private ConcurrentObjectIDSet current                    = new ConcurrentObjectIDSet();
-  private final Timer           timer                      = new Timer("Re-invalidation Timer", true);
+  private final Timer           timer                      = TCTimerService.getInstance()
+                                                               .getTimer("Re-invalidation Timer");
 
   public ReInvalidateHandler(CachedItemStore store) {
     this.store = store;
