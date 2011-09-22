@@ -14,6 +14,7 @@ import com.tc.object.cache.CachedItemStore;
 import com.tc.object.context.CachedItemEvictionContext;
 import com.tc.object.context.CachedItemExpiredContext;
 import com.tc.object.context.LocksToRecallContext;
+import com.tc.object.handler.ReInvalidateHandler;
 import com.tc.object.locks.LockID;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.msg.GetAllKeysServerMapRequestMessage;
@@ -40,10 +41,12 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   // TODO::Make its own property
   private static final int                                               MAX_OUTSTANDING_REQUESTS_SENT_IMMEDIATELY = TCPropertiesImpl
                                                                                                                        .getProperties()
-                                                                                                                       .getInt(TCPropertiesConsts.L1_SERVERMAPMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY);
+                                                                                                                       .getInt(
+                                                                                                                               TCPropertiesConsts.L1_SERVERMAPMANAGER_REMOTE_MAX_REQUEST_SENT_IMMEDIATELY);
   private static final long                                              BATCH_LOOKUP_TIME_PERIOD                  = TCPropertiesImpl
                                                                                                                        .getProperties()
-                                                                                                                       .getInt(TCPropertiesConsts.L1_SERVERMAPMANAGER_REMOTE_BATCH_LOOKUP_TIME_PERIOD);
+                                                                                                                       .getInt(
+                                                                                                                               TCPropertiesConsts.L1_SERVERMAPMANAGER_REMOTE_BATCH_LOOKUP_TIME_PERIOD);
 
   private final GroupID                                                  groupID;
   private final ServerMapMessageFactory                                  smmFactory;
@@ -67,6 +70,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   private final Sink                                                     capacityEvictionSink;
   private final Sink                                                     ttiTTLEvitionSink;
 
+  private final ReInvalidateHandler                                      reInvalidateHandler;
+
   private static enum State {
     PAUSED, RUNNING, STARTING, STOPPED
   }
@@ -82,6 +87,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     this.lockRecallSink = lockRecallSink;
     this.capacityEvictionSink = capacityEvictionSink;
     this.ttiTTLEvitionSink = ttiTTLEvitionSink;
+    this.reInvalidateHandler = new ReInvalidateHandler(cachedItems);
   }
 
   /**
@@ -211,8 +217,8 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   }
 
   private void sendRequestNow(final AbstractServerMapRequestContext context) {
-    final ServerMapRequestMessage msg = this.smmFactory.newServerMapRequestMessage(this.groupID,
-                                                                                   context.getRequestType());
+    final ServerMapRequestMessage msg = this.smmFactory.newServerMapRequestMessage(this.groupID, context
+        .getRequestType());
     context.initializeMessage(msg);
     msg.send();
   }
@@ -340,7 +346,11 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
 
   public void flush(final Object id) {
     if (id == null) { throw new AssertionError("ID cannot be null"); }
-    this.cachedItems.flush(id);
+    if (!this.cachedItems.flush(id)) {
+      if (id instanceof ObjectID) {
+        reInvalidateHandler.add((ObjectID) id);
+      }
+    }
   }
 
   public void initiateCachedItemEvictionFor(final TCObjectServerMap serverMap) {

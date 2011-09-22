@@ -8,6 +8,7 @@ import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
+import com.tc.util.ObjectIDSet;
 
 import java.util.Collection;
 import java.util.List;
@@ -64,4 +65,11 @@ public interface ClientStateManager {
   public int getReferenceCount(NodeID nodeID);
 
   public Set<NodeID> getConnectedClientIDs();
+
+  /**
+   * Add prefetched ObjectIDs for the client
+   */
+  public void addPrefetchedObjectIDs(NodeID nodeId, ObjectIDSet prefetchedIds);
+
+  public void missingObjectIDs(NodeID clientID, ObjectIDSet missingObjectIDs);
 }

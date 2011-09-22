@@ -183,12 +183,14 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   public ServerMapRequestManager createServerMapRequestManager(final ObjectManager objectMgr,
                                                                final DSOChannelManager channelManager,
                                                                final Sink respondToServerTCMapSink,
-                                                               final Sink managedObjectRequestSink) {
+                                                               final Sink managedObjectRequestSink,
+                                                               ClientStateManager clientStateManager) {
     return new ServerMapRequestManagerImpl(objectMgr, channelManager, respondToServerTCMapSink,
-                                           managedObjectRequestSink);
+                                           managedObjectRequestSink, clientStateManager);
   }
 
-  public ServerConfigurationContext createServerConfigurationContext(StageManager stageManager,
+  public ServerConfigurationContext createServerConfigurationContext(
+                                                                     StageManager stageManager,
                                                                      ObjectManager objMgr,
                                                                      ObjectRequestManager objRequestMgr,
                                                                      ServerMapRequestManager serverTCMapRequestManager,
