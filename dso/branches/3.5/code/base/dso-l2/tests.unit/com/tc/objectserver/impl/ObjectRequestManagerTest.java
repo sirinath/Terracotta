@@ -399,7 +399,7 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     final Set sendSet = TestObjectsNotFoundMessage.sendSet;
-    assertEquals(sendSet.size(), 10);
+    assertEquals(10, sendSet.size());
 
     int i = 0;
     for (final Iterator iter = sendSet.iterator(); iter.hasNext(); i++) {
@@ -500,10 +500,12 @@ public class ObjectRequestManagerTest extends TestCase {
       throw new AssertionError(e);
     }
 
-    objectRequestManager.sendObjects(respondToObjectRequestContext.getRequestedNodeID(), respondToObjectRequestContext
-        .getObjs(), respondToObjectRequestContext.getRequestedObjectIDs(), respondToObjectRequestContext
-        .getMissingObjectIDs(), respondToObjectRequestContext.isServerInitiated(), respondToObjectRequestContext
-        .getRequestDepth());
+    objectRequestManager.sendObjects(respondToObjectRequestContext.getRequestedNodeID(),
+                                     respondToObjectRequestContext.getObjs(),
+                                     respondToObjectRequestContext.getRequestedObjectIDs(),
+                                     respondToObjectRequestContext.getMissingObjectIDs(),
+                                     respondToObjectRequestContext.isServerInitiated(),
+                                     respondToObjectRequestContext.getRequestDepth());
 
   }
 
@@ -670,11 +672,11 @@ public class ObjectRequestManagerTest extends TestCase {
         synchronized (this) {
           System.out.println("in the reponse thread: " + respondToObjectRequestContext);
           this.objectRequestManager.sendObjects(respondToObjectRequestContext.getRequestedNodeID(),
-                                                respondToObjectRequestContext.getObjs(), respondToObjectRequestContext
-                                                    .getRequestedObjectIDs(), respondToObjectRequestContext
-                                                    .getMissingObjectIDs(), respondToObjectRequestContext
-                                                    .isServerInitiated(), respondToObjectRequestContext
-                                                    .getRequestDepth());
+                                                respondToObjectRequestContext.getObjs(),
+                                                respondToObjectRequestContext.getRequestedObjectIDs(),
+                                                respondToObjectRequestContext.getMissingObjectIDs(),
+                                                respondToObjectRequestContext.isServerInitiated(),
+                                                respondToObjectRequestContext.getRequestDepth());
           if (testReqManObjResMsgIter.hasNext()) {
             final TestRequestManagedObjectResponseMessage message = (TestRequestManagedObjectResponseMessage) testReqManObjResMsgIter
                 .next();
@@ -746,7 +748,8 @@ public class ObjectRequestManagerTest extends TestCase {
 
   private static class TestClientStateManager implements ClientStateManager {
 
-    private final Map clientStateMap = new HashMap();
+    private final Map<NodeID, Set<ObjectID>> clientStateMap         = new HashMap<NodeID, Set<ObjectID>>();
+    private final Map<NodeID, ObjectIDSet>   clientPrefetchStateMap = new HashMap<NodeID, ObjectIDSet>();
 
     public void addReference(final NodeID nodeID, final ObjectID objectID) {
       throw new NotImplementedException(TestClientStateManager.class);
@@ -770,10 +773,10 @@ public class ObjectRequestManagerTest extends TestCase {
 
     public Set<ObjectID> addReferences(final NodeID nodeID, final Set<ObjectID> oids) {
 
-      Set<ObjectID> refs = (Set) this.clientStateMap.get(nodeID);
+      Set<ObjectID> refs = this.clientStateMap.get(nodeID);
 
       if (refs == null) {
-        this.clientStateMap.put(nodeID, (refs = new HashSet()));
+        this.clientStateMap.put(nodeID, (refs = new HashSet<ObjectID>()));
       }
 
       if (refs.isEmpty()) {
@@ -814,13 +817,18 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     public void addPrefetchedObjectIDs(NodeID nodeId, ObjectIDSet prefetchedIds) {
-      throw new ImplementMe();
-
+      if (!clientPrefetchStateMap.containsKey(nodeId)) {
+        clientPrefetchStateMap.put(nodeId, new ObjectIDSet());
+      }
+      ObjectIDSet prefetches = clientPrefetchStateMap.get(nodeId);
+      prefetches.addAll(prefetchedIds);
     }
 
     public void missingObjectIDs(NodeID clientID, ObjectIDSet missingObjectIDs) {
-      throw new ImplementMe();
-
+      if (clientPrefetchStateMap.containsKey(clientID)) {
+        ObjectIDSet prefetches = clientPrefetchStateMap.get(clientID);
+        prefetches.removeAll(missingObjectIDs);
+      }
     }
 
   }
