@@ -20,8 +20,7 @@ import java.util.Set;
 public class DistributedMethodCallGCTest extends GCTestBase {
 
   public DistributedMethodCallGCTest() {
-    // MNK-714
-    //disableAllUntil("2010-3-19"); //extended timebomb
+    disableAllUntil(new java.util.Date(Long.MAX_VALUE));
   }
   
   public void doSetUp(TransparentTestIface t) throws Exception {
