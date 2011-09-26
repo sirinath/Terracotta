@@ -7,6 +7,7 @@ package com.tc.object;
 import com.google.common.collect.MapMaker;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
+import com.tc.exception.TCNotRunningException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.CustomerLogging;
@@ -90,6 +91,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private static final State                    PAUSED                       = new State("PAUSED");
   private static final State                    RUNNING                      = new State("RUNNING");
   private static final State                    STARTING                     = new State("STARTING");
+  private static final State                    SHUTDOWN                     = new State("SHUTDOWN");
 
   private static final TCLogger                 staticLogger                 = TCLogging
                                                                                  .getLogger(ClientObjectManager.class);
@@ -102,7 +104,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private static final int                      COMMIT_SIZE                  = 100;
 
   private State                                 state                        = RUNNING;
-  private final Object                          shutdownLock                 = new Object();
   private final Map                             roots                        = new HashMap();
   private final ObjectStore                     objectStore                  = new ObjectStore();
   private final ConcurrentMap<Object, TCObject> pojoToManaged                = new MapMaker()
@@ -224,15 +225,18 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void waitUntilRunning() {
     boolean isInterrupted = false;
-
-    while (this.state != RUNNING) {
-      try {
-        wait();
-      } catch (final InterruptedException e) {
-        isInterrupted = true;
+    try {
+      while (this.state != RUNNING) {
+        if (this.state == SHUTDOWN) { throw new TCNotRunningException(); }
+        try {
+          wait();
+        } catch (final InterruptedException e) {
+          isInterrupted = true;
+        }
       }
+    } finally {
+      Util.selfInterruptIfNeeded(isInterrupted);
     }
-    Util.selfInterruptIfNeeded(isInterrupted);
   }
 
   private void assertPaused(final Object message) {
@@ -308,14 +312,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     return basicLookup(pojo);
   }
 
-  public void shutdown() {
-    synchronized (this.shutdownLock) {
-      if (this.reaper != null) {
-        try {
-          stopThread(this.reaper);
-        } finally {
-          this.reaper = null;
-        }
+  public synchronized void shutdown() {
+    this.state = SHUTDOWN;
+    if (this.reaper != null) {
+      try {
+        stopThread(this.reaper);
+      } finally {
+        this.reaper = null;
       }
     }
   }
