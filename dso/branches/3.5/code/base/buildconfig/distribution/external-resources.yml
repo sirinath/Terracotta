@@ -145,7 +145,7 @@ artifacts:
   - maven_artifact: true
     groupId: org.terracotta
     artifactId: terracotta-toolkit-1.3-runtime-ee
-    version: 3.3.0-SNAPSHOT
+    version: 3.4.0-SNAPSHOT
     destination: common
     kit_edition: enterprise
 
