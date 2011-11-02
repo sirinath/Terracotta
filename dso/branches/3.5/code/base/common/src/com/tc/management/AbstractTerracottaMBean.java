@@ -146,8 +146,8 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
    * -------------------------------------------------------------------------------------------------------
    *
    * The containing listener is always registered in the VM's MBean server which keeps a strong reference to it
-   * as long as it isn't registered. Transitively, the contained listener is hard-referenced and keeps its
-   * L1 classloader alive as long as the containing listener hasn't been registered.
+   * as long as it isn't unregistered. Transitively, the contained listener is hard-referenced and keeps its
+   * L1 classloader alive as long as the containing listener hasn't been unregistered.
    *
    * In some situations, like when rejoin kicks in, the L1 is shut down and re-created but any listener registered
    * on an L1 MBean by 3rd party code will keep a hard ref onto the L1 classloader, provoking a perm gen leak.
@@ -171,7 +171,7 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
       for (Field field : declaredFields) {
         field.setAccessible(true);
         Object subListener = field.get(listener);
-        if (subListener == null) { continue; }
+        if (subListener == null || !(subListener instanceof NotificationListener)) { continue; }
         ClassLoader fieldObjectCl = subListener.getClass().getClassLoader();
 
         if (logger.isDebugEnabled()) {
