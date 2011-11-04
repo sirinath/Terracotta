@@ -11,7 +11,7 @@ public class LinkedBlockingQueueProxyCrashTest extends TransparentTestBase {
   private static final int NODE_COUNT = 4;
 
   public LinkedBlockingQueueProxyCrashTest() {
-    disableAllUntil("2012-11-01");
+    timebombTest("2012-11-01");
   }
 
   @Override
