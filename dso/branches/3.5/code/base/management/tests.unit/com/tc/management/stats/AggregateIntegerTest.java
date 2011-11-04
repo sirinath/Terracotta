@@ -1,9 +1,8 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.management.stats;
-
-import java.util.Date;
 
 import com.tc.test.TCTestCase;
 
@@ -12,20 +11,23 @@ public class AggregateIntegerTest extends TCTestCase {
   private AggregateInteger stat;
 
   public AggregateIntegerTest() {
-    disableTestUntil("testGetSampleRate", new Date(Long.MAX_VALUE));
+    //
   }
 
+  @Override
   protected void setUp() throws Exception {
     stat = new AggregateInteger("Testing statistic");
     super.setUp();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     stat = null;
     super.tearDown();
   }
 
-  public void testGetSampleRate() throws InterruptedException {
+  // disable
+  public void _testGetSampleRate() throws InterruptedException {
     final String failureExplanation = "Since this is a timing test it is likely that it might fail from time to time on a loaded machine";
     final long SECOND = 1000;
     final long HALF_SECOND = SECOND / 2;

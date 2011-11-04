@@ -9,12 +9,10 @@ import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
-import java.util.Date;
-
 public class ConcurrentHashMapGCActivePassiveTest extends GCAndActivePassiveTestBase implements TestConfigurator {
 
   public ConcurrentHashMapGCActivePassiveTest() {
-    disableAllUntil(new Date(Long.MAX_VALUE));
+    disableTest();
   }
 
   @Override

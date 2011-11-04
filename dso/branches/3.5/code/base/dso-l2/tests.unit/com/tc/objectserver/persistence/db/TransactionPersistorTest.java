@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class TransactionPersistorTest extends TCTestCase {
         .endsWith("BerkeleyDBFactory")) {
       // This test is trying some functionality that's specific to BerkeleyDB, disable if we're not
       // running with BerkeleyDB
-      disableAllUntil(new Date(Long.MAX_VALUE));
+      disableTest();
     }
   }
 

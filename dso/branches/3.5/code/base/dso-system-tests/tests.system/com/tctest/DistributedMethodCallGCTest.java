@@ -20,15 +20,17 @@ import java.util.Set;
 public class DistributedMethodCallGCTest extends GCTestBase {
 
   public DistributedMethodCallGCTest() {
-    disableAllUntil(new java.util.Date(Long.MAX_VALUE));
+    disableTest();
   }
-  
+
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     super.doSetUp(t);
     t.getTransparentAppConfig().setAttribute("gc-interval-ms",
                                              new Long(gcConfigHelper.getGarbageCollectionInterval() * 1000));
   }
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
@@ -47,6 +49,7 @@ public class DistributedMethodCallGCTest extends GCTestBase {
       if (getParticipantCount() < 2) { throw new AssertionError(); }
     }
 
+    @Override
     protected void runTest() throws Throwable {
 
       DMITarget.setAppThread(Thread.currentThread());

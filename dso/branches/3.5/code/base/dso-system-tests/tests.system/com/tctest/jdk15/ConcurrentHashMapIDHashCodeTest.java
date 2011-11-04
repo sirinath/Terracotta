@@ -15,7 +15,6 @@ import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 
@@ -29,7 +28,7 @@ public class ConcurrentHashMapIDHashCodeTest extends TransparentTestBase {
 
   public ConcurrentHashMapIDHashCodeTest() {
     if (Vm.isIBM()) {
-      disableAllUntil(new Date(Long.MAX_VALUE));
+      disableTest();
     }
   }
 
