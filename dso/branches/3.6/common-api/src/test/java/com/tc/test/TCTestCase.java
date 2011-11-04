@@ -41,7 +41,6 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -346,7 +345,7 @@ public class TCTestCase extends TestCase {
   /**
    * Disable ALL tests until the given date. This method should be called in the constructor of your unit test
    */
-  protected final void disableAllUntil(Date theDate) {
+  private final void disableAllUntil(Date theDate) {
     Assert.eval(theDate != null);
     if (allDisabledUntil == null || allDisabledUntil.before(theDate)) {
       allDisabledUntil = theDate;
@@ -357,48 +356,15 @@ public class TCTestCase extends TestCase {
   /**
    * Disable ALL tests until the given date. This method should be called in the constructor of your unit test
    */
-  protected final void disableAllUntil(String theDate) {
-    disableAllUntil(parseDate(theDate));
+  protected final void timebombTest(String date) {
+    disableAllUntil(parseDate(date));
   }
 
   /**
-   * Disable ALL tests until the given date. This method should be called in the constructor of your unit test Only
-   * specified platforms ("windows", "linux", "solaris") will take effect.
+   * Disable all tests indefinitely
    */
-  protected final void disableAllUntil(String theDate, String[] platforms) {
-    List platform_list = Arrays.asList(platforms);
-    String platform = TestConfigObject.getInstance().platform();
-    if (platform_list.contains(platform)) {
-      disableAllUntil(parseDate(theDate));
-    }
-  }
-
-  /**
-   * Disable the given test method until the given date. This method should be called in the constructor of your unit
-   * test
-   */
-  protected final void disableTestUntil(String method, String date) {
-    this.disabledUntil.put(method, parseDate(date));
-  }
-
-  /**
-   * Disable the given test method until the given date. This method should be called in the constructor of your unit
-   * test. Only specified platforms ("windows", "linux", "solaris") take effect.
-   */
-  protected final void disableTestUntil(String method, String date, String[] platforms) {
-    List platform_list = Arrays.asList(platforms);
-    String platform = TestConfigObject.getInstance().platform();
-    if (platform_list.contains(platform)) {
-      this.disabledUntil.put(method, parseDate(date));
-    }
-  }
-
-  /**
-   * Disable the given test method until the given date. This method should be called in the constructor of your unit
-   * test
-   */
-  protected final void disableTestUntil(String method, Date date) {
-    this.disabledUntil.put(method, date);
+  protected final void disableTest() {
+    disableAllUntil(new Date(Long.MAX_VALUE));
   }
 
   protected final void assertSameOrdered(Object one, Object two) {
