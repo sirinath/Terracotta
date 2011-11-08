@@ -79,7 +79,7 @@
       <groupId>org.terracotta</groupId>
       <artifactId>tcconfig</artifactId>
       <classifier>docflex</classifier>
-      <version>${project.version}</version><!--$NO-MVN-MAN-VER$-->
+      <version>${tc-config.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
