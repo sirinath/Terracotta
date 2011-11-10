@@ -158,12 +158,12 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
    */
   private boolean isListenerInSameClassLoader(final NotificationListener listener) {
     if (logger.isDebugEnabled()) {
-      logger.debug("trying to add notification listener " + listener + " - CL : " + listener.getClass()
-          .getClassLoader(), new Exception("stack trace"));
+      logger.debug("checking notification listener " + listener + " - CL : " + listener.getClass()
+          .getClassLoader());
     }
     ClassLoader currentCl = getClass().getClassLoader();
     if (logger.isDebugEnabled()) {
-      logger.debug("current CL : " + currentCl + " - system CL : " + Notification.class.getClassLoader());
+      logger.debug("current CL : " + currentCl);
     }
 
     try {
@@ -178,16 +178,21 @@ public abstract class AbstractTerracottaMBean extends StandardMBean implements N
           logger.debug("checking notification listener field " + subListener + " - CL : " + fieldObjectCl);
         }
         if (fieldObjectCl != currentCl) {
-          logger.info("Unauthorized classloader of listener field " + subListener + ", NOT adding of notification listener " + listener);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Unauthorized classloader of listener field " + subListener + 
+                         ", NOT authorizing notification listener " + listener);
+          }
           return false;
         }
       }
     } catch (Exception e) {
-      logger.warn("Reflection error, NOT adding notification listener " + listener, e);
+      logger.warn("Reflection error, NOT authorizing notification listener " + listener, e);
       return false;
     }
 
-    logger.info("Adding notification listener " + listener);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Authorized notification listener " + listener);
+    }
     return true;
   }
 
