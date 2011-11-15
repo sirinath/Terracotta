@@ -181,7 +181,7 @@ artifacts:
     destination: quartz
     explode: true
     remove_root_folder: true
-    url: http://download.terracotta.org/quartz/quartz-2.1.0.tar.gz
+    url: http://download.terracotta.org/quartz/quartz-2.1.2-SNAPSHOT.tar.gz
     post_actions:
       - kit_edition: enterprise
         ant: replace
