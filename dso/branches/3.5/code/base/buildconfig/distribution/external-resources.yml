@@ -197,14 +197,14 @@ artifacts:
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta
-    version: 2.1.1-SNAPSHOT
+    version: 2.1.2-SNAPSHOT
     destination: quartz
     kit_edition: opensource
     
   - maven_artifact: true
     groupId: org.terracotta.quartz
     artifactId: quartz-terracotta-ee
-    version: 2.1.1-SNAPSHOT
+    version: 2.1.2-SNAPSHOT
     destination: quartz
     kit_edition: enterprise
 
