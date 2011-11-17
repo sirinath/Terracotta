@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
+import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 public class SRACpuTest extends TestCase {
@@ -36,7 +37,7 @@ public class SRACpuTest extends TestCase {
     StatisticRetrievalAction action = new SRACpu();
 
     StatisticData[] data1;
-    BigDecimal[][] values1;
+    BigDecimal[][] values1 = null;
 
     final MathContext mathcontext = new MathContext(1, RoundingMode.UP);
 
@@ -46,7 +47,30 @@ public class SRACpuTest extends TestCase {
       Thread.sleep(5000);
 
       data1 = action.retrieveStatisticData();
-      values1 = assertCpuData(cpuCount, data1);
+      
+      // wrap the assertCpuData() call in a try-catch to print debug logs in case of test failure (MNK-3077)
+      try {
+        values1 = assertCpuData(cpuCount, data1);
+      } catch (AssertionFailedError caughtError) {
+        System.out.println("****** Caught The Assertion Failed Error: Printing Values For Debugging *******");
+        System.out.println("cpuCount = " + cpuCount);
+        if (data1 != null) {
+          int dataLength = data1.length;
+          System.out.println("data1.length = " + dataLength);
+          for (int i = 0; i < dataLength; i++) {
+            if (data1[i] != null) {
+              System.out.println("data1[" + i + "].getName = " + data1[i].getName());
+              System.out.println("data1[" + i + "].getData = " + data1[i].getData());
+            } else {
+              System.out.println("data1[" + i + "] is null");
+            }
+          }
+        } else {
+          System.out.println("data1 is null");
+        }
+        System.out.println("****** Rethrowing The Caught Assertion Failed Error To Fail The Test *******");
+        throw caughtError;
+      }
 
       int cpuOkCount = 0;
       for (int i = 0; i < cpuCount; i++) {
