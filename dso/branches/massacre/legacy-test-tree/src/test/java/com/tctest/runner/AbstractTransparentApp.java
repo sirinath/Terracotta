@@ -7,7 +7,6 @@ package com.tctest.runner;
 import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.ConfigVisitor;
-import com.tc.object.config.DSOApplicationConfig;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.Application;
@@ -18,8 +17,8 @@ import com.tc.test.JMXUtils;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.management.remote.JMXConnector;
 
@@ -88,16 +87,6 @@ public abstract class AbstractTransparentApp implements Application {
 
     TransparencyClassSpec spec = config.getOrCreateSpec(TransparentAppCoordinator.class.getName());
     spec.addRoot("participants", "participants");
-    config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
-  }
-
-  public static void visitDSOApplicationConfig(ConfigVisitor visitor, DSOApplicationConfig config) {
-    config.addIncludePattern(AbstractTransparentApp.class.getName());
-    config.addRoot("AbstractTransparentAppAppIds", AbstractTransparentApp.class.getName() + ".appIds");
-    config.addWriteAutolock("* " + AbstractTransparentApp.class.getName() + ".*(..)");
-
-    config.addIncludePattern(TransparentAppCoordinator.class.getName());
-    config.addRoot("participants", TransparentAppCoordinator.class.getName() + ".participants");
     config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
   }
 
