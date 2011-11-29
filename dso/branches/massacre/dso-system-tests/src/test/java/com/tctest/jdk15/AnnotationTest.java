@@ -9,15 +9,20 @@ import com.tctest.TransparentTestIface;
 
 public class AnnotationTest extends TransparentTestBase {
 
+  public static final int NODE_COUNT = 3;
+
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
-    t.getTransparentAppConfig().setClientCount(3).setIntensity(1);
+    t.getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return AnnotationTestApp.class;
   }
 
+  @Override
   protected boolean canRunCrash() {
     return false;
   }

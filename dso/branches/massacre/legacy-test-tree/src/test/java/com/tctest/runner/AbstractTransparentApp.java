@@ -60,14 +60,6 @@ public abstract class AbstractTransparentApp implements Application {
     return coordinator.getGlobalId();
   }
 
-  protected void moveToStage(int stage) {
-    coordinator.moveToStage(stage);
-  }
-
-  protected void moveToStageAndWait(int stage) {
-    coordinator.moveToStageAndWait(stage);
-  }
-
   protected void notifyError(String msg) {
     listenerProvider.getResultsListener().notifyError(new ErrorContext(msg, new Error()));
   }

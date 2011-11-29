@@ -1,12 +1,12 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.transparency;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -17,22 +17,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
 
 public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTransparentApp {
 
-  private static final int WORKER_COUNT    = 5;
-  private static final int WORK_COUNT      = 10;
+  private static final int    WORKER_COUNT = 5;
+  private static final int    WORK_COUNT   = 10;
 
-  private static final int CREATED_WORKERS = 0;
-  private static final int CREATED_WORK    = 1;
-  private static final int WORK_DONE       = 2;
-  private static final int VERIFIED        = 2;
-
-  private ArrayList        workers         = new ArrayList();
+  private final ArrayList     workers      = new ArrayList();
+  private final CyclicBarrier barrier;
 
   public SubClassOfThreadGotRootTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
-    Assert.assertTrue(getParticipantCount() == 2);
+    Assert.assertEquals(SubClassOfThreadGotRootTest.NODE_COUNT, 2);
+    barrier = new CyclicBarrier(SubClassOfThreadGotRootTest.NODE_COUNT);
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -45,15 +43,14 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
     config.addWriteAutolock(workMethodExpression);
     spec.addRoot("workQueue", "workQueue");
 
-    CyclicBarrierSpec cbspec = new CyclicBarrierSpec();
-    cbspec.visit(visitor, config);
-
-    // config.addExcludePattern("*..SubClassA");
+    spec = config.getOrCreateSpec(SubClassOfThreadGotRootTestApp.class.getName());
+    spec.addRoot("barrier", "barrier");
 
     // Include everything to be instrumented.
     config.addIncludePattern("*..*", false);
   }
 
+  @Override
   protected void runTest() throws Throwable {
 
     for (int i = 0; i < WORKER_COUNT; i++) {
@@ -62,7 +59,7 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
       worker.start();
     }
 
-    moveToStageAndWait(CREATED_WORKERS);
+    barrier.await();
 
     Random r = new Random();
 
@@ -73,14 +70,14 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
       }
     }
 
-    moveToStageAndWait(CREATED_WORK);
+    barrier.await();
 
     for (int i = 0; i < WORKER_COUNT; i++) {
       Worker w = (Worker) workers.get(i);
       w.waitToCompleteAndStop();
     }
 
-    moveToStageAndWait(WORK_DONE);
+    barrier.await();
 
     for (int i = 0; i < WORKER_COUNT; i++) {
       Worker w = (Worker) workers.get(i);
@@ -92,14 +89,15 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
         work.verify();
       }
     }
-    moveToStage(VERIFIED);
+    barrier.await();
 
   }
 
   // This class has the root
   public class Worker extends Thread {
-
+    // Root
     List                 workQueue     = new ArrayList();
+
     List                 workDone      = new ArrayList();
 
     boolean              stopRequested = false;
@@ -110,6 +108,7 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
       this.appId = appId;
     }
 
+    @Override
     public void run() {
       Random r = new Random();
       while (!stopRequested) {
@@ -117,8 +116,7 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
         if (work != null) {
           work.run();
           workDone.add(work);
-        }
-        else if (!stopRequested) {
+        } else if (!stopRequested) {
           ThreadUtil.reallySleep(r.nextInt(2000) + 1);
         }
       }
@@ -239,6 +237,7 @@ public class SubClassOfThreadGotRootTestApp extends AbstractErrorCatchingTranspa
       }
     }
 
+    @Override
     public String toString() {
       return "Work(" + appId + "):{" + n1 + "," + n2 + "}";
     }
