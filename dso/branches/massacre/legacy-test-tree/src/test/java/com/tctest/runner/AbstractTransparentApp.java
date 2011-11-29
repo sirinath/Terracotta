@@ -8,7 +8,6 @@ import com.tc.logging.LogLevel;
 import com.tc.logging.TCLogging;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.Application;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.app.ErrorContext;
@@ -76,9 +75,6 @@ public abstract class AbstractTransparentApp implements Application {
     config.addIncludePattern(AbstractTransparentApp.class.getName());
     config.addRoot("AbstractTransparentAppAppIds", AbstractTransparentApp.class.getName() + ".appIds");
     config.addWriteAutolock("* " + AbstractTransparentApp.class.getName() + ".*(..)");
-
-    TransparencyClassSpec spec = config.getOrCreateSpec(TransparentAppCoordinator.class.getName());
-    spec.addRoot("participants", "participants");
     config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
   }
 
