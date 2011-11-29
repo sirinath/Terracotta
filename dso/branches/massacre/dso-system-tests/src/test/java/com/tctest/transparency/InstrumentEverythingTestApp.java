@@ -6,13 +6,9 @@ package com.tctest.transparency;
 
 import org.apache.commons.collections.FastHashMap;
 
-import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
@@ -22,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.CyclicBarrier;
 
 public class InstrumentEverythingTestApp extends AbstractErrorCatchingTransparentApp {
 
@@ -41,25 +38,26 @@ public class InstrumentEverythingTestApp extends AbstractErrorCatchingTransparen
     spec.addRoot("root", "root");
     spec.addRoot("barrier", "barrier");
 
-    CyclicBarrierSpec cbspec = new CyclicBarrierSpec();
-    cbspec.visit(visitor, config);
-
-    // config.addExcludePattern("*..SubClassA");
-
     // Include everything to be instrumented.
     config.addIncludePattern("*..*", false);
   }
 
   @Override
-  public void runTest() throws BrokenBarrierException, InterruptedException {
-    int n = barrier.barrier();
+  public void runTest() throws Throwable {
+    int n = barrier.await();
+
     if (n == 0) {
       synchronized (root) {
         addALotOfObjects(root);
       }
+
+      barrier.await();
     } else {
+      barrier.await();
+
       List local = new ArrayList();
       addALotOfObjects(local);
+
       synchronized (root) {
         verify(local, root);
       }

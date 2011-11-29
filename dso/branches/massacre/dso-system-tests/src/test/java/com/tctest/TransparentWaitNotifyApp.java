@@ -20,17 +20,21 @@ public class TransparentWaitNotifyApp extends AbstractTransparentApp {
   private static final String DONE       = "done Biatch!";
 
   private final HashMap       sharedRoot = new HashMap();
-  private final CyclicBarrier barrier;
+  private final CyclicBarrier barrier    = new CyclicBarrier(getParticipantCount());
 
   public TransparentWaitNotifyApp(String globalId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(globalId, cfg, listenerProvider);
 
-    barrier = new CyclicBarrier(TransparentWaitNotifyTest.NODE_COUNT);
+    if ((getIntensity() != 1) || (getParticipantCount() != 2)) {
+      //
+      throw Assert.failure("Invalid parameters");
+    }
+
   }
 
   public void run() {
     try {
-      if (barrier.await() == 0) {
+      if ((new Integer(this.getApplicationId()).intValue() % 2) == 0) {
         testWaiter();
       } else {
         testNotify();
@@ -38,22 +42,30 @@ public class TransparentWaitNotifyApp extends AbstractTransparentApp {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    notifyResult(Boolean.TRUE);
   }
 
-  private void testNotify() {
+  private void testNotify() throws Exception {
+    barrier.await();
+
     synchronized (sharedRoot) {
       System.err.println("NOTIFY");
       sharedRoot.notify();
     }
+
+    barrier.await();
 
     synchronized (sharedRoot) {
       Assert.eval("key not in map", sharedRoot.containsKey(DONE));
     }
   }
 
-  private void testWaiter() {
+  private void testWaiter() throws Exception {
 
     synchronized (sharedRoot) {
+      barrier.await();
+
       System.err.println("WAIT");
 
       try {
@@ -65,6 +77,8 @@ public class TransparentWaitNotifyApp extends AbstractTransparentApp {
 
       sharedRoot.put(DONE, null);
     }
+
+    barrier.await();
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
