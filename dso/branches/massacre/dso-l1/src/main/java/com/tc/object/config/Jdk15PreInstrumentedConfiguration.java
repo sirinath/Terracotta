@@ -5,8 +5,6 @@
 package com.tc.object.config;
 
 import com.tc.bundles.LegacyDefaultModuleBase;
-import com.tc.object.config.StandardDSOClientConfigHelper;
-import com.tc.object.config.TransparencyClassSpec;
 import com.tc.util.runtime.Vm;
 
 public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
@@ -62,7 +60,6 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
       // addLogicalAdaptedLinkedBlockingQueueSpec();
       addJavaUtilConcurrentFutureTaskSpec();
 
-      addJavaUtilConcurrentCopyOnWriteArrayListSpec();
       addJavaUtilConcurrentCopyOnWriteArraySetSpec();
 
       // ---------------------------------------------------------------------
@@ -78,22 +75,6 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
     spec.addDistributedMethodCall("managedInnerCancel", "()V", false);
     getOrCreateSpec("java.util.concurrent.FutureTask");
     getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter");
-  }
-
-  private void addJavaUtilConcurrentCopyOnWriteArrayListSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.CopyOnWriteArrayList");
-    spec.setHonorVolatile(true);
-    if (Vm.isJDK15()) {
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.add*(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.remove*(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.copyIn(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.set(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.removeRange(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.addIfAbsent(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.retainAll(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.clear(..)");
-      configHelper.addWriteAutolock("* java.util.concurrent.CopyOnWriteArrayList.subList(..)");
-    }
   }
 
   private void addJavaUtilConcurrentCopyOnWriteArraySetSpec() {

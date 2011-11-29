@@ -84,8 +84,6 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.TDC_SERIALIZED_ENTRY));
     classNameToStateMap.put(TDCCustomLifespanSerializedEntryManagedObjectState.CUSTOM_SERIALIZED_ENTRY,
                             Byte.valueOf(ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY));
-    classNameToStateMap.put(java.util.concurrent.CopyOnWriteArrayList.class.getName(),
-                            Byte.valueOf(ManagedObjectState.LIST_TYPE));
     // XXX: Support for terracotta toolkit
     classNameToStateMap.put("org.terracotta.async.ProcessingBucketItems", Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put("org.terracotta.collections.ConcurrentBlockingQueue",
