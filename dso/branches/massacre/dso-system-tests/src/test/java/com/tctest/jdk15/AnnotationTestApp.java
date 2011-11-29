@@ -20,6 +20,7 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 /**
@@ -27,17 +28,23 @@ import java.util.concurrent.CyclicBarrier;
  */
 public class AnnotationTestApp extends AbstractTransparentApp {
 
-  private ClassWithAnnotations value = new ClassWithAnnotations();
+  private final ClassWithAnnotations value = new ClassWithAnnotations();
+  private final CyclicBarrier        mainBarrier;
 
   public AnnotationTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
+    mainBarrier = new CyclicBarrier(AnnotationTest.NODE_COUNT);
   }
 
   public void run() {
-    testPortableOnAnnotation();
-    testLockOnAnnotation();
-    testDmiOnAnnotation();
-    testRoot();
+    try {
+      testPortableOnAnnotation();
+      testLockOnAnnotation();
+      testDmiOnAnnotation();
+      testRoot();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void testRoot() {
@@ -45,27 +52,26 @@ public class AnnotationTestApp extends AbstractTransparentApp {
     o.await();
   }
 
-  private void testPortableOnAnnotation() {
+  private void testPortableOnAnnotation() throws InterruptedException, BrokenBarrierException {
+    mainBarrier.await();
     ClassIncludedWithAnnotation o = new ClassIncludedWithAnnotation("foo");
     value.setDistributed(o);
-
-    moveToStageAndWait(0);
   }
 
   // CDV-271: Annotation support for Locks, includes by matching on what ever annotations they want.
-  private void testLockOnAnnotation() {
+  private void testLockOnAnnotation() throws InterruptedException, BrokenBarrierException {
+    mainBarrier.await();
+
     value.setDistributed("foo");
     junit.framework.Assert.assertEquals("foo", value.getDistributed());
-
-    moveToStageAndWait(1);
   }
 
-  private void testDmiOnAnnotation() {
-    moveToStageAndWait(2);
+  private void testDmiOnAnnotation() throws InterruptedException, BrokenBarrierException {
+    mainBarrier.await();
 
     value.processMessage("msg from " + getApplicationId());
 
-    moveToStageAndWait(3);
+    mainBarrier.await();
 
     try {
       Thread.sleep(1000L * 10);
@@ -81,6 +87,7 @@ public class AnnotationTestApp extends AbstractTransparentApp {
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     TransparencyClassSpec spec = config.getOrCreateSpec(AnnotationTestApp.class.getName());
     spec.addRoot("value", "value");
+    spec.addRoot("mainBarrier", "mainBarrier");
 
     String testClass = "com.tctest.jdk15.AnnotationTestApp$ClassWithAnnotations";
     // config.addIncludePattern(testClass);
@@ -136,7 +143,7 @@ public class AnnotationTestApp extends AbstractTransparentApp {
 
   @Portable
   public static class ClassIncludedWithAnnotation {
-    private String value;
+    private final String value;
 
     public ClassIncludedWithAnnotation(String value) {
       this.value = value;
@@ -150,7 +157,6 @@ public class AnnotationTestApp extends AbstractTransparentApp {
   public static class ClassWithAnnotatedRoot {
     @Root
     private final CyclicBarrier barrier;
-
 
     public ClassWithAnnotatedRoot(int num) {
       if (num < 2) { throw new AssertionError(); }

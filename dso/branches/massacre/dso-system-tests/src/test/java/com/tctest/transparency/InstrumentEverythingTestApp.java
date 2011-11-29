@@ -25,12 +25,8 @@ import java.util.Vector;
 
 public class InstrumentEverythingTestApp extends AbstractErrorCatchingTransparentApp {
 
-  private static final int INITIAL      = 0;
-  private static final int INTERMEDIATE = 1;
-  private static final int END          = 2;
-
-  final List               root         = new ArrayList();
-  final CyclicBarrier      barrier;
+  final List          root = new ArrayList();
+  final CyclicBarrier barrier;
 
   public InstrumentEverythingTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -57,22 +53,18 @@ public class InstrumentEverythingTestApp extends AbstractErrorCatchingTransparen
   @Override
   public void runTest() throws BrokenBarrierException, InterruptedException {
     int n = barrier.barrier();
-    moveToStage(INITIAL);
     if (n == 0) {
       synchronized (root) {
         addALotOfObjects(root);
       }
-      moveToStage(INTERMEDIATE);
     } else {
       List local = new ArrayList();
       addALotOfObjects(local);
-      moveToStageAndWait(INTERMEDIATE);
       synchronized (root) {
         verify(local, root);
       }
     }
     printDetails();
-    moveToStage(END);
   }
 
   private void verify(List expected, List actual) {
