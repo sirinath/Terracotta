@@ -25,7 +25,6 @@ import java.util.ListIterator;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GenericListTestApp extends GenericTransparentApp {
 
@@ -74,7 +73,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     lists.add(new MyVector());
     lists.add(new MyStack());
     lists.add(new MyAbstractListSubclass());
-    lists.add(new CopyOnWriteArrayList());
 
     sharedMap.put("lists", lists);
     sharedMap.put("arrayforLinkedList", new Object[2]);
@@ -89,7 +87,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     sharedMap.put("arrayforMyVector", new Object[2]);
     sharedMap.put("arrayforMyStack", new Object[2]);
     sharedMap.put("arrayforMyAbstractListSubclass", new Object[2]);
-    sharedMap.put("arrayforCOWArrayList", new Object[2]);
   }
 
   void testBasicAdd(List list, boolean validate, int v) {
@@ -100,45 +97,6 @@ public class GenericListTestApp extends GenericTransparentApp {
         boolean added = list.add(E("rollin in my 6-4", v));
         Assert.assertTrue(added);
       }
-    }
-  }
-
-  void testAddIfAbsent(List list, boolean validate, int v) {
-    if (!(list instanceof CopyOnWriteArrayList)) return;
-    CopyOnWriteArrayList cowList = (CopyOnWriteArrayList) list;
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("one", v), E("two", v), E("three", v) }), cowList);
-    } else {
-      boolean added = cowList.addIfAbsent(E("one", v));
-      Assert.assertTrue(added);
-      added = cowList.addIfAbsent(E("two", v));
-      Assert.assertTrue(added);
-      added = cowList.addIfAbsent(E("three", v));
-      Assert.assertTrue(added);
-      added = cowList.addIfAbsent(E("two", v));
-      Assert.assertFalse(added);
-    }
-  }
-
-  void testAddAllIfAbsent(List list, boolean validate, int v) {
-    if (!(list instanceof CopyOnWriteArrayList)) return;
-    CopyOnWriteArrayList cowList = (CopyOnWriteArrayList) list;
-    if (validate) {
-      assertListsEqual(Arrays
-                           .asList(new Object[] { E("one", v), E("two", v), E("three", v), E("four", v), E("five", v) }),
-                       cowList);
-    } else {
-      List extra = new ArrayList();
-      extra.add(E("two", v));
-      extra.add(E("four", v));
-      extra.add(E("one", v));
-      extra.add(E("five", v));
-
-      cowList.add(E("one", v));
-      cowList.add(E("two", v));
-      cowList.add(E("three", v));
-      int addCount = cowList.addAllAbsent(extra);
-      Assert.assertEquals(2, addCount);
     }
   }
 
@@ -573,8 +531,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testSubList(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
                            E("third element", v), E("fourth element", v) }), list);
@@ -624,12 +580,7 @@ public class GenericListTestApp extends GenericTransparentApp {
         list.add(E("third element", v));
         list.add(E("fourth element", v));
       }
-      Class listClass;
-      if (list instanceof CopyOnWriteArrayList) {
-        listClass = CopyOnWriteArrayList.class;
-      } else {
-        listClass = AbstractList.class;
-      }
+      Class listClass = AbstractList.class;
       Class[] parameterType = new Class[2];
       parameterType[0] = Integer.TYPE;
       parameterType[1] = Integer.TYPE;
@@ -710,8 +661,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // List Iterator testing methods.
   void testListIteratorSet1(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("second element", v),
                            E("third element", v) }), list);
@@ -730,8 +679,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorSet2(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("modified second element", v),
                            E("third element", v) }), list);
@@ -751,8 +698,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorSetRemove1(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("third element", v) }), list);
     } else {
@@ -773,8 +718,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorSetRemove2(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("modified second element", v) }), list);
     } else {
@@ -795,8 +738,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorDuplicateElementRemove(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -816,8 +757,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAdd1(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
                            E("third element", v) }), list);
@@ -835,8 +774,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAdd2(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
                            E("third element", v) }), list);
@@ -854,8 +791,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAddSet1(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("modified first element", v), E("second element", v),
                            E("third element", v) }), list);
@@ -874,8 +809,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAddSet2(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
                            E("modified third element", v) }), list);
@@ -895,8 +828,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAddSet3(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
                            E("modified third element", v), E("fourth element", v) }), list);
@@ -917,8 +848,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAddNull(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { null, null, E("third element", v) }), list);
     } else {
@@ -932,8 +861,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorAddRemove(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("second element", v), E("third element", v) }), list);
     } else {
@@ -951,8 +878,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorRemoveNull(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) return;
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("third element", v) }), list);
     } else {
@@ -974,7 +899,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   // Read only testing methods.
   void testReadOnlyAdd(List list, boolean validate, int v) {
 
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -991,7 +916,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testReadOnlySet(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -1009,7 +934,7 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for remove.
   void testSetUpRemove(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1035,7 +960,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testSetUpToArray(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     Object[] array = getArray(list);
     if (validate) {
@@ -1064,7 +989,7 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for Iterator remove.
   void testSetUpIteratorRemove(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1093,7 +1018,7 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for clear.
   void testSetUpClear(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1120,7 +1045,7 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for retainAll.
   void testSetUpRetainAll(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1149,7 +1074,7 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for removeAll.
   void testSetUpRemoveAll(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
@@ -1177,7 +1102,7 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorReadOnlyAdd(List list, boolean validate, int v) {
-    if (list instanceof Vector || list instanceof CopyOnWriteArrayList) { return; }
+    if (list instanceof Vector) { return; }
 
     if (validate) {
       assertEmptyList(list);
@@ -1209,8 +1134,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Iterator testing methods.
   void testIteratorRemove(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("second element", v) }), list);
     } else {
@@ -1228,8 +1151,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testIteratorDuplicateElementRemove(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -1250,8 +1171,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testIteratorRemoveNull(List list, boolean validate, int v) {
-    if (list instanceof CopyOnWriteArrayList) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), null, E("second element", v) }), list);
     } else {
@@ -1348,7 +1267,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
     if (list instanceof Vector) { return (Object[]) sharedMap.get("arrayforVector"); }
     if (list instanceof MyAbstractListSubclass) { return (Object[]) sharedMap.get("arrayforAbstractListSubclass"); }
-    if (list instanceof CopyOnWriteArrayList) { return (Object[]) sharedMap.get("arrayforCOWArrayList"); }
     return null;
   }
 
