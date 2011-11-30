@@ -57,7 +57,6 @@ public class StandardConfiguration extends LegacyDefaultModuleBase {
     getOrCreateSpec("java.lang.Exception");
     getOrCreateSpec("java.lang.RuntimeException");
     getOrCreateSpec("java.lang.InterruptedException");
-    getOrCreateSpec("java.awt.AWTException");
     getOrCreateSpec("java.io.IOException");
     getOrCreateSpec("java.io.FileNotFoundException");
     getOrCreateSpec("java.lang.Error");
