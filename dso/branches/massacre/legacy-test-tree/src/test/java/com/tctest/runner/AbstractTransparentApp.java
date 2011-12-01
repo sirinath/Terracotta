@@ -73,6 +73,7 @@ public abstract class AbstractTransparentApp implements Application {
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     config.addIncludePattern(AbstractTransparentApp.class.getName());
+    config.addIncludePattern(TransparentAppCoordinator.class.getName());
     config.addRoot("AbstractTransparentAppAppIds", AbstractTransparentApp.class.getName() + ".appIds");
     config.addWriteAutolock("* " + AbstractTransparentApp.class.getName() + ".*(..)");
     config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
