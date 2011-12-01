@@ -101,9 +101,6 @@ import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.CloneUtil;
 import com.tc.object.bytecode.HashMapClassAdapter;
 import com.tc.object.bytecode.HashtableClassAdapter;
-import com.tc.object.bytecode.JavaLangReflectArrayAdapter;
-import com.tc.object.bytecode.JavaLangReflectFieldAdapter;
-import com.tc.object.bytecode.JavaLangReflectProxyClassAdapter;
 import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
@@ -515,7 +512,6 @@ public class BootJarTool {
       addInstrumentedHashMap();
       addInstrumentedHashtable();
       addInstrumentedJavaUtilCollection();
-      addReflectionInstrumentation();
 
       addJdk15SpecificPreInstrumentedClasses();
 
@@ -662,7 +658,6 @@ public class BootJarTool {
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
       addInstrumentedJavaNetURL();
-      addInstrumentedProxy();
       addTreeMap();
       addObjectStreamClass();
 
@@ -852,13 +847,6 @@ public class BootJarTool {
 
       addIbmInstrumentedAtomicInteger();
       addIbmInstrumentedAtomicLong();
-    }
-  }
-
-  private void addReflectionInstrumentation() {
-    if (this.configHelper.reflectionEnabled()) {
-      adaptAndLoad("java.lang.reflect.Field", new JavaLangReflectFieldAdapter());
-      adaptAndLoad("java.lang.reflect.Array", new JavaLangReflectArrayAdapter());
     }
   }
 
@@ -1250,23 +1238,6 @@ public class BootJarTool {
     spec.markPreInstrumented();
 
     loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
-  }
-
-  private final void addInstrumentedProxy() {
-    final String className = "java.lang.reflect.Proxy";
-    byte[] bytes = getSystemBytes(className);
-
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-
-    final ClassVisitor cv = new JavaLangReflectProxyClassAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    bytes = cw.toByteArray();
-
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(className);
-    bytes = doDSOTransform(spec.getClassName(), bytes);
-    loadClassIntoJar(className, bytes, true);
   }
 
   private final void addInstrumentedJavaLangString() {
