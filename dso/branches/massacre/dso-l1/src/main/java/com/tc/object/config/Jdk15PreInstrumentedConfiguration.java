@@ -60,8 +60,6 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
       // addLogicalAdaptedLinkedBlockingQueueSpec();
       addJavaUtilConcurrentFutureTaskSpec();
 
-      addJavaUtilConcurrentCopyOnWriteArraySetSpec();
-
       // ---------------------------------------------------------------------
       // SECTION ENDS
       // ---------------------------------------------------------------------
@@ -75,9 +73,5 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
     spec.addDistributedMethodCall("managedInnerCancel", "()V", false);
     getOrCreateSpec("java.util.concurrent.FutureTask");
     getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter");
-  }
-
-  private void addJavaUtilConcurrentCopyOnWriteArraySetSpec() {
-    getOrCreateSpec("java.util.concurrent.CopyOnWriteArraySet");
   }
 }
