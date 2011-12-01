@@ -524,9 +524,6 @@ public class BootJarTool {
       if (Vm.isJDK15Compliant()) {
         loadTerracottaClass("com.tc.util.concurrent.locks.TCLock");
       }
-      if (Vm.isJDK16Compliant()) {
-        loadTerracottaClass("com.tc.util.concurrent.locks.CopyOnWriteArrayListLock");
-      }
       loadTerracottaClass(com.tc.util.Stack.class.getName());
       loadTerracottaClass(TCObjectNotSharableException.class.getName());
       loadTerracottaClass(TCObjectNotFoundException.class.getName());
@@ -1698,8 +1695,6 @@ public class BootJarTool {
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
     addSerializationInstrumentedCode(spec);
 
-    spec = this.configHelper.getOrCreateSpec("java.util.concurrent.CopyOnWriteArraySet");
-    addSerializationInstrumentedCode(spec);
   }
 
   private final void addSerializationInstrumentedCode(final TransparencyClassSpec spec) {
