@@ -178,14 +178,6 @@ public class DBSerializationTest extends TCTestCase {
           loaded.apply(newLiteralDNA(true), new TransactionID(++this.transactionSequence), new ApplyTransactionInfo(),
                        this.imo, false);
           break;
-        case ManagedObjectState.TREE_MAP_TYPE:
-          loaded.apply(newLogicalTreeMapDNA(true), new TransactionID(++this.transactionSequence),
-                       new ApplyTransactionInfo(), this.imo, false);
-          break;
-        case ManagedObjectState.TREE_SET_TYPE:
-          loaded.apply(newLogicalTreeSetDNA(true), new TransactionID(++this.transactionSequence),
-                       new ApplyTransactionInfo(), this.imo, false);
-          break;
       }
 
     }

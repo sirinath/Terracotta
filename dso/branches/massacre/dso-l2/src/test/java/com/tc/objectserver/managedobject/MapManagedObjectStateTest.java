@@ -30,19 +30,6 @@ public class MapManagedObjectStateTest extends AbstractTestManagedObjectState {
     basicTestUnit(className, ManagedObjectState.CONCURRENT_HASHMAP_TYPE, cursor, 7, false);
   }
 
-  public void testTreeMap() throws Exception {
-    final String className = "java.util.TreeMap";
-    final String COMPARATOR_FIELDNAME = "java.util.TreeMap.comparator";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(COMPARATOR_FIELDNAME, new ObjectID(2001), true);
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2002), new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2004), new ObjectID(2005) });
-
-    basicTestUnit(className, ManagedObjectState.TREE_MAP_TYPE, cursor, 5, false);
-  }
-
   public void testLinkedHashMap() throws Exception {
     final String className = "java.util.LinkedHashMap";
     final String ACCESS_ORDER_FIELDNAME = "java.util.LinkedHashMap.accessOrder";

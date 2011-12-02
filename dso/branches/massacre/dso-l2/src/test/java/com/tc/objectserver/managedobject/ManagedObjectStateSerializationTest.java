@@ -61,12 +61,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.SET_TYPE:
             testSet();
             break;
-          case ManagedObjectState.TREE_SET_TYPE:
-            testTreeSet();
-            break;
-          case ManagedObjectState.TREE_MAP_TYPE:
-            testTreeMap();
-            break;
           case ManagedObjectState.QUEUE_TYPE:
             testLinkedBlockingQueue();
             break;
@@ -258,38 +252,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.LINKED_HASHSET_TYPE);
-  }
-
-  public void testTreeSet() throws Exception {
-    final String className = "java.util.TreeSet";
-    final String COMPARATOR_FIELDNAME = "java.util.TreeMap.comparator";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(COMPARATOR_FIELDNAME, new ObjectID(2001), true);
-
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.TREE_SET_TYPE);
-  }
-
-  public void testTreeMap() throws Exception {
-    final String className = "java.util.TreeMap";
-    final String COMPARATOR_FIELDNAME = "java.util.TreeMap.comparator";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(COMPARATOR_FIELDNAME, new ObjectID(2001), true);
-
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2002), new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2004), new ObjectID(2005) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.TREE_MAP_TYPE);
   }
 
   public void testLinkedBlockingQueue() throws Exception {

@@ -115,7 +115,6 @@ import com.tc.object.bytecode.JavaUtilConcurrentHashMapWriteThroughEntryAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
-import com.tc.object.bytecode.JavaUtilTreeMapAdapter;
 import com.tc.object.bytecode.LinkedHashMapClassAdapter;
 import com.tc.object.bytecode.LinkedListAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
@@ -658,7 +657,6 @@ public class BootJarTool {
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
       addInstrumentedJavaNetURL();
-      addTreeMap();
       addObjectStreamClass();
 
       addClusterEventsAndMetaDataClasses();
@@ -904,23 +902,6 @@ public class BootJarTool {
 
     // this class needed for ibm-jdk-15 branch
     loadTerracottaClass("com.tc.object.bytecode.ClassAdapterFactory");
-  }
-
-  private final void addTreeMap() {
-    final String className = "java.util.TreeMap";
-    final byte[] orig = getSystemBytes(className);
-
-    final TransparencyClassSpec spec = this.configHelper.getSpec(className);
-
-    final byte[] transformed = doDSOTransform(className, orig);
-
-    final ClassReader cr = new ClassReader(transformed);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-
-    final ClassVisitor cv = new JavaUtilTreeMapAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    loadClassIntoJar(className, cw.toByteArray(), spec.isPreInstrumented());
   }
 
   private final void issueWarningsAndErrors() {
@@ -1589,19 +1570,6 @@ public class BootJarTool {
     addSerializationInstrumentedCode(spec);
 
     spec = this.configHelper.getOrCreateSpec("java.util.LinkedHashSet", "com.tc.object.applicator.HashSetApplicator");
-    addSerializationInstrumentedCode(spec);
-
-    spec = this.configHelper.getOrCreateSpec("java.util.TreeSet", "com.tc.object.applicator.TreeSetApplicator");
-    spec.addIfTrueLogSpec(SerializationUtil.ADD_SIGNATURE);
-    spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE,
-                          new SetRemoveMethodAdapter("java/util/TreeSet", "java/util/TreeMap", "m", Vm
-                              .getMajorVersion() >= 6 ? "java/util/NavigableMap" : "java/util/SortedMap"));
-
-    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addSetIteratorWrapperSpec(SerializationUtil.ITERATOR_SIGNATURE);
-    spec.addViewSetWrapperSpec(SerializationUtil.SUBSET_SIGNATURE);
-    spec.addViewSetWrapperSpec(SerializationUtil.HEADSET_SIGNATURE);
-    spec.addViewSetWrapperSpec(SerializationUtil.TAILSET_SIGNATURE);
     addSerializationInstrumentedCode(spec);
 
     spec = this.configHelper.getOrCreateSpec("java.util.LinkedList", "com.tc.object.applicator.ListApplicator");
