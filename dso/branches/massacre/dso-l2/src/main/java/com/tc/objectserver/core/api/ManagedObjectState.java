@@ -5,9 +5,9 @@
 package com.tc.objectserver.core.api;
 
 import com.tc.object.ObjectID;
+import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
 import com.tc.objectserver.managedobject.ManagedObjectTraverser;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
@@ -35,8 +35,6 @@ public interface ManagedObjectState {
   public static final byte LITERAL_TYPE                           = 0x06;
   public static final byte LIST_TYPE                              = 0x07;
   public static final byte SET_TYPE                               = 0x08;
-  public static final byte TREE_SET_TYPE                          = 0x09;
-  public static final byte TREE_MAP_TYPE                          = 0x0a;
   public static final byte QUEUE_TYPE                             = 0x0b;
   public static final byte CONCURRENT_HASHMAP_TYPE                = 0x0c;
   public static final byte PARTIAL_MAP_TYPE                       = 0x0d;

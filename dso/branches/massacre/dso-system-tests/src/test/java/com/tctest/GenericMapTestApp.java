@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GenericMapTestApp extends GenericTransparentApp {
@@ -72,7 +71,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     maps.add(new HashMap());
     maps.add(new Hashtable());
-    maps.add(new TreeMap(new NullTolerantComparator()));
     maps.add(new LinkedHashMap());
     maps.add(new THashMap());
     maps.add(new Properties());
@@ -80,8 +78,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     maps.add(new MyHashMap(new HashMap()));
     maps.add(new MyHashMap2());
     maps.add(new MyHashMap3(0));
-    maps.add(new MyTreeMap(new NullTolerantComparator()));
-    maps.add(new MyTreeMap2(new NullTolerantComparator()));
     maps.add(new MyHashtable());
     maps.add(new MyHashtable2());
     maps.add(new MyLinkedHashMap());
@@ -110,14 +106,11 @@ public class GenericMapTestApp extends GenericTransparentApp {
     sharedMap.put("maps", maps);
     nonSharedArrayMap.put("arrayforHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforHashtable", new Object[4]);
-    sharedMap.put("arrayforTreeMap", new Object[4]);
-    sharedMap.put("arrayforTreeMap2", new Object[4]);
     sharedMap.put("arrayforTHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforLinkedHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforProperties", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap2", new Object[4]);
-    sharedMap.put("arrayforMyTreeMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashtable", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashtable2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap", new Object[4]);
@@ -186,9 +179,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       if (map instanceof MyHashMap) {
         Assert.assertEquals(E("timmy", v), ((MyHashMap) map).getKey());
         Assert.assertEquals("teck", ((MyHashMap) map).getValue());
-      } else if (map instanceof MyTreeMap2) {
-        Assert.assertEquals(E("timmy", v), ((MyTreeMap2) map).getKey());
-        Assert.assertEquals("teck", ((MyTreeMap2) map).getValue());
       } else if (map instanceof MyLinkedHashMap2) {
         Assert.assertEquals(E("timmy", v), ((MyLinkedHashMap2) map).getKey());
         Assert.assertEquals("teck", ((MyLinkedHashMap2) map).getValue());
@@ -1055,7 +1045,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   void testEntrySetToArray3(Map map, boolean validate, int v) {
     // CDV-1130
     if (map instanceof ConcurrentHashMap) return;
-    if (map instanceof TreeMap) return;
     if (map instanceof THashMap) return;
 
     if (validate) {
@@ -2122,8 +2111,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     if (map instanceof MyHashMap2) { return nonSharedArrayMap.get("arrayforMyHashMap2"); }
     if (map instanceof MyHashMap) { return nonSharedArrayMap.get("arrayforMyHashMap"); }
     if (map instanceof MyHashMap3) { return sharedMap.get("arrayforMyHashMap3"); }
-    if (map instanceof MyTreeMap) { return sharedMap.get("arrayforMyTreeMap"); }
-    if (map instanceof MyTreeMap2) { return sharedMap.get("arrayforMyTreeMap"); }
     if (map instanceof MyHashtable2) { return nonSharedArrayMap.get("arrayforMyHashtable2"); }
     if (map instanceof MyHashtable) { return nonSharedArrayMap.get("arrayforMyHashtable"); }
     if (map instanceof MyTHashMap) { return sharedMap.get("arrayforMyTHashMap"); }
@@ -2149,8 +2136,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       return (Object[]) nonSharedArrayMap.get("arrayforHashMap");
     } else if (map instanceof Hashtable) {
       return (Object[]) nonSharedArrayMap.get("arrayforHashtable");
-    } else if (map instanceof TreeMap) {
-      return (Object[]) sharedMap.get("arrayforTreeMap");
     } else if (map instanceof THashMap) {
       return (Object[]) sharedMap.get("arrayforTHashMap");
     } else if (isCHM(map)) { return (Object[]) sharedMap.get("arrayforConcurrentHashMap"); }
@@ -2449,18 +2434,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     }
   }
 
-  private static class MyTreeMap extends TreeMap {
-    // This constructor influences how this subclass is instrumented -- Do not remove
-    @SuppressWarnings("unused")
-    public MyTreeMap() {
-      super();
-    }
-
-    public MyTreeMap(Comparator comparator) {
-      super(comparator);
-    }
-  }
-
   private static class MyHashMap3 extends HashMap {
     // This field influences how this subclass is instrumented -- Do not remove
     @SuppressWarnings("unused")
@@ -2471,30 +2444,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       this.i = i;
     }
 
-  }
-
-  private static class MyTreeMap2 extends MyTreeMap {
-    private Object key;
-    private Object value;
-
-    public MyTreeMap2(Comparator comparator) {
-      super(comparator);
-    }
-
-    @Override
-    public Object put(Object arg0, Object arg1) {
-      this.key = arg0;
-      this.value = arg1;
-      return super.put(arg0, arg1);
-    }
-
-    public Object getKey() {
-      return key;
-    }
-
-    public Object getValue() {
-      return value;
-    }
   }
 
   private static class MyHashtable extends Hashtable {

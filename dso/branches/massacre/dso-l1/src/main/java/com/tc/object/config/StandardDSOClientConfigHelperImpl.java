@@ -50,7 +50,6 @@ import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
 import com.tc.object.bytecode.SessionConfiguration;
 import com.tc.object.bytecode.THashMapAdapter;
 import com.tc.object.bytecode.TransparencyClassAdapter;
-import com.tc.object.bytecode.TreeMapAdapter;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
@@ -364,13 +363,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
   private void doPreInstrumentedAutoconfig() {
     TransparencyClassSpec spec = null;
-
-    spec = getOrCreateSpec("java.util.TreeMap", "com.tc.object.applicator.TreeMapApplicator");
-    spec.setUseNonDefaultConstructor(true);
-    spec.addMethodAdapter(SerializationUtil.PUT_SIGNATURE, new TreeMapAdapter.PutAdapter());
-    spec.addMethodAdapter("deleteEntry(Ljava/util/TreeMap$Entry;)V", new TreeMapAdapter.DeleteEntryAdapter());
-    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
 
     spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
 
@@ -740,8 +732,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     getOrCreateSpec("java.util.HashSet", "com.tc.object.applicator.HashSetApplicator");
 
     getOrCreateSpec("java.util.LinkedHashSet", "com.tc.object.applicator.HashSetApplicator");
-
-    getOrCreateSpec("java.util.TreeSet", "com.tc.object.applicator.TreeSetApplicator");
 
     getOrCreateSpec("java.util.LinkedList", "com.tc.object.applicator.ListApplicator");
 

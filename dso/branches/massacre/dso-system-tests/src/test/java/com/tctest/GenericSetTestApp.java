@@ -15,13 +15,11 @@ import gnu.trove.THashSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class GenericSetTestApp extends GenericTransparentApp {
 
@@ -32,31 +30,29 @@ public class GenericSetTestApp extends GenericTransparentApp {
     super(appId, cfg, listenerProvider, Set.class, 2);
   }
 
+  @Override
   protected Object getTestObject(String testName) {
     List sets = (List) sharedMap.get("sets");
     return sets.iterator();
   }
 
+  @Override
   protected void setupTestObject(String testName) {
     List sets = new ArrayList();
     sets.add(new HashSet());
     sets.add(new LinkedHashSet());
     sets.add(new THashSet());
-    sets.add(new TreeSet(new NullTolerantComparator()));
     sets.add(new MyHashSet());
     sets.add(new MyLinkedHashSet());
     sets.add(new MyTHashSet());
-    sets.add(new MyTreeSet(new NullTolerantComparator()));
     // sets.add(new SubclassOfAbstractLogicalSubclass());
 
     sharedMap.put("sets", sets);
     sharedMap.put("arrayforHashSet", new Object[2]);
     sharedMap.put("arrayforTHashSet", new Object[2]);
-    sharedMap.put("arrayforTreeSet", new Object[2]);
     sharedMap.put("arrayforLinkedHashSet", new Object[2]);
     sharedMap.put("arrayforMyHashSet", new Object[2]);
     sharedMap.put("arrayforMyTHashSet", new Object[2]);
-    sharedMap.put("arrayforMyTreeSet", new Object[2]);
     sharedMap.put("arrayforMyLinkedHashSet", new Object[2]);
   }
 
@@ -495,7 +491,6 @@ public class GenericSetTestApp extends GenericTransparentApp {
     if (set instanceof MyLinkedHashSet) { return sharedMap.get("arrayforMyLinkedHashSet"); }
     if (set instanceof MyHashSet) { return sharedMap.get("arrayforMyHashSet"); }
     if (set instanceof MyTHashSet) { return sharedMap.get("arrayforMyTHashSet"); }
-    if (set instanceof MyTreeSet) { return sharedMap.get("arrayforMyTreeSet"); }
     return null;
   }
 
@@ -506,13 +501,12 @@ public class GenericSetTestApp extends GenericTransparentApp {
     if (set instanceof LinkedHashSet) { return (Object[]) sharedMap.get("arrayforLinkedHashSet"); }
     if (set instanceof HashSet) { return (Object[]) sharedMap.get("arrayforHashSet"); }
     if (set instanceof THashSet) { return (Object[]) sharedMap.get("arrayforTHashSet"); }
-    if (set instanceof TreeSet) { return (Object[]) sharedMap.get("arrayforTreeSet"); }
     return null;
   }
 
   private static void assertEmptyObjectArray(Object[] array) {
-    for (int i = 0; i < array.length; i++) {
-      Assert.assertNull(array[i]);
+    for (Object element : array) {
+      Assert.assertNull(element);
     }
   }
 
@@ -577,12 +571,6 @@ public class GenericSetTestApp extends GenericTransparentApp {
     }
   }
 
-  private static class MyTreeSet extends TreeSet {
-    public MyTreeSet(Comparator comparator) {
-      super(comparator);
-    }
-  }
-
   private static class Foo implements Comparable {
     private final String value;
 
@@ -594,10 +582,12 @@ public class GenericSetTestApp extends GenericTransparentApp {
       this.value = value;
     }
 
+    @Override
     public int hashCode() {
       return value.hashCode();
     }
 
+    @Override
     public boolean equals(Object obj) {
       if (obj instanceof Foo) { return value.equals(((Foo) obj).value); }
       return false;

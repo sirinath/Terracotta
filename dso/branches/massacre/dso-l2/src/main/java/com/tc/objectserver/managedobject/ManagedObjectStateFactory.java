@@ -51,14 +51,12 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.MAP_TYPE));
     classNameToStateMap.put(java.util.LinkedHashMap.class.getName(),
                             Byte.valueOf(ManagedObjectState.LINKED_HASHMAP_TYPE));
-    classNameToStateMap.put(java.util.TreeMap.class.getName(), Byte.valueOf(ManagedObjectState.TREE_MAP_TYPE));
     classNameToStateMap.put(gnu.trove.THashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.HashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.LinkedHashSet.class.getName(),
                             Byte.valueOf(ManagedObjectState.LINKED_HASHSET_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_SET.getClass().getName(),
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put(java.util.TreeSet.class.getName(), Byte.valueOf(ManagedObjectState.TREE_SET_TYPE));
     classNameToStateMap.put(java.util.LinkedList.class.getName(), Byte.valueOf(ManagedObjectState.LINKED_LIST_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Vector.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
@@ -163,14 +161,10 @@ public class ManagedObjectStateFactory {
         return new PartialMapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.LINKED_HASHMAP_TYPE:
         return new LinkedHashMapManagedObjectState(classID);
-      case ManagedObjectState.TREE_MAP_TYPE:
-        return new TreeMapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.LINKED_HASHSET_TYPE:
         return new LinkedHashSetManagedObjectState(classID);
       case ManagedObjectState.SET_TYPE:
         return new SetManagedObjectState(classID, this.persistentCollectionFactory.createPersistentSet(oid));
-      case ManagedObjectState.TREE_SET_TYPE:
-        return new TreeSetManagedObjectState(classID, this.persistentCollectionFactory.createPersistentSet(oid));
       case ManagedObjectState.LIST_TYPE:
         return new ListManagedObjectState(classID);
       case ManagedObjectState.LINKED_LIST_TYPE:
@@ -273,10 +267,6 @@ public class ManagedObjectStateFactory {
           return LinkedListManagedObjectState.readFrom(in);
         case ManagedObjectState.SET_TYPE:
           return SetManagedObjectState.readFrom(in);
-        case ManagedObjectState.TREE_SET_TYPE:
-          return TreeSetManagedObjectState.readFrom(in);
-        case ManagedObjectState.TREE_MAP_TYPE:
-          return TreeMapManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
           return ConcurrentHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:

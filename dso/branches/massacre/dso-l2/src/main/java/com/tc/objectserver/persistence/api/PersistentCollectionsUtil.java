@@ -15,10 +15,8 @@ public class PersistentCollectionsUtil {
     switch (type) {
       case ManagedObjectState.MAP_TYPE:
       case ManagedObjectState.PARTIAL_MAP_TYPE:
-      case ManagedObjectState.TREE_MAP_TYPE:
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
       case ManagedObjectState.SET_TYPE:
-      case ManagedObjectState.TREE_SET_TYPE:
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
         return true;
@@ -42,13 +40,11 @@ public class PersistentCollectionsUtil {
     switch (type) {
       case ManagedObjectState.MAP_TYPE:
       case ManagedObjectState.PARTIAL_MAP_TYPE:
-      case ManagedObjectState.TREE_MAP_TYPE:
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
         return (PersistableCollection) collectionFactory.createPersistentMap(id);
       case ManagedObjectState.SET_TYPE:
-      case ManagedObjectState.TREE_SET_TYPE:
         return (PersistableCollection) collectionFactory.createPersistentSet(id);
       default:
         return null;
