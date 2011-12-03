@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,6 +40,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     //
   }
 
+  @Override
   public void setUp() throws Exception {
     objManager = new TestClientObjectManager();
     objManager.setIsManaged(true);
@@ -56,42 +56,10 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     ClassProcessorHelper.setContext(Thread.currentThread().getContextClassLoader(), context);
   }
 
+  @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     objManager.setIsManaged(false);
-  }
-
-  public void testHashtable() throws Exception {
-    clazz = Hashtable.class;
-    instance = clazz.newInstance();
-
-    objManager.lookupOrCreate(instance);
-    invokeMethod(clazz, instance, SerializationUtil.PUT_SIGNATURE, new Class[] { Object.class, Object.class },
-                 new Object[] { new Integer(1), new Integer(2) });
-    invokeMethod(clazz, instance, SerializationUtil.REMOVE_KEY_SIGNATURE, new Class[] { Object.class },
-                 new Object[] { new Integer(1) });
-    invokeMethod(clazz, instance, SerializationUtil.CLEAR_SIGNATURE, new Class[] {}, new Object[] {});
-    tcObject = (MockTCObject) objManager.lookupOrCreate(instance);
-    history = tcObject.getHistory();
-    assertEquals(3, history.size());
-
-    call = (MockTCObject.MethodCall) history.get(0);
-    assertEquals(SerializationUtil.PUT, call.method);
-    params = call.parameters;
-    assertEquals(new Integer(1), params[0]);
-    assertEquals(new Integer(2), params[1]);
-    assertEquals(2, params.length);
-
-    call = (MockTCObject.MethodCall) history.get(1);
-    assertEquals(SerializationUtil.REMOVE, call.method);
-    params = call.parameters;
-    assertEquals(new Integer(1), params[0]);
-    assertEquals(1, params.length);
-
-    call = (MockTCObject.MethodCall) history.get(2);
-    assertEquals(SerializationUtil.CLEAR, call.method);
-    params = call.parameters;
-    assertEquals(0, params.length);
   }
 
   public void testHashMap() throws Exception {

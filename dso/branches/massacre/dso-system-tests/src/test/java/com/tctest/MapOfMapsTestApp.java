@@ -189,14 +189,10 @@ public class MapOfMapsTestApp extends AbstractErrorCatchingTransparentApp {
   private Map getChild(final Map m) {
     if (m instanceof HashMap) {
       return getPopulatedMap(new Hashtable());
-    } else if (m instanceof Hashtable) {
-      return getPopulatedMap(new LinkedHashMap());
     } else if (m instanceof LinkedHashMap) {
       return getPopulatedMap(new IdentityHashMap());
     } else if (m instanceof IdentityHashMap) {
       return getPopulatedMap(new TreeMap());
-    } else if (m instanceof TreeMap) {
-      return getPopulatedMap(new HashMap());
     } else {
       throw new AssertionError("Should never get here");
     }

@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -107,8 +106,6 @@ public class SerializationTest extends BaseDSOTestCase {
 
   public void testSubclassOfMapSerialization() throws Exception {
     validateSubclassOfMapSerialization(MyHashMap.class.getName());
-
-    validateSubclassOfMapSerialization(MyHashtable.class.getName());
   }
 
   public void testSubclassofCollectionSerialization() throws Exception {
@@ -553,23 +550,6 @@ public class SerializationTest extends BaseDSOTestCase {
     }
   }
 
-  public static class MyHashtable extends Hashtable {
-    private Object key;
-    private Object value;
-
-    public MyHashtable() {
-      super();
-    }
-
-    public Object getKey() {
-      return key;
-    }
-
-    public Object getValue() {
-      return value;
-    }
-  }
-
   public static class MyArrayList extends ArrayList {
     private Object index;
 
@@ -600,7 +580,6 @@ public class SerializationTest extends BaseDSOTestCase {
 
     static {
       useCustomLoaderClasses.add(MyHashMap.class.getName());
-      useCustomLoaderClasses.add(MyHashtable.class.getName());
       useCustomLoaderClasses.add(MyArrayList.class.getName());
       useCustomLoaderClasses.add(MyHashSet.class.getName());
     }

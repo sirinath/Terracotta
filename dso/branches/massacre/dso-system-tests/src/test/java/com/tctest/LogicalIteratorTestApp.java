@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -19,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,12 +29,11 @@ import java.util.Vector;
 
 public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp {
 
-  private final Set           set       = new HashSet();
-  private final Map           map       = new HashMap();
-  private final List          llist     = new LinkedList();
-  private final List          alist     = new ArrayList();
-  private final Vector        vector    = new Vector();
-  private final Hashtable     hashtable = new Hashtable();
+  private final Set           set    = new HashSet();
+  private final Map           map    = new HashMap();
+  private final List          llist  = new LinkedList();
+  private final List          alist  = new ArrayList();
+  private final Vector        vector = new Vector();
   private final CyclicBarrier barrier;
 
   public LogicalIteratorTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -42,6 +41,7 @@ public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp 
     this.barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   protected void runTest() throws Throwable {
     String me = getApplicationId();
     init(me);
@@ -60,7 +60,6 @@ public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp 
       if (alist.size() != 0) { throw new RuntimeException("alist not empty" + alist.size()); }
       if (set.size() != 0) { throw new RuntimeException("set not empty: " + set.size()); }
       if (llist.size() != 0) { throw new RuntimeException("llist not empty: " + llist.size()); }
-      if (hashtable.size() != 0) { throw new RuntimeException("hashtable not empty: " + hashtable.size()); }
     }
   }
 
@@ -72,8 +71,6 @@ public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp 
       alist.add(id);
       set.add(id);
       llist.add(id);
-      hashtable.put("key" + id, id);
-      hashtable.put(id, "value" + id);
     }
   }
 
@@ -85,8 +82,6 @@ public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp 
       remove(alist.iterator(), id);
       remove(set.iterator(), id);
       remove(llist.iterator(), id);
-      remove(hashtable.keySet().iterator(), "key" + id);
-      remove(hashtable.values().iterator(), "value" + id);
     }
   }
 
@@ -153,7 +148,6 @@ public class LogicalIteratorTestApp extends AbstractErrorCatchingTransparentApp 
     method = "* " + testClass + ".verifySize(..)";
     config.addWriteAutolock(method);
 
-    spec.addRoot("hashtable", "hashtableLock");
     spec.addRoot("set", "setLock");
     spec.addRoot("vector", "vectorLock");
     spec.addRoot("map", "mapLock");

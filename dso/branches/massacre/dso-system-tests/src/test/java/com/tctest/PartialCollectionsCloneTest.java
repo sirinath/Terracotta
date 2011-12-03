@@ -18,7 +18,6 @@ import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,7 +41,6 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
     private static final int    MAP_SIZE = 1000;
     private final CyclicBarrier barrier;
     private HashMap             hashmap;
-    private Hashtable           hashtable;
 
     public PartialCollectionsCloneTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
       super(appId, cfg, listenerProvider);
@@ -61,7 +59,6 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
 
       if (!rootCreator) {
         testMapClone(hashmap);
-        testMapClone(hashtable);
       }
 
       barrier.barrier();
@@ -100,10 +97,8 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
 
     private void createRoots() {
       hashmap = new HashMap();
-      hashtable = new Hashtable();
 
       populateMap(hashmap);
-      populateMap(hashtable);
     }
 
     private void populateMap(Map m) {
@@ -141,7 +136,6 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
 
       spec.addRoot("barrier", "barrier");
       spec.addRoot("hashmap", "hashmap");
-      spec.addRoot("hashtable", "hashtable");
     }
 
   }

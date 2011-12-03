@@ -15,7 +15,6 @@ import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,7 +40,6 @@ public class LinkedHashMapClassAdapterTestApp extends AbstractTransparentApp {
 
     config.getOrCreateSpec(CyclicBarrier.class.getName());
     config.addWriteAutolock("* " + CyclicBarrier.class.getName() + "*.*(..)");
-    config.addWriteAutolock("* " + Hashtable.class.getName() + "*.*(..)");
     config.addWriteAutolock("* " + Vector.class.getName() + "*.*(..)");
 
     config.getOrCreateSpec(CustomLinkedHashMap.class.getName());
