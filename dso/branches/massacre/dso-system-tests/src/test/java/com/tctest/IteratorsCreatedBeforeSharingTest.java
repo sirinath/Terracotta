@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.TreeSet;
 import java.util.Vector;
 
 public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
@@ -78,7 +77,6 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
       }
 
       // sets
-      unsharedCollections.add(create(TreeSet.class));
       unsharedCollections.add(create(HashSet.class));
       unsharedCollections.add(create(LinkedHashSet.class));
 
