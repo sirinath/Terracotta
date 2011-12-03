@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Test to make sure local object state is preserved when TC throws: UnlockedSharedObjectException ReadOnlyException
@@ -28,13 +27,14 @@ import java.util.TreeSet;
  * @author hhuynh
  */
 public class SetLocalStateTestApp extends GenericLocalStateTestApp {
-  private List<Set> root       = new ArrayList<Set>();
-  private Class[]   setClasses = new Class[] { HashSet.class, TreeSet.class, LinkedHashSet.class, THashSet.class };
+  private final List<Set> root       = new ArrayList<Set>();
+  private final Class[]   setClasses = new Class[] { HashSet.class, LinkedHashSet.class, THashSet.class };
 
   public SetLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
+  @Override
   protected void runTest() throws Throwable {
     initTest();
 
@@ -54,6 +54,7 @@ public class SetLocalStateTestApp extends GenericLocalStateTestApp {
     }
   }
 
+  @Override
   protected void validate(int before, int after, Object testTarget, LockMode lockMode, Class mutatorClass)
       throws Exception {
     switch (lockMode) {
