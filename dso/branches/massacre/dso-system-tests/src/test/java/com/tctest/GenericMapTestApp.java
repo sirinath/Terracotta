@@ -59,7 +59,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals(22, maps.size());
+    Assert.assertEquals(19, maps.size());
 
     return maps.iterator();
   }
