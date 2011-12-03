@@ -100,7 +100,6 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.CloneUtil;
 import com.tc.object.bytecode.HashMapClassAdapter;
-import com.tc.object.bytecode.HashtableClassAdapter;
 import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
@@ -218,8 +217,6 @@ import com.tc.util.Assert;
 import com.tc.util.DebugUtil;
 import com.tc.util.EnumerationWrapper;
 import com.tc.util.FieldUtils;
-import com.tc.util.HashtableKeySetWrapper;
-import com.tc.util.HashtableValuesWrapper;
 import com.tc.util.ListIteratorWrapper;
 import com.tc.util.SequenceID;
 import com.tc.util.SequenceID.SequenceIDComparator;
@@ -239,7 +236,6 @@ import com.tcclient.cluster.DsoNodeImpl;
 import com.tcclient.cluster.DsoNodeInternal;
 import com.tcclient.cluster.DsoNodeMetaData;
 import com.tcclient.cluster.OutOfBandDsoClusterListener;
-import com.tcclient.util.HashtableEntrySetWrapper;
 import com.tcclient.util.MapEntrySetWrapper;
 
 import gnu.trove.TLinkable;
@@ -509,7 +505,6 @@ public class BootJarTool {
       this.bootJar = this.bootJarHandler.getBootJar();
 
       addInstrumentedHashMap();
-      addInstrumentedHashtable();
       addInstrumentedJavaUtilCollection();
 
       addJdk15SpecificPreInstrumentedClasses();
@@ -533,12 +528,6 @@ public class BootJarTool {
       loadTerracottaClass(ListIteratorWrapper.class.getName());
       loadTerracottaClass(MapEntrySetWrapper.class.getName());
       loadTerracottaClass(MapEntrySetWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(HashtableEntrySetWrapper.class.getName());
-      loadTerracottaClass(HashtableEntrySetWrapper.class.getName() + "$HashtableIteratorWrapper");
-      loadTerracottaClass(HashtableKeySetWrapper.class.getName());
-      loadTerracottaClass(HashtableKeySetWrapper.class.getName() + "$IteratorWrapper");
-      loadTerracottaClass(HashtableValuesWrapper.class.getName());
-      loadTerracottaClass(HashtableValuesWrapper.class.getName() + "$IteratorWrapper");
       loadTerracottaClass(SetIteratorWrapper.class.getName());
       loadTerracottaClass(EnumerationWrapper.class.getName());
       loadTerracottaClass(NamedClassLoader.class.getName());
@@ -1650,13 +1639,6 @@ public class BootJarTool {
 
     bytes = cw.toByteArray();
     loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
-  }
-
-  private final void addInstrumentedHashtable() {
-    final String jMapClassNameDots = "java.util.Hashtable";
-    final String tcMapClassNameDots = "java.util.HashtableTC";
-    final Map instrumentedContext = new HashMap();
-    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, HashtableClassAdapter.getMethods(), null);
   }
 
   private final void addInstrumentedLinkedHashMap(final Map instrumentedContext) {

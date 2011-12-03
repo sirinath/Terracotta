@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +109,6 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
     List maps = new ArrayList();
 
     maps.add(new HashMap());
-    maps.add(new Hashtable());
 
     if (Vm.isJDK15Compliant()) {
       maps.add(makeConcurrentHashMap());

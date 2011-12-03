@@ -19,7 +19,6 @@ import com.tc.aspectwerkz.expression.ExpressionVisitor;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.MemberInfo;
-import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 import com.tc.backport175.bytecode.AnnotationElement.Annotation;
 import com.tc.config.schema.CommonL1Config;
 import com.tc.config.schema.builder.DSOApplicationConfigBuilder;
@@ -239,8 +238,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     logger.debug("roots: " + this.roots);
     logger.debug("locks: " + this.locks);
     logger.debug("distributed-methods: " + this.distributedMethods);
-
-    rewriteHashtableAutoLockSpecIfNecessary();
   }
 
   private void doLegacyDefaultModuleConfig() {
@@ -369,26 +366,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
     spec.setUseNonDefaultConstructor(true);
 
-    spec = getOrCreateSpec("java.util.Hashtable", "com.tc.object.applicator.PartialHashMapApplicator");
-
-    /**
-     * spec.addSupportMethodCreator(new HashtableMethodCreator());
-     * spec.addHashtablePutLogSpec(SerializationUtil.PUT_SIGNATURE);
-     * spec.addHashtableRemoveLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
-     * spec.addHashtableClearLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-     * spec.addMethodAdapter("entrySet()Ljava/util/Set;", new HashtableAdapter.EntrySetAdapter());
-     * spec.addMethodAdapter("keySet()Ljava/util/Set;", new HashtableAdapter.KeySetAdapter());
-     * spec.addMethodAdapter("values()Ljava/util/Collection;", new HashtableAdapter.ValuesAdapter());
-     */
-
-    /**
-     * addWriteAutolock("synchronized * java.util.Hashtable.*(..)"); addReadAutolock(new String[] { "synchronized *
-     * java.util.Hashtable.get(..)", "synchronized * java.util.Hashtable.hashCode(..)", "synchronized *
-     * java.util.Hashtable.contains*(..)", "synchronized * java.util.Hashtable.elements(..)", "synchronized *
-     * java.util.Hashtable.equals(..)", "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized *
-     * java.util.Hashtable.keys(..)", "synchronized * java.util.Hashtable.size(..)", "synchronized *
-     * java.util.Hashtable.toString(..)" });
-     */
     spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
     addWriteAutolock("synchronized * java.util.Properties.*(..)");
 
@@ -1025,81 +1002,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     }
     return (String[]) missingRoots.toArray(new String[0]);
-  }
-
-  private void rewriteHashtableAutoLockSpecIfNecessary() {
-    // addReadAutolock(new String[] { "synchronized * java.util.Hashtable.get(..)",
-    // "synchronized * java.util.Hashtable.hashCode(..)", "synchronized * java.util.Hashtable.contains*(..)",
-    // "synchronized * java.util.Hashtable.elements(..)", "synchronized * java.util.Hashtable.equals(..)",
-    // "synchronized * java.util.Hashtable.isEmpty(..)", "synchronized * java.util.Hashtable.keys(..)",
-    // "synchronized * java.util.Hashtable.size(..)", "synchronized * java.util.Hashtable.toString(..)" });
-
-    String className = "java.util.Hashtable";
-    ClassInfo classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
-
-    String patterns = "get(Ljava/lang/Object;)Ljava/lang/Object;|" + //
-                      "hashCode()I|" + //
-                      "clone()Ljava/lang/Object;|" + //
-                      "contains(Ljava/lang/Object;)Z|" + //
-                      "containsKey(Ljava/lang/Object;)Z|" + //
-                      "elements()Ljava/util/Enumeration;|" + //
-                      "equals(Ljava/lang/Object;)Z|" + //
-                      "isEmpty()Z|" + //
-                      "keys()Ljava/util/Enumeration;|" + //
-                      "size()I|" + //
-                      "toString()Ljava/lang/String;";
-
-    rewriteHashtableAutoLockSpecIfNecessaryInternal(classInfo, className, patterns);
-
-    className = "java.util.HashtableTC";
-    String realClassName = "java.util.Hashtable";
-    classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
-    patterns = "lookUpAndStoreIfNecessary(Ljava/util/Map$Entry;)Ljava/lang/Object;|" + //
-               "storeValueIfValid(Ljava/util/Map$Entry;Ljava/lang/Object;)V|" + //
-               "getEntry(Ljava/lang/Object;)Ljava/util/Map$Entry;|";
-    rewriteHashtableAutoLockSpecIfNecessaryInternal(classInfo, realClassName, patterns);
-
-    className = "java.util.HashtableTC$EntriesIterator";
-    realClassName = "java.util.Hashtable$EntriesIterator";
-    classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
-    patterns = "hasNext()Z|" + //
-               "nextEntry()Ljava/util/Map$Entry;";
-    rewriteHashtableAutoLockSpecIfNecessaryInternal(classInfo, realClassName, patterns);
-
-    className = "java.util.HashtableTC$EntrySetWrapper";
-    realClassName = "java.util.Hashtable$EntrySetWrapper";
-    classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
-    patterns = "contains(Ljava/lang/Object;)Z";
-    rewriteHashtableAutoLockSpecIfNecessaryInternal(classInfo, realClassName, patterns);
-
-    className = "java.util.HashtableTC$EntryWrapper";
-    realClassName = "java.util.Hashtable$EntryWrapper";
-    classInfo = AsmClassInfo.getClassInfo(className, getClass().getClassLoader());
-    patterns = "equals(Ljava/lang/Object;)Z|" + //
-               "getKey()Ljava/lang/Object;|" + //
-               "getValue()Ljava/lang/Object;|" + //
-               "getValueFaultBreadth()Ljava/lang/Object;|" + //
-               "hashCode()I|";
-    rewriteHashtableAutoLockSpecIfNecessaryInternal(classInfo, realClassName, patterns);
-  }
-
-  private void rewriteHashtableAutoLockSpecIfNecessaryInternal(final ClassInfo classInfo, final String className,
-                                                               final String patterns) {
-    MemberInfo[] methods = classInfo.getMethods();
-    for (MemberInfo methodInfo : methods) {
-      if (patterns.indexOf(methodInfo.getName() + methodInfo.getSignature()) > -1) {
-        for (Iterator i = locks.iterator(); i.hasNext();) {
-          Lock lock = (Lock) i.next();
-          if (matches(lock, methodInfo)) {
-            LockDefinition ld = lock.getLockDefinition();
-            if (ld.isAutolock() && ld.getLockLevel() != ConfigLockLevel.READ) {
-              addReadAutolock("* " + className + "." + methodInfo.getName() + "(..)");
-            }
-            break;
-          }
-        }
-      }
-    }
   }
 
   public LockDefinition[] lockDefinitionsFor(final MemberInfo memberInfo) {

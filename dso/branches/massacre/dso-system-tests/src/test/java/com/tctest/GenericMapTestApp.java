@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -70,7 +69,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     List maps = new ArrayList();
 
     maps.add(new HashMap());
-    maps.add(new Hashtable());
     maps.add(new LinkedHashMap());
     maps.add(new THashMap());
     maps.add(new Properties());
@@ -78,8 +76,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     maps.add(new MyHashMap(new HashMap()));
     maps.add(new MyHashMap2());
     maps.add(new MyHashMap3(0));
-    maps.add(new MyHashtable());
-    maps.add(new MyHashtable2());
     maps.add(new MyLinkedHashMap());
     maps.add(new MyLinkedHashMap2());
     maps.add(new MyLinkedHashMap3(true));
@@ -105,14 +101,11 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     sharedMap.put("maps", maps);
     nonSharedArrayMap.put("arrayforHashMap", new Object[4]);
-    nonSharedArrayMap.put("arrayforHashtable", new Object[4]);
     sharedMap.put("arrayforTHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforLinkedHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforProperties", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap2", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyHashtable", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyHashtable2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap3", new Object[4]);
@@ -2089,15 +2082,15 @@ public class GenericMapTestApp extends GenericTransparentApp {
   }
 
   private boolean canTestSharedArray(Map map) {
-    return !(map instanceof HashMap) && !(map instanceof LinkedHashMap) && !(map instanceof Hashtable);
+    return !(map instanceof HashMap) && !(map instanceof LinkedHashMap);
   }
 
   private boolean canTestNonPortableObject(Map map) {
-    return ((map instanceof HashMap) || (map instanceof LinkedHashMap) || (map instanceof Hashtable));
+    return ((map instanceof HashMap) || (map instanceof LinkedHashMap));
   }
 
   private boolean canTestReadOnly(Map map) {
-    return (!(map instanceof Hashtable) && !(isCHM(map)));
+    return !(isCHM(map));
   }
 
   /**
@@ -2111,8 +2104,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     if (map instanceof MyHashMap2) { return nonSharedArrayMap.get("arrayforMyHashMap2"); }
     if (map instanceof MyHashMap) { return nonSharedArrayMap.get("arrayforMyHashMap"); }
     if (map instanceof MyHashMap3) { return sharedMap.get("arrayforMyHashMap3"); }
-    if (map instanceof MyHashtable2) { return nonSharedArrayMap.get("arrayforMyHashtable2"); }
-    if (map instanceof MyHashtable) { return nonSharedArrayMap.get("arrayforMyHashtable"); }
     if (map instanceof MyTHashMap) { return sharedMap.get("arrayforMyTHashMap"); }
     if (map instanceof MyProperties2) { return nonSharedArrayMap.get("arrayforMyProperties2"); }
     if (map instanceof MyProperties3) { return nonSharedArrayMap.get("arrayforMyProperties3"); }
@@ -2134,8 +2125,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       return (Object[]) nonSharedArrayMap.get("arrayforLinkedHashMap");
     } else if (map instanceof HashMap) {
       return (Object[]) nonSharedArrayMap.get("arrayforHashMap");
-    } else if (map instanceof Hashtable) {
-      return (Object[]) nonSharedArrayMap.get("arrayforHashtable");
     } else if (map instanceof THashMap) {
       return (Object[]) sharedMap.get("arrayforTHashMap");
     } else if (isCHM(map)) { return (Object[]) sharedMap.get("arrayforConcurrentHashMap"); }
@@ -2291,7 +2280,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
   }
 
   private static boolean allowsNull(Map map) {
-    return !(map instanceof Hashtable) && !(isCHM(map));
+    return !(isCHM(map));
   }
 
   private static class Key implements Comparable {
@@ -2444,19 +2433,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       this.i = i;
     }
 
-  }
-
-  private static class MyHashtable extends Hashtable {
-    public MyHashtable() {
-      super();
-    }
-
-  }
-
-  private static class MyHashtable2 extends MyHashtable {
-    public MyHashtable2() {
-      super();
-    }
   }
 
   private static class MyLinkedHashMap extends LinkedHashMap {

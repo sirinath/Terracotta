@@ -19,7 +19,6 @@ import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +26,13 @@ import java.util.Map.Entry;
 
 public class ClearableTest extends TransparentTestBase {
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(1);
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
@@ -49,9 +50,9 @@ public class ClearableTest extends TransparentTestBase {
       super(appId, cfg, listenerProvider);
     }
 
+    @Override
     protected void runTest() throws Throwable {
       add(new HashMap());
-      add(new Hashtable());
 
       if (Vm.isJDK15Compliant()) {
         add(makeCHM());
@@ -146,10 +147,12 @@ public class ClearableTest extends TransparentTestBase {
       return i;
     }
 
+    @Override
     public int hashCode() {
       return i;
     }
 
+    @Override
     public boolean equals(Object obj) {
       if (obj instanceof Key) { return this.i == ((Key) obj).i; }
       return false;

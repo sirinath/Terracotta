@@ -18,7 +18,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ public class MapValuesIteratorFaultBreadthTestApp extends AbstractErrorCatchingT
 
   private static final int COUNT = 10000;
   private final Map        root1 = new HashMap();
-  private final Map        root2 = new Hashtable();
   private CyclicBarrier    barrier;
 
   public MapValuesIteratorFaultBreadthTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -37,7 +35,6 @@ public class MapValuesIteratorFaultBreadthTestApp extends AbstractErrorCatchingT
     String testClass = MapValuesIteratorFaultBreadthTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
     spec.addRoot("root1", "root1");
-    spec.addRoot("root2", "root2");
     spec.addRoot("barrier", "barrier");
     String methodExpression = "* " + testClass + ".read(..)";
     config.addReadAutolock(methodExpression);
@@ -48,10 +45,10 @@ public class MapValuesIteratorFaultBreadthTestApp extends AbstractErrorCatchingT
     new CyclicBarrierSpec().visit(visitor, config);
   }
 
+  @Override
   protected void runTest() throws Throwable {
     setCyclicBarrier();
     runTestFor(root1);
-    runTestFor(root2);
   }
 
   private void runTestFor(Map m) throws Throwable {
@@ -117,6 +114,7 @@ public class MapValuesIteratorFaultBreadthTestApp extends AbstractErrorCatchingT
   private class Value {
     long time = System.currentTimeMillis();
 
+    @Override
     public String toString() {
       return "Value [ " + formatter.format(new Date(time)) + "]";
     }

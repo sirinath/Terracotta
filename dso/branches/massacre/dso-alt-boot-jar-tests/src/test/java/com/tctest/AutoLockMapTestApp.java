@@ -22,9 +22,9 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
 
 public class AutoLockMapTestApp extends GenericTransparentApp {
 
@@ -32,20 +32,20 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
     super(appId, cfg, listenerProvider, Map.class);
   }
 
+  @Override
   protected Object getTestObject(String test) {
     List maps = (List) sharedMap.get("maps");
 
     return maps.iterator();
   }
 
+  @Override
   protected void setupTestObject(String test) {
     List maps = new ArrayList();
     maps.add(new HashMap());
-    maps.add(new Hashtable());
     maps.add(new Properties());
 
     sharedMap.put("maps", maps);
-    sharedMap.put("arrayforHashtable", new Object[4]);
     sharedMap.put("arrayforProperties", new Object[4]);
   }
 
@@ -63,7 +63,7 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
   }
 
   void testDisableAutoLocks(Map map, boolean validate) throws Exception {
-    if (!(map instanceof Hashtable) || (map instanceof HashMap)) { return; }
+    if (map instanceof HashMap) { return; }
 
     if (validate) { return; }
 
@@ -452,7 +452,7 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
 
   void testHashMapPut(Map map, boolean validate) {
     if (!(map instanceof HashMap)) return;
-    
+
     if (validate) {
       Assert.assertEquals(0, map.size());
     } else {
@@ -467,16 +467,16 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
 
   void assertArray(Object[] expect, Collection collection) {
     Assert.assertEquals(expect.length, collection.size());
-    for (int i = 0; i < expect.length; i++) {
-      String val = (String) expect[i];
+    for (Object element : expect) {
+      String val = (String) element;
       Assert.assertTrue(collection.contains(val));
     }
   }
 
   void assertArray(Object[] expect, Map map) {
     Assert.assertEquals(expect.length, map.size());
-    for (int i = 0; i < expect.length; i++) {
-      Entry entry = (Entry) expect[i];
+    for (Object element : expect) {
+      Entry entry = (Entry) element;
       Object val = map.get(entry.getKey());
       Assert.assertEquals(entry.getValue(), val);
     }
@@ -501,7 +501,6 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
 
   private Object[] getArray(Map map) {
     if (map instanceof Properties) { return (Object[]) sharedMap.get("arrayforProperties"); }
-    if (map instanceof Hashtable) { return (Object[]) sharedMap.get("arrayforHashtable"); }
 
     return null;
   }
@@ -539,16 +538,19 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
       return oldValue;
     }
 
+    @Override
     public boolean equals(Object o) {
       if (!(o instanceof Map.Entry)) return false;
       Map.Entry e = (Map.Entry) o;
       return eq(key, e.getKey()) && eq(value, e.getValue());
     }
 
+    @Override
     public int hashCode() {
       return ((key == null) ? 0 : key.hashCode()) ^ ((value == null) ? 0 : value.hashCode());
     }
 
+    @Override
     public String toString() {
       return key + "=" + value;
     }

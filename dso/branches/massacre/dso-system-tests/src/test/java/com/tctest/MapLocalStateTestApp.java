@@ -16,7 +16,6 @@ import gnu.trove.THashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,14 +30,14 @@ import java.util.TreeMap;
  * @author hhuynh
  */
 public class MapLocalStateTestApp extends GenericLocalStateTestApp {
-  private List<Map> root       = new ArrayList<Map>();
-  private Class[]   mapClasses = new Class[] { THashMap.class, TreeMap.class, LinkedHashMap.class, Hashtable.class,
-      HashMap.class           };
+  private final List<Map> root       = new ArrayList<Map>();
+  private final Class[]   mapClasses = new Class[] { THashMap.class, TreeMap.class, LinkedHashMap.class, HashMap.class };
 
   public MapLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
+  @Override
   protected void runTest() throws Throwable {
     initTest();
 
@@ -92,6 +91,7 @@ public class MapLocalStateTestApp extends GenericLocalStateTestApp {
     }
   }
 
+  @Override
   protected void validate(int before, int after, Object testTarget, LockMode lockMode, Class mutatorClass)
       throws Exception {
     switch (lockMode) {

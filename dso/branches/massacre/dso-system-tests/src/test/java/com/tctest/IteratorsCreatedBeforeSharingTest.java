@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -26,22 +25,23 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
-import java.util.Map.Entry;
 
 public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
 
   private final static int NODE_COUNT = 1;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     getTransparentAppConfig().setClientCount(NODE_COUNT);
     initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
@@ -54,6 +54,7 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
       super(appId, cfg, listenerProvider);
     }
 
+    @Override
     protected void runTest() throws Throwable {
       List iterators = new ArrayList();
 
@@ -70,9 +71,7 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
       // maps
       unsharedCollections.add(create(LinkedHashMap.class));
       unsharedCollections.add(create(IdentityHashMap.class));
-      unsharedCollections.add(create(TreeMap.class));
       unsharedCollections.add(create(HashMap.class));
-      unsharedCollections.add(create(Hashtable.class));
       unsharedCollections.add(create(Properties.class));
       if (Vm.isJDK15Compliant()) {
         unsharedCollections.add(create(Class.forName("java.util.concurrent.ConcurrentHashMap")));
@@ -102,7 +101,7 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
         Object o = iter.next();
         clearAccessedOnElements(o);
 
-        ((Manageable)o).__tc_managed().clearAccessed();
+        ((Manageable) o).__tc_managed().clearAccessed();
         if (o instanceof Clearable) {
           ((Clearable) o).__tc_clearReferences(Integer.MAX_VALUE);
         }
@@ -124,14 +123,14 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
 
     private void clearAccessedOnElements(Object o) {
       if (o instanceof Collection) {
-        for (Iterator i = ((Collection)o).iterator(); i.hasNext(); ) {
-          ((Manageable)i.next()).__tc_managed().clearAccessed();
+        for (Iterator i = ((Collection) o).iterator(); i.hasNext();) {
+          ((Manageable) i.next()).__tc_managed().clearAccessed();
         }
       } else if (o instanceof Map) {
-        for (Iterator i = ((Map)o).entrySet().iterator(); i.hasNext(); ) {
+        for (Iterator i = ((Map) o).entrySet().iterator(); i.hasNext();) {
           Map.Entry entry = (Entry) i.next();
-          ((Manageable)entry.getKey()).__tc_managed().clearAccessed();
-          ((Manageable)entry.getValue()).__tc_managed().clearAccessed();
+          ((Manageable) entry.getKey()).__tc_managed().clearAccessed();
+          ((Manageable) entry.getValue()).__tc_managed().clearAccessed();
         }
       } else {
         throw new AssertionError(o.getClass());
