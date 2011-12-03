@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * Test to make sure local object state is preserved when TC throws: UnlockedSharedObjectException ReadOnlyException
@@ -31,7 +30,7 @@ import java.util.TreeMap;
  */
 public class MapLocalStateTestApp extends GenericLocalStateTestApp {
   private final List<Map> root       = new ArrayList<Map>();
-  private final Class[]   mapClasses = new Class[] { THashMap.class, TreeMap.class, LinkedHashMap.class, HashMap.class };
+  private final Class[]   mapClasses = new Class[] { THashMap.class, LinkedHashMap.class, HashMap.class };
 
   public MapLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
