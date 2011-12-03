@@ -26,12 +26,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Map.Entry;
 
 public class CollectionsWrappersTest extends TransparentTestBase {
 
@@ -59,13 +57,9 @@ public class CollectionsWrappersTest extends TransparentTestBase {
     private final ArrayList                  l    = new ArrayList(Arrays.asList(new Object[] { "timmy" }));
     private final HashMap                    m    = new HashMap();
     private final HashSet                    s    = new HashSet();
-    private final TreeMap                    sm   = new TreeMap();
-    private final TreeSet                    ss   = new TreeSet();
     {
       m.put("yer", "mom");
       s.add("it");
-      sm.put("swing", "low");
-      ss.add("sweet chariot");
     }
 
     public CollectionsWrappersTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -87,8 +81,6 @@ public class CollectionsWrappersTest extends TransparentTestBase {
           root.put("synch list", Collections.synchronizedList(new ArrayList()));
           root.put("synch map", Collections.synchronizedMap(new HashMap()));
           root.put("synch set", Collections.synchronizedSet(new HashSet()));
-          root.put("synch sorted map", Collections.synchronizedSortedMap(new TreeMap()));
-          root.put("synch sorted set", Collections.synchronizedSortedSet(new TreeSet()));
 
           root.put("empty list", Collections.EMPTY_LIST);
           root.put("empty set", Collections.EMPTY_SET);
@@ -102,8 +94,6 @@ public class CollectionsWrappersTest extends TransparentTestBase {
           root.put("unmod list", Collections.unmodifiableList((List) l.clone()));
           root.put("unmod map", Collections.unmodifiableMap((Map) m.clone()));
           root.put("unmod set", Collections.unmodifiableSet((Set) s.clone()));
-          root.put("unmod sorted map", Collections.unmodifiableSortedMap((SortedMap) sm.clone()));
-          root.put("unmod sorted set", Collections.unmodifiableSortedSet((SortedSet) ss.clone()));
         }
 
         // XXX: This test should really excercise all methods to test autolocking, not just
@@ -178,13 +168,11 @@ public class CollectionsWrappersTest extends TransparentTestBase {
       assertEquals(Collections.singletonList("item"), root.get("singleton list"));
       assertEquals(Collections.singletonMap("key", "value"), root.get("singleton map"));
 
-      assertTrue(Arrays.equals(Collections.unmodifiableCollection(c).toArray(), ((Collection) root
-          .get("unmod collection")).toArray()));
+      assertTrue(Arrays.equals(Collections.unmodifiableCollection(c).toArray(),
+                               ((Collection) root.get("unmod collection")).toArray()));
       assertEquals(Collections.unmodifiableList(l), root.get("unmod list"));
       assertEquals(Collections.unmodifiableMap(m), root.get("unmod map"));
       assertEquals(Collections.unmodifiableSet(s), root.get("unmod set"));
-      assertEquals(Collections.unmodifiableSortedMap(sm), root.get("unmod sorted map"));
-      assertEquals(Collections.unmodifiableSortedSet(ss), root.get("unmod sorted set"));
 
       for (Object element : root.values()) {
         exercise(element);
