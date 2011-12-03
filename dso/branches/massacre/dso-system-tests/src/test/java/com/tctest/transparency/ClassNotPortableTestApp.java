@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Vector;
 
 public class ClassNotPortableTestApp extends AbstractTransparentApp {
@@ -181,17 +180,6 @@ public class ClassNotPortableTestApp extends AbstractTransparentApp {
       try {
         // Adding non-portable Map to a shared object.
         root6.add(m);
-        throw new AssertionError("Should have failed");
-      } catch (TCNonPortableObjectError tcp) {
-        // Expected
-      }
-
-      Map tm = new TreeMap();
-      root6.add(tm);
-
-      try {
-        tm.put(Integer.valueOf(10), new SuperClassWithFields());
-        // Adding non-portable Map to a shared object.
         throw new AssertionError("Should have failed");
       } catch (TCNonPortableObjectError tcp) {
         // Expected
