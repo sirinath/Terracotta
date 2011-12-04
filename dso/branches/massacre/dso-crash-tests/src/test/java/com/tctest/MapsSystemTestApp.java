@@ -18,24 +18,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.CyclicBarrier;
 
 public class MapsSystemTestApp extends AbstractTransparentApp {
-  private ServerControl                         serverControl;
-  private CyclicBarrier                         barrier;
-  private TreeMap<PartialSetNode, String>       myTreeMap;
-  private LinkedHashMap<PartialSetNode, String> myLinkedHashMapInsertionOrder;
-  private LinkedHashMap<PartialSetNode, String> myLinkedHashMapAccessOrder;
-  private HashMap<PartialSetNode, String>       myHashMap;
+  private final ServerControl                         serverControl;
+  private final CyclicBarrier                         barrier;
+  private final LinkedHashMap<PartialSetNode, String> myLinkedHashMapInsertionOrder;
+  private final LinkedHashMap<PartialSetNode, String> myLinkedHashMapAccessOrder;
+  private final HashMap<PartialSetNode, String>       myHashMap;
 
-  private final static int                      NUMBERS_ADDED = 5000;
+  private final static int                            NUMBERS_ADDED = 5000;
 
   public MapsSystemTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     serverControl = cfg.getServerControl();
     barrier = new CyclicBarrier(getParticipantCount());
-    myTreeMap = new TreeMap<PartialSetNode, String>();
     myLinkedHashMapInsertionOrder = new LinkedHashMap<PartialSetNode, String>();
     myLinkedHashMapAccessOrder = new LinkedHashMap<PartialSetNode, String>(1000, (float) 0.75, true);
     myHashMap = new HashMap<PartialSetNode, String>();
@@ -55,12 +52,10 @@ public class MapsSystemTestApp extends AbstractTransparentApp {
   }
 
   private void validate() {
-    validateAllEntries(myTreeMap);
     validateAllEntries(myLinkedHashMapInsertionOrder);
     validateAllEntries(myLinkedHashMapAccessOrder);
     validateAllEntries(myHashMap);
 
-    validateTreeMap();
     validateLinkedHashMapInsertionOrder();
     validateLinkedHashMapAccessOrder();
   }
@@ -79,20 +74,14 @@ public class MapsSystemTestApp extends AbstractTransparentApp {
     validateInOrder(myLinkedHashMapInsertionOrder, true);
   }
 
-  private void validateTreeMap() {
-    validateInOrder(myTreeMap, true);
-  }
-
   private void validateInOrder(Map<PartialSetNode, String> map, boolean inOrder) {
     Iterator<PartialSetNode> iter = map.keySet().iterator();
     int count = 0;
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       PartialSetNode node = iter.next();
-      if(inOrder)
-        Assert.assertEquals(count, node.getNumber());
-      else
-        Assert.assertEquals(5000 - count -1, node.getNumber());
-      
+      if (inOrder) Assert.assertEquals(count, node.getNumber());
+      else Assert.assertEquals(5000 - count - 1, node.getNumber());
+
       count++;
     }
   }
@@ -108,7 +97,6 @@ public class MapsSystemTestApp extends AbstractTransparentApp {
   }
 
   private void addElementsToMaps() {
-    addElementsToMap(myTreeMap);
     addElementsToMap(myLinkedHashMapInsertionOrder);
     addElementsToMap(myLinkedHashMapAccessOrder);
     addElementsToMap(myHashMap);
