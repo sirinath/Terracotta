@@ -366,9 +366,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
     spec.setUseNonDefaultConstructor(true);
 
-    spec = getOrCreateSpec("java.util.Properties", "com.tc.object.applicator.PartialHashMapApplicator");
-    addWriteAutolock("synchronized * java.util.Properties.*(..)");
-
     spec = getOrCreateSpec("com.tcclient.util.MapEntrySetWrapper$EntryWrapper");
 
     spec = getOrCreateSpec("java.util.IdentityHashMap", "com.tc.object.applicator.HashMapApplicator");

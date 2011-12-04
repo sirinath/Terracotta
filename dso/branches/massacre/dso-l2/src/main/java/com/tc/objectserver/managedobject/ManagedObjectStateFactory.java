@@ -43,7 +43,6 @@ public class ManagedObjectStateFactory {
 
   static {
     classNameToStateMap.put(java.util.IdentityHashMap.class.getName(), Byte.valueOf(ManagedObjectState.MAP_TYPE));
-    classNameToStateMap.put(java.util.Properties.class.getName(), Byte.valueOf(ManagedObjectState.PARTIAL_MAP_TYPE));
     classNameToStateMap.put(gnu.trove.THashMap.class.getName(), Byte.valueOf(ManagedObjectState.MAP_TYPE));
     classNameToStateMap.put(java.util.HashMap.class.getName(), Byte.valueOf(ManagedObjectState.PARTIAL_MAP_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_MAP.getClass().getName(),
