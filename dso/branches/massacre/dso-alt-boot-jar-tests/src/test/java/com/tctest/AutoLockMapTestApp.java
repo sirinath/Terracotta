@@ -43,10 +43,8 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
   protected void setupTestObject(String test) {
     List maps = new ArrayList();
     maps.add(new HashMap());
-    maps.add(new Properties());
 
     sharedMap.put("maps", maps);
-    sharedMap.put("arrayforProperties", new Object[4]);
   }
 
   private void initialize(Map map) {
@@ -390,33 +388,6 @@ public class AutoLockMapTestApp extends GenericTransparentApp {
         Object[] returnArray = map.values().toArray(array);
         Assert.assertTrue(returnArray == array);
       }
-    }
-  }
-
-  void testBasicSetProperty(Map map, boolean validate) {
-    if (map instanceof HashMap) { return; }
-    if (!(map instanceof Properties)) { return; }
-
-    if (validate) {
-      assertMappings(getInitialData(), map);
-    } else {
-      ((Properties) map).setProperty("January", "Jan");
-      ((Properties) map).setProperty("February", "Feb");
-      ((Properties) map).setProperty("March", "Mar");
-      ((Properties) map).setProperty("April", "Apr");
-    }
-  }
-
-  void testBasicGetProperty(Map map, boolean validate) {
-    if (map instanceof HashMap) { return; }
-    if (!(map instanceof Properties)) { return; }
-
-    if (validate) {
-      Assert.assertEquals("value", ((Properties) map).getProperty("key"));
-      Assert.assertEquals("defaultValue", ((Properties) map).getProperty("nonsense", "defaultValue"));
-      Assert.assertEquals("value", ((Properties) map).getProperty("key", "defaultValue"));
-    } else {
-      ((Properties) map).setProperty("key", "value");
     }
   }
 
