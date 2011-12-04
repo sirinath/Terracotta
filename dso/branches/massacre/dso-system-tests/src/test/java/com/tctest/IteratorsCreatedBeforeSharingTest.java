@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Vector;
 
 public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
@@ -71,7 +70,6 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
       unsharedCollections.add(create(LinkedHashMap.class));
       unsharedCollections.add(create(IdentityHashMap.class));
       unsharedCollections.add(create(HashMap.class));
-      unsharedCollections.add(create(Properties.class));
       if (Vm.isJDK15Compliant()) {
         unsharedCollections.add(create(Class.forName("java.util.concurrent.ConcurrentHashMap")));
       }
