@@ -21,8 +21,6 @@ import gnu.trove.THashMap;
 import gnu.trove.TObjectFunction;
 import gnu.trove.TObjectHash;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -38,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,7 +56,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals(19, maps.size());
+    Assert.assertEquals(12, maps.size());
 
     return maps.iterator();
   }
@@ -71,7 +68,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     maps.add(new HashMap());
     maps.add(new LinkedHashMap());
     maps.add(new THashMap());
-    maps.add(new Properties());
     maps.add(new MyHashMap(11));
     maps.add(new MyHashMap(new HashMap()));
     maps.add(new MyHashMap2());
@@ -80,39 +76,18 @@ public class GenericMapTestApp extends GenericTransparentApp {
     maps.add(new MyLinkedHashMap2());
     maps.add(new MyLinkedHashMap3(true));
     maps.add(new MyTHashMap());
-    maps.add(new MyProperties());
-    maps.add(new MyProperties2());
-    maps.add(new MyProperties3());
     maps.add(new ConcurrentHashMap<Object, Object>());
-
-    // maps.add(new IdentityHashMap());
-    // maps.add(new WeakHashMap());
-
-    /*
-     * sharedMap.put("maps", maps); sharedMap.put("arrayforHashMap", new Object[4]); sharedMap.put("arrayforHashtable",
-     * new Object[4]); sharedMap.put("arrayforTreeMap", new Object[4]); sharedMap.put("arrayforTreeMap2", new
-     * Object[4]); sharedMap.put("arrayforTHashMap", new Object[4]); sharedMap.put("arrayforLinkedHashMap", new
-     * Object[4]); sharedMap.put("arrayforMyHashMap2", new Object[4]); sharedMap.put("arrayforMyHashMap3", new
-     * Object[4]); sharedMap.put("arrayforMyTreeMap", new Object[4]); sharedMap.put("arrayforMyHashtable", new
-     * Object[4]); sharedMap.put("arrayforMyHashtable2", new Object[4]); sharedMap.put("arrayforMyLinkedHashMap", new
-     * Object[4]); sharedMap.put("arrayforMyLinkedHashMap2", new Object[4]); sharedMap.put("arrayforMyTHashMap", new
-     * Object[4]); sharedMap.put("arrayforMyProperties2", new Object[4]);
-     */
 
     sharedMap.put("maps", maps);
     nonSharedArrayMap.put("arrayforHashMap", new Object[4]);
     sharedMap.put("arrayforTHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforLinkedHashMap", new Object[4]);
-    nonSharedArrayMap.put("arrayforProperties", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap2", new Object[4]);
     nonSharedArrayMap.put("arrayforMyLinkedHashMap3", new Object[4]);
     sharedMap.put("arrayforMyTHashMap", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyProperties", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyProperties2", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyProperties3", new Object[4]);
     sharedMap.put("arrayforConcurrentHashMap", new Object[4]);
   }
 
@@ -149,8 +124,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   }
 
   void testBasicUnSynchronizedPut(Map map, boolean validate, int v) {
-    // if (map instanceof Hashtable) { return; }
-
     if (isCHM(map)) { return; }
 
     if (validate) {
@@ -175,9 +148,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       } else if (map instanceof MyLinkedHashMap2) {
         Assert.assertEquals(E("timmy", v), ((MyLinkedHashMap2) map).getKey());
         Assert.assertEquals("teck", ((MyLinkedHashMap2) map).getValue());
-      } else if (map instanceof MyProperties) {
-        Assert.assertEquals(E("timmy", v), ((MyProperties) map).getKey());
-        Assert.assertEquals("teck", ((MyProperties) map).getValue());
       }
     } else {
       synchronized (map) {
@@ -273,64 +243,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       synchronized (map) {
         Object prev = map.put(new Key("id2", "key"), "value2");
         Assert.assertEquals("value", prev);
-      }
-    }
-  }
-
-  void testBasicSetProperty(Map map, boolean validate, int v) {
-    if (!(map instanceof Properties)) { return; }
-
-    if (validate) {
-      assertSingleMapping(map, "timmy", "teck");
-    } else {
-      synchronized (map) {
-        Object previous = ((Properties) map).setProperty("timmy", "teck");
-        Assert.assertNull(previous);
-      }
-    }
-  }
-
-  void testBasicGetProperty(Map map, boolean validate, int v) {
-    if (!(map instanceof Properties)) { return; }
-
-    if (validate) {
-      Assert.assertEquals("value", ((Properties) map).getProperty("key"));
-      Assert.assertEquals("defaultValue", ((Properties) map).getProperty("nonsense", "defaultValue"));
-      Assert.assertEquals("value", ((Properties) map).getProperty("key", "defaultValue"));
-    } else {
-      synchronized (map) {
-        ((Properties) map).setProperty("key", "value");
-      }
-    }
-  }
-
-  void testBasicLoad(Map map, boolean validate, int v) {
-    if (!(map instanceof Properties)) { return; }
-
-    if (validate) {
-      Properties expectedMap = new Properties();
-      expectedMap.setProperty("key1", "val1");
-      expectedMap.setProperty("key2", "val2");
-      expectedMap.setProperty("key3", "val3");
-      assertMappings(expectedMap, map);
-    } else {
-      synchronized (map) {
-        Properties data = new Properties();
-        data.setProperty("key1", "val1");
-        data.setProperty("key2", "val2");
-        data.setProperty("key3", "val3");
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-          data.store(outputStream, null);
-        } catch (IOException ioe) {
-          Assert.fail();
-        }
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-        try {
-          ((Properties) map).load(inputStream);
-        } catch (IOException ioe) {
-          Assert.fail();
-        }
       }
     }
   }
@@ -433,7 +345,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
             Assert.assertEquals("value", map.get(E("key", v)));
           }
         } else {
-          Assert.assertEquals("value", map.get(E("key", v)));
+          Assert.assertEquals(map.getClass(), "value", map.get(E("key", v)));
         }
         if (map instanceof MyHashMap) {
           Assert.assertEquals("value", ((MyHashMap) map).getObject(E("key", v)));
@@ -2105,9 +2017,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     if (map instanceof MyHashMap) { return nonSharedArrayMap.get("arrayforMyHashMap"); }
     if (map instanceof MyHashMap3) { return sharedMap.get("arrayforMyHashMap3"); }
     if (map instanceof MyTHashMap) { return sharedMap.get("arrayforMyTHashMap"); }
-    if (map instanceof MyProperties2) { return nonSharedArrayMap.get("arrayforMyProperties2"); }
-    if (map instanceof MyProperties3) { return nonSharedArrayMap.get("arrayforMyProperties3"); }
-    if (map instanceof MyProperties) { return nonSharedArrayMap.get("arrayforMyProperties"); }
     return null;
   }
 
@@ -2118,8 +2027,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   private Object[] getArray(Map map) {
     Object o = getMySubclassArray(map);
     if (o != null) { return (Object[]) o; }
-
-    if (map instanceof Properties) { return (Object[]) nonSharedArrayMap.get("arrayforProperties"); }
 
     if (map instanceof LinkedHashMap) {
       return (Object[]) nonSharedArrayMap.get("arrayforLinkedHashMap");
@@ -2474,64 +2381,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   private static class MyTHashMap extends THashMap {
     public MyTHashMap() {
       super();
-    }
-  }
-
-  private static class MyProperties extends Properties {
-    private Object key;
-    private Object value;
-
-    public MyProperties() {
-      super();
-    }
-
-    @Override
-    public Object put(Object arg0, Object arg1) {
-      this.key = arg0;
-      this.value = arg1;
-      return super.put(arg0, arg1);
-    }
-
-    public Object getKey() {
-      return key;
-    }
-
-    public Object getValue() {
-      return value;
-    }
-  }
-
-  private static class MyProperties2 extends MyProperties {
-    // This field is relevant to the test case -- Do not remove
-    @SuppressWarnings("unused")
-    private Object lastGetKey;
-
-    public MyProperties2() {
-      super();
-    }
-
-    @Override
-    public synchronized Object get(Object key) {
-      this.lastGetKey = key;
-      return super.get(key);
-    }
-
-  }
-
-  private static class MyProperties3 extends Properties {
-    public MyProperties3() {
-      super();
-    }
-
-    @SuppressWarnings("unused")
-    public void setDefault(Properties newDefaults) {
-      // This access to a super class field is relevant -- Do not remove
-      defaults = newDefaults;
-    }
-
-    @Override
-    public Object put(Object arg0, Object arg1) {
-      return super.put(arg0, arg1);
     }
   }
 
