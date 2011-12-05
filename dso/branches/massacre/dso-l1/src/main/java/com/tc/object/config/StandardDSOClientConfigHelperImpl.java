@@ -376,16 +376,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.BitSet");
     spec.setHonorTransient(false);
 
-    if (Vm.isJDK15Compliant()) {
-      spec = getOrCreateSpec("java.util.EnumMap");
-      spec.setHonorTransient(false);
-      spec = getOrCreateSpec("java.util.EnumSet");
-      if (!Vm.isIBM() || !Vm.isJDK16Compliant()) {
-        spec = getOrCreateSpec("java.util.RegularEnumSet");
-        spec = getOrCreateSpec("java.util.RegularEnumSet$EnumSetIterator");
-      }
-    }
-
     spec = getOrCreateSpec("java.util.Collections");
     spec = getOrCreateSpec("java.util.Collections$EmptyList");
     spec = getOrCreateSpec("java.util.Collections$EmptyMap");
