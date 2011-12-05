@@ -116,7 +116,7 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals("Map-count discrepancy", 2 + (Vm.isJDK15Compliant() ? 1 : 0), maps.size());
+    Assert.assertEquals("Map-count discrepancy", 1 + (Vm.isJDK15Compliant() ? 1 : 0), maps.size());
 
     synchronized (sharedMap) {
       sharedMap.put("maps", maps);
