@@ -57,8 +57,6 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.LinkedList.class.getName(), Byte.valueOf(ManagedObjectState.LINKED_LIST_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put(java.util.Vector.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put(java.util.Stack.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_LIST.getClass().getName(),
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Date.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));

@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import java.util.Stack;
 import java.util.Vector;
 
 public class GenericListTestApp extends GenericTransparentApp {
@@ -64,28 +63,20 @@ public class GenericListTestApp extends GenericTransparentApp {
     List lists = new ArrayList();
     lists.add(new LinkedList());
     lists.add(new ArrayList());
-    lists.add(new Vector());
-    lists.add(new Stack());
     lists.add(new MyArrayList());
     lists.add(new MyArrayList5());
     lists.add(new MyArrayList6());
     lists.add(new MyLinkedList());
-    lists.add(new MyVector());
-    lists.add(new MyStack());
     lists.add(new MyAbstractListSubclass());
 
     sharedMap.put("lists", lists);
     sharedMap.put("arrayforLinkedList", new Object[2]);
     sharedMap.put("arrayforArrayList", new Object[2]);
-    sharedMap.put("arrayforVector", new Object[2]);
-    sharedMap.put("arrayforStack", new Object[2]);
     sharedMap.put("arrayforAbstractListSubclass", new Object[2]);
     sharedMap.put("arrayforMyArrayList", new Object[2]);
     sharedMap.put("arrayforMyArrayList5", new Object[2]);
     sharedMap.put("arrayforMyArrayList6", new Object[2]);
     sharedMap.put("arrayforMyLinkedList", new Object[2]);
-    sharedMap.put("arrayforMyVector", new Object[2]);
-    sharedMap.put("arrayforMyStack", new Object[2]);
     sharedMap.put("arrayforMyAbstractListSubclass", new Object[2]);
   }
 
@@ -120,161 +111,6 @@ public class GenericListTestApp extends GenericTransparentApp {
         Assert.assertTrue(removed);
       }
 
-    }
-  }
-
-  void testVectorSetSizeGrow(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    int size = 5;
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      Assert.assertEquals(E("start", v), vector.get(0));
-      for (int i = 1; i < size; i++) {
-        Object val = vector.get(i);
-        Assert.assertNull("element " + i + " is " + val, val);
-      }
-      Assert.assertEquals(E("end", v), vector.get(size));
-    } else {
-      synchronized (vector) {
-        vector.add(E("start", v));
-        vector.setSize(size);
-        vector.add(E("end", v));
-      }
-    }
-  }
-
-  void testVectorSetSizeShrink(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      Assert.assertEquals(E("start", v), vector.get(0));
-      Assert.assertEquals(E("end", v), vector.get(1));
-    } else {
-      synchronized (vector) {
-        vector.add(E("start", v));
-        vector.add(E("ho hum", v));
-        vector.add(E("ho hum2", v));
-        vector.add(E("ho hum3", v));
-
-        vector.setSize(1);
-        vector.add(E("end", v));
-      }
-    }
-  }
-
-  void testVectorAddElement(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), vector);
-    } else {
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(E("second element", v));
-      }
-    }
-  }
-
-  void testVectorRetainAll(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("second element", v) }), vector);
-    } else {
-
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(E("second element", v));
-        vector.addElement(E("third element", v));
-
-        List retainList = new ArrayList(1);
-        retainList.add(E("second element", v));
-
-        vector.retainAll(retainList);
-      }
-    }
-  }
-
-  void testVectorRemoveAll(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("third element", v) }), vector);
-    } else {
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(E("second element", v));
-        vector.addElement(E("third element", v));
-
-        List removeList = new ArrayList(1);
-        removeList.add(E("second element", v));
-        vector.removeAll(removeList);
-      }
-    }
-  }
-
-  void testVectorRemoveAllElements(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertEmptyList(vector);
-    } else {
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(E("second element", v));
-        vector.addElement(E("third element", v));
-
-        vector.removeAllElements();
-      }
-    }
-  }
-
-  void testVectorSetElementAt(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
-                           E("third element", v) }), vector);
-    } else {
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(null);
-        vector.addElement(E("third element", v));
-
-        vector.setElementAt(E("second element", v), 1);
-      }
-    }
-  }
-
-  void testVectorInsertElementAt(List list, boolean validate, int v) {
-    if (!(list instanceof Vector)) { return; }
-
-    Vector vector = (Vector) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v),
-                           E("third element", v) }), vector);
-    } else {
-      synchronized (vector) {
-        vector.addElement(E("first element", v));
-        vector.addElement(E("third element", v));
-
-        vector.insertElementAt(E("second element", v), 1);
-      }
     }
   }
 
@@ -898,9 +734,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Read only testing methods.
   void testReadOnlyAdd(List list, boolean validate, int v) {
-
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertEmptyList(list);
     } else {
@@ -916,8 +749,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testReadOnlySet(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertEmptyList(list);
     } else {
@@ -934,8 +765,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for remove.
   void testSetUpRemove(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -960,8 +789,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testSetUpToArray(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     Object[] array = getArray(list);
     if (validate) {
       assertEmptyObjectArray(array);
@@ -989,8 +816,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for Iterator remove.
   void testSetUpIteratorRemove(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -1018,8 +843,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for clear.
   void testSetUpClear(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -1045,8 +868,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for retainAll.
   void testSetUpRetainAll(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -1074,8 +895,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   // Setting up for the ReadOnly test for removeAll.
   void testSetUpRemoveAll(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
     } else {
@@ -1102,8 +921,6 @@ public class GenericListTestApp extends GenericTransparentApp {
   }
 
   void testListIteratorReadOnlyAdd(List list, boolean validate, int v) {
-    if (list instanceof Vector) { return; }
-
     if (validate) {
       assertEmptyList(list);
     } else {
@@ -1190,39 +1007,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     }
   }
 
-  // Stack specific testing method.
-  void testStackPush(List list, boolean validate, int v) {
-    if (!(list instanceof Stack)) { return; }
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
-    } else {
-      synchronized (list) {
-        Stack s = (Stack) list;
-        s.push(E("first element", v));
-        s.push(E("second element", v));
-      }
-    }
-  }
-
-  void testStackPop(List list, boolean validate, int v) {
-    if (!(list instanceof Stack)) { return; }
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v) }), list);
-    } else {
-      Stack s = (Stack) list;
-      synchronized (list) {
-        s.push(E("first element", v));
-        s.push(E("second element", v));
-      }
-      synchronized (list) {
-        Object o = s.pop();
-        Assert.assertEquals(E("second element", v), o);
-      }
-    }
-  }
-
   void testAddNonPortableObject(List list, boolean validate, int v) {
     if (!validate) {
       synchronized (list) {
@@ -1249,8 +1033,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     if (list instanceof MyArrayList5) { return sharedMap.get("arrayforMyArrayList5"); }
     if (list instanceof MyArrayList) { return sharedMap.get("arrayforMyArrayList"); }
     if (list instanceof MyLinkedList) { return sharedMap.get("arrayforMyLinkedList"); }
-    if (list instanceof MyVector) { return sharedMap.get("arrayforMyVector"); }
-    if (list instanceof MyStack) { return sharedMap.get("arrayforMyStack"); }
     if (list instanceof MyAbstractListSubclass) { return sharedMap.get("arrayforMyAbstractListSubclass"); }
     return null;
   }
@@ -1261,11 +1043,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
     if (list instanceof LinkedList) { return (Object[]) sharedMap.get("arrayforLinkedList"); }
     if (list instanceof ArrayList) { return (Object[]) sharedMap.get("arrayforArrayList"); }
-    if (list instanceof Stack) { // need to check instanceof Stack first before checking instance of Vector
-      // as Stack is a subclass of Vector.
-      return (Object[]) sharedMap.get("arrayforStack");
-    }
-    if (list instanceof Vector) { return (Object[]) sharedMap.get("arrayforVector"); }
     if (list instanceof MyAbstractListSubclass) { return (Object[]) sharedMap.get("arrayforAbstractListSubclass"); }
     return null;
   }
@@ -1406,18 +1183,6 @@ public class GenericListTestApp extends GenericTransparentApp {
 
   private static class MyLinkedList extends LinkedList {
     public MyLinkedList() {
-      super();
-    }
-  }
-
-  private static class MyVector extends Vector {
-    public MyVector() {
-      super();
-    }
-  }
-
-  private static class MyStack extends Stack {
-    public MyStack() {
       super();
     }
   }
