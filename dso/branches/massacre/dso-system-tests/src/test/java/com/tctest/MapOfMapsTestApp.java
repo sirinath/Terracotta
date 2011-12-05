@@ -25,14 +25,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 public class MapOfMapsTestApp extends AbstractErrorCatchingTransparentApp {
 
@@ -188,11 +186,11 @@ public class MapOfMapsTestApp extends AbstractErrorCatchingTransparentApp {
    */
   private Map getChild(final Map m) {
     if (m instanceof HashMap) {
-      return getPopulatedMap(new Hashtable());
+      return getPopulatedMap(new LinkedHashMap());
     } else if (m instanceof LinkedHashMap) {
       return getPopulatedMap(new IdentityHashMap());
     } else if (m instanceof IdentityHashMap) {
-      return getPopulatedMap(new TreeMap());
+      return getPopulatedMap(new HashMap());
     } else {
       throw new AssertionError("Should never get here");
     }
