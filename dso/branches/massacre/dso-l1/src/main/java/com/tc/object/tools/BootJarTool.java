@@ -135,7 +135,6 @@ import com.tc.object.bytecode.TCMap;
 import com.tc.object.bytecode.TCServerMap;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.TransparentAccess;
-import com.tc.object.bytecode.VectorAdapter;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl;
 import com.tc.object.bytecode.hook.ClassPostProcessor;
 import com.tc.object.bytecode.hook.ClassPreProcessor;
@@ -1577,34 +1576,6 @@ public class BootJarTool {
     spec.addMethodAdapter(SerializationUtil.REMOVE_SIGNATURE, new LinkedListAdapter.RemoveAdapter());
     spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
     spec.addSupportMethodCreator(new LinkedListAdapter.RemoveMethodCreator());
-    addSerializationInstrumentedCode(spec);
-
-    spec = this.configHelper.getOrCreateSpec("java.util.Vector", "com.tc.object.applicator.ListApplicator");
-    spec.addAlwaysLogSpec(SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.ADD_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_AT_SIGNATURE);
-    // the Vector.addAll(Collection) implementation in the IBM JDK simply delegates
-    // to Vector.addAllAt(int, Collection), if addAll is instrumented as well, the
-    // vector elements are added twice to the collection
-    if (!Vm.isIBM()) {
-      spec.addAlwaysLogSpec(SerializationUtil.ADD_ALL_SIGNATURE);
-    }
-    spec.addAlwaysLogSpec(SerializationUtil.ADD_ELEMENT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ALL_ELEMENTS_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_ELEMENT_AT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_AT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_RANGE_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.SET_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.SET_ELEMENT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.TRIM_TO_SIZE_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.SET_SIZE_SIGNATURE);
-    spec.addMethodAdapter(SerializationUtil.ELEMENTS_SIGNATURE, new VectorAdapter.ElementsAdapter());
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.COPY_INTO_SIGNATURE);
-    addSerializationInstrumentedCode(spec);
-
-    spec = this.configHelper.getOrCreateSpec("java.util.Stack", "com.tc.object.applicator.ListApplicator");
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
     addSerializationInstrumentedCode(spec);
 
     spec = this.configHelper.getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");

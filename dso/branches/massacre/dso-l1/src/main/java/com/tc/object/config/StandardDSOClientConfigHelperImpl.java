@@ -699,19 +699,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     getOrCreateSpec("java.util.LinkedList", "com.tc.object.applicator.ListApplicator");
 
-    getOrCreateSpec("java.util.Stack", "com.tc.object.applicator.ListApplicator");
-
-    getOrCreateSpec("java.util.Vector", "com.tc.object.applicator.ListApplicator");
-    // addWriteAutolock("synchronized * java.util.Vector.*(..)");
-    // addReadAutolock(new String[] { "synchronized * java.util.Vector.capacity(..)",
-    // "synchronized * java.util.Vector.clone(..)", "synchronized * java.util.Vector.containsAll(..)",
-    // "synchronized * java.util.Vector.elementAt(..)", "synchronized * java.util.Vector.equals(..)",
-    // "synchronized * java.util.Vector.firstElement(..)", "synchronized * java.util.Vector.get(..)",
-    // "synchronized * java.util.Vector.hashCode(..)", "synchronized * java.util.Vector.indexOf(..)",
-    // "synchronized * java.util.Vector.isEmpty(..)", "synchronized * java.util.Vector.lastElement(..)",
-    // "synchronized * java.util.Vector.lastIndexOf(..)", "synchronized * java.util.Vector.size(..)",
-    // "synchronized * java.util.Vector.subList(..)", "synchronized * java.util.Vector.toString(..)", });
-
     getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
   }
 
