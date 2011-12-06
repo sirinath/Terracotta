@@ -88,7 +88,6 @@ import com.tc.object.appevent.ApplicationEvent;
 import com.tc.object.appevent.ApplicationEventContext;
 import com.tc.object.applicator.ApplicatorObjectManager;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
-import com.tc.object.bytecode.AccessibleObjectAdapter;
 import com.tc.object.bytecode.AddInterfacesAdapter;
 import com.tc.object.bytecode.ArrayListAdapter;
 import com.tc.object.bytecode.AtomicIntegerAdapter;
@@ -243,7 +242,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.AccessibleObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -640,7 +638,6 @@ public class BootJarTool {
       loadTerracottaClass(L1ServerMapLocalCacheStoreListener.class.getName());
 
       addSunStandardLoaders();
-      addInstrumentedAccessibleObject();
       addInstrumentedJavaLangThrowable();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
@@ -1147,24 +1144,6 @@ public class BootJarTool {
 
     System.err.println(errmsg.toString());
     System.exit(1);
-  }
-
-  private void addInstrumentedAccessibleObject() {
-    final String classname = AccessibleObject.class.getName();
-    byte[] bytes = getSystemBytes(classname);
-
-    // instrument the state changing methods in AccessibleObject
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    final ClassVisitor cv = new AccessibleObjectAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-    bytes = cw.toByteArray();
-
-    // regular DSO instrumentation
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(classname);
-    spec.markPreInstrumented();
-
-    loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
   private void addIbmInstrumentedAtomicInteger() {
