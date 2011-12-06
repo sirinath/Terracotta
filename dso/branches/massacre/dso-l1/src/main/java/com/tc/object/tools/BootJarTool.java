@@ -642,7 +642,6 @@ public class BootJarTool {
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
       addInstrumentedJavaNetURL();
-      addObjectStreamClass();
 
       addClusterEventsAndMetaDataClasses();
       loadTerracottaClass(StatisticRetrievalAction.class.getName());
@@ -783,28 +782,6 @@ public class BootJarTool {
     loadTerracottaClass(InjectedDsoInstance.class.getName());
     loadTerracottaClass(UnclusteredObjectException.class.getName());
     loadTerracottaClass(UnsupportedInjectedDsoInstanceTypeException.class.getName());
-  }
-
-  private void addObjectStreamClass() {
-    final String jClassNameDots = "java.io.ObjectStreamClass";
-    final String tcClassNameDots = "java.io.ObjectStreamClassTC";
-
-    final byte[] tcData = getSystemBytes(tcClassNameDots);
-    final ClassReader tcCR = new ClassReader(tcData);
-    final ClassNode tcCN = new ClassNode();
-    tcCR.accept(tcCN, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-    byte[] jData = getSystemBytes(jClassNameDots);
-
-    final ClassReader jCR = new ClassReader(jData);
-    final ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
-
-    final Map instrumentedContext = new HashMap();
-    final ClassVisitor cv = new FixedMergeTCToJavaClassAdapter(cw, null, jClassNameDots, tcClassNameDots, tcCN,
-                                                               instrumentedContext);
-    jCR.accept(cv, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-    jData = cw.toByteArray();
-    loadClassIntoJar(jClassNameDots, jData, true);
   }
 
   private void addLiterals() {
