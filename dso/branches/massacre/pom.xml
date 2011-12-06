@@ -45,7 +45,6 @@
     <module>dso-system-tests</module>
     <module>dso-crash-tests</module>
     <module>dso-statistics-tests</module>
-    <module>dso-alt-boot-jar-tests</module>
     
     <module>terracotta-parent</module>
     <module>terracotta</module>

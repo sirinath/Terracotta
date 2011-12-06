@@ -376,64 +376,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.BitSet");
     spec.setHonorTransient(false);
 
-    spec = getOrCreateSpec("java.util.Collections");
-    spec = getOrCreateSpec("java.util.Collections$EmptyList");
-    spec = getOrCreateSpec("java.util.Collections$EmptyMap");
-    spec = getOrCreateSpec("java.util.Collections$EmptySet");
-
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableCollection$1");
-    spec = getOrCreateSpec("java.util.Collections$1");
-    spec.setHonorJDKSubVersionSpecific(true);
-    spec = getOrCreateSpec("java.util.Collections$2");
-    spec.setHonorJDKSubVersionSpecific(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableList$1");
-    spec.setHonorJDKSubVersionSpecific(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableList");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap$UnmodifiableEntrySet");
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableMap$UnmodifiableEntrySet$1");
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableRandomAccessList");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSet");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedMap");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$UnmodifiableSortedSet");
-    spec.setHonorTransient(true);
-
-    spec = getOrCreateSpec("java.util.Collections$SingletonSet");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SingletonList");
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SingletonMap");
-    spec.setHonorTransient(true);
-
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedSet");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedCollection");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedList");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedMap");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedSortedSet");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedMap");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-    spec = getOrCreateSpec("java.util.Collections$SynchronizedRandomAccessList");
-    // autoLockAllMethods(spec, ConfigLockLevel.WRITE);
-    spec.setHonorTransient(true);
-
     addJavaUtilCollectionPreInstrumentedSpec();
 
     spec = getOrCreateSpec("com.tcclient.util.SortedViewSetWrapper");
@@ -486,10 +428,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.net.URL", "com.tc.object.applicator.URLApplicator");
     spec.setHonorTransient(true);
     spec.addAlwaysLogSpec(SerializationUtil.URL_SET_SIGNATURE);
-
-    spec = getOrCreateSpec("java.util.Calendar");
-    spec = getOrCreateSpec("java.util.GregorianCalendar");
-    spec.setHonorTransient(true);
 
     // addJDK15PreInstrumentedSpec();
     // This section of spec are specified in the BootJarTool also
