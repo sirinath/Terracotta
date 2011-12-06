@@ -10,11 +10,11 @@ import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.exception.ImplementMe;
 import com.tc.object.MockRemoteSearchRequestManager;
 import com.tc.object.MockTCObject;
+import com.tc.object.MockTCObject.MethodCall;
 import com.tc.object.ObjectID;
 import com.tc.object.PortabilityImpl;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TestClientObjectManager;
-import com.tc.object.MockTCObject.MethodCall;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.schema.DSORuntimeLoggingOptions;
@@ -37,9 +37,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.Map.Entry;
 
 public class HashMapTCTest extends TCTestCase {
   private ClassLoader origThreadContextClassLoader;
@@ -94,7 +94,8 @@ public class HashMapTCTest extends TCTestCase {
     MockClientLockManager testClientLockManager = new MockClientLockManager();
     MockRemoteSearchRequestManager testSearchRequestManager = new MockRemoteSearchRequestManager();
     IsolationClassLoader classLoader = new IsolationClassLoader((DSOClientConfigHelper) proxy, testClientObjectManager,
-                                                                testTransactionManager, testClientLockManager, testSearchRequestManager);
+                                                                testTransactionManager, testClientLockManager,
+                                                                testSearchRequestManager);
     classLoader.init();
 
     this.origThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -115,8 +116,6 @@ public class HashMapTCTest extends TCTestCase {
     tcmap = createMap("java.util.LinkedHashMap");
     validateLogicalInvoke(tcmap);
 
-    tcmap = createMap("java.util.Hashtable");
-    validateLogicalInvoke(tcmap);
   }
 
   public void BROKENtestMapNotShared() throws Exception {
@@ -188,9 +187,6 @@ public class HashMapTCTest extends TCTestCase {
     tcmap = createMap("java.util.LinkedHashMap");
     validateEntryIteratorRemove(jmap, tcmap);
 
-    jmap = createMap("java.util.Hashtable_J");
-    tcmap = createMap("java.util.Hashtable");
-    validateEntryIteratorRemove(jmap, tcmap);
   }
 
   public void BROKENtestKeySet() throws Exception {
