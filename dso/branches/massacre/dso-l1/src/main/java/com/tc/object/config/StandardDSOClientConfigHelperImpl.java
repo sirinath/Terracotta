@@ -394,8 +394,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.util.AbstractSet");
     spec = getOrCreateSpec("java.util.AbstractSequentialList");
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec = getOrCreateSpec("java.util.Dictionary");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
 
     // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
     spec = getOrCreateSpec("java.util.AbstractMap");

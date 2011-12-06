@@ -18,9 +18,7 @@ public class NonInstrumentedClasses {
     nonInstrumentedClass.add("java.util.AbstractList");
     nonInstrumentedClass.add("java.util.AbstractCollection");
     nonInstrumentedClass.add("java.util.AbstractQueue");
-    nonInstrumentedClass.add("java.util.Dictionary");
     nonInstrumentedClass.add("java.lang.Enum");
-    nonInstrumentedClass.add("java.lang.reflect.AccessibleObject");
 
     if (Vm.isIBM()) {
       nonInstrumentedClass.add("java.util.concurrent.atomic.AtomicInteger");
