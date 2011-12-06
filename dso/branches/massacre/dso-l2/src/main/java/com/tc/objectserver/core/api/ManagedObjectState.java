@@ -38,7 +38,7 @@ public interface ManagedObjectState {
   public static final byte QUEUE_TYPE                             = 0x0b;
   public static final byte CONCURRENT_HASHMAP_TYPE                = 0x0c;
   public static final byte PARTIAL_MAP_TYPE                       = 0x0d;
-  public static final byte URL_TYPE                               = 0x0e;
+  // public static final byte URL_TYPE = 0x0e;
   public static final byte LINKED_HASHSET_TYPE                    = 0x0f;
   public static final byte LINKED_LIST_TYPE                       = 0x10;
   // XXX: hack to get support various tims.

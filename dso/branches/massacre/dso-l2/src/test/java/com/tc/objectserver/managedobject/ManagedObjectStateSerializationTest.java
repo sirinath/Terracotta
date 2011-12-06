@@ -67,9 +67,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
             testConcurrentHashMap();
             break;
-          case ManagedObjectState.URL_TYPE:
-            testURL();
-            break;
           case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
             testConcurrentDistributedMap();
             break;
@@ -289,19 +286,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.CONCURRENT_HASHMAP_TYPE);
-  }
-
-  public void testURL() throws Exception {
-    final String className = "java.net.URL";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addLogicalAction(SerializationUtil.URL_SET, new Object[] { "http", "terracotta.org", new Integer(8080),
-        "auth", "user:pass", "/test", "par1=val1", "ref" });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.URL_TYPE);
   }
 
   // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.

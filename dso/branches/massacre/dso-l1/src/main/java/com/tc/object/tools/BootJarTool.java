@@ -101,8 +101,6 @@ import com.tc.object.bytecode.CloneUtil;
 import com.tc.object.bytecode.HashMapClassAdapter;
 import com.tc.object.bytecode.JavaLangStringAdapter;
 import com.tc.object.bytecode.JavaLangStringTC;
-import com.tc.object.bytecode.JavaLangThrowableDebugClassAdapter;
-import com.tc.object.bytecode.JavaNetURLAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentCyclicBarrierClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentHashMapEntryIteratorAdapter;
@@ -255,7 +253,6 @@ import java.util.Set;
  * Tool for creating the DSO boot jar
  */
 public class BootJarTool {
-  public static final String          TC_DEBUG_THROWABLE_CONSTRUCTION  = "tc.debug.throwable.construction";
 
   private static final String         EXCESS_CLASSES                   = "excess";
   private static final String         MISSING_CLASSES                  = "missing";
@@ -399,7 +396,7 @@ public class BootJarTool {
    * Checks if the given bootJarFile is complete; meaning: - All the classes declared in the configurations
    * <additional-boot-jar-classes/> section is present in the boot jar. - And there are no user-classes present in the
    * boot jar that is not declared in the <additional-boot-jar-classes/> section
-   * 
+   *
    * @return <code>true</code> if the boot jar is complete.
    */
   private final boolean isBootJarComplete(final File bootJarFile) {
@@ -638,10 +635,8 @@ public class BootJarTool {
       loadTerracottaClass(L1ServerMapLocalCacheStoreListener.class.getName());
 
       addSunStandardLoaders();
-      addInstrumentedJavaLangThrowable();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
-      addInstrumentedJavaNetURL();
 
       addClusterEventsAndMetaDataClasses();
       loadTerracottaClass(StatisticRetrievalAction.class.getName());
@@ -851,7 +846,6 @@ public class BootJarTool {
   }
 
   private final void addRuntimeClasses() {
-    loadTerracottaClass("com.tc.object.applicator.TCURL");
     loadTerracottaClass("com.tc.object.bytecode.TCMapEntry");
 
     // DEV-116; Some of these probably should'nt be in the boot jar
@@ -1071,7 +1065,7 @@ public class BootJarTool {
 
   /**
    * Locates the root most cause of an Exception and returns its error message.
-   * 
+   *
    * @param throwable The exception whose root cause message is extracted.
    * @return The message of the root cause of an exception.
    */
@@ -1087,7 +1081,7 @@ public class BootJarTool {
 
   /**
    * Convenience method. Will delegate to exit(msg, null)
-   * 
+   *
    * @param msg The custom message to print
    */
   private final void exit(final String msg) {
@@ -1096,7 +1090,7 @@ public class BootJarTool {
 
   /**
    * Print custom error message and abort the application. The exit code is set to a non-zero value.
-   * 
+   *
    * @param msg The custom message to print
    * @param throwable The exception that caused the application to abort. If this parameter is not null then the message
    *        from the exception is also printed.
@@ -1177,30 +1171,6 @@ public class BootJarTool {
     loadClassIntoJar("java.lang.String", cw.toByteArray(), false);
   }
 
-  private final void addInstrumentedJavaNetURL() {
-    final String className = "java.net.URL";
-    byte[] bytes = getSystemBytes(className);
-
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-
-    final ClassVisitor cv = new JavaNetURLAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(className,
-                                                                         "com.tc.object.applicator.URLApplicator");
-    spec.markPreInstrumented();
-    spec.setHonorTransient(true);
-    spec.addAlwaysLogSpec(SerializationUtil.URL_SET_SIGNATURE);
-    // note that there's another set method, that is actually never referenced
-    // from URLStreamHandler, so it's not accessible from classes that extend
-    // URLStreamHandler, so I'm not supporting it here
-
-    bytes = doDSOTransform(className, cw.toByteArray());
-
-    loadClassIntoJar(className, bytes, spec.isPreInstrumented());
-  }
-
   private final void addSunStandardLoaders() {
     byte[] orig = getSystemBytes("sun.misc.Launcher$AppClassLoader");
 
@@ -1229,27 +1199,6 @@ public class BootJarTool {
     cv = new StandardClassLoaderAdapter(cw, Namespace.getStandardExtensionsLoaderName(), EXT_CLASSLOADER_NAME_PROPERTY);
     cr.accept(cv, ClassReader.SKIP_FRAMES);
     loadClassIntoJar("sun.misc.Launcher$ExtClassLoader", cw.toByteArray(), false);
-  }
-
-  private final void addInstrumentedJavaLangThrowable() {
-    final String className = "java.lang.Throwable";
-    byte[] bytes = getSystemBytes(className);
-
-    if (System.getProperty(TC_DEBUG_THROWABLE_CONSTRUCTION) != null) {
-      final ClassReader cr = new ClassReader(bytes);
-      final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-      final ClassVisitor cv = new JavaLangThrowableDebugClassAdapter(cw);
-      cr.accept(cv, ClassReader.SKIP_FRAMES);
-      bytes = cw.toByteArray();
-    }
-
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(className);
-    spec.markPreInstrumented();
-    spec.setHonorTransient(true);
-
-    final byte[] instrumented = doDSOTransform(className, bytes);
-
-    loadClassIntoJar(className, instrumented, spec.isPreInstrumented());
   }
 
   /**

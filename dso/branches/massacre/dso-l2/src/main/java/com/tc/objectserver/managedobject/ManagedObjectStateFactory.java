@@ -63,7 +63,6 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put(java.sql.Date.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
     classNameToStateMap.put(java.sql.Time.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
     classNameToStateMap.put(java.sql.Timestamp.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
-    classNameToStateMap.put(java.net.URL.class.getName(), Byte.valueOf(ManagedObjectState.URL_TYPE));
     classNameToStateMap.put(java.util.concurrent.LinkedBlockingQueue.class.getName(),
                             Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put(java.util.concurrent.ConcurrentHashMap.class.getName(),
@@ -172,8 +171,6 @@ public class ManagedObjectStateFactory {
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
         return new ConcurrentHashMapManagedObjectState(classID,
                                                        this.persistentCollectionFactory.createPersistentMap(oid));
-      case ManagedObjectState.URL_TYPE:
-        return new URLManagedObjectState(classID);
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
         return new ConcurrentDistributedMapManagedObjectState(classID,
                                                               this.persistentCollectionFactory.createPersistentMap(oid));
@@ -267,8 +264,6 @@ public class ManagedObjectStateFactory {
           return ConcurrentHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
-        case ManagedObjectState.URL_TYPE:
-          return URLManagedObjectState.readFrom(in);
         case ManagedObjectState.LINKED_HASHSET_TYPE:
           return LinkedHashSetManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
