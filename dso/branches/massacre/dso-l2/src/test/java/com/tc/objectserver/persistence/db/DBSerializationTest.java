@@ -36,8 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * XXX: This test needs to test more of the persistor interface.
@@ -199,44 +197,9 @@ public class DBSerializationTest extends TCTestCase {
         return newLogicalListObject(oid);
       case 6:
         return newLogicalSetObject(oid);
-      case 7:
-        return newLogicalTreeSetObject(oid);
-      case 8:
-        return newLogicalTreeMapObject(oid);
       default:
         return newLogicalDateObject(oid);
     }
-  }
-
-  private ManagedObject newLogicalTreeMapObject(final ObjectID oid) {
-    return newLogicalObject(oid, newLogicalTreeMapDNA(false));
-  }
-
-  private TestDNA newLogicalTreeMapDNA(final boolean delta) {
-    final TestDNACursor cursor = new TestDNACursor();
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { Short.valueOf((short) 10), "good bad and ugly" });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { Boolean.valueOf(true), "mapped" });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { Boolean.valueOf(true), "Remapped" });
-    final TestDNA dna = new TestDNA(cursor, TreeMap.class.getName());
-    dna.version = this.version++;
-    dna.isDelta = delta;
-    return dna;
-  }
-
-  private ManagedObject newLogicalTreeSetObject(final ObjectID oid) {
-    return newLogicalObject(oid, newLogicalTreeSetDNA(false));
-  }
-
-  private TestDNA newLogicalTreeSetDNA(final boolean delta) {
-    final TestDNACursor cursor = new TestDNACursor();
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new Integer(10343) });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { "Hello" });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(25) });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { newLong() });
-    final TestDNA dna = new TestDNA(cursor, TreeSet.class.getName());
-    dna.version = this.version++;
-    dna.isDelta = delta;
-    return dna;
   }
 
   private ManagedObject newLogicalSetObject(final ObjectID oid) {
