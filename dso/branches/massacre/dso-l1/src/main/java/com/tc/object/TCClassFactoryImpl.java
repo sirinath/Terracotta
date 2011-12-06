@@ -9,13 +9,11 @@ import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.applicator.AccessibleObjectApplicator;
 import com.tc.object.applicator.ArrayApplicator;
 import com.tc.object.applicator.ChangeApplicator;
 import com.tc.object.applicator.FileApplicator;
 import com.tc.object.applicator.LiteralTypesApplicator;
 import com.tc.object.applicator.PhysicalApplicator;
-import com.tc.object.applicator.ProxyApplicator;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -24,7 +22,6 @@ import com.tc.object.field.TCFieldFactory;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheManager;
-import com.tc.util.ClassUtils;
 import com.tc.util.runtime.Vm;
 
 import java.io.File;
@@ -139,10 +136,6 @@ public class TCClassFactoryImpl implements TCClassFactory {
     if (applicatorClazz == null) {
       if (LiteralValues.isLiteral(name)) {
         return new LiteralTypesApplicator(clazz, this.encoding);
-      } else if (clazz.isProxyClass()) {
-        return new ProxyApplicator(this.encoding);
-      } else if (ClassUtils.isPortableReflectionClass(clazz.getPeerClass())) {
-        return new AccessibleObjectApplicator(this.encoding);
       } else if (File.class.isAssignableFrom(clazz.getPeerClass())) {
         return new FileApplicator(clazz, this.encoding);
       } else if (IS_IBM && "java.util.concurrent.atomic.AtomicInteger".equals(name)) {
