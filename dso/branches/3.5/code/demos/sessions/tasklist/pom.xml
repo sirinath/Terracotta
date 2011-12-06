@@ -6,7 +6,7 @@
 
   <groupId>org.terracotta.samples.sessions</groupId>
   <artifactId>tasklist</artifactId>
-  <version>3.5.4-SNAPSHOT</version>
+  <version>3.5.5-SNAPSHOT</version>
   <name>DepartmentTaskList</name>
   <packaging>war</packaging>
 
