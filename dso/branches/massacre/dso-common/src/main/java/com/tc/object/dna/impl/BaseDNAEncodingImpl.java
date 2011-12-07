@@ -75,7 +75,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASS              = 15;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
   protected static final byte                 TYPE_ID_BIG_INTEGER                  = 17;
-  protected static final byte                 TYPE_ID_STACK_TRACE_ELEMENT          = 18;
   protected static final byte                 TYPE_ID_BIG_DECIMAL                  = 19;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
@@ -241,11 +240,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
         break;
-      case STACK_TRACE_ELEMENT:
-        output.writeByte(TYPE_ID_STACK_TRACE_ELEMENT);
-        final StackTraceElement ste = (StackTraceElement) value;
-        writeStackTraceElement(ste, output);
-        break;
       case BIG_INTEGER:
         output.writeByte(TYPE_ID_BIG_INTEGER);
         writeByteArray(((BigInteger) value).toByteArray(), output);
@@ -273,13 +267,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
     }
 
     // unreachable
-  }
-
-  private void writeStackTraceElement(final StackTraceElement ste, final TCDataOutput output) {
-    output.writeString(ste.getClassName());
-    output.writeString(ste.getMethodName());
-    output.writeString(ste.getFileName());
-    output.writeInt(ste.getLineNumber());
   }
 
   private void writeEnumInstance(final EnumInstance value, final TCDataOutput output, ObjectStringSerializer serializer) {
@@ -408,8 +395,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
         return new ObjectID(input.readLong());
       case TYPE_ID_ARRAY:
         return decodeArray(input);
-      case TYPE_ID_STACK_TRACE_ELEMENT:
-        return readStackTraceElement(input);
       case TYPE_ID_BIG_INTEGER:
         final byte[] b1 = readByteArray(input);
         return new BigInteger(b1);
@@ -447,14 +432,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   // }
   // return array;
   // }
-
-  private Object readStackTraceElement(final TCDataInput input) throws IOException {
-    final String className = input.readString();
-    final String methodName = input.readString();
-    final String fileName = input.readString();
-    final int lineNumber = input.readInt();
-    return new StackTraceElement(className, methodName, fileName, lineNumber);
-  }
 
   public void encodeArray(final Object value, final TCDataOutput output) {
     encodeArray(value, output, value == null ? -1 : Array.getLength(value));

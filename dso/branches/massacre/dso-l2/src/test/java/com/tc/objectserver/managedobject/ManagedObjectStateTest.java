@@ -45,7 +45,6 @@ public class ManagedObjectStateTest extends TestCase {
     types.put("field7", Short.valueOf((short) 606));
     types.put("field8", Double.valueOf(98.76d));
     types.put("field9", Float.valueOf(8.8f));
-    types.put("field10", new StackTraceElement("classname", "methodname", "filename", 123));
 
     final TestDNACursor cursor = new TestDNACursor();
     for (final Iterator i = types.entrySet().iterator(); i.hasNext();) {
@@ -106,7 +105,6 @@ public class ManagedObjectStateTest extends TestCase {
     types.put("field7", Short.valueOf((short) 606));
     types.put("field8", Double.valueOf(98.76d));
     types.put("field9", Float.valueOf(8.8f));
-    types.put("field10", new StackTraceElement("classname", "methodname", "filename", 123));
 
     TestDNACursor cursor = new TestDNACursor();
     for (final Iterator i = types.entrySet().iterator(); i.hasNext();) {
