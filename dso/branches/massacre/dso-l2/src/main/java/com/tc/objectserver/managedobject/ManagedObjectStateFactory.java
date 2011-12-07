@@ -47,8 +47,6 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put(java.util.HashMap.class.getName(), Byte.valueOf(ManagedObjectState.PARTIAL_MAP_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_MAP.getClass().getName(),
                             Byte.valueOf(ManagedObjectState.MAP_TYPE));
-    classNameToStateMap.put(java.util.LinkedHashMap.class.getName(),
-                            Byte.valueOf(ManagedObjectState.LINKED_HASHMAP_TYPE));
     classNameToStateMap.put(gnu.trove.THashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.HashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.LinkedHashSet.class.getName(),
@@ -145,8 +143,6 @@ public class ManagedObjectStateFactory {
         return new MapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.PARTIAL_MAP_TYPE:
         return new PartialMapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
-      case ManagedObjectState.LINKED_HASHMAP_TYPE:
-        return new LinkedHashMapManagedObjectState(classID);
       case ManagedObjectState.LINKED_HASHSET_TYPE:
         return new LinkedHashSetManagedObjectState(classID);
       case ManagedObjectState.SET_TYPE:
@@ -233,8 +229,6 @@ public class ManagedObjectStateFactory {
           return MapManagedObjectState.readFrom(in);
         case ManagedObjectState.PARTIAL_MAP_TYPE:
           return PartialMapManagedObjectState.readFrom(in);
-        case ManagedObjectState.LINKED_HASHMAP_TYPE:
-          return LinkedHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.ARRAY_TYPE:
           return ArrayManagedObjectState.readFrom(in);
         case ManagedObjectState.LITERAL_TYPE:

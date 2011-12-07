@@ -29,7 +29,6 @@ public interface ManagedObjectState {
    */
   public static final byte PHYSICAL_TYPE                          = 0x01;
   public static final byte MAP_TYPE                               = 0x03;
-  public static final byte LINKED_HASHMAP_TYPE                    = 0x04;
   public static final byte ARRAY_TYPE                             = 0x05;
   public static final byte LITERAL_TYPE                           = 0x06;
   public static final byte LIST_TYPE                              = 0x07;
