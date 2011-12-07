@@ -58,7 +58,6 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
 
       // addJavaUtilConcurrentHashMapSpec();
       // addLogicalAdaptedLinkedBlockingQueueSpec();
-      addJavaUtilConcurrentFutureTaskSpec();
 
       // ---------------------------------------------------------------------
       // SECTION ENDS
@@ -66,12 +65,4 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
     }
   }
 
-  private void addJavaUtilConcurrentFutureTaskSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.FutureTask$Sync");
-    configHelper.addWriteAutolock("* java.util.concurrent.FutureTask$Sync.*(..)");
-    spec.setHonorTransient(true);
-    spec.addDistributedMethodCall("managedInnerCancel", "()V", false);
-    getOrCreateSpec("java.util.concurrent.FutureTask");
-    getOrCreateSpec("java.util.concurrent.Executors$RunnableAdapter");
-  }
 }
