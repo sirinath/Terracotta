@@ -33,9 +33,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.PHYSICAL_TYPE:
             testPhysical();
             break;
-          case ManagedObjectState.DATE_TYPE:
-            testDate();
-            break;
           case ManagedObjectState.MAP_TYPE:
           case ManagedObjectState.PARTIAL_MAP_TYPE:
             // Map type is tested in another test.
@@ -147,19 +144,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.PHYSICAL_TYPE);
-  }
-
-  public void testDate() throws Exception {
-    final String className = "java.util.Date";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addLogicalAction(SerializationUtil.SET_TIME, new Long[] { Long.valueOf(System.currentTimeMillis()) });
-    cursor.addLogicalAction(SerializationUtil.SET_NANOS, new Integer[] { Integer.valueOf(0) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.DATE_TYPE);
   }
 
   public void testLinkedHashMap() throws Exception {

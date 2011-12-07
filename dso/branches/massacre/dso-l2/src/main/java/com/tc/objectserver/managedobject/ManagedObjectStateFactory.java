@@ -53,15 +53,7 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put(java.util.HashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.LinkedHashSet.class.getName(),
                             Byte.valueOf(ManagedObjectState.LINKED_HASHSET_TYPE));
-    classNameToStateMap.put(java.util.Collections.EMPTY_SET.getClass().getName(),
-                            Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put(java.util.Collections.EMPTY_LIST.getClass().getName(),
-                            Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put(java.util.Date.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
-    classNameToStateMap.put(java.sql.Date.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
-    classNameToStateMap.put(java.sql.Time.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
-    classNameToStateMap.put(java.sql.Timestamp.class.getName(), Byte.valueOf(ManagedObjectState.DATE_TYPE));
     classNameToStateMap.put(java.util.concurrent.LinkedBlockingQueue.class.getName(),
                             Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put(java.util.concurrent.ConcurrentHashMap.class.getName(),
@@ -163,8 +155,6 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
-      case ManagedObjectState.DATE_TYPE:
-        return new DateManagedObjectState(classID);
       case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
         return new ConcurrentHashMapManagedObjectState(classID,
                                                        this.persistentCollectionFactory.createPersistentMap(oid));
@@ -247,8 +237,6 @@ public class ManagedObjectStateFactory {
           return LinkedHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.ARRAY_TYPE:
           return ArrayManagedObjectState.readFrom(in);
-        case ManagedObjectState.DATE_TYPE:
-          return DateManagedObjectState.readFrom(in);
         case ManagedObjectState.LITERAL_TYPE:
           return LiteralTypesManagedObjectState.readFrom(in);
         case ManagedObjectState.LIST_TYPE:

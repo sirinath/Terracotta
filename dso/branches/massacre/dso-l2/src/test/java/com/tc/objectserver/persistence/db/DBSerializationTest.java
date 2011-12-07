@@ -168,10 +168,6 @@ public class DBSerializationTest extends TCTestCase {
           loaded.apply(newLogicalLinkedHashMapDNA(true), new TransactionID(++this.transactionSequence),
                        new ApplyTransactionInfo(), this.imo, false);
           break;
-        case ManagedObjectState.DATE_TYPE:
-          loaded.apply(newLogicalDateDNA(true), new TransactionID(++this.transactionSequence),
-                       new ApplyTransactionInfo(), this.imo, false);
-          break;
         case ManagedObjectState.LITERAL_TYPE:
           loaded.apply(newLiteralDNA(true), new TransactionID(++this.transactionSequence), new ApplyTransactionInfo(),
                        this.imo, false);

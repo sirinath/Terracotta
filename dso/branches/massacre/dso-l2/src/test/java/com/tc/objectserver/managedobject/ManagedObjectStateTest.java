@@ -319,9 +319,6 @@ public class ManagedObjectStateTest extends TestCase {
     final LiteralTypesManagedObjectState literalTypesManagedObjectState = new LiteralTypesManagedObjectState();
     assertTrue(literalTypesManagedObjectState.hasNoReferences());
 
-    final DateManagedObjectState dateManagedObjectState = new DateManagedObjectState(1);
-    assertTrue(dateManagedObjectState.hasNoReferences());
-
     final TDCSerializedEntryManagedObjectState tcHibernateSerializedEntryManagedObjectState = new TDCSerializedEntryManagedObjectState(
                                                                                                                                        1);
     assertTrue(tcHibernateSerializedEntryManagedObjectState.hasNoReferences());
