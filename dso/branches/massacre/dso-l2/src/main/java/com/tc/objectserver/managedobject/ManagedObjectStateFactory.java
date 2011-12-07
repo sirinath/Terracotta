@@ -55,7 +55,6 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.LINKED_HASHSET_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_SET.getClass().getName(),
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put(java.util.LinkedList.class.getName(), Byte.valueOf(ManagedObjectState.LINKED_LIST_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.Collections.EMPTY_LIST.getClass().getName(),
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
@@ -162,8 +161,6 @@ public class ManagedObjectStateFactory {
         return new SetManagedObjectState(classID, this.persistentCollectionFactory.createPersistentSet(oid));
       case ManagedObjectState.LIST_TYPE:
         return new ListManagedObjectState(classID);
-      case ManagedObjectState.LINKED_LIST_TYPE:
-        return new LinkedListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
       case ManagedObjectState.DATE_TYPE:
@@ -256,8 +253,6 @@ public class ManagedObjectStateFactory {
           return LiteralTypesManagedObjectState.readFrom(in);
         case ManagedObjectState.LIST_TYPE:
           return ListManagedObjectState.readFrom(in);
-        case ManagedObjectState.LINKED_LIST_TYPE:
-          return LinkedListManagedObjectState.readFrom(in);
         case ManagedObjectState.SET_TYPE:
           return SetManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
