@@ -13,13 +13,10 @@ import com.tc.util.Assert;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
 public class TCObjectInputOutputStreamTest extends TCTestCase {
 
@@ -126,8 +123,6 @@ public class TCObjectInputOutputStreamTest extends TCTestCase {
     l.add(new ClassInstance(new UTF8ByteDataHolder(this.getClass().getName()), new UTF8ByteDataHolder("saroloader")));
     // Object o[] = new Object[] { new ObjectID(88), new ObjectID(77), new Integer(66), new Long(55) };
     // l.add(o);
-    l.add(new BigInteger(128, new Random()));
-    l.add(new BigDecimal(948754756.34365234d));
     return l;
   }
 
