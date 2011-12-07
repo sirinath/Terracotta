@@ -29,7 +29,6 @@ import com.tc.injection.DsoClusterInjectionInstrumentation;
 import com.tc.injection.InjectionInstrumentation;
 import com.tc.injection.InjectionInstrumentationRegistry;
 import com.tc.injection.exceptions.UnsupportedInjectedDsoInstanceTypeException;
-import com.tc.jam.transform.ReflectClassBuilderAdapter;
 import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
@@ -445,17 +444,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("java.lang.Object");
     spec.setCallConstructorOnLoad(true);
 
-    // Autolocking FastHashMap.
-    // addIncludePattern("org.apache.commons.collections.FastHashMap*", true);
-    // addWriteAutolock("* org.apache.commons.collections.FastHashMap*.*(..)");
-    // addReadAutolock(new String[] { "* org.apache.commons.collections.FastHashMap.clone(..)",
-    // "* org.apache.commons.collections.FastHashMap*.contains*(..)",
-    // "* org.apache.commons.collections.FastHashMap.equals(..)",
-    // "* org.apache.commons.collections.FastHashMap.get(..)",
-    // "* org.apache.commons.collections.FastHashMap*.hashCode(..)",
-    // "* org.apache.commons.collections.FastHashMap*.isEmpty(..)",
-    // "* org.apache.commons.collections.FastHashMap*.size(..)" });
-
     spec = getOrCreateSpec("gnu.trove.TObjectHash");
     spec.addTObjectHashRemoveAtLogSpec(SerializationUtil.TROVE_REMOVE_AT_SIGNATURE);
 
@@ -478,14 +466,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("javax.servlet.GenericServlet");
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-
-    // TODO for the Event Swing sample only
-    LockDefinition ld = new LockDefinitionImpl("setTextArea", ConfigLockLevel.WRITE);
-    ld.commit();
-    addLock("* test.event.*.setTextArea(..)", ld);
-
-    // hard code junk for Axis2 problem (CDV-525)
-    addCustomAdapter("org.codehaus.jam.internal.reflect.ReflectClassBuilder", new ReflectClassBuilderAdapter());
 
     if (hasBootJar) {
       // pre-load specs from boot jar
