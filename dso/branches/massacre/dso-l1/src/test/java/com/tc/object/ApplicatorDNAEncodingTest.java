@@ -23,8 +23,6 @@ import com.tc.util.StringTCUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -433,8 +431,8 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     TCByteBufferInputStream input = new TCByteBufferInputStream(data);
     ClassInstance holder = (ClassInstance) encoding.decode(input);
     assertEquals(getClass().getName(), holder.getName().asString());
-    assertEquals(this.classProvider.getLoaderDescriptionFor(getClass()), LoaderDescription.fromString(holder
-        .getLoaderDef().asString()));
+    assertEquals(this.classProvider.getLoaderDescriptionFor(getClass()),
+                 LoaderDescription.fromString(holder.getLoaderDef().asString()));
 
     holder = (ClassInstance) encoding.decode(input);
     assertEquals(name, holder.getName());
@@ -473,10 +471,6 @@ public class ApplicatorDNAEncodingTest extends TestCase {
     data.add(new Long(System.currentTimeMillis() % 17));
     data.add("eight");
     data.add(new Short((short) -1));
-    data.add("nine");
-    data.add(new BigInteger(512, new Random()));
-    data.add("ten");
-    data.add(new BigDecimal(84564547.45465478d));
 
     final DNAEncoding encoding = getApplicatorEncoding();
     for (final Iterator i = data.iterator(); i.hasNext();) {

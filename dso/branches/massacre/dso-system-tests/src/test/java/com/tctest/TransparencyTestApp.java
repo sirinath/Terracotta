@@ -18,8 +18,6 @@ import com.tctest.runner.AbstractTransparentApp;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -318,8 +316,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     to = new TestObj(null);
     to.setStringValue("baby");
     obj.setTwoDobject(4, 2, to);
-    obj.bigIntegerObject = new BigInteger("100");
-    obj.bigDecimalObject = new BigDecimal(100.0);
     return obj;
   }
 
@@ -384,8 +380,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
       }
     }).start();
     obj.setTwoDobject(5, 1, new TestObj(null));
-    obj.setBigIntegerObject(new BigInteger("200"));
-    obj.setBigDecimalObject(new BigDecimal(200.0));
     return obj;
   }
 
@@ -433,8 +427,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     Assert.eval(obj.getStringValue().equals("Steve2"));
     Assert.eval(obj.getObjects().length == 1);
     Assert.eval((obj.getObject(0)).getStringValue().equals("cool2"));
-    Assert.eval(obj.getBigIntegerObject().equals(new BigInteger("200")));
-    Assert.eval(obj.getBigDecimalObject().equals(new BigDecimal(200.0)));
 
     Assert.eval(obj.getInts().length == 6);
     System.out.println("Got value:" + obj.getInt(3) + " array:" + obj.getInts());
@@ -503,8 +495,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     Assert.eval(obj.getStringValue().equals("Steve"));
     Assert.eval(obj.getObjects().length == 1);
     Assert.eval((obj.getObject(0)).getStringValue().equals("cool"));
-    Assert.eval(obj.bigIntegerObject.equals(new BigInteger("100")));
-    Assert.eval(obj.bigDecimalObject.equals(new BigDecimal(100.0)));
 
     Assert.eval(obj.getInts().length == 6);
     System.out.println("Got value:" + obj.getInt(3) + " array:" + obj.getInts());
@@ -621,8 +611,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     private Character[]   charObjects;
     private Object        literalObject;
     private Object[]      objectArray;
-    private BigInteger    bigIntegerObject;
-    private BigDecimal    bigDecimalObject;
 
     private final Boolean booleanTRUE  = Boolean.TRUE;
     private final Boolean booleanFALSE = Boolean.FALSE;
@@ -1169,22 +1157,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
 
     public void setClassObject(Class classObject) {
       this.classObject = classObject;
-    }
-
-    public BigDecimal getBigDecimalObject() {
-      return bigDecimalObject;
-    }
-
-    public void setBigDecimalObject(BigDecimal bigDecimalObject) {
-      this.bigDecimalObject = bigDecimalObject;
-    }
-
-    public BigInteger getBigIntegerObject() {
-      return bigIntegerObject;
-    }
-
-    public void setBigIntegerObject(BigInteger bigIntegerObject) {
-      this.bigIntegerObject = bigIntegerObject;
     }
 
   }

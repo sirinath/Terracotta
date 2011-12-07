@@ -14,8 +14,6 @@ import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.loaders.LoaderDescription;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Currency;
 
 /**
@@ -91,15 +89,9 @@ public class DsoLiteralLockID implements LockID {
         literal = Currency.getInstance(serialInput.readString());
         return this;
       case BIG_INTEGER:
-        int length = serialInput.readInt();
-        byte[] data = new byte[length];
-        serialInput.readFully(data);
-        literal = new BigInteger(data);
-        return this;
+        throw new AssertionError();
       case BIG_DECIMAL:
-        literal = new BigDecimal(serialInput.readString());
-        return this;
-
+        throw new AssertionError();
       case STRING_BYTES:
       case JAVA_LANG_CLASS_HOLDER:
       case STRING_BYTES_COMPRESSED:
@@ -162,14 +154,9 @@ public class DsoLiteralLockID implements LockID {
         serialOutput.writeString(((Currency) literal).getCurrencyCode());
         break;
       case BIG_INTEGER:
-        byte[] data = ((BigInteger) literal).toByteArray();
-        serialOutput.writeInt(data.length);
-        serialOutput.write(data);
-        break;
+        throw new AssertionError();
       case BIG_DECIMAL:
-        serialOutput.writeString(((BigDecimal) literal).toString());
-        break;
-
+        throw new AssertionError();
       case STRING_BYTES:
       case JAVA_LANG_CLASS_HOLDER:
       case STRING_BYTES_COMPRESSED:

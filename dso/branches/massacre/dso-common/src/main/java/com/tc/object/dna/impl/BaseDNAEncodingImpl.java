@@ -25,8 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Currency;
 import java.util.zip.InflaterInputStream;
 
@@ -74,8 +72,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   protected static final byte                 TYPE_ID_ARRAY                        = 14;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASS              = 15;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASS_HOLDER       = 16;
-  protected static final byte                 TYPE_ID_BIG_INTEGER                  = 17;
-  protected static final byte                 TYPE_ID_BIG_DECIMAL                  = 19;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASSLOADER        = 20;
   protected static final byte                 TYPE_ID_JAVA_LANG_CLASSLOADER_HOLDER = 21;
   protected static final byte                 TYPE_ID_ENUM                         = 22;
@@ -240,28 +236,9 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
         output.writeByte(TYPE_ID_REFERENCE);
         output.writeLong(((ObjectID) value).toLong());
         break;
-      case BIG_INTEGER:
-        output.writeByte(TYPE_ID_BIG_INTEGER);
-        writeByteArray(((BigInteger) value).toByteArray(), output);
-        break;
-      case BIG_DECIMAL:
-        output.writeByte(TYPE_ID_BIG_DECIMAL);
-        writeByteArray(((BigDecimal) value).toString().getBytes(), output);
-        break;
       case ARRAY:
         encodeArray(value, output);
         break;
-      // case LiteralValues.URL:
-      // {
-      // URL url = (URL)value;
-      // output.writeByte(TYPE_ID_URL);
-      // output.writeString(url.getProtocol());
-      // output.writeString(url.getHost());
-      // output.writeInt(url.getPort());
-      // output.writeString(url.getFile());
-      // output.writeString(url.getRef());
-      // }
-      // break;
       default:
         throw Assert.failure("Illegal type (" + type + "):" + value);
     }
@@ -395,25 +372,6 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
         return new ObjectID(input.readLong());
       case TYPE_ID_ARRAY:
         return decodeArray(input);
-      case TYPE_ID_BIG_INTEGER:
-        final byte[] b1 = readByteArray(input);
-        return new BigInteger(b1);
-      case TYPE_ID_BIG_DECIMAL:
-        // char[] chars = readCharArray(input); // Unfortunately this is 1.5 specific
-        final byte[] b2 = readByteArray(input);
-        return new BigDecimal(new String(b2));
-        // case TYPE_ID_URL:
-        // {
-        // String protocol = input.readString();
-        // String host = input.readString();
-        // int port = input.readInt();
-        // String file = input.readString();
-        // String ref = input.readString();
-        // if (ref != null) {
-        // file = file+"#"+ref;
-        // }
-        // return new URL(protocol, host, port, file);
-        // }
       default:
         throw Assert.failure("Illegal type (" + type + ")");
     }

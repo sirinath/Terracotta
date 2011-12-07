@@ -787,9 +787,6 @@ public class BootJarTool {
     this.bootJar.loadClassIntoJar("java.lang.Integer", getSystemBytes("java.lang.Integer"), false);
     this.bootJar.loadClassIntoJar("java.lang.Long", getSystemBytes("java.lang.Long"), false);
     this.bootJar.loadClassIntoJar("java.lang.Short", getSystemBytes("java.lang.Short"), false);
-
-    this.bootJar.loadClassIntoJar("java.math.BigInteger", getSystemBytes("java.math.BigInteger"), false);
-    this.bootJar.loadClassIntoJar("java.math.BigDecimal", getSystemBytes("java.math.BigDecimal"), false);
   }
 
   private void addIBMSpecific() {
