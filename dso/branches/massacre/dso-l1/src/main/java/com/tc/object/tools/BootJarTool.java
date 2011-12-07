@@ -332,9 +332,6 @@ public class BootJarTool {
 
   private final void addJdk15SpecificPreInstrumentedClasses() {
     if (Vm.isJDK15Compliant()) {
-      final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec("java.math.MathContext");
-      spec.markPreInstrumented();
-
       addInstrumentedJavaUtilConcurrentLocks();
 
       addInstrumentedJavaUtilConcurrentLinkedBlockingQueue();
