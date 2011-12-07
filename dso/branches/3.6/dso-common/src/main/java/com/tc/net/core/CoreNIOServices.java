@@ -551,8 +551,8 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             continue;
           }
 
-          if (NIOWorkaroundsTemp.solarisOnX86SelectWorkaround(ioe)) {
-            logger.warn("working around Solaris x86 select IOException");
+          if (NIOWorkaroundsTemp.solarisSelectWorkaround(ioe)) {
+            logger.warn("working around Solaris select IOException");
             continue;
           }
 
@@ -865,19 +865,15 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
    */
   private static class NIOWorkaroundsTemp {
     /**
-     * Workaround for select() throwing IOException("Bad file number") in Solaris running on x86 arch. Couldn't find a
-     * exact bug reported on this.
+     * Workaround for select() throwing IOException("Bad file number") in Solaris. See DEV-6592 and
+     * http://wesunsolve.net/bugid/id/6994017
      */
-    private static boolean solarisOnX86SelectWorkaround(IOException ioe) {
-      if (Os.isSolaris() && isArchx86()) {
+    private static boolean solarisSelectWorkaround(IOException ioe) {
+      if (Os.isSolaris()) {
         String msg = ioe.getMessage();
         if ((msg != null) && msg.contains("Bad file number")) { return true; }
       }
       return false;
-    }
-
-    private static boolean isArchx86() {
-      return getOsArch().toLowerCase().indexOf("x86") >= 0;
     }
 
     private static String getOsArch() {
