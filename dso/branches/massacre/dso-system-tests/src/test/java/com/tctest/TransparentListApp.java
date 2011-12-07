@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -11,7 +12,7 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -21,15 +22,15 @@ import java.util.Random;
 public class TransparentListApp extends AbstractTransparentApp {
   private final static int ACTION_COUNT = 5;
 
-  private String           putterName;
-  private List             queue        = new LinkedList();
-  private Random           random       = new Random();
+  private final String     putterName;
+  private final List       queue        = new ArrayList();
+  private final Random     random       = new Random();
 
   public TransparentListApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     this.putterName = "TransparentListApp.putter(" + appId + ")";
   }
-  
+
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClassName = TransparentListApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
@@ -70,8 +71,8 @@ public class TransparentListApp extends AbstractTransparentApp {
   }
 
   public static class Action {
-    private int    count;
-    private String putter;
+    private final int    count;
+    private final String putter;
 
     public Action(int count, String putter) {
       this.count = count;
@@ -82,6 +83,7 @@ public class TransparentListApp extends AbstractTransparentApp {
       System.out.println("*** Executing: Count:" + count + " putter:" + putter + " executer:" + executerName);
     }
 
+    @Override
     public String toString() {
       return "Count:" + count + " putter:" + putter;
     }

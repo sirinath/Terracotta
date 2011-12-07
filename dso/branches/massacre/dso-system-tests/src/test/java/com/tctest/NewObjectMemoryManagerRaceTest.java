@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
@@ -85,17 +84,17 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
 
   private static class Shared {
     // roots
-    private static final LinkedList queue    = new LinkedList();
-    private static boolean          end      = false;
+    private static final List queue    = new ArrayList();
+    private static boolean    end      = false;
 
-    private static final int        BATCH    = 5000;
-    private static int              putCount = 0;
+    private static final int  BATCH    = 5000;
+    private static int        putCount = 0;
 
     static Collection take() {
       Collection rv = new ArrayList();
       synchronized (queue) {
         while (!queue.isEmpty()) {
-          rv.add(queue.removeFirst());
+          rv.add(queue.remove(0));
         }
       }
       return rv;
@@ -114,7 +113,7 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
 
       synchronized (queue) {
         for (int i = 0; i < BATCH; i++) {
-          queue.addLast(new Foo());
+          queue.add(new Foo());
           putCount++;
         }
       }
