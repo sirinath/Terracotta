@@ -423,10 +423,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
     spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
 
-    spec = getOrCreateSpec("java.net.URL", "com.tc.object.applicator.URLApplicator");
-    spec.setHonorTransient(true);
-    spec.addAlwaysLogSpec(SerializationUtil.URL_SET_SIGNATURE);
-
     // addJDK15PreInstrumentedSpec();
     // This section of spec are specified in the BootJarTool also
     // They are placed again so that the honorTransient
