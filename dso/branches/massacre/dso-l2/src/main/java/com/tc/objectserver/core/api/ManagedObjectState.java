@@ -28,7 +28,6 @@ public interface ManagedObjectState {
    * ManagedObjectStateFactory.
    */
   public static final byte PHYSICAL_TYPE                          = 0x01;
-  public static final byte DATE_TYPE                              = 0x02;
   public static final byte MAP_TYPE                               = 0x03;
   public static final byte LINKED_HASHMAP_TYPE                    = 0x04;
   public static final byte ARRAY_TYPE                             = 0x05;
@@ -38,7 +37,6 @@ public interface ManagedObjectState {
   public static final byte QUEUE_TYPE                             = 0x0b;
   public static final byte CONCURRENT_HASHMAP_TYPE                = 0x0c;
   public static final byte PARTIAL_MAP_TYPE                       = 0x0d;
-  // public static final byte URL_TYPE = 0x0e;
   public static final byte LINKED_HASHSET_TYPE                    = 0x0f;
   // XXX: hack to get support various tims.
   public static final byte CONCURRENT_DISTRIBUTED_MAP_TYPE        = 0x11;

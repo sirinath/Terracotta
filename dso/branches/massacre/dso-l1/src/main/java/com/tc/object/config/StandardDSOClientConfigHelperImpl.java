@@ -407,21 +407,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     spec = getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
 
-    spec = getOrCreateSpec("java.util.Date", "com.tc.object.applicator.DateApplicator");
-    spec.addAlwaysLogSpec(SerializationUtil.SET_TIME_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_YEAR_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_MONTH_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_DATE_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_HOURS_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_MINUTES_SIGNATURE);
-    spec.addDateMethodLogSpec(SerializationUtil.SET_SECONDS_SIGNATURE);
-
-    spec = getOrCreateSpec("java.sql.Date", "com.tc.object.applicator.DateApplicator");
-    spec = getOrCreateSpec("java.sql.Time", "com.tc.object.applicator.DateApplicator");
-    spec = getOrCreateSpec("java.sql.Timestamp", "com.tc.object.applicator.DateApplicator");
-    spec.addDateMethodLogSpec(SerializationUtil.SET_TIME_SIGNATURE, MethodSpec.TIMESTAMP_SET_TIME_METHOD_WRAPPER_LOG);
-    spec.addAlwaysLogSpec(SerializationUtil.SET_NANOS_SIGNATURE);
-
     // addJDK15PreInstrumentedSpec();
     // This section of spec are specified in the BootJarTool also
     // They are placed again so that the honorTransient
