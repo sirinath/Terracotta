@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -61,22 +60,18 @@ public class GenericListTestApp extends GenericTransparentApp {
   @Override
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
-    lists.add(new LinkedList());
     lists.add(new ArrayList());
     lists.add(new MyArrayList());
     lists.add(new MyArrayList5());
     lists.add(new MyArrayList6());
-    lists.add(new MyLinkedList());
     lists.add(new MyAbstractListSubclass());
 
     sharedMap.put("lists", lists);
-    sharedMap.put("arrayforLinkedList", new Object[2]);
     sharedMap.put("arrayforArrayList", new Object[2]);
     sharedMap.put("arrayforAbstractListSubclass", new Object[2]);
     sharedMap.put("arrayforMyArrayList", new Object[2]);
     sharedMap.put("arrayforMyArrayList5", new Object[2]);
     sharedMap.put("arrayforMyArrayList6", new Object[2]);
-    sharedMap.put("arrayforMyLinkedList", new Object[2]);
     sharedMap.put("arrayforMyAbstractListSubclass", new Object[2]);
   }
 
@@ -111,80 +106,6 @@ public class GenericListTestApp extends GenericTransparentApp {
         Assert.assertTrue(removed);
       }
 
-    }
-  }
-
-  void testLinkedListRemoveFirst(List list, boolean validate, int v) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertSingleElement(linkedList, E("teck", v));
-    } else {
-      synchronized (linkedList) {
-        linkedList.add(E("timmy", v));
-        linkedList.add(E("teck", v));
-      }
-
-      synchronized (linkedList) {
-        linkedList.removeFirst();
-      }
-    }
-  }
-
-  void testLinkedListRemoveLast(List list, boolean validate, int v) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertSingleElement(linkedList, E("timmy", v));
-    } else {
-      synchronized (linkedList) {
-        linkedList.add(E("timmy", v));
-        linkedList.add(E("teck", v));
-      }
-
-      synchronized (linkedList) {
-        linkedList.removeLast();
-      }
-    }
-  }
-
-  void testLinkedListAddFirst(List list, boolean validate, int v) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add(E("second element", v));
-      }
-
-      synchronized (linkedList) {
-        linkedList.addFirst(E("first element", v));
-      }
-    }
-  }
-
-  void testLinkedListAddLast(List list, boolean validate, int v) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { E("first element", v), E("second element", v) }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add(E("first element", v));
-      }
-
-      synchronized (linkedList) {
-        linkedList.addLast(E("second element", v));
-      }
     }
   }
 
@@ -1032,7 +953,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     if (list instanceof MyArrayList6) { return sharedMap.get("arrayforMyArrayList6"); }
     if (list instanceof MyArrayList5) { return sharedMap.get("arrayforMyArrayList5"); }
     if (list instanceof MyArrayList) { return sharedMap.get("arrayforMyArrayList"); }
-    if (list instanceof MyLinkedList) { return sharedMap.get("arrayforMyLinkedList"); }
     if (list instanceof MyAbstractListSubclass) { return sharedMap.get("arrayforMyAbstractListSubclass"); }
     return null;
   }
@@ -1041,7 +961,6 @@ public class GenericListTestApp extends GenericTransparentApp {
     Object o = getMySubclassArray(list);
     if (o != null) { return (Object[]) o; }
 
-    if (list instanceof LinkedList) { return (Object[]) sharedMap.get("arrayforLinkedList"); }
     if (list instanceof ArrayList) { return (Object[]) sharedMap.get("arrayforArrayList"); }
     if (list instanceof MyAbstractListSubclass) { return (Object[]) sharedMap.get("arrayforAbstractListSubclass"); }
     return null;
@@ -1178,12 +1097,6 @@ public class GenericListTestApp extends GenericTransparentApp {
       s.add("test");
       ArrayList l = new ArrayList(s);
       if (size() != 0) { throw new AssertionError(l.size()); }
-    }
-  }
-
-  private static class MyLinkedList extends LinkedList {
-    public MyLinkedList() {
-      super();
     }
   }
 

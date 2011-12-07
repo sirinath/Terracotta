@@ -40,7 +40,6 @@ public interface ManagedObjectState {
   public static final byte PARTIAL_MAP_TYPE                       = 0x0d;
   // public static final byte URL_TYPE = 0x0e;
   public static final byte LINKED_HASHSET_TYPE                    = 0x0f;
-  public static final byte LINKED_LIST_TYPE                       = 0x10;
   // XXX: hack to get support various tims.
   public static final byte CONCURRENT_DISTRIBUTED_MAP_TYPE        = 0x11;
   public static final byte TDC_SERIALIZED_ENTRY                   = 0x12;

@@ -17,7 +17,6 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -39,11 +38,9 @@ public class GenericList15TestApp extends GenericTransparentApp {
   @Override
   protected void setupTestObject(String testName) {
     List lists = new ArrayList();
-    lists.add(new LinkedList());
     lists.add(new ArrayList());
 
     sharedMap.put("lists", lists);
-    sharedMap.put("arrayforLinkedList", new Object[2]);
     sharedMap.put("arrayforArrayList", new Object[2]);
   }
 
@@ -54,118 +51,6 @@ public class GenericList15TestApp extends GenericTransparentApp {
       synchronized (list) {
         boolean added = list.add("rollin in my 6-4");
         Assert.assertTrue(added);
-      }
-    }
-  }
-
-  void testLinkedListRemoveFirst(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertSingleElement(linkedList, "teck");
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("timmy");
-        linkedList.add("teck");
-      }
-
-      synchronized (linkedList) {
-        linkedList.removeFirst();
-      }
-    }
-  }
-
-  void testLinkedListRemoveLast(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertSingleElement(linkedList, "timmy");
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("timmy");
-        linkedList.add("teck");
-      }
-
-      synchronized (linkedList) {
-        linkedList.removeLast();
-      }
-    }
-  }
-
-  void testLinkedListAddFirst(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { "first element", "second element" }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("second element");
-      }
-
-      synchronized (linkedList) {
-        linkedList.addFirst("first element");
-      }
-    }
-  }
-
-  void testLinkedListAddLast(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { "first element", "second element" }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("first element");
-      }
-
-      synchronized (linkedList) {
-        linkedList.addLast("second element");
-      }
-    }
-  }
-
-  void testLinkedListPoll(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { "second element" }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("first element");
-        linkedList.add("second element");
-      }
-
-      synchronized (linkedList) {
-        Object o = linkedList.poll();
-        Assert.assertEquals("first element", o);
-      }
-    }
-  }
-
-  void testLinkedListOffer(List list, boolean validate) {
-    if (!(list instanceof LinkedList)) { return; }
-
-    LinkedList linkedList = (LinkedList) list;
-
-    if (validate) {
-      assertListsEqual(Arrays.asList(new Object[] { "first element", "second element" }), list);
-    } else {
-      synchronized (linkedList) {
-        linkedList.add("first element");
-      }
-
-      synchronized (linkedList) {
-        linkedList.offer("second element");
       }
     }
   }
@@ -926,7 +811,6 @@ public class GenericList15TestApp extends GenericTransparentApp {
   }
 
   private Object[] getArray(List list) {
-    if (list instanceof LinkedList) { return (Object[]) sharedMap.get("arrayforLinkedList"); }
     if (list instanceof ArrayList) { return (Object[]) sharedMap.get("arrayforArrayList"); }
     return null;
   }

@@ -629,8 +629,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     getOrCreateSpec("java.util.LinkedHashSet", "com.tc.object.applicator.HashSetApplicator");
 
-    getOrCreateSpec("java.util.LinkedList", "com.tc.object.applicator.ListApplicator");
-
     getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
   }
 
