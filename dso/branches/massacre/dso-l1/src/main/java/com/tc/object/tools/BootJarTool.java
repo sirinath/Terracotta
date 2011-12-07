@@ -337,7 +337,6 @@ public class BootJarTool {
       addInstrumentedJavaUtilConcurrentLinkedBlockingQueue();
       addInstrumentedJavaUtilConcurrentHashMap();
       addInstrumentedJavaUtilConcurrentCyclicBarrier();
-      addInstrumentedJavaUtilConcurrentFutureTask();
     }
   }
 
@@ -1418,28 +1417,6 @@ public class BootJarTool {
       jData = doDSOTransform(spec.getClassName(), jData);
       loadClassIntoJar(spec.getClassName(), jData, true);
     }
-  }
-
-  private final void addInstrumentedJavaUtilConcurrentFutureTask() {
-
-    if (!Vm.isJDK15Compliant()) { return; }
-    final Map instrumentedContext = new HashMap();
-
-    TransparencyClassSpec spec = this.configHelper.getOrCreateSpec("java.util.concurrent.FutureTask");
-    spec.setHonorTransient(true);
-    spec.setCallConstructorOnLoad(true);
-    spec.markPreInstrumented();
-    changeClassName("java.util.concurrent.FutureTaskTC", "java.util.concurrent.FutureTaskTC",
-                    "java.util.concurrent.FutureTask", instrumentedContext, true);
-
-    this.configHelper.addWriteAutolock("* java.util.concurrent.FutureTask$Sync.*(..)");
-
-    spec = this.configHelper.getOrCreateSpec("java.util.concurrent.FutureTask$Sync");
-    spec.setHonorTransient(true);
-    spec.markPreInstrumented();
-    spec.addDistributedMethodCall("managedInnerCancel", "()V", true);
-    changeClassName("java.util.concurrent.FutureTaskTC$Sync", "java.util.concurrent.FutureTaskTC",
-                    "java.util.concurrent.FutureTask", instrumentedContext, true);
   }
 
   private final void addInstrumentedJavaUtilCollection() {
