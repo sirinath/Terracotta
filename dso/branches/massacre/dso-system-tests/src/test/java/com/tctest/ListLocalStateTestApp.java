@@ -13,11 +13,8 @@ import com.tc.util.Assert;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Stack;
-import java.util.Vector;
 
 /**
  * Test to make sure local object state is preserved when TC throws: UnlockedSharedObjectException ReadOnlyException
@@ -26,13 +23,14 @@ import java.util.Vector;
  * @author hhuynh
  */
 public class ListLocalStateTestApp extends GenericLocalStateTestApp {
-  private List<List> root        = new ArrayList<List>();
-  private Class[]    listClasses = new Class[] { ArrayList.class, Vector.class, LinkedList.class, Stack.class };
+  private final List<List> root        = new ArrayList<List>();
+  private final Class[]    listClasses = new Class[] { ArrayList.class };
 
   public ListLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
+  @Override
   protected void runTest() throws Throwable {
     initTest();
     for (LockMode lockMode : LockMode.values()) {
@@ -70,6 +68,7 @@ public class ListLocalStateTestApp extends GenericLocalStateTestApp {
     }
   }
 
+  @Override
   protected void validate(int before, int after, Object testTarget, LockMode lockMode, Class mutatorClass)
       throws Exception {
     switch (lockMode) {

@@ -17,7 +17,7 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
@@ -33,7 +33,7 @@ public class ReentrantLockTestApp extends AbstractTransparentApp {
   private static final int    NUM_OF_LOOPS       = 5;
 
   private final DataRoot      root               = new DataRoot();
-  private final List          queue              = new LinkedList();
+  private final List          queue              = new ArrayList();
   private final CyclicBarrier barrier2           = new CyclicBarrier(2);
   private final CyclicBarrier barrier3           = new CyclicBarrier(3);
   private final CyclicBarrier barrier;

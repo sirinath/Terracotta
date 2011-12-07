@@ -22,11 +22,9 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Vector;
 
 public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
 
@@ -60,8 +58,6 @@ public class IteratorsCreatedBeforeSharingTest extends TransparentTestBase {
 
       // lists
       unsharedCollections.add(create(ArrayList.class));
-      unsharedCollections.add(create(LinkedList.class));
-      unsharedCollections.add(create(Vector.class));
       if (Vm.isJDK15Compliant()) {
         unsharedCollections.add(create(Class.forName("java.util.concurrent.LinkedBlockingQueue")));
       }

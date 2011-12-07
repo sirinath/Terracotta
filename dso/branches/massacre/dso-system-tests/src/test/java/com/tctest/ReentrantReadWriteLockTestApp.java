@@ -42,7 +42,7 @@ public class ReentrantReadWriteLockTestApp extends AbstractTransparentApp {
   private final CyclicBarrier barrier, barrier2, barrier3, barrier4, barrier5;
   private final DataRoot      dataRoot          = new DataRoot();
 
-  private final List          queue             = new LinkedList();
+  private final List          queue             = new ArrayList();
   private final List          shareableLockList = new ArrayList();
   private final Random        random;
 
