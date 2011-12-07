@@ -362,9 +362,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
 
-    spec = getOrCreateSpec("java.util.LinkedHashMap", "com.tc.object.applicator.LinkedHashMapApplicator");
-    spec.setUseNonDefaultConstructor(true);
-
     spec = getOrCreateSpec("com.tcclient.util.MapEntrySetWrapper$EntryWrapper");
 
     spec = getOrCreateSpec("java.util.IdentityHashMap", "com.tc.object.applicator.HashMapApplicator");

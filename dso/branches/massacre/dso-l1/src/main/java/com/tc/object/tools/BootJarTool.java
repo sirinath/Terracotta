@@ -111,7 +111,6 @@ import com.tc.object.bytecode.JavaUtilConcurrentHashMapWriteThroughEntryAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter;
-import com.tc.object.bytecode.LinkedHashMapClassAdapter;
 import com.tc.object.bytecode.LogicalClassSerializationAdapter;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.Manager;
@@ -1467,14 +1466,6 @@ public class BootJarTool {
     loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
-  private final void addInstrumentedLinkedHashMap(final Map instrumentedContext) {
-    final String jMapClassNameDots = "java.util.LinkedHashMap";
-    final String tcMapClassNameDots = "java.util.LinkedHashMapTC";
-
-    mergeClass(tcMapClassNameDots, jMapClassNameDots, instrumentedContext, null,
-               new ClassAdapterFactory[] { LinkedHashMapClassAdapter.FACTORY });
-  }
-
   private void addInstrumentedReentrantReadWriteLock() {
     final String methodPrefix = "__RWL" + ByteCodeUtil.TC_METHOD_PREFIX;
 
@@ -1583,8 +1574,6 @@ public class BootJarTool {
     final Map instrumentedContext = new HashMap();
     mergeClass(HashMapClassAdapter.TC_MAP_CLASSNAME_DOTS, HashMapClassAdapter.J_MAP_CLASSNAME_DOTS,
                instrumentedContext, null, new ClassAdapterFactory[] { HashMapClassAdapter.FACTORY });
-
-    addInstrumentedLinkedHashMap(instrumentedContext);
   }
 
   private final void mergeClass(final String tcClassNameDots, final String jClassNameDots,

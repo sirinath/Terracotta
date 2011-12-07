@@ -56,7 +56,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals(12, maps.size());
+    Assert.assertEquals(8, maps.size());
 
     return maps.iterator();
   }
@@ -66,27 +66,19 @@ public class GenericMapTestApp extends GenericTransparentApp {
     List maps = new ArrayList();
 
     maps.add(new HashMap());
-    maps.add(new LinkedHashMap());
     maps.add(new THashMap());
     maps.add(new MyHashMap(11));
     maps.add(new MyHashMap(new HashMap()));
     maps.add(new MyHashMap2());
     maps.add(new MyHashMap3(0));
-    maps.add(new MyLinkedHashMap());
-    maps.add(new MyLinkedHashMap2());
-    maps.add(new MyLinkedHashMap3(true));
     maps.add(new MyTHashMap());
     maps.add(new ConcurrentHashMap<Object, Object>());
 
     sharedMap.put("maps", maps);
     nonSharedArrayMap.put("arrayforHashMap", new Object[4]);
     sharedMap.put("arrayforTHashMap", new Object[4]);
-    nonSharedArrayMap.put("arrayforLinkedHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap2", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyLinkedHashMap", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyLinkedHashMap2", new Object[4]);
-    nonSharedArrayMap.put("arrayforMyLinkedHashMap3", new Object[4]);
     sharedMap.put("arrayforMyTHashMap", new Object[4]);
     sharedMap.put("arrayforConcurrentHashMap", new Object[4]);
   }
@@ -145,9 +137,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       if (map instanceof MyHashMap) {
         Assert.assertEquals(E("timmy", v), ((MyHashMap) map).getKey());
         Assert.assertEquals("teck", ((MyHashMap) map).getValue());
-      } else if (map instanceof MyLinkedHashMap2) {
-        Assert.assertEquals(E("timmy", v), ((MyLinkedHashMap2) map).getKey());
-        Assert.assertEquals("teck", ((MyLinkedHashMap2) map).getValue());
       }
     } else {
       synchronized (map) {
@@ -1681,107 +1670,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     }
   }
 
-  void testLinkedHashMapAccessOrderGet(Map map, boolean validate, int v) {
-    if (!isAccessOrderedLinkedHashMap(map)) { return; }
-
-    if (validate) {
-      Map toBeExpected = new LinkedHashMap();
-      toBeExpected.put(E("First", v), "First Value");
-      toBeExpected.put(E("Third", v), "Third Value");
-      toBeExpected.put(E("Second", v), "Second Value"); // access order maps put recently accessed items at the end
-      assertMappings(toBeExpected, map);
-    } else {
-      Map toBeAdded = new LinkedHashMap();
-      toBeAdded.put(E("First", v), "First Value");
-      toBeAdded.put(E("Second", v), "Second Value");
-      toBeAdded.put(E("Third", v), "Third Value");
-      synchronized (map) {
-        map.putAll(toBeAdded);
-      }
-      synchronized (map) {
-        Assert.assertEquals("Second Value", map.get(E("Second", v)));
-      }
-    }
-  }
-
-  void testLinkedHashMapInsertionOrderPut(Map map, boolean validate, int v) {
-    if (!(map instanceof LinkedHashMap)) { return; }
-
-    // we only want insertion ordered maps in this test
-    if (isAccessOrderedLinkedHashMap(map)) { return; }
-
-    if (validate) {
-      Map toBeExpected = new LinkedHashMap();
-      toBeExpected.put(E("First", v), "First Value");
-      toBeExpected.put(E("Second", v), "New Second Value");
-      toBeExpected.put(E("Third", v), "Third Value");
-      assertMappings(toBeExpected, map);
-    } else {
-      Map toBeAdded = new LinkedHashMap();
-      toBeAdded.put(E("First", v), "First Value");
-      toBeAdded.put(E("Second", v), "Second Value");
-      toBeAdded.put(E("Third", v), "Third Value");
-      synchronized (map) {
-        map.putAll(toBeAdded);
-      }
-      synchronized (map) {
-        // replacing mapping should not affect order (for insertion order maps)
-        map.put(E("Second", v), "New Second Value");
-      }
-    }
-  }
-
-  void testLinkedHashMapInsertionOrderRemovePut(Map map, boolean validate, int v) {
-    if (!(map instanceof LinkedHashMap)) { return; }
-
-    // we only want insertion ordered maps in this test
-    if (isAccessOrderedLinkedHashMap(map)) { return; }
-
-    if (validate) {
-      Map toBeExpected = new LinkedHashMap();
-      toBeExpected.put(E("First", v), "First Value");
-      toBeExpected.put(E("Third", v), "Third Value");
-      toBeExpected.put(E("Second", v), "New Second Value");
-      assertMappings(toBeExpected, map);
-    } else {
-      Map toBeAdded = new LinkedHashMap();
-      toBeAdded.put(E("First", v), "First Value");
-      toBeAdded.put(E("Second", v), "Second Value");
-      toBeAdded.put(E("Third", v), "Third Value");
-      synchronized (map) {
-        map.putAll(toBeAdded);
-      }
-      synchronized (map) {
-        map.remove(E("Second", v));
-        map.put(E("Second", v), "New Second Value");
-      }
-    }
-  }
-
-  void testLinkedHashMapAccessOrderPut(Map map, boolean validate, int v) {
-    if (!isAccessOrderedLinkedHashMap(map)) { return; }
-
-    if (validate) {
-      Map toBeExpected = new LinkedHashMap();
-      toBeExpected.put(E("First", v), "First Value");
-      toBeExpected.put(E("Third", v), "Third Value");
-      toBeExpected.put(E("Second", v), "New Second Value"); // access order maps put recently accessed items at the end
-      assertMappings(toBeExpected, map);
-    } else {
-      Map toBeAdded = new LinkedHashMap();
-      toBeAdded.put(E("First", v), "First Value");
-      toBeAdded.put(E("Second", v), "Second Value");
-      toBeAdded.put(E("Third", v), "Third Value");
-      synchronized (map) {
-        map.putAll(toBeAdded);
-      }
-      synchronized (map) {
-        // puts count as access on access order linked hash maps
-        map.put(E("Second", v), "New Second Value");
-      }
-    }
-  }
-
   void testClearable(Map map, boolean validate, int v) {
     // The instance of check should be okay once CDV-1184 is fixed
     // if (!(map instanceof Clearable)) return;
@@ -1994,11 +1882,11 @@ public class GenericMapTestApp extends GenericTransparentApp {
   }
 
   private boolean canTestSharedArray(Map map) {
-    return !(map instanceof HashMap) && !(map instanceof LinkedHashMap);
+    return !(map instanceof HashMap);
   }
 
   private boolean canTestNonPortableObject(Map map) {
-    return ((map instanceof HashMap) || (map instanceof LinkedHashMap));
+    return (map instanceof HashMap);
   }
 
   private boolean canTestReadOnly(Map map) {
@@ -2010,9 +1898,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
    * LinkedHashMap.
    */
   private Object getMySubclassArray(Map map) {
-    if (map instanceof MyLinkedHashMap3) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap3"); }
-    if (map instanceof MyLinkedHashMap2) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap2"); }
-    if (map instanceof MyLinkedHashMap) { return nonSharedArrayMap.get("arrayforMyLinkedHashMap"); }
     if (map instanceof MyHashMap2) { return nonSharedArrayMap.get("arrayforMyHashMap2"); }
     if (map instanceof MyHashMap) { return nonSharedArrayMap.get("arrayforMyHashMap"); }
     if (map instanceof MyHashMap3) { return sharedMap.get("arrayforMyHashMap3"); }
@@ -2028,9 +1913,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
     Object o = getMySubclassArray(map);
     if (o != null) { return (Object[]) o; }
 
-    if (map instanceof LinkedHashMap) {
-      return (Object[]) nonSharedArrayMap.get("arrayforLinkedHashMap");
-    } else if (map instanceof HashMap) {
+    if (map instanceof HashMap) {
       return (Object[]) nonSharedArrayMap.get("arrayforHashMap");
     } else if (map instanceof THashMap) {
       return (Object[]) sharedMap.get("arrayforTHashMap");
@@ -2059,13 +1942,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
   void assertMappings(Map expect, Map actual) {
     Assert.assertEquals(actual.getClass(), expect.size(), actual.size());
 
-    Set expectEntries = expect.entrySet();
     Set actualEntries = actual.entrySet();
-    if (actual instanceof LinkedHashMap) {
-      for (Iterator iExpect = expectEntries.iterator(), iActual = actualEntries.iterator(); iExpect.hasNext();) {
-        Assert.assertEquals(actual.getClass(), iExpect.next(), iActual.next());
-      }
-    }
 
     for (Iterator i = actualEntries.iterator(); i.hasNext();) {
       Entry entry = (Entry) i.next();
@@ -2075,14 +1952,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
   void assertMappingsEqual(Object[] expect, Map map) {
     Assert.assertEquals(expect.length, map.size());
-
-    if (map instanceof LinkedHashMap) {
-      Set entries = map.entrySet();
-      int i = 0;
-      for (Iterator iActual = entries.iterator(); iActual.hasNext();) {
-        Assert.assertEquals(expect[i++], iActual.next());
-      }
-    }
 
     for (Object element : expect) {
       Entry entry = (Entry) element;
@@ -2340,42 +2209,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
       this.i = i;
     }
 
-  }
-
-  private static class MyLinkedHashMap extends LinkedHashMap {
-    public MyLinkedHashMap() {
-      super();
-    }
-  }
-
-  private static class MyLinkedHashMap2 extends MyLinkedHashMap {
-    private Object key;
-    private Object value;
-
-    public MyLinkedHashMap2() {
-      super();
-    }
-
-    @Override
-    public Object put(Object arg0, Object arg1) {
-      this.key = arg0;
-      this.value = arg1;
-      return super.put(arg0, arg1);
-    }
-
-    public Object getKey() {
-      return key;
-    }
-
-    public Object getValue() {
-      return value;
-    }
-  }
-
-  private static class MyLinkedHashMap3 extends LinkedHashMap {
-    public MyLinkedHashMap3(boolean accessOrder) {
-      super(10, 0.75f, accessOrder);
-    }
   }
 
   private static class MyTHashMap extends THashMap {
