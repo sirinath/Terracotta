@@ -37,9 +37,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.PARTIAL_MAP_TYPE:
             // Map type is tested in another test.
             break;
-          case ManagedObjectState.LINKED_HASHMAP_TYPE:
-            testLinkedHashMap();
-            break;
           case ManagedObjectState.ARRAY_TYPE:
             testArray();
             break;
@@ -144,22 +141,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.PHYSICAL_TYPE);
-  }
-
-  public void testLinkedHashMap() throws Exception {
-    final String className = "java.util.LinkedHashMap";
-    final String ACCESS_ORDER_FIELDNAME = "java.util.LinkedHashMap.accessOrder";
-
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(ACCESS_ORDER_FIELDNAME, Boolean.FALSE, false);
-
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2002), new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2004), new ObjectID(2005) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.LINKED_HASHMAP_TYPE);
   }
 
   public void testArray() throws Exception {
