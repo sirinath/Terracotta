@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.io.serializer;
 
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Random;
 
 public class TCObjectInputOutputStreamTest extends TCTestCase {
-  
+
   public TCObjectInputOutputStreamTest() {
     //
   }
@@ -122,25 +123,12 @@ public class TCObjectInputOutputStreamTest extends TCTestCase {
     l.add(new Boolean(true));
     l.add(this.getClass());
     l.add(new UTF8ByteDataHolder("Hello back"));
-    l.add(new ClassInstance(new UTF8ByteDataHolder(this.getClass().getName()) , new UTF8ByteDataHolder("saroloader")));
+    l.add(new ClassInstance(new UTF8ByteDataHolder(this.getClass().getName()), new UTF8ByteDataHolder("saroloader")));
     // Object o[] = new Object[] { new ObjectID(88), new ObjectID(77), new Integer(66), new Long(55) };
     // l.add(o);
-    addStackTraceElements(l);
     l.add(new BigInteger(128, new Random()));
     l.add(new BigDecimal(948754756.34365234d));
     return l;
-  }
-
-  private void addStackTraceElements(List l) {
-    StackTraceElement[] ste;
-    try {
-      throw new Exception();
-    } catch (Exception e) {
-      ste = e.getStackTrace();
-    }
-    for (int i = 0; i < ste.length; i++) {
-      l.add(ste[i]);
-    }
   }
 
   private static String createString(int length) {

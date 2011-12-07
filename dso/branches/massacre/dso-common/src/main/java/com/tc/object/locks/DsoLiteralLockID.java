@@ -21,23 +21,22 @@ import java.util.Currency;
 /**
  * Represents the a lock on a clustered literal object.
  * <p>
- * Literal locks in Terracotta are special as they locks on the value of the
- * literal object and not on its object identity - as literal objects have no
- * cluster wide object identity.
+ * Literal locks in Terracotta are special as they locks on the value of the literal object and not on its object
+ * identity - as literal objects have no cluster wide object identity.
  */
 public class DsoLiteralLockID implements LockID {
   private static final long serialVersionUID = 0x173295fec628dca3L;
 
-  private Object literal;
-  
+  private Object            literal;
+
   public DsoLiteralLockID() {
     // please tc serialization
   }
-  
+
   public DsoLiteralLockID(Manager mgr, Object literal) throws IllegalArgumentException {
     this.literal = translateLiteral(mgr, literal);
   }
-  
+
   public String asString() {
     return null;
   }
@@ -45,7 +44,7 @@ public class DsoLiteralLockID implements LockID {
   public LockIDType getLockType() {
     return LockIDType.DSO_LITERAL;
   }
-  
+
   public Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     LiteralValues type = LiteralValues.values()[serialInput.readByte()];
     switch (type) {
@@ -76,19 +75,15 @@ public class DsoLiteralLockID implements LockID {
       case STRING:
         throw new AssertionError("String literal types should be handled by StringLockID");
       case STACK_TRACE_ELEMENT:
-        String declaringClass = serialInput.readString();
-        String methodName = serialInput.readString();
-        String fileName = serialInput.readString();
-        int lineNumber = serialInput.readInt();
-        literal = new StackTraceElement(declaringClass, methodName, fileName, lineNumber);
-        return this;
+        throw new AssertionError();
       case JAVA_LANG_CLASSLOADER_HOLDER:
         literal = new ClassLoaderInstance(new UTF8ByteDataHolder(serialInput.readString()));
         return this;
       case ENUM_HOLDER:
         String loaderDefinition = serialInput.readString();
         String className = serialInput.readString();
-        ClassInstance classInstance = new ClassInstance(new UTF8ByteDataHolder(className), new UTF8ByteDataHolder(loaderDefinition));
+        ClassInstance classInstance = new ClassInstance(new UTF8ByteDataHolder(className),
+                                                        new UTF8ByteDataHolder(loaderDefinition));
         String enumName = serialInput.readString();
         literal = new EnumInstance(classInstance, new UTF8ByteDataHolder(enumName));
         return this;
@@ -148,16 +143,11 @@ public class DsoLiteralLockID implements LockID {
       case SHORT:
         serialOutput.writeShort(((Short) literal).shortValue());
         break;
-        
+
       case STRING:
         throw new AssertionError("String literal types should be handled by StringLockID");
       case STACK_TRACE_ELEMENT:
-        StackTraceElement ste = (StackTraceElement) literal;
-        serialOutput.writeString(ste.getClassName());
-        serialOutput.writeString(ste.getMethodName());
-        serialOutput.writeString(ste.getFileName());
-        serialOutput.writeInt(ste.getLineNumber());
-        break;
+        throw new AssertionError();
       case JAVA_LANG_CLASSLOADER_HOLDER:
         ClassLoaderInstance classLoaderInstance = (ClassLoaderInstance) literal;
         serialOutput.writeString(classLoaderInstance.getLoaderDef().asString());
@@ -179,7 +169,7 @@ public class DsoLiteralLockID implements LockID {
       case BIG_DECIMAL:
         serialOutput.writeString(((BigDecimal) literal).toString());
         break;
-        
+
       case STRING_BYTES:
       case JAVA_LANG_CLASS_HOLDER:
       case STRING_BYTES_COMPRESSED:
@@ -193,11 +183,13 @@ public class DsoLiteralLockID implements LockID {
         throw new AssertionError("Illegal type passed to DsoLiteralLockID constructor " + type);
     }
   }
-  
+
+  @Override
   public int hashCode() {
     return LiteralValues.calculateDsoHashCode(literal);
   }
-  
+
+  @Override
   public boolean equals(Object o) {
     if (o == this) {
       return true;
@@ -207,7 +199,7 @@ public class DsoLiteralLockID implements LockID {
       return false;
     }
   }
-  
+
   public int compareTo(Object o) {
     throw new ClassCastException("DsoLiteralLockID instances can't be compared");
   }
@@ -237,9 +229,10 @@ public class DsoLiteralLockID implements LockID {
       default:
         return literal;
     }
-  }  
-  
-  private static LoaderDescription getLoaderDescription(Manager mgr, ClassLoader loader) throws IllegalArgumentException {
+  }
+
+  private static LoaderDescription getLoaderDescription(Manager mgr, ClassLoader loader)
+      throws IllegalArgumentException {
     try {
       return mgr.getClassProvider().getLoaderDescriptionFor(loader);
     } catch (RuntimeException e) {
