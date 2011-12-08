@@ -19,7 +19,7 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public class NullLiteralReferencesTest extends TransparentTestBase {
@@ -41,7 +41,7 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
   public static class NullLiteralReferencesTestApp extends AbstractErrorCatchingTransparentApp {
 
     private final CyclicBarrier barrier;
-    private final Map           root = new LinkedHashMap();
+    private final Map           root = new HashMap();
 
     public NullLiteralReferencesTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
       super(appId, cfg, listenerProvider);
@@ -114,27 +114,26 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
       }
     }
 
-    Byte              byteRef;
-    Boolean           booleanRef;
-    Character         characterRef;
-    Double            doubleRef;
-    Float             floatRef;
-    Integer           integerRef;
-    Long              longRef;
-    Short             shortRef;
+    Byte      byteRef;
+    Boolean   booleanRef;
+    Character characterRef;
+    Double    doubleRef;
+    Float     floatRef;
+    Integer   integerRef;
+    Long      longRef;
+    Short     shortRef;
 
-    Class             clazz;
-    StackTraceElement stack;
-    String            str;
+    Class     clazz;
+    String    str;
 
-    byte              b = 1;
-    boolean           z = true;
-    char              c = 'e';
-    double            d = Math.PI;
-    float             f = "floater".length();
-    int               i = -9;
-    long              l = 2342342344324234L;
-    short             s = 3;
+    byte      b = 1;
+    boolean   z = true;
+    char      c = 'e';
+    double    d = Math.PI;
+    float     f = "floater".length();
+    int       i = -9;
+    long      l = 2342342344324234L;
+    short     s = 3;
 
     synchronized void setNonNull() {
       byteRef = Byte.valueOf((byte) 1);
@@ -147,7 +146,6 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
       shortRef = Short.valueOf((short) "steve".length());
 
       clazz = getClass();
-      stack = new Throwable().getStackTrace()[0];
       str = "timmy";
     }
 
@@ -162,7 +160,6 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
       shortRef = null;
 
       clazz = null;
-      stack = null;
       str = null;
     }
 
