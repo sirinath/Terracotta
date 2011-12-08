@@ -19,11 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
 
@@ -58,6 +56,7 @@ public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
 
   }
 
+  @Override
   protected void runTest() throws Throwable {
     barrier.barrier();
 
@@ -77,9 +76,7 @@ public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
     Map         map1      = new HashMap();
     Map         map2      = new IdentityHashMap();
 
-    List        list1     = new LinkedList();
-    List        list2     = new ArrayList();
-    List        list3     = new Vector();
+    List        list1     = new ArrayList();
 
     Set         set1      = new HashSet();
 
@@ -96,11 +93,7 @@ public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
       Assert.assertNull(array[2]);
 
       Assert.assertEquals(1, list1.size());
-      Assert.assertEquals(1, list2.size());
-      Assert.assertEquals(1, list3.size());
       Assert.assertTrue(list1.contains(null));
-      Assert.assertTrue(list2.contains(null));
-      Assert.assertTrue(list3.contains(null));
 
       Assert.assertEquals(2, map1.size());
       Assert.assertEquals(2, map2.size());
@@ -115,28 +108,28 @@ public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
 
     synchronized void mod() {
       modSets(new Set[] { set1 });
-      modLists(new List[] { list1, list2, list3 });
+      modLists(new List[] { list1 });
       modMaps(new Map[] { map1, map2 });
       reference = null;
       array[0] = null;
     }
 
     void modLists(List[] lists) {
-      for (int i = 0; i < lists.length; i++) {
-        lists[i].add(null);
+      for (List list : lists) {
+        list.add(null);
       }
     }
 
     void modSets(Set[] sets) {
-      for (int i = 0; i < sets.length; i++) {
-        sets[i].add(null);
+      for (Set set : sets) {
+        set.add(null);
       }
     }
 
     void modMaps(Map[] maps) {
-      for (int i = 0; i < maps.length; i++) {
-        maps[i].put(null, "value for null key");
-        maps[i].put("key" + count + " for null value", null);
+      for (Map map : maps) {
+        map.put(null, "value for null key");
+        map.put("key" + count + " for null value", null);
       }
       count++;
     }
