@@ -46,9 +46,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.LIST_TYPE:
             testList();
             break;
-          case ManagedObjectState.LINKED_HASHSET_TYPE:
-            testLinkedHashSet();
-            break;
           case ManagedObjectState.SET_TYPE:
             testSet();
             break;
@@ -187,18 +184,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.SET_TYPE);
-  }
-
-  public void testLinkedHashSet() throws Exception {
-    final String className = "java.util.LinkedHashSet";
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
-    cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.LINKED_HASHSET_TYPE);
   }
 
   public void testLinkedBlockingQueue() throws Exception {

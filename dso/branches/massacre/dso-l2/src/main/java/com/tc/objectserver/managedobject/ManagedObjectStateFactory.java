@@ -49,8 +49,6 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.MAP_TYPE));
     classNameToStateMap.put(gnu.trove.THashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put(java.util.HashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put(java.util.LinkedHashSet.class.getName(),
-                            Byte.valueOf(ManagedObjectState.LINKED_HASHSET_TYPE));
     classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(java.util.concurrent.LinkedBlockingQueue.class.getName(),
                             Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
@@ -143,8 +141,6 @@ public class ManagedObjectStateFactory {
         return new MapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.PARTIAL_MAP_TYPE:
         return new PartialMapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
-      case ManagedObjectState.LINKED_HASHSET_TYPE:
-        return new LinkedHashSetManagedObjectState(classID);
       case ManagedObjectState.SET_TYPE:
         return new SetManagedObjectState(classID, this.persistentCollectionFactory.createPersistentSet(oid));
       case ManagedObjectState.LIST_TYPE:
@@ -241,8 +237,6 @@ public class ManagedObjectStateFactory {
           return ConcurrentHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
-        case ManagedObjectState.LINKED_HASHSET_TYPE:
-          return LinkedHashSetManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
           return ConcurrentDistributedMapManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:

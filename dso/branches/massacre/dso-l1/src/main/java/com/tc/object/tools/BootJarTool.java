@@ -1429,9 +1429,6 @@ public class BootJarTool {
     spec.addSetIteratorWrapperSpec(SerializationUtil.ITERATOR_SIGNATURE);
     addSerializationInstrumentedCode(spec);
 
-    spec = this.configHelper.getOrCreateSpec("java.util.LinkedHashSet", "com.tc.object.applicator.HashSetApplicator");
-    addSerializationInstrumentedCode(spec);
-
     spec = this.configHelper.getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
     spec.addAlwaysLogSpec(SerializationUtil.ADD_AT_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.ADD_SIGNATURE);
