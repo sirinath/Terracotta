@@ -589,8 +589,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     // The details of the instrumentation spec is specified in BootJarTool.
     getOrCreateSpec("java.util.HashSet", "com.tc.object.applicator.HashSetApplicator");
 
-    getOrCreateSpec("java.util.LinkedHashSet", "com.tc.object.applicator.HashSetApplicator");
-
     getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
   }
 
