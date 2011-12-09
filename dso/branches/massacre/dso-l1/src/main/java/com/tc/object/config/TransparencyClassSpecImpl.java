@@ -327,11 +327,11 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addKeySetWrapperSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.KEY_SET_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addValuesWrapperSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.VALUES_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addHashMapPutLogSpec(final String name) {
@@ -343,11 +343,11 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addTHashMapPutLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.THASHMAP_PUT_LOG));
+    throw new AssertionError();
   }
 
   public void addTObjectHashRemoveAtLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.TOBJECTHASH_REMOVE_AT_LOG));
+    throw new AssertionError();
   }
 
   public void addHashtableClearLogSpec(final String name) {

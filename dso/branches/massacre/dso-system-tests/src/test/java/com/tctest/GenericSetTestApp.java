@@ -11,8 +11,6 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 
-import gnu.trove.THashSet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -40,16 +38,12 @@ public class GenericSetTestApp extends GenericTransparentApp {
   protected void setupTestObject(String testName) {
     List sets = new ArrayList();
     sets.add(new HashSet());
-    sets.add(new THashSet());
     sets.add(new MyHashSet());
-    sets.add(new MyTHashSet());
     // sets.add(new SubclassOfAbstractLogicalSubclass());
 
     sharedMap.put("sets", sets);
     sharedMap.put("arrayforHashSet", new Object[2]);
-    sharedMap.put("arrayforTHashSet", new Object[2]);
     sharedMap.put("arrayforMyHashSet", new Object[2]);
-    sharedMap.put("arrayforMyTHashSet", new Object[2]);
   }
 
   // This method is kind of like a macro, it returns an element (E == element) to be used
@@ -485,7 +479,6 @@ public class GenericSetTestApp extends GenericTransparentApp {
 
   private Object getMySubclassArray(Set set) {
     if (set instanceof MyHashSet) { return sharedMap.get("arrayforMyHashSet"); }
-    if (set instanceof MyTHashSet) { return sharedMap.get("arrayforMyTHashSet"); }
     return null;
   }
 
@@ -494,7 +487,6 @@ public class GenericSetTestApp extends GenericTransparentApp {
     if (o != null) { return (Object[]) o; }
 
     if (set instanceof HashSet) { return (Object[]) sharedMap.get("arrayforHashSet"); }
-    if (set instanceof THashSet) { return (Object[]) sharedMap.get("arrayforTHashSet"); }
     return null;
   }
 
@@ -543,12 +535,6 @@ public class GenericSetTestApp extends GenericTransparentApp {
 
   private static class MyHashSet extends HashSet {
     public MyHashSet() {
-      super();
-    }
-  }
-
-  private static class MyTHashSet extends THashSet {
-    public MyTHashSet() {
       super();
     }
   }

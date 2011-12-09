@@ -11,8 +11,6 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 
-import gnu.trove.THashMap;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,7 +28,7 @@ import java.util.Set;
  */
 public class MapLocalStateTestApp extends GenericLocalStateTestApp {
   private final List<Map> root       = new ArrayList<Map>();
-  private final Class[]   mapClasses = new Class[] { THashMap.class, HashMap.class };
+  private final Class[]   mapClasses = new Class[] { HashMap.class };
 
   public MapLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);

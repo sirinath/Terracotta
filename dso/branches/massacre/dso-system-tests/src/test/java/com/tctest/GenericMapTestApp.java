@@ -17,13 +17,8 @@ import com.tc.simulator.app.ErrorContext;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 
-import gnu.trove.THashMap;
-import gnu.trove.TObjectFunction;
-import gnu.trove.TObjectHash;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,7 +51,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     // This is just to make sure all the expected maps are here.
     // As new map classes get added to this test, you'll have to adjust this number obviously
-    Assert.assertEquals(8, maps.size());
+    Assert.assertEquals(6, maps.size());
 
     return maps.iterator();
   }
@@ -66,20 +61,16 @@ public class GenericMapTestApp extends GenericTransparentApp {
     List maps = new ArrayList();
 
     maps.add(new HashMap());
-    maps.add(new THashMap());
     maps.add(new MyHashMap(11));
     maps.add(new MyHashMap(new HashMap()));
     maps.add(new MyHashMap2());
     maps.add(new MyHashMap3(0));
-    maps.add(new MyTHashMap());
     maps.add(new ConcurrentHashMap<Object, Object>());
 
     sharedMap.put("maps", maps);
     nonSharedArrayMap.put("arrayforHashMap", new Object[4]);
-    sharedMap.put("arrayforTHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap", new Object[4]);
     nonSharedArrayMap.put("arrayforMyHashMap2", new Object[4]);
-    sharedMap.put("arrayforMyTHashMap", new Object[4]);
     sharedMap.put("arrayforConcurrentHashMap", new Object[4]);
   }
 
@@ -222,7 +213,7 @@ public class GenericMapTestApp extends GenericTransparentApp {
       Assert.assertEquals(1, map.keySet().size());
       Key retainedKey = (Key) map.keySet().iterator().next();
 
-      String expect = (map instanceof THashMap) ? "id2" : "id1";
+      String expect = "id1";
       Assert.assertEquals(expect, retainedKey.id);
     } else {
       synchronized (map) {
@@ -439,13 +430,8 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
   void testValuesDuplicateRemove(Map map, boolean validate, int v) {
     if (validate) {
-      if (map instanceof THashMap) {
-        // values().remove(Object) on THashMap will remove all mappings for the given value, not just the first
-        assertEmptyMap(map);
-      } else {
-        Object expect = sharedMap.get("expect" + map.getClass().getName());
-        assertSingleMapping(map, expect, E("value", v));
-      }
+      Object expect = sharedMap.get("expect" + map.getClass().getName());
+      assertSingleMapping(map, expect, E("value", v));
     } else {
       synchronized (map) {
         map.put(E("key1", v), E("value", v));
@@ -939,7 +925,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   void testEntrySetToArray3(Map map, boolean validate, int v) {
     // CDV-1130
     if (map instanceof ConcurrentHashMap) return;
-    if (map instanceof THashMap) return;
 
     if (validate) {
       synchronized (map) {
@@ -990,9 +975,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
   }
 
   void testKeySetToArray2(Map map, boolean validate, int v) {
-    // CDV-911
-    if (THashMap.class.isAssignableFrom(map.getClass())) return;
-
     Object[] array = getArray(map);
 
     if (validate) {
@@ -1595,58 +1577,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     }
   }
 
-  // THashMap specific testing methods.
-  void testTHashMapRemoveAt(Map map, boolean validate, int v) throws Exception {
-    if (!(map instanceof THashMap)) { return; }
-
-    Map toAdd = new HashMap();
-    addMappings(toAdd, 2, v);
-    if (validate) {
-      assertMappings(toAdd, map);
-    } else {
-      synchronized (map) {
-        map.putAll(toAdd);
-        map.put(E("key2", v), "value2");
-      }
-      Class mapClass = TObjectHash.class;
-      Class[] parameterType = new Class[1];
-
-      parameterType[0] = Object.class;
-      Method m = mapClass.getDeclaredMethod("index", parameterType);
-      m.setAccessible(true);
-      Object indexObj = m.invoke(map, new Object[] { E("key2", v) });
-
-      synchronized (map) {
-        parameterType[0] = Integer.TYPE;
-        m = mapClass.getDeclaredMethod("removeAt", parameterType);
-        m.setAccessible(true); // suppressing java access checking since removeRange is
-        // a protected method.
-
-        m.invoke(map, new Object[] { indexObj });
-      }
-
-    }
-  }
-
-  void testTHashMapTransformValues(Map map, boolean validate, int v) {
-    if (!(map instanceof THashMap)) { return; }
-    THashMap tMap = (THashMap) map;
-    if (validate) {
-      for (int i = 0; i < 10; i++) {
-        Assert.assertEquals(Integer.valueOf(i + 1), tMap.get(String.valueOf(i)));
-      }
-    } else {
-      synchronized (tMap) {
-        for (int i = 0; i < 10; i++) {
-          tMap.put(String.valueOf(i), Integer.valueOf(i));
-        }
-      }
-      synchronized (tMap) {
-        tMap.transformValues(new MyObjectFunction());
-      }
-    }
-  }
-
   void testPutNonPortableObject(Map map, boolean validate, int v) {
     if (!canTestNonPortableObject(map)) { return; }
 
@@ -1901,7 +1831,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     if (map instanceof MyHashMap2) { return nonSharedArrayMap.get("arrayforMyHashMap2"); }
     if (map instanceof MyHashMap) { return nonSharedArrayMap.get("arrayforMyHashMap"); }
     if (map instanceof MyHashMap3) { return sharedMap.get("arrayforMyHashMap3"); }
-    if (map instanceof MyTHashMap) { return sharedMap.get("arrayforMyTHashMap"); }
     return null;
   }
 
@@ -1915,8 +1844,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
 
     if (map instanceof HashMap) {
       return (Object[]) nonSharedArrayMap.get("arrayforHashMap");
-    } else if (map instanceof THashMap) {
-      return (Object[]) sharedMap.get("arrayforTHashMap");
     } else if (isCHM(map)) { return (Object[]) sharedMap.get("arrayforConcurrentHashMap"); }
 
     return null;
@@ -2207,20 +2134,6 @@ public class GenericMapTestApp extends GenericTransparentApp {
     public MyHashMap3(int i) {
       super();
       this.i = i;
-    }
-
-  }
-
-  private static class MyTHashMap extends THashMap {
-    public MyTHashMap() {
-      super();
-    }
-  }
-
-  private static class MyObjectFunction implements TObjectFunction {
-
-    public Object execute(Object value) {
-      return Integer.valueOf(((Integer) value).intValue() + 1);
     }
 
   }

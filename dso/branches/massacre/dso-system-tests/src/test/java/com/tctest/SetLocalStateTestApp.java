@@ -11,8 +11,6 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 
-import gnu.trove.THashSet;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,7 +25,7 @@ import java.util.Set;
  */
 public class SetLocalStateTestApp extends GenericLocalStateTestApp {
   private final List<Set> root       = new ArrayList<Set>();
-  private final Class[]   setClasses = new Class[] { HashSet.class, THashSet.class };
+  private final Class[]   setClasses = new Class[] { HashSet.class };
 
   public SetLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
