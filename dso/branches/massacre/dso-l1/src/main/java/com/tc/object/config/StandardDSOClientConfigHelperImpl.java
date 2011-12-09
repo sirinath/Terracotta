@@ -240,9 +240,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private void doLegacyDefaultModuleConfig() {
-    new ExcludesConfiguration(this).apply();
     new Jdk15PreInstrumentedConfiguration(this).apply();
-    new StandardConfiguration(this).apply();
   }
 
   public String rawConfigText() {
