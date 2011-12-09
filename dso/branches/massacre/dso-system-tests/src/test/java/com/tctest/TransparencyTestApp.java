@@ -15,18 +15,11 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -52,7 +45,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
 
     TransparencyClassSpec appSpec = config.getOrCreateSpec("com.tctest.TransparencyTestApp");
     appSpec.addRoot("myRoot", "rootBabyRoot");
-    appSpec.addRoot("vector", "vector");
     appSpec.addRoot("out", "out");
 
     TransparencyClassSpec spec = config.getOrCreateSpec("com.tctest.TransparencyTestApp$TestObj");
@@ -168,7 +160,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
       fullMap.put("1", new TestObj(new TestObj(null)));
       fullMap.put(new TestObj(new TestObj(null)), new TestObj(new TestObj(null)));
       fullMap.put("3", "4");
-      fullMap.put("5", Collections.EMPTY_LIST);
       myRoot.put("testMapWithstuff", fullMap);
       System.out.println("Entering test2 put");
     }
@@ -248,29 +239,18 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     }
 
     obj.namedSubclass = new NamedSubclass();
-    obj.setSyncMap(Collections.synchronizedMap(new HashMap()));
-    obj.setSyncSet(Collections.synchronizedSet(new HashSet()));
-    obj.setSyncList(Collections.synchronizedList(new ArrayList()));
-    obj.setSyncCollection(Collections.synchronizedCollection(new ArrayList()));
 
     System.setProperty("steve", "prop1");
     obj.setClassObject(Object.class);
-    obj.setSqlDate(new java.sql.Date(10));
     obj.setTransientObject(new HashMap());
     obj.setTransientPrimitive(101L);
     obj.setObjectArray(new Object[5]);
-    obj.setObjectArray(1, new File("hello"));
+    obj.setObjectArray(1, obj);
     obj.setObjectArray(2, Character.valueOf('b'));
-
-    Date[] dates = new Date[2];
-    obj.setFile(new File("yellow"));
-    obj.setDates(dates);
-    obj.setDate(0, new Date());
 
     obj.setCharacters(new Character[2]);
     obj.setCharacter(0, Character.valueOf('c'));
 
-    obj.setDate(new Date());
     obj.setLiteralObject(Long.valueOf(0));
     obj.setBooleanObject(Boolean.valueOf(true));
     obj.setBooleanValue(true);
@@ -322,23 +302,14 @@ public class TransparencyTestApp extends AbstractTransparentApp {
   private TestObj initialize2(TestObj obj) {
     System.setProperty("steve", "prop2");
 
-    obj.getSyncMap().put("Hello", "Steve");
-    obj.getSyncList().add("Hello");
-    obj.getSyncSet().add("Hello");
-    obj.getSyncCollection().add("Hello");
-
     obj.setClassObject(Integer.class);
-    obj.setSqlDate(new java.sql.Date(11));
     obj.setTransientObject(new Date());
     obj.setTransientPrimitive(1011L);
 
-    obj.setObjectArray(2, new File("hello"));
+    obj.setObjectArray(2, obj);
     obj.setObjectArray(1, Character.valueOf('b'));
 
-    obj.setFile(new File("yellow"));
-    obj.setDate(1, new Date());
     obj.setCharacter(1, Character.valueOf('d'));
-    obj.setDate(new Date());
     obj.setLiteralObject("Steve");
     obj.setBooleanObject(Boolean.valueOf(false));
     obj.setBooleanValue(false);
@@ -384,29 +355,16 @@ public class TransparencyTestApp extends AbstractTransparentApp {
   }
 
   private void verifyFull2(TestObj obj) {
-
-    Assert.eval(obj.getSyncMap().containsKey("Hello"));
-    Assert.eval(obj.getSyncMap().get("Hello").equals("Steve"));
-
-    Assert.eval(obj.getSyncSet().contains("Hello"));
-    Assert.eval(obj.getSyncList().contains("Hello"));
-    Assert.eval(obj.getSyncCollection().contains("Hello"));
-
-    Assert.eval(obj.getSqlDate().getTime() == 11);
     Assert.eval(Integer.class.equals(obj.getClassObject()));
     Assert.eval(obj.getTransientObject() == null);
     Assert.eval(obj.getTransientPrimitive() == 0);
-    Assert.eval(obj.getObjectArray(2).equals(new File("hello")));
+    Assert.eval(obj.getObjectArray(2).equals(obj));
     Assert.eval(obj.getObjectArray(1).equals(Character.valueOf('b')));
 
-    Assert.eval(obj.getFile().equals(new File("yellow")));
     Assert.eval(System.getProperty("steve").equals("prop2"));
     Assert.eval(obj.getCharacter(0).equals(Character.valueOf('c')));
     Assert.eval(obj.getCharacter(1).equals(Character.valueOf('d')));
 
-    Assert.eval(obj.getDate() != null);
-    Assert.eval(obj.getDate(0) != null);
-    Assert.eval(obj.getDate(1) != null);
     Assert.eval(obj.getLiteralObject().equals("Steve"));
     Assert.eval(obj.getBooleanObject().equals(Boolean.valueOf(false)));
     Assert.eval(obj.getBooleanValue() == false);
@@ -455,26 +413,15 @@ public class TransparencyTestApp extends AbstractTransparentApp {
   }
 
   private void verifyFull(TestObj obj) {
-
-    Assert.eval(obj.getSyncMap() != null);
-    Assert.eval(obj.getSyncSet() != null);
-    Assert.eval(obj.getSyncCollection() != null);
-    Assert.eval(obj.getSyncList() != null);
-
     Assert.eval(obj.getTransientObject() == null);
     Assert.eval(Object.class.equals(obj.getClassObject()));
-    Assert.eval(obj.getSqlDate().getTime() == 10);
     System.out.println("Got:" + obj.getTransientPrimitive());
     Assert.eval(obj.getTransientPrimitive() == 0);
-    Assert.eval(obj.getObjectArray(1).equals(new File("hello")));
+    Assert.eval(obj.getObjectArray(1).equals(obj));
     Assert.eval(obj.getObjectArray(2).equals(Character.valueOf('b')));
-    Assert.eval(obj.getFile().equals(new File("yellow")));
     Assert.eval(System.getProperty("steve").equals("prop1"));
     Assert.eval(obj.getCharacter(0).equals(Character.valueOf('c')));
     Assert.eval(obj.getCharacter(1) == null);
-    Assert.eval(obj.getDate() != null);
-    Assert.eval(obj.getDate(0) != null);
-    Assert.eval(obj.getDate(1) == null);
     Assert.eval(obj.getLiteralObject().equals(Long.valueOf(0)));
     Assert.eval(obj.getBooleanObject().equals(Boolean.valueOf(true)));
     Assert.eval(obj.getBooleanValue() == true);
@@ -549,7 +496,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
                                                     private Object o;
 
                                                     public void run() {
-                                                      System.out.println("syncMap" + syncMap);
                                                       System.out.println("o: " + o);
                                                     }
                                                   };
@@ -566,19 +512,11 @@ public class TransparencyTestApp extends AbstractTransparentApp {
       return this.namedSubclass;
     }
 
-    private Map           syncMap;
-    private Collection    syncCollection;
-    private List          syncList;
-    private Set           syncSet;
-
     private Object        transientObject;
     private long          transientPrimitive;
 
     private Class         classObject;
-    private java.sql.Date sqlDate;
     private final TestObj obj;
-    private File          file;
-    private Date          dateObject;
     private String        stringValue;
     private Integer       integerObject;
     private int           integerValue;
@@ -607,7 +545,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     private byte[]        bytes;
     private float[]       floats;
     private char[]        chars;
-    private Date[]        dates;
     private Character[]   charObjects;
     private Object        literalObject;
     private Object[]      objectArray;
@@ -617,38 +554,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
 
     public TestObj(TestObj obj) {
       this.obj = obj;
-    }
-
-    public void setSyncMap(Map map) {
-      this.syncMap = map;
-    }
-
-    public void setSyncSet(Set set) {
-      this.syncSet = set;
-    }
-
-    public void setSyncList(List list) {
-      this.syncList = list;
-    }
-
-    public void setSyncCollection(Collection collection) {
-      this.syncCollection = collection;
-    }
-
-    public Map getSyncMap() {
-      return this.syncMap;
-    }
-
-    public Set getSyncSet() {
-      return this.syncSet;
-    }
-
-    public Collection getSyncCollection() {
-      return this.syncCollection;
-    }
-
-    public List getSyncList() {
-      return this.syncList;
     }
 
     public void setLiteralObject(Object o) {
@@ -671,14 +576,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
      */
     public Boolean getBooleanObject() {
       return booleanObject;
-    }
-
-    public java.sql.Date getSqlDate() {
-      return sqlDate;
-    }
-
-    public void setSqlDate(java.sql.Date sqlDate) {
-      this.sqlDate = sqlDate;
     }
 
     /**
@@ -721,10 +618,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
      */
     public byte getByteValue() {
       return byteValue;
-    }
-
-    public void setDate(int index, Date value) {
-      dates[index] = value;
     }
 
     /**
@@ -967,14 +860,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
       ints[index] = value;
     }
 
-    public void setDates(Date[] dates) {
-      this.dates = dates;
-    }
-
-    public Date getDate(int index) {
-      return dates[index];
-    }
-
     public double getDouble(int index) {
       return doubles[index];
     }
@@ -1005,14 +890,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
 
     public void setByte(int index, byte value) {
       bytes[index] = value;
-    }
-
-    public void setDate(Date date) {
-      this.dateObject = date;
-    }
-
-    public Date getDate() {
-      return dateObject;
     }
 
     public float getFloat(int index) {
@@ -1109,14 +986,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
 
     public TestObj getTwoDobject(int i1, int i2) {
       return twoDobjects[i1][i2];
-    }
-
-    public File getFile() {
-      return this.file;
-    }
-
-    public void setFile(File file) {
-      this.file = file;
     }
 
     public Object getObjectArray(int index) {
