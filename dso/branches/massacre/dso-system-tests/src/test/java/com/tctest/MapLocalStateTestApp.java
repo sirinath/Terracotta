@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public class MapLocalStateTestApp extends GenericLocalStateTestApp {
   private final List<Map> root       = new ArrayList<Map>();
-  private final Class[]   mapClasses = new Class[] { THashMap.class, LinkedHashMap.class, HashMap.class };
+  private final Class[]   mapClasses = new Class[] { THashMap.class, HashMap.class };
 
   public MapLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
