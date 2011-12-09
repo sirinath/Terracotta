@@ -369,9 +369,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec.addAlwaysLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
     spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
 
-    spec = getOrCreateSpec("java.util.BitSet");
-    spec.setHonorTransient(false);
-
     addJavaUtilCollectionPreInstrumentedSpec();
 
     spec = getOrCreateSpec("com.tcclient.util.SortedViewSetWrapper");
