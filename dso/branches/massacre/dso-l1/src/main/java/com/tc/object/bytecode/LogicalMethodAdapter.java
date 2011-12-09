@@ -77,9 +77,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
       case MethodSpec.HASHTABLE_REMOVE_LOG:
         createHashMapRemoveWrapperMethod(classVisitor, false);
         break;
-      case MethodSpec.TOBJECTHASH_REMOVE_AT_LOG:
-        createTObjectHashRemoveAtWrapperMethod(classVisitor);
-        break;
       case MethodSpec.HASHMAP_PUT_LOG:
         createHashPutWrapperMethod(classVisitor, true);
         break;
@@ -88,9 +85,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
         break;
       case MethodSpec.HASHTABLE_CLEAR_LOG:
         createAlwaysLogWrapperMethod(classVisitor, false);
-        break;
-      case MethodSpec.THASHMAP_PUT_LOG:
-        createTHashMapPutWrapperMethod(classVisitor);
         break;
       case MethodSpec.IF_TRUE_LOG:
         createIfTrueLogWrapperMethod(classVisitor);
@@ -101,12 +95,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
       case MethodSpec.ENTRY_SET_WRAPPER_LOG:
         createEntrySetWrapper(classVisitor);
         break;
-      case MethodSpec.KEY_SET_WRAPPER_LOG:
-        createKeySetWrapper(classVisitor);
-        break;
-      case MethodSpec.VALUES_WRAPPER_LOG:
-        createValuesWrapper(classVisitor);
-        break;
       case MethodSpec.SORTED_SET_VIEW_WRAPPER_LOG:
         createSortedViewSetWrapper(classVisitor);
         break;
@@ -114,40 +102,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
         throw new AssertionError("illegal instrumentationType:" + instrumentationType);
     }
 
-  }
-
-  private void createTObjectHashRemoveAtWrapperMethod(ClassVisitor classVisitor) {
-    MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
-    addCheckWriteAccessInstrumentedCode(mv, true);
-    mv.visitInsn(ACONST_NULL);
-    mv.visitVarInsn(ASTORE, 2);
-    ByteCodeUtil.pushThis(mv);
-    mv.visitFieldInsn(GETFIELD, ownerSlashes, "_set", "[Ljava/lang/Object;");
-    mv.visitVarInsn(ILOAD, 1);
-    mv.visitInsn(AALOAD);
-    mv.visitVarInsn(ASTORE, 2);
-    ByteCodeUtil.pushThis(mv);
-    Type[] params = Type.getArgumentTypes(description);
-    for (int i = 0; i < params.length; i++) {
-      mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
-    }
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, getNewName(), description);
-
-    ByteCodeUtil.pushThis(mv);
-
-    mv.visitLdcInsn(methodName + description);
-    mv.visitLdcInsn(Integer.valueOf(1));
-    mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-    mv.visitInsn(DUP);
-    mv.visitLdcInsn(Integer.valueOf(0));
-    mv.visitVarInsn(ALOAD, 2);
-    mv.visitInsn(AASTORE);
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
-
-    mv.visitInsn(RETURN);
-    mv.visitMaxs(0, 0);
-    mv.visitEnd();
   }
 
   private void createSortedViewSetWrapper(ClassVisitor classVisitor) {
@@ -211,100 +165,6 @@ public class LogicalMethodAdapter implements MethodAdapter, Opcodes {
     mv.visitLabel(l1);
     mv.visitLocalVariable("this", "Ljava/util/Map;", null, l0, l1, 0);
     mv.visitMaxs(5, 1);
-    mv.visitEnd();
-  }
-
-  private void createKeySetWrapper(ClassVisitor classVisitor) {
-    MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
-    Label l0 = new Label();
-    mv.visitLabel(l0);
-    mv.visitTypeInsn(NEW, "com/tc/util/THashMapCollectionWrapper");
-    mv.visitInsn(DUP);
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitInsn(DUP);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, getNewName(), "()Ljava/util/Set;");
-    mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/THashMapCollectionWrapper", "<init>",
-                       "(Ljava/util/Map;Ljava/util/Collection;)V");
-    mv.visitInsn(ARETURN);
-    Label l1 = new Label();
-    mv.visitLabel(l1);
-    mv.visitLocalVariable("this", "Ljava/util/Map;", null, l0, l1, 0);
-    mv.visitMaxs(5, 1);
-    mv.visitEnd();
-  }
-
-  private void createValuesWrapper(ClassVisitor classVisitor) {
-    MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
-    Label l0 = new Label();
-    mv.visitLabel(l0);
-    mv.visitTypeInsn(NEW, "com/tc/util/THashMapCollectionWrapper");
-    mv.visitInsn(DUP);
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitInsn(DUP);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, getNewName(), "()Ljava/util/Collection;");
-    mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/THashMapCollectionWrapper", "<init>",
-                       "(Ljava/util/Map;Ljava/util/Collection;)V");
-    mv.visitInsn(ARETURN);
-    Label l1 = new Label();
-    mv.visitLabel(l1);
-    mv.visitLocalVariable("this", "Ljava/util/Map;", null, l0, l1, 0);
-    mv.visitMaxs(5, 1);
-    mv.visitEnd();
-  }
-
-  private void createTHashMapPutWrapperMethod(ClassVisitor classVisitor) {
-    MethodVisitor mv = classVisitor.visitMethod(wrapperAccess, methodName, description, signature, exceptions);
-    addCheckWriteAccessInstrumentedCode(mv, true);
-    mv.visitInsn(ACONST_NULL);
-    mv.visitVarInsn(ASTORE, 3);
-    ByteCodeUtil.pushThis(mv);
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, "containsKey", "(Ljava/lang/Object;)Z");
-    Label l2 = new Label();
-    mv.visitJumpInsn(IFEQ, l2);
-    ByteCodeUtil.pushThis(mv);
-    mv.visitFieldInsn(GETFIELD, ownerSlashes, "_set", "[Ljava/lang/Object;");
-    ByteCodeUtil.pushThis(mv);
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, "index", "(Ljava/lang/Object;)I");
-    mv.visitInsn(AALOAD);
-    mv.visitVarInsn(ASTORE, 3);
-    mv.visitLabel(l2);
-    ByteCodeUtil.pushThis(mv);
-    Type[] params = Type.getArgumentTypes(description);
-    for (int i = 0; i < params.length; i++) {
-      mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
-    }
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, getNewName(), description);
-
-    mv.visitVarInsn(ASTORE, 4);
-
-    ByteCodeUtil.pushThis(mv);
-    mv.visitLdcInsn(methodName + description);
-    mv.visitLdcInsn(Integer.valueOf(3));
-    mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-    mv.visitInsn(DUP);
-    int count = 0;
-    mv.visitLdcInsn(Integer.valueOf(count++));
-    mv.visitVarInsn(ALOAD, 3);
-    mv.visitInsn(AASTORE);
-
-    mv.visitInsn(DUP);
-    mv.visitLdcInsn(Integer.valueOf(count++));
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitInsn(AASTORE);
-
-    mv.visitInsn(DUP);
-    mv.visitLdcInsn(Integer.valueOf(count++));
-    mv.visitVarInsn(ALOAD, 2);
-    mv.visitInsn(AASTORE);
-
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
-
-    mv.visitVarInsn(ALOAD, 4);
-    mv.visitInsn(ARETURN);
-    mv.visitMaxs(0, 0);
     mv.visitEnd();
   }
 

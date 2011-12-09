@@ -46,7 +46,6 @@ import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
 import com.tc.object.bytecode.OverridesHashCodeAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
 import com.tc.object.bytecode.SessionConfiguration;
-import com.tc.object.bytecode.THashMapAdapter;
 import com.tc.object.bytecode.TransparencyClassAdapter;
 import com.tc.object.bytecode.aspectwerkz.ExpressionHelper;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
@@ -420,25 +419,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
 
     spec = getOrCreateSpec("java.lang.Object");
     spec.setCallConstructorOnLoad(true);
-
-    spec = getOrCreateSpec("gnu.trove.TObjectHash");
-    spec.addTObjectHashRemoveAtLogSpec(SerializationUtil.TROVE_REMOVE_AT_SIGNATURE);
-
-    spec = getOrCreateSpec("gnu.trove.THashMap", "com.tc.object.applicator.HashMapApplicator");
-    spec.addTHashMapPutLogSpec(SerializationUtil.PUT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addEntrySetWrapperSpec(SerializationUtil.ENTRY_SET_SIGNATURE);
-    spec.addKeySetWrapperSpec(SerializationUtil.KEY_SET_SIGNATURE);
-    spec.addValuesWrapperSpec(SerializationUtil.VALUES_SIGNATURE);
-    spec.addMethodAdapter(SerializationUtil.TRANSFORM_VALUES_SIGNATURE, new THashMapAdapter.TransformValuesAdapter());
-
-    spec = getOrCreateSpec("gnu.trove.THashSet", "com.tc.object.applicator.HashSetApplicator");
-    spec.addIfTrueLogSpec(SerializationUtil.ADD_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
-
-    spec = getOrCreateSpec("gnu.trove.ToObjectArrayProcedure");
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
 
     spec = getOrCreateSpec("javax.servlet.GenericServlet");
     spec.setHonorTransient(true);

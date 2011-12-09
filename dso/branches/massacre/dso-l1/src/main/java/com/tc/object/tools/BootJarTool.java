@@ -215,7 +215,6 @@ import com.tc.util.ListIteratorWrapper;
 import com.tc.util.SequenceID;
 import com.tc.util.SequenceID.SequenceIDComparator;
 import com.tc.util.SetIteratorWrapper;
-import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.UnknownJvmVersionException;
@@ -511,8 +510,6 @@ public class BootJarTool {
       loadTerracottaClass(TerracottaOperatorEvent.EventType.class.getName());
       loadTerracottaClass(TerracottaOperatorEvent.EventSubsystem.class.getName());
 
-      loadTerracottaClass(THashMapCollectionWrapper.class.getName());
-      loadTerracottaClass(THashMapCollectionWrapper.class.getName() + "$IteratorWrapper");
       loadTerracottaClass(ListIteratorWrapper.class.getName());
       loadTerracottaClass(MapEntrySetWrapper.class.getName());
       loadTerracottaClass(MapEntrySetWrapper.class.getName() + "$IteratorWrapper");
