@@ -16,7 +16,6 @@ import gnu.trove.THashSet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +27,7 @@ import java.util.Set;
  */
 public class SetLocalStateTestApp extends GenericLocalStateTestApp {
   private final List<Set> root       = new ArrayList<Set>();
-  private final Class[]   setClasses = new Class[] { HashSet.class, LinkedHashSet.class, THashSet.class };
+  private final Class[]   setClasses = new Class[] { HashSet.class, THashSet.class };
 
   public SetLocalStateTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
