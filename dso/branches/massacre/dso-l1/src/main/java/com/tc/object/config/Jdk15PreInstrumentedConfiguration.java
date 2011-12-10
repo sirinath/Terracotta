@@ -25,22 +25,6 @@ public class Jdk15PreInstrumentedConfiguration extends LegacyDefaultModuleBase {
       spec.setHonorJDKSubVersionSpecific(true);
       getOrCreateSpec("java.util.concurrent.TimeUnit");
 
-      spec = getOrCreateSpec("java.util.concurrent.atomic.AtomicBoolean");
-      spec.setHonorVolatile(true);
-
-      if (!Vm.isIBM()) {
-        spec = getOrCreateSpec("java.util.concurrent.atomic.AtomicInteger");
-        spec.setHonorVolatile(true);
-
-        if (!Vm.isAzul()) {
-          spec = getOrCreateSpec("java.util.concurrent.atomic.AtomicLong");
-          spec.setHonorVolatile(true);
-        }
-      }
-
-      spec = getOrCreateSpec("java.util.concurrent.atomic.AtomicReference");
-      spec.setHonorVolatile(true);
-
       // ---------------------------------------------------------------------
       // The following section of specs are specified in the BootJarTool
       // also.
