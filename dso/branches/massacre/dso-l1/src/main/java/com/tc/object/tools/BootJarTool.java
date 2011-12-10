@@ -161,7 +161,6 @@ import com.tc.object.loaders.LoaderDescription;
 import com.tc.object.loaders.NamedClassLoader;
 import com.tc.object.loaders.NamedLoaderAdapter;
 import com.tc.object.loaders.Namespace;
-import com.tc.object.loaders.StandardClassLoaderAdapter;
 import com.tc.object.locks.LongLockID;
 import com.tc.object.locks.Notify;
 import com.tc.object.locks.ThreadID;
@@ -622,7 +621,6 @@ public class BootJarTool {
 
       loadTerracottaClass(L1ServerMapLocalCacheStoreListener.class.getName());
 
-      addSunStandardLoaders();
       addInstrumentedClassLoader();
       addInstrumentedJavaLangString();
 
@@ -1084,36 +1082,6 @@ public class BootJarTool {
     cr.accept(cv, ClassReader.SKIP_FRAMES);
 
     loadClassIntoJar("java.lang.String", cw.toByteArray(), false);
-  }
-
-  private final void addSunStandardLoaders() {
-    byte[] orig = getSystemBytes("sun.misc.Launcher$AppClassLoader");
-
-    ClassReader cr = new ClassReader(orig);
-    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    ClassVisitor cv = new StandardClassLoaderAdapter(cw, Namespace.getStandardSystemLoaderName(),
-                                                     SYSTEM_CLASSLOADER_NAME_PROPERTY);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    final byte[] tcData = getSystemBytes("sun.misc.AppClassLoaderTC");
-    final ClassReader tcCR = new ClassReader(tcData);
-    final ClassNode tcCN = new ClassNode();
-    tcCR.accept(tcCN, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-    cr = new ClassReader(cw.toByteArray());
-    cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    cv = new FixedMergeTCToJavaClassAdapter(cw, null, "sun.misc.Launcher$AppClassLoader", "sun.misc.AppClassLoaderTC",
-                                            tcCN, new HashMap(), ByteCodeUtil.TC_METHOD_PREFIX, false);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    loadClassIntoJar("sun.misc.Launcher$AppClassLoader", cw.toByteArray(), false);
-
-    orig = getSystemBytes("sun.misc.Launcher$ExtClassLoader");
-    cr = new ClassReader(orig);
-    cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    cv = new StandardClassLoaderAdapter(cw, Namespace.getStandardExtensionsLoaderName(), EXT_CLASSLOADER_NAME_PROPERTY);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-    loadClassIntoJar("sun.misc.Launcher$ExtClassLoader", cw.toByteArray(), false);
   }
 
   /**

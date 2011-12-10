@@ -160,31 +160,9 @@ public class ManagerImpl implements ManagerInternal {
     }
     this.runtimeLogger = runtimeLogger == null ? new RuntimeLoggerImpl(config) : runtimeLogger;
     this.classProvider = classProvider == null ? new StandardClassProvider(this.runtimeLogger) : classProvider;
-    if (config.hasBootJar()) {
-      registerStandardLoaders();
-    }
+
     this.lockIdFactory = new LockIdFactory(this);
     this.clientMode = isExpressRejoinMode ? ClientMode.EXPRESS_REJOIN_MODE : ClientMode.DSO_MODE;
-  }
-
-  private void registerStandardLoaders() {
-    final ClassLoader loader1 = ClassLoader.getSystemClassLoader();
-    final ClassLoader loader2 = loader1.getParent();
-    final ClassLoader loader3 = loader2.getParent();
-
-    final ClassLoader sunSystemLoader;
-    final ClassLoader extSystemLoader;
-
-    if (loader3 != null) { // user is using alternate system loader
-      sunSystemLoader = loader2;
-      extSystemLoader = loader3;
-    } else {
-      sunSystemLoader = loader1;
-      extSystemLoader = loader2;
-    }
-
-    registerNamedLoader((NamedClassLoader) sunSystemLoader, null);
-    registerNamedLoader((NamedClassLoader) extSystemLoader, null);
   }
 
   public void init() {
