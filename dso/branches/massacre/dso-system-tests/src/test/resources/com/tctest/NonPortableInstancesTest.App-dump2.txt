@@ -24,7 +24,7 @@ Dumping object graph of non-portable instance of type com.tctest.NonPortableInst
                        [1] = (Object[], id 11)
                          [0] = (com.tctest.NonPortableInstancesTest$Ref, id 12)
                            Object ref = (ref id 6)
-!!               Thread t = (java.lang.Thread) (never portable)
+!!               Thread t = (java.lang.Thread)
          [entry 1]
            key = "array"
            value = (Object[][], id 13)
