@@ -90,8 +90,6 @@ import com.tc.object.applicator.ApplicatorObjectManager;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
 import com.tc.object.bytecode.AddInterfacesAdapter;
 import com.tc.object.bytecode.ArrayListAdapter;
-import com.tc.object.bytecode.AtomicIntegerAdapter;
-import com.tc.object.bytecode.AtomicLongAdapter;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ChangeClassNameHierarchyAdapter;
 import com.tc.object.bytecode.ChangeClassNameRootAdapter;
@@ -157,7 +155,6 @@ import com.tc.object.dna.api.PhysicalAction;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.ProxyInstance;
 import com.tc.object.field.TCField;
-import com.tc.object.ibm.SystemInitializationAdapter;
 import com.tc.object.loaders.BytecodeProvider;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.LoaderDescription;
@@ -636,8 +633,6 @@ public class BootJarTool {
       loadTerracottaClass(StatisticDataCSVParser.class.getName());
       loadTerracottaClass(LazilyInitializedSRA.class.getName());
 
-      addIBMSpecific();
-
       final Map internalSpecs = getTCSpecs();
       loadBootJarClasses(removeAlreadyLoaded(massageSpecs(internalSpecs, true)));
 
@@ -781,16 +776,6 @@ public class BootJarTool {
     this.bootJar.loadClassIntoJar("java.lang.Short", getSystemBytes("java.lang.Short"), false);
   }
 
-  private void addIBMSpecific() {
-    if (Vm.isIBM()) {
-      // Yes, the class name is misspelled
-      adaptAndLoad("com.ibm.misc.SystemIntialization", new SystemInitializationAdapter());
-
-      addIbmInstrumentedAtomicInteger();
-      addIbmInstrumentedAtomicLong();
-    }
-  }
-
   private final Map getAllSpecs() {
     final Map map = new HashMap();
     final TransparencyClassSpec[] allSpecs = this.configHelper.getAllSpecs();
@@ -811,20 +796,6 @@ public class BootJarTool {
       consoleLogger.warn(className + " already belongs in the bootjar by default.");
     }
     this.bootJar.loadClassIntoJar(className, data, isPreinstrumented, isForeign);
-  }
-
-  private void adaptAndLoad(final String name, final ClassAdapterFactory factory) {
-    byte[] bytes = getSystemBytes(name);
-
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-
-    final ClassVisitor cv = factory.create(cw, null);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    bytes = cw.toByteArray();
-
-    loadClassIntoJar(name, bytes, false);
   }
 
   private final void addManagementClasses() {
@@ -1101,48 +1072,6 @@ public class BootJarTool {
 
     System.err.println(errmsg.toString());
     System.exit(1);
-  }
-
-  private void addIbmInstrumentedAtomicInteger() {
-    Vm.assertIsIbm();
-    if (!Vm.isJDK15Compliant()) { return; }
-
-    final String classname = "java.util.concurrent.atomic.AtomicInteger";
-    byte[] bytes = getSystemBytes(classname);
-
-    // instrument the state changing methods in AtomicInteger
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    final ClassVisitor cv = new AtomicIntegerAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-    bytes = cw.toByteArray();
-
-    // regular DSO instrumentation
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(classname);
-    spec.markPreInstrumented();
-
-    loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
-  }
-
-  private void addIbmInstrumentedAtomicLong() {
-    Vm.assertIsIbm();
-    if (!Vm.isJDK15Compliant()) { return; }
-
-    final String classname = "java.util.concurrent.atomic.AtomicLong";
-    byte[] bytes = getSystemBytes(classname);
-
-    // instrument the state changing methods in AtomicLong
-    final ClassReader cr = new ClassReader(bytes);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    final ClassVisitor cv = new AtomicLongAdapter(cw);
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-    bytes = cw.toByteArray();
-
-    // regular DSO instrumentation
-    final TransparencyClassSpec spec = this.configHelper.getOrCreateSpec(classname);
-    spec.markPreInstrumented();
-
-    loadClassIntoJar(spec.getClassName(), bytes, spec.isPreInstrumented());
   }
 
   private final void addInstrumentedJavaLangString() {
