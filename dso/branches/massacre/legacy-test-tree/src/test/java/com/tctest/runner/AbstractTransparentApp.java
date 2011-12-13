@@ -77,6 +77,11 @@ public abstract class AbstractTransparentApp implements Application {
     config.addRoot("AbstractTransparentAppAppIds", AbstractTransparentApp.class.getName() + ".appIds");
     config.addWriteAutolock("* " + AbstractTransparentApp.class.getName() + ".*(..)");
     config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
+
+    // XXX: Configuration for "built-in" clustered data types
+    // These should be deleted when system tests are moved up from core to toolkit
+    config.addIncludePattern("com.tctest.builtin.AtomicInteger");
+    config.addIncludePattern("com.tctest.builtin.Lock");
   }
 
   public void notifyResult(Boolean result) {
