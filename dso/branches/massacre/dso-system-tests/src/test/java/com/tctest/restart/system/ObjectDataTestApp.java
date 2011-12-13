@@ -13,6 +13,7 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.util.Assert;
+import com.tctest.builtin.AtomicInteger;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ObjectDataTestApp extends AbstractTransparentApp {
   public static final String       SYNCHRONOUS_WRITE = "synch-write";
