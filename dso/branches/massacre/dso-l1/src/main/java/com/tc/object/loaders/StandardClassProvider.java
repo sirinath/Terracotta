@@ -27,12 +27,12 @@ public class StandardClassProvider implements ClassProvider {
 
   private static final String                                BOOT               = Namespace
                                                                                     .getStandardBootstrapLoaderName();
-  // private static final String EXT = Namespace.getStandardExtensionsLoaderName();
   private static final String                                SYSTEM             = Namespace
                                                                                     .getStandardSystemLoaderName();
   private static final String                                ISOLATION          = Namespace.getIsolationLoaderName();
 
   private static final LoaderDescription                     BOOT_DESC          = new LoaderDescription(null, BOOT);
+  private static final LoaderDescription                     SYSTEM_DESC        = new LoaderDescription(null, SYSTEM);
 
   private static final boolean                               DEBUG              = TCPropertiesImpl
                                                                                     .getProperties()
@@ -52,12 +52,6 @@ public class StandardClassProvider implements ClassProvider {
 
   /** Maps appGroup -> set of loader names */
   private final Map<String, Set<String>>                     appGroups          = new HashMap<String, Set<String>>();
-
-  /**
-   * If an IsolationClassLoader has been registered, without an explicit app-group, save it here so it can be
-   * substituted for the system classloader.
-   */
-  private NamedClassLoader                                   isolationClassLoader;
 
   // END fields requiring atomicity
 
@@ -141,12 +135,7 @@ public class StandardClassProvider implements ClassProvider {
         updateAllChildRelationships(appGroup);
       } else {
         loaderChildren.put(name, Collections.EMPTY_SET);
-
-        if (ISOLATION.equals(name)) {
-          isolationClassLoader = loader;
-        }
       }
-
     }
 
     NamedClassLoader prev = prevRef == null ? null : (NamedClassLoader) prevRef.get();
@@ -162,6 +151,8 @@ public class StandardClassProvider implements ClassProvider {
 
   public LoaderDescription getLoaderDescriptionFor(ClassLoader loader) {
     if (loader == null) { return BOOT_DESC; }
+    if (loader == SystemLoaderHolder.loader) { return SYSTEM_DESC; }
+
     if (loader instanceof NamedClassLoader) {
       String name = getName((NamedClassLoader) loader);
       return loaderDescriptions.get(name);
@@ -186,8 +177,7 @@ public class StandardClassProvider implements ClassProvider {
   }
 
   private boolean isBootLoader(String desc) {
-    // EXT and SYSTEM get registered at startup like normal loaders; no need to special-case
-    return BOOT.equals(desc); // || EXT.equals(desc) || SYSTEM.equals(desc);
+    return BOOT.equals(desc);
   }
 
   private ClassLoader lookupLoader(LoaderDescription desc) {
@@ -206,11 +196,18 @@ public class StandardClassProvider implements ClassProvider {
   private ClassLoader lookupLoaderWithAppGroup(LoaderDescription desc) {
     if (DEBUG) debug("Starting lookup for loader description: " + desc);
 
-    // Testing support: allow substitution of IsolationClassLoader for system classloader,
-    // unless they were explicitly registered within app-groups.
-    if (SYSTEM.equals(desc.name()) && null == desc.appGroup()) {
-      if (null != isolationClassLoader) { return (ClassLoader) isolationClassLoader; }
-    } else if (ISOLATION.equals(desc.name()) && null == desc.appGroup() && null == loaderDescriptions.get(desc.name())) { return SystemLoaderHolder.loader; }
+    // Testing support: allow substitution of IsolationClassLoader for system classloader
+    if (ISOLATION.equals(desc.name()) && null == loaderDescriptions.get(desc.name())) { return SystemLoaderHolder.loader; }
+
+    if (SYSTEM.equals(desc.name())) {
+      WeakReference<NamedClassLoader> ref = loaders.get(ISOLATION);
+      if (ref != null) {
+        NamedClassLoader loader = ref.get();
+        if (loader != null) { return (ClassLoader) loader; }
+      }
+
+      return SystemLoaderHolder.loader;
+    }
 
     while (true) {
       ClassLoader loader;
@@ -220,7 +217,7 @@ public class StandardClassProvider implements ClassProvider {
         appGroupLoaders = appGroups.get(desc.appGroup());
 
         if (DEBUG) {
-        if (appGroupLoaders != null) {
+          if (appGroupLoaders != null) {
             debug("Loaders in app-group: " + appGroupLoaders);
           } else {
             debug("Zero loaders present in app-group");
