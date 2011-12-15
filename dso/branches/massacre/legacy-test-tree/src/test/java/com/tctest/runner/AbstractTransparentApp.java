@@ -71,6 +71,10 @@ public abstract class AbstractTransparentApp implements Application {
     listenerProvider.getResultsListener().notifyError(new ErrorContext(t));
   }
 
+  public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config, Map optionalAttributes) {
+    visitL1DSOConfig(visitor, config);
+  }
+
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     config.addIncludePattern(AbstractTransparentApp.class.getName());
     config.addIncludePattern(TransparentAppCoordinator.class.getName());
