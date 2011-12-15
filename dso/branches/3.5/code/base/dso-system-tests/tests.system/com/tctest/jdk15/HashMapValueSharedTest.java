@@ -43,7 +43,7 @@ public class HashMapValueSharedTest extends GCTestBase {
   public static class HashMapValuedShareApp extends AbstractTransparentApp {
     
 
-    private static final int    NUM_OF_OBJ_PER_THREAD = 1000;
+    private static final int    NUM_OF_OBJ_PER_THREAD = 600;
     private final HashMap       hashmapRoot = new HashMap();
     private final CyclicBarrier barrier;
 
