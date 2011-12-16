@@ -118,9 +118,6 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       rewriteArraycopy();
     } else if (classname.equals("java/lang/Object")) {
       handleJavaLangObjectMethodCall(opcode, classname, theMethodName, desc);
-    } else if (classname.equals("java/lang/String") && "intern".equals(theMethodName)) {
-      super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", ByteCodeUtil.TC_METHOD_PREFIX + "intern",
-                            "()Ljava/lang/String;");
     } else {
       super.visitMethodInsn(opcode, classname, theMethodName, desc);
     }

@@ -4,7 +4,6 @@
  */
 package com.tctest;
 
-import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -101,15 +100,12 @@ public class CompressedStringTest extends TransparentTestBase {
 
     private void testStringDecompressedBeforeIntern() throws Throwable {
       final String actual = pop(root).intern();
-      assertTCString(actual, false);
       assertEquals(EXPECTED, actual);
     }
 
     private void testSerializeCompressedString() throws Throwable {
       final String actual = pop(root);
-      assertTCString(actual, true);
       byte[] serialized = serializeToByteArray(actual);
-      assertTCString(actual, false);
       assertEquals(EXPECTED, actual);
       byte[] serializedUninstrumented = getSerializedBytes();
       assertTrue(Arrays.equals(serialized, serializedUninstrumented));
@@ -118,12 +114,6 @@ public class CompressedStringTest extends TransparentTestBase {
     private void testDeserializeUninstrumented() throws Exception {
       String uninstrumentedSerialized = (String) deserializeFromFile();
       assertEquals(EXPECTED, uninstrumentedSerialized);
-    }
-
-    private void assertTCString(Object string, boolean isCompressed) {
-      assertTrue(string instanceof JavaLangStringTC);
-      JavaLangStringTC tcString = (JavaLangStringTC) string;
-      assertEquals(isCompressed, tcString.__tc_isCompressed());
     }
 
     private void put(String value, List list) {

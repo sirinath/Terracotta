@@ -17,7 +17,6 @@ import com.tc.object.loaders.ClassProvider;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
-import com.tc.util.StringTCUtil;
 
 import gnu.trove.TObjectIntHashMap;
 
@@ -189,43 +188,25 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
         break;
       case STRING:
         final String s = (String) value;
-        boolean stringInterned = false;
-
-        if (StringTCUtil.isInterned(s)) {
-          stringInterned = true;
-        }
 
         if (STRING_COMPRESSION_ENABLED && s.length() >= STRING_COMPRESSION_MIN_SIZE) {
           output.writeByte(TYPE_ID_STRING_COMPRESSED);
-          output.writeBoolean(stringInterned);
           writeCompressedString(s, output);
         } else {
           output.writeByte(TYPE_ID_STRING);
-          output.writeBoolean(stringInterned);
           writeString(s, output, serializer);
         }
         break;
       case STRING_BYTES:
         final UTF8ByteDataHolder utfBytes = (UTF8ByteDataHolder) value;
-        boolean stringbytesInterned = false;
-        if (utfBytes.isInterned()) {
-          stringbytesInterned = true;
-        }
 
         output.writeByte(TYPE_ID_STRING_BYTES);
-        output.writeBoolean(stringbytesInterned);
         serializer.writeStringBytes(output, utfBytes.getBytes());
         break;
       case STRING_BYTES_COMPRESSED:
         final UTF8ByteCompressedDataHolder utfCompressedBytes = (UTF8ByteCompressedDataHolder) value;
-        boolean interned = false;
-
-        if (utfCompressedBytes.isInterned()) {
-          interned = true;
-        }
 
         output.writeByte(TYPE_ID_STRING_COMPRESSED);
-        output.writeBoolean(interned);
         output.writeInt(utfCompressedBytes.getUncompressedStringLength());
         writeByteArray(utfCompressedBytes.getBytes(), output);
         output.writeInt(utfCompressedBytes.getStringLength());
@@ -691,20 +672,14 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
 
   private Object readString(final TCDataInput input, final byte type, ObjectStringSerializer serializer)
       throws IOException {
-    final boolean isInterned = input.readBoolean();
     final byte[] data = readStringBytes(input, serializer);
     if (useUTF8String(type)) {
       // special case the empty string to save memory
       if (data.length == 0) { return ""; }
 
-      if (isInterned) {
-        final String temp = new String(data, "UTF-8");
-        return temp.intern();
-      } else {
-        return new String(data, "UTF-8");
-      }
+      return new String(data, "UTF-8");
     } else {
-      return new UTF8ByteDataHolder(data, isInterned);
+      return new UTF8ByteDataHolder(data);
     }
   }
 
@@ -715,14 +690,13 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   protected abstract boolean useUTF8String(byte type);
 
   protected Object readCompressedString(final TCDataInput input) throws IOException {
-    final boolean isInterned = input.readBoolean();
     final int stringUncompressedByteLength = input.readInt();
     final byte[] data = readByteArray(input);
 
     final int stringLength = input.readInt();
     final int stringHash = input.readInt();
 
-    return new UTF8ByteCompressedDataHolder(data, isInterned, stringUncompressedByteLength, stringLength, stringHash);
+    return new UTF8ByteCompressedDataHolder(data, stringUncompressedByteLength, stringLength, stringHash);
   }
 
   public static String inflateCompressedString(final byte[] data, int length) {

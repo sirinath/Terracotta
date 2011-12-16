@@ -84,8 +84,6 @@ import com.tc.object.applicator.ApplicatorObjectManager;
 import com.tc.object.bytecode.AAFairDistributionPolicyMarker;
 import com.tc.object.bytecode.Clearable;
 import com.tc.object.bytecode.CloneUtil;
-import com.tc.object.bytecode.JavaLangStringAdapter;
-import com.tc.object.bytecode.JavaLangStringTC;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerInternal;
@@ -107,7 +105,6 @@ import com.tc.object.bytecode.hook.ClassProcessor;
 import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelper;
 import com.tc.object.bytecode.hook.impl.ClassProcessorHelperJDK15;
-import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
 import com.tc.object.bytecode.hook.impl.Util;
 import com.tc.object.cache.Cacheable;
 import com.tc.object.compression.CompressedData;
@@ -518,7 +515,6 @@ public class BootJarTool {
       loadTerracottaClass(NIOWorkarounds.class.getName());
       loadTerracottaClass(TCProperties.class.getName());
       loadTerracottaClass(OverrideCheck.class.getName());
-      loadTerracottaClass(JavaLangStringTC.class.getName());
       loadTerracottaClass(StringCompressionUtil.class.getName());
       loadTerracottaClass(CompressedData.class.getName());
       loadTerracottaClass(TCByteArrayOutputStream.class.getName());
@@ -526,7 +522,6 @@ public class BootJarTool {
 
       loadTerracottaClass("com.tc.object.bytecode.hook.impl.ArrayManager");
       loadTerracottaClass(ProxyInstance.class.getName());
-      loadTerracottaClass(JavaLangArrayHelpers.class.getName());
 
       loadTerracottaClass(Vm.class.getName());
       loadTerracottaClass(VmVersion.class.getName());
@@ -549,8 +544,6 @@ public class BootJarTool {
 
       addRuntimeClasses();
 
-      addLiterals();
-
       // local cache store classes
       loadTerracottaClass(LocalCacheStoreFullException.class.getName());
       loadTerracottaClass(ServerMapLocalCache.class.getName());
@@ -563,7 +556,6 @@ public class BootJarTool {
       loadTerracottaClass(L1ServerMapLocalCacheStoreListener.class.getName());
 
       addInstrumentedClassLoader();
-      addInstrumentedJavaLangString();
 
       addClusterEventsAndMetaDataClasses();
       loadTerracottaClass(StatisticRetrievalAction.class.getName());
@@ -702,17 +694,6 @@ public class BootJarTool {
     loadTerracottaClass(InjectedDsoInstance.class.getName());
     loadTerracottaClass(UnclusteredObjectException.class.getName());
     loadTerracottaClass(UnsupportedInjectedDsoInstanceTypeException.class.getName());
-  }
-
-  private void addLiterals() {
-    this.bootJar.loadClassIntoJar("java.lang.Boolean", getSystemBytes("java.lang.Boolean"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Byte", getSystemBytes("java.lang.Byte"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Character", getSystemBytes("java.lang.Character"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Double", getSystemBytes("java.lang.Double"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Float", getSystemBytes("java.lang.Float"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Integer", getSystemBytes("java.lang.Integer"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Long", getSystemBytes("java.lang.Long"), false);
-    this.bootJar.loadClassIntoJar("java.lang.Short", getSystemBytes("java.lang.Short"), false);
   }
 
   private final Map getAllSpecs() {
@@ -1009,18 +990,6 @@ public class BootJarTool {
 
     System.err.println(errmsg.toString());
     System.exit(1);
-  }
-
-  private final void addInstrumentedJavaLangString() {
-    final byte[] orig = getSystemBytes("java.lang.String");
-
-    final ClassReader cr = new ClassReader(orig);
-    final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-
-    final ClassVisitor cv = new JavaLangStringAdapter(cw, Vm.isAzul(), Vm.isIBM());
-    cr.accept(cv, ClassReader.SKIP_FRAMES);
-
-    loadClassIntoJar("java.lang.String", cw.toByteArray(), false);
   }
 
   private final void addInstrumentedClassLoader() {
