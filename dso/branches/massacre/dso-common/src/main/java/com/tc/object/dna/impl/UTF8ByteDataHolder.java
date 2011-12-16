@@ -4,8 +4,6 @@
  */
 package com.tc.object.dna.impl;
 
-import com.tc.util.StringTCUtil;
-
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -19,8 +17,7 @@ import java.util.Arrays;
  */
 public class UTF8ByteDataHolder implements Serializable {
 
-  private final byte[]  bytes;
-  private final boolean interned;
+  private final byte[] bytes;
 
   // Used for tests
   public UTF8ByteDataHolder(String str) {
@@ -29,27 +26,13 @@ public class UTF8ByteDataHolder implements Serializable {
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
-
-    if (StringTCUtil.isInterned(str)) {
-      this.interned = true;
-    } else {
-      this.interned = false;
-    }
   }
 
   /**
    * Just byte data
    */
   public UTF8ByteDataHolder(byte[] b) {
-    this(b, false);
-  }
-
-  /**
-   * For a possibly interned, non-compressed string
-   */
-  public UTF8ByteDataHolder(byte[] b, boolean interned) {
     this.bytes = b;
-    this.interned = interned;
   }
 
   public byte[] getBytes() {
@@ -60,10 +43,6 @@ public class UTF8ByteDataHolder implements Serializable {
     return getString();
   }
 
-  public boolean isInterned() {
-    return this.interned;
-  }
-
   private String getString() {
     try {
       return new String(bytes, "UTF-8");
@@ -72,14 +51,16 @@ public class UTF8ByteDataHolder implements Serializable {
     }
   }
 
+  @Override
   public String toString() {
     return asString();
   }
 
+  @Override
   public int hashCode() {
     return computeHashCode(37);
-  } 
-  
+  }
+
   protected int computeHashCode(int seed) {
     int hash = seed;
     for (int i = 0, n = bytes.length; i < n; i++) {
@@ -88,6 +69,7 @@ public class UTF8ByteDataHolder implements Serializable {
     return hash;
   }
 
+  @Override
   public boolean equals(Object obj) {
     if (obj instanceof UTF8ByteDataHolder) {
       UTF8ByteDataHolder other = (UTF8ByteDataHolder) obj;
