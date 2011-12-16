@@ -12,10 +12,9 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Vm;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
-
-import java.util.HashMap;
-import java.util.concurrent.CyclicBarrier;
 
 public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
   int                                     BATCHSIZE    = (Vm.isIBM()) ? 400 : 1000;

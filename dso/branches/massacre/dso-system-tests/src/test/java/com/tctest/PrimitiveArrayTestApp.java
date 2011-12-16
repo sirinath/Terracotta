@@ -6,16 +6,14 @@ package com.tctest;
 
 import org.apache.commons.lang.ArrayUtils;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.object.util.ReadOnlyException;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import gnu.trove.TObjectIntHashMap;
@@ -97,7 +95,6 @@ public class PrimitiveArrayTestApp extends AbstractErrorCatchingTransparentApp {
     spec.addRoot("root", "the-data-root-yo");
     spec.addRoot("barrier", "barrier");
     config.addIncludePattern(DataRoot.class.getName());
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
   @Override
@@ -107,7 +104,7 @@ public class PrimitiveArrayTestApp extends AbstractErrorCatchingTransparentApp {
     Object compare = root.getCompareData(type);
 
     // wait for all nodes to get arrays
-    barrier.barrier();
+    barrier.await();
 
     // make sure all the data was consumed
     if (root.getIndex() != root.getNumArrays()) { throw new RuntimeException("Not all data consumed"); }
@@ -119,19 +116,19 @@ public class PrimitiveArrayTestApp extends AbstractErrorCatchingTransparentApp {
     validate(false);
 
     // wait for all read only tests to finish.
-    barrier.barrier();
+    barrier.await();
 
     // modify my one type locally
     modifyDataWithWriteLock(array, intClassType(type));
 
     // wait for all nodes to do modifications
-    barrier.barrier();
+    barrier.await();
 
     // validate all the changes made by the other nodes
     validate(true);
 
     // wait for all nodes to do validations
-    barrier.barrier();
+    barrier.await();
 
     synchronized (array) {
       // test System.arrayCopy()
@@ -139,7 +136,7 @@ public class PrimitiveArrayTestApp extends AbstractErrorCatchingTransparentApp {
     }
 
     // wait for all nodes to do finish arraycopy (data should be back to original values)
-    barrier.barrier();
+    barrier.await();
 
     // validate the arraycopy calls
     validate(false);

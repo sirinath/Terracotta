@@ -11,9 +11,7 @@ import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterFactory;
-import com.tc.object.bytecode.DateMethodAdapter;
 import com.tc.object.bytecode.DistributedMethodCallAdapter;
-import com.tc.object.bytecode.LogicalMethodAdapter;
 import com.tc.object.bytecode.MethodAdapter;
 import com.tc.object.bytecode.MethodCreator;
 import com.tc.object.config.schema.IncludeOnLoad;
@@ -307,23 +305,23 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addAlwaysLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.ALWAYS_LOG));
+    throw new AssertionError();
   }
 
   public void addIfTrueLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.IF_TRUE_LOG));
+    throw new AssertionError();
   }
 
   public void addSetIteratorWrapperSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.SET_ITERATOR_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addViewSetWrapperSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.SORTED_SET_VIEW_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addEntrySetWrapperSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.ENTRY_SET_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addKeySetWrapperSpec(final String name) {
@@ -335,11 +333,11 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addHashMapPutLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.HASHMAP_PUT_LOG));
+    throw new AssertionError();
   }
 
   public void addHashtablePutLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.HASHTABLE_PUT_LOG));
+    throw new AssertionError();
   }
 
   public void addTHashMapPutLogSpec(final String name) {
@@ -351,15 +349,15 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addHashtableClearLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.HASHTABLE_CLEAR_LOG));
+    throw new AssertionError();
   }
 
   public void addHashtableRemoveLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.HASHTABLE_REMOVE_LOG));
+    throw new AssertionError();
   }
 
   public void addHashMapRemoveLogSpec(final String name) {
-    methodAdapters.put(name, new LogicalMethodAdapter(name, MethodSpec.HASHMAP_REMOVE_LOG));
+    throw new AssertionError();
   }
 
   public void addArrayCopyMethodCodeSpec(final String name) {
@@ -376,11 +374,11 @@ public class TransparencyClassSpecImpl implements TransparencyClassSpecInternal 
   }
 
   public void addDateMethodLogSpec(final String name) {
-    methodAdapters.put(name, new DateMethodAdapter(name, MethodSpec.DATE_ADD_SET_TIME_WRAPPER_LOG));
+    throw new AssertionError();
   }
 
   public void addDateMethodLogSpec(final String name, final int methodSpec) {
-    methodAdapters.put(name, new DateMethodAdapter(name, methodSpec));
+    throw new AssertionError();
   }
 
   public void addMethodCodeSpec(final String name, final TransparencyCodeSpec codeSpec) {

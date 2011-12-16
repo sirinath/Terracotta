@@ -4,14 +4,12 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 public class NonStaticInnerTest extends TransparentTestBase {
@@ -42,20 +40,18 @@ public class NonStaticInnerTest extends TransparentTestBase {
 
     @Override
     protected void runTest() throws Throwable {
-
-      final int index = barrier.barrier();
+      final int index = barrier.await();
 
       if (index == 0) {
         root = new Top();
       }
 
-      barrier.barrier();
+      barrier.await();
 
       root.exerciseInner();
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
       String testClassName = App.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("root", "root");

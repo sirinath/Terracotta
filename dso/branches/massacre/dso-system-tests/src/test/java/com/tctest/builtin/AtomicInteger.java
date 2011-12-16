@@ -38,4 +38,13 @@ public class AtomicInteger {
       lock.writeUnlock();
     }
   }
+
+  public void set(int i) {
+    lock.writeLock();
+    try {
+      value = i;
+    } finally {
+      lock.writeUnlock();
+    }
+  }
 }

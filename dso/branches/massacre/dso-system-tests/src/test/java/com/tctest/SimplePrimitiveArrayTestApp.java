@@ -4,15 +4,13 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.ArrayList;
@@ -20,6 +18,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.BrokenBarrierException;
 
 public class SimplePrimitiveArrayTestApp extends AbstractTransparentApp {
 
@@ -34,7 +33,6 @@ public class SimplePrimitiveArrayTestApp extends AbstractTransparentApp {
     spec.addRoot("root", "the-data-root-yo");
     spec.addRoot("barrier", "barrier");
     config.addIncludePattern(ArrayRoot.class.getName());
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
   public SimplePrimitiveArrayTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
@@ -50,14 +48,14 @@ public class SimplePrimitiveArrayTestApp extends AbstractTransparentApp {
 
       ArrayRoot.validateWithEquals(1, original);
       ArrayRoot.validate(1, original);
-      barrier.barrier();
+      barrier.await();
 
       ArrayRoot.modify(2, original);
-      barrier.barrier();
+      barrier.await();
 
       root.validateWithEquals(2);
       root.validate(2);
-      barrier.barrier();
+      barrier.await();
 
       Double[] toCopyFrom = new Double[original.length];
       for (int i = 0; i < toCopyFrom.length; i++) {
@@ -68,11 +66,13 @@ public class SimplePrimitiveArrayTestApp extends AbstractTransparentApp {
         System.arraycopy(toCopyFrom, 0, original, 0, toCopyFrom.length);
       }
 
-      barrier.barrier();
+      barrier.await();
       root.validateWithEquals(3);
       root.validate(3);
 
     } catch (InterruptedException e) {
+      throw new TCRuntimeException(e);
+    } catch (BrokenBarrierException e) {
       throw new TCRuntimeException(e);
     }
 
@@ -119,8 +119,8 @@ public class SimplePrimitiveArrayTestApp extends AbstractTransparentApp {
 
     public static void validate(double expectedValue, Double[] array) {
       synchronized (array) {
-        for (int i = 0; i < array.length; i++) {
-          double value = array[i].doubleValue();
+        for (Double element : array) {
+          double value = element.doubleValue();
           if (expectedValue != value) { throw new RuntimeException("Expected " + expectedValue + " but was " + value); }
         }
       }

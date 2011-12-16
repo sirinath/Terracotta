@@ -4,9 +4,6 @@
  */
 package com.tc.object;
 
-import sun.misc.Unsafe;
-
-import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.applicator.ChangeApplicator;
@@ -21,7 +18,6 @@ import com.tc.object.loaders.Namespace;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ReflectionUtil;
-import com.tc.util.UnsafeUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -45,10 +41,8 @@ import java.util.Map;
  * 
  * @author orion
  */
-@SuppressWarnings("restriction")
 public class TCClassImpl implements TCClass {
   private final static TCLogger          logger                 = TCLogging.getLogger(TCClassImpl.class);
-  private final static Unsafe            unsafe                 = UnsafeUtil.getUnsafe();
   private final static SerializationUtil SERIALIZATION_UTIL     = new SerializationUtil();
 
   /**
@@ -73,7 +67,6 @@ public class TCClassImpl implements TCClass {
   private final LoaderDescription        loaderDesc;
   private final Field                    parentField;
   private final boolean                  useNonDefaultConstructor;
-  private final Map                      offsetToFieldNames;
   private final ClientObjectManager      objectManager;
   private final boolean                  isProxyClass;
   private final boolean                  isEnum;
@@ -120,7 +113,6 @@ public class TCClassImpl implements TCClass {
     this.useNonDefaultConstructor = this.isProxyClass || ClassUtils.isPortableReflectionClass(peer)
                                     || useNonDefaultConstructor;
     this.logicalSuperClass = logicalSuperClass;
-    this.offsetToFieldNames = getFieldOffsets(peer);
     this.useResolveLockWhileClearing = useResolveLockWhileClearing;
     this.isNotClearable = NotClearable.class.isAssignableFrom(peer);
     this.postCreateMethods = resolveCreateMethods(postCreateMethod, false);
@@ -395,60 +387,8 @@ public class TCClassImpl implements TCClass {
     return o;
   }
 
-  private static Map getFieldOffsets(final Class peer) {
-    final Map rv = new HashMap();
-    if (unsafe != null) {
-      try {
-        final Field[] fields = peer.equals(Object.class) ? new Field[0] : peer.getDeclaredFields();
-        // System.err.println("Thread " + Thread.currentThread().getName() + ", class: " + getName() + ", # of field: "
-        // + fields.length);
-        for (int i = 0; i < fields.length; i++) {
-          try {
-            if (!Modifier.isStatic(fields[i].getModifiers())) {
-              fields[i].setAccessible(true);
-              rv.put(Long.valueOf(unsafe.objectFieldOffset(fields[i])), makeFieldName(fields[i]));
-              // System.err.println("Thread " + Thread.currentThread().getName() + ", class: " + getName() + ", field: "
-              // + fields[i].getName() + ", offset: " + unsafe.objectFieldOffset(fields[i]));
-            }
-          } catch (final Exception e) {
-            // Ignore those fields that throw an exception
-          }
-        }
-      } catch (final Exception e) {
-        throw new TCRuntimeException(e);
-      }
-    }
-
-    return rv;
-  }
-
-  private static String makeFieldName(final Field field) {
-    final StringBuffer sb = new StringBuffer(field.getDeclaringClass().getName());
-    sb.append(".");
-    sb.append(field.getName());
-    return sb.toString();
-  }
-
-  public String getFieldNameByOffset(final long fieldOffset) {
-    final Long fieldOffsetObj = Long.valueOf(fieldOffset);
-
-    final String field = (String) this.offsetToFieldNames.get(fieldOffsetObj);
-    if (field == null) {
-      if (this.superclazz != null) {
-        return this.superclazz.getFieldNameByOffset(fieldOffset);
-      } else {
-        throw new AssertionError("Field does not exist for offset: " + fieldOffset);
-      }
-    } else {
-      return field;
-    }
-  }
-
   public boolean isPortableField(final long fieldOffset) {
-    final String fieldName = getFieldNameByOffset(fieldOffset);
-    final TCField tcField = getField(fieldName);
-
-    return tcField.isPortable();
+    throw new AssertionError();
   }
 
   public boolean isProxyClass() {

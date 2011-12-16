@@ -12,15 +12,14 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CyclicBarrier;
 
 public class OnLoadReadLockTestApp extends AbstractErrorCatchingTransparentApp {
   private final CyclicBarrier barrier;
@@ -68,8 +67,6 @@ public class OnLoadReadLockTestApp extends AbstractErrorCatchingTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    new CyclicBarrierSpec().visit(visitor, config);
-
     TransparencyClassSpec spec = config.getOrCreateSpec(MyObject.class.getName());
     config.addWriteAutolock("* " + MyObject.class.getName() + "*.*(..)");
 

@@ -4,33 +4,34 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import com.terracottatech.config.PersistenceMode;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 public class ArrayGCTest extends GCTestBase {
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
 
+  @Override
   protected boolean useExternalProcess() {
     return true;
   }
 
+  @Override
   protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
     super.setupConfig(configFactory);
     configFactory.setPersistenceMode(PersistenceMode.PERMANENT_STORE);
@@ -64,14 +65,15 @@ public class ArrayGCTest extends GCTestBase {
       random = new Random(seed);
     }
 
+    @Override
     protected void runTest() throws Throwable {
-      final int index = barrier.barrier();
+      final int index = barrier.await();
 
       if (index == 0) {
         populate();
       }
 
-      barrier.barrier();
+      barrier.await();
 
       if ((index % 2) == 0) {
         read();
@@ -108,10 +110,8 @@ public class ArrayGCTest extends GCTestBase {
       while (!shouldEnd()) {
         Object[] array = getRandomArray();
 
-        for (int i = 0, n = array.length; i < n; i++) {
+        for (Object o : array) {
           synchronized (array) {
-            Object o = array[i]; // resolve array element
-
             // this bit of code should prevent any optimizer from removing the array access above
             if (o.hashCode() == h) {
               System.err.println("OK");
@@ -187,8 +187,6 @@ public class ArrayGCTest extends GCTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
-
       String testClassName = App.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("root", "root");

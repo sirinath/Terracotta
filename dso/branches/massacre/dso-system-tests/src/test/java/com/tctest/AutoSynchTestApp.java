@@ -4,18 +4,16 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,9 +22,9 @@ import java.util.List;
  * @author hhuynh
  */
 public class AutoSynchTestApp extends AbstractErrorCatchingTransparentApp {
-  private final CyclicBarrier   barrier;
-  private AutoSynchronizedClass autoSynchronizedRoot = new AutoSynchronizedClass();
-  private NonSynchronizedClass nonSynchronizedRoot = new NonSynchronizedClass();
+  private final CyclicBarrier         barrier;
+  private final AutoSynchronizedClass autoSynchronizedRoot = new AutoSynchronizedClass();
+  private final NonSynchronizedClass  nonSynchronizedRoot  = new NonSynchronizedClass();
 
   public AutoSynchTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -42,7 +40,6 @@ public class AutoSynchTestApp extends AbstractErrorCatchingTransparentApp {
     spec.addRoot("barrier", "barrier");
     spec.addRoot("autoSynchronizedRoot", "autoSynchronizedRoot");
     spec.addRoot("nonSynchronizedRoot", "nonSynchronizedRoot");
-    new CyclicBarrierSpec().visit(visitor, config);
 
     String baseClass = AutoSynchronizedClass.class.getName();
     config.addIncludePattern(baseClass);
@@ -55,15 +52,16 @@ public class AutoSynchTestApp extends AbstractErrorCatchingTransparentApp {
     config.addIncludePattern(baseClass);
   }
 
+  @Override
   protected void runTest() throws Throwable {
     autoSynchronizedRoot.add("one");
     autoSynchronizedRoot.add("two");
 
-    barrier.barrier();
+    barrier.await();
     Assert.assertEquals(4, autoSynchronizedRoot.getSize());
-    
-    barrier.barrier();
-    
+
+    barrier.await();
+
     try {
       nonSynchronizedRoot.add("one");
       throw new AssertionError("Expect to throw an UnlockedSharedObjectException.");

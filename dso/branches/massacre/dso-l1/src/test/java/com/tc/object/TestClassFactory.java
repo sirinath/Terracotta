@@ -37,18 +37,15 @@ public class TestClassFactory implements TCClassFactory {
 
     private TCField[]           portableFields         = null;
 
-    private boolean             portable               = false;
-
     public MockTCClass() {
       //
     }
 
     public MockTCClass(final ClientObjectManager clientObjectManager, final boolean hasOnLoadExecuteScript,
-                       final boolean hasOnLoadMethod, final boolean portable, final TCField[] portableFields) {
+                       final boolean hasOnLoadMethod, final TCField[] portableFields) {
       this.clientObjectManager = clientObjectManager;
       this.hasOnLoadExecuteScript = hasOnLoadExecuteScript;
       this.hasOnLoadMethod = hasOnLoadMethod;
-      this.portable = portable;
       this.portableFields = portableFields;
     }
 
@@ -108,10 +105,6 @@ public class TestClassFactory implements TCClassFactory {
       return false;
     }
 
-    public boolean isPortable() {
-      return portable;
-    }
-
     public TCField getField(final String name) {
       for (TCField field : portableFields) {
         if (name.equals(field.getName())) return field;
@@ -149,10 +142,6 @@ public class TestClassFactory implements TCClassFactory {
 
     public Class getPeerClass() {
       return Object.class;
-    }
-
-    public String getFieldNameByOffset(final long fieldOffset) {
-      throw new ImplementMe();
     }
 
     public ClientObjectManager getObjectManager() {

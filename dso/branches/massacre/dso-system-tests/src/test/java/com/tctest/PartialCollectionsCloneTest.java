@@ -4,16 +4,14 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.lang.reflect.Method;
@@ -49,19 +47,19 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
 
     @Override
     protected void runTest() throws Throwable {
-      boolean rootCreator = barrier.barrier() == 0;
+      boolean rootCreator = barrier.await() == 0;
 
       if (rootCreator) {
         createRoots();
       }
 
-      barrier.barrier();
+      barrier.await();
 
       if (!rootCreator) {
         testMapClone(hashmap);
       }
 
-      barrier.barrier();
+      barrier.await();
     }
 
     private void testMapClone(Map m) {
@@ -127,7 +125,6 @@ public class PartialCollectionsCloneTest extends TransparentTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
       String testClass = PartialCollectionsCloneTestApp.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
       String methodExpr = "* " + testClass + "*.*(..)";

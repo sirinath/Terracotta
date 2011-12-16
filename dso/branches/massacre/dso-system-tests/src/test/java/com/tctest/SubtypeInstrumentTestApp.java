@@ -4,14 +4,12 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.ArrayList;
@@ -19,7 +17,7 @@ import java.util.List;
 
 public class SubtypeInstrumentTestApp extends AbstractErrorCatchingTransparentApp {
   private final CyclicBarrier barrier;
-  private SubClass root = new SubClass();
+  private final SubClass      root = new SubClass();
 
   public SubtypeInstrumentTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -34,36 +32,36 @@ public class SubtypeInstrumentTestApp extends AbstractErrorCatchingTransparentAp
     config.addWriteAutolock(methodExpression);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("root", "root");
-    new CyclicBarrierSpec().visit(visitor, config);
 
     String baseClass = BaseClass.class.getName();
     String subClass = SubClass.class.getName();
-    
+
     config.addIncludePattern(baseClass + "+");
-    
+
     // THIS IS INTENTIONALLY COMMENTED OUT TO MAKE SURE
     // THE TEST STILL PASSES. SEE CDV-144
     // config.addIncludePattern(subClass);
 
     config.addWriteAutolock("* " + baseClass + "*.*(..)");
     config.addWriteAutolock("* " + subClass + "*.*(..)");
-    
+
   }
 
+  @Override
   protected void runTest() throws Throwable {
-    if (barrier.barrier() == 0) {
+    if (barrier.await() == 0) {
       root.add("one");
       root.add("two");
     }
 
-    barrier.barrier();
+    barrier.await();
     Assert.assertEquals(2, root.getSize());
 
   }
-  
+
   static class BaseClass {
     protected List list = new ArrayList();
-    
+
     public void add(Object o) {
       synchronized (list) {
         list.add(o);
@@ -77,7 +75,7 @@ public class SubtypeInstrumentTestApp extends AbstractErrorCatchingTransparentAp
     }
 
   }
-  
+
   static class SubClass extends BaseClass {
     public Object getFirst() {
       synchronized (list) {

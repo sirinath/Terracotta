@@ -10,7 +10,6 @@ import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.objectserver.control.ExtraL1ProcessControl;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
@@ -44,11 +43,10 @@ public class TcPropertiesOverWriteTestApp extends AbstractTransparentApp {
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     String testClass = TcPropertiesOverWriteTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
+    spec.addRoot("obj", "obj");
     config.addIncludePattern(testClass + "$*", false, false, true);
     config.addWriteAutolock("* " + testClass + "*.*(..)");
 
-    new SynchronizedIntSpec().visit(visitor, config);
-    spec.addRoot("obj", "obj");
   }
 
   public void run() {

@@ -4,14 +4,12 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
 public class NullLiteralArrayElementRegressionTestApp extends AbstractTransparentApp {
@@ -52,7 +50,7 @@ public class NullLiteralArrayElementRegressionTestApp extends AbstractTransparen
       }
     }
 
-    barrier.barrier();
+    barrier.await();
 
     if (creator) {
       synchronized (obj) {
@@ -60,7 +58,7 @@ public class NullLiteralArrayElementRegressionTestApp extends AbstractTransparen
       }
     }
 
-    barrier.barrier();
+    barrier.await();
 
     Object value = obj.getElement(5);
 
@@ -76,8 +74,6 @@ public class NullLiteralArrayElementRegressionTestApp extends AbstractTransparen
     spec.addRoot("barrier", "barrier");
     spec.addRoot("root", "root");
     config.addIncludePattern(TestObject.class.getName());
-
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
   private static class TestObject {

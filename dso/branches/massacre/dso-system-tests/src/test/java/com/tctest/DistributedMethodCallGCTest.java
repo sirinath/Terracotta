@@ -13,11 +13,11 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.AdaptedClassDumper;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.HashSet;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 public class DistributedMethodCallGCTest extends GCTestBase {

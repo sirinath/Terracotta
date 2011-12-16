@@ -42,14 +42,10 @@ public class ManagedObjectStateFactory {
   private final PersistentCollectionFactory         persistentCollectionFactory;
 
   static {
-    classNameToStateMap.put(java.util.IdentityHashMap.class.getName(), Byte.valueOf(ManagedObjectState.MAP_TYPE));
-    classNameToStateMap.put(java.util.HashMap.class.getName(), Byte.valueOf(ManagedObjectState.PARTIAL_MAP_TYPE));
-    classNameToStateMap.put(java.util.HashSet.class.getName(), Byte.valueOf(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put(java.util.ArrayList.class.getName(), Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put(java.util.concurrent.LinkedBlockingQueue.class.getName(),
-                            Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
-    classNameToStateMap.put(java.util.concurrent.ConcurrentHashMap.class.getName(),
-                            Byte.valueOf(ManagedObjectState.CONCURRENT_HASHMAP_TYPE));
+    // XXX: remove this when possible!
+    classNameToStateMap.put("com.tctest.builtin.HashMap", Byte.valueOf(ManagedObjectState.MAP_TYPE));
+    classNameToStateMap.put("com.tctest.builtin.ArrayList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
+
     // XXX: Support for CDM, CDSM in terracotta-toolkit
     classNameToStateMap.put("com.terracotta.toolkit.collections.ConcurrentDistributedMapDso",
                             Byte.valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE));
@@ -143,9 +139,6 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
-      case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
-        return new ConcurrentHashMapManagedObjectState(classID,
-                                                       this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
         return new ConcurrentDistributedMapManagedObjectState(classID,
                                                               this.persistentCollectionFactory.createPersistentMap(oid));
@@ -229,8 +222,6 @@ public class ManagedObjectStateFactory {
           return ListManagedObjectState.readFrom(in);
         case ManagedObjectState.SET_TYPE:
           return SetManagedObjectState.readFrom(in);
-        case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
-          return ConcurrentHashMapManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:

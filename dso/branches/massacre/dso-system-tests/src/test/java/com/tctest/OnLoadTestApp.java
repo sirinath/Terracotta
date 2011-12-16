@@ -4,15 +4,13 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.ArrayList;
@@ -34,13 +32,13 @@ public class OnLoadTestApp extends AbstractErrorCatchingTransparentApp {
   @Override
   protected void runTest() throws Throwable {
     // force the outcome of the race to create (as opposed to faulting) the roots
-    boolean creator = (barrier.barrier() == 0);
+    boolean creator = (barrier.await() == 0);
 
     if (creator) {
       createRoots();
     }
 
-    barrier.barrier();
+    barrier.await();
 
     synchronized (root) {
       Assert.eval(root.getSize() == 0);
@@ -79,14 +77,11 @@ public class OnLoadTestApp extends AbstractErrorCatchingTransparentApp {
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    new CyclicBarrierSpec().visit(visitor, config);
-
     String testClass = OnLoadTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(MyObject.class.getName());
     spec.setHonorTransient(true);
     // We want to make sure that all objects are resolved.
-    spec
-        .setExecuteScriptOnLoad("if(self.mine == null){self.ok = false;}else{self.ok = true;} self.list = new ArrayList();");
+    spec.setExecuteScriptOnLoad("if(self.mine == null){self.ok = false;}else{self.ok = true;} self.list = new ArrayList();");
 
     spec = config.getOrCreateSpec(MyObject1.class.getName());
     spec.setHonorTransient(true);

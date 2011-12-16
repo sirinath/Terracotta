@@ -4,18 +4,16 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,35 +24,38 @@ import java.util.List;
 public class MutualReferenceCollectionTest extends TransparentTestBase {
   private static final int NODE_COUNT = 3;
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
 
   public static class App extends AbstractErrorCatchingTransparentApp {
-    private CyclicBarrier barrier    = new CyclicBarrier(NODE_COUNT);
-    private List          firstList  = new ArrayList();
-    private List          secondList = new ArrayList();
+    private final CyclicBarrier barrier    = new CyclicBarrier(NODE_COUNT);
+    private final List          firstList  = new ArrayList();
+    private final List          secondList = new ArrayList();
 
     public App(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
       super(appId, cfg, listenerProvider);
     }
 
+    @Override
     protected void runTest() throws Throwable {
       initLists();
       System.out.println("Done initializing lists...");
-      
-      CyclicBarrier readBarrier = new CyclicBarrier(2);
+
+      java.util.concurrent.CyclicBarrier readBarrier = new java.util.concurrent.CyclicBarrier(2);
       ListWorker worker1 = new ListWorker(readBarrier, firstList);
       ListWorker worker2 = new ListWorker(readBarrier, secondList);
 
       System.out.println("Waiting to start workers...");
-      barrier.barrier();      
-      
+      barrier.await();
+
       worker1.start();
       worker2.start();
       System.out.println("workers started...");
@@ -69,29 +70,31 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
      * set up lists and mutually reference each other
      */
     private void initLists() throws Exception {
-      if (barrier.barrier() == 0) {
+      if (barrier.await() == 0) {
         synchronized (firstList) {
           for (int i = 0; i < 3000; i++) {
-           firstList.add(new Object());
-           if((i % 100) == 0) {
-             System.out.println(i + "entries has been intialized for firstList thus far, for thread " + Thread.currentThread());
-           }
+            firstList.add(new Object());
+            if ((i % 100) == 0) {
+              System.out.println(i + "entries has been intialized for firstList thus far, for thread "
+                                 + Thread.currentThread());
+            }
           }
           // reference secondList
           firstList.add(secondList);
         }
         synchronized (secondList) {
           for (int i = 1; i < 3000; i++) {
-           secondList.add(new Object());
-           if((i % 100) == 0) {
-             System.out.println(i + " entries has been intialized for secondList thus far, for thread " + Thread.currentThread());
-           }
+            secondList.add(new Object());
+            if ((i % 100) == 0) {
+              System.out.println(i + " entries has been intialized for secondList thus far, for thread "
+                                 + Thread.currentThread());
+            }
           }
           // reference firstList
           secondList.add(firstList);
         }
       }
-      barrier.barrier();
+      barrier.await();
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -105,16 +108,14 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
 
       config.addIncludePattern(testClassName + "$*");
       config.addReadAutolock("* " + testClassName + "$*.*(..)");
-
-      new CyclicBarrierSpec().visit(visitor, config);
     }
 
     private static class ListWorker extends Thread {
-      private Throwable     error;
-      private CyclicBarrier readBarrier;
-      private List          list;
+      private Throwable                                error;
+      private final java.util.concurrent.CyclicBarrier readBarrier;
+      private final List                               list;
 
-      public ListWorker(CyclicBarrier readBarrier, List list) {
+      public ListWorker(java.util.concurrent.CyclicBarrier readBarrier, List list) {
         this.readBarrier = readBarrier;
         this.list = list;
       }
@@ -125,7 +126,7 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
           int i = 0;
           for (Iterator it = list.iterator(); it.hasNext();) {
             it.next();
-            if((i % 100) == 0) {
+            if ((i % 100) == 0) {
               System.out.println(i + " entries has been read thus far for " + Thread.currentThread());
             }
             i++;
@@ -134,10 +135,11 @@ public class MutualReferenceCollectionTest extends TransparentTestBase {
         }
       }
 
+      @Override
       public void run() {
         try {
           System.out.println("waiting for readBarrier...");
-          readBarrier.barrier();
+          readBarrier.await();
           System.out.println("Client " + ManagerUtil.getClientID() + ", thread " + getName() + ": start work...");
           doWork();
           System.out.println("Client " + ManagerUtil.getClientID() + ", thread " + getName() + ": Done");

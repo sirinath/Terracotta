@@ -18,7 +18,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagedObjectStateSerializationTest extends ManagedObjectStateSerializationTestBase {
 
@@ -51,9 +50,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
             break;
           case ManagedObjectState.QUEUE_TYPE:
             testLinkedBlockingQueue();
-            break;
-          case ManagedObjectState.CONCURRENT_HASHMAP_TYPE:
-            testConcurrentHashMap();
             break;
           case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
             testConcurrentDistributedMap();
@@ -204,23 +200,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     final ManagedObjectState state = applyValidation(className, cursor);
 
     serializationValidation(state, cursor, ManagedObjectState.QUEUE_TYPE);
-  }
-
-  public void testConcurrentHashMap() throws Exception {
-    final String className = ConcurrentHashMap.class.getName();
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(ConcurrentHashMapManagedObjectState.SEGMENT_MASK_FIELD_NAME, Integer.valueOf(10), false);
-    cursor.addPhysicalAction(ConcurrentHashMapManagedObjectState.SEGMENT_SHIFT_FIELD_NAME, Integer.valueOf(20), false);
-    final ObjectID[] segments = new ObjectID[] { new ObjectID(2001), new ObjectID(2002) };
-    cursor.addArrayAction(segments);
-
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2002), new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2004), new ObjectID(2005) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.CONCURRENT_HASHMAP_TYPE);
   }
 
   // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.

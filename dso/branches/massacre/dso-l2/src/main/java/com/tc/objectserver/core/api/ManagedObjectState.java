@@ -34,7 +34,6 @@ public interface ManagedObjectState {
   public static final byte LIST_TYPE                              = 0x07;
   public static final byte SET_TYPE                               = 0x08;
   public static final byte QUEUE_TYPE                             = 0x0b;
-  public static final byte CONCURRENT_HASHMAP_TYPE                = 0x0c;
   public static final byte PARTIAL_MAP_TYPE                       = 0x0d;
   // XXX: hack to get support various tims.
   public static final byte CONCURRENT_DISTRIBUTED_MAP_TYPE        = 0x11;

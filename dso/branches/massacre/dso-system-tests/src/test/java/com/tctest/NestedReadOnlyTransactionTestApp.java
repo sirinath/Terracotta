@@ -4,17 +4,15 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
 public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
@@ -28,7 +26,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
 
   public void run() {
     try {
-      int index = barrier.barrier();
+      int index = barrier.await();
       nestedReadLockTest(index);
       nestedWriteLockTest(index);
     } catch (Throwable t) {
@@ -51,7 +49,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
       }
     }
 
-    barrier.barrier();
+    barrier.await();
   }
 
   private void nestedWriteLockTest(int index) throws Exception {
@@ -59,7 +57,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
       dataRoot.clear();
     }
 
-    barrier.barrier();
+    barrier.await();
 
     if (index == 0) {
       ManagerUtil.monitorEnter(dataRoot, Manager.LOCK_TYPE_WRITE);
@@ -73,23 +71,23 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
         }
       }
 
-      barrier.barrier();
+      barrier.await();
 
       long l = dataRoot.getLongValue();
       Assert.assertEquals(15, l);
 
-      barrier.barrier();
+      barrier.await();
     } finally {
       if (index == 0) {
         ManagerUtil.monitorExit(dataRoot, Manager.LOCK_TYPE_WRITE);
       }
     }
 
-    barrier.barrier();
+    barrier.await();
 
     Assert.assertEquals(15, dataRoot.getLongValue());
 
-    barrier.barrier();
+    barrier.await();
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
@@ -101,8 +99,6 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
     config.addReadAutolock("* " + testClass + "*.*assertLongValue(..)");
 
     config.addIncludePattern(testClass + "$*");
-
-    new CyclicBarrierSpec().visit(visitor, config);
 
     spec.addRoot("barrier", "barrier");
     spec.addRoot("dataRoot", "dataRoot");

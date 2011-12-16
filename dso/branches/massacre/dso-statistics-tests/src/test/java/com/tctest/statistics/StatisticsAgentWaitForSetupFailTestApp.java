@@ -1,27 +1,29 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest.statistics;
-
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.statistics.retrieval.actions.SRASystemProperties;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
+
+import java.util.concurrent.BrokenBarrierException;
 
 public class StatisticsAgentWaitForSetupFailTestApp extends AbstractTransparentApp {
 
-  public static final int NODE_COUNT = 2;
+  public static final int     NODE_COUNT = 2;
 
-  private final CyclicBarrier barrier = new CyclicBarrier(NODE_COUNT);
+  private final CyclicBarrier barrier    = new CyclicBarrier(NODE_COUNT);
 
-  public StatisticsAgentWaitForSetupFailTestApp(final String appId, final ApplicationConfig cfg, final ListenerProvider listenerProvider) {
+  public StatisticsAgentWaitForSetupFailTestApp(final String appId, final ApplicationConfig cfg,
+                                                final ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
   }
 
@@ -32,8 +34,10 @@ public class StatisticsAgentWaitForSetupFailTestApp extends AbstractTransparentA
 
   private void barrier() {
     try {
-      barrier.barrier();
+      barrier.await();
     } catch (InterruptedException ie) {
+      throw new AssertionError();
+    } catch (BrokenBarrierException e) {
       throw new AssertionError();
     }
   }
@@ -41,10 +45,8 @@ public class StatisticsAgentWaitForSetupFailTestApp extends AbstractTransparentA
   public static void visitL1DSOConfig(final ConfigVisitor visitor, final DSOClientConfigHelper config) {
     String testClass = StatisticsAgentWaitForSetupFailTestApp.class.getName();
 
-    config.getOrCreateSpec(testClass)
-      .addRoot("barrier", "barrier");
+    config.getOrCreateSpec(testClass).addRoot("barrier", "barrier");
 
     config.addWriteAutolock("* " + testClass + "*.*(..)");
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 }

@@ -4,28 +4,27 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
+
+import java.util.concurrent.BrokenBarrierException;
 
 public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentApp {
 
-  private static final int ITERATION_COUNT = 10;
+  private static final int    ITERATION_COUNT = 10;
 
-  private static String    appId;
-  private final int        nodeCount;
+  private static String       appId;
+  private final int           nodeCount;
 
   // roots
-  private CyclicBarrier    barrier;
-  private SharedObject     sharedObject;
+  private final CyclicBarrier barrier;
+  private final SharedObject  sharedObject;
 
   public AutolockedDistributedMethodCallTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -37,7 +36,7 @@ public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentA
 
   public void run() {
     try {
-      int id = barrier.barrier();
+      int id = barrier.await();
       if (id % nodeCount == 0) {
         System.out.println("##### appId=[" + appId + "] initiating autolockedSynchronizedRead method call");
         this.sharedObject.autolockedSynchronizedRead();
@@ -52,7 +51,7 @@ public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentA
           this.sharedObject.localCounterIncrement();
         }
       }
-      barrier.barrier();
+      barrier.await();
 
       waitForAllDistributedCalls();
 
@@ -82,8 +81,6 @@ public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentA
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     try {
-      new CyclicBarrierSpec().visit(visitor, config);
-
       String testClassName = AutolockedDistributedMethodCallTestApp.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("barrier", "barrier");
@@ -121,7 +118,7 @@ public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentA
     private int                 autolockedSynchronizedCounter;
     private int                 autosynchronizedCounter;
     private int                 autolockedSynchronizeBlockCounter;
-    private CyclicBarrier       readerBarrier;
+    private final CyclicBarrier readerBarrier;
 
     public SharedObject(int readerCount) {
       autolockedSynchronizedCounter = 0;
@@ -183,7 +180,7 @@ public class AutolockedDistributedMethodCallTestApp extends AbstractTransparentA
       System.out.println("***** appId=[" + AutolockedDistributedMethodCallTestApp.appId
                          + "] autolockedSynchronizedRead called:  autolockedSynchronizedCounter=["
                          + autolockedSynchronizedCounter + "]");
-      readerBarrier.barrier();
+      readerBarrier.await();
     }
   }
 

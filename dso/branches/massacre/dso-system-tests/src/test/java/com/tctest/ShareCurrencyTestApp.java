@@ -4,14 +4,12 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.Currency;
@@ -35,12 +33,11 @@ public class ShareCurrencyTestApp extends AbstractErrorCatchingTransparentApp {
     config.addWriteAutolock(methodExpression);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("mapRoot", "mapRoot");
-    new CyclicBarrierSpec().visit(visitor, config);
-
   }
 
+  @Override
   protected void runTest() throws Throwable {
-    int index = barrier.barrier();
+    int index = barrier.await();
 
     if (index == 0) {
       synchronized (mapRoot) {
@@ -48,7 +45,7 @@ public class ShareCurrencyTestApp extends AbstractErrorCatchingTransparentApp {
       }
     }
 
-    barrier.barrier();
+    barrier.await();
 
     synchronized (mapRoot) {
       Currency cur = (Currency) mapRoot.get("EUR");

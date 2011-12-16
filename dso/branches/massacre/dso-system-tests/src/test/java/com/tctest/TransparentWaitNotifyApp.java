@@ -11,15 +11,16 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.HashMap;
-import java.util.concurrent.CyclicBarrier;
+import java.util.Map;
 
 public class TransparentWaitNotifyApp extends AbstractTransparentApp {
   private static final String DONE       = "done Biatch!";
 
-  private final HashMap       sharedRoot = new HashMap();
+  private final Map           sharedRoot = new HashMap();
   private final CyclicBarrier barrier    = new CyclicBarrier(getParticipantCount());
 
   public TransparentWaitNotifyApp(String globalId, ApplicationConfig cfg, ListenerProvider listenerProvider) {

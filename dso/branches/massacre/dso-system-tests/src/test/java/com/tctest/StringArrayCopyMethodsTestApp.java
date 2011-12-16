@@ -1,16 +1,15 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.Arrays;
@@ -28,6 +27,7 @@ public class StringArrayCopyMethodsTestApp extends AbstractErrorCatchingTranspar
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   protected void runTest() throws Throwable {
 
     synchronized (map) {
@@ -40,7 +40,7 @@ public class StringArrayCopyMethodsTestApp extends AbstractErrorCatchingTranspar
     char[] ca = (char[]) map.get("charArray");
     byte[] ba = (byte[]) map.get("byteArray");
 
-    int num = barrier.barrier();
+    int num = barrier.await();
     if (num == 0) {
       synchronized (ba) {
         // copy into the managed byte array
@@ -53,7 +53,7 @@ public class StringArrayCopyMethodsTestApp extends AbstractErrorCatchingTranspar
       }
     }
 
-    barrier.barrier();
+    barrier.await();
 
     Assert.assertTrue(Arrays.equals(new byte[] { 0, (byte) 'T', (byte) 'i', (byte) 'm', 0 }, ba));
     Assert.assertTrue(Arrays.equals(new char[] { 0, 'h', 'e', 'a', 'd' }, ca));
@@ -67,8 +67,6 @@ public class StringArrayCopyMethodsTestApp extends AbstractErrorCatchingTranspar
     config.addWriteAutolock(methodExpression);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("map", "map");
-
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
 }

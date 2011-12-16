@@ -12,9 +12,9 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.ArrayList;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,17 +23,18 @@ import java.util.List;
  * @author hhuynh
  */
 public class MassCloneTestApp extends AbstractErrorCatchingTransparentApp {
-  private static final int COUNT    = 6000;
-  private static final int RUN_TIME = 3 * 60 * 1000;
+  private static final int    COUNT    = 6000;
+  private static final int    RUN_TIME = 3 * 60 * 1000;
 
-  private List             root     = new ArrayList();
-  private CyclicBarrier    barrier;
+  private final List          root     = new ArrayList();
+  private final CyclicBarrier barrier;
 
   public MassCloneTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   protected void runTest() throws Throwable {
     if (barrier.barrier() == 0) {
       System.err.println("creating " + COUNT + " objects...");
@@ -97,6 +98,7 @@ public class MassCloneTestApp extends AbstractErrorCatchingTransparentApp {
       return array != null && list != null;
     }
 
+    @Override
     protected Object clone() throws CloneNotSupportedException {
       return super.clone();
     }

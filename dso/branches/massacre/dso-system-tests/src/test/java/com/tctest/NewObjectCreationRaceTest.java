@@ -1,18 +1,18 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedRef;
 
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.HashMap;
@@ -24,12 +24,14 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 3;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     getTransparentAppConfig().setClientCount(NODE_COUNT).setIntensity(1);
     initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return NewObjectCreationRaceTestApp.class;
   }
@@ -50,8 +52,9 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
       barrier = new CyclicBarrier(getParticipantCount());
     }
 
+    @Override
     protected void runTest() throws Throwable {
-      int n = barrier.barrier();
+      int n = barrier.await();
 
       if (n == 0) {
         runCreateNode();
@@ -61,7 +64,7 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
     }
 
     private void runFaultNode() throws Exception {
-      barrier.barrier();
+      barrier.await();
 
       final Map faultedRoot;
 
@@ -85,10 +88,10 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
       }
 
       // unblock the create node
-      barrier.barrier();
+      barrier.await();
 
       // wait for the create node to commit it's change
-      barrier.barrier();
+      barrier.await();
 
       // make sure the delta is in there
       synchronized (faultedRoot) {
@@ -136,7 +139,7 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
         Runnable doBarrier = new Runnable() {
           public void run() {
             try {
-              barrier.barrier();
+              barrier.await();
             } catch (Throwable err) {
               error.set(err);
             }
@@ -159,7 +162,7 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
         // create a change (ie. delta DNA) in the original transaction
         root.put("delta", "non-null");
 
-        barrier.barrier();
+        barrier.await();
       }
 
     }
@@ -170,8 +173,6 @@ public class NewObjectCreationRaceTest extends TransparentTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
-
       String testClass;
       TransparencyClassSpec spec;
       String methodExpression;
