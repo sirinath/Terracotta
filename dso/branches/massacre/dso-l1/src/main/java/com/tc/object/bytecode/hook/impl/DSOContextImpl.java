@@ -8,7 +8,7 @@ import static org.terracotta.license.LicenseConstants.LICENSE_KEY_FILENAME;
 
 import org.apache.commons.io.CopyUtils;
 
-import com.google.common.collect.MapMaker;
+import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.WeavingStrategy;
 import com.tc.bundles.EmbeddedOSGiRuntime;
@@ -23,7 +23,6 @@ import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.ManagerInternal;
@@ -58,7 +57,6 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 public class DSOContextImpl implements DSOContext {
@@ -206,8 +204,6 @@ public class DSOContextImpl implements DSOContext {
     this.instrumentationLogger = manager.getInstrumentationLogger();
     this.weavingStrategy = new DefaultWeavingStrategy(configHelper, instrumentationLogger);
 
-    checkForProperlyInstrumentedBaseClasses();
-
     validateTimApiVersion();
 
     try {
@@ -236,7 +232,7 @@ public class DSOContextImpl implements DSOContext {
 
   private void resolveClasses() {
     // This fixes a class circularity error in JavaClassInfoRepository
-    new MapMaker().weakKeys().weakValues().makeMap().put("foo", "bar");
+    JavaClassInfo.getClassInfo(getClass());
   }
 
   /**
@@ -266,19 +262,6 @@ public class DSOContextImpl implements DSOContext {
       msg.append("Unable to verify the contents of the boot jar; ");
       msg.append("Please check the client logs for more information.");
       throw new BootJarException(msg.toString(), e);
-    }
-  }
-
-  private void checkForProperlyInstrumentedBaseClasses() {
-    if (!configHelper.hasBootJar()) { return; }
-
-    if (!Manageable.class.isAssignableFrom(HashMap.class)) {
-      StringBuffer msg = new StringBuffer();
-      msg.append("The DSO boot jar is not prepended to your bootclasspath! ");
-      msg.append("Generate it using the make-boot-jar script ");
-      msg.append("and place the generated jar file in the bootclasspath ");
-      msg.append("(i.e. -Xbootclasspath/p:/path/to/terracotta/lib/dso-boot/dso-boot-xxx.jar)");
-      throw new Error(msg.toString());
     }
   }
 

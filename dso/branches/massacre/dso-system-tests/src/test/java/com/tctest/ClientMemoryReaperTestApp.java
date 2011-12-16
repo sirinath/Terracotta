@@ -11,6 +11,7 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Os;
+import com.tctest.builtin.HashMap;
 import com.tctest.restart.system.ObjectDataTestApp;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
@@ -18,7 +19,6 @@ import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;

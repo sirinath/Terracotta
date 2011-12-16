@@ -4,8 +4,6 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Opcodes;
@@ -13,11 +11,11 @@ import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.object.loaders.IsolationClassLoader;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import com.terracottatech.config.PersistenceMode;
 
@@ -86,17 +84,17 @@ public class NonStaticSubclassGCTest extends GCTestBase {
     protected void runTest() throws Throwable {
       IsolationClassLoader loader = (IsolationClassLoader) getClass().getClassLoader();
 
-      final int index = barrier.barrier();
+      final int index = barrier.await();
 
       if (index == 1) {
         loader.addAdapter("com.tctest.NonStaticSubclassGCTest$App$AbstractBase", AddFieldAdapter.class);
       }
 
-      barrier.barrier();
+      barrier.await();
 
       verifyFields(index == 1);
 
-      barrier.barrier();
+      barrier.await();
 
       if (index == 0) {
         synchronized (root) {
@@ -104,7 +102,7 @@ public class NonStaticSubclassGCTest extends GCTestBase {
         }
       }
 
-      barrier.barrier();
+      barrier.await();
 
       if (index != 0) {
         synchronized (root) {
@@ -112,7 +110,7 @@ public class NonStaticSubclassGCTest extends GCTestBase {
         }
       }
 
-      barrier.barrier();
+      barrier.await();
 
       // sleep for a few DGC cycles to make sure DGC runs on these bad state objects
       ThreadUtil.reallySleep(gcInterval * 5);
@@ -125,7 +123,6 @@ public class NonStaticSubclassGCTest extends GCTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
       String testClassName = App.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("root", "root");

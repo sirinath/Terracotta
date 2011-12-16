@@ -4,16 +4,14 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedInt;
-
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.AtomicInteger;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.HashMap;
@@ -23,14 +21,14 @@ import java.util.Map;
  * @author steve
  */
 public class TransparencySpeedTestApp extends AbstractTransparentApp {
-  public final static int       MUTATOR_COUNT  = 3;
-  public final static int       ADD_COUNT      = 10;                    // must be divisible by 2
-  public final static int       VERIFIER_COUNT = 3;
+  public final static int     MUTATOR_COUNT  = 3;
+  public final static int     ADD_COUNT      = 10;                  // must be divisible by 2
+  public final static int     VERIFIER_COUNT = 3;
 
-  private static Map            myRoot         = new HashMap();
-  private long                  count;
-  private int                   commits        = 0;
-  private final SynchronizedInt gcount         = new SynchronizedInt(0);
+  private static Map          myRoot         = new HashMap();
+  private long                count;
+  private int                 commits        = 0;
+  private final AtomicInteger gcount         = new AtomicInteger(0);
 
   public TransparencySpeedTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -56,12 +54,10 @@ public class TransparencySpeedTestApp extends AbstractTransparentApp {
     methodExpression = "boolean com.tctest.TransparencySpeedTestVerifier.verify()";
 
     config.addWriteAutolock(methodExpression);
-    new SynchronizedIntSpec().visit(visitor, config);
   }
 
   public void run() {
-
-    int myId = gcount.increment();
+    int myId = gcount.incrementAndGet();
     if (myId > MUTATOR_COUNT) {
       verify();
     } else {

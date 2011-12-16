@@ -9,17 +9,17 @@ import com.tc.cluster.DsoClusterListener;
 import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tc.util.Assert;
 import com.tcclient.cluster.DsoNode;
+import com.tctest.builtin.ArrayList;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClusterEventsTestListener implements DsoClusterListener {
 
   @InjectedDsoInstance
-  private DsoCluster    cluster;
+  private DsoCluster          cluster;
 
-  private List<String>  eventDescriptions = new ArrayList<String>();
-  private List<DsoNode> eventNodes = new ArrayList<DsoNode>();
+  private final List<String>  eventDescriptions = new ArrayList<String>();
+  private final List<DsoNode> eventNodes        = new ArrayList<DsoNode>();
 
   public List<String> getOccurredEvents() {
     return eventDescriptions;

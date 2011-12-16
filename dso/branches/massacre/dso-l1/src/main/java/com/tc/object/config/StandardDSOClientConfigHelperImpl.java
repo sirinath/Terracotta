@@ -36,13 +36,11 @@ import com.tc.net.core.ConnectionInfo;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
-import com.tc.object.SerializationUtil;
-import com.tc.object.bytecode.AQSSubclassStrongReferenceAdapter;
-import com.tc.object.bytecode.AbstractListMethodCreator;
+import com.tc.object.applicator.HashMapApplicator;
+import com.tc.object.applicator.ListApplicator;
 import com.tc.object.bytecode.ByteCodeUtil;
 import com.tc.object.bytecode.ClassAdapterBase;
 import com.tc.object.bytecode.ClassAdapterFactory;
-import com.tc.object.bytecode.JavaUtilConcurrentLocksAQSAdapter;
 import com.tc.object.bytecode.OverridesHashCodeAdapter;
 import com.tc.object.bytecode.SafeSerialVersionUIDAdder;
 import com.tc.object.bytecode.SessionConfiguration;
@@ -224,7 +222,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     try {
       doPreInstrumentedAutoconfig();
       doAutoconfig();
-      doLegacyDefaultModuleConfig();
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
@@ -236,10 +233,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     logger.debug("roots: " + this.roots);
     logger.debug("locks: " + this.locks);
     logger.debug("distributed-methods: " + this.distributedMethods);
-  }
-
-  private void doLegacyDefaultModuleConfig() {
-    new Jdk15PreInstrumentedConfiguration(this).apply();
   }
 
   public String rawConfigText() {
@@ -355,67 +348,12 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   private void doPreInstrumentedAutoconfig() {
-    TransparencyClassSpec spec = null;
-
-    spec = getOrCreateSpec("java.util.HashMap", "com.tc.object.applicator.PartialHashMapApplicator");
-
-    spec = getOrCreateSpec("com.tcclient.util.MapEntrySetWrapper$EntryWrapper");
-
-    spec = getOrCreateSpec("java.util.IdentityHashMap", "com.tc.object.applicator.HashMapApplicator");
-    spec.addAlwaysLogSpec(SerializationUtil.PUT_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.REMOVE_KEY_SIGNATURE);
-    spec.addAlwaysLogSpec(SerializationUtil.CLEAR_SIGNATURE);
-
-    addJavaUtilCollectionPreInstrumentedSpec();
-
-    spec = getOrCreateSpec("com.tcclient.util.SortedViewSetWrapper");
-    spec.setHonorTransient(true);
-
-    // These classes are not PORTABLE by themselves, but logical classes subclasses them.
-    // We dont want them to get tc fields, TransparentAccess interfaces etc. but we do want them
-    // to be instrumented for Array manipulations, clone(), wait(), notify() calls etc.
-    spec = getOrCreateSpec("java.util.AbstractCollection");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec.addArrayCopyMethodCodeSpec(SerializationUtil.TO_ARRAY_SIGNATURE);
-    spec = getOrCreateSpec("java.util.AbstractList");
-    spec.setHonorTransient(true);
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec.addSupportMethodCreator(new AbstractListMethodCreator());
-    spec = getOrCreateSpec("java.util.AbstractSet");
-    spec = getOrCreateSpec("java.util.AbstractSequentialList");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-
-    // AbstractMap is special because it actually has some fields so it needs to be instrumented and not just ADAPTABLE
-    spec = getOrCreateSpec("java.util.AbstractMap");
-    spec.setHonorTransient(true);
-
-    // spec = getOrCreateSpec("java.lang.Number");
-    // This hack is needed to make Number work in all platforms. Without this hack, if you add Number in bootjar, the
-    // JVM crashes.
-    // spec.generateNonStaticTCFields(false);
-
-    // =================================================================
-
-    spec = getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
-
-    // addJDK15PreInstrumentedSpec();
-    // This section of spec are specified in the BootJarTool also
-    // They are placed again so that the honorTransient
-    // flag will be honored during runtime.
-    // SECTION BEGINS
-    if (Vm.getMegaVersion() >= 1 && Vm.getMajorVersion() > 4) {
-      addJavaUtilConcurrentHashMapSpec(); // should be in jdk15-preinst-config bundle
-      addLogicalAdaptedLinkedBlockingQueueSpec(); // should be in jdk15-preinst-config bundle
-    }
-    // SECTION ENDS
-
+    getOrCreateSpec("com.tcclient.object.DistributedMethodCall");
     markAllSpecsPreInstrumented();
   }
 
   private void doAutoconfig() throws Exception {
     TransparencyClassSpec spec;
-
-    addJDK15InstrumentedSpec();
 
     spec = getOrCreateSpec("java.lang.Object");
     spec.setCallConstructorOnLoad(true);
@@ -423,6 +361,17 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     spec = getOrCreateSpec("javax.servlet.GenericServlet");
     spec.setHonorTransient(true);
     spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
+
+    // XXX: Configuration for "built-in" clustered data types
+    // These should be deleted when system tests are moved up from core to toolkit
+    addIncludePattern("com.tctest.builtin.AtomicInteger");
+    addIncludePattern("com.tctest.builtin.AtomicReference");
+    addIncludePattern("com.tctest.builtin.Lock");
+    addIncludePattern("com.tctest.builtin.CyclicBarrier");
+    addIncludePattern("com.tctest.builtin.HashSet");
+    addIncludePattern("com.tctest.builtin.ConcurrentHashMap");
+    getOrCreateSpec("com.tctest.builtin.HashMap", HashMapApplicator.class.getName());
+    getOrCreateSpec("com.tctest.builtin.ArrayList", ListApplicator.class.getName());
 
     if (hasBootJar) {
       // pre-load specs from boot jar
@@ -488,114 +437,6 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     TransparencyClassSpec spec = getOrCreateSpec(classInfo.getName());
     spec.setHasOnLoadInjection(true);
     addCustomAdapter(classInfo.getName(), instrumentation.getClassAdapterFactoryForFieldInjection(fi));
-  }
-
-  private void addJDK15InstrumentedSpec() {
-    if (Vm.isJDK15Compliant()) {
-
-      TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock");
-      spec.markPreInstrumented();
-      spec.setPreCreateMethod("validateInUnLockState");
-      spec.setCallConstructorOnLoad(true);
-      spec.setHonorTransient(true);
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$DsoLock");
-      spec.setHonorTransient(true);
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock");
-      spec.markPreInstrumented();
-      spec.setPreCreateMethod("validateInUnLockState");
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock");
-      spec.setPreCreateMethod("validateInUnLockState");
-      spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$Sync");
-      spec.setHonorTransient(true);
-      spec.setCustomClassAdapter(new AQSSubclassStrongReferenceAdapter());
-      spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantReadWriteLock$FairSync");
-      spec.setCallConstructorOnLoad(true);
-      spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("com.tcclient.util.concurrent.locks.ConditionObject");
-      spec.disableWaitNotifyCodeSpec("signal()V");
-      spec.disableWaitNotifyCodeSpec("signalAll()V");
-      spec.setHonorTransient(true);
-      spec.setCallConstructorOnLoad(true);
-
-      spec = getOrCreateSpec("com.tcclient.util.concurrent.locks.ConditionObject$SyncCondition");
-      spec.setCallConstructorOnLoad(true);
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$Sync");
-      spec.setHonorTransient(true);
-      spec.setCustomClassAdapter(new AQSSubclassStrongReferenceAdapter());
-      spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock$FairSync");
-      spec.setCallConstructorOnLoad(true);
-      spec.markPreInstrumented();
-
-      spec = getOrCreateSpec("java.util.concurrent.locks.ReentrantLock");
-      spec.setPreCreateMethod("validateInUnLockState");
-      spec.setCallConstructorOnLoad(true);
-      spec.markPreInstrumented();
-
-      addAbstractSynchronizerSpec();
-    }
-  }
-
-  private void addAbstractSynchronizerSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.locks.AbstractQueuedSynchronizer");
-    spec.setHonorTransient(true);
-    spec.addTransient("state");
-    spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    spec.setCustomClassAdapter(new JavaUtilConcurrentLocksAQSAdapter());
-    spec.markPreInstrumented();
-
-    if (Vm.isJDK16Compliant()) {
-      spec = getOrCreateSpec("java.util.concurrent.locks.AbstractOwnableSynchronizer");
-      spec.setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-      spec.markPreInstrumented();
-    }
-  }
-
-  private void addJavaUtilCollectionPreInstrumentedSpec() {
-    // The details of the instrumentation spec is specified in BootJarTool.
-    getOrCreateSpec("java.util.HashSet", "com.tc.object.applicator.HashSetApplicator");
-
-    getOrCreateSpec("java.util.ArrayList", "com.tc.object.applicator.ListApplicator");
-  }
-
-  private void addJavaUtilConcurrentHashMapSpec() {
-    TransparencyClassSpec spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap",
-                                                 "com.tc.object.applicator.ConcurrentHashMapApplicator");
-    spec.setHonorTransient(true);
-    spec.setPostCreateMethod("__tc_rehash");
-    // The "segments" array is itself not a shared object and doesn't need array instrumentation
-    TransparencyCodeSpec defaultCodeSpec = TransparencyCodeSpecImpl.getDefaultLogicalCodeSpec();
-    defaultCodeSpec.setArrayOperatorInstrumentationReq(false);
-    spec.setDefaultCodeSpec(defaultCodeSpec);
-
-    spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$Segment");
-    // The "table" array is itself not a shared object and doesn't need array instrumentation
-    defaultCodeSpec = TransparencyCodeSpecImpl.getDefaultPhysicalCodeSpec();
-    defaultCodeSpec.setArrayOperatorInstrumentationReq(false);
-    defaultCodeSpec.setForceRawFieldAccess(); // field reads of HashEntry instances do not need to be instrumented
-    spec.setDefaultCodeSpec(defaultCodeSpec);
-    spec.setCallConstructorOnLoad(true);
-    spec.setHonorTransient(true);
-
-    if (Vm.isJDK16Compliant()) {
-      spec = getOrCreateSpec("java.util.concurrent.ConcurrentHashMap$WriteThroughEntry");
-      spec = getOrCreateSpec("java.util.AbstractMap$SimpleEntry");
-    }
-  }
-
-  private void addLogicalAdaptedLinkedBlockingQueueSpec() {
-    getOrCreateSpec("java.util.AbstractQueue").setInstrumentationAction(TransparencyClassSpec.ADAPTABLE);
-    getOrCreateSpec("java.util.concurrent.LinkedBlockingQueue",
-                    "com.tc.object.applicator.LinkedBlockingQueueApplicator");
   }
 
   public void addCustomAdapter(final String name, final ClassAdapterFactory factory) {

@@ -4,8 +4,6 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
@@ -14,11 +12,11 @@ import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Vm;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.lang.reflect.InvocationTargetException;
@@ -64,10 +62,10 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
     for (Iterator i = tests.iterator(); i.hasNext();) {
       String name = (String) i.next();
 
-      if (barrier.barrier() == 0) {
+      if (barrier.await() == 0) {
         setupTestMaps(name);
       }
-      barrier.barrier();
+      barrier.await();
 
       for (Iterator maps = getTestMaps(); maps.hasNext();) {
         synchronized (sharedMap) {
@@ -79,7 +77,7 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
         Map map = (Map) maps.next();
 
         long start = System.currentTimeMillis();
-        if (barrier.barrier() == 0) System.err.print("Running test: " + name + " on " + map.getClass() + " ... ");
+        if (barrier.await() == 0) System.err.print("Running test: " + name + " on " + map.getClass() + " ... ");
 
         try {
           runOp(name, map, false);
@@ -87,7 +85,7 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
           exit.toggle();
           throw t;
         } finally {
-          barrier.barrier();
+          barrier.await();
         }
         if (exit.shouldExit()) return;
 
@@ -97,7 +95,7 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
           exit.toggle();
           throw t;
         } finally {
-          if (barrier.barrier() == 0) System.err.println(" took " + (System.currentTimeMillis() - start) + " millis");
+          if (barrier.await() == 0) System.err.println(" took " + (System.currentTimeMillis() - start) + " millis");
         }
 
         if (exit.shouldExit()) return;
@@ -197,8 +195,6 @@ public class NonFaultingMapTestApp extends AbstractErrorCatchingTransparentApp {
 
     String methodExpression = "* " + testClass + "*.*(..)";
     config.addWriteAutolock(methodExpression);
-
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
   private static class Exit {

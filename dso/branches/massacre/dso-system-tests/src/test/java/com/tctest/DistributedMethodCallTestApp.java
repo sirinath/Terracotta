@@ -7,15 +7,13 @@ package com.tctest;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.AtomicInteger;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.Arrays;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class DistributedMethodCallTestApp extends AbstractTransparentApp {
 
@@ -131,10 +129,9 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
   private static int[][][] makeIntArray() {
     int[][][] ints = new int[6][8][9];
     int count = 0;
-    for (int i = 0; i < ints.length; i++) {
-      int[][] array1 = ints[i];
-      for (int j = 0; j < array1.length; j++) {
-        int[] array2 = array1[j];
+    for (int[][] array1 : ints) {
+      for (int[] element : array1) {
+        int[] array2 = element;
         for (int k = 0; k < array2.length; k++) {
           array2[k] = count++;
         }
@@ -145,8 +142,8 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
 
   private static FooObject[][] makeFooArray() {
     FooObject[][] foos = new FooObject[2][3];
-    for (int i = 0; i < foos.length; i++) {
-      Arrays.fill(foos[i], new FooObject());
+    for (FooObject[] foo : foos) {
+      Arrays.fill(foo, new FooObject());
     }
     return foos;
   }
@@ -174,22 +171,17 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       System.out.println("XXXXXXX callCount: " + countCall);
       new Exception().printStackTrace();
       // Everything in the "foos" array should be non-null
-      for (int index = 0; index < foos.length; index++) {
-        FooObject[] array = foos[index];
-        for (int j = 0; j < array.length; j++) {
-          FooObject foo = array[j];
+      for (FooObject[] array : foos) {
+        for (FooObject foo : array) {
           if (foo == null) notifyError("foo == null");
         }
       }
 
       // access all the "ints"
       int count = 0;
-      for (int index = 0; index < ints.length; index++) {
-        int[][] array1 = ints[index];
-        for (int j = 0; j < array1.length; j++) {
-          int[] array2 = array1[j];
-          for (int k = 0; k < array2.length; k++) {
-            int val = array2[k];
+      for (int[][] array1 : ints) {
+        for (int[] array2 : array1) {
+          for (int val : array2) {
             if (count++ != val) notifyError("count ++ != val");
           }
         }
@@ -203,22 +195,17 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         throws Throwable {
       callCount.incrementAndGet();
       // Everything in the "foos" array should be non-null
-      for (int index = 0; index < foos.length; index++) {
-        FooObject[] array = foos[index];
-        for (int j = 0; j < array.length; j++) {
-          FooObject foo = array[j];
+      for (FooObject[] array : foos) {
+        for (FooObject foo : array) {
           if (foo == null) notifyError("foo == null");
         }
       }
 
       // access all the "ints"
       int count = 0;
-      for (int index = 0; index < ints.length; index++) {
-        int[][] array1 = ints[index];
-        for (int j = 0; j < array1.length; j++) {
-          int[] array2 = array1[j];
-          for (int k = 0; k < array2.length; k++) {
-            int val = array2[k];
+      for (int[][] array1 : ints) {
+        for (int[] array2 : array1) {
+          for (int val : array2) {
             if (count++ != val) notifyError("count ++ != val");
           }
         }
@@ -268,9 +255,6 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     try {
-      new CyclicBarrierSpec().visit(visitor, config);
-      new SynchronizedIntSpec().visit(visitor, config);
-
       TransparencyClassSpec spec = config.getOrCreateSpec(FooObject.class.getName());
       String testClassName = DistributedMethodCallTestApp.class.getName();
       spec = config.getOrCreateSpec(testClassName);
@@ -288,8 +272,8 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       spec.addDistributedMethodCall("addObjectNonVoid",
                                     "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)java/lang/String;", true);
       spec.addDistributedMethodCall("addObjectWithNulls", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V", true);
-      spec
-          .addDistributedMethodCall("addObjectWithParamChange", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V", true);
+      spec.addDistributedMethodCall("addObjectWithParamChange", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V",
+                                    true);
       spec.addDistributedMethodCall("addObjectSynched", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V", true);
       spec.addDistributedMethodCall("addObjectNested", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V", true);
       spec.addDistributedMethodCall("addObject", "(Ljava/lang/Object;ID[[Lcom/tctest/FooObject;[[[IZ)V", true);

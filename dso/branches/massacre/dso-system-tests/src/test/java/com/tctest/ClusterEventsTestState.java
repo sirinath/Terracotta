@@ -4,8 +4,8 @@
 package com.tctest;
 
 import com.tcclient.cluster.DsoNode;
+import com.tctest.builtin.HashMap;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class ClusterEventsTestState {

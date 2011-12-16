@@ -13,14 +13,13 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * @author steve
@@ -68,8 +67,6 @@ public class TransparencyTestApp extends AbstractTransparentApp {
     myRoot = new HashMap();
     synchronized (myRoot) {
       test1();
-      Vector v = new Vector();
-      v.add("Hello Steve");
       testFunnyInner();
       testFunnyCstr();
     }

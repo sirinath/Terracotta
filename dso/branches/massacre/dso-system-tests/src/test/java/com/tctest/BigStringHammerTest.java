@@ -4,44 +4,37 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
 
 /**
- * The goal of this test is to check concurrent decompression of big strings.  "Big" (default=512) strings
- * get decompressed in an L1 before being sent to the L2.  These compressed values are then sent to any other
+ * The goal of this test is to check concurrent decompression of big strings. "Big" (default=512) strings
+ * get decompressed in an L1 before being sent to the L2. These compressed values are then sent to any other
  * receiving L1s that fault in the String value.
- * 
- * On the receiving L1, we pack the compressed byte[] into a char[] and create a new String with it.  This string
- * has a valid length and hash code (retrieving only those values should not cause decompression).  But the string
- * is instrumented such that any call to the internal char[] goes through a new method that will unpack and decompress 
- * the char[] value before returning it.  
- * 
- * The act of decompression has a benign data race (similar to the one in computing the hashcode).  Since no
- * synchronization or volatile is used, more than one thread might decompress the string at the same time without 
- * knowing about the other thread's activity.  
- * 
- * This test tries to test decompression and also push that race a bit.  It starts multiple nodes with 
- * multiple threads.  Each thread grabs a portion of a shared list and populates it with a value based on the index
+ * On the receiving L1, we pack the compressed byte[] into a char[] and create a new String with it. This string
+ * has a valid length and hash code (retrieving only those values should not cause decompression). But the string
+ * is instrumented such that any call to the internal char[] goes through a new method that will unpack and decompress
+ * the char[] value before returning it.
+ * The act of decompression has a benign data race (similar to the one in computing the hashcode). Since no
+ * synchronization or volatile is used, more than one thread might decompress the string at the same time without
+ * knowing about the other thread's activity.
+ * This test tries to test decompression and also push that race a bit. It starts multiple nodes with
+ * multiple threads. Each thread grabs a portion of a shared list and populates it with a value based on the index
  * (so the expected value can be recomputed).
- * 
  * Then all threads walk through each index and:
- *   1) hit a barrier to synchronize
- *   2) access the string such that decompression will occur
- *   3) verify the string value against a newly constructed equivalent version
- *   
- * At any given index, 1 node will have created the values and so will not have a compressed value.  The interesting
+ * 1) hit a barrier to synchronize
+ * 2) access the string such that decompression will occur
+ * 3) verify the string value against a newly constructed equivalent version
+ * At any given index, 1 node will have created the values and so will not have a compressed value. The interesting
  * part here is really in the threads, so you could bump up the THREAD_COUNT if you wanted.
  */
 public class BigStringHammerTest extends TransparentTestBase implements TestConfigurator {
@@ -52,10 +45,12 @@ public class BigStringHammerTest extends TransparentTestBase implements TestConf
     // disableAllUntil("2008-04-30");
   }
 
+  @Override
   protected Class getApplicationClass() {
     return BigStringHammerTestApp.class;
   }
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(THREADS_COUNT);
     t.initializeTestRunner();
@@ -84,22 +79,22 @@ public class BigStringHammerTest extends TransparentTestBase implements TestConf
       config.addWriteAutolock(methodExpression);
       methodExpression = "* " + testClass + ".readPhase(..)";
       config.addReadAutolock(methodExpression);
-      new CyclicBarrierSpec().visit(visitor, config);
     }
 
-    public void runTest() throws BrokenBarrierException, InterruptedException {
+    @Override
+    public void runTest() throws InterruptedException, BrokenBarrierException {
       int participationCount = getParticipantCount();
       barrier = new CyclicBarrier(participationCount);
 
       int totalSize = participationCount * ITEMS_PER_PARTICIPANT;
-      values = new ArrayList(totalSize);
+      values = new ArrayList();
 
-      int arrivalOrder = barrier.barrier();
+      int arrivalOrder = barrier.await();
 
       prepPhase(arrivalOrder, totalSize);
       loadPhase(arrivalOrder);
       readPhase();
-      
+
       System.out.println("Participant " + arrivalOrder + " done reading values.");
     }
 
@@ -113,8 +108,8 @@ public class BigStringHammerTest extends TransparentTestBase implements TestConf
       }
     }
 
-    private void loadPhase(int arrivalOrder) throws InterruptedException {
-      barrier.barrier();
+    private void loadPhase(int arrivalOrder) throws InterruptedException, BrokenBarrierException {
+      barrier.await();
 
       // Set items in the list for this thread's chunk of the list
       int begin = arrivalOrder * ITEMS_PER_PARTICIPANT; // inclusive
@@ -138,9 +133,9 @@ public class BigStringHammerTest extends TransparentTestBase implements TestConf
       return str.toString();
     }
 
-    private void readPhase() throws InterruptedException {
+    private void readPhase() throws InterruptedException, BrokenBarrierException {
       for (int i = 0; i < values.size(); i++) {
-        barrier.barrier();
+        barrier.await();
 
         String actual = null;
         synchronized (values) {

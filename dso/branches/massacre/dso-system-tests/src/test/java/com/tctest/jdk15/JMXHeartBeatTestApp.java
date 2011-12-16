@@ -14,10 +14,10 @@ import com.tc.simulator.listener.ListenerProvider;
 import com.tc.test.JMXUtils;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.io.IOException;
-import java.util.concurrent.CyclicBarrier;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -73,9 +73,8 @@ public class JMXHeartBeatTestApp extends AbstractTransparentApp {
       jmxc = JMXUtils.getJMXConnector("localhost", jmxPort);
       mbsc = jmxc.getMBeanServerConnection();
       echo("obtained mbeanserver connection");
-      serverMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc,
-                                                                                      L2MBeanNames.TC_SERVER_INFO,
-                                                                                      TCServerInfoMBean.class, false);
+      serverMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO,
+                                                                  TCServerInfoMBean.class, false);
       String result = serverMBean.getHealthStatus();
       echo("got health status: " + result);
       jmxc.close();

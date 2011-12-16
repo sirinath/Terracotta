@@ -6,20 +6,18 @@ package com.tctest;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.Os;
+import com.tctest.builtin.ConcurrentHashMap;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CyclicBarrier;
 
 public class MapOfCollectionsTestApp extends AbstractTransparentApp {
 
@@ -46,8 +44,6 @@ public class MapOfCollectionsTestApp extends AbstractTransparentApp {
 
     config.addIncludePattern(Key.class.getName() + "$*", false, false, true);
     config.addIncludePattern(Value.class.getName() + "$*", false, false, true);
-    new SynchronizedIntSpec().visit(visitor, config);
-    new CyclicBarrierSpec().visit(visitor, config);
   }
 
   public MapOfCollectionsTestApp(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {

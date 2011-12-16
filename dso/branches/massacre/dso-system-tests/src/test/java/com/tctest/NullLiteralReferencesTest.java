@@ -8,15 +8,13 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.HashMap;
@@ -50,7 +48,7 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
 
     @Override
     protected void runTest() throws Throwable {
-      int index = barrier.barrier();
+      int index = barrier.await();
 
       if (index == 0) {
         Holder h1 = new Holder(true);
@@ -72,7 +70,7 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
         h2.setNull();
       }
 
-      barrier.barrier();
+      barrier.await();
 
       Holder compareNull = new Holder(true);
       Holder compareNotNull = new Holder(false);
@@ -84,8 +82,6 @@ public class NullLiteralReferencesTest extends TransparentTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
-
       String testClass;
       TransparencyClassSpec spec;
       String methodExpression;

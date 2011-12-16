@@ -4,8 +4,6 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
@@ -15,29 +13,30 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Test to make sure custom adapted class and its inherited classes can be shared under DSO
- *
+ * 
  * @author hhuynh
  */
 public class CustomClassAdapterTestApp extends AbstractErrorCatchingTransparentApp {
-  private Map           root = new HashMap();
-  private CyclicBarrier barrier;
+  private final Map           root = new HashMap();
+  private final CyclicBarrier barrier;
 
   public CustomClassAdapterTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   protected void runTest() throws Throwable {
     Foo foo = new Foo();
     Assert.assertEquals(-1, foo.getVal());
@@ -51,7 +50,7 @@ public class CustomClassAdapterTestApp extends AbstractErrorCatchingTransparentA
     Assert.assertEquals(-1, fooKid.getVal());
     Assert.assertEquals(-2, fooKid.getDoubleVal());
 
-    if (barrier.barrier() == 0) {
+    if (barrier.await() == 0) {
       synchronized (root) {
         foo.setVal(200);
         fooKid.setVal(200);
@@ -60,7 +59,7 @@ public class CustomClassAdapterTestApp extends AbstractErrorCatchingTransparentA
       }
     }
 
-    barrier.barrier();
+    barrier.await();
     Foo sharedFoo = (Foo) root.get("foo");
     Assert.assertEquals(-1, foo.getVal());
     Assert.assertEquals(200, sharedFoo.getRealVal());
@@ -84,9 +83,6 @@ public class CustomClassAdapterTestApp extends AbstractErrorCatchingTransparentA
   }
 
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-    CyclicBarrierSpec cbspec = new CyclicBarrierSpec();
-    cbspec.visit(visitor, config);
-
     String testClass = CustomClassAdapterTestApp.class.getName();
     TransparencyClassSpec spec = config.getOrCreateSpec(testClass);
 
@@ -148,6 +144,7 @@ class GetValAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory
     super(visitor);
   }
 
+  @Override
   public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature,
                                    final String[] exceptions) {
     if ("getVal".equals(name)) {

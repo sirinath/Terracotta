@@ -4,27 +4,27 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.Root;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 public class TransientFieldsTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 3;
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return App.class;
   }
@@ -44,13 +44,12 @@ public class TransientFieldsTest extends TransparentTestBase {
 
       config.addRoot(new Root(App.class.getName(), "root", "root"), false);
       config.addRoot(new Root(App.class.getName(), "barrier", "barrier"), false);
-
-      new CyclicBarrierSpec().visit(visitor, config);
     }
 
     private final Foo           root = new Foo();
     private final CyclicBarrier barrier;
 
+    @Override
     protected void runTest() throws Throwable {
       final int myId = Integer.parseInt(getApplicationId());
       final Object myObject = getApplicationId();
@@ -65,7 +64,7 @@ public class TransientFieldsTest extends TransparentTestBase {
       assertEquals(null, root.getDeclaredTransientObject());
       assertEquals(null, root.getHonoredTransientObject());
 
-      barrier.barrier();
+      barrier.await();
 
       // set the transient fields to local values
       root.setDeclaredTransientInt(myId);
@@ -73,7 +72,7 @@ public class TransientFieldsTest extends TransparentTestBase {
       root.setDeclaredTransientObject(myObject);
       root.setHonoredTransientObject(myObject);
 
-      barrier.barrier();
+      barrier.await();
 
       // observe the the transient fields values are still what we expect them to be
       assertEquals(myId, root.getDeclaredTransientInt());
@@ -81,10 +80,10 @@ public class TransientFieldsTest extends TransparentTestBase {
       assertEquals(myObject, root.getDeclaredTransientObject());
       assertEquals(myObject, root.getHonoredTransientObject());
 
-      barrier.barrier();
+      barrier.await();
 
       // make sure reference clearing does not disturb transient fields
-      ((Manageable)root).__tc_managed().clearReferences(10000);
+      ((Manageable) root).__tc_managed().clearReferences(10000);
       assertEquals(myObject, root.getDeclaredTransientObject());
       assertEquals(myObject, root.getHonoredTransientObject());
     }

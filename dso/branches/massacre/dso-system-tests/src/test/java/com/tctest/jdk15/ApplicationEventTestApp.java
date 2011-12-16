@@ -21,9 +21,9 @@ import com.tc.simulator.app.ErrorContext;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.test.JMXUtils;
 import com.tc.util.Assert;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
 import javax.management.MBeanServerConnection;

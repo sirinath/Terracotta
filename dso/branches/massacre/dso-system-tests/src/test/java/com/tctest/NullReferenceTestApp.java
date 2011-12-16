@@ -4,15 +4,13 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
 import java.util.ArrayList;
@@ -51,22 +49,19 @@ public class NullReferenceTestApp extends AbstractErrorCatchingTransparentApp {
     config.addWriteAutolock(methodExpression);
 
     config.addIncludePattern(Holder.class.getName());
-
-    new CyclicBarrierSpec().visit(visitor, config);
-
   }
 
   @Override
   protected void runTest() throws Throwable {
-    barrier.barrier();
+    barrier.await();
 
     holder.check();
 
-    barrier.barrier();
+    barrier.await();
 
     holder.mod();
 
-    barrier.barrier();
+    barrier.await();
   }
 
   private static class Holder {

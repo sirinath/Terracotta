@@ -118,10 +118,6 @@ public class MockTCClass implements TCClass {
     return getClass();
   }
 
-  public String getFieldNameByOffset(final long fieldOffset) {
-    throw new ImplementMe();
-  }
-
   public ClientObjectManager getObjectManager() {
     throw new ImplementMe();
   }

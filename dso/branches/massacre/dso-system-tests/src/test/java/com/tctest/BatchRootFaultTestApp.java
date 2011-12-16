@@ -1,5 +1,6 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tctest;
 
@@ -8,15 +9,15 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
+import com.tctest.builtin.HashSet;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class BatchRootFaultTestApp extends AbstractTransparentApp {
-  private TestRoot root1;
-  private TestRoot root2;
-  private Set      nodes = new HashSet();
+  private TestRoot  root1;
+  private TestRoot  root2;
+  private final Set nodes = new HashSet();
 
   public BatchRootFaultTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);

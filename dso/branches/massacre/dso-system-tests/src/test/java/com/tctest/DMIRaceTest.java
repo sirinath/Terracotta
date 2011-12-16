@@ -4,21 +4,19 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.DistributedMethodSpec;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 import com.terracottatech.config.PersistenceMode;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -69,14 +67,14 @@ public class DMIRaceTest extends TransparentTestBase {
 
     @Override
     protected void runTest() throws Throwable {
-      final int index = barrier.barrier();
+      final int index = barrier.await();
       final boolean dmiSource = index == 0;
 
       if (dmiSource) {
         dmiTarget = new DmiTarget();
       }
 
-      barrier.barrier();
+      barrier.await();
 
       if (index < PRODUCERS) {
         producer(dmiSource);
@@ -124,8 +122,6 @@ public class DMIRaceTest extends TransparentTestBase {
     }
 
     public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
-      new CyclicBarrierSpec().visit(visitor, config);
-
       String testClassName = App.class.getName();
       TransparencyClassSpec spec = config.getOrCreateSpec(testClassName);
       spec.addRoot("root", "root");

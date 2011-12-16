@@ -8,7 +8,6 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.OutputListener;
@@ -196,8 +195,6 @@ public class ObjectDataTestApp extends AbstractTransparentApp {
     // Worker config
     String workerRunExpression = "* " + workerClassname + ".run(..)";
     addWriteAutolock(config, isSynchronousWrite, workerRunExpression);
-
-    new SynchronizedIntSpec().visit(visitor, config);
 
     // IDProvider config
     String nextIDExpression = "* " + idProviderClassname + ".nextID(..)";

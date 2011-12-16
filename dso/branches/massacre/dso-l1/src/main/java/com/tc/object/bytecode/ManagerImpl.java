@@ -684,8 +684,7 @@ public class ManagerImpl implements ManagerInternal {
   }
 
   public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
-    final TCObject tcObj = lookupExistingOrNull(pojo);
-    return tcObj != null && tcObj.isFieldPortableByOffset(fieldOffset);
+    throw new AssertionError();
   }
 
   public boolean overridesHashCode(final Object obj) {

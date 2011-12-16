@@ -14,10 +14,8 @@ import com.tc.simulator.app.ErrorContext;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.test.JMXUtils;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.management.remote.JMXConnector;
 
@@ -28,13 +26,8 @@ public abstract class AbstractTransparentApp implements Application {
   private final TransparentAppCoordinator coordinator;
   private final int                       intensity;
   private final ListenerProvider          listenerProvider;
-  private final Set                       appIds        = new HashSet();
 
   public AbstractTransparentApp(String appId, ApplicationConfig config, ListenerProvider listenerProvider) {
-    synchronized (appIds) {
-      if (!appIds.add(appId)) { throw new AssertionError("You've created me with the same global ID as someone else: "
-                                                         + appId); }
-    }
     this.listenerProvider = listenerProvider;
     this.intensity = config.getIntensity();
     this.coordinator = new TransparentAppCoordinator(appId, config.getGlobalParticipantCount());
@@ -78,15 +71,8 @@ public abstract class AbstractTransparentApp implements Application {
   public static void visitL1DSOConfig(ConfigVisitor visitor, DSOClientConfigHelper config) {
     config.addIncludePattern(AbstractTransparentApp.class.getName());
     config.addIncludePattern(TransparentAppCoordinator.class.getName());
-    config.addRoot("AbstractTransparentAppAppIds", AbstractTransparentApp.class.getName() + ".appIds");
     config.addWriteAutolock("* " + AbstractTransparentApp.class.getName() + ".*(..)");
     config.addWriteAutolock("* " + TransparentAppCoordinator.class.getName() + ".*(..)");
-
-    // XXX: Configuration for "built-in" clustered data types
-    // These should be deleted when system tests are moved up from core to toolkit
-    config.addIncludePattern("com.tctest.builtin.AtomicInteger");
-    config.addIncludePattern("com.tctest.builtin.AtomicReference");
-    config.addIncludePattern("com.tctest.builtin.Lock");
   }
 
   public void notifyResult(Boolean result) {

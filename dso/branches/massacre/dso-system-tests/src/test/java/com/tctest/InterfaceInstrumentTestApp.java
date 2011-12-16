@@ -4,22 +4,20 @@
  */
 package com.tctest;
 
-import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
-
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.TransparencyClassSpec;
-import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractErrorCatchingTransparentApp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparentApp {
   private final CyclicBarrier barrier;
-  private MyInterface root = new MyConcrete();
+  private final MyInterface   root = new MyConcrete();
 
   public InterfaceInstrumentTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
@@ -34,13 +32,12 @@ public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparent
     config.addWriteAutolock(methodExpression);
     spec.addRoot("barrier", "barrier");
     spec.addRoot("root", "root");
-    new CyclicBarrierSpec().visit(visitor, config);
 
     String concreteClass = MyConcrete.class.getName();
     String interfaceName = MyInterface.class.getName();
-    
+
     config.addIncludePattern(interfaceName + "+");
-    
+
     // THIS IS INTENTIONALLY COMMENTED OUT TO MAKE SURE
     // THE TEST STILL PASSES. SEE CDV-144
     // config.addIncludePattern(concreteClass);
@@ -48,25 +45,27 @@ public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparent
     config.addWriteAutolock("* " + concreteClass + "*.*(..)");
   }
 
+  @Override
   protected void runTest() throws Throwable {
-    if (barrier.barrier() == 0) {
+    if (barrier.await() == 0) {
       root.add("one");
       root.add("two");
     }
 
-    barrier.barrier();
+    barrier.await();
     Assert.assertEquals(2, root.getSize());
 
   }
-  
+
   static interface MyInterface {
     int getSize();
+
     void add(Object o);
   }
-  
+
   static class MyConcrete implements MyInterface {
     protected List list = new ArrayList();
-    
+
     public void add(Object o) {
       synchronized (list) {
         list.add(o);
@@ -79,6 +78,5 @@ public class InterfaceInstrumentTestApp extends AbstractErrorCatchingTransparent
       }
     }
   }
-  
-  
+
 }

@@ -9,7 +9,6 @@ import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
-import com.tc.object.config.spec.SynchronizedIntSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.stats.api.DSOClientMBean;
@@ -38,8 +37,6 @@ public class DSOClientMBeanNodeIDTestApp extends AbstractTransparentApp {
     String testClass = DSOClientMBeanNodeIDTestApp.class.getName();
     config.addIncludePattern(testClass + "$*", false, false, true);
     config.addWriteAutolock("* " + testClass + "*.*(..)");
-
-    new SynchronizedIntSpec().visit(visitor, config);
   }
 
   public void run() {

@@ -269,24 +269,6 @@ public interface TCObject extends Cacheable, TCObjectExternal {
   public boolean isNew();
 
   /**
-   * Set a field value change by offset
-   * 
-   * @param classname Class name
-   * @param fieldOffset The offset into this object's fields
-   * @param newValue New object value
-   * @param index The index if this peer object is an array
-   */
-  public void objectFieldChangedByOffset(String classname, long fieldOffset, Object newValue, int index);
-
-  /**
-   * Get field name from field offset
-   * 
-   * @param fieldOffset The offset for the field
-   * @return Field name
-   */
-  public String getFieldNameByOffset(long fieldOffset);
-
-  /**
    * Invoke logical method
    * 
    * @param method Method indicator, as defined in {@link com.tc.object.SerializationUtil}
@@ -304,14 +286,6 @@ public interface TCObject extends Cacheable, TCObjectExternal {
    * @return True if auto locking enabled.
    */
   public boolean autoLockingDisabled();
-
-  /**
-   * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
-   * 
-   * @param fieldOffset The index
-   * @return true if the field is portable and false otherwise
-   */
-  public boolean isFieldPortableByOffset(long fieldOffset);
 
   /**
    * Get or create the toggleable strong reference for this shared object. The returned object can be used to ensure the
