@@ -12,18 +12,18 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.simulator.listener.OutputListener;
 import com.tc.util.Assert;
+import com.tctest.builtin.ArrayList;
 import com.tctest.builtin.AtomicInteger;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
+import com.tctest.builtin.HashSet;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CyclicBarrier;
 
 public class ObjectDataTestApp extends AbstractTransparentApp {
   public static final String       SYNCHRONOUS_WRITE = "synch-write";
@@ -282,13 +282,6 @@ public class ObjectDataTestApp extends AbstractTransparentApp {
       spec.addRoot("barriers", classname + ".barriers");
       String barriersExpression = "* " + classname + ".*(..)";
       config.addWriteAutolock(barriersExpression);
-
-      String cyclicBarrierClassname = CyclicBarrier.class.getName();
-      config.addIncludePattern(cyclicBarrierClassname);
-
-      // CyclicBarrier config
-      String cyclicBarrierExpression = "* " + cyclicBarrierClassname + ".*(..)";
-      config.addWriteAutolock(cyclicBarrierExpression);
     }
 
     public Barriers(final int nodeCount) {

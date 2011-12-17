@@ -12,11 +12,11 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tctest.builtin.CyclicBarrier;
+import com.tctest.builtin.HashMap;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CyclicBarrier;
 
 public class MapsSystemTestApp extends AbstractTransparentApp {
   private final ServerControl                   serverControl;
