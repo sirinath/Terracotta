@@ -11,17 +11,17 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tctest.builtin.ArrayList;
+import com.tctest.builtin.CyclicBarrier;
 import com.tctest.runner.AbstractTransparentApp;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.CyclicBarrier;
 
 public class L2DumperTestApp extends AbstractTransparentApp {
 
-  private ArrayList<IntNumber> mySharedArrayList;
-  private int                  jmxPort;
-  private CyclicBarrier        barrier;
+  private final ArrayList<IntNumber> mySharedArrayList;
+  private final int                  jmxPort;
+  private final CyclicBarrier        barrier;
 
   public L2DumperTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);

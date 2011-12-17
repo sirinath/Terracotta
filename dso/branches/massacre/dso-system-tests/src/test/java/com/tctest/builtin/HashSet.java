@@ -29,24 +29,7 @@ public class HashSet<E> implements Set<E> {
 
   @Override
   public Iterator<E> iterator() {
-    final Iterator<E> iter = map.keySet().iterator();
-
-    return new Iterator<E>() {
-      @Override
-      public boolean hasNext() {
-        return iter.hasNext();
-      }
-
-      @Override
-      public E next() {
-        return iter.next();
-      }
-
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
+    return map.keySet().iterator();
   }
 
   @Override

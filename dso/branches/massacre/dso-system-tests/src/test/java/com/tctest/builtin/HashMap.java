@@ -61,7 +61,7 @@ public class HashMap<K, V> implements Map<K, V> {
   }
 
   public Set<K> keySet() {
-    return Collections.unmodifiableSet(data.keySet());
+    return new KeySet(data.keySet());
   }
 
   public Collection<V> values() {
@@ -202,6 +202,105 @@ public class HashMap<K, V> implements Map<K, V> {
     public void remove() {
       throw new UnsupportedOperationException();
     }
+  }
+
+  private class KeySet implements Set<K> {
+
+    private final Set<K> keySet;
+
+    public KeySet(Set<K> keySet) {
+      this.keySet = keySet;
+    }
+
+    public int size() {
+      return keySet.size();
+    }
+
+    public boolean isEmpty() {
+      return keySet.isEmpty();
+    }
+
+    public boolean contains(Object o) {
+      return keySet.contains(o);
+    }
+
+    public Iterator<K> iterator() {
+      final Iterator<K> iterator = keySet.iterator();
+      return new Iterator<K>() {
+
+        private K last;
+
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
+
+        @Override
+        public K next() {
+          last = iterator.next();
+          return last;
+        }
+
+        @Override
+        public void remove() {
+          ManagerUtil.checkWriteAccess(HashMap.this);
+          iterator.remove();
+          ManagerUtil.logicalInvoke(HashMap.this, SerializationUtil.REMOVE_SIGNATURE, new Object[] { last });
+        }
+      };
+    }
+
+    public Object[] toArray() {
+      return keySet.toArray();
+    }
+
+    public <T> T[] toArray(T[] a) {
+      return keySet.toArray(a);
+    }
+
+    public boolean add(K e) {
+      throw new UnsupportedOperationException();
+    }
+
+    public boolean remove(Object o) {
+      throw new UnsupportedOperationException();
+    }
+
+    public boolean containsAll(Collection<?> c) {
+      return keySet.containsAll(c);
+    }
+
+    public boolean addAll(Collection<? extends K> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    public boolean retainAll(Collection<?> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    public boolean removeAll(Collection<?> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    public void clear() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return keySet.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+      return keySet.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return keySet.toString();
+    }
+
   }
 
 }
