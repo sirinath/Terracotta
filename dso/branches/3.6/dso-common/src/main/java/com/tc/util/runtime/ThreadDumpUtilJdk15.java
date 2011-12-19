@@ -32,6 +32,11 @@ public class ThreadDumpUtilJdk15 extends ThreadDumpUtil {
         threadHeader(sb, thread);
         sb.append('\n');
         final StackTraceElement[] stea = thread.getStackTrace();
+        if (stea.length == 0) {
+          // skip not-started or terminated threads
+          continue;
+        }
+
         for (final StackTraceElement element : stea) {
           sb.append("\tat ");
           sb.append(element.toString());
