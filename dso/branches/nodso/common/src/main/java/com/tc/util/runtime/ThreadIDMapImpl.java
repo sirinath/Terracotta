@@ -5,14 +5,13 @@
 package com.tc.util.runtime;
 
 import com.google.common.collect.MapMaker;
-
 import com.tc.object.locks.ThreadID;
 
 import java.util.Map;
 
-public class ThreadIDMapJdk15 implements ThreadIDMap {
+public class ThreadIDMapImpl implements ThreadIDMap {
   private final Map<Long, ThreadID> id2ThreadIDMap = new MapMaker().weakValues().makeMap();
-  
+
   public synchronized void addTCThreadID(final ThreadID tcThreadID) {
     id2ThreadIDMap.put(Long.valueOf(Thread.currentThread().getId()), tcThreadID);
   }
