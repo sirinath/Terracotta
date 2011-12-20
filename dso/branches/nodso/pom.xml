@@ -36,6 +36,7 @@
     <module>deploy-api</module>
     <module>dso-statistics</module>
     <module>dso-l1</module>
+    <module>toolkit-impl</module>
     <module>dso-l2</module>
     <module>deploy</module>
     <module>simulator</module>
