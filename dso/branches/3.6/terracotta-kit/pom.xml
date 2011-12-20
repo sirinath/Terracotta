@@ -44,6 +44,7 @@
     <ehcache-terracotta.artifactId>ehcache-terracotta${ee.suffix}</ehcache-terracotta.artifactId>
     
     <terracotta.license>LICENSE.txt</terracotta.license>
+    <site-xml.url>http://svn.terracotta.org/svn/tc/eclipse-update-site/site.xml</site-xml.url>
     <ehcache-core.readme.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/README.html</ehcache-core.readme.url>
     <ehcache-core.quickstart.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/QUICK-START.html</ehcache-core.quickstart.url>    
     <ehcache-core.tclicense.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/trunk/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt</ehcache-core.tclicense.url>
@@ -655,12 +656,24 @@
                   <preservePath>true</preservePath>
                 </resource>
                 
+                <!-- download site.xml -->
+                <resource>
+                  <targetPath>${rootDir}/update</targetPath>
+                  <file>${site-xml.url}</file>
+                  <replaces>
+                    <replace>
+                      <from>VERSION</from>
+                      <to>{{project.properties['eclipse.plugin.version']}}</to>
+                      <groovy>true</groovy>
+                    </replace>
+                  </replaces>
+                </resource>
+                    
                 <!-- filtered resource -->
                 <resource>
                   <targetPath>${rootDir}</targetPath>
                   <directory>${basedir}/src/packaging/eclipse</directory>
                   <includes>
-                    <include>**/site.xml</include>
                     <include>**/feature.xml</include>
                     <include>**/MANIFEST.MF</include>
                   </includes>
