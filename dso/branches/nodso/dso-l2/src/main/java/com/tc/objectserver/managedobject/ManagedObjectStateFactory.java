@@ -91,6 +91,8 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("org.terracotta.collections.ConcurrentBlockingQueue",
                             Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put("org.terracotta.collections.TerracottaList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
+    classNameToStateMap.put(SerializedClusterObjectState.SERIALIZED_CLUSTER_OBJECT,
+                            Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
   }
 
   private ManagedObjectStateFactory(final ManagedObjectChangeListenerProvider listenerProvider,
@@ -197,6 +199,8 @@ public class ManagedObjectStateFactory {
         return new TDCSerializedEntryManagedObjectState(classID);
       case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
         return new TDCCustomLifespanSerializedEntryManagedObjectState(classID);
+      case ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE:
+        return new SerializedClusterObjectState(classID);
     }
     // Unreachable
     throw new AssertionError("Type : " + type + " is unknown !");
@@ -295,6 +299,8 @@ public class ManagedObjectStateFactory {
           return TDCSerializedEntryManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
           return TDCCustomLifespanSerializedEntryManagedObjectState.readFrom(in);
+        case ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE:
+          return SerializedClusterObjectState.readFrom(in);
         default:
           throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
       }
