@@ -9,6 +9,7 @@ import com.tc.object.config.schema.L2DSOConfig;
 import com.tc.objectserver.persistence.db.DBException;
 import com.tc.objectserver.persistence.db.TCCollectionsSerializer;
 import com.tc.objectserver.persistence.db.TCCollectionsSerializerImpl;
+import com.tc.objectserver.storage.berkeleydb.BerkeleyDBTCMapsDatabase;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
 import com.tc.util.Conversion;
@@ -21,7 +22,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
@@ -42,7 +42,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
     this.dbHome = new File(dataPath.getAbsolutePath(), L2DSOConfig.OBJECTDB_DIRNAME);
     this.dbHome.mkdir();
 
-    this.dbenv = new DBFactoryForDBUnitTests(new Properties()).createEnvironment(true, this.dbHome, null, false);
+    this.dbenv = DBFactory.getInstance().createEnvironment(true, this.dbHome);
     this.dbenv.open();
 
     this.ptp = this.dbenv.getPersistenceTransactionProvider();
@@ -106,7 +106,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
 
     Map<String, String> reference = new HashMap<String, String>();
     PersistenceTransaction tx = ptp.newTransaction();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       String key = getRandomString(mapId, size);
       String value = getRandomString(mapId, size);
       reference.put(key, value);
@@ -134,7 +134,9 @@ public class TCMapsDatabaseTest extends TCTestCase {
     tx = ptp.newTransaction();
     try {
       database.insert(tx, mapId, key, value, serializer);
-      assertTrue(false);
+      // BDB doesn't detect duplicate inserts, both update and insert just map to put, so we don't fail in the case of
+      // bdb.
+      assertTrue(database instanceof BerkeleyDBTCMapsDatabase);
     } catch (DBException e) {
       assertEquals("Duplicate key insert into map " + mapId, e.getMessage());
     }
@@ -154,7 +156,7 @@ public class TCMapsDatabaseTest extends TCTestCase {
 
     Map<String, String> reference = new HashMap<String, String>();
     PersistenceTransaction tx = ptp.newTransaction();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       String key = getRandomString(mapId, size);
       String value = getRandomString(mapId, size);
       reference.put(key, value);
@@ -327,7 +329,8 @@ public class TCMapsDatabaseTest extends TCTestCase {
   public void testSmallBigKeyTransition() throws Exception {
     long mapId = 1;
     Map<String, String> referenceMap = new HashMap<String, String>();
-    for (int i = 15800; i < 16200; i++) {
+    // Transition is 15992
+    for (int i = 15990; i < 15995; i++) {
       referenceMap.put(getRandomString(1, i), getRandomString(1, 100));
     }
     PersistenceTransaction tx = ptp.newTransaction();
