@@ -27,7 +27,7 @@
     </dependency>
     <dependency>
       <groupId>org.terracotta.internal</groupId>
-      <artifactId>toolkit-impl</artifactId>
+      <artifactId>core-toolkit-impl</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>  
