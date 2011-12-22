@@ -10,7 +10,7 @@
   </parent>
 
   <groupId>org.terracotta.internal</groupId>
-  <artifactId>toolkit-impl</artifactId>
+  <artifactId>core-toolkit-impl</artifactId>
 
   <properties>
     <skip.deploy>true</skip.deploy>
