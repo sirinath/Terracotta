@@ -91,6 +91,9 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("org.terracotta.collections.ConcurrentBlockingQueue",
                             Byte.valueOf(ManagedObjectState.QUEUE_TYPE));
     classNameToStateMap.put("org.terracotta.collections.TerracottaList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
+    // XXX: Support for terracotta toolkit coordination
+    classNameToStateMap.put(CyclicBarrierManagedObjectState.CYCLE_BARRIER_CLASSNAME,
+                            Byte.valueOf(ManagedObjectState.CYCLE_BARRIER_TYPE));
     classNameToStateMap.put(SerializedClusterObjectState.SERIALIZED_CLUSTER_OBJECT,
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
   }
@@ -195,6 +198,8 @@ public class ManagedObjectStateFactory {
         return new ConcurrentDistributedServerMapManagedObjectState(classID,
                                                                     this.persistentCollectionFactory
                                                                         .createPersistentMap(oid));
+      case ManagedObjectState.CYCLE_BARRIER_TYPE:
+        return new CyclicBarrierManagedObjectState(classID);
       case ManagedObjectState.TDC_SERIALIZED_ENTRY:
         return new TDCSerializedEntryManagedObjectState(classID);
       case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
@@ -295,6 +300,8 @@ public class ManagedObjectStateFactory {
           return ConcurrentDistributedMapManagedObjectState.readFrom(in);
         case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
           return ConcurrentDistributedServerMapManagedObjectState.readFrom(in);
+        case ManagedObjectState.CYCLE_BARRIER_TYPE:
+          return CyclicBarrierManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_SERIALIZED_ENTRY:
           return TDCSerializedEntryManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
