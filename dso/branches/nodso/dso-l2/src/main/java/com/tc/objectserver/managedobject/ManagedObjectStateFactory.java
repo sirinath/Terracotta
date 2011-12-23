@@ -96,6 +96,8 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.CYCLE_BARRIER_TYPE));
     classNameToStateMap.put(SerializedClusterObjectState.SERIALIZED_CLUSTER_OBJECT,
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
+    classNameToStateMap.put("com.terracotta.toolkit.collections.TerracottaList",
+                            Byte.valueOf(ManagedObjectState.LIST_TYPE));
   }
 
   private ManagedObjectStateFactory(final ManagedObjectChangeListenerProvider listenerProvider,
