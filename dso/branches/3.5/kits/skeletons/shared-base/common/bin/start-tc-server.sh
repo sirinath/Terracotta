@@ -44,7 +44,7 @@ do
 done
 
 # set to true if you want Terracotta server uses Derby DB as a store
-USE_DERBYDB=false
+USE_DERBYDB=true
 
 if $USE_DERBYDB; then 
   DERBY_DB="-Dcom.tc.l2.db.factory.name=com.tc.objectserver.storage.derby.DerbyDBFactory"
