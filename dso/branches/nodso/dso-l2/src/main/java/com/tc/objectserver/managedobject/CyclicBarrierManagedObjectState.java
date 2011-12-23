@@ -36,20 +36,23 @@ public class CyclicBarrierManagedObjectState extends LogicalManagedObjectState {
   public CyclicBarrierManagedObjectState(ObjectInput in) throws IOException {
     super(in);
     parties = in.readInt();
-    count = in.readInt();
+    count = parties;
   }
 
   @Override
   public void apply(ObjectID objectID, DNACursor cursor, ApplyTransactionInfo applyInfo) throws IOException {
     String fieldName;
+    Object fieldValue;
     logger.info("abhim state apply");
     while (cursor.next()) {
       final Object action = cursor.getAction();
       if (action instanceof PhysicalAction) {
         final PhysicalAction pAction = (PhysicalAction) action;
         fieldName = pAction.getFieldName();
-        if (fieldName.equals(COUNT)) {
-          --count;
+        fieldValue = pAction.getObject();
+        if (fieldName.equals(PARTIES)) {
+          parties = ((Integer) fieldValue).intValue();
+          count = parties;
         }
       } else {
         final LogicalAction logicalAction = (LogicalAction) action;
@@ -62,7 +65,7 @@ public class CyclicBarrierManagedObjectState extends LogicalManagedObjectState {
 
   protected void applyMethod(final ObjectID objectID, final ApplyTransactionInfo applyInfo, final int method,
                              final Object[] params) {
-    logger.info("abhim applyMethod");
+    logger.info("abhim state applyMethod");
     switch (method) {
       case SerializationUtil.ADD:
         --count;
@@ -76,7 +79,7 @@ public class CyclicBarrierManagedObjectState extends LogicalManagedObjectState {
   public void dehydrate(ObjectID objectID, DNAWriter writer, DNAType type) {
     logger.info("abhim state dehydrate");
     writer.addPhysicalAction(PARTIES, parties);
-    writer.addPhysicalAction(COUNT, count);
+    // writer.addPhysicalAction(COUNT, count);
   }
 
   @Override
@@ -92,7 +95,7 @@ public class CyclicBarrierManagedObjectState extends LogicalManagedObjectState {
   @Override
   protected void basicWriteTo(ObjectOutput out) throws IOException {
     out.writeInt(parties);
-    out.writeInt(count);
+    // out.writeInt(count);
   }
 
   @Override
