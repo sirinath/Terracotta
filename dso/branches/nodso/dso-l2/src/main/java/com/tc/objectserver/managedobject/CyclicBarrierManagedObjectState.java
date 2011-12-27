@@ -20,7 +20,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 
 public class CyclicBarrierManagedObjectState extends LogicalManagedObjectState {
-  public static final String    CYCLE_BARRIER_CLASSNAME = "com.terracotta.coordination.BarrierImpl";
+  public static final String    CYCLE_BARRIER_CLASSNAME = "com.terracotta.toolkit2.coordination.BarrierImpl";
   private static final TCLogger logger                  = TCLogging.getLogger(CyclicBarrierManagedObjectState.class);
 
   private static String         PARTIES                 = "parties";

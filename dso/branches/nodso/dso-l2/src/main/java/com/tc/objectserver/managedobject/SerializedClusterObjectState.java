@@ -28,7 +28,7 @@ public class SerializedClusterObjectState extends AbstractManagedObjectState {
 
   private static final TCLogger logger                    = TCLogging.getLogger(SerializedClusterObjectState.class);
 
-  public static final String    SERIALIZED_CLUSTER_OBJECT = "com.terracotta.toolkit.SerializedClusterObjectImpl";
+  public static final String    SERIALIZED_CLUSTER_OBJECT = "com.terracotta.toolkit2.serialization.SerializedClusterObjectImpl";
 
   private final long            classID;
 
