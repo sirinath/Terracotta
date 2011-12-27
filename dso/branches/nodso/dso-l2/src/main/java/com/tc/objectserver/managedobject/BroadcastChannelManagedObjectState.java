@@ -33,7 +33,7 @@ public class BroadcastChannelManagedObjectState extends AbstractManagedObjectSta
   private static final TCLogger logger                              = TCLogging
                                                                         .getLogger(BroadcastChannelManagedObjectState.class);
 
-  public static final String    BROADCAST_CHANNEL_TOOLKIT_CLASSNAME = "com.terracotta.toolkit.util.BroadcastChannelImpl";
+  public static final String    BROADCAST_CHANNEL_TOOLKIT_CLASSNAME = "com.terracotta.toolkit2.util.BroadcastChannelImpl";
 
   private final long            classID;
 
