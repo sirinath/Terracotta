@@ -48,6 +48,7 @@ public class SerializationUtil {
   public final static int         SET_TARGET_MAX_TOTAL_COUNT           = 31;
   public final static int         SET_MAX_TTI                          = 32;
   public final static int         SET_MAX_TTL                          = 33;
+  public final static int         BROADCAST                            = 34;
 
   public final static String      PUSH_SIGNATURE                       = "push(Ljava/lang/Object;)java/lang/Object;";
   public final static String      POP_SIGNATURE                        = "pop()java/lang/Object;";
@@ -127,6 +128,7 @@ public class SerializationUtil {
   public final static String      SIGNAL_ALL_SIGNATURE                 = "signalAll()V";
   public final static String      TRANSFORM_VALUES_SIGNATURE           = "transformValues(Lgnu/trove/TObjectFunction;)V";
   public final static String      URL_SET_SIGNATURE                    = "set(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+  public static final String      BROADCAST_SIGNATURE                  = "broadcast()V";
 
   private final TObjectIntHashMap mappings                             = new TObjectIntHashMap();
 
@@ -173,6 +175,7 @@ public class SerializationUtil {
     mappings.put(SET_TARGET_MAX_TOTAL_COUNT_SIGNATURE, SET_TARGET_MAX_TOTAL_COUNT);
     mappings.put(SET_MAX_TTI_SIGNATURE, SET_MAX_TTI);
     mappings.put(SET_MAX_TTL_SIGNATURE, SET_MAX_TTL);
+    mappings.put(BROADCAST_SIGNATURE, BROADCAST);
   }
 
   public String[] getSignatures() {
