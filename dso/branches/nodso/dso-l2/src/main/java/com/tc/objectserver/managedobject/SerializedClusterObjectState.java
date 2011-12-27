@@ -125,6 +125,7 @@ public class SerializedClusterObjectState extends AbstractManagedObjectState {
   }
 
   static SerializedClusterObjectState readFrom(final ObjectInput in) throws IOException {
+    logger.info("abhim sco state readFrom");
     final SerializedClusterObjectState state = new SerializedClusterObjectState(in.readLong());
     state.readFromInternal(in);
     return state;
