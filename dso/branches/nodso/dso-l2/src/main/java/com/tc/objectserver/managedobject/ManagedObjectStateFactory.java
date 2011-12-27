@@ -96,7 +96,7 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.CYCLE_BARRIER_TYPE));
     classNameToStateMap.put(SerializedClusterObjectState.SERIALIZED_CLUSTER_OBJECT,
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.collections.TerracottaList",
+    classNameToStateMap.put("com.terracotta.toolkit2.collections.TerracottaList",
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(BroadcastChannelManagedObjectState.BROADCAST_CHANNEL_TOOLKIT_CLASSNAME,
                             ManagedObjectState.BROADCAST_CHANNEL_TYPE);
