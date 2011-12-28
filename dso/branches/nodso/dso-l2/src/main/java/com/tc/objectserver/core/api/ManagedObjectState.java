@@ -51,6 +51,7 @@ public interface ManagedObjectState {
   public static final byte SERIALIZED_CLUSTER_OBJECT_TYPE         = 0x15;
   public static final byte CYCLE_BARRIER_TYPE                     = 0x16;
   public static final byte BROADCAST_CHANNEL_TYPE                 = 0x17;
+  public static final byte CLUSTERED_BLOCKING_QUEUE_TYPE          = 0x18;
 
   public void apply(ObjectID objectID, DNACursor cursor, ApplyTransactionInfo applyInfo) throws IOException;
 
