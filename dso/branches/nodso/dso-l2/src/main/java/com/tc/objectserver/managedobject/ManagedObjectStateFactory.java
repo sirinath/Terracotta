@@ -100,6 +100,8 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put(BroadcastChannelManagedObjectState.BROADCAST_CHANNEL_TOOLKIT_CLASSNAME,
                             ManagedObjectState.BROADCAST_CHANNEL_TYPE);
+    classNameToStateMap.put(ClusteredBlockingQueueManagedObjectState.CBQ_TOOLKIT_CLASSNAME,
+                            Byte.valueOf(ManagedObjectState.CLUSTERED_BLOCKING_QUEUE_TYPE));
   }
 
   private ManagedObjectStateFactory(final ManagedObjectChangeListenerProvider listenerProvider,
@@ -212,6 +214,8 @@ public class ManagedObjectStateFactory {
         return new SerializedClusterObjectState(classID);
       case ManagedObjectState.BROADCAST_CHANNEL_TYPE:
         return new BroadcastChannelManagedObjectState(classID);
+      case ManagedObjectState.CLUSTERED_BLOCKING_QUEUE_TYPE:
+        return new ClusteredBlockingQueueManagedObjectState(classID);
     }
     // Unreachable
     throw new AssertionError("Type : " + type + " is unknown !");
@@ -316,6 +320,8 @@ public class ManagedObjectStateFactory {
           return SerializedClusterObjectState.readFrom(in);
         case ManagedObjectState.BROADCAST_CHANNEL_TYPE:
           return BroadcastChannelManagedObjectState.readFrom(in);
+        case ManagedObjectState.CLUSTERED_BLOCKING_QUEUE_TYPE:
+          return ClusteredBlockingQueueManagedObjectState.readFrom(in);
         default:
           throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
       }
