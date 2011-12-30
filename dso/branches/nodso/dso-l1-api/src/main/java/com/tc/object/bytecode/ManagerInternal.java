@@ -3,6 +3,8 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.object.locks.LockID;
+import com.tc.object.locks.Notify;
 import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
@@ -32,4 +34,9 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
 
   void initForTests(CountDownLatch latch);
 
+  void lockIDWait(final LockID lock, final long timeout) throws InterruptedException;
+
+  Notify lockIDNotifyAll(final LockID lock);
+
+  Notify lockIDNotify(final LockID lock);
 }

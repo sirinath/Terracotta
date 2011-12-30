@@ -119,6 +119,42 @@ public class ManagerUtilInternal {
     return mgr.isLockedByCurrentThread(lock, LockLevel.fromInt(lockLevel));
   }
 
+  /**
+   * Check whether this lock is held by the current thread
+   * 
+   * @param lockId The lock ID
+   * @param lockLevel The lock level
+   * @return True if held by current thread
+   */
+  public static boolean isLockHeldByCurrentThread(final String lockId, final int lockLevel) {
+    ManagerInternal mgr = getInternalManager();
+    LockID lock = mgr.generateLockIdentifier(lockId);
+    return mgr.isLockedByCurrentThread(lock, LockLevel.fromInt(lockLevel));
+  }
+
+  /**
+   * Perform untimed wait on lockID
+   * 
+   * @param obj Instance
+   */
+  public static void lockIDWait(final String lockID, long timeoutMillis) throws InterruptedException {
+    ManagerInternal mgr = getInternalManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.lockIDWait(lock, timeoutMillis);
+  }
+
+  public static void lockIDNotifyAll(final String lockID) {
+    ManagerInternal mgr = getInternalManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.lockIDNotifyAll(lock);
+  }
+
+  public static void lockIDNotify(final String lockID) {
+    ManagerInternal mgr = getInternalManager();
+    LockID lock = mgr.generateLockIdentifier(lockID);
+    mgr.lockIDNotify(lock);
+  }
+
   public static void verifyCapability(String capability) {
     getInternalManager().verifyCapability(capability);
   }

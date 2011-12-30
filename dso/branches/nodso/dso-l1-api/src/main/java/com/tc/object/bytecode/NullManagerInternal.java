@@ -332,4 +332,19 @@ public class NullManagerInternal implements ManagerInternal {
     //
   }
 
+  @Override
+  public void lockIDWait(LockID lock, long timeout) throws InterruptedException {
+    NULL_MANAGER.wait(lock, null, timeout);
+  }
+
+  @Override
+  public Notify lockIDNotifyAll(LockID lock) {
+    return NULL_MANAGER.notify(lock, null);
+  }
+
+  @Override
+  public Notify lockIDNotify(LockID lock) {
+    return NULL_MANAGER.notify(lock, null);
+  }
+
 }
