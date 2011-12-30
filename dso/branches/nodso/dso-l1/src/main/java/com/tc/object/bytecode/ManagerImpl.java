@@ -843,6 +843,16 @@ public class ManagerImpl implements ManagerInternal {
     return NotifyImpl.NULL;
   }
 
+  public Notify lockIDNotifyAll(final LockID lock) {
+    this.txManager.notify(this.lockManager.notifyAll(lock, null));
+    return NotifyImpl.NULL;
+  }
+
+  public Notify lockIDNotify(final LockID lock) {
+    this.txManager.notify(this.lockManager.notify(lock, null));
+    return NotifyImpl.NULL;
+  }
+
   public boolean tryLock(final LockID lock, final LockLevel level) {
     if (clusteredLockingEnabled(lock)) {
       if (this.lockManager.tryLock(lock, level)) {
@@ -900,6 +910,20 @@ public class ManagerImpl implements ManagerInternal {
       }
     } else {
       waitObject.wait();
+    }
+  }
+
+  public void lockIDWait(final LockID lock, final long timeout) throws InterruptedException {
+    try {
+      this.txManager.commit(lock, LockLevel.WRITE);
+    } catch (final UnlockedSharedObjectException e) {
+      throw new IllegalMonitorStateException();
+    }
+    try {
+      this.lockManager.wait(lock, null, timeout);
+    } finally {
+      // XXX this is questionable
+      this.txManager.begin(lock, LockLevel.WRITE);
     }
   }
 
