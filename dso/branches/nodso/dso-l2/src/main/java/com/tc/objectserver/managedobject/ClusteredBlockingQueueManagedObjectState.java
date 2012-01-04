@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class ClusteredBlockingQueueManagedObjectState extends AbstractManagedObjectState {
 
-  public static final String  CBQ_TOOLKIT_CLASSNAME   = "com.terracotta.toolkit2.collections.ClusteredBlockingQueue";
+  public static final String  CBQ_TOOLKIT_CLASSNAME   = "com.terracotta.toolkit2.collections.ClusteredBlockingQueueImpl";
 
   private static final String BACKING_LIST_FIELD_NAME = "backingList";
   private static final String NAME_FIELD_NAME         = "name";
