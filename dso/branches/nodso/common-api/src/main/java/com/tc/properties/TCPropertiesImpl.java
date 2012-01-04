@@ -196,11 +196,14 @@ public class TCPropertiesImpl implements TCProperties {
 
   private String getTCJarRootDirectory() {
     URL url = TCPropertiesImpl.class.getProtectionDomain().getCodeSource().getLocation();
-    String path = url.getPath();
-    if (!path.toLowerCase().endsWith(".jar")) { return null; }
-    File jarFile = new File(path);
-    String dir = jarFile.getParent();
-    return dir;
+    if (url != null) {
+      String path = url.getPath();
+      if (!path.toLowerCase().endsWith(".jar")) { return null; }
+      File jarFile = new File(path);
+      String dir = jarFile.getParent();
+      return dir;
+    }
+    return null;
   }
 
   private void loadDefaults(String propFile) {

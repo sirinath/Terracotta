@@ -161,25 +161,27 @@ public final class ProductInfo {
 
   static InputStream getData(String name) {
     URL source = ProductInfo.class.getProtectionDomain().getCodeSource().getLocation();
-    if (source.getProtocol().equals("file") && source.toExternalForm().endsWith(".jar")) {
-      URL res;
-      try {
-        res = new URL("jar:" + source.toExternalForm() + "!" + name);
-        InputStream in = res.openStream();
-        if (in != null) { return in; }
-      } catch (MalformedURLException e) {
-        throw new AssertionError(e);
-      } catch (IOException e) {
-        // must not be embedded in this jar -- resolve via loader path
-      }
-    } else if (source.getProtocol().equals("file") && (new File(source.getPath()).isDirectory())) {
-      File local = new File(source.getPath(), name);
-
-      if (local.isFile()) {
+    if (source != null) {
+      if (source.getProtocol().equals("file") && source.toExternalForm().endsWith(".jar")) {
+        URL res;
         try {
-          return new FileInputStream(local);
-        } catch (FileNotFoundException e) {
+          res = new URL("jar:" + source.toExternalForm() + "!" + name);
+          InputStream in = res.openStream();
+          if (in != null) { return in; }
+        } catch (MalformedURLException e) {
           throw new AssertionError(e);
+        } catch (IOException e) {
+          // must not be embedded in this jar -- resolve via loader path
+        }
+      } else if (source.getProtocol().equals("file") && (new File(source.getPath()).isDirectory())) {
+        File local = new File(source.getPath(), name);
+
+        if (local.isFile()) {
+          try {
+            return new FileInputStream(local);
+          } catch (FileNotFoundException e) {
+            throw new AssertionError(e);
+          }
         }
       }
     }
