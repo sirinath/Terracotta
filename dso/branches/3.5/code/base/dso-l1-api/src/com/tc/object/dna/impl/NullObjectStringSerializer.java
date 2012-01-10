@@ -47,4 +47,8 @@ public class NullObjectStringSerializer implements ObjectStringSerializer {
     input.readFully(bytes);
     return bytes;
   }
+
+  public int getApproximateBytesWritten() {
+    return 0;
+  }
 }
