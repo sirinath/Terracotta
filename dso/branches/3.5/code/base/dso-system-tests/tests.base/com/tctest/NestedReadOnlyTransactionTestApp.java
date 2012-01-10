@@ -15,6 +15,7 @@ import com.tc.object.config.spec.CyclicBarrierSpec;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
+import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.runner.AbstractTransparentApp;
 
 public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
@@ -46,6 +47,7 @@ public class NestedReadOnlyTransactionTestApp extends AbstractTransparentApp {
       dataRoot.assertLongValue(index, 15);
     } finally {
       if (index == 0) {
+        ThreadUtil.reallySleep(10 * 1000);
         dataRoot.setCommit(true);
         ManagerUtil.monitorExit(dataRoot, Manager.LOCK_TYPE_WRITE);
       }
