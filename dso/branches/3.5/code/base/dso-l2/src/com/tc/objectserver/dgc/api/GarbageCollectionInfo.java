@@ -208,7 +208,7 @@ public class GarbageCollectionInfo implements Cloneable, TCSerializable {
       gcInfo.append(" totalMarkCycleTime = " + this.totalMarkCycleTime);
     }
     if (this.candidateGarbageCount != NOT_INITIALIZED) {
-      gcInfo.append(" candiate garabage  count = " + this.candidateGarbageCount);
+      gcInfo.append(" candidate garabage  count = " + this.candidateGarbageCount);
     }
     if (this.actualGarbageCount != NOT_INITIALIZED) {
       gcInfo.append(" actual garbage count = " + this.actualGarbageCount);
