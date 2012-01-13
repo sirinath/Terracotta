@@ -85,7 +85,6 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     this.txnStageCoordinator = txnStageCoordinator;
   }
 
-  @Override
   public void initializeContext(ConfigurationContext context) {
     ServerConfigurationContext scc = (ServerConfigurationContext) context;
     txnManager = scc.getTransactionManager();
