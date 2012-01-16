@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.tx;
 
+import com.tc.async.api.ConfigurationContext;
+import com.tc.async.api.PostInit;
 import com.tc.handler.CallbackDumpAdapter;
 import com.tc.handler.CallbackDumpHandler;
 import com.tc.logging.TCLogger;
@@ -17,6 +19,7 @@ import com.tc.objectserver.context.CommitTransactionContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.context.RecallObjectsContext;
 import com.tc.objectserver.context.TransactionLookupContext;
+import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -34,23 +37,22 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * This class keeps track of locally checked out objects for applies and maintain the objects to txnid mapping in the
  * server. It wraps calls going to object manager from lookup, apply, commit stages
  */
-public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable {
+public class TransactionalObjectManagerImpl implements TransactionalObjectManager, PrettyPrintable, PostInit {
 
   private static final TCLogger                logger                  = TCLogging
                                                                            .getLogger(TransactionalObjectManagerImpl.class);
   private static final int                     MAX_COMMIT_SIZE         = TCPropertiesImpl
                                                                            .getProperties()
-                                                                           .getInt(
-                                                                                   TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
+                                                                           .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_MAXOBJECTS_TO_COMMIT);
   private final ObjectManager                  objectManager;
   private final ServerTransactionSequencer     sequencer;
   private final ServerGlobalTransactionManager gtxm;
@@ -69,6 +71,8 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   private final TransactionalStageCoordinator  txnStageCoordinator;
 
+  private ServerTransactionManager             txnManager;
+
   public TransactionalObjectManagerImpl(ObjectManager objectManager, ServerTransactionSequencer sequencer,
                                         ServerGlobalTransactionManager gtxm,
                                         TransactionalStageCoordinator txnStageCoordinator) {
@@ -78,12 +82,18 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
     this.txnStageCoordinator = txnStageCoordinator;
   }
 
+  public void initializeContext(ConfigurationContext context) {
+    ServerConfigurationContext scc = (ServerConfigurationContext) context;
+    txnManager = scc.getTransactionManager();
+  }
+
   // ProcessTransactionHandler Method
-  public void addTransactions(Collection txns) {
+  public void addTransactions(Collection<ServerTransaction> txns) {
     try {
-      Collection txnLookupContexts = createAndPreFetchObjectsFor(txns);
+      Collection<TransactionLookupContext> txnLookupContexts = createAndPreFetchObjectsFor(txns);
       this.sequencer.addTransactionLookupContexts(txnLookupContexts);
       this.txnStageCoordinator.initiateLookup();
+      this.txnManager.processMetaData(txns);
     } catch (Throwable t) {
       logger.error(t);
       dumpOnError(txns);
@@ -155,12 +165,11 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
   }
 
   public synchronized void lookupObjectsForApplyAndAddToSink(ServerTransaction txn) {
-    Collection oids = txn.getObjectIDs();
+    Collection<ObjectID> oids = txn.getObjectIDs();
     // log("lookupObjectsForApplyAndAddToSink(): START : " + txn.getServerTransactionID() + " : " + oids);
     ObjectIDSet newRequests = new ObjectIDSet();
     boolean makePending = false;
-    for (Iterator i = oids.iterator(); i.hasNext();) {
-      ObjectID oid = (ObjectID) i.next();
+    for (ObjectID oid : oids) {
       TxnObjectGrouping tog;
       if (this.pendingObjectRequest.contains(oid)) {
         makePending = true;
