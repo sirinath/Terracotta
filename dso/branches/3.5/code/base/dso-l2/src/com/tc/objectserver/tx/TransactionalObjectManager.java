@@ -12,12 +12,12 @@ import java.util.Collection;
 
 public interface TransactionalObjectManager {
 
-  public void addTransactions(Collection txns);
-  
+  public void addTransactions(Collection<ServerTransaction> txns);
+
   public void lookupObjectsForTransactions();
 
   public boolean applyTransactionComplete(ServerTransactionID stxnID);
-  
+
   public void processApplyComplete();
 
   public void commitTransactionsComplete(CommitTransactionContext ctc);

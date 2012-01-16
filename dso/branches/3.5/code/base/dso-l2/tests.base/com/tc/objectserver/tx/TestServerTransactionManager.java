@@ -64,7 +64,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     // NOP
   }
 
-  public void apply(ServerTransaction txn, Map objects, ApplyTransactionInfo includeIDs, ObjectInstanceMonitor instanceMonitor) {
+  public void apply(ServerTransaction txn, Map objects, ApplyTransactionInfo includeIDs,
+                    ObjectInstanceMonitor instanceMonitor) {
     // NOP
   }
 
@@ -122,4 +123,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
+  public void processMetaData(Collection<ServerTransaction> txn) {
+    //
+  }
 }
