@@ -54,6 +54,7 @@ public class ServerCrasher implements Runnable {
       synchronized (testState) {
         if (testState.isRunning()) {
           try {
+            server.waitUntilL2IsActiveOrPassive();
             System.err.println("Crashing server...");
             if (proxyConnectMode) {
               proxyMgr.stopProxyTest();

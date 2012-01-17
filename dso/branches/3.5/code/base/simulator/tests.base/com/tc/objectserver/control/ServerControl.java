@@ -51,4 +51,5 @@ public interface ServerControl {
 
   public int getAdminPort();
 
+  public void waitUntilL2IsActiveOrPassive() throws Exception;
 }
