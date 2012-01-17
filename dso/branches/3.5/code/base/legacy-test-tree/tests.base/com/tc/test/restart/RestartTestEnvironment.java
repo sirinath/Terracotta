@@ -386,5 +386,9 @@ public class RestartTestEnvironment {
     public int waitFor() throws Exception {
       return server.waitFor();
     }
+
+    public void waitUntilL2IsActiveOrPassive() throws Exception {
+      server.waitUntilL2IsActiveOrPassive();
+    }
   }
 }

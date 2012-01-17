@@ -60,4 +60,7 @@ public class NullServerControl implements ServerControl {
     return 1;
   }
 
+  public void waitUntilL2IsActiveOrPassive() {
+    //
+  }
 }
