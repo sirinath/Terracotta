@@ -11,7 +11,7 @@
 
   <properties>
     <tc-maven-plugin.version>1.8.1</tc-maven-plugin.version>
-    <terracotta-session.version>1.2.0</terracotta-session.version>
+    <terracotta-session.version>1.2.1</terracotta-session.version>
     <ehcache-core.version>2.5.1</ehcache-core.version>
     <ehcache-terracotta.version>2.5.1</ehcache-terracotta.version>
   </properties>

@@ -11,7 +11,7 @@
 
   <properties>
     <tc-maven-plugin.version>1.8.1</tc-maven-plugin.version>
-    <terracotta-session.version>1.2.0</terracotta-session.version>
+    <terracotta-session.version>1.2.1</terracotta-session.version>
     <toolkit-api>1.4</toolkit-api>
     <toolkit-runtime.version>4.1.0</toolkit-runtime.version>
   </properties> 
