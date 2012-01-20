@@ -1,23 +1,15 @@
 package org.terracotta.tests.base;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ClassUtils;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.terracotta.test.util.TestBaseUtil;
 
 import com.tc.exception.ImplementMe;
+import com.tc.test.TCTestCase;
 import com.tc.test.TestConfigObject;
 import com.tc.test.config.model.TestConfig;
 import com.tc.test.jmx.TestHandler;
@@ -29,16 +21,25 @@ import com.tc.test.setup.TestJMXServerManager;
 import com.tc.test.setup.TestServerManager;
 import com.tc.util.PortChooser;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 @RunWith(value = TcTestRunner.class)
-public abstract class AbstractTestBase extends TerracottaTestCase {
-  protected static final String SEP     = File.pathSeparator;
+public abstract class AbstractTestBase extends TCTestCase {
+  private static final String   SINGLE_SERVER_CONFIG = "single-server-config";
+  protected static final String SEP                  = File.pathSeparator;
   private final TestConfig      testConfig;
   private final File            tcConfigFile;
   protected TestServerManager   testServerManager;
   protected final File          tempDir;
   protected File                javaHome;
   private TestClientManager     clientRunner;
-  private volatile boolean      runTest = false;
   private TestJMXServerManager  jmxServerManager;
   private Thread                duringRunningClusterThread;
 
@@ -54,32 +55,39 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     }
   }
 
+  /**
+   * Returns the list of testconfigs the test has to run with Overwrite this method to run the same test with multiple
+   * configs
+   */
   @Configs
   public static List<TestConfig> getTestConfigs() {
-    TestConfig testConfig = new TestConfig("SingleServerConfig");
+    TestConfig testConfig = new TestConfig(SINGLE_SERVER_CONFIG);
     testConfig.getGroupConfig().setMemberCount(1);
     TestConfig[] testConfigs = new TestConfig[] { testConfig };
     return Arrays.asList(testConfigs);
   }
 
+  @Override
   @Before
   public void setUp() throws Exception {
-    runTest = preRun();
-    Assume.assumeTrue(runTest);
-    try {
-      System.out.println("*************** Starting Test with Test Profile : " + testConfig.getConfigName()
-                         + " **************************");
-      setJavaHome();
-      testServerManager = new TestServerManager(this.testConfig, this.tempDir, this.tcConfigFile, this.javaHome);
-      clientRunner = new TestClientManager(tempDir, this, this.testConfig);
-      startServers();
-      TestHandlerMBean testHandlerMBean = new TestHandler(testServerManager, testConfig);
-      jmxServerManager = new TestJMXServerManager(new PortChooser().chooseRandomPort(), testHandlerMBean);
-      jmxServerManager.startJMXServer();
-      executeDuringRunningCluster();
-    } catch (Throwable e) {
-      e.printStackTrace();
-      throw new AssertionError(e);
+    tcTestCaseSetup();
+
+    if (testWillRun) {
+      try {
+        System.out.println("*************** Starting Test with Test Profile : " + testConfig.getConfigName()
+                           + " **************************");
+        setJavaHome();
+        testServerManager = new TestServerManager(this.testConfig, this.tempDir, this.tcConfigFile, this.javaHome);
+        clientRunner = new TestClientManager(tempDir, this, this.testConfig);
+        startServers();
+        TestHandlerMBean testHandlerMBean = new TestHandler(testServerManager, testConfig);
+        jmxServerManager = new TestJMXServerManager(new PortChooser().chooseRandomPort(), testHandlerMBean);
+        jmxServerManager.startJMXServer();
+        executeDuringRunningCluster();
+      } catch (Throwable e) {
+        e.printStackTrace();
+        throw new AssertionError(e);
+      }
     }
   }
 
@@ -100,9 +108,20 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     return TestConfigObject.getInstance();
   }
 
-  @Test
-  public void runTest() throws Throwable {
-    clientRunner.runClients();
+  @Override
+  @Test(timeout = 15 * 60 * 1000)
+  final public void runTest() throws Throwable {
+    if (!testWillRun) return;
+
+    Throwable testException = null;
+    try {
+      startClients();
+      postClientVerification();
+    } catch (Throwable t) {
+      testException = t;
+    }
+
+    tcTestCaseTearDown(testException);
   }
 
   public int getTestControlMbeanPort() {
@@ -147,6 +166,13 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     //
   }
 
+  /**
+   * Override this method if there is a need to do some verification when the clients are done
+   */
+  protected void postClientVerification() {
+    //
+  }
+
   protected String getTestDependencies() {
     return "";
   }
@@ -176,9 +202,10 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     return TestBaseUtil.getTerracottaURL(getGroupsData());
   }
 
+  @Override
   @After
   public void tearDown() throws Exception {
-    if (runTest) {
+    if (testWillRun) {
       System.out.println("Waiting for During Cluster running thread to finish");
       duringRunningClusterThread.join();
       this.testServerManager.stopAllServers();
@@ -190,14 +217,19 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
 
   @Override
   protected File getTempDirectory() throws IOException {
+    // this is a hack but there is no direct way to know whether a test is going to be run with single config
+    if (testConfig.getConfigName().equals(SINGLE_SERVER_CONFIG)) { return super.getTempDirectory(); }
+
     File tempDirectory = new File(super.getTempDirectory(), testConfig.getConfigName());
     return tempDirectory;
   }
 
+  @Override
   protected File getTempFile(String fileName) throws IOException {
     return new File(getTempDirectory(), fileName);
   }
 
+  @Override
   protected boolean cleanTempDir() {
     return false;
   }
@@ -207,12 +239,32 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     testServerManager.dumpClusterState(getThreadDumpCount(), getThreadDumpInterval());
   }
 
-  protected void runClient(Class client, boolean withStandaloneJar) throws Throwable {
-    clientRunner.runClient(client, withStandaloneJar);
+  protected void startClients() throws Throwable {
+    int index = 0;
+    Runner[] runners = testConfig.getClientConfig().isParallelClients() ? new Runner[testConfig.getClientConfig()
+        .getClientClasses().length] : new Runner[] {};
+    for (Class<? extends Runnable> c : testConfig.getClientConfig().getClientClasses()) {
+      if (!testConfig.getClientConfig().isParallelClients()) {
+        runClient(c);
+      } else {
+        Runner runner = new Runner(c);
+        runners[index++] = runner;
+        runner.start();
+      }
+    }
+
+    for (Runner runner : runners) {
+      runner.finish();
+    }
   }
 
   protected void runClient(Class client) throws Throwable {
-    clientRunner.runClient(client);
+    runClient(client, true);
+  }
+
+  protected void runClient(Class client, boolean withStandaloneJar) throws Throwable {
+    List<String> emptyList = Collections.emptyList();
+    runClient(client, withStandaloneJar, client.getSimpleName(), emptyList);
   }
 
   protected void runClient(Class client, boolean withStandaloneJar, String clientName, List<String> extraClientArgs)
@@ -252,6 +304,31 @@ public abstract class AbstractTestBase extends TerracottaTestCase {
     });
     duringRunningClusterThread.setName(getClass().getName() + " duringRunningCluster");
     duringRunningClusterThread.start();
+  }
+
+  protected class Runner extends Thread {
+
+    private final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+    private final Class                      clientClass;
+
+    public Runner(Class clientClass) {
+      this.clientClass = clientClass;
+    }
+
+    @Override
+    public void run() {
+      try {
+        runClient(clientClass);
+      } catch (Throwable t) {
+        error.set(t);
+      }
+    }
+
+    public void finish() throws Throwable {
+      join();
+      Throwable t = error.get();
+      if (t != null) throw t;
+    }
   }
 
 }
