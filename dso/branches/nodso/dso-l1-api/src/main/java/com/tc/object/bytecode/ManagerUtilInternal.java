@@ -4,6 +4,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.net.GroupID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
@@ -157,5 +158,13 @@ public class ManagerUtilInternal {
 
   public static void verifyCapability(String capability) {
     getInternalManager().verifyCapability(capability);
+  }
+
+  public static Object lookupOrCreateRoot(final String name, final Object object, GroupID gid) {
+    return getInternalManager().lookupOrCreateRoot(name, object, gid);
+  }
+
+  public static GroupID[] getGroupIDs() {
+    return getInternalManager().getGroupIDs();
   }
 }

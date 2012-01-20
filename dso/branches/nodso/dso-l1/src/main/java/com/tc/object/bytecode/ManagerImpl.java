@@ -23,6 +23,7 @@ import com.tc.license.LicenseManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.TunneledDomainUpdater;
+import com.tc.net.GroupID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
@@ -402,6 +403,15 @@ public class ManagerImpl implements ManagerInternal {
 
   public Object lookupOrCreateRoot(final String name, final Object object) {
     return lookupOrCreateRoot(name, object, false);
+  }
+
+  public Object lookupOrCreateRoot(final String name, final Object object, GroupID gid) {
+    try {
+      return this.objectManager.lookupOrCreateRoot(name, object, gid);
+    } catch (final Throwable t) {
+      Util.printLogAndRethrowError(t, logger);
+      throw new AssertionError();
+    }
   }
 
   public Object lookupOrCreateRootNoDepth(final String name, final Object obj) {
@@ -1043,5 +1053,10 @@ public class ManagerImpl implements ManagerInternal {
   public void fireOperatorEvent(EventType eventLevel, EventSubsystem eventSubsystem, String eventMessage) {
     TerracottaOperatorEvent opEvent = new TerracottaOperatorEventImpl(eventLevel, eventSubsystem, eventMessage, "");
     TerracottaOperatorEventLogging.getEventLogger().fireOperatorEvent(opEvent);
+  }
+
+  @Override
+  public GroupID[] getGroupIDs() {
+    return this.dso.getGroupIDs();
   }
 }

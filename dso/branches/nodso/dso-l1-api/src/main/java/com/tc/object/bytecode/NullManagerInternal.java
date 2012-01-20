@@ -3,6 +3,7 @@ package com.tc.object.bytecode;
 import com.tc.cluster.DsoCluster;
 import com.tc.logging.TCLogger;
 import com.tc.management.TunneledDomainUpdater;
+import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
@@ -345,6 +346,16 @@ public class NullManagerInternal implements ManagerInternal {
   @Override
   public Notify lockIDNotify(LockID lock) {
     return NULL_MANAGER.notify(lock, null);
+  }
+
+  @Override
+  public GroupID[] getGroupIDs() {
+    return null;
+  }
+
+  @Override
+  public Object lookupOrCreateRoot(String name, Object object, GroupID gid) {
+    return NULL_MANAGER.lookupOrCreateRoot(name, object);
   }
 
 }

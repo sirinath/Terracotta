@@ -198,6 +198,8 @@ public interface ClientObjectManager extends ApplicatorObjectManager, TCObjectSe
    */
   public Object lookupOrCreateRoot(String name, Object obj);
 
+  public Object lookupOrCreateRoot(String name, Object obj, GroupID gid);
+
   /**
    * Find and create if necessary a root object for the specified named root. All dependent objects needed will be
    * faulted in, limited to the fault-count specified in the configuration.
