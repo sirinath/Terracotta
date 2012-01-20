@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.net.GroupID;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.Notify;
 import com.tc.object.locks.TerracottaLockingInternal;
@@ -39,4 +40,8 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
   Notify lockIDNotifyAll(final LockID lock);
 
   Notify lockIDNotify(final LockID lock);
+
+  Object lookupOrCreateRoot(final String name, final Object object, GroupID gid);
+
+  GroupID[] getGroupIDs();
 }
