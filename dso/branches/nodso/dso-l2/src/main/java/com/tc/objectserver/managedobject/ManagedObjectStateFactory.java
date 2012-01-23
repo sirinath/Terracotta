@@ -95,7 +95,7 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
     classNameToStateMap.put("com.terracotta.toolkit2.collections.TerracottaList",
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.aggregate.RootMap", Byte.valueOf(ManagedObjectState.ROOT_MAP_TYPE));
+    classNameToStateMap.put("com.terracotta.toolkit2.RootMapImpl", Byte.valueOf(ManagedObjectState.ROOT_MAP_TYPE));
     classNameToStateMap.put(BroadcastChannelManagedObjectState.BROADCAST_CHANNEL_TOOLKIT_CLASSNAME,
                             ManagedObjectState.BROADCAST_CHANNEL_TYPE);
     classNameToStateMap.put(ClusteredBlockingQueueManagedObjectState.CBQ_TOOLKIT_CLASSNAME,
