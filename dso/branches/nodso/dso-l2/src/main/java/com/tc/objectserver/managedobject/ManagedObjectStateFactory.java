@@ -95,6 +95,7 @@ public class ManagedObjectStateFactory {
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
     classNameToStateMap.put("com.terracotta.toolkit2.collections.TerracottaList",
                             Byte.valueOf(ManagedObjectState.LIST_TYPE));
+    classNameToStateMap.put("com.terracotta.toolkit.aggregate.RootMap", Byte.valueOf(ManagedObjectState.ROOT_MAP_TYPE));
     classNameToStateMap.put(BroadcastChannelManagedObjectState.BROADCAST_CHANNEL_TOOLKIT_CLASSNAME,
                             ManagedObjectState.BROADCAST_CHANNEL_TYPE);
     classNameToStateMap.put(ClusteredBlockingQueueManagedObjectState.CBQ_TOOLKIT_CLASSNAME,
@@ -211,6 +212,8 @@ public class ManagedObjectStateFactory {
         return new BroadcastChannelManagedObjectState(classID);
       case ManagedObjectState.CLUSTERED_BLOCKING_QUEUE_TYPE:
         return new ClusteredBlockingQueueManagedObjectState(classID);
+      case ManagedObjectState.ROOT_MAP_TYPE:
+        return new RootMapManagedObjectState(classID);
     }
     // Unreachable
     throw new AssertionError("Type : " + type + " is unknown !");
@@ -315,6 +318,9 @@ public class ManagedObjectStateFactory {
           return BroadcastChannelManagedObjectState.readFrom(in);
         case ManagedObjectState.CLUSTERED_BLOCKING_QUEUE_TYPE:
           return ClusteredBlockingQueueManagedObjectState.readFrom(in);
+        case ManagedObjectState.ROOT_MAP_TYPE:
+          return RootMapManagedObjectState.readFrom(in);
+
         default:
           throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
       }

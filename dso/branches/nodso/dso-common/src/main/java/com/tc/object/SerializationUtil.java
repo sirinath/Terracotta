@@ -49,6 +49,7 @@ public class SerializationUtil {
   public final static int         SET_MAX_TTI                          = 32;
   public final static int         SET_MAX_TTL                          = 33;
   public final static int         BROADCAST                            = 34;
+  public final static int         CREATE_ARRAY                         = 35;
 
   public final static String      PUSH_SIGNATURE                       = "push(Ljava/lang/Object;)java/lang/Object;";
   public final static String      POP_SIGNATURE                        = "pop()java/lang/Object;";
