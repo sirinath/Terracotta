@@ -5,6 +5,7 @@ import com.tc.logging.TCLogger;
 import com.tc.management.TunneledDomainUpdater;
 import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
+import com.tc.object.TCObject;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.loaders.NamedClassLoader;
@@ -356,6 +357,11 @@ public class NullManagerInternal implements ManagerInternal {
   @Override
   public Object lookupOrCreateRoot(String name, Object object, GroupID gid) {
     return NULL_MANAGER.lookupOrCreateRoot(name, object);
+  }
+
+  @Override
+  public TCObject lookupOrCreate(Object obj, Object parentObject) {
+    return null;
   }
 
 }

@@ -475,6 +475,21 @@ public class ManagerImpl implements ManagerInternal {
     return this.objectManager.lookupOrCreate(obj);
   }
 
+  public TCObject lookupOrCreate(final Object obj, final Object parentObject) {
+    if (obj instanceof Manageable) {
+      TCObject tco = ((Manageable) obj).__tc_managed();
+      if (tco != null) { return tco; }
+    }
+
+    if (parentObject instanceof Manageable) {
+      TCObject tco = ((Manageable) parentObject).__tc_managed();
+      return this.objectManager.lookupOrCreate(obj, new GroupID(tco.getObjectID().getGroupID()));
+    }
+
+    // TODO: May be we can get rid of this after Dev cycles complete in nodso removal
+    throw new IllegalArgumentException("Parent Object passed should be clustered" + parentObject);
+  }
+
   public TCObject lookupExistingOrNull(final Object pojo) {
     if (pojo == null) { return null; }
 
