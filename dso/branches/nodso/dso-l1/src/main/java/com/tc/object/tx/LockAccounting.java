@@ -8,6 +8,8 @@ import EDU.oswego.cs.dl.util.concurrent.Latch;
 
 import com.tc.exception.TCNotRunningException;
 import com.tc.exception.TCRuntimeException;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.object.locks.LockID;
 
 import java.util.Collection;
@@ -20,6 +22,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LockAccounting {
+  private static final TCLogger                          logger                         = TCLogging
+                                                                                            .getLogger(LockAccounting.class);
   private static final long                              WAIT_FOR_TRANSACTIONS_INTERVAL = 10 * 1000;
 
   private final CopyOnWriteArrayList<TxnRemovedListener> listeners                      = new CopyOnWriteArrayList<TxnRemovedListener>();
@@ -133,15 +137,23 @@ public class LockAccounting {
   public void waitAllCurrentTxnCompleted() {
     TxnRemovedListener listener;
     Latch latch = new Latch();
+    Set currentTxnSet = null;
     synchronized (this) {
-      Set currentTxnSet = new HashSet(tx2Locks.keySet());
+      currentTxnSet = new HashSet(tx2Locks.keySet());
       listener = new TxnRemovedListener(currentTxnSet, latch);
       listeners.add(listener);
     }
+
     try {
       // DEV-6271: During rejoin, the client could be shut down. In that case we need to get
       // out of this wait and throw a TCNotRunningException for upper layers to handle
       do {
+        // mnk-3221, enabling debug logging for what all txn are pending
+        if (logger.isDebugEnabled()) {
+          for (Object o : currentTxnSet) {
+            logger.info(o);
+          }
+        }
         if (shutdown) { throw new TCNotRunningException(); }
       } while (!latch.attempt(WAIT_FOR_TRANSACTIONS_INTERVAL));
     } catch (InterruptedException e) {
