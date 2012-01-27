@@ -98,9 +98,9 @@ public class RootMapManagedObjectState extends AbstractManagedObjectState {
     return getStateFactory().getClassName(this.classID);
   }
 
-  public final String getLoaderDescription() {
-    return getStateFactory().getLoaderDescription(this.classID);
-  }
+  // public final String getLoaderDescription() {
+  // return getStateFactory().getLoaderDescription(this.classID);
+  // }
 
   @Override
   protected boolean basicEquals(AbstractManagedObjectState o) {

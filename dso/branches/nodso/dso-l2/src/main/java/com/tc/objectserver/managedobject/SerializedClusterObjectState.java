@@ -102,9 +102,9 @@ public class SerializedClusterObjectState extends AbstractManagedObjectState {
     return getStateFactory().getClassName(this.classID);
   }
 
-  public final String getLoaderDescription() {
-    return getStateFactory().getLoaderDescription(this.classID);
-  }
+  // public final String getLoaderDescription() {
+  // return getStateFactory().getLoaderDescription(this.classID);
+  // }
 
   public Set getObjectReferences() {
     return Collections.EMPTY_SET;
@@ -125,7 +125,6 @@ public class SerializedClusterObjectState extends AbstractManagedObjectState {
   }
 
   static SerializedClusterObjectState readFrom(final ObjectInput in) throws IOException {
-    logger.info("abhim sco state readFrom");
     final SerializedClusterObjectState state = new SerializedClusterObjectState(in.readLong());
     state.readFromInternal(in);
     return state;
