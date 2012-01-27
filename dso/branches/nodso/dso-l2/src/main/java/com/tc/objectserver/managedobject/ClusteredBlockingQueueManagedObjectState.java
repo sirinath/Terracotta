@@ -75,9 +75,9 @@ public class ClusteredBlockingQueueManagedObjectState extends AbstractManagedObj
     return getStateFactory().getClassName(this.classID);
   }
 
-  public final String getLoaderDescription() {
-    return getStateFactory().getLoaderDescription(this.classID);
-  }
+  // public final String getLoaderDescription() {
+  // return getStateFactory().getLoaderDescription(this.classID);
+  // }
 
   public Set getObjectReferences() {
     ObjectIDSet refs = new ObjectIDSet();

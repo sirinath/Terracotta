@@ -107,9 +107,9 @@ public class BroadcastChannelManagedObjectState extends AbstractManagedObjectSta
     return getStateFactory().getClassName(this.classID);
   }
 
-  public final String getLoaderDescription() {
-    return getStateFactory().getLoaderDescription(this.classID);
-  }
+  // public final String getLoaderDescription() {
+  // return getStateFactory().getLoaderDescription(this.classID);
+  // }
 
   public Set getObjectReferences() {
     return Collections.EMPTY_SET;
