@@ -193,12 +193,10 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     if (workerCommMgr == null) { return; }
 
     readerComm.unregister(channel);
-    synchronized (managedConnectionsMap) {
-      final CoreNIOServices workerComm = workerCommMgr.getNextWorkerComm();
-      connection.setCommWorker(workerComm);
-      workerComm.addConnection(connection, addWeightBy);
-      workerComm.requestReadWriteInterest(connection, channel);
-    }
+    final CoreNIOServices workerComm = workerCommMgr.getNextWorkerComm();
+    connection.setCommWorker(workerComm);
+    workerComm.addConnection(connection, addWeightBy);
+    workerComm.requestReadWriteInterest(connection, channel);
   }
 
   private void addConnection(TCConnectionImpl connection, int initialWeight) {
@@ -552,12 +550,12 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             logger.warn("working around Sun bug 4504001");
             continue;
           }
-          
+
           if (NIOWorkaroundsTemp.solarisSelectWorkaround(ioe)) {
-              logger.warn("working around Solaris select IOException");
-              continue;
+            logger.warn("working around Solaris select IOException");
+            continue;
           }
-          
+
           throw ioe;
         } catch (CancelledKeyException cke) {
           logger.warn("Cencelled Key " + cke);
@@ -860,7 +858,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
       return buf.toString();
     }
   }
-  
+
   /**
    * A temporary class. These apis are available in the latest tim-api version. Since, TC 3.6 can't use the newer
    * tim-api version, having a copy of them here.
@@ -877,11 +875,6 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
       }
       return false;
     }
-
-    private static String getOsArch() {
-      return System.getProperty("os.arch", "unknown");
-    }
-
   }
 
 }
