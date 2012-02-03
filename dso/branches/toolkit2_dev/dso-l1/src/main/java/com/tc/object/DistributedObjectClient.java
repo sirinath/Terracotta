@@ -39,6 +39,7 @@ import com.tc.management.remote.protocol.terracotta.TunneledDomainManager;
 import com.tc.management.remote.protocol.terracotta.TunneledDomainsChanged;
 import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.CommStackMismatchException;
+import com.tc.net.GroupID;
 import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ClusterTopologyChangedListener;
@@ -1328,5 +1329,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         // the logger is closed by now so we can't even log that
       }
     }
+  }
+
+  public GroupID[] getGroupIDs() {
+    return this.connectionComponents.getGroupIDs();
   }
 }

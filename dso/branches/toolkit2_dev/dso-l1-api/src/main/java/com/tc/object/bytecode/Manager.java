@@ -8,6 +8,7 @@ import com.tc.cluster.DsoCluster;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.TunneledDomainUpdater;
+import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.loaders.ClassProvider;
@@ -73,6 +74,26 @@ public interface Manager extends TerracottaLocking {
   public Object lookupOrCreateRoot(String name, Object object);
 
   /**
+   * Look up or create a new root object in the particular group
+   * 
+   * @param name Root name
+   * @param object Root object to use if none exists yet
+   * @param gid group id
+   * @return The root object actually used, may or may not == object
+   */
+  public Object lookupOrCreateRoot(final String name, final Object object, GroupID gid);
+
+  /**
+   * Look up a new root object in the particular group
+   * 
+   * @param name Root name
+   * @param object Root object to use if none exists yet
+   * @param gid group id
+   * @return The root object actually used, may or may not == object
+   */
+  public Object lookupRoot(final String name, GroupID gid);
+
+  /**
    * Look up or create a new root object. Objects faulted in to arbitrary depth.
    * 
    * @param name Root name
@@ -132,6 +153,8 @@ public interface Manager extends TerracottaLocking {
    * @return The TCObject
    */
   public TCObject lookupOrCreate(Object obj);
+
+  public TCObject lookupOrCreate(Object obj, GroupID gid);
 
   /**
    * Perform invoke on logical managed object
@@ -357,4 +380,5 @@ public interface Manager extends TerracottaLocking {
 
   void initForTests(CountDownLatch latch);
 
+  public GroupID[] getGroupIDs();
 }

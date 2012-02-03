@@ -8,6 +8,7 @@ package com.tc.object.bytecode;
 
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
+import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.ArrayManager;
@@ -150,6 +151,20 @@ public class ManagerUtil {
    */
   public static Object lookupOrCreateRoot(final String name, final Object object) {
     return getManager().lookupOrCreateRoot(name, object);
+  }
+
+  /**
+   * Look up or create a new root object in the particular group id
+   */
+  public static Object lookupOrCreateRoot(final String name, final Object object, GroupID gid) {
+    return getManager().lookupOrCreateRoot(name, object, gid);
+  }
+
+  /**
+   * Look up or create a new root object in the particular group id
+   */
+  public static Object lookupRoot(final String name, GroupID gid) {
+    return getManager().lookupRoot(name, gid);
   }
 
   /**
@@ -428,6 +443,16 @@ public class ManagerUtil {
    */
   public static TCObject lookupOrCreate(final Object obj) {
     return getManager().lookupOrCreate(obj);
+  }
+
+  /**
+   * Find or create new TCObject
+   * 
+   * @param obj The object instance
+   * @return The TCObject
+   */
+  public static TCObject lookupOrCreate(final Object obj, GroupID gid) {
+    return getManager().lookupOrCreate(obj, gid);
   }
 
   /**
@@ -1237,6 +1262,10 @@ public class ManagerUtil {
   public static void fireOperatorEvent(EventType coreOperatorEventLevel, EventSubsystem coreEventSubsytem,
                                        String eventMessage) {
     getManager().fireOperatorEvent(coreOperatorEventLevel, coreEventSubsytem, eventMessage);
+  }
+
+  public static GroupID[] getGroupIDs() {
+    return getManager().getGroupIDs();
   }
 
 }

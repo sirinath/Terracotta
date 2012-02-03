@@ -23,6 +23,7 @@ import com.tc.license.LicenseManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.TunneledDomainUpdater;
+import com.tc.net.GroupID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
@@ -376,6 +377,24 @@ public class ManagerImpl implements Manager {
     return lookupOrCreateRoot(name, object, false);
   }
 
+  public Object lookupOrCreateRoot(final String name, final Object object, GroupID gid) {
+    try {
+      return this.objectManager.lookupOrCreateRoot(name, object, gid);
+    } catch (final Throwable t) {
+      Util.printLogAndRethrowError(t, logger);
+      throw new AssertionError();
+    }
+  }
+
+  public Object lookupRoot(final String name, GroupID gid) {
+    try {
+      return this.objectManager.lookupRoot(name, gid);
+    } catch (final Throwable t) {
+      Util.printLogAndRethrowError(t, logger);
+      throw new AssertionError();
+    }
+  }
+
   public Object lookupOrCreateRootNoDepth(final String name, final Object obj) {
     return lookupOrCreateRoot(name, obj, true);
   }
@@ -435,6 +454,15 @@ public class ManagerImpl implements Manager {
     }
 
     return this.objectManager.lookupOrCreate(obj);
+  }
+
+  public TCObject lookupOrCreate(final Object obj, GroupID gid) {
+    if (obj instanceof Manageable) {
+      TCObject tco = ((Manageable) obj).__tc_managed();
+      if (tco != null) { return tco; }
+    }
+
+    return this.objectManager.lookupOrCreate(obj, gid);
   }
 
   public TCObject lookupExistingOrNull(final Object pojo) {
@@ -957,5 +985,10 @@ public class ManagerImpl implements Manager {
   public void fireOperatorEvent(EventType eventLevel, EventSubsystem eventSubsystem, String eventMessage) {
     TerracottaOperatorEvent opEvent = new TerracottaOperatorEventImpl(eventLevel, eventSubsystem, eventMessage, "");
     TerracottaOperatorEventLogging.getEventLogger().fireOperatorEvent(opEvent);
+  }
+
+  @Override
+  public GroupID[] getGroupIDs() {
+    return this.dso.getGroupIDs();
   }
 }

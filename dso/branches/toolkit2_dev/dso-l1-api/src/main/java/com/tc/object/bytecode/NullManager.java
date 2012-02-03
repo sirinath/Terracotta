@@ -5,9 +5,11 @@
 package com.tc.object.bytecode;
 
 import com.tc.cluster.DsoCluster;
+import com.tc.exception.ImplementMe;
 import com.tc.logging.NullTCLogger;
 import com.tc.logging.TCLogger;
 import com.tc.management.TunneledDomainUpdater;
+import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.loaders.ClassProvider;
@@ -346,6 +348,26 @@ public class NullManager implements Manager {
 
   public void stopImmediate() {
     //
+  }
+
+  @Override
+  public Object lookupOrCreateRoot(String name, Object object, GroupID gid) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public GroupID[] getGroupIDs() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Object lookupRoot(String name, GroupID gid) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TCObject lookupOrCreate(Object obj, GroupID gid) {
+    throw new ImplementMe();
   }
 
 }
