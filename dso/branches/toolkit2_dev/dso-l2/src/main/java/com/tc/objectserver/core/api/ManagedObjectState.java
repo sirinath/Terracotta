@@ -40,6 +40,7 @@ public interface ManagedObjectState {
   public static final byte TDC_SERIALIZED_ENTRY                   = 0x12;
   public static final byte TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY   = 0x13;
   public static final byte CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE = 0x14;
+  public static final byte TOOLKIT_TYPE_ROOT_TYPE                 = 0x15;
 
   public void apply(ObjectID objectID, DNACursor cursor, ApplyTransactionInfo applyInfo) throws IOException;
 
