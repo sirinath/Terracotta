@@ -64,9 +64,11 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("org.terracotta.collections.quartz.DistributedSortedSet$Storage",
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
     classNameToStateMap.put("com.terracotta.toolkit.roots.impl.ToolkitTypeRootImpl",
-                            Byte.valueOf(ManagedObjectState.TOOLKIT_TYPE_ROOT_TYPE));
+                            Byte.valueOf(ManagedObjectState.MAP_TYPE));
     classNameToStateMap.put("com.terracotta.toolkit.object.SerializedClusterObjectImpl",
                             Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
+    classNameToStateMap.put("com.terracotta.toolkit.collections.ClusteredListImpl",
+                            Byte.valueOf(ManagedObjectState.LIST_TYPE));
   }
 
   private ManagedObjectStateFactory(final ManagedObjectChangeListenerProvider listenerProvider,
