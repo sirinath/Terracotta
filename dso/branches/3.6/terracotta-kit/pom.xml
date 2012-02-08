@@ -48,7 +48,7 @@
     <ehcache-core.readme.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.6/ehcache-express-kit/src/assemble/README.html</ehcache-core.readme.url>
     <ehcache-core.quickstart.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.6/ehcache-express-kit/src/assemble/QUICK-START.html</ehcache-core.quickstart.url>    
     <ehcache-core.tclicense.url>http://svn.terracotta.org/svn/forge/projects/terracotta-ehcache/branches/tc-3.6/ehcache-express-kit/src/assemble/EHCACHE-TERRACOTTA-LICENSE.txt</ehcache-core.tclicense.url>
-    <ehcache-core.tcschema.url>http://svn.terracotta.org/svn/ehcache/trunk/core/src/main/config/ehcache-terracotta.xml</ehcache-core.tcschema.url>
+    <ehcache-core.tcschema.url>http://svn.terracotta.org/svn/ehcache/branches/ehcache-core-2.5.x/src/main/config/ehcache-terracotta.xml</ehcache-core.tcschema.url>
     <quartz-kit.url>http://download.terracotta.org/quartz/quartz-${quartz.version}.tar.gz</quartz-kit.url>
     
     <maven-copy-plugin.version>0.2.3.3</maven-copy-plugin.version>
