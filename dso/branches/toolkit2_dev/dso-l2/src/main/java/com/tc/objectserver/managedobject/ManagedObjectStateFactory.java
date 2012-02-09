@@ -11,6 +11,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.loaders.Namespace;
 import com.tc.objectserver.core.api.ManagedObjectState;
+import com.tc.objectserver.managedobject.ManagedObjectStateStaticConfig.Factory;
 import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
 import com.tc.objectserver.persistence.api.Persistor;
 import com.tc.util.Assert;
@@ -63,12 +64,6 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("org.terracotta.collections.TerracottaList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
     classNameToStateMap.put("org.terracotta.collections.quartz.DistributedSortedSet$Storage",
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.roots.impl.ToolkitTypeRootImpl",
-                            Byte.valueOf(ManagedObjectState.MAP_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.object.SerializedClusterObjectImpl",
-                            Byte.valueOf(ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.collections.ClusteredListImpl",
-                            Byte.valueOf(ManagedObjectState.LIST_TYPE));
   }
 
   private ManagedObjectStateFactory(final ManagedObjectChangeListenerProvider listenerProvider,
@@ -140,8 +135,10 @@ public class ManagedObjectStateFactory {
 
     final long classID = getClassID(className);
 
-    if (type == ManagedObjectState.PHYSICAL_TYPE) { return this.physicalMOFactory.create(classID, oid, parentID,
-                                                                                         className, cursor); }
+    if (type == ManagedObjectState.PHYSICAL_TYPE) { throw new AssertionError();
+    // physical objects no longer supported
+    // return this.physicalMOFactory.create(classID, oid, parentID, className, cursor);
+    }
     switch (type) {
       case ManagedObjectState.ARRAY_TYPE:
         return new ArrayManagedObjectState(classID);
@@ -166,11 +163,10 @@ public class ManagedObjectStateFactory {
         return new TDCSerializedEntryManagedObjectState(classID);
       case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
         return new TDCCustomLifespanSerializedEntryManagedObjectState(classID);
-      case ManagedObjectState.TOOLKIT_TYPE_ROOT_TYPE:
-        return new ToolkitTypeRootManagedObjectState(classID);
-      case ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE:
-        return new SerializedClusterObjectState(classID);
     }
+    ManagedObjectStateStaticConfig config = ManagedObjectStateStaticConfig.getConfigForClientClassName(className);
+    if (config != null) { return config.getFactory().newInstance(oid, classID, persistentCollectionFactory); }
+
     // Unreachable
     throw new AssertionError("Type : " + type + " is unknown !");
   }
@@ -197,7 +193,13 @@ public class ManagedObjectStateFactory {
     final Byte type = (Byte) classNameToStateMap.get(className);
     if (type != null) { return type.byteValue(); }
     if (LiteralValues.isLiteral(className)) { return ManagedObjectState.LITERAL_TYPE; }
-    return ManagedObjectState.PHYSICAL_TYPE;
+
+    ManagedObjectStateStaticConfig config = ManagedObjectStateStaticConfig.getConfigForClientClassName(className);
+    if (config != null) { return config.getStateObjectType(); }
+
+    throw new AssertionError("This server doesn't recognize types of '" + className + "'");
+    // physical types no more supported
+    // return ManagedObjectState.PHYSICAL_TYPE;
   }
 
   public PhysicalManagedObjectState createPhysicalState(final ObjectID parentID, final int classId)
@@ -232,13 +234,16 @@ public class ManagedObjectStateFactory {
           return TDCSerializedEntryManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
           return TDCCustomLifespanSerializedEntryManagedObjectState.readFrom(in);
-        case ManagedObjectState.TOOLKIT_TYPE_ROOT_TYPE:
-          return ToolkitTypeRootManagedObjectState.readFrom(in);
-        case ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE:
-          return SerializedClusterObjectState.readFrom(in);
-        default:
-          throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
       }
+
+      Factory factory = ManagedObjectStateStaticConfig.Factory.getFactoryForType(type);
+      if (factory != null) {
+        factory.readFrom(in);
+      }
+
+      // Unreachable!
+      throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");
+
     } catch (final IOException e) {
       e.printStackTrace();
       throw new TCRuntimeException(e);

@@ -1,0 +1,185 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
+package com.tc.objectserver.managedobject;
+
+import com.tc.object.ObjectID;
+import com.tc.objectserver.core.api.ManagedObjectState;
+import com.tc.objectserver.persistence.api.PersistentCollectionFactory;
+
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+public enum ManagedObjectStateStaticConfig {
+
+  /**
+   * Toolkit type root - reuses map managed object state
+   */
+  TOOLKIT_TYPE_ROOT(ToolkitTypeNames.TOOLKIT_TYPE_ROOT_IMPL, Factory.MAP_TYPE_FACTORY),
+  /**
+   * Toolkit clusteredList type - reuses list object state
+   */
+  CLUSTERED_LIST(ToolkitTypeNames.CLUSTERED_LIST_IMPL, Factory.LIST_TYPE_FACTORY),
+  /**
+   * Toolkit SerializedClusteredObject type - explicit type
+   */
+  SERIALIZED_CLUSTER_OBJECT(ToolkitTypeNames.SERIALIZED_CLUSTERED_OBJECT_IMPL,
+      Factory.SERIALIZED_CLUSTERED_OBJECT_FACTORY),
+  /**
+   * Toolkit Clustered configuration - reuses map managed object state
+   */
+  CLUSTERED_CONFIGURATION(ToolkitTypeNames.CLUSTERED_CONFIG_IMPL, Factory.MAP_TYPE_FACTORY);
+
+  private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
+
+  static {
+    for (ManagedObjectStateStaticConfig config : ManagedObjectStateStaticConfig.values()) {
+      NAME_TO_CONFIG_MAP.put(config.getClientClassName(), config);
+    }
+  }
+
+  public static ManagedObjectStateStaticConfig getConfigForClientClassName(String className) {
+    return NAME_TO_CONFIG_MAP.get(className);
+  }
+
+  private final String  clientClassName;
+  private final Factory factory;
+
+  private ManagedObjectStateStaticConfig(String clientClassName, Factory factory) {
+    this.clientClassName = clientClassName;
+    this.factory = factory;
+  }
+
+  public String getClientClassName() {
+    return clientClassName;
+  }
+
+  public Factory getFactory() {
+    return factory;
+  }
+
+  public byte getStateObjectType() {
+    return factory.getStateObjectType();
+  }
+
+  public static enum Factory {
+    MAP_TYPE_FACTORY() {
+
+      @Override
+      public byte getStateObjectType() {
+        return ManagedObjectState.MAP_TYPE;
+      }
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        return MapManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new MapManagedObjectState(classId, persistentCollectionFactory.createPersistentMap(oid));
+      }
+
+    },
+    LIST_TYPE_FACTORY() {
+
+      @Override
+      public byte getStateObjectType() {
+        return ManagedObjectState.LIST_TYPE;
+      }
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        return ListManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new ListManagedObjectState(classId);
+      }
+
+    },
+    SERIALIZED_CLUSTERED_OBJECT_FACTORY() {
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+        return SerializedClusterObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new SerializedClusterObjectState(classId);
+      }
+
+    };
+
+    private static final Map<Byte, Factory> TYPE_TO_FACTORY_MAP = new ConcurrentHashMap<Byte, Factory>();
+
+    static {
+      for (Factory factory : Factory.values()) {
+        TYPE_TO_FACTORY_MAP.put(factory.getStateObjectType(), factory);
+      }
+    }
+
+    public static Factory getFactoryForType(byte type) {
+      return TYPE_TO_FACTORY_MAP.get(type);
+    }
+
+    private final byte implicitStateObjectType;
+
+    private Factory() {
+      this.implicitStateObjectType = (byte) (MANAGED_OBJECT_STATE_OFFSET_START + ordinal());
+    }
+
+    /**
+     * Override to reuse old existing values from ManagedObjectState interface
+     */
+    protected byte getStateObjectType() {
+      return implicitStateObjectType;
+    }
+
+    public abstract ManagedObjectState readFrom(ObjectInput objectInput) throws IOException, ClassNotFoundException;
+
+    public abstract ManagedObjectState newInstance(ObjectID oid, long classId,
+                                                   PersistentCollectionFactory persistentCollectionFactory);
+
+    static {
+      for (Factory type : Factory.values()) {
+        byte byteVal = type.implicitStateObjectType;
+        if (byteVal < MANAGED_OBJECT_STATE_OFFSET_START || byteVal > Byte.MAX_VALUE) { throw new AssertionError(); }
+
+      }
+    }
+
+  }
+
+  // a big enough offset such that no value greater than or equal to this value is defined in ManagedObjectState
+  // interface - todo: add test
+  private static final byte MANAGED_OBJECT_STATE_OFFSET_START = 0x30;
+
+  public abstract static class ToolkitTypeNames {
+    private static final Set<String> CONSTANTS = new HashSet<String>();
+
+    private static String defineConstant(String constant) {
+      CONSTANTS.add(constant);
+      return constant;
+    }
+
+    public static Set<String> values() {
+      return Collections.unmodifiableSet(CONSTANTS);
+    }
+
+    public final static String TOOLKIT_TYPE_ROOT_IMPL           = defineConstant("com.terracotta.toolkit.roots.impl.ToolkitTypeRootImpl");
+    public final static String CLUSTERED_LIST_IMPL              = defineConstant("com.terracotta.toolkit.collections.ClusteredListImpl");
+    public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.SerializedClusterObjectImpl");
+    public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
+  }
+}

@@ -11,7 +11,6 @@ import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.PhysicalAction;
-import com.tc.objectserver.core.api.ManagedObjectState;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.PhysicalManagedObjectFacade;
 
@@ -105,7 +104,7 @@ public class SerializedClusterObjectState extends AbstractManagedObjectState {
   }
 
   public byte getType() {
-    return ManagedObjectState.SERIALIZED_CLUSTER_OBJECT_TYPE;
+    return ManagedObjectStateStaticConfig.SERIALIZED_CLUSTER_OBJECT.getStateObjectType();
   }
 
   public void writeTo(final ObjectOutput out) throws IOException {

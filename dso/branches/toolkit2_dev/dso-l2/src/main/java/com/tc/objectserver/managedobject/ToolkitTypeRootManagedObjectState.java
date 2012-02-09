@@ -106,7 +106,7 @@ public class ToolkitTypeRootManagedObjectState extends LogicalManagedObjectState
 
   @Override
   public byte getType() {
-    return TOOLKIT_TYPE_ROOT_TYPE;
+    return ManagedObjectStateStaticConfig.TOOLKIT_TYPE_ROOT.getStateObjectType();
   }
 
   @Override
