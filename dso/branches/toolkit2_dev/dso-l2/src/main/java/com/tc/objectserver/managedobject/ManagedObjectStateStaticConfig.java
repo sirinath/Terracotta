@@ -33,7 +33,11 @@ public enum ManagedObjectStateStaticConfig {
   /**
    * Toolkit Clustered configuration - reuses map managed object state
    */
-  CLUSTERED_CONFIGURATION(ToolkitTypeNames.CLUSTERED_CONFIG_IMPL, Factory.MAP_TYPE_FACTORY);
+  CLUSTERED_CONFIGURATION(ToolkitTypeNames.CLUSTERED_CONFIG_IMPL, Factory.MAP_TYPE_FACTORY),
+  /**
+   * Toolkit ClusteredObjectStripe config - explicit state factory
+   */
+  CLUSTERED_OBJECT_STRIPE(ToolkitTypeNames.CLUSTERED_OBJECT_STRIPE_IMPL, Factory.CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY);
 
   private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
 
@@ -119,6 +123,20 @@ public enum ManagedObjectStateStaticConfig {
         return new SerializedClusterObjectState(classId);
       }
 
+    },
+    CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY() {
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+        return ClusteredObjectStripeState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new ClusteredObjectStripeState(classId);
+      }
+
     };
 
     private static final Map<Byte, Factory> TYPE_TO_FACTORY_MAP = new ConcurrentHashMap<Byte, Factory>();
@@ -181,5 +199,6 @@ public enum ManagedObjectStateStaticConfig {
     public final static String CLUSTERED_LIST_IMPL              = defineConstant("com.terracotta.toolkit.collections.ClusteredListImpl");
     public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.SerializedClusterObjectImpl");
     public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
+    public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
   }
 }

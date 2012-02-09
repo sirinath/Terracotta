@@ -19,7 +19,6 @@ public class ManagedObjectStateStaticConfigTest extends TestCase {
 
     Assert.assertTrue(configs.length > 1);
     Assert.assertTrue(factories.length > 1);
-    Assert.assertEquals(toolkitTypeNames.size(), configs.length);
 
     for (ManagedObjectStateStaticConfig config : configs) {
       System.out.println(config);
@@ -29,7 +28,8 @@ public class ManagedObjectStateStaticConfigTest extends TestCase {
       Assert.assertEquals(config.getStateObjectType(), config.getFactory().getStateObjectType());
 
       // verify every config has a name defined
-      Assert.assertTrue(toolkitTypeNames.contains(config.getClientClassName()));
+      Assert.assertTrue("ToolkitTypeName constant not defined for '" + config.getClientClassName() + "'",
+                        toolkitTypeNames.contains(config.getClientClassName()));
     }
 
     for (Factory f : factories) {
@@ -43,6 +43,8 @@ public class ManagedObjectStateStaticConfigTest extends TestCase {
       ManagedObjectStateStaticConfig config = ManagedObjectStateStaticConfig.getConfigForClientClassName(name);
       System.out.println(name);
       // verify every name has a config defined
+      Assert.assertNotNull("ManagedObjectStateStaticFactory enum type not defined for toolkit type: '" + name + "'",
+                           config);
       Assert.assertEquals(name, config.getClientClassName());
     }
 
