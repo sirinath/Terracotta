@@ -41,7 +41,7 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
   private static final long END           = System.currentTimeMillis() + TEST_DURATION;
 
   public NewObjectMemoryManagerRaceTest() {
-    super(1); // only need 1 node
+    super(1, new String[] { "-Xmx512m" }); // only need 1 node
   }
 
   @Override
