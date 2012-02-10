@@ -37,7 +37,11 @@ public enum ManagedObjectStateStaticConfig {
   /**
    * Toolkit ClusteredObjectStripe config - explicit state factory
    */
-  CLUSTERED_OBJECT_STRIPE(ToolkitTypeNames.CLUSTERED_OBJECT_STRIPE_IMPL, Factory.CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY);
+  CLUSTERED_OBJECT_STRIPE(ToolkitTypeNames.CLUSTERED_OBJECT_STRIPE_IMPL, Factory.CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY),
+  /**
+   * ServerMap - explicit state factory
+   */
+  SERVER_MAP(ToolkitTypeNames.SERVER_MAP_TYPE, Factory.SERVER_MAP_TYPE_FACTORY);
 
   private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
 
@@ -127,7 +131,7 @@ public enum ManagedObjectStateStaticConfig {
     CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY() {
 
       @Override
-      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException, ClassNotFoundException {
         return ClusteredObjectStripeState.readFrom(objectInput);
       }
 
@@ -135,6 +139,22 @@ public enum ManagedObjectStateStaticConfig {
       public ManagedObjectState newInstance(ObjectID oid, long classId,
                                             PersistentCollectionFactory persistentCollectionFactory) {
         return new ClusteredObjectStripeState(classId);
+      }
+
+    },
+    SERVER_MAP_TYPE_FACTORY() {
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+        return ConcurrentDistributedServerMapManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new ConcurrentDistributedServerMapManagedObjectState(classId,
+                                                                    persistentCollectionFactory
+                                                                        .createPersistentMap(oid));
       }
 
     };
@@ -200,5 +220,6 @@ public enum ManagedObjectStateStaticConfig {
     public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.SerializedClusterObjectImpl");
     public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
     public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
+    public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
   }
 }

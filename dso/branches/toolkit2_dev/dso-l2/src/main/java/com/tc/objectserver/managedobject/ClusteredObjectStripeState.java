@@ -32,7 +32,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   private final long            classID;
 
   private ObjectID              configurationObjectId;
-  private ObjectID[]            componentObjectIds;
+  private Object[]              componentObjects;
 
   public ClusteredObjectStripeState(final long classID) {
     this.classID = classID;
@@ -43,7 +43,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     final ClusteredObjectStripeState other = (ClusteredObjectStripeState) o;
 
     if (configurationObjectId != other.configurationObjectId) { return false; }
-    if (!Arrays.equals(this.componentObjectIds, other.componentObjectIds)) { return false; }
+    if (!Arrays.equals(this.componentObjects, other.componentObjects)) { return false; }
 
     return true;
   }
@@ -56,18 +56,12 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
       throws IOException {
     while (cursor.next()) {
       final PhysicalAction pa = cursor.getPhysicalAction();
-      if (pa.getFieldName().equals(CONFIGURATION_FIELD_NAME)) {
+      if (pa.isEntireArray()) {
+        this.componentObjects = (Object[]) pa.getObject();
+      } else if (CONFIGURATION_FIELD_NAME.equals(pa.getFieldName())) {
         ObjectID newOid = (ObjectID) pa.getObject();
         getListener().changed(objectID, configurationObjectId, newOid);
         this.configurationObjectId = newOid;
-      } else if (pa.isEntireArray()) {
-        final Object array = pa.getObject();
-        if (array instanceof ObjectID[]) {
-          this.componentObjectIds = (ObjectID[]) array;
-        } else {
-          final String type = safeTypeName(array);
-          logger.error("received array of type " + type + " -- ignoring it");
-        }
       } else {
         logger.error("received physical action: " + pa + " -- ignoring it");
       }
@@ -84,24 +78,33 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     return false;
   }
 
-  private static String safeTypeName(final Object obj) {
-    final String type = obj == null ? "null" : obj.getClass().getName();
-    return type;
-  }
-
   public ManagedObjectFacade createFacade(final ObjectID objectID, final String className, final int limit) {
-    final Map<String, Object> fields = addFacadeFields(new HashMap<String, Object>());
+    final Map<String, Object> fields = addFacadeFields(new HashMap<String, Object>(), limit);
     return new PhysicalManagedObjectFacade(objectID, null, className, fields, false, DNA.NULL_ARRAY_SIZE, false);
   }
 
-  protected Map<String, Object> addFacadeFields(final Map<String, Object> fields) {
-    // TODO: implement this
+  protected Map<String, Object> addFacadeFields(final Map<String, Object> fields, int limit) {
+    fields.put(CONFIGURATION_FIELD_NAME, configurationObjectId);
+
+    if (componentObjects != null) {
+      int size = componentObjects.length;
+      if (limit < 0) {
+        limit = size;
+      } else {
+        limit = Math.min(limit, size);
+      }
+      for (int i = 0; i < limit; i++) {
+        fields.put("components[" + i + "/" + componentObjects.length + "]", componentObjects[i]);
+      }
+    } else {
+      fields.put("components", "<Empty Array>");
+    }
     return fields;
   }
 
   public void dehydrate(final ObjectID objectID, final DNAWriter writer, final DNAType type) {
     writer.addPhysicalAction(CONFIGURATION_FIELD_NAME, configurationObjectId);
-    writer.addEntireArray(componentObjectIds);
+    writer.addEntireArray(componentObjects);
   }
 
   public final String getClassName() {
@@ -113,10 +116,13 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     if (configurationObjectId != null && !configurationObjectId.isNull()) {
       set.add(configurationObjectId);
     }
-    if (componentObjectIds != null) {
-      for (ObjectID oid : componentObjectIds) {
-        if (oid != null && !oid.isNull()) {
-          set.add(oid);
+    if (componentObjects != null) {
+      for (Object obj : componentObjects) {
+        if (obj instanceof ObjectID) {
+          ObjectID oid = (ObjectID) obj;
+          if (!oid.isNull()) {
+            set.add(oid);
+          }
         }
       }
     }
@@ -130,32 +136,32 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   public void writeTo(final ObjectOutput out) throws IOException {
     out.writeLong(this.classID);
     out.writeLong(configurationObjectId.toLong());
-    if (this.componentObjectIds != null) {
-      out.writeInt(this.componentObjectIds.length);
-      for (ObjectID oid : componentObjectIds) {
-        out.writeLong(oid.toLong());
+    if (this.componentObjects != null) {
+      out.writeInt(this.componentObjects.length);
+      for (Object obj : componentObjects) {
+        out.writeObject(obj);
       }
     } else {
       out.writeInt(-1);
     }
   }
 
-  static ClusteredObjectStripeState readFrom(final ObjectInput in) throws IOException {
+  static ClusteredObjectStripeState readFrom(final ObjectInput in) throws IOException, ClassNotFoundException {
     final ClusteredObjectStripeState state = new ClusteredObjectStripeState(in.readLong());
     state.readFromInternal(in);
     return state;
   }
 
-  protected void readFromInternal(final ObjectInput in) throws IOException {
+  protected void readFromInternal(final ObjectInput in) throws IOException, ClassNotFoundException {
     configurationObjectId = new ObjectID(in.readLong());
     final int length = in.readInt();
     if (length >= 0) {
-      componentObjectIds = new ObjectID[length];
-      for (int i = 0; i < componentObjectIds.length; i++) {
-        componentObjectIds[i] = new ObjectID(in.readLong());
+      componentObjects = new Object[length];
+      for (int i = 0; i < componentObjects.length; i++) {
+        componentObjects[i] = in.readObject();
       }
     } else {
-      componentObjectIds = new ObjectID[0];
+      componentObjects = new Object[0];
     }
   }
 
@@ -164,7 +170,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     final int prime = 31;
     int result = 1;
     result = prime * result + (int) (classID ^ (classID >>> 32));
-    result = prime * result + Arrays.hashCode(componentObjectIds);
+    result = prime * result + Arrays.hashCode(componentObjects);
     result = prime * result + ((configurationObjectId == null) ? 0 : configurationObjectId.hashCode());
     return result;
   }
