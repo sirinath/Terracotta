@@ -41,7 +41,11 @@ public enum ManagedObjectStateStaticConfig {
   /**
    * ServerMap - explicit state factory
    */
-  SERVER_MAP(ToolkitTypeNames.SERVER_MAP_TYPE, Factory.SERVER_MAP_TYPE_FACTORY);
+  SERVER_MAP(ToolkitTypeNames.SERVER_MAP_TYPE, Factory.SERVER_MAP_TYPE_FACTORY),
+  /**
+   * ClusteredNotifier - explicit state factory
+   */
+  CLUSTERED_NOTIFIER(ToolkitTypeNames.CLUSTERED_NOTIFIER_TYPE, Factory.CLUSTERED_NOTIFIER_TYPE_FACTORY);
 
   private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
 
@@ -156,7 +160,19 @@ public enum ManagedObjectStateStaticConfig {
                                                                     persistentCollectionFactory
                                                                         .createPersistentMap(oid));
       }
+    },
+    CLUSTERED_NOTIFIER_TYPE_FACTORY() {
 
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+        return ClusteredNotifierManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new ClusteredNotifierManagedObjectState(classId);
+      }
     };
 
     private static final Map<Byte, Factory> TYPE_TO_FACTORY_MAP = new ConcurrentHashMap<Byte, Factory>();
@@ -221,5 +237,6 @@ public enum ManagedObjectStateStaticConfig {
     public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
     public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
     public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
+    public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.notifier.ClusteredNotifierImpl");
   }
 }
