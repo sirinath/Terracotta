@@ -370,4 +370,20 @@ public class NullManager implements Manager {
     throw new ImplementMe();
   }
 
+  @Override
+  public void lockIDWait(LockID lock, long timeout) throws InterruptedException {
+    throw new UnsupportedOperationException();
+
+  }
+
+  @Override
+  public Notify lockIDNotifyAll(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Notify lockIDNotify(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
 }

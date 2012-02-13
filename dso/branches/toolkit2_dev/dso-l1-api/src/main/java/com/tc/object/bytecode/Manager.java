@@ -14,6 +14,7 @@ import com.tc.object.TCObject;
 import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
+import com.tc.object.locks.Notify;
 import com.tc.object.locks.TerracottaLocking;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.metadata.MetaDataDescriptor;
@@ -381,4 +382,10 @@ public interface Manager extends TerracottaLocking {
   void initForTests(CountDownLatch latch);
 
   public GroupID[] getGroupIDs();
+
+  void lockIDWait(final LockID lock, final long timeout) throws InterruptedException;
+
+  Notify lockIDNotifyAll(final LockID lock);
+
+  Notify lockIDNotify(final LockID lock);
 }
