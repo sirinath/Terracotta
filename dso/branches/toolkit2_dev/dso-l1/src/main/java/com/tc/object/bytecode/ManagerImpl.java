@@ -991,4 +991,28 @@ public class ManagerImpl implements Manager {
   public GroupID[] getGroupIDs() {
     return this.dso.getGroupIDs();
   }
+
+  public void lockIDWait(final LockID lock, final long timeout) throws InterruptedException {
+    try {
+      this.txManager.commit(lock, LockLevel.WRITE);
+    } catch (final UnlockedSharedObjectException e) {
+      throw new IllegalMonitorStateException();
+    }
+    try {
+      this.lockManager.wait(lock, null, timeout);
+    } finally {
+      // XXX this is questionable
+      this.txManager.begin(lock, LockLevel.WRITE);
+    }
+  }
+
+  public Notify lockIDNotifyAll(final LockID lock) {
+    this.txManager.notify(this.lockManager.notifyAll(lock, null));
+    return NotifyImpl.NULL;
+  }
+
+  public Notify lockIDNotify(final LockID lock) {
+    this.txManager.notify(this.lockManager.notify(lock, null));
+    return NotifyImpl.NULL;
+  }
 }
