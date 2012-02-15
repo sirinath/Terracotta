@@ -10,12 +10,19 @@ import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.runtime.Os;
 
+import java.util.ArrayList;
+
 public class CreateLotsOfGarbageYoungGenGCTest extends YoungGCTestAndActivePassiveTest implements TestConfigurator {
 
   public CreateLotsOfGarbageYoungGenGCTest() {
     if (Os.isSolaris()) {
       disableTest();
     }
+  }
+
+  @Override
+  protected void setExtraJvmArgs(ArrayList jvmArgs) {
+    jvmArgs.add("-Xmx512m");
   }
 
   @Override
