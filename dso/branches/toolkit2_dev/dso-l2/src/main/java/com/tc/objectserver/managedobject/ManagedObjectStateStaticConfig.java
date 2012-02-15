@@ -35,6 +35,10 @@ public enum ManagedObjectStateStaticConfig {
    */
   CLUSTERED_CONFIGURATION(ToolkitTypeNames.CLUSTERED_CONFIG_IMPL, Factory.MAP_TYPE_FACTORY),
   /**
+   * Toolkit Serializer map - reuses map managed object state
+   */
+  SERIALIZER_MAP(ToolkitTypeNames.SERIALIZER_MAP_IMPL, Factory.MAP_TYPE_FACTORY),
+  /**
    * Toolkit ClusteredObjectStripe config - explicit state factory
    */
   CLUSTERED_OBJECT_STRIPE(ToolkitTypeNames.CLUSTERED_OBJECT_STRIPE_IMPL, Factory.CLUSTERED_OBJECT_STRIPE_TYPE_FACTORY),
@@ -235,6 +239,7 @@ public enum ManagedObjectStateStaticConfig {
     public final static String CLUSTERED_LIST_IMPL              = defineConstant("com.terracotta.toolkit.collections.ClusteredListImpl");
     public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.SerializedClusterObjectImpl");
     public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
+    public final static String SERIALIZER_MAP_IMPL              = defineConstant("com.terracotta.toolkit.collections.SerializerMapImpl");
     public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
     public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
     public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.notifier.ClusteredNotifierImpl");
