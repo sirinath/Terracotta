@@ -11,6 +11,7 @@ import com.tc.handler.CallbackDumpHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
+import com.tc.object.dna.api.DNA;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectManagerLookupResults;
@@ -153,7 +154,21 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       }
       ServerTransaction txn = lookupContext.getTransaction();
       if (lookupContext.initiateApply()) {
-        lookupObjectsForApplyAndAddToSink(txn);
+        try {
+          lookupObjectsForApplyAndAddToSink(txn);
+        } catch (Throwable t) {
+          for (Iterator j = txn.getChanges().iterator(); j.hasNext();) {
+            DNA dna = (DNA) j.next();
+            ObjectID oid = dna.getObjectID();
+            String actionLog = dna.getCursor().getLogicalAction() == null ? "" : String.valueOf(dna.getCursor()
+                .getLogicalAction().getMethod());
+            String phyLog = dna.getCursor().getPhysicalAction() == null ? "" : dna.getCursor().getPhysicalAction()
+                .getFieldName();
+            logger.warn("Failed: " + oid + " actionLogical=" + actionLog + " physicalAction=" + phyLog + " isDelta="
+                        + dna.isDelta(), t);
+            throw new RuntimeException(t);
+          }
+        }
       } else {
         // These txns are already applied, hence just sending it to the next stage.
         this.txnStageCoordinator.addToApplyStage(new ApplyTransactionContext(txn));
