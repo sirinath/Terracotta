@@ -10,23 +10,33 @@ import com.tc.stats.DSOMBean;
 import com.tc.util.Assert;
 import com.tctest.runner.PostAction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class GCAndActivePassiveTestBase extends ActivePassiveTransparentTestBase implements TestConfigurator {
 
   protected GCConfigurationHelper gcConfigHelper = new GCConfigurationHelper();
-  
+
+  @Override
+  protected void setExtraJvmArgs(ArrayList jvmArgs) {
+    super.setExtraJvmArgs(jvmArgs);
+    jvmArgs.add("-XX:+HeapDumpOnOutOfMemoryError");
+  }
+
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     doSetUp(this);
   }
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(gcConfigHelper.getNodeCount())
         .setIntensity(GCConfigurationHelper.Parameters.LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }
 
+  @Override
   protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
     gcConfigHelper.setupConfig(configFactory);
   }
