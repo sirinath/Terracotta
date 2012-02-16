@@ -41,7 +41,7 @@ public class CreateLotsOfGarbageGCTestApp extends AbstractTransparentApp {
           array[j] = new Object();
         }
       }
-      if (i != 0 && i % 100 == 0) {
+      if (i != 0 && i % 50 == 0) {
         System.out.println("Loop count : " + i);
         ThreadUtil.reallySleep(1000);
       }
