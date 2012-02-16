@@ -1268,19 +1268,19 @@ public class ManagerUtil {
     return getManager().getGroupIDs();
   }
 
-  public static void lockIDWait(final String lockID, long timeoutMillis) throws InterruptedException {
+  public static void lockIDWait(final Object lockID, long timeoutMillis) throws InterruptedException {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
     mgr.lockIDWait(lock, timeoutMillis);
   }
 
-  public static void lockIDNotifyAll(final String lockID) {
+  public static void lockIDNotifyAll(final Object lockID) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
     mgr.lockIDNotifyAll(lock);
   }
 
-  public static void lockIDNotify(final String lockID) {
+  public static void lockIDNotify(final Object lockID) {
     Manager mgr = getManager();
     LockID lock = mgr.generateLockIdentifier(lockID);
     mgr.lockIDNotify(lock);

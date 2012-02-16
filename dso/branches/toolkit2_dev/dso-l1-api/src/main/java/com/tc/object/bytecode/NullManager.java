@@ -371,7 +371,7 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public void lockIDWait(LockID lock, long timeout) throws InterruptedException {
+  public void lockIDWait(LockID lock, long timeout) {
     throw new UnsupportedOperationException();
 
   }
