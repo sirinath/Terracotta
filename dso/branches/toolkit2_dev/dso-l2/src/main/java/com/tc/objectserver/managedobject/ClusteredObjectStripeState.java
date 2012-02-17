@@ -6,10 +6,12 @@ package com.tc.objectserver.managedobject;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
+import com.tc.object.SerializationUtil;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.PhysicalManagedObjectFacade;
@@ -25,26 +27,30 @@ import java.util.Set;
 
 public class ClusteredObjectStripeState extends AbstractManagedObjectState {
 
-  private static final TCLogger logger                   = TCLogging.getLogger(ClusteredObjectStripeState.class);
+  private static final TCLogger        logger                   = TCLogging.getLogger(ClusteredObjectStripeState.class);
 
-  private static final String   CONFIGURATION_FIELD_NAME = "configuration";
+  private static final String          CONFIGURATION_FIELD_NAME = "configuration";
 
-  private final long            classID;
+  private final long                   classID;
 
-  private ObjectID              configurationObjectId;
-  private Object[]              componentObjects;
+  private volatile Map<String, Object> configMap                = new HashMap<String, Object>();
+  private Object[]                     componentObjects;
 
   public ClusteredObjectStripeState(final long classID) {
     this.classID = classID;
   }
 
   @Override
-  protected boolean basicEquals(final AbstractManagedObjectState o) {
-    final ClusteredObjectStripeState other = (ClusteredObjectStripeState) o;
-
-    if (configurationObjectId != other.configurationObjectId) { return false; }
-    if (!Arrays.equals(this.componentObjects, other.componentObjects)) { return false; }
-
+  protected boolean basicEquals(final AbstractManagedObjectState obj) {
+    if (this == obj) return true;
+    if (!super.equals(obj)) return false;
+    if (getClass() != obj.getClass()) return false;
+    ClusteredObjectStripeState other = (ClusteredObjectStripeState) obj;
+    if (classID != other.classID) return false;
+    if (!Arrays.equals(componentObjects, other.componentObjects)) return false;
+    if (configMap == null) {
+      if (other.configMap != null) return false;
+    } else if (!configMap.equals(other.configMap)) return false;
     return true;
   }
 
@@ -55,16 +61,33 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   public void apply(final ObjectID objectID, final DNACursor cursor, final ApplyTransactionInfo includeIDs)
       throws IOException {
     while (cursor.next()) {
-      final PhysicalAction pa = cursor.getPhysicalAction();
-      if (pa.isEntireArray()) {
-        this.componentObjects = (Object[]) pa.getObject();
-      } else if (CONFIGURATION_FIELD_NAME.equals(pa.getFieldName())) {
-        ObjectID newOid = (ObjectID) pa.getObject();
-        getListener().changed(objectID, configurationObjectId, newOid);
-        this.configurationObjectId = newOid;
+      Object action = cursor.getAction();
+      if (action instanceof PhysicalAction) {
+        final PhysicalAction pa = (PhysicalAction) action;
+        if (pa.isEntireArray()) {
+          this.componentObjects = (Object[]) pa.getObject();
+        } else {
+          configMap.put(pa.getFieldName(), pa.getObject());
+        }
       } else {
-        logger.error("received physical action: " + pa + " -- ignoring it");
+        final LogicalAction logicalAction = (LogicalAction) action;
+        final int method = logicalAction.getMethod();
+        final Object[] params = logicalAction.getParameters();
+        applyMethod(objectID, method, params);
       }
+    }
+  }
+
+  private void applyMethod(ObjectID objectID, int method, Object[] params) {
+    switch (method) {
+      case SerializationUtil.PUT:
+        final Object key = params[0];
+        final Object value = params[1];
+        configMap.put((String) key, value);
+        break;
+      default:
+        throw new AssertionError("Gor unhandled logical action: objectId: " + objectID + ", method: " + method
+                                 + ", params: " + Arrays.asList(params));
     }
   }
 
@@ -84,7 +107,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   }
 
   protected Map<String, Object> addFacadeFields(final Map<String, Object> fields, int limit) {
-    fields.put(CONFIGURATION_FIELD_NAME, configurationObjectId);
+    fields.putAll(configMap);
 
     if (componentObjects != null) {
       int size = componentObjects.length;
@@ -103,7 +126,9 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   }
 
   public void dehydrate(final ObjectID objectID, final DNAWriter writer, final DNAType type) {
-    writer.addPhysicalAction(CONFIGURATION_FIELD_NAME, configurationObjectId);
+    for (Map.Entry<String, Object> entry : configMap.entrySet()) {
+      writer.addPhysicalAction(entry.getKey(), entry.getValue());
+    }
     writer.addEntireArray(componentObjects);
   }
 
@@ -113,9 +138,6 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
 
   public Set getObjectReferences() {
     ObjectIDSet set = new ObjectIDSet();
-    if (configurationObjectId != null && !configurationObjectId.isNull()) {
-      set.add(configurationObjectId);
-    }
     if (componentObjects != null) {
       for (Object obj : componentObjects) {
         if (obj instanceof ObjectID) {
@@ -135,7 +157,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
 
   public void writeTo(final ObjectOutput out) throws IOException {
     out.writeLong(this.classID);
-    out.writeLong(configurationObjectId.toLong());
+    out.writeObject(configMap);
     if (this.componentObjects != null) {
       out.writeInt(this.componentObjects.length);
       for (Object obj : componentObjects) {
@@ -153,7 +175,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   }
 
   protected void readFromInternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-    configurationObjectId = new ObjectID(in.readLong());
+    configMap = (Map<String, Object>) in.readObject();
     final int length = in.readInt();
     if (length >= 0) {
       componentObjects = new Object[length];
@@ -171,7 +193,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     int result = 1;
     result = prime * result + (int) (classID ^ (classID >>> 32));
     result = prime * result + Arrays.hashCode(componentObjects);
-    result = prime * result + ((configurationObjectId == null) ? 0 : configurationObjectId.hashCode());
+    result = prime * result + ((configMap == null) ? 0 : configMap.hashCode());
     return result;
   }
 
