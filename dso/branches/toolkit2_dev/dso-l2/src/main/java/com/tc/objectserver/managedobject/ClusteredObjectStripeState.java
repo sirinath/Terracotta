@@ -3,8 +3,6 @@
  */
 package com.tc.objectserver.managedobject;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.dna.api.DNA;
@@ -23,17 +21,14 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class ClusteredObjectStripeState extends AbstractManagedObjectState {
 
-  private static final TCLogger        logger                   = TCLogging.getLogger(ClusteredObjectStripeState.class);
-
-  private static final String          CONFIGURATION_FIELD_NAME = "configuration";
-
   private final long                   classID;
 
-  private volatile Map<String, Object> configMap                = new HashMap<String, Object>();
+  private volatile Map<String, Object> configMap = new HashMap<String, Object>();
   private Object[]                     componentObjects;
 
   public ClusteredObjectStripeState(final long classID) {
@@ -157,7 +152,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
 
   public void writeTo(final ObjectOutput out) throws IOException {
     out.writeLong(this.classID);
-    out.writeObject(configMap);
+    writeMap(configMap, out);
     if (this.componentObjects != null) {
       out.writeInt(this.componentObjects.length);
       for (Object obj : componentObjects) {
@@ -168,6 +163,25 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
     }
   }
 
+  private static void writeMap(final Map<String, Object> map, final ObjectOutput out) throws IOException {
+    out.writeInt(map.size());
+    for (Entry<String, Object> e : map.entrySet()) {
+      out.writeUTF(e.getKey());
+      out.writeObject(e.getValue());
+    }
+  }
+
+  private static Map<String, Object> readMap(final ObjectInput in) throws ClassNotFoundException, IOException {
+    HashMap<String, Object> rv = new HashMap<String, Object>();
+    int size = in.readInt();
+    for (int i = 0; i < size; i++) {
+      String key = in.readUTF();
+      Object value = in.readObject();
+      rv.put(key, value);
+    }
+    return rv;
+  }
+
   static ClusteredObjectStripeState readFrom(final ObjectInput in) throws IOException, ClassNotFoundException {
     final ClusteredObjectStripeState state = new ClusteredObjectStripeState(in.readLong());
     state.readFromInternal(in);
@@ -175,7 +189,7 @@ public class ClusteredObjectStripeState extends AbstractManagedObjectState {
   }
 
   protected void readFromInternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-    configMap = (Map<String, Object>) in.readObject();
+    configMap = readMap(in);
     final int length = in.readInt();
     if (length >= 0) {
       componentObjects = new Object[length];
