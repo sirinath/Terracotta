@@ -237,11 +237,11 @@ public enum ManagedObjectStateStaticConfig {
 
     public final static String TOOLKIT_TYPE_ROOT_IMPL           = defineConstant("com.terracotta.toolkit.roots.impl.ToolkitTypeRootImpl");
     public final static String CLUSTERED_LIST_IMPL              = defineConstant("com.terracotta.toolkit.collections.ClusteredListImpl");
-    public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.SerializedClusterObjectImpl");
+    public final static String SERIALIZED_CLUSTERED_OBJECT_IMPL = defineConstant("com.terracotta.toolkit.object.serialization.SerializedClusterObjectImpl");
     public final static String CLUSTERED_CONFIG_IMPL            = defineConstant("com.terracotta.toolkit.config.ClusteredConfigurationImpl");
-    public final static String SERIALIZER_MAP_IMPL              = defineConstant("com.terracotta.toolkit.collections.SerializerMapImpl");
+    public final static String SERIALIZER_MAP_IMPL              = defineConstant("com.terracotta.toolkit.object.serialization.SerializerMapImpl");
     public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
     public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
-    public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.notifier.ClusteredNotifierImpl");
+    public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.events.ClusteredNotifierImpl");
   }
 }
