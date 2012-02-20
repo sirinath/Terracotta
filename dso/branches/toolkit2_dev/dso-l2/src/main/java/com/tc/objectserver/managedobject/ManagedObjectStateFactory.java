@@ -47,11 +47,6 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("com.tctest.builtin.HashMap", Byte.valueOf(ManagedObjectState.MAP_TYPE));
     classNameToStateMap.put("com.tctest.builtin.ArrayList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
 
-    // XXX: Support for CDM, CDSM in terracotta-toolkit
-    classNameToStateMap.put("com.terracotta.toolkit.collections.ConcurrentDistributedMapDso",
-                            Byte.valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE));
-    classNameToStateMap.put("com.terracotta.toolkit.collections.ConcurrentDistributedServerMapDso",
-                            Byte.valueOf(ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE));
     // XXX: Support for Ehcache entry type
     classNameToStateMap.put(TDCSerializedEntryManagedObjectState.SERIALIZED_ENTRY,
                             Byte.valueOf(ManagedObjectState.TDC_SERIALIZED_ENTRY));
@@ -152,13 +147,6 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
-      case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
-        return new ConcurrentDistributedMapManagedObjectState(classID,
-                                                              this.persistentCollectionFactory.createPersistentMap(oid));
-      case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
-        return new ConcurrentDistributedServerMapManagedObjectState(classID,
-                                                                    this.persistentCollectionFactory
-                                                                        .createPersistentMap(oid));
       case ManagedObjectState.TDC_SERIALIZED_ENTRY:
         return new TDCSerializedEntryManagedObjectState(classID);
       case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
@@ -226,10 +214,6 @@ public class ManagedObjectStateFactory {
           return SetManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
-        case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
-          return ConcurrentDistributedMapManagedObjectState.readFrom(in);
-        case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
-          return ConcurrentDistributedServerMapManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_SERIALIZED_ENTRY:
           return TDCSerializedEntryManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
@@ -237,9 +221,7 @@ public class ManagedObjectStateFactory {
       }
 
       Factory factory = ManagedObjectStateStaticConfig.Factory.getFactoryForType(type);
-      if (factory != null) {
-        factory.readFrom(in);
-      }
+      if (factory != null) { return factory.readFrom(in); }
 
       // Unreachable!
       throw new AssertionError("Unknown type : " + type + " : Dont know how to deserialize this type !");

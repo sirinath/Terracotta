@@ -46,8 +46,7 @@ public class ConcurrentDistributedServerMapManagedObjectStateTest extends Abstra
 
   private TestDNACursor createDNACursor() {
     final TestDNACursor cursor = new TestDNACursor();
-    cursor.addPhysicalAction(ConcurrentDistributedMapManagedObjectState.DSO_LOCK_TYPE_FIELDNAME, new Integer(1), false);
-    cursor.addPhysicalAction(ConcurrentDistributedMapManagedObjectState.LOCK_STRATEGY_FIELDNAME, new ObjectID(20),
+    cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.DSO_LOCK_TYPE_FIELDNAME, new Integer(1),
                              false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.MAX_TTI_SECONDS_FIELDNAME,
                              Integer.valueOf(0), false);
