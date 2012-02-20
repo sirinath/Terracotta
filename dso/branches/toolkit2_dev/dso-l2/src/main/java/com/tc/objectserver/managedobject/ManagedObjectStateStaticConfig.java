@@ -45,7 +45,11 @@ public enum ManagedObjectStateStaticConfig {
   /**
    * ClusteredNotifier - explicit state factory
    */
-  CLUSTERED_NOTIFIER(ToolkitTypeNames.CLUSTERED_NOTIFIER_TYPE, Factory.CLUSTERED_NOTIFIER_TYPE_FACTORY);
+  CLUSTERED_NOTIFIER(ToolkitTypeNames.CLUSTERED_NOTIFIER_TYPE, Factory.CLUSTERED_NOTIFIER_TYPE_FACTORY),
+  /**
+   * SerializedEntry - explicit state factory
+   */
+  SERIALIZED_ENTRY(ToolkitTypeNames.SERIALIZED_ENTRY_TYPE, Factory.SERIALIZED_ENTRY_TYPE_FACTORY);
 
   private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
 
@@ -173,7 +177,22 @@ public enum ManagedObjectStateStaticConfig {
                                             PersistentCollectionFactory persistentCollectionFactory) {
         return new ClusteredNotifierManagedObjectState(classId);
       }
-    };
+    },
+    SERIALIZED_ENTRY_TYPE_FACTORY() {
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException {
+        return TDCSerializedEntryManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new TDCSerializedEntryManagedObjectState(classId);
+      }
+    }
+
+    ;
 
     private static final Map<Byte, Factory> TYPE_TO_FACTORY_MAP = new ConcurrentHashMap<Byte, Factory>();
 
@@ -238,5 +257,6 @@ public enum ManagedObjectStateStaticConfig {
     public final static String CLUSTERED_OBJECT_STRIPE_IMPL     = defineConstant("com.terracotta.toolkit.object.ClusteredObjectStripeImpl");
     public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
     public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.events.ClusteredNotifierImpl");
+    public final static String SERIALIZED_ENTRY_TYPE            = defineConstant("com.terracotta.toolkit.object.serialization.SerializedEntry");
   }
 }

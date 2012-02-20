@@ -48,8 +48,6 @@ public class ManagedObjectStateFactory {
     classNameToStateMap.put("com.tctest.builtin.ArrayList", Byte.valueOf(ManagedObjectState.LIST_TYPE));
 
     // XXX: Support for Ehcache entry type
-    classNameToStateMap.put(TDCSerializedEntryManagedObjectState.SERIALIZED_ENTRY,
-                            Byte.valueOf(ManagedObjectState.TDC_SERIALIZED_ENTRY));
     classNameToStateMap.put(TDCCustomLifespanSerializedEntryManagedObjectState.CUSTOM_SERIALIZED_ENTRY,
                             Byte.valueOf(ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY));
     // XXX: Support for terracotta toolkit
@@ -147,8 +145,6 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
-      case ManagedObjectState.TDC_SERIALIZED_ENTRY:
-        return new TDCSerializedEntryManagedObjectState(classID);
       case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
         return new TDCCustomLifespanSerializedEntryManagedObjectState(classID);
     }
@@ -214,8 +210,6 @@ public class ManagedObjectStateFactory {
           return SetManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
-        case ManagedObjectState.TDC_SERIALIZED_ENTRY:
-          return TDCSerializedEntryManagedObjectState.readFrom(in);
         case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
           return TDCCustomLifespanSerializedEntryManagedObjectState.readFrom(in);
       }

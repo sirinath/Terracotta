@@ -26,14 +26,11 @@ import java.util.Set;
 
 public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectState implements EvictableEntry {
 
-  private static final TCLogger logger                     = TCLogging
-                                                               .getLogger(TDCSerializedEntryManagedObjectState.class);
+  private static final TCLogger logger                 = TCLogging
+                                                           .getLogger(TDCSerializedEntryManagedObjectState.class);
 
-  public static final String    SERIALIZED_ENTRY           = "org.terracotta.cache.serialization.SerializedEntry";
-  public static final String    ABSTRACT_TIMESTAMPED_VALUE = "org.terracotta.cache.value.AbstractTimestampedValue";
-
-  public static final String    CREATE_TIME_FIELD          = SERIALIZED_ENTRY + ".createTime";
-  public static final String    LAST_ACCESS_TIME_FIELD     = ABSTRACT_TIMESTAMPED_VALUE + ".lastAccessedTime";
+  public static final String    CREATE_TIME_FIELD      = "createTime";
+  public static final String    LAST_ACCESS_TIME_FIELD = "lastAccessedTime";
 
   private final long            classID;
 
