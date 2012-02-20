@@ -7,11 +7,10 @@ package com.tcclient.cluster;
 import com.tc.exception.TCRuntimeException;
 import com.tc.object.bytecode.ManagerUtil;
 
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class DsoNodeImpl implements DsoNodeInternal, Comparable, Serializable {
+public class DsoNodeImpl implements DsoNodeInternal, Comparable {
 
   private final String             id;
   private final long               channelId;
