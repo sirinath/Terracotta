@@ -52,12 +52,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.QUEUE_TYPE:
             testLinkedBlockingQueue();
             break;
-          case ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE:
-            testConcurrentDistributedMap();
-            break;
-          case ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE:
-            testConcurrentDistributedServerMap();
-            break;
           case ManagedObjectState.TDC_SERIALIZED_ENTRY:
             testTcHibernateSerializedEntry();
             break;
@@ -65,8 +59,7 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
             testTcHibernateCustomSerializedEntry();
             break;
           default:
-            throw new AssertionError("Type " + type
-                                     + " does not have a test case in ManagedObjectStateSerializationTest.");
+            testConcurrentDistributedServerMap();
         }
       }
     }
@@ -181,32 +174,12 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
     serializationValidation(state, cursor, ManagedObjectState.QUEUE_TYPE);
   }
 
-  // XXX: This is a rather ugly hack to get around the requirements of tim-concurrent-collections.
-  public void testConcurrentDistributedMap() throws Exception {
-    final String className = "com.terracotta.toolkit.collections.ConcurrentDistributedMapDso";
-    final TestDNACursor cursor = new TestDNACursor();
-
-    cursor.addPhysicalAction(ConcurrentDistributedMapManagedObjectState.DSO_LOCK_TYPE_FIELDNAME, Integer.valueOf(42),
-                             false);
-    cursor.addPhysicalAction(ConcurrentDistributedMapManagedObjectState.LOCK_STRATEGY_FIELDNAME, new ObjectID(1, 12),
-                             true);
-
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2001), new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.PUT, new Object[] { new ObjectID(2002), new ObjectID(2004) });
-
-    final ManagedObjectState state = applyValidation(className, cursor);
-
-    serializationValidation(state, cursor, ManagedObjectState.CONCURRENT_DISTRIBUTED_MAP_TYPE);
-  }
-
   public void testConcurrentDistributedServerMap() throws Exception {
     final String className = "com.terracotta.toolkit.collections.ConcurrentDistributedServerMapDso";
     final TestDNACursor cursor = new TestDNACursor();
 
-    cursor
-        .addPhysicalAction(ConcurrentDistributedMapManagedObjectState.DSO_LOCK_TYPE_FIELDNAME, new Integer(42), false);
-    cursor.addPhysicalAction(ConcurrentDistributedMapManagedObjectState.LOCK_STRATEGY_FIELDNAME, new ObjectID(1, 12),
-                             true);
+    cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.DSO_LOCK_TYPE_FIELDNAME, new Integer(42),
+                             false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.MAX_TTI_SECONDS_FIELDNAME,
                              Integer.valueOf(0), false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.MAX_TTL_SECONDS_FIELDNAME,
@@ -224,7 +197,7 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
 
     final ManagedObjectState state = applyValidation(className, cursor);
 
-    serializationValidation(state, cursor, ManagedObjectState.CONCURRENT_DISTRIBUTED_SERVER_MAP_TYPE);
+    serializationValidation(state, cursor, ManagedObjectStateStaticConfig.SERVER_MAP.getStateObjectType());
   }
 
   public void testEnum() throws Exception {
