@@ -8,6 +8,7 @@ import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TestDNACursor;
 import com.tc.objectserver.core.api.ManagedObjectState;
+import com.tc.objectserver.managedobject.ManagedObjectStateStaticConfig.ToolkitTypeNames;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -66,7 +67,7 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
   }
 
   public void testTcHibernateSerializedEntry() throws Exception {
-    final String className = TDCSerializedEntryManagedObjectState.SERIALIZED_ENTRY;
+    final String className = ToolkitTypeNames.SERIALIZED_ENTRY_TYPE;
     final TestDNACursor cursor = new TestDNACursor();
 
     cursor.addPhysicalAction(TDCSerializedEntryManagedObjectState.CREATE_TIME_FIELD, new Integer(1), false);

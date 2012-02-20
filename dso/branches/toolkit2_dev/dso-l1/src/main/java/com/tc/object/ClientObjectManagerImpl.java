@@ -995,7 +995,12 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     if (obj == null) { return null; }
     if (obj instanceof TCObjectSelf) {
       TCObjectSelf self = (TCObjectSelf) obj;
-      if (self.isInitialized()) { return self; }
+      if (self.isInitialized()) {
+        return self;
+      } else {
+        // return null when not initialized yet, as __tc_managed() is itself and not null
+        return null;
+      }
     }
 
     if (obj instanceof Manageable) { return ((Manageable) obj).__tc_managed(); }
