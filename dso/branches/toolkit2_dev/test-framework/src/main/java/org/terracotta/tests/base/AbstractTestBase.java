@@ -125,7 +125,7 @@ public abstract class AbstractTestBase extends TCTestCase {
   }
 
   @Override
-  @Test(timeout = 15 * 60 * 1000)
+  @Test
   final public void runTest() throws Throwable {
     if (!testWillRun) return;
 

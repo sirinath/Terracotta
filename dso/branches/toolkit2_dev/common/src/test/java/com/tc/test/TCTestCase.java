@@ -300,7 +300,7 @@ public class TCTestCase extends TestCase {
     }
   }
 
-  public void scheduleTimeoutTask() {
+  public synchronized void scheduleTimeoutTask() {
     // enforce some sanity
     final int MINIMUM = 30;
     long junitTimeout = this.getTimeoutValueInSeconds();
@@ -432,10 +432,6 @@ public class TCTestCase extends TestCase {
    */
   protected final void timebombTest(String date) {
     disableAllUntil(parseDate(date));
-  }
-
-  protected final void timebombTestForRewrite() {
-    timebombTest("2012-02-10");
   }
 
   /**

@@ -11,10 +11,8 @@ class Util {
       def kitEdition = project.properties['kit.edition']
       def rootDir = project.properties['rootDir']
       
-      def rootEhcacheFolder = "/ehcache-core-" + ehcacheVersion
-      if (kitEdition == 'enterprise') {
-        rootEhcacheFolder = "/ehcache-core-ee-" + ehcacheVersion
-      }
+      def prefix =  kitEdition == 'enterprise' ? "/ehcache-ee-" : "/ehcache-"
+      def rootEhcacheFolder = prefix + ehcacheVersion
   
       def currentName =  rootDir + rootEhcacheFolder
       def newName = rootDir  + "/ehcache"
@@ -23,10 +21,13 @@ class Util {
     
     static void processQuartzDistribution(project) {
       def quartzVersion = project.properties['quartz.version']
-      def rootDir = project.properties['rootDir']
       def kitEdition = project.properties['kit.edition']
+      def rootDir = project.properties['rootDir']
       
-      def currentName =  rootDir + "/quartz-" + quartzVersion
+      def prefix =  kitEdition == 'enterprise' ? "/quartz-ee-" : "/quartz-"
+      def rootQuartzFolder = prefix + quartzVersion
+      
+      def currentName =  rootDir + rootQuartzFolder
       def newName = rootDir  + "/quartz"
       rename(currentName, newName)
       if (kitEdition == "enterprise") {        
