@@ -134,6 +134,9 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.TRIM_TO_SIZE:
         // do nothing for now
         break;
+      case SerializationUtil.DESTROY:
+        // do nothing
+        break;
       default:
         throw new AssertionError("Invalid method:" + method + " state:" + this);
     }

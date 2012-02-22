@@ -1015,4 +1015,9 @@ public class ManagerImpl implements Manager {
     this.txManager.notify(this.lockManager.notify(lock, null));
     return NotifyImpl.NULL;
   }
+
+  @Override
+  public void flushObject(TCObject tco) {
+    this.objectManager.flushObject(tco);
+  }
 }

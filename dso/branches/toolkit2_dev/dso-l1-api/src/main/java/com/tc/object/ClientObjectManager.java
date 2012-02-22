@@ -358,4 +358,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @return the weak reference
    */
   WeakReference newWeakObjectReference(ObjectID objectID, Object peer);
+
+  void flushObject(TCObject tco);
 }
