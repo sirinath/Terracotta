@@ -369,5 +369,11 @@ public class ManagerImplTest extends BaseDSOTestCase {
       throw new ImplementMe();
     }
 
+    @Override
+    public void flushObject(TCObject tco) {
+      throw new ImplementMe();
+
+    }
+
   }
 }

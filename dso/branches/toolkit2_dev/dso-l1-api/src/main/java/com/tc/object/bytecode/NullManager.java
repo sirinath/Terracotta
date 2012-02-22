@@ -386,4 +386,10 @@ public class NullManager implements Manager {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public void flushObject(TCObject tco) {
+    throw new ImplementMe();
+
+  }
+
 }

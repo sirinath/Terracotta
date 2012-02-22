@@ -1286,4 +1286,9 @@ public class ManagerUtil {
     mgr.lockIDNotify(lock);
   }
 
+  public static void flushObject(TCObject tco) {
+    Manager mgr = getManager();
+    mgr.flushObject(tco);
+  }
+
 }

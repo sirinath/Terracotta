@@ -244,4 +244,10 @@ public class TestClientObjectManager implements ClientObjectManager {
   public Object lookupRoot(String name, GroupID groupID) {
     throw new ImplementMe();
   }
+
+  @Override
+  public void flushObject(TCObject tco) {
+    throw new ImplementMe();
+
+  }
 }
