@@ -377,12 +377,12 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public Notify lockIDNotifyAll(LockID lock) {
+  public void lockIDNotifyAll(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Notify lockIDNotify(LockID lock) {
+  public void lockIDNotify(LockID lock) {
     throw new UnsupportedOperationException();
   }
 
