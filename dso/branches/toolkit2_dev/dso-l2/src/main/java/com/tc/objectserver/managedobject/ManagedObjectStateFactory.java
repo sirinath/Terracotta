@@ -136,7 +136,7 @@ public class ManagedObjectStateFactory {
       case ManagedObjectState.PARTIAL_MAP_TYPE:
         return new PartialMapManagedObjectState(classID, this.persistentCollectionFactory.createPersistentMap(oid));
       case ManagedObjectState.SET_TYPE:
-        return new SetManagedObjectState(classID, this.persistentCollectionFactory.createPersistentSet(oid));
+        return new SetManagedObjectState(classID);
       case ManagedObjectState.LIST_TYPE:
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:

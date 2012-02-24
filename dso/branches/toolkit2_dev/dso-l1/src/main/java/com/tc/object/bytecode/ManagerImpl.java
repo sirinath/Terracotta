@@ -1006,14 +1006,12 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  public Notify lockIDNotifyAll(final LockID lock) {
+  public void lockIDNotifyAll(final LockID lock) {
     this.txManager.notify(this.lockManager.notifyAll(lock, null));
-    return NotifyImpl.NULL;
   }
 
-  public Notify lockIDNotify(final LockID lock) {
+  public void lockIDNotify(final LockID lock) {
     this.txManager.notify(this.lockManager.notify(lock, null));
-    return NotifyImpl.NULL;
   }
 
 }

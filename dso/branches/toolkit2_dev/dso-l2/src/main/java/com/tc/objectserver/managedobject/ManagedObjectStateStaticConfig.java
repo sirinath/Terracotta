@@ -49,7 +49,12 @@ public enum ManagedObjectStateStaticConfig {
   /**
    * SerializedEntry - explicit state factory
    */
-  SERIALIZED_ENTRY(ToolkitTypeNames.SERIALIZED_ENTRY_TYPE, Factory.SERIALIZED_ENTRY_TYPE_FACTORY);
+  SERIALIZED_ENTRY(ToolkitTypeNames.SERIALIZED_ENTRY_TYPE, Factory.SERIALIZED_ENTRY_TYPE_FACTORY),
+
+  /**
+   * Toolkit clusteredSortedSet type - reuses list object state
+   */
+  CLUSTERED_SORTED_SET(ToolkitTypeNames.CLUSTERED_SORTED_SET_IMPL, Factory.SORTED_SET_TYPE_FACTORY);
 
   private static final Map<String, ManagedObjectStateStaticConfig> NAME_TO_CONFIG_MAP = new ConcurrentHashMap<String, ManagedObjectStateStaticConfig>();
 
@@ -190,9 +195,26 @@ public enum ManagedObjectStateStaticConfig {
                                             PersistentCollectionFactory persistentCollectionFactory) {
         return new TDCSerializedEntryManagedObjectState(classId);
       }
-    }
+    },
+    SORTED_SET_TYPE_FACTORY() {
 
-    ;
+      @Override
+      public byte getStateObjectType() {
+        return ManagedObjectState.SET_TYPE;
+      }
+
+      @Override
+      public ManagedObjectState readFrom(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        return SetManagedObjectState.readFrom(objectInput);
+      }
+
+      @Override
+      public ManagedObjectState newInstance(ObjectID oid, long classId,
+                                            PersistentCollectionFactory persistentCollectionFactory) {
+        return new SetManagedObjectState(classId);
+      }
+
+    };
 
     private static final Map<Byte, Factory> TYPE_TO_FACTORY_MAP = new ConcurrentHashMap<Byte, Factory>();
 
@@ -258,5 +280,6 @@ public enum ManagedObjectStateStaticConfig {
     public final static String SERVER_MAP_TYPE                  = defineConstant("com.terracotta.toolkit.collections.ServerMap");
     public final static String CLUSTERED_NOTIFIER_TYPE          = defineConstant("com.terracotta.toolkit.events.ClusteredNotifierImpl");
     public final static String SERIALIZED_ENTRY_TYPE            = defineConstant("com.terracotta.toolkit.object.serialization.SerializedEntry");
+    public final static String CLUSTERED_SORTED_SET_IMPL        = defineConstant("com.terracotta.toolkit.collections.ClusteredSortedSetImpl");
   }
 }
