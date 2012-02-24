@@ -321,6 +321,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         this.reaper = null;
       }
     }
+    notifyAll();
   }
 
   private static void stopThread(final StoppableThread thread) {
