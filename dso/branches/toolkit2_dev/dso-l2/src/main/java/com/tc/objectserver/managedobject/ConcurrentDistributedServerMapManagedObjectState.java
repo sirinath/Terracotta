@@ -156,7 +156,8 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
         final int method = logicalAction.getMethod();
         final Object[] params = logicalAction.getParameters();
         applyMethod(objectID, applyInfo, method, params);
-        if (method == SerializationUtil.CLEAR || method == SerializationUtil.CLEAR_LOCAL_CACHE) {
+        if (method == SerializationUtil.CLEAR || method == SerializationUtil.CLEAR_LOCAL_CACHE
+            || method == SerializationUtil.DESTROY) {
           // clear needs to be broadcasted so local caches can be cleared elsewhere
           broadcast = true;
         }
@@ -193,6 +194,9 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
         evictionCompleted();
         break;
       case SerializationUtil.CLEAR_LOCAL_CACHE:
+        break;
+      case SerializationUtil.DESTROY:
+        this.references.clear();
         break;
       default:
         super.applyMethod(objectID, applyInfo, method, params);

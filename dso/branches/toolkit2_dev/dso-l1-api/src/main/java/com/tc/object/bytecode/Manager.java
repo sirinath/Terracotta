@@ -388,6 +388,4 @@ public interface Manager extends TerracottaLocking {
   Notify lockIDNotifyAll(final LockID lock);
 
   Notify lockIDNotify(final LockID lock);
-
-  void flushObject(TCObject tco);
 }
