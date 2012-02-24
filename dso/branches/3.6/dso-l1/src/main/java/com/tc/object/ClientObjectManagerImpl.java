@@ -76,8 +76,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
@@ -329,6 +329,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
           this.reaper = null;
         }
       }
+      notifyAll();
     }
   }
 
@@ -1022,8 +1023,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
         for (final Method method : entry.getValue()) {
           try {
-            executeMethod(target, method, "postCreate method (" + method.getName() + ") failed on object of "
-                                          + target.getClass());
+            executeMethod(target, method,
+                          "postCreate method (" + method.getName() + ") failed on object of " + target.getClass());
           } catch (final Throwable t) {
             if (exception == null) {
               exception = t;
@@ -1129,8 +1130,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     TCObject obj = null;
 
     if ((obj = basicLookup(pojo)) == null) {
-      obj = this.factory.getNewInstance(nextObjectID(this.txManager.getCurrentTransaction(), pojo, gid), pojo, pojo
-          .getClass(), true);
+      obj = this.factory.getNewInstance(nextObjectID(this.txManager.getCurrentTransaction(), pojo, gid), pojo,
+                                        pojo.getClass(), true);
       this.txManager.createObject(obj);
       basicAddLocal(obj, false);
       if (this.runtimeLogger.getNewManagedObjectDebug()) {
