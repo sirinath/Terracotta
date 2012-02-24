@@ -1016,8 +1016,4 @@ public class ManagerImpl implements Manager {
     return NotifyImpl.NULL;
   }
 
-  @Override
-  public void flushObject(TCObject tco) {
-    this.objectManager.flushObject(tco);
-  }
 }

@@ -634,16 +634,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     }
   }
 
-  public void flushObject(TCObject tco) {
-    synchronized (this) {
-      this.objectStore.remove(tco);
-      this.remoteObjectManager.removed(tco.getObjectID());
-    }
-    if (ClientObjectManagerImpl.this.runtimeLogger.getFlushDebug()) {
-      this.runtimeLogger.updateFlushStats(tco.getClass().getName());
-    }
-  }
-
   private void waitAndClearLatchSet(final Set waitSet) {
     boolean isInterrupted = false;
     // now wait till all the other objects you are waiting for releases there latch.

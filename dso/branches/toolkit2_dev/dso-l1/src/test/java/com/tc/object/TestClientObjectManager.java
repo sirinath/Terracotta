@@ -245,9 +245,4 @@ public class TestClientObjectManager implements ClientObjectManager {
     throw new ImplementMe();
   }
 
-  @Override
-  public void flushObject(TCObject tco) {
-    throw new ImplementMe();
-
-  }
 }

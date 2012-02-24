@@ -94,6 +94,7 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       }
         break;
       case SerializationUtil.CLEAR:
+      case SerializationUtil.DESTROY:
         references.clear();
         break;
       case SerializationUtil.SET_ELEMENT:
@@ -133,9 +134,6 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
         break;
       case SerializationUtil.TRIM_TO_SIZE:
         // do nothing for now
-        break;
-      case SerializationUtil.DESTROY:
-        // do nothing
         break;
       default:
         throw new AssertionError("Invalid method:" + method + " state:" + this);
