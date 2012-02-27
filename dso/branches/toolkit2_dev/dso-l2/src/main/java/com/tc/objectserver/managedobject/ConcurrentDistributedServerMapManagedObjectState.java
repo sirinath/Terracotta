@@ -34,24 +34,24 @@ import java.util.Set;
 public class ConcurrentDistributedServerMapManagedObjectState extends PartialMapManagedObjectState implements
     EvictableMap {
 
-  private static final TCLogger LOGGER                           = TCLogging
-                                                                     .getLogger(ConcurrentDistributedServerMapManagedObjectState.class);
-  private static final boolean  ENABLE_DELETE_VALUE_ON_REMOVE    = TCPropertiesImpl
-                                                                     .getProperties()
-                                                                     .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED,
-                                                                                 true);
+  private static final TCLogger LOGGER                         = TCLogging
+                                                                   .getLogger(ConcurrentDistributedServerMapManagedObjectState.class);
+  private static final boolean  ENABLE_DELETE_VALUE_ON_REMOVE  = TCPropertiesImpl
+                                                                   .getProperties()
+                                                                   .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED,
+                                                                               true);
 
-  public static final String    MAX_TTI_SECONDS_FIELDNAME        = "maxTTISeconds";
-  public static final String    MAX_TTL_SECONDS_FIELDNAME        = "maxTTLSeconds";
-  public static final String    TARGET_MAX_TOTAL_COUNT_FIELDNAME = "targetMaxTotalCount";
-  public static final String    INVALIDATE_ON_CHANGE             = "invalidateOnChange";
-  public static final String    CACHE_NAME_FIELDNAME             = "cacheName";
-  public static final String    LOCAL_CACHE_ENABLED_FIELDNAME    = "localCacheEnabled";
-  public static final String    DSO_LOCK_TYPE_FIELDNAME          = "dsoLockType";
+  public static final String    CACHE_NAME_FIELDNAME           = "cacheName";
+  public static final String    INVALIDATE_ON_CHANGE_FIELDNAME = "invalidateOnChange";
+  public static final String    LOCK_TYPE_FIELDNAME            = "lockType";
+  public static final String    LOCAL_CACHE_ENABLED_FIELDNAME  = "localCacheEnabled";
+  public static final String    MAX_TTI_SECONDS_FIELDNAME      = "maxTTISeconds";
+  public static final String    MAX_TTL_SECONDS_FIELDNAME      = "maxTTLSeconds";
+  public static final String    MAX_COUNT_IN_CLUSTER_FIELDNAME = "maxCountInCluster";
 
   protected int                 dsoLockType;
 
-  private static final double   OVERSHOOT                        = getOvershoot();
+  private static final double   OVERSHOOT                      = getOvershoot();
 
   static {
     LOGGER.info("Eviction overshoot threshold is " + OVERSHOOT);
@@ -108,11 +108,11 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
   }
 
   protected void dehydrateFields(final ObjectID objectID, final DNAWriter writer) {
-    writer.addPhysicalAction(DSO_LOCK_TYPE_FIELDNAME, dsoLockType);
+    writer.addPhysicalAction(LOCK_TYPE_FIELDNAME, dsoLockType);
     writer.addPhysicalAction(MAX_TTI_SECONDS_FIELDNAME, Integer.valueOf(this.maxTTISeconds));
     writer.addPhysicalAction(MAX_TTL_SECONDS_FIELDNAME, Integer.valueOf(this.maxTTLSeconds));
-    writer.addPhysicalAction(TARGET_MAX_TOTAL_COUNT_FIELDNAME, Integer.valueOf(this.targetMaxTotalCount));
-    writer.addPhysicalAction(INVALIDATE_ON_CHANGE, Boolean.valueOf(this.invalidateOnChange));
+    writer.addPhysicalAction(MAX_COUNT_IN_CLUSTER_FIELDNAME, Integer.valueOf(this.targetMaxTotalCount));
+    writer.addPhysicalAction(INVALIDATE_ON_CHANGE_FIELDNAME, Boolean.valueOf(this.invalidateOnChange));
     writer.addPhysicalAction(CACHE_NAME_FIELDNAME, cacheName);
     writer.addPhysicalAction(LOCAL_CACHE_ENABLED_FIELDNAME, localCacheEnabled);
   }
@@ -127,15 +127,15 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
         final PhysicalAction physicalAction = (PhysicalAction) action;
 
         final String fieldName = physicalAction.getFieldName();
-        if (fieldName.equals(DSO_LOCK_TYPE_FIELDNAME)) {
+        if (fieldName.equals(LOCK_TYPE_FIELDNAME)) {
           this.dsoLockType = ((Integer) physicalAction.getObject());
         } else if (fieldName.equals(MAX_TTI_SECONDS_FIELDNAME)) {
           this.maxTTISeconds = ((Integer) physicalAction.getObject());
         } else if (fieldName.equals(MAX_TTL_SECONDS_FIELDNAME)) {
           this.maxTTLSeconds = ((Integer) physicalAction.getObject());
-        } else if (fieldName.equals(TARGET_MAX_TOTAL_COUNT_FIELDNAME)) {
+        } else if (fieldName.equals(MAX_COUNT_IN_CLUSTER_FIELDNAME)) {
           this.targetMaxTotalCount = ((Integer) physicalAction.getObject());
-        } else if (fieldName.equals(INVALIDATE_ON_CHANGE)) {
+        } else if (fieldName.equals(INVALIDATE_ON_CHANGE_FIELDNAME)) {
           this.invalidateOnChange = ((Boolean) physicalAction.getObject());
         } else if (fieldName.equals(CACHE_NAME_FIELDNAME)) {
           Object value = physicalAction.getObject();
