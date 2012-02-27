@@ -211,7 +211,7 @@ public enum ManagedObjectStateStaticConfig {
       @Override
       public ManagedObjectState newInstance(ObjectID oid, long classId,
                                             PersistentCollectionFactory persistentCollectionFactory) {
-        return new SetManagedObjectState(classId);
+        return new SetManagedObjectState(classId, persistentCollectionFactory.createPersistentSet(oid));
       }
 
     };
