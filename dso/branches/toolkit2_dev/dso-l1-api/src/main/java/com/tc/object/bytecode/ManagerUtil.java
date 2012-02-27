@@ -1286,4 +1286,8 @@ public class ManagerUtil {
     mgr.lockIDNotify(lock);
   }
 
+  public static void registerShutdownHooks(Runnable r) {
+    Manager mgr = getManager();
+    mgr.registerBeforeShutdownHook(r);
+  }
 }
