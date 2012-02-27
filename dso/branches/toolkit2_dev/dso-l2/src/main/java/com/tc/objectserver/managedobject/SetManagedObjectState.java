@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -31,7 +30,6 @@ public class SetManagedObjectState extends LogicalManagedObjectState implements 
 
   SetManagedObjectState(long classID) {
     super(classID);
-    this.references = new HashSet();
   }
 
   protected SetManagedObjectState(ObjectInput in) throws IOException {
