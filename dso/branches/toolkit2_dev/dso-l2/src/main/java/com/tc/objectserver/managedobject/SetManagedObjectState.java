@@ -28,8 +28,9 @@ import java.util.Set;
 public class SetManagedObjectState extends LogicalManagedObjectState implements PersistableObjectState, TCDestroyable {
   protected Set references;
 
-  SetManagedObjectState(long classID) {
+  SetManagedObjectState(long classID, Set set) {
     super(classID);
+    this.references = set;
   }
 
   protected SetManagedObjectState(ObjectInput in) throws IOException {
