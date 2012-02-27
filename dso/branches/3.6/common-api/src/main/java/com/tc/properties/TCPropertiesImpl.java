@@ -19,6 +19,7 @@ import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +99,8 @@ public class TCPropertiesImpl implements TCProperties {
     // find and record all tc properties set via system properties
 
     // NOT using System.getProperties().entrySet() since that might throw ConcurrentModificationException
-    for (String key : System.getProperties().stringPropertyNames()) {
+    for (Enumeration e = System.getProperties().propertyNames(); e.hasMoreElements();) {
+      String key = (String) e.nextElement();
       if (key.startsWith(SYSTEM_PROP_PREFIX)) {
         String value = System.getProperty(key);
         if (value != null) {
