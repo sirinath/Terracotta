@@ -100,12 +100,15 @@ public class TCPropertiesImpl implements TCProperties {
 
     // NOT using System.getProperties().entrySet() since that might throw ConcurrentModificationException
     for (Enumeration e = System.getProperties().propertyNames(); e.hasMoreElements();) {
-      String key = (String) e.nextElement();
-      if (key.startsWith(SYSTEM_PROP_PREFIX)) {
-        String value = System.getProperty(key);
-        if (value != null) {
-          localTcProperties.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), value);
-          props.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), value);
+      Object objKey = e.nextElement();
+      if (objKey instanceof String) {
+        String key = (String) objKey;
+        if (key.startsWith(SYSTEM_PROP_PREFIX)) {
+          String value = System.getProperty(key);
+          if (value != null) {
+            localTcProperties.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), value);
+            props.setProperty(key.substring(SYSTEM_PROP_PREFIX.length()), value);
+          }
         }
       }
     }
