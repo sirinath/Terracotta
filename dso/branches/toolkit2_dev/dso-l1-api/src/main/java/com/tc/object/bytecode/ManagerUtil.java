@@ -22,6 +22,7 @@ import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.toolkit.object.serialization.SerializationStrategy;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -1289,5 +1290,15 @@ public class ManagerUtil {
   public static void registerBeforeShutdownHook(Runnable r) {
     Manager mgr = getManager();
     mgr.registerBeforeShutdownHook(r);
+  }
+
+  public static void registerSerializationStrategy(SerializationStrategy strategy) {
+    Manager mgr = getManager();
+    mgr.registerSerializationStrategy(strategy);
+  }
+
+  public static SerializationStrategy getSerializationStrategy() {
+    Manager mgr = getManager();
+    return mgr.getSerializationStrategy();
   }
 }
