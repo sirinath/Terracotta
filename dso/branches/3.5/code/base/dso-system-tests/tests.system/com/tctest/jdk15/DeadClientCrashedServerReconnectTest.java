@@ -68,6 +68,7 @@ public class DeadClientCrashedServerReconnectTest extends BaseDSOTestCase {
     mgr.setupProxy();
 
     server.start();
+    server.waitUntilL2IsActiveOrPassive();
 
     mgr.proxyUp();
 
@@ -106,6 +107,7 @@ public class DeadClientCrashedServerReconnectTest extends BaseDSOTestCase {
 
     // start the server back up
     server.start();
+    server.waitUntilL2IsActiveOrPassive();
     mgr.proxyUp();
 
     // give time for jmx server to start up
