@@ -26,6 +26,7 @@ import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.toolkit.object.serialization.SerializationStrategy;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -383,6 +384,16 @@ public class NullManager implements Manager {
 
   @Override
   public void lockIDNotify(LockID lock) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void registerSerializationStrategy(SerializationStrategy strategy) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public SerializationStrategy getSerializationStrategy() {
     throw new UnsupportedOperationException();
   }
 

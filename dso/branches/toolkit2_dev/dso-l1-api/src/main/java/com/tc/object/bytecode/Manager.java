@@ -23,6 +23,7 @@ import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.statistics.StatisticRetrievalAction;
+import com.tc.toolkit.object.serialization.SerializationStrategy;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -387,4 +388,8 @@ public interface Manager extends TerracottaLocking {
   void lockIDNotifyAll(final LockID lock);
 
   void lockIDNotify(final LockID lock);
+
+  void registerSerializationStrategy(SerializationStrategy strategy);
+
+  SerializationStrategy getSerializationStrategy();
 }

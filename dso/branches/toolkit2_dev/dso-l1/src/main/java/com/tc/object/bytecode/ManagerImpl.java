@@ -70,6 +70,7 @@ import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.statistics.StatisticsAgentSubSystemImpl;
 import com.tc.text.ConsoleParagraphFormatter;
 import com.tc.text.StringFormatter;
+import com.tc.toolkit.object.serialization.SerializationStrategy;
 import com.tc.util.Assert;
 import com.tc.util.FindbugsSuppressWarnings;
 import com.tc.util.Util;
@@ -116,6 +117,9 @@ public class ManagerImpl implements Manager {
   private DmiManager                               methodCallManager;
 
   private final SerializationUtil                  serializer          = new SerializationUtil();
+  // Used by toolkit objects
+  private volatile SerializationStrategy           serializationStrategy;
+
   private final MethodDisplayNames                 methodDisplay       = new MethodDisplayNames(this.serializer);
 
   private static final boolean                     QUERY_WAIT_FOR_TXNS = TCPropertiesImpl
@@ -1012,6 +1016,20 @@ public class ManagerImpl implements Manager {
 
   public void lockIDNotify(final LockID lock) {
     this.txManager.notify(this.lockManager.notify(lock, null));
+  }
+
+  @Override
+  public void registerSerializationStrategy(SerializationStrategy strategy) {
+    if (serializationStrategy == null) {
+      this.serializationStrategy = strategy;
+    }
+  }
+
+  @Override
+  public SerializationStrategy getSerializationStrategy() {
+    if (this.serializationStrategy == null) { throw new IllegalStateException(
+                                                                              "SerializationStrategy is not initialized"); }
+    return this.serializationStrategy;
   }
 
 }
