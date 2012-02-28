@@ -43,9 +43,6 @@ public class ManagedObjectStateFactory {
   private final PersistentCollectionFactory         persistentCollectionFactory;
 
   static {
-    // XXX: Support for Ehcache entry type
-    classNameToStateMap.put(TDCCustomLifespanSerializedEntryManagedObjectState.CUSTOM_SERIALIZED_ENTRY,
-                            Byte.valueOf(ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY));
     // XXX: Support for terracotta toolkit
     classNameToStateMap.put("org.terracotta.collections.quartz.DistributedSortedSet$Storage",
                             Byte.valueOf(ManagedObjectState.SET_TYPE));
@@ -137,8 +134,6 @@ public class ManagedObjectStateFactory {
         return new ListManagedObjectState(classID);
       case ManagedObjectState.QUEUE_TYPE:
         return new QueueManagedObjectState(classID);
-      case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
-        return new TDCCustomLifespanSerializedEntryManagedObjectState(classID);
     }
     ManagedObjectStateStaticConfig config = ManagedObjectStateStaticConfig.getConfigForClientClassName(className);
     if (config != null) { return config.getFactory().newInstance(oid, classID, persistentCollectionFactory); }
@@ -202,8 +197,6 @@ public class ManagedObjectStateFactory {
           return SetManagedObjectState.readFrom(in);
         case ManagedObjectState.QUEUE_TYPE:
           return QueueManagedObjectState.readFrom(in);
-        case ManagedObjectState.TDC_CUSTOM_LIFESPAN_SERIALIZED_ENTRY:
-          return TDCCustomLifespanSerializedEntryManagedObjectState.readFrom(in);
       }
 
       Factory factory = ManagedObjectStateStaticConfig.Factory.getFactoryForType(type);
