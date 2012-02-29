@@ -98,6 +98,7 @@ public class LockInfoThreadDumpTestApp extends AbstractTransparentApp {
 
     boolean lockedFound = false;
     boolean waitingFound = false;
+    int countFailed = 0;
     do {
       ThreadUtil.reallySleep(5000);
       waitForMBeanReady(l1Info, 60);
@@ -114,6 +115,10 @@ public class LockInfoThreadDumpTestApp extends AbstractTransparentApp {
       System.err.println("XXX waiting for the needed lock state. lock found = " + lockedFound + "; waiting found = "
                          + waitingFound);
       l1Info = getL1InfoBean(myIndex);
+      countFailed++;
+      if (countFailed > 5) {
+        System.err.println(threadDump);
+      }
     } while (!waitingFound || !lockedFound);
 
     System.out.println("XXX DONE");
