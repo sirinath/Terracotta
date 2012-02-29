@@ -34,7 +34,7 @@ public interface SerializationStrategy<T extends Serializable> {
    * @return a portable {@code String} key
    * @throws IOException if serialization fails
    */
-  public String generateStringKeyFor(final Serializable key) throws IOException;
+  public String serializeToString(final Serializable key) throws IOException;
 
   /**
    * Deserialize a given key object into the "real" key object. This method assumes it is passed Strings created from
@@ -45,6 +45,6 @@ public interface SerializationStrategy<T extends Serializable> {
    * @throws IOException
    * @throws ClassNotFoundException
    */
-  public Serializable deserializeStringKey(final String key) throws IOException, ClassNotFoundException;
+  public Serializable deserializeFromString(final String key) throws IOException, ClassNotFoundException;
 
 }
