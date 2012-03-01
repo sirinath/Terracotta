@@ -5,14 +5,15 @@
 repos="$1"
 rev="$2"
 repo_name=`basename $repos`
+repo_root=`dirname $repos`
+uuid=`svnlook uuid $repos`
 jenkinsmaster="jenkinsmaster.terracotta.lan:9000"
 
-uuid=`svnlook uuid $repos`
 notify_url=http://$jenkinsmaster/subversion/${uuid}/notifyCommit?rev=$rev
 timeout=10
 tries=3
 
-log=/export2/svn-mirror/logs/$repo_name-post-commit.log
+log=$repo_root/logs/$repo_name-post-commit.log
 echo "" > $log
 
 for url in $notify_url; do
