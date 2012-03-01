@@ -12,7 +12,7 @@ notify_url=http://$jenkinsmaster/subversion/${uuid}/notifyCommit?rev=$rev
 timeout=10
 tries=3
 
-log=/export1/svn-mirror/logs/$repo_name-post-commit.log
+log=/export2/svn-mirror/logs/$repo_name-post-commit.log
 echo "" > $log
 
 for url in $notify_url; do
