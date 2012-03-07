@@ -64,9 +64,9 @@ public class PassiveSmoothStartTest extends TransparentTestBase {
     }
 
     TestConfigurationSetupManagerFactory factory = new TestConfigurationSetupManagerFactory(
-                                                                                                  TestConfigurationSetupManagerFactory.MODE_DISTRIBUTED_CONFIG,
-                                                                                                  null,
-                                                                                                  new FatalIllegalConfigurationChangeHandler());
+                                                                                            TestConfigurationSetupManagerFactory.MODE_DISTRIBUTED_CONFIG,
+                                                                                            null,
+                                                                                            new FatalIllegalConfigurationChangeHandler());
     // to be used by in-process clients
     setConfigFactory(factory);
     L1ConfigurationSetupManager manager = factory.getL1TVSConfigurationSetupManager();
@@ -125,6 +125,7 @@ public class PassiveSmoothStartTest extends TransparentTestBase {
       l2s[theOther].setL2GroupPort(l2GroupPorts[theOther]);
 
       HaConfigBuilder ha = new HaConfigBuilder();
+      ha.setElectionTime("10");
       ha.setMode(HaConfigBuilder.HA_MODE_NETWORKED_ACTIVE_PASSIVE);
 
       GroupsConfigBuilder grpsBuilder = new GroupsConfigBuilder();
