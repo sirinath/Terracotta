@@ -62,6 +62,7 @@ import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.server.util.TcHashSessionIdManager;
 import com.tc.servlets.L1ReconnectPropertiesServlet;
 import com.tc.statistics.StatisticsGathererSubSystem;
 import com.tc.statistics.beans.StatisticsMBeanNames;
@@ -157,23 +158,23 @@ public class TCServerImpl extends SEDA implements TCServer {
     }
   }
 
-  private static OrderedGroupIDs createOrderedGroupIds(ActiveServerGroupConfig[] groupArray) {
-    GroupID[] gids = new GroupID[groupArray.length];
-    for (int i = 0; i < groupArray.length; i++) {
-      gids[i] = groupArray[i].getGroupId();
+  private static OrderedGroupIDs createOrderedGroupIds(List<ActiveServerGroupConfig> groups) {
+    GroupID[] gids = new GroupID[groups.size()];
+    for (int i = 0; i < groups.size(); i++) {
+      gids[i] = groups.get(i).getGroupId();
     }
     return new OrderedGroupIDs(gids);
   }
 
   public ServerGroupInfo[] serverGroups() {
     L2Info[] l2Infos = infoForAllL2s();
-    ActiveServerGroupConfig[] groupArray = this.configurationSetupManager.activeServerGroupsConfig()
-        .getActiveServerGroupArray();
-    OrderedGroupIDs orderedGroupsIds = createOrderedGroupIds(groupArray);
+    List<ActiveServerGroupConfig> groups = this.configurationSetupManager.activeServerGroupsConfig()
+        .getActiveServerGroups();
+    OrderedGroupIDs orderedGroupsIds = createOrderedGroupIds(groups);
     GroupID coordinatorId = orderedGroupsIds.getActiveCoordinatorGroup();
-    ServerGroupInfo[] result = new ServerGroupInfo[groupArray.length];
-    for (int i = 0; i < groupArray.length; i++) {
-      ActiveServerGroupConfig groupInfo = groupArray[i];
+    ServerGroupInfo[] result = new ServerGroupInfo[groups.size()];
+    for (int i = 0; i < groups.size(); i++) {
+      ActiveServerGroupConfig groupInfo = groups.get(i);
       GroupID groupId = groupInfo.getGroupId();
       List<L2Info> memberList = new ArrayList<L2Info>();
       for (L2Info l2Info : l2Infos) {
@@ -612,7 +613,7 @@ public class TCServerImpl extends SEDA implements TCServer {
         if (files != null && files.length > 0) {
           String warFile = files[0];
           logger.info("deploying console web UI from archive " + warFile);
-          WebAppContext consoleContext = new WebAppContext(new SecurityHandler(), null, null, null);
+          WebAppContext consoleContext = new WebAppContext();
           consoleContext.setContextPath("/console");
           consoleContext.setWar(consoleDir.getPath() + File.separator + warFile);
           contextHandlerCollection.addHandler(consoleContext);
@@ -633,6 +634,7 @@ public class TCServerImpl extends SEDA implements TCServer {
     }
 
     this.httpServer.addHandler(contextHandlerCollection);
+    this.httpServer.setSessionIdManager(new TcHashSessionIdManager());
 
     try {
       this.httpServer.start();
