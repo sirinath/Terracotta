@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+ 
+  <parent>
+    <groupId>org.terracotta.forge</groupId>
+    <artifactId>forge-parent</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+  
+  <groupId>org.terracotta</groupId>
+  <artifactId>terracotta-root</artifactId>
+  <version>3.7.0-SNAPSHOT</version>
+  <name>terracotta-root</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <build.edition>opensource</build.edition>
+  </properties>
+  
+  <modules>
+    <module>build-parent</module>
+    <module>build-data</module>
+    <module>common</module>
+    <module>thirdparty</module>
+    <module>aspectwerkz</module>
+    <module>dso-statistics-api</module>
+    <module>dso-l1-api</module>
+    <module>dso-common</module>
+    <module>management</module>
+    <module>dso-l2-common</module> 
+    <module>dso-statistics</module>
+    <module>dso-l1</module>
+    <module>dso-l2</module>
+    <module>deploy</module>
+    <module>dso-cluster-api</module>
+    
+    <module>legacy-test-tree</module>
+    <module>dso-system-tests</module>
+    <module>dso-crash-tests</module>
+    <module>dso-statistics-tests</module>
+    
+    <module>terracotta-parent</module>
+    <module>terracotta</module>
+    <module>terracotta-l1-parent</module>
+    <module>terracotta-l1</module>
+    <module>test-framework</module>        
+  </modules>
+  
+  <profiles>
+    <!-- Allow building kit from the top level -->
+    <profile>
+      <id>kit</id>
+      <modules>
+        <module>terracotta-kit</module>
+      </modules>
+    </profile>
+
+    <!-- activate to include EE modules if it's EE branch -->
+    <profile>
+      <id>ee</id>
+      <properties>
+        <build.edition>enterprise</build.edition>
+      </properties>
+      <activation>
+        <file>
+          <exists>../terracotta-ee</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>../ent-common</module>
+        <module>../ent-dso-l1</module>
+        <module>../ent-dso-l2</module>
+        <module>../ent-deploy</module>
+        <module>../ent-system-tests</module>
+        <module>../ent-active-active-tests</module>
+        <module>../terracotta-ee</module>
+        <module>../terracotta-l1-ee</module>         
+      </modules>        
+    </profile>
+    
+    <!-- activate by default if 'terracotta-toolkit' module exists. 
+         You have to check out this module manually under 'community/devwork' -->
+    <profile>
+      <id>toolkit</id>
+      <activation>
+        <file>
+          <exists>devwork/terracotta-toolkit</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/terracotta-toolkit</module>
+      </modules>
+    </profile>
+    <!-- activate by default if 'terracotta-toolkit-ee' module exists. 
+         You have to check out this module manually under 'community/devwork' -->
+    <profile>
+      <id>toolkit-ee</id>
+      <activation>
+        <file>
+          <exists>devwork/terracotta-toolkit-ee</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/terracotta-toolkit-ee</module>
+      </modules>
+    </profile>  
+    
+    <!-- activate by default if 'ehcache' module exists. 
+         You have to check out this module manually under 'community/devwork' -->
+    <profile>
+      <id>ehcache</id>
+      <activation>
+        <file>
+          <exists>devwork/ehcache</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/ehcache</module>
+      </modules>
+    </profile>
+    <!-- activate by default if 'ehcache-ee' module exists. 
+         You have to check out this module manually under 'community/devwork' -->
+    <profile>
+      <id>ehcache-ee</id>
+      <activation>
+        <file>
+          <exists>devwork/ehcache-ee</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/ehcache-ee</module>
+      </modules>
+    </profile>        
+    
+    <profile>
+      <id>quartz</id>
+      <activation>
+        <file>
+          <exists>devwork/quartz</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/quartz</module>
+      </modules>
+    </profile>     
+    
+    <profile>
+      <id>quartz-ee</id>
+      <activation>
+        <file>
+          <exists>devwork/quartz-ee</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/quartz-ee</module>
+      </modules>
+    </profile>     
+  </profiles>
+</project>
