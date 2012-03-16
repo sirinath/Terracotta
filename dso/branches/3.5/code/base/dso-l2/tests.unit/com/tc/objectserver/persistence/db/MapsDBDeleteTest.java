@@ -11,6 +11,7 @@ import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.objectserver.managedobject.MapManagedObjectState;
 import com.tc.objectserver.managedobject.NullManagedObjectChangeListenerProvider;
 import com.tc.objectserver.storage.api.DBEnvironment;
+import com.tc.objectserver.storage.api.DBFactory;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
 import com.tc.test.TCTestCase;
@@ -23,7 +24,10 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public abstract class AbstractDBCollectionsDeleteTestParent extends TCTestCase {
+public class MapsDBDeleteTest extends TCTestCase {
+  static {
+    ManagedObjectStateFactory.disableSingleton(true);
+  }
 
   private DBPersistorImpl                persistor;
   private PersistenceTransactionProvider ptp;
@@ -46,7 +50,9 @@ public abstract class AbstractDBCollectionsDeleteTestParent extends TCTestCase {
     this.collectionsPersistor = this.persistor.getCollectionsPersistor();
   }
 
-  protected abstract DBEnvironment getDBEnvironMent(final File dbHome) throws IOException;
+  private DBEnvironment getDBEnvironMent(final File dbHome) throws IOException {
+    return DBFactory.getInstance().createEnvironment(true, dbHome);
+  }
 
   // XXX:: Check SleepycatSerializationTest if you want know why its done like this or ask Orion.
   private File newDBHome() throws IOException {
@@ -68,6 +74,14 @@ public abstract class AbstractDBCollectionsDeleteTestParent extends TCTestCase {
     this.persistor = null;
     this.ptp = null;
     this.env = null;
+  }
+
+  public void testDeleteSmallMap() throws Exception {
+    doTestDeleteMap(2500, 10);
+  }
+
+  public void testDeleteLargeMap() throws Exception {
+    doTestDeleteMap(1, 150000);
   }
 
   protected void doTestDeleteMap(int numMaps, int entriesPerMap) throws TCDatabaseException, IOException {
