@@ -47,6 +47,10 @@ public class PassiveSmoothStartTest extends TransparentTestBase {
   private File[]           configFiles;
   String[]                 serverDataPath  = new String[SERVERS];
 
+  public PassiveSmoothStartTest() {
+    this.disableTest();
+  }
+
   @Override
   protected Class getApplicationClass() {
     return PassiveSmoothStartTestApp.class;
