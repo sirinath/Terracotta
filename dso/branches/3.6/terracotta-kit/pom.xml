@@ -186,9 +186,9 @@
       <build>
         <plugins>      
           <plugin>
-            <groupId>com.goldin.plugins</groupId>
-            <artifactId>maven-copy-plugin</artifactId>
-            <version>${maven-copy-plugin.version}</version>
+            <groupId>com.github.goldin</groupId>
+            <artifactId>copy-maven-plugin</artifactId>
+            <version>${copy-maven-plugin.version}</version>
             <executions>
               <!-- assemble kit content -->
               <execution>
@@ -444,9 +444,9 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>com.goldin.plugins</groupId>
-            <artifactId>maven-copy-plugin</artifactId>
-            <version>${maven-copy-plugin.version}</version>
+            <groupId>com.github.goldin</groupId>
+            <artifactId>copy-maven-plugin</artifactId>
+            <version>${copy-maven-plugin.version}</version>
             <executions>
               <execution>
                 <id>prepare-izpack-installer</id>
@@ -619,9 +619,9 @@
             </executions>
           </plugin>            
           <plugin>
-            <groupId>com.goldin.plugins</groupId>
-            <artifactId>maven-copy-plugin</artifactId>
-            <version>${maven-copy-plugin.version}</version>
+            <groupId>com.github.goldin</groupId>
+            <artifactId>copy-maven-plugin</artifactId>
+            <version>${copy-maven-plugin.version}</version>
             <configuration>
               <groovyConfig>
                 <classpath>${project.basedir}/src/scripts</classpath>
