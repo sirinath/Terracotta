@@ -93,6 +93,12 @@ public class ExtraProcessServerControl extends ServerControlBase {
     this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, mergeOutput, javaHome, jvmArgs);
   }
 
+  public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc,
+                                   File runningDirectory, boolean mergeOutput, File javaHome, List jvmArgs) {
+    this(new DebugParams(), host, dsoPort, adminPort, configFileLoc, runningDirectory, mergeOutput, null, jvmArgs,
+         NOT_DEF, javaHome, false);
+  }
+
   // constructor 5: used by active-passive tests
   public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput,
                                    String servername, List additionalJvmArgs, File javaHome, boolean useIdentifier) {
