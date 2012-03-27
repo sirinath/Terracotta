@@ -172,7 +172,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // override in subclasses
   }
 
-  private void writeLog4jProperties(final Properties properties) throws IOException {
+  protected void writeLog4jProperties(final Properties properties) throws IOException {
     File log4jPropertiesFile = new File(getTempDirectory(), ".tc.dev.log4j.properties");
     if (log4jPropertiesFile.createNewFile()) {
       FileOutputStream fos = new FileOutputStream(log4jPropertiesFile);
@@ -464,8 +464,8 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       throws Exception {
     setJavaHome();
     assertNotNull(jvmArgs);
-    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, true, javaHome,
-                                                  jvmArgs);
+    serverControl = new ExtraProcessServerControl("localhost", serverPort, adminPort, configFile, getTempDirectory(),
+                                                  true, javaHome, jvmArgs);
     setUpTransparent(factory, helper);
 
     setPortsInConfig();

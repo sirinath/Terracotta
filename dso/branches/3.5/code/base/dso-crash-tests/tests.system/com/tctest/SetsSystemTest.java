@@ -9,12 +9,17 @@ import org.apache.tools.ant.filters.StringInputStream;
 
 import com.tc.config.schema.test.L2ConfigBuilder;
 import com.tc.config.schema.test.TerracottaConfigBuilder;
+import com.tc.logging.LogLevel;
+import com.tc.logging.LogLevelImpl;
+import com.tc.net.core.TCConnection;
 import com.tc.util.Assert;
 import com.tc.util.PortChooser;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Properties;
 
 public class SetsSystemTest extends TransparentTestBase {
   private static final int NODE_COUNT = 2;
@@ -41,11 +46,21 @@ public class SetsSystemTest extends TransparentTestBase {
 
     writeConfigFile(port, jmxPort);
 
+    Properties log4jProperties = new Properties();
+    log4jProperties.setProperty("log4j.logger." + TCConnection.class.getName(), "DEBUG");
+    writeLog4jProperties(log4jProperties);
+
     ArrayList jvmArgs = new ArrayList();
     setJvmArgsL1Reconnect(jvmArgs);
     setUpControlledServer(configFactory(), configHelper(), port, jmxPort, groupPort, configFile.getAbsolutePath(),
                           jvmArgs);
     doSetUp(this);
+  }
+
+  @Override
+  protected void setL1ClassLoggingLevels(Map<Class<?>, LogLevel> logLevels) {
+    super.setL1ClassLoggingLevels(logLevels);
+    logLevels.put(TCConnection.class, LogLevelImpl.DEBUG);
   }
 
   private synchronized void writeConfigFile(int port, int jmxPort) {
