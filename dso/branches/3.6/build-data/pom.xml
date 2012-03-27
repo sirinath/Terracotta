@@ -46,9 +46,9 @@
         </executions>
       </plugin>       
       <plugin>
-        <groupId>com.goldin.plugins</groupId>
-        <artifactId>maven-properties-plugin</artifactId>
-        <version>0.2.2</version>
+        <groupId>com.github.goldin</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>0.2.3.8</version>
         <executions>
           <execution>
             <id>set-properties</id>
