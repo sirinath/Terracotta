@@ -53,10 +53,10 @@ import com.tc.injection.annotations.InjectedDsoInstance;
 import com.tc.injection.exceptions.UnsupportedInjectedDsoInstanceTypeException;
 import com.tc.io.TCByteArrayOutputStream;
 import com.tc.io.TCByteBufferInput;
+import com.tc.io.TCByteBufferInput.Mark;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
-import com.tc.io.TCByteBufferInput.Mark;
 import com.tc.lang.Recyclable;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.LogLevel;
@@ -70,6 +70,7 @@ import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientObjectManager;
+import com.tc.object.LocalCacheAddCallBack;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
@@ -79,7 +80,6 @@ import com.tc.object.TCObject;
 import com.tc.object.TCObjectExternal;
 import com.tc.object.TCObjectSelf;
 import com.tc.object.TCObjectSelfCallback;
-import com.tc.object.TCObjectSelfCompilationHelper;
 import com.tc.object.TCObjectSelfImpl;
 import com.tc.object.TCObjectSelfStore;
 import com.tc.object.TCObjectServerMap;
@@ -166,12 +166,12 @@ import com.tc.object.config.TransparencyClassSpec;
 import com.tc.object.dmi.DmiClassSpec;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
+import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.PhysicalAction;
-import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.ProxyInstance;
 import com.tc.object.field.TCField;
@@ -233,10 +233,10 @@ import com.tc.util.HashtableKeySetWrapper;
 import com.tc.util.HashtableValuesWrapper;
 import com.tc.util.ListIteratorWrapper;
 import com.tc.util.SequenceID;
+import com.tc.util.SequenceID.SequenceIDComparator;
 import com.tc.util.SetIteratorWrapper;
 import com.tc.util.THashMapCollectionWrapper;
 import com.tc.util.UnsafeUtil;
-import com.tc.util.SequenceID.SequenceIDComparator;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.UnknownJvmVersionException;
 import com.tc.util.runtime.UnknownRuntimeVersionException;
@@ -566,6 +566,7 @@ public class BootJarTool {
       loadTerracottaClass(AAFairDistributionPolicyMarker.class.getName());
       loadTerracottaClass(Clearable.class.getName());
       loadTerracottaClass(NotClearable.class.getName());
+      loadTerracottaClass(LocalCacheAddCallBack.class.getName());
       loadTerracottaClass(TCServerMap.class.getName());
       loadTerracottaClass(IndexQueryResult.class.getName());
       loadTerracottaClass(SearchQueryResults.class.getName());
@@ -721,7 +722,6 @@ public class BootJarTool {
     loadTerracottaClass(TCObjectSelf.class.getName());
     loadTerracottaClass(TCObjectSelfImpl.class.getName());
     loadTerracottaClass(TCObjectSelfCallback.class.getName());
-    loadTerracottaClass(TCObjectSelfCompilationHelper.class.getName());
   }
 
   private void loadTerracottaClassesReachableFromTCObject() {
@@ -1421,8 +1421,8 @@ public class BootJarTool {
     final ClassReader cr = new ClassReader(orig);
     final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
 
-    final ClassVisitor cv = new JavaLangStringAdapter(cw, Vm.VERSION, shouldIncludeStringBufferAndFriends(), Vm
-        .isAzul(), Vm.isIBM());
+    final ClassVisitor cv = new JavaLangStringAdapter(cw, Vm.VERSION, shouldIncludeStringBufferAndFriends(),
+                                                      Vm.isAzul(), Vm.isIBM());
     cr.accept(cv, ClassReader.SKIP_FRAMES);
 
     loadClassIntoJar("java.lang.String", cw.toByteArray(), false);
@@ -1653,8 +1653,8 @@ public class BootJarTool {
           .getOrCreateSpec("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper");
       spec.markPreInstrumented();
       bytes = doDSOTransform(spec.getClassName(), bytes);
-      loadClassIntoJar("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper", bytes, spec
-          .isPreInstrumented());
+      loadClassIntoJar("com.tcclient.util.ConcurrentHashMapEntrySetWrapper$EntryWrapper", bytes,
+                       spec.isPreInstrumented());
     }
   }
 
@@ -1882,8 +1882,9 @@ public class BootJarTool {
 
     final ClassReader cr = new ClassReader(bytes);
     final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    final ClassVisitor cv = new LogicalClassSerializationAdapter.LogicalClassSerializationClassAdapter(cw, spec
-        .getClassName());
+    final ClassVisitor cv = new LogicalClassSerializationAdapter.LogicalClassSerializationClassAdapter(
+                                                                                                       cw,
+                                                                                                       spec.getClassName());
     cr.accept(cv, ClassReader.SKIP_FRAMES);
 
     bytes = cw.toByteArray();
