@@ -23,7 +23,7 @@
     <ehcache.version>2.5.2</ehcache.version>
     <quartz.version>2.1.4</quartz.version>
     <terracotta-session.version>1.2.2</terracotta-session.version>
-    <quartz-terracotta.version>2.2.2</quartz-terracotta.version>
+    <quartz-terracotta.version>2.2.3</quartz-terracotta.version>
     
     <skip.deploy>true</skip.deploy>
     <skip.testjar>true</skip.testjar>
