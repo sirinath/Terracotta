@@ -24,7 +24,7 @@ public class ReentrantReadWriteLockDowngraderTest extends TransparentTestBase {
 
   private static final int  NODE_COUNT  = 3;
   private static final int  LOOP_COUNT  = 1000;
-  private static final long TRY_TIMEOUT = 10;  // seconds
+  private static final long TRY_TIMEOUT = 15;  // seconds
 
   @Override
   protected Class getApplicationClass() {
