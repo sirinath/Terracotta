@@ -169,6 +169,7 @@ public class ExtraProcessServerControl extends ServerControlBase {
     this.runningDirectory = runningDirectory;
 
     addProductKeyIfExists(jvmArgs);
+    jvmArgs.add("-Dtc.ssl=" + System.getProperty("tc.ssl"));
     jvmArgs.add("-Dcom.tc.l1.modules.repositories=" + System.getProperty("com.tc.l1.modules.repositories"));
     jvmArgs.add("-Dtc.base-dir=" + System.getProperty("tc.base-dir"));
     jvmArgs.add("-D" + Directories.TC_INSTALL_ROOT_IGNORE_CHECKS_PROPERTY_NAME + "=true");

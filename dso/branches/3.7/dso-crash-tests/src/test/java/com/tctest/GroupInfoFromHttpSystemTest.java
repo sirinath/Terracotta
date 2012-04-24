@@ -15,14 +15,13 @@ import com.tc.test.JMXUtils;
 import com.tc.util.Assert;
 import com.tc.util.TcConfigBuilder;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.io.ServerURL;
 import com.tctest.process.ExternalDsoServer;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
@@ -74,14 +73,18 @@ public class GroupInfoFromHttpSystemTest extends BaseDSOTestCase {
   }
 
   private void testGroupInfoForServer(int dsoPort, boolean shouldPass) throws MalformedURLException {
-    URL theURL = new URL("http", "localhost", dsoPort, TCServerImpl.GROUP_INFO_SERVLET_PATH);
+    String protocol = "http";
+    if (Boolean.getBoolean("tc.ssl")) {
+      protocol = "https";
+    }
+
+    ServerURL theURL = new ServerURL(protocol, "localhost", dsoPort, TCServerImpl.GROUP_INFO_SERVLET_PATH);
     InputStream l1PropFromL2Stream = null;
     System.out.println("Trying to get groupinfo from " + theURL.toString());
     int trials = 0;
     while (true) {
       try {
-        URLConnection connection = theURL.openConnection();
-        l1PropFromL2Stream = connection.getInputStream();
+        l1PropFromL2Stream = theURL.openStream();
         Assert.assertNotNull(l1PropFromL2Stream);
         break;
       } catch (IOException e) {

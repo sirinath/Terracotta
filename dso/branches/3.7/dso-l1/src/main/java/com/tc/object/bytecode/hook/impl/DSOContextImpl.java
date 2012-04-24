@@ -45,6 +45,7 @@ import com.tc.util.Assert;
 import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.Util;
+import com.tc.util.io.ServerURL;
 import com.terracottatech.config.ConfigurationModel;
 
 import java.io.ByteArrayOutputStream;
@@ -348,7 +349,13 @@ public class DSOContextImpl implements DSOContext {
 
   private static String getServerConfigMode(String serverHost, int httpPort) throws MalformedURLException,
       TCTimeoutException, IOException {
-    URL theURL = new URL("http", serverHost, httpPort, "/config?query=mode");
+
+    String protocol = "http";
+    if (Boolean.getBoolean("tc.ssl")) {
+      protocol = "https";
+    }
+    ServerURL theURL = new ServerURL(protocol, serverHost, httpPort, "/config?query=mode");
+
     long startTime = System.currentTimeMillis();
     long lastTrial = 0;
 

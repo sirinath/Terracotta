@@ -18,13 +18,12 @@ import com.tc.net.core.ConnectionInfo;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.io.ServerURL;
 import com.terracottatech.config.L1ReconnectPropertiesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -256,17 +255,19 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
    * Open an InputStream via http servlet from one of L2s.
    */
   public InputStream getPropertiesFromL2Stream(final String message, final String httpPathExtension) {
-    URLConnection connection = null;
-    InputStream propFromL2Stream = null;
-    URL theURL = null;
+    InputStream propFromL2Stream;
+    ServerURL theURL;
     for (int i = 0; i < connections.length; i++) {
       ConnectionInfo ci = connections[i];
       try {
-        theURL = new URL("http", ci.getHostname(), ci.getPort(), httpPathExtension);
+        String protocol = "http";
+        if (Boolean.getBoolean("tc.ssl")) {
+          protocol = "https";
+        }
+        theURL = new ServerURL(protocol, ci.getHostname(), ci.getPort(), httpPathExtension);
         String text = "Trying to get " + message + " from " + theURL.toString();
         logger.info(text);
-        connection = theURL.openConnection();
-        propFromL2Stream = connection.getInputStream();
+        propFromL2Stream = theURL.openStream();
         if (propFromL2Stream != null) return propFromL2Stream;
       } catch (IOException e) {
         String text = "Can't connect to [" + ci + "].";

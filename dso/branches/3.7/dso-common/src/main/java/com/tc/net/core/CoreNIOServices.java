@@ -1,3 +1,6 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
 package com.tc.net.core;
 
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
@@ -19,6 +22,7 @@ import com.tc.util.runtime.Os;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
@@ -40,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * The communication thread. Creates {@link Selector selector}, registers {@link SocketChannel} to the selector and does
  * other NIO operations.
- * 
+ *
  * @author mgovinda
  */
 
@@ -87,11 +91,6 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   public void cleanupChannel(SocketChannel channel, Runnable callback) {
     readerComm.cleanupChannel(channel, callback);
     writerComm.cleanupChannel(channel, callback);
-  }
-
-  public void detach(final SocketChannel channel) {
-    readerComm.unregister(channel);
-    writerComm.unregister(channel);
   }
 
   public void closeEvent(TCListenerEvent event) {
@@ -171,7 +170,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
 
   /**
    * Change thread ownership of a connection or upgrade weight.
-   * 
+   *
    * @param connection : connection which has to be transfered from the main selector thread to a new worker comm thread
    *        that has the least weight. If the connection is already managed by a comm thread, then just update
    *        connection's weight.
@@ -620,18 +619,66 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             }
 
             if (isReader() && key.isValid() && key.isReadable()) {
-              int read;
               TCChannelReader reader = (TCChannelReader) key.attachment();
-              ScatteringByteChannel channel = (ScatteringByteChannel) key.channel();
+              BufferManager bufferManager = reader.getBufferManager();
+              ByteBuffer buffer = bufferManager.getRecvBuffer();
+
+              int channelRead;
               do {
-                read = reader.doRead(channel);
-                this.bytesRead.add(read);
-              } while ((read != 0) && key.isReadable());
+                try {
+                  channelRead = bufferManager.recv();
+                } catch (IOException e) {
+                  channelRead = -1;
+                }
+                if (channelRead == -1) {
+                  reader.closeRead();
+                  break;
+                }
+
+                buffer.flip();
+                while (buffer.hasRemaining()) {
+                  int read = reader.doRead(buffer);
+                  if (read == -1) {
+                    reader.closeRead();
+                    break;
+                  }
+                  this.bytesRead.add(read);
+                }
+                buffer.clear();
+              } while (channelRead != 0 && key.isValid() && key.isReadable());
             }
 
             if (key.isValid() && !isReader() && key.isWritable()) {
-              int written = ((TCChannelWriter) key.attachment()).doWrite((GatheringByteChannel) key.channel());
-              this.bytesWritten.add(written);
+              TCChannelWriter writer = (TCChannelWriter)key.attachment();
+              BufferManager bufferManager = writer.getBufferManager();
+              ByteBuffer buffer = bufferManager.getSendBuffer();
+
+              int written = writer.doWrite(buffer);
+              if (written == -1) {
+                writer.closeWrite();
+                break;
+              }
+
+              int channelWritten = 0;
+              while (channelWritten != written) {
+                int sent = 0;
+                try {
+                  sent = bufferManager.send();
+                } catch (IOException ioe) {
+                  channelWritten = -1;
+                }
+                if (channelWritten == -1) {
+                  writer.closeWrite();
+                  break;
+                }
+                channelWritten += sent;
+                this.bytesWritten.add(channelWritten);
+              }
+            }
+
+            TCConnection conn = (TCConnection)key.attachment();
+            if (conn != null && conn.isClosePending()) {
+              conn.asynchClose();
             }
 
           } catch (CancelledKeyException cke) {
