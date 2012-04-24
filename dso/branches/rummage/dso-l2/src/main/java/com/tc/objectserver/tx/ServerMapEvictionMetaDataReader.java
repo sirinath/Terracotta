@@ -207,8 +207,9 @@ public class ServerMapEvictionMetaDataReader implements MetaDataReader {
           // XXX: assumes String key!
           return AbstractNVPair.createNVPair("", ((UTF8ByteDataHolder) next.getKey()).asString());
         } else {
-          // XXX: assumes ValueID value!
-          NVPair nv = new AbstractNVPair.ValueIdNVPair("", (ValueID) next.getValue());
+          // XXX: assumes ObjectID value!
+          ObjectID valueOid = (ObjectID) next.getValue();
+          NVPair nv = new AbstractNVPair.ValueIdNVPair("", new ValueID(valueOid.toLong()));
           if (toRemove.hasNext()) {
             next = toRemove.next();
           }
