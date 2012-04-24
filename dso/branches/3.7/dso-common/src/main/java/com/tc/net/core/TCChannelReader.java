@@ -4,7 +4,8 @@
  */
 package com.tc.net.core;
 
-import java.nio.channels.ScatteringByteChannel;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Interface used by {@link CoreNIOServices comms threads} to request reading from a channel. This interface makes it
@@ -14,5 +15,7 @@ import java.nio.channels.ScatteringByteChannel;
  * @author teck
  */
 interface TCChannelReader {
-  public int doRead(ScatteringByteChannel channel);
+  public int doRead(ByteBuffer buffer);
+  void closeRead() throws IOException;
+  BufferManager getBufferManager();
 }

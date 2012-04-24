@@ -4,6 +4,7 @@
  */
 package com.tc.server;
 
+import org.mortbay.jetty.Request;
 import org.mortbay.jetty.bio.SocketConnector;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
 /**
- * A Jettu connector that is handed sockets from the DSO listen port once they are identified as HTTP requests
+ * A Jetty connector that is handed sockets from the DSO listen port once they are identified as HTTP requests
  */
 public class TerracottaConnector extends SocketConnector {
   private boolean shutdown = false;
@@ -45,6 +46,10 @@ public class TerracottaConnector extends SocketConnector {
         wait();
       }
     }
+  }
+
+  public boolean isConfidential(Request request) {
+    return Boolean.getBoolean("tc.ssl");
   }
 
   /**

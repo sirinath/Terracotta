@@ -5,18 +5,15 @@ package com.tc.config.schema.setup.sources;
 
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.util.Assert;
+import com.tc.util.io.ServerURL;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 
 /**
  * A {@link ConfigurationSource} that reads from a URL.
- * 
- * @see URLConfigurationSourceTest
  */
 public class ServerConfigurationSource implements ConfigurationSource {
 
@@ -32,14 +29,13 @@ public class ServerConfigurationSource implements ConfigurationSource {
 
   public InputStream getInputStream(long maxTimeoutMillis) throws IOException, ConfigurationSetupException {
     try {
-      URL theURL = new URL("http", host, port, "/config");
-  
-      // JDK: 1.4.2 - These settings are proprietary to Sun's implementation of java.net.URL in version 1.4.2
-      System.setProperty("sun.net.client.defaultConnectTimeout", String.valueOf(maxTimeoutMillis));
-      System.setProperty("sun.net.client.defaultReadTimeout", String.valueOf(maxTimeoutMillis));
+      String protocol = "http";
+      if (Boolean.getBoolean("tc.ssl")) {
+        protocol = "https";
+      }
 
-      URLConnection connection = theURL.openConnection();
-      return connection.getInputStream();
+      ServerURL theURL = new ServerURL(protocol, host, port, "/config" , (int)maxTimeoutMillis);
+      return theURL.openStream();
     } catch (MalformedURLException murle) {
       throw new ConfigurationSetupException("Can't load configuration from "+this+".");
     }
