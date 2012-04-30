@@ -7,6 +7,7 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.PostInit;
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
+import com.tc.client.SecurityContext;
 import com.tc.config.HaConfig;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
 import com.tc.io.TCFile;
@@ -104,9 +105,11 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   private final HaConfig   haConfig;
   private final GroupID    thisGroupID;
   protected final TCLogger logger;
+  private final SecurityContext securityContext;
 
-  public StandardDSOServerBuilder(final HaConfig haConfig, final TCLogger logger) {
+  public StandardDSOServerBuilder(final HaConfig haConfig, final TCLogger logger, final SecurityContext securityContext) {
     this.logger = logger;
+    this.securityContext = securityContext;
     this.logger.info("Standard DSO Server created");
     this.haConfig = haConfig;
     this.thisGroupID = this.haConfig.getThisGroupID();
@@ -139,7 +142,8 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                              final Sink httpSink, final StripeIDStateManager stripeStateManager,
                                              final ServerGlobalTransactionManager gtxm) {
     if (networkedHA) {
-      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink, this.haConfig.getNodesStore());
+      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink, this.haConfig.getNodesStore(),
+                                    securityContext);
     } else {
       return new SingleNodeGroupManager();
     }

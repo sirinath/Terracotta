@@ -15,6 +15,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.NullSink;
+import com.tc.client.SecurityContext;
 import com.tc.config.HaConfig;
 import com.tc.config.HaConfigImpl;
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -358,6 +359,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   protected final L2ConfigurationSetupManager    configSetupManager;
   private final Sink                             httpSink;
   protected final HaConfigImpl                   haConfig;
+  protected final SecurityContext                securityContext;
 
   private static final TCLogger                  logger           = CustomerLogging.getDSOGenericLogger();
   private static final TCLogger                  consoleLogger    = CustomerLogging.getConsoleLogger();
@@ -431,6 +433,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     // Even in tests, we probably don't want different thread group configurations
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
+    if (Boolean.getBoolean("tc.ssl")) {
+      this.securityContext = new SecurityContext();
+    } else {
+      this.securityContext = null;
+    }
+
     this.configSetupManager = configSetupManager;
     this.haConfig = new HaConfigImpl(this.configSetupManager);
     this.connectionPolicy = connectionPolicy;
@@ -445,7 +453,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
   protected DSOServerBuilder createServerBuilder(final HaConfig config, final TCLogger tcLogger, final TCServer server) {
     Assert.assertEquals(config.isActiveActive(), false);
-    return new StandardDSOServerBuilder(config, tcLogger);
+    return new StandardDSOServerBuilder(config, tcLogger, securityContext);
   }
 
   protected DSOServerBuilder getServerBuilder() {
@@ -706,7 +714,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                    .getPropertiesFor("healthcheck.l1"), "DSO Server"),
                                                                this.thisServerNodeID,
                                                                new TransportHandshakeErrorNullHandler(),
-                                                               getMessageTypeClassMappings(), Collections.EMPTY_MAP);
+                                                               getMessageTypeClassMappings(), Collections.EMPTY_MAP,
+                                                               securityContext);
 
     final DSOApplicationEvents appEvents;
     try {

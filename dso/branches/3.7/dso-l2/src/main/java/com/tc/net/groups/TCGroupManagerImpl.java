@@ -7,6 +7,7 @@ package com.tc.net.groups;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
+import com.tc.client.SecurityContext;
 import com.tc.config.NodesStore;
 import com.tc.config.ReloadConfigChangeContext;
 import com.tc.config.TopologyChangeListener;
@@ -98,6 +99,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
   private final ReconnectConfig                             l2ReconnectConfig;
 
   private final Sink                                        httpSink;
+  private final SecurityContext                             securityContext;
   private final ServerID                                    thisNodeID;
   private final int                                         groupPort;
   private final ConnectionPolicy                            connectionPolicy;
@@ -132,16 +134,18 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
    * Setup a communication manager which can establish channel from either sides.
    */
   public TCGroupManagerImpl(L2ConfigurationSetupManager configSetupManager, StageManager stageManager,
-                            ServerID thisNodeID, Sink httpSink, NodesStore nodesStore) {
-    this(configSetupManager, new NullConnectionPolicy(), stageManager, thisNodeID, httpSink, nodesStore);
+                            ServerID thisNodeID, Sink httpSink, NodesStore nodesStore, SecurityContext securityContext) {
+    this(configSetupManager, new NullConnectionPolicy(), stageManager, thisNodeID, httpSink, nodesStore, securityContext);
   }
 
   public TCGroupManagerImpl(L2ConfigurationSetupManager configSetupManager, ConnectionPolicy connectionPolicy,
-                            StageManager stageManager, ServerID thisNodeID, Sink httpSink, NodesStore nodesStore) {
+                            StageManager stageManager, ServerID thisNodeID, Sink httpSink, NodesStore nodesStore,
+                            SecurityContext securityContext) {
     this.connectionPolicy = connectionPolicy;
     this.stageManager = stageManager;
     this.thisNodeID = thisNodeID;
     this.httpSink = httpSink;
+    this.securityContext = securityContext;
     this.l2ReconnectConfig = new L2ReconnectConfigImpl();
     this.isUseOOOLayer = l2ReconnectConfig.getReconnectEnabled();
 
@@ -179,9 +183,10 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
    * for testing purpose only. Tester needs to do setDiscover().
    */
   public TCGroupManagerImpl(ConnectionPolicy connectionPolicy, String hostname, int port, int groupPort,
-                            StageManager stageManager) {
+                            StageManager stageManager, SecurityContext securityContext) {
     this.connectionPolicy = connectionPolicy;
     this.stageManager = stageManager;
+    this.securityContext = securityContext;
     this.l2ReconnectConfig = new L2ReconnectConfigImpl();
     this.httpSink = null;
     this.isUseOOOLayer = l2ReconnectConfig.getReconnectEnabled();
@@ -214,7 +219,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
                                                           new HealthCheckerConfigImpl(l2Properties
                                                               .getPropertiesFor("healthcheck.l2"), "TCGroupManager"),
                                                           thisNodeID, new TransportHandshakeErrorHandlerForGroupComm(),
-                                                          messageTypeClassMapping, messageTypeFactoryMapping);
+                                                          messageTypeClassMapping, messageTypeFactoryMapping,
+                                                          securityContext);
 
     groupListener = communicationsManager.createListener(new NullSessionManager(), socketAddress, true,
                                                          new DefaultConnectionIdFactory(), httpSink);

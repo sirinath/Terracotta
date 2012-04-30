@@ -11,6 +11,7 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
+import com.tc.client.SecurityContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
@@ -58,7 +59,7 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   private static final long                  NO_CONNECT_TIME             = -1L;
   private static final TCLogger              logger                      = TCLogging.getLogger(TCConnection.class);
   private static final long                  WARN_THRESHOLD              = 0x400000L;                                                    // 4MB
-  private static final BufferManagerFactory  bufferManagerFactory;
+  private final BufferManagerFactory  bufferManagerFactory;
 
   private volatile CoreNIOServices           commWorker;
   private volatile SocketChannel             channel;
@@ -105,22 +106,19 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
 
   static {
     logger.info("Comms Message Batching " + (MSG_GROUPING_ENABLED ? "enabled" : "disabled"));
-    bufferManagerFactory = createBufferManagerFactory();
   }
 
   // todo: this should be more dynamic
-  //  -> no more system prop
   //  -> SSLBufferManagerFactory class name should be discovered?
   //  -> ClearTextBufferManagerFactory should not be instantiated directly?
-  private static BufferManagerFactory createBufferManagerFactory() {
-    if (Boolean.getBoolean("tc.ssl")) {
+  private static BufferManagerFactory createBufferManagerFactory(SecurityContext securityContext) {
+    if (securityContext != null) {
       try {
         Class<?> bufferManagerFactoryClass = Class.forName("com.tc.net.core.ssl.SSLBufferManagerFactory");
         Object bufferManagerFactory = bufferManagerFactoryClass.newInstance();
         return (BufferManagerFactory)bufferManagerFactory;
       } catch (Exception e) {
         logger.warn("cannot enable SSL, falling back to clear text", e);
-        System.setProperty("tc.ssl", "false");
         return new ClearTextBufferManagerFactory();
       }
     }
@@ -133,13 +131,13 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   // for creating unconnected client connections
   TCConnectionImpl(final TCConnectionEventListener listener, final TCProtocolAdaptor adaptor,
                    final TCConnectionManagerImpl managerJDK14, final CoreNIOServices nioServiceThread,
-                   final SocketParams socketParams) {
-    this(listener, adaptor, null, managerJDK14, nioServiceThread, socketParams);
+                   final SocketParams socketParams, final SecurityContext securityContext) {
+    this(listener, adaptor, null, managerJDK14, nioServiceThread, socketParams, securityContext);
   }
 
   TCConnectionImpl(final TCConnectionEventListener listener, final TCProtocolAdaptor adaptor, final SocketChannel ch,
                    final TCConnectionManagerImpl parent, final CoreNIOServices nioServiceThread,
-                   final SocketParams socketParams) {
+                   final SocketParams socketParams, final SecurityContext securityContext) {
 
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
@@ -152,6 +150,8 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
     }
 
     this.channel = ch;
+
+    this.bufferManagerFactory = createBufferManagerFactory(securityContext);
 
     if (ch != null) {
       socketParams.applySocketParams(ch.socket());
