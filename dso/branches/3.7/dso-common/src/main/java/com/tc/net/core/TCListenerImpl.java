@@ -6,6 +6,7 @@ package com.tc.net.core;
 
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 
+import com.tc.client.SecurityContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
@@ -47,9 +48,13 @@ final class TCListenerImpl implements TCListener {
   private final CopyOnWriteArraySet       listeners       = new CopyOnWriteArraySet();
   private final ProtocolAdaptorFactory    factory;
   private final CoreNIOServices           commNIOServiceThread;
+  private final SecurityContext           securityContext;
 
   TCListenerImpl(ServerSocketChannel ssc, ProtocolAdaptorFactory factory, TCConnectionEventListener listener,
-                 TCConnectionManagerImpl managerJDK14, CoreNIOServices commNIOServiceThread) {
+                 TCConnectionManagerImpl managerJDK14, CoreNIOServices commNIOServiceThread,
+                 SecurityContext securityContext) {
+    new Exception("TCListenerImpl.securityContext: " + securityContext).printStackTrace();
+    this.securityContext = securityContext;
     this.addr = ssc.socket().getInetAddress();
     this.port = ssc.socket().getLocalPort();
     this.sockAddr = new TCSocketAddress(this.addr, this.port);
@@ -68,7 +73,7 @@ final class TCListenerImpl implements TCListener {
   TCConnectionImpl createConnection(SocketChannel ch, CoreNIOServices nioServiceThread, SocketParams socketParams)
       throws IOException {
     TCProtocolAdaptor adaptor = getProtocolAdaptorFactory().getInstance();
-    TCConnectionImpl rv = new TCConnectionImpl(listener, adaptor, ch, parent, nioServiceThread, socketParams);
+    TCConnectionImpl rv = new TCConnectionImpl(listener, adaptor, ch, parent, nioServiceThread, socketParams, securityContext);
     rv.finishConnect();
     parent.newConnection(rv);
     return rv;

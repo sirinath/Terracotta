@@ -79,7 +79,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   private final TransportHandshakeMessageFactory                            transportMessageFactory;
   private final MessageMonitor                                              monitor;
   private final TCMessageRouter                                             messageRouter;
-  private final SecurityContext                                             securityContext;
   private final HealthCheckerConfig                                         healthCheckerConfig;
   private final ConnectionPolicy                                            connectionPolicy;
   private final ReconnectionRejectedHandler                                 reconnectionRejectedHandler;
@@ -101,7 +100,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    NetworkStackHarnessFactory stackHarnessFactory, ConnectionPolicy connectionPolicy) {
     this(commsMgrName, monitor, new TCMessageRouterImpl(), stackHarnessFactory, null, connectionPolicy, 0,
          new DisabledHealthCheckerConfigImpl(), new TransportHandshakeErrorHandlerForL1(), Collections.EMPTY_MAP,
-         Collections.EMPTY_MAP);
+         Collections.EMPTY_MAP, null);
 
   }
 
@@ -110,7 +109,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    int workerCommCount) {
     this(commsMgrName, monitor, new TCMessageRouterImpl(), stackHarnessFactory, null, connectionPolicy,
          workerCommCount, new DisabledHealthCheckerConfigImpl(), new TransportHandshakeErrorHandlerForL1(),
-         Collections.EMPTY_MAP, Collections.EMPTY_MAP);
+         Collections.EMPTY_MAP, Collections.EMPTY_MAP, null);
   }
 
   public CommunicationsManagerImpl(String commsMgrName, MessageMonitor monitor,
@@ -125,7 +124,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    HealthCheckerConfig config, Map<TCMessageType, Class> messageTypeClassMapping,
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, null, connectionPolicy, 0, config,
-         new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping, messageTypeFactoryMapping);
+         new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping, messageTypeFactoryMapping, null);
   }
 
   public CommunicationsManagerImpl(String commsMgrName, MessageMonitor monitor, TCMessageRouter messageRouter,
@@ -133,9 +132,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    int workerCommCount, HealthCheckerConfig config, ServerID serverID,
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
-                                   Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping) {
+                                   Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
+                                   SecurityContext securityContext) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, null, connectionPolicy, workerCommCount, config,
-         transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping);
+         transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping, securityContext);
     this.serverID = serverID;
   }
 
@@ -145,10 +145,11 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    HealthCheckerConfig healthCheckerConf,
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
-                                   Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping) {
+                                   Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
+                                   SecurityContext securityContext) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, connMgr, connectionPolicy, workerCommCount,
          healthCheckerConf, transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping,
-         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR, null);
+         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR, securityContext);
   }
 
   /**
@@ -168,7 +169,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     this.commsMgrName = commsMgrName;
     this.monitor = monitor;
     this.messageRouter = messageRouter;
-    this.securityContext = securityContext;
     this.transportMessageFactory = new TransportMessageFactoryImpl();
     this.connectionPolicy = connectionPolicy;
     this.stackHarnessFactory = stackHarnessFactory;
