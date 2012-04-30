@@ -19,8 +19,10 @@ public class ServerConfigurationSource implements ConfigurationSource {
 
   private final String host;
   private final int port;
+  private final boolean secure;
 
-  public ServerConfigurationSource(String host, int port) {
+  public ServerConfigurationSource(String host, int port, boolean secure) {
+    this.secure = secure;
     Assert.assertNotBlank(host);
     Assert.assertTrue(port > 0);
     this.host = host;
@@ -29,11 +31,7 @@ public class ServerConfigurationSource implements ConfigurationSource {
 
   public InputStream getInputStream(long maxTimeoutMillis) throws IOException, ConfigurationSetupException {
     try {
-      String protocol = "http";
-      if (Boolean.getBoolean("tc.ssl")) {
-        protocol = "https";
-      }
-
+      String protocol = secure ? "https" : "http";
       ServerURL theURL = new ServerURL(protocol, host, port, "/config" , (int)maxTimeoutMillis);
       return theURL.openStream();
     } catch (MalformedURLException murle) {

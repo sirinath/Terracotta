@@ -184,11 +184,17 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
   private ConfigurationSource attemptToCreateServerSource(String text) {
     Matcher matcher = SERVER_PATTERN.matcher(text);
     if (matcher.matches()) {
+      boolean secure = false;
       String host = matcher.group(1);
+      int userSeparatorIndex = host.indexOf('@');
+      if (userSeparatorIndex > -1) {
+        secure = true;
+        host = host.substring(userSeparatorIndex + 1);
+      }
       String portText = matcher.group(2);
 
       try {
-        return new ServerConfigurationSource(host.trim(), Integer.parseInt(portText.trim()));
+        return new ServerConfigurationSource(host.trim(), Integer.parseInt(portText.trim()), secure);
       } catch (Exception e) {/**/
       }
     }

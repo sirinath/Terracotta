@@ -10,6 +10,7 @@ import com.tc.aspectwerkz.reflect.FieldInfo;
 import com.tc.aspectwerkz.reflect.impl.java.JavaClassInfo;
 import com.tc.client.AbstractClientFactory;
 import com.tc.client.ClientMode;
+import com.tc.client.SecurityContext;
 import com.tc.cluster.DsoCluster;
 import com.tc.cluster.DsoClusterImpl;
 import com.tc.exception.ExceptionWrapper;
@@ -104,6 +105,7 @@ public class ManagerImpl implements ManagerInternal {
   private final RuntimeLogger                      runtimeLogger;
   private final LockIdFactory                      lockIdFactory;
   private final ClientMode                         clientMode;
+  private final SecurityContext                    securityContext;
 
   private final InstrumentationLogger              instrumentationLogger;
 
@@ -122,16 +124,18 @@ public class ManagerImpl implements ManagerInternal {
                                                                            .getProperties()
                                                                            .getBoolean(TCPropertiesConsts.SEARCH_QUERY_WAIT_FOR_TXNS);
 
-  public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
-    this(true, null, null, null, null, config, connectionComponents, true, null, null, false);
+  public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
+                     final SecurityContext securityContext) {
+    this(true, null, null, null, null, config, connectionComponents, true, null, null, false, securityContext);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
                      final ClientTransactionManager txManager, final ClientLockManager lockManager,
                      final RemoteSearchRequestManager searchRequestManager, final DSOClientConfigHelper config,
-                     final PreparedComponentsFromL2Connection connectionComponents) {
+                     final PreparedComponentsFromL2Connection connectionComponents,
+                     final SecurityContext securityContext) {
     this(startClient, objectManager, txManager, lockManager, searchRequestManager, config, connectionComponents, true,
-         null, null, false);
+         null, null, false, securityContext);
   }
 
   public ManagerImpl(final boolean startClient, final ClientObjectManager objectManager,
@@ -139,8 +143,10 @@ public class ManagerImpl implements ManagerInternal {
                      final RemoteSearchRequestManager searchRequestManager, final DSOClientConfigHelper config,
                      final PreparedComponentsFromL2Connection connectionComponents,
                      final boolean shutdownActionRequired, final RuntimeLogger runtimeLogger,
-                     final ClassProvider classProvider, final boolean isExpressRejoinMode) {
+                     final ClassProvider classProvider, final boolean isExpressRejoinMode,
+                     final SecurityContext securityContext) {
     this.objectManager = objectManager;
+    this.securityContext = securityContext;
     this.portability = config.getPortability();
     this.txManager = txManager;
     this.lockManager = lockManager;
@@ -265,7 +271,8 @@ public class ManagerImpl implements ManagerInternal {
                                                           ManagerImpl.this.connectionComponents, ManagerImpl.this,
                                                           ManagerImpl.this.statisticsAgentSubSystem,
                                                           ManagerImpl.this.dsoCluster, ManagerImpl.this.runtimeLogger,
-                                                          ManagerImpl.this.clientMode);
+                                                          ManagerImpl.this.clientMode,
+                                                          ManagerImpl.this.securityContext);
 
         if (forTests) {
           ManagerImpl.this.dso.setCreateDedicatedMBeanServer(true);

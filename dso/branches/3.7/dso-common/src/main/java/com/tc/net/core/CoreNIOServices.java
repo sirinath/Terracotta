@@ -6,6 +6,7 @@ package com.tc.net.core;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.client.SecurityContext;
 import com.tc.exception.TCInternalError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -53,6 +54,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   private final TCWorkerCommManager            workerCommMgr;
   private final String                         commThreadName;
   private final SocketParams                   socketParams;
+  private final SecurityContext                securityContext;
   private final CommThread                     readerComm;
   private final CommThread                     writerComm;
   private final SetOnceFlag                    stopRequested = new SetOnceFlag();
@@ -67,10 +69,12 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     NIO_READER, NIO_WRITER
   }
 
-  public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams) {
+  public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams,
+                         SecurityContext securityContext) {
     this.commThreadName = commThreadName;
     this.workerCommMgr = workerCommManager;
     this.socketParams = socketParams;
+    this.securityContext = securityContext;
     this.managedConnectionsMap = new HashMap<TCConnection, Integer>();
     this.readerComm = new CommThread(COMM_THREAD_MODE.NIO_READER);
     this.writerComm = new CommThread(COMM_THREAD_MODE.NIO_WRITER);
