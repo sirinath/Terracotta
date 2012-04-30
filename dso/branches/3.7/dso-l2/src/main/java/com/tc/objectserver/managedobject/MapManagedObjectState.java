@@ -76,6 +76,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
         }
         if (old instanceof ObjectID) {
           removedValueFromMap(objectID, applyInfo, (ObjectID) old);
+          addKeyPresentForValue(applyInfo, (ObjectID) value);
         }
         break;
       case SerializationUtil.REMOVE:
@@ -99,6 +100,10 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   }
 
   protected void removedValueFromMap(ObjectID mapID, ApplyTransactionInfo applyInfo, ObjectID objectID) {
+    // Overridden by subclasses
+  }
+
+  protected void addKeyPresentForValue(ApplyTransactionInfo applyInfo, ObjectID value) {
     // Overridden by subclasses
   }
 

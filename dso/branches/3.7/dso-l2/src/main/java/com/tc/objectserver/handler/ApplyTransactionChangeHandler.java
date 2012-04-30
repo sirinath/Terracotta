@@ -63,7 +63,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     NotifiedWaiters notifiedWaiters = new NotifiedWaiters();
     final ServerTransactionID stxnID = txn.getServerTransactionID();
-    final ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID);
+    final ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled());
 
     if (atc.needsApply()) {
       this.transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
@@ -72,6 +72,8 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
       this.transactionManager.skipApplyAndCommit(txn);
       getLogger().warn("Not applying previously applied transaction: " + stxnID);
     }
+
+    this.transactionManager.processMetaData(txn, atc.needsApply() ? applyInfo : null);
 
     for (final Iterator i = txn.getNotifies().iterator(); i.hasNext();) {
       final Notify notify = (Notify) i.next();
