@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.HostnameVerifier;
@@ -40,7 +39,7 @@ public class ServerURL {
     URLConnection urlConnection;
 
     if ("https".equals(theURL.getProtocol())) {
-      HttpsURLConnection sslUrlConnection = (HttpsURLConnection)theURL.openConnection();
+      HttpsURLConnection sslUrlConnection = (HttpsURLConnection) theURL.openConnection();
 
       // don't verify hostname
       sslUrlConnection.setHostnameVerifier(new HostnameVerifier() {
@@ -50,19 +49,19 @@ public class ServerURL {
       });
 
       // trust all certs
-      TrustManager[] trustAllCerts = new TrustManager[] {
-          new X509TrustManager() {
-            public void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) throws CertificateException {
-            }
+      TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+        public void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) {
+          //
+        }
 
-            public void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) throws CertificateException {
-            }
+        public void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) {
+          //
+        }
 
-            public X509Certificate[] getAcceptedIssuers() {
-              return null;
-            }
-          }
-      };
+        public X509Certificate[] getAcceptedIssuers() {
+          return null;
+        }
+      } };
 
       try {
         SSLContext sslContext = SSLContext.getInstance("TLS");

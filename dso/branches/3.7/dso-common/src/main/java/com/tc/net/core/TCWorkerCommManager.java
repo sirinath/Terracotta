@@ -4,7 +4,6 @@
  */
 package com.tc.net.core;
 
-import com.tc.client.SecurityContext;
 import com.tc.logging.LossyTCLogger;
 import com.tc.logging.LossyTCLogger.LossyTCLoggerType;
 import com.tc.logging.TCLogger;
@@ -36,13 +35,13 @@ public class TCWorkerCommManager {
 
   private final AtomicInteger     nextWorkerCommId   = new AtomicInteger();
 
-  TCWorkerCommManager(String name, int workerCommCount, SocketParams socketParams, SecurityContext securityContext) {
+  TCWorkerCommManager(String name, int workerCommCount, SocketParams socketParams) {
     if (workerCommCount <= 0) { throw new IllegalArgumentException("invalid worker count: " + workerCommCount); }
     logger.info("Creating " + workerCommCount + " worker comm threads for " + name);
     this.totalWorkerComm = workerCommCount;
     this.workerCommThreads = new CoreNIOServices[workerCommCount];
     for (int i = 0; i < this.workerCommThreads.length; i++) {
-      this.workerCommThreads[i] = new CoreNIOServices(name + ":" + WORKER_NAME_PREFIX + i, this, socketParams, securityContext);
+      this.workerCommThreads[i] = new CoreNIOServices(name + ":" + WORKER_NAME_PREFIX + i, this, socketParams);
     }
   }
 

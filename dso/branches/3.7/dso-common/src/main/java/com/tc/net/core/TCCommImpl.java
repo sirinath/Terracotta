@@ -4,7 +4,6 @@
  */
 package com.tc.net.core;
 
-import com.tc.client.SecurityContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
@@ -23,15 +22,15 @@ class TCCommImpl implements TCComm {
 
   private volatile boolean          started        = false;
 
-  TCCommImpl(String name, int workerCommCount, SocketParams socketParams, SecurityContext securityContext) {
+  TCCommImpl(String name, int workerCommCount, SocketParams socketParams) {
     if (workerCommCount > 0) {
-      workerCommMgr = new TCWorkerCommManager(name, workerCommCount, socketParams, securityContext);
+      workerCommMgr = new TCWorkerCommManager(name, workerCommCount, socketParams);
     } else {
       logger.info("Comm Worker Threads NOT requested");
       workerCommMgr = null;
     }
 
-    this.commThread = new CoreNIOServices(name + ":" + commThreadName, workerCommMgr, socketParams, securityContext);
+    this.commThread = new CoreNIOServices(name + ":" + commThreadName, workerCommMgr, socketParams);
   }
 
   protected int getWeightForWorkerComm(int workerCommId) {
