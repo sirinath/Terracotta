@@ -127,7 +127,8 @@ public class TestServerTransactionManager implements ServerTransactionManager {
     throw new ImplementMe();
   }
 
-  public void processMetaData(Collection<ServerTransaction> txns) {
+  public void processMetaData(ServerTransaction txn, ApplyTransactionInfo applyInfo) {
     //
   }
+
 }

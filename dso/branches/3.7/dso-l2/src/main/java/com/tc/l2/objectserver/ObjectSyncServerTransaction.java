@@ -123,6 +123,14 @@ public class ObjectSyncServerTransaction implements ServerTransaction {
     return false;
   }
 
+  public boolean isResent() {
+    return false;
+  }
+
+  public void markResent() {
+    throw new UnsupportedOperationException();
+  }
+
   public int getNumApplicationTxn() {
     return 1;
   }
@@ -135,4 +143,7 @@ public class ObjectSyncServerTransaction implements ServerTransaction {
     return EMPTY_LONG_ARRAY;
   }
 
+  public boolean isSearchEnabled() {
+    return false;
+  }
 }
