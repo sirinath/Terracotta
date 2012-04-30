@@ -4,6 +4,7 @@
 package com.tc.object;
 
 import com.tc.async.api.Sink;
+import com.tc.client.SecurityContext;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -115,11 +116,12 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                            final HealthCheckerConfig aConfig,
                                                            Map<TCMessageType, Class> messageTypeClassMapping,
                                                            Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
-                                                           ReconnectionRejectedHandler reconnectionRejectediHandler) {
+                                                           ReconnectionRejectedHandler reconnectionRejectediHandler,
+                                                           SecurityContext securityContext) {
     return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, messageRouter,
                                          stackHarnessFactory, null, connectionPolicy, 0, aConfig,
                                          new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping,
-                                         messageTypeFactoryMapping, reconnectionRejectediHandler);
+                                         messageTypeFactoryMapping, reconnectionRejectediHandler, securityContext);
   }
 
   public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, final DSOMBeanConfig config) {

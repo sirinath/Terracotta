@@ -16,6 +16,7 @@ import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.client.ClientMode;
+import com.tc.client.SecurityContext;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.handler.CallbackDumpAdapter;
 import com.tc.handler.CallbackDumpHandler;
@@ -251,6 +252,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private final StatisticsAgentSubSystem             statisticsAgentSubSystem;
   private final RuntimeLogger                        runtimeLogger;
   private final ThreadIDMap                          threadIDMap;
+  private final SecurityContext                      securityContext;
 
   protected final PreparedComponentsFromL2Connection connectionComponents;
 
@@ -285,7 +287,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                  final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger) {
     this(config, threadGroup, classProvider, connectionComponents, manager, statisticsAgentSubSystem, dsoCluster,
-         runtimeLogger, ClientMode.DSO_MODE);
+         runtimeLogger, ClientMode.DSO_MODE, null);
   }
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
@@ -293,9 +295,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final PreparedComponentsFromL2Connection connectionComponents, final Manager manager,
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                  final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
-                                 final ClientMode clientMode) {
+                                 final ClientMode clientMode, final SecurityContext securityContext) {
     super(threadGroup, clientMode.isExpressRejoinClient() ? QueueFactory.LINKED_BLOCKING_QUEUE
         : QueueFactory.BOUNDED_LINKED_QUEUE);
+    this.securityContext = securityContext;
     Assert.assertNotNull(config);
     this.clientMode = clientMode;
     this.config = config;
@@ -496,7 +499,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                      new HealthCheckerConfigClientImpl(this.l1Properties
                                          .getPropertiesFor("healthcheck.l2"), "DSO Client"),
                                      getMessageTypeClassMapping(), getMessageTypeFactoryMApping(encoding),
-                                     reconnectionRejectedHandler);
+                                     reconnectionRejectedHandler, securityContext);
 
     DSO_LOGGER.debug("Created CommunicationsManager.");
 

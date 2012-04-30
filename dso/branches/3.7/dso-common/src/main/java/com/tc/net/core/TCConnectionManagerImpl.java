@@ -4,6 +4,7 @@
  */
 package com.tc.net.core;
 
+import com.tc.client.SecurityContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
@@ -49,15 +50,15 @@ public class TCConnectionManagerImpl implements TCConnectionManager {
   private final SocketParams            socketParams;
 
   public TCConnectionManagerImpl() {
-    this("ConnectionMgr", 0, new HealthCheckerConfigImpl("DefaultConfigForActiveConnections"));
+    this("ConnectionMgr", 0, new HealthCheckerConfigImpl("DefaultConfigForActiveConnections"), null);
   }
 
-  public TCConnectionManagerImpl(String name, int workerCommCount, HealthCheckerConfig healthCheckerConfig) {
+  public TCConnectionManagerImpl(String name, int workerCommCount, HealthCheckerConfig healthCheckerConfig, SecurityContext securityContext) {
     this.connEvents = new ConnectionEvents();
     this.listenerEvents = new ListenerEvents();
     this.socketParams = new SocketParams();
     this.healthCheckerConfig = healthCheckerConfig;
-    this.comm = new TCCommImpl(name, workerCommCount, socketParams);
+    this.comm = new TCCommImpl(name, workerCommCount, socketParams, securityContext);
     this.comm.start();
   }
 

@@ -6,6 +6,7 @@ package com.tc.net.protocol.tcm;
 
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
+import com.tc.client.SecurityContext;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -78,6 +79,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   private final TransportHandshakeMessageFactory                            transportMessageFactory;
   private final MessageMonitor                                              monitor;
   private final TCMessageRouter                                             messageRouter;
+  private final SecurityContext                                             securityContext;
   private final HealthCheckerConfig                                         healthCheckerConfig;
   private final ConnectionPolicy                                            connectionPolicy;
   private final ReconnectionRejectedHandler                                 reconnectionRejectedHandler;
@@ -146,7 +148,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, connMgr, connectionPolicy, workerCommCount,
          healthCheckerConf, transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping,
-         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR);
+         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR, null);
   }
 
   /**
@@ -154,7 +156,6 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
    * actually want to use an explicit connection manager
    * 
    * @param connMgr the connection manager to use
-   * @param serverDescriptors
    */
   public CommunicationsManagerImpl(String commsMgrName, MessageMonitor monitor, TCMessageRouter messageRouter,
                                    NetworkStackHarnessFactory stackHarnessFactory, TCConnectionManager connMgr,
@@ -163,10 +164,11 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
-                                   ReconnectionRejectedHandler reconnectionRejectedHandler) {
+                                   ReconnectionRejectedHandler reconnectionRejectedHandler, SecurityContext securityContext) {
     this.commsMgrName = commsMgrName;
     this.monitor = monitor;
     this.messageRouter = messageRouter;
+    this.securityContext = securityContext;
     this.transportMessageFactory = new TransportMessageFactoryImpl();
     this.connectionPolicy = connectionPolicy;
     this.stackHarnessFactory = stackHarnessFactory;
@@ -179,7 +181,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
     Assert.assertNotNull(commsMgrName);
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerImpl(commsMgrName, workerCommCount, healthCheckerConfig);
+      this.connectionManager = new TCConnectionManagerImpl(commsMgrName, workerCommCount, healthCheckerConfig, securityContext);
     } else {
       this.connectionManager = connMgr;
     }
