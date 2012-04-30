@@ -6,6 +6,7 @@ package com.tc.net.core;
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
+import com.tc.client.SecurityContext;
 import com.tc.exception.TCInternalError;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -44,7 +45,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * The communication thread. Creates {@link Selector selector}, registers {@link SocketChannel} to the selector and does
  * other NIO operations.
- * 
+ *
  * @author mgovinda
  */
 
@@ -53,6 +54,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
   private final TCWorkerCommManager            workerCommMgr;
   private final String                         commThreadName;
   private final SocketParams                   socketParams;
+  private final SecurityContext                securityContext;
   private final CommThread                     readerComm;
   private final CommThread                     writerComm;
   private final SetOnceFlag                    stopRequested = new SetOnceFlag();
@@ -67,10 +69,12 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
     NIO_READER, NIO_WRITER
   }
 
-  public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams) {
+  public CoreNIOServices(String commThreadName, TCWorkerCommManager workerCommManager, SocketParams socketParams,
+                         SecurityContext securityContext) {
     this.commThreadName = commThreadName;
     this.workerCommMgr = workerCommManager;
     this.socketParams = socketParams;
+    this.securityContext = securityContext;
     this.managedConnectionsMap = new HashMap<TCConnection, Integer>();
     this.readerComm = new CommThread(COMM_THREAD_MODE.NIO_READER);
     this.writerComm = new CommThread(COMM_THREAD_MODE.NIO_WRITER);
@@ -170,7 +174,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
 
   /**
    * Change thread ownership of a connection or upgrade weight.
-   * 
+   *
    * @param connection : connection which has to be transfered from the main selector thread to a new worker comm thread
    *        that has the least weight. If the connection is already managed by a comm thread, then just update
    *        connection's weight.
@@ -649,7 +653,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             }
 
             if (key.isValid() && !isReader() && key.isWritable()) {
-              TCChannelWriter writer = (TCChannelWriter) key.attachment();
+              TCChannelWriter writer = (TCChannelWriter)key.attachment();
               BufferManager bufferManager = writer.getBufferManager();
               ByteBuffer buffer = bufferManager.getSendBuffer();
 
@@ -676,7 +680,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
               }
             }
 
-            TCConnection conn = (TCConnection) key.attachment();
+            TCConnection conn = (TCConnection)key.attachment();
             if (conn != null && conn.isClosePending()) {
               conn.asynchClose();
             }
