@@ -61,12 +61,13 @@ public class TCConnectionManagerImpl implements TCConnectionManager {
     this.listenerEvents = new ListenerEvents();
     this.socketParams = new SocketParams();
     this.healthCheckerConfig = healthCheckerConfig;
-    this.comm = new TCCommImpl(name, workerCommCount, socketParams, securityContext);
+    this.comm = new TCCommImpl(name, workerCommCount, socketParams);
     this.comm.start();
   }
 
   protected TCConnection createConnectionImpl(TCProtocolAdaptor adaptor, TCConnectionEventListener listener) {
-    return new TCConnectionImpl(listener, adaptor, this, comm.nioServiceThreadForNewConnection(), socketParams, securityContext);
+    return new TCConnectionImpl(listener, adaptor, this, comm.nioServiceThreadForNewConnection(), socketParams,
+                                securityContext);
   }
 
   protected TCListener createListenerImpl(TCSocketAddress addr, ProtocolAdaptorFactory factory, int backlog,

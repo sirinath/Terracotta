@@ -18,8 +18,8 @@ import java.nio.channels.Pipe;
  */
 public class PipeSocket extends Socket {
 
-  private final Pipe inputPipe;
-  private final Pipe outputPipe;
+  private final Pipe       inputPipe;
+  private final Pipe       outputPipe;
   private volatile boolean closed = false;
 
   public PipeSocket() throws IOException {
@@ -41,12 +41,12 @@ public class PipeSocket extends Socket {
   }
 
   @Override
-  public InputStream getInputStream() throws IOException {
+  public InputStream getInputStream() {
     return Channels.newInputStream(inputPipe.source());
   }
 
   @Override
-  public OutputStream getOutputStream() throws IOException {
+  public OutputStream getOutputStream() {
     return new PipeSocketOutputStream(Channels.newOutputStream(outputPipe.sink()));
   }
 
@@ -73,6 +73,7 @@ public class PipeSocket extends Socket {
   }
 
   public void onWrite() {
+    //
   }
 
   public void closeRead() throws IOException {
@@ -98,4 +99,3 @@ public class PipeSocket extends Socket {
     }
   }
 }
- 
