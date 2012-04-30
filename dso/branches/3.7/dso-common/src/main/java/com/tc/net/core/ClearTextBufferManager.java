@@ -14,8 +14,8 @@ import java.nio.channels.SocketChannel;
 class ClearTextBufferManager implements BufferManager {
 
   private final SocketChannel channel;
-  private final ByteBuffer sendBuffer = ByteBuffer.allocate(512);
-  private final ByteBuffer recvBuffer = ByteBuffer.allocate(512);
+  private final ByteBuffer    sendBuffer = ByteBuffer.allocate(512);
+  private final ByteBuffer    recvBuffer = ByteBuffer.allocate(512);
 
   ClearTextBufferManager(SocketChannel channel) {
     this.channel = channel;
@@ -40,6 +40,7 @@ class ClearTextBufferManager implements BufferManager {
     return channel.read(recvBuffer);
   }
 
-  public void close() throws IOException {
+  public void close() {
+    //
   }
 }

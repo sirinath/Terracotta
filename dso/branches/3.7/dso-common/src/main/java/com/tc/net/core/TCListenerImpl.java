@@ -53,7 +53,6 @@ final class TCListenerImpl implements TCListener {
   TCListenerImpl(ServerSocketChannel ssc, ProtocolAdaptorFactory factory, TCConnectionEventListener listener,
                  TCConnectionManagerImpl managerJDK14, CoreNIOServices commNIOServiceThread,
                  SecurityContext securityContext) {
-    new Exception("TCListenerImpl.securityContext: " + securityContext).printStackTrace();
     this.securityContext = securityContext;
     this.addr = ssc.socket().getInetAddress();
     this.port = ssc.socket().getLocalPort();
@@ -73,7 +72,8 @@ final class TCListenerImpl implements TCListener {
   TCConnectionImpl createConnection(SocketChannel ch, CoreNIOServices nioServiceThread, SocketParams socketParams)
       throws IOException {
     TCProtocolAdaptor adaptor = getProtocolAdaptorFactory().getInstance();
-    TCConnectionImpl rv = new TCConnectionImpl(listener, adaptor, ch, parent, nioServiceThread, socketParams, securityContext);
+    TCConnectionImpl rv = new TCConnectionImpl(listener, adaptor, ch, parent, nioServiceThread, socketParams,
+                                               securityContext);
     rv.finishConnect();
     parent.newConnection(rv);
     return rv;
