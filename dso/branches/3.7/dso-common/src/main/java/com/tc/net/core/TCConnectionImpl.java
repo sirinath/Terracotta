@@ -59,7 +59,6 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   private static final long                  NO_CONNECT_TIME             = -1L;
   private static final TCLogger              logger                      = TCLogging.getLogger(TCConnection.class);
   private static final long                  WARN_THRESHOLD              = 0x400000L;                                                    // 4MB
-  private final BufferManagerFactory  bufferManagerFactory;
 
   private volatile CoreNIOServices           commWorker;
   private volatile SocketChannel             channel;
@@ -67,6 +66,7 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   private volatile PipeSocket                pipeSocket;
 
 
+  private final BufferManagerFactory         bufferManagerFactory;
   private final AtomicBoolean                transportEstablished        = new AtomicBoolean(false);
   private final LinkedList<TCNetworkMessage> writeMessages               = new LinkedList<TCNetworkMessage>();
   private final TCConnectionManagerImpl      parent;
@@ -108,18 +108,12 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
     logger.info("Comms Message Batching " + (MSG_GROUPING_ENABLED ? "enabled" : "disabled"));
   }
 
-  // todo: this should be more dynamic
-  //  -> SSLBufferManagerFactory class name should be discovered?
-  //  -> ClearTextBufferManagerFactory should not be instantiated directly?
   private static BufferManagerFactory createBufferManagerFactory(SecurityContext securityContext) {
     if (securityContext != null) {
       try {
-        Class<?> bufferManagerFactoryClass = Class.forName("com.tc.net.core.ssl.SSLBufferManagerFactory");
-        Object bufferManagerFactory = bufferManagerFactoryClass.newInstance();
-        return (BufferManagerFactory)bufferManagerFactory;
+        return securityContext.createBufferManagerFactory();
       } catch (Exception e) {
         logger.warn("cannot enable SSL, falling back to clear text", e);
-        return new ClearTextBufferManagerFactory();
       }
     }
     return new ClearTextBufferManagerFactory();
