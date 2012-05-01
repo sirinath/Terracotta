@@ -49,8 +49,10 @@ public class ConnectionInfoConfig {
         }
 
         boolean secure = false;
-        if (host.indexOf('@') > -1) {
+        int userSeparatorIndex = host.indexOf('@');
+        if (userSeparatorIndex > -1) {
           secure = true;
+          host = host.substring(userSeparatorIndex + 1);
         }
 
         out[i] = new ConnectionInfo(host, dsoPort, secure);

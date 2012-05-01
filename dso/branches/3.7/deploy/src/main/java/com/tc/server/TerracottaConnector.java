@@ -21,7 +21,12 @@ import java.nio.channels.SocketChannel;
  * A Jetty connector that is handed sockets from the DSO listen port once they are identified as HTTP requests
  */
 public class TerracottaConnector extends SocketConnector {
+  private final boolean secure;
   private boolean shutdown = false;
+
+  public TerracottaConnector(boolean secure) {
+    this.secure = secure;
+  }
 
   public void shutdown() {
     synchronized (this) {
@@ -49,7 +54,7 @@ public class TerracottaConnector extends SocketConnector {
   }
 
   public boolean isConfidential(Request request) {
-    return Boolean.getBoolean("tc.ssl");
+    return secure;
   }
 
   /**

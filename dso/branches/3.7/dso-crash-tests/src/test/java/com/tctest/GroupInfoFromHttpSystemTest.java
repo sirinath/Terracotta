@@ -64,17 +64,17 @@ public class GroupInfoFromHttpSystemTest extends BaseDSOTestCase {
   }
 
   public void testGetGroupInfo() throws Exception {
-    testGroupInfoForServer(dsoPort_1, true);
-    testGroupInfoForServer(dsoPort_2, false);
+    testGroupInfoForServer(dsoPort_1, false, true);
+    testGroupInfoForServer(dsoPort_2, false, false);
     server_1.stop();
     waitTillBecomeActive(jmxPort_2);
-    testGroupInfoForServer(dsoPort_1, false);
-    testGroupInfoForServer(dsoPort_2, true);
+    testGroupInfoForServer(dsoPort_1, false, false);
+    testGroupInfoForServer(dsoPort_2, false, true);
   }
 
-  private void testGroupInfoForServer(int dsoPort, boolean shouldPass) throws MalformedURLException {
+  private void testGroupInfoForServer(int dsoPort, boolean secure, boolean shouldPass) throws MalformedURLException {
     String protocol = "http";
-    if (Boolean.getBoolean("tc.ssl")) {
+    if (secure) {
       protocol = "https";
     }
 
