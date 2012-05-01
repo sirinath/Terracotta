@@ -13,6 +13,7 @@ import org.apache.xmlbeans.XmlString;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
 import com.tc.config.schema.BaseConfigObject;
 import com.tc.config.schema.HaConfigObject;
+import com.tc.config.schema.SecurityConfigObject;
 import com.tc.config.schema.UpdateCheckConfigObject;
 import com.tc.config.schema.context.ConfigContext;
 import com.tc.config.schema.defaults.DefaultValueProvider;
@@ -156,6 +157,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     HaConfigObject.initializeHa(servers, defaultValueProvider);
     ActiveServerGroupsConfigObject.initializeMirrorGroups(servers, defaultValueProvider);
     UpdateCheckConfigObject.initializeUpdateCheck(servers, defaultValueProvider);
+    SecurityConfigObject.initializeSecurity(servers, defaultValueProvider);
   }
 
   private static void initializeServerBind(Server server, DefaultValueProvider defaultValueProvider) {
