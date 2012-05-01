@@ -20,6 +20,8 @@ import com.tc.config.schema.ConfigTCProperties;
 import com.tc.config.schema.ConfigTCPropertiesFromObject;
 import com.tc.config.schema.HaConfigSchema;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
+import com.tc.config.schema.SecurityConfig;
+import com.tc.config.schema.SecurityConfigObject;
 import com.tc.config.schema.SystemConfig;
 import com.tc.config.schema.SystemConfigObject;
 import com.tc.config.schema.UpdateCheckConfig;
@@ -44,6 +46,7 @@ import com.terracottatech.config.Application;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.MirrorGroups;
 import com.terracottatech.config.PersistenceMode;
+import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 import com.terracottatech.config.System;
@@ -78,6 +81,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
   private final Map                         l2ConfigData;
   private final HaConfigSchema              haConfig;
   private final UpdateCheckConfig           updateCheckConfig;
+  private final SecurityConfig              securityConfig;
   private final String                      thisL2Identifier;
   private final L2ConfigData                myConfigData;
   private final ConfigTCProperties          configTCProperties;
@@ -118,6 +122,12 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     // do this after runConfigurationCreator method call, after serversBeanRepository is set
     try {
       this.updateCheckConfig = getUpdateCheckConfig();
+    } catch (XmlException e2) {
+      throw new ConfigurationSetupException(e2);
+    }
+
+    try {
+      this.securityConfig = getSecurityConfig();
     } catch (XmlException e2) {
       throw new ConfigurationSetupException(e2);
     }
@@ -190,6 +200,10 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   public String getL2Identifier() {
     return this.thisL2Identifier;
+  }
+
+  public SecurityConfig getSecurity() {
+    return this.securityConfig;
   }
 
   private void verifyPortUsed(Set<String> serverPorts, String hostname, int port) throws ConfigurationSetupException {
@@ -293,6 +307,23 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       }
     }
     return newHaConfig;
+  }
+
+  private SecurityConfig getSecurityConfig() throws XmlException {
+    ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Security.class,
+        new ChildBeanFetcher() {
+          public XmlObject getChild(XmlObject parent) {
+            Security security = ((Servers)parent).getSecurity();
+            if (security == null) {
+              security = Security.Factory.newInstance();
+              security.setEnabled(false);
+            }
+            return security;
+          }
+        });
+
+    return new SecurityConfigObject(createContext(beanRepository, configurationCreator()
+        .directoryConfigurationLoadedFrom()));
   }
 
   private UpdateCheckConfig getUpdateCheckConfig() throws XmlException {

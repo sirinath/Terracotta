@@ -6,6 +6,7 @@ package com.tc.config.schema.setup;
 
 import com.tc.config.schema.CommonL1Config;
 import com.tc.config.schema.L2ConfigForL1;
+import com.tc.config.schema.SecurityConfig;
 import com.tc.object.config.schema.DSOApplicationConfig;
 import com.tc.object.config.schema.L1DSOConfig;
 
@@ -24,6 +25,8 @@ public interface L1ConfigurationSetupManager {
   L2ConfigForL1 l2Config();
 
   L1DSOConfig dsoL1Config();
+
+  SecurityConfig securityConfig();
 
   void setupLogging();
 

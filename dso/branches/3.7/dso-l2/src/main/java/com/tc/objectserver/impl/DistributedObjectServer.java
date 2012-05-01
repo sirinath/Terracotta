@@ -433,8 +433,13 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     // Even in tests, we probably don't want different thread group configurations
     Assert.assertEquals(threadGroup, Thread.currentThread().getThreadGroup());
 
-    if (Boolean.getBoolean("tc.ssl")) {
-      this.securityContext = new SecurityContext();
+    if (configSetupManager.getSecurity() != null && configSetupManager.getSecurity().isEnabled()) {
+      try {
+        this.securityContext = new SecurityContext();
+      } catch (Exception e) {
+        throw new RuntimeException("cannot create security context", e);
+      }
+      consoleLogger.info("Security enabled, turning on SSL");
     } else {
       this.securityContext = null;
     }

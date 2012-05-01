@@ -13,17 +13,19 @@ public class ConnectionInfo implements java.io.Serializable {
   private final int                    port;
   private final int                    groupId;
   private final String                 groupName;
+  private final boolean                secure;
 
-  public ConnectionInfo(String hostname, int port) {
-    this(hostname, port, 0, null);
+  public ConnectionInfo(String hostname, int port, boolean secure) {
+    this(hostname, port, 0, null, secure);
   }
 
-  public ConnectionInfo(String hostname, int port, int groupId, String groupName) {
+  public ConnectionInfo(String hostname, int port, int groupId, String groupName, boolean secure) {
     Assert.assertNotNull(hostname);
     this.hostname = hostname;
     this.port = port;
     this.groupId = groupId;
     this.groupName = groupName;
+    this.secure = secure;
   }
 
   public String getHostname() {
@@ -42,15 +44,20 @@ public class ConnectionInfo implements java.io.Serializable {
     return groupName;
   }
 
+  public boolean isSecure() {
+    return secure;
+  }
+
   public boolean equals(Object o) {
     if (o == this) return true;
     if (o instanceof ConnectionInfo) {
       ConnectionInfo other = (ConnectionInfo) o;
       if (groupName == null) {
-        return this.hostname.equals(other.getHostname()) && this.port == other.getPort();
+        return this.hostname.equals(other.getHostname()) && this.port == other.getPort()
+               && this.secure == other.secure;
       } else {
         return this.hostname.equals(other.getHostname()) && this.port == other.getPort()
-               && this.groupName.equals(other.groupName);
+               && this.groupName.equals(other.groupName) && this.secure == other.secure;
       }
     }
     return false;

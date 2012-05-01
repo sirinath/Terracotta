@@ -56,7 +56,7 @@ public class ClientMessageTransportTest extends TCTestCase {
     this.transportMessageFactory = new TransportMessageFactoryImpl();
     handshakeErrorHandler = new TestTransportHandshakeErrorHandler();
 
-    final ConnectionInfo connectionInfo = new ConnectionInfo("", 0);
+    final ConnectionInfo connectionInfo = new ConnectionInfo("", 0, false);
     ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
                                                                       connectionManager,
                                                                       new ConnectionAddressProvider(
@@ -121,7 +121,7 @@ public class ClientMessageTransportTest extends TCTestCase {
     listener.start(Collections.EMPTY_SET);
     int port = listener.getBindPort();
 
-    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, port);
+    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, port, false);
     ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
                                                                       commsMgr.getConnectionManager(),
                                                                       new ConnectionAddressProvider(
@@ -212,7 +212,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                                                                                                   new ConnectionAddressProvider(
                                                                                                                                 new ConnectionInfo[] { new ConnectionInfo(
                                                                                                                                                                           "localhost",
-                                                                                                                                                                          port) }),
+                                                                                                                                                                          port, false) }),
                                                                                                   maxRetries, timeout);
         ClientMessageTransport cmt = new ClientMessageTransport(clientConnectionEstablisher, handshakeErrorHandler,
                                                                 transportMessageFactory,
@@ -243,7 +243,7 @@ public class ClientMessageTransportTest extends TCTestCase {
                              port,
                              timeout,
                              new ConnectionAddressProvider(
-                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port) }),
+                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port, false) }),
                              transportFactory);
     try {
       channel.open();

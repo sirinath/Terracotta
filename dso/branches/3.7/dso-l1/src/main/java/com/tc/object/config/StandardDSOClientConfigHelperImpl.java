@@ -1870,7 +1870,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       for (int j = 0; j < connectionInfo.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(connectionInfo[j].getHostname()),
                                                          connectionInfo[j].getPort(), i * j + j,
-                                                         connectionInfo[j].getGroupName());
+                                                         connectionInfo[j].getGroupName(), connectionInfo[j].isSecure());
         connInfoFromL1.add(connectionIn);
       }
     }
@@ -1882,7 +1882,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       ServerInfo[] serverInfos = grpArray[i].getServerInfoArray();
       for (int j = 0; j < serverInfos.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(serverInfos[j].getName()), serverInfos[j]
-            .getDsoPort().intValue(), i * j + j, grpName);
+            .getDsoPort().intValue(), i * j + j, grpName, configSetupManager.securityConfig().isEnabled());
         connInfoFromL2.add(connectionIn);
       }
     }

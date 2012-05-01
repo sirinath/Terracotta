@@ -102,7 +102,7 @@ public class ReconnectionRejectedEventTest extends TCTestCase {
   }
 
   private ConnectionAddressProvider getConnectionAddrProvider(final int connPort) {
-    return new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("localhost", connPort) });
+    return new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("localhost", connPort, false) });
   }
 
   public void testReconnectionRejectedEventReceived() {

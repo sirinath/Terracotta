@@ -158,7 +158,7 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
     ClientMessageChannel clientMsgCh = commsMgr
         .createClientChannel(new NullSessionManager(), 0, serverLsnr.getBindAddress().getHostAddress(), proxyPort,
                              1000, new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
-                                 .getBindAddress().getHostAddress(), proxyPort) }));
+                                 .getBindAddress().getHostAddress(), proxyPort, false) }));
 
     return clientMsgCh;
   }

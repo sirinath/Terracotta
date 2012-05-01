@@ -333,7 +333,7 @@ public class DSOContextImpl implements DSOContext {
     Assert.assertNotNull(l2Data);
 
     if (false && !config.loadedFromTrustedSource()) {
-      String serverConfigMode = getServerConfigMode(l2Data[0].host(), l2Data[0].dsoPort());
+      String serverConfigMode = getServerConfigMode(l2Data[0].host(), l2Data[0].dsoPort(), l2Data[0].secure());
 
       if (serverConfigMode != null && serverConfigMode.equals(ConfigurationModel.PRODUCTION)) {
         String text = "Configuration constraint violation: "
@@ -348,11 +348,11 @@ public class DSOContextImpl implements DSOContext {
   private static final long MAX_HTTP_FETCH_TIME       = 30 * 1000; // 30 seconds
   private static final long HTTP_FETCH_RETRY_INTERVAL = 1 * 1000; // 1 second
 
-  private static String getServerConfigMode(String serverHost, int httpPort) throws MalformedURLException,
+  private static String getServerConfigMode(String serverHost, int httpPort, boolean secure) throws MalformedURLException,
       TCTimeoutException, IOException {
 
     String protocol = "http";
-    if (Boolean.getBoolean("tc.ssl")) {
+    if (secure) {
       protocol = "https";
     }
     ServerURL theURL = new ServerURL(protocol, serverHost, httpPort, "/config?query=mode");

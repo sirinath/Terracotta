@@ -143,7 +143,7 @@ public class ConnectionHealthCheckerTest extends TCTestCase {
                              new ConnectionAddressProvider(
                                                            new ConnectionInfo[] { new ConnectionInfo("localhost",
                                                                                                      serverLsnr
-                                                                                                         .getBindPort()) }));
+                                                                                                         .getBindPort(), false) }));
 
     return clientMsgCh;
   }

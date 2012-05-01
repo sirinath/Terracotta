@@ -19,11 +19,13 @@ public interface L2ConfigForL1 {
     private final int    dsoPort;
     private int          groupId = -1;
     private String       groupName;
+    private boolean      secure;
 
-    public L2Data(String host, int dsoPort) {
+    public L2Data(String host, int dsoPort, boolean secure) {
       Assert.assertNotBlank(host);
       this.host = host;
       this.dsoPort = dsoPort;
+      this.secure = secure;
     }
 
     public String host() {
@@ -32,6 +34,10 @@ public interface L2ConfigForL1 {
 
     public int dsoPort() {
       return this.dsoPort;
+    }
+
+    public boolean secure() {
+      return secure;
     }
 
     public void setGroupId(int gid) {
