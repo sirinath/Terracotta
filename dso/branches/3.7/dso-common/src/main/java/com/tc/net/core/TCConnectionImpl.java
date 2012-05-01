@@ -108,17 +108,6 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
     logger.info("Comms Message Batching " + (MSG_GROUPING_ENABLED ? "enabled" : "disabled"));
   }
 
-  private static BufferManagerFactory createBufferManagerFactory(SecurityContext securityContext) {
-    if (securityContext != null) {
-      try {
-        return securityContext.createBufferManagerFactory();
-      } catch (Exception e) {
-        logger.warn("cannot enable SSL, falling back to clear text", e);
-      }
-    }
-    return new ClearTextBufferManagerFactory();
-  }
-
   // having this variable at instance level helps reducing memory pressure at VM;
   private final ArrayList<TCNetworkMessage>  messagesToBatch             = new ArrayList<TCNetworkMessage>();
 
@@ -145,7 +134,11 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
 
     this.channel = ch;
 
-    this.bufferManagerFactory = createBufferManagerFactory(securityContext);
+    if (securityContext != null) {
+      this.bufferManagerFactory = securityContext.getBufferManagerFactory();
+    } else {
+      this.bufferManagerFactory = new ClearTextBufferManagerFactory();
+    }
 
     if (ch != null) {
       socketParams.applySocketParams(ch.socket());

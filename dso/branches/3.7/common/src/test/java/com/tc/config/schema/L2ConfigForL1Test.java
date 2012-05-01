@@ -13,41 +13,41 @@ public class L2ConfigForL1Test extends TCTestCase {
 
   public void testL2Data() throws Exception {
     try {
-      new L2ConfigForL1.L2Data(null, 20);
+      new L2ConfigForL1.L2Data(null, 20, false);
       fail("Didn't get NPE on no host");
     } catch (NullPointerException npe) {
       // ok
     }
 
     try {
-      new L2ConfigForL1.L2Data("", 20);
+      new L2ConfigForL1.L2Data("", 20, false);
       fail("Didn't get IAE on empty host");
     } catch (IllegalArgumentException iae) {
       // ok
     }
 
     try {
-      new L2ConfigForL1.L2Data("   ", 20);
+      new L2ConfigForL1.L2Data("   ", 20, false);
       fail("Didn't get IAE on blank host");
     } catch (IllegalArgumentException iae) {
       // ok
     }
 
-    L2ConfigForL1.L2Data config = new L2ConfigForL1.L2Data("foobar", 20);
+    L2ConfigForL1.L2Data config = new L2ConfigForL1.L2Data("foobar", 20, false);
     assertEquals("foobar", config.host());
     assertEquals(20, config.dsoPort());
 
     EqualityChecker.checkArraysForEquality(
         new Object[] {
-                      new L2ConfigForL1.L2Data("foobar", 20),
-                      new L2ConfigForL1.L2Data("foobaz", 20),
-                      new L2ConfigForL1.L2Data("foobar", 2),
-                      new L2ConfigForL1.L2Data("foobar", 30) },
+                      new L2ConfigForL1.L2Data("foobar", 20, false),
+                      new L2ConfigForL1.L2Data("foobaz", 20, false),
+                      new L2ConfigForL1.L2Data("foobar", 2, false),
+                      new L2ConfigForL1.L2Data("foobar", 30, false) },
         new Object[] {
-                      new L2ConfigForL1.L2Data("foobar", 20),
-                      new L2ConfigForL1.L2Data("foobaz", 20),
-                      new L2ConfigForL1.L2Data("foobar", 2),
-                      new L2ConfigForL1.L2Data("foobar", 30) });
+                      new L2ConfigForL1.L2Data("foobar", 20, false),
+                      new L2ConfigForL1.L2Data("foobaz", 20, false),
+                      new L2ConfigForL1.L2Data("foobar", 2, false),
+                      new L2ConfigForL1.L2Data("foobar", 30, false) });
   }
 
 }

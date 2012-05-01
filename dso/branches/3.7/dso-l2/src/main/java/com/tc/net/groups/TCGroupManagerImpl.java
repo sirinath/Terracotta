@@ -556,7 +556,8 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
   public void openChannel(String hostname, int port, ChannelEventListener listener) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException, CommStackMismatchException {
-    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port) }), listener);
+    boolean secure = securityContext != null;
+    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port, secure) }), listener);
   }
 
   /*

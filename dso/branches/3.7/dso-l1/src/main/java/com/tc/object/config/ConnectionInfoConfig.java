@@ -48,13 +48,18 @@ public class ConnectionInfoConfig {
           }
         }
 
-        out[i] = new ConnectionInfo(host, dsoPort);
+        boolean secure = false;
+        if (host.indexOf('@') > -1) {
+          secure = true;
+        }
+
+        out[i] = new ConnectionInfo(host, dsoPort, secure);
       }
     } else {
       out = new ConnectionInfo[l2sData.length];
 
       for (int i = 0; i < out.length; ++i) {
-        out[i] = new ConnectionInfo(l2sData[i].host(), l2sData[i].dsoPort(), l2sData[i].getGroupId(), l2sData[i].getGroupName());
+        out[i] = new ConnectionInfo(l2sData[i].host(), l2sData[i].dsoPort(), l2sData[i].getGroupId(), l2sData[i].getGroupName(), l2sData[i].secure());
       }
     }
 

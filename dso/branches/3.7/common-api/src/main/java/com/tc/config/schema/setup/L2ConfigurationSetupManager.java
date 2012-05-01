@@ -8,6 +8,7 @@ import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.CommonL2Config;
 import com.tc.config.schema.HaConfigSchema;
+import com.tc.config.schema.SecurityConfig;
 import com.tc.config.schema.SystemConfig;
 import com.tc.config.schema.UpdateCheckConfig;
 import com.tc.object.config.schema.DSOApplicationConfig;
@@ -50,6 +51,8 @@ public interface L2ConfigurationSetupManager {
   String[] allCurrentlyKnownServers();
 
   String getL2Identifier();
+
+  SecurityConfig getSecurity();
 
   CommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException;
 

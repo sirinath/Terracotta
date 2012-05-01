@@ -261,7 +261,7 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
       ConnectionInfo ci = connections[i];
       try {
         String protocol = "http";
-        if (Boolean.getBoolean("tc.ssl")) {
+        if (ci.isSecure()) {
           protocol = "https";
         }
         theURL = new ServerURL(protocol, ci.getHostname(), ci.getPort(), httpPathExtension);

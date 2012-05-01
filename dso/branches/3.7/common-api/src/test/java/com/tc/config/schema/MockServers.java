@@ -18,6 +18,7 @@ import org.xml.sax.ext.LexicalHandler;
 import com.tc.exception.ImplementMe;
 import com.terracottatech.config.Ha;
 import com.terracottatech.config.MirrorGroups;
+import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 import com.terracottatech.config.UpdateCheck;
@@ -70,6 +71,26 @@ public class MockServers implements Servers {
   }
 
   public void removeServer(int arg0) {
+    throw new ImplementMe();
+  }
+
+  public Security getSecurity() {
+    throw new ImplementMe();
+  }
+
+  public boolean isSetSecurity() {
+    throw new ImplementMe();
+  }
+
+  public void setSecurity(final Security security) {
+    throw new ImplementMe();
+  }
+
+  public Security addNewSecurity() {
+    throw new ImplementMe();
+  }
+
+  public void unsetSecurity() {
     throw new ImplementMe();
   }
 
