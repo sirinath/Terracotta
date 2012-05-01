@@ -70,7 +70,7 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                                 }
                                                                               }), null));
 
-    securityConfig = new SecurityConfigObject(createContext(new ChildBeanRepository(clientBeanRepository(),
+    securityConfig = new SecurityConfigObject(createContext(new ChildBeanRepository(serversBeanRepository(),
                                                                                     Security.class,
                                                                                     new ChildBeanFetcher() {
                                                                                       public XmlObject getChild(XmlObject parent) {
