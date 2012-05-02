@@ -91,6 +91,7 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   private final ArrayList<WriteContext>      writeContexts               = new ArrayList<WriteContext>();
   private final Object                       pipeSocketWriteInterestLock = new Object();
   private boolean                            hasPipeSocketWriteInterest  = false;
+  private int                                writeBufferSize             = 0;
 
   private static final boolean               MSG_GROUPING_ENABLED        = TCPropertiesImpl
                                                                              .getProperties()
@@ -169,6 +170,9 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
     }
     try {
       if (pipeSocket != null) {
+        synchronized (pipeSocketWriteInterestLock) {
+          writeBufferSize = 0;
+        }
         pipeSocket.dispose();
       }
     } catch (IOException ioe) {
@@ -225,6 +229,7 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
       @Override
       public void onWrite() {
         synchronized (pipeSocketWriteInterestLock) {
+          writeBufferSize++;
           if (!hasPipeSocketWriteInterest) {
             TCConnectionImpl.this.commWorker.requestWriteInterest(TCConnectionImpl.this, TCConnectionImpl.this.channel);
             hasPipeSocketWriteInterest = true;
@@ -271,7 +276,11 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
       try {
         synchronized (pipeSocketWriteInterestLock) {
           int gotFromSendBuffer = pipeSocket.getFromSendBuffer(buffer);
-          if (gotFromSendBuffer == 0 && hasPipeSocketWriteInterest) {
+          if (gotFromSendBuffer > -1) {
+            writeBufferSize -= gotFromSendBuffer;
+          }
+
+          if (writeBufferSize == 0 && hasPipeSocketWriteInterest) {
             TCConnectionImpl.this.commWorker.removeWriteInterest(TCConnectionImpl.this, TCConnectionImpl.this.channel);
             hasPipeSocketWriteInterest = false;
           }
