@@ -4,6 +4,7 @@
  */
 package com.tc.client;
 
+import com.tc.license.LicenseManager;
 import com.tc.net.core.BufferManagerFactory;
 
 /**
@@ -14,6 +15,7 @@ public class SecurityContext {
   private final BufferManagerFactory bufferManagerFactory;
 
   public SecurityContext() throws Exception {
+    LicenseManager.verifySecurityCapability();
     this.bufferManagerFactory = createBufferManagerFactory();
   }
 
