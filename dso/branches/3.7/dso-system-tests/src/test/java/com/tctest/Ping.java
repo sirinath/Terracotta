@@ -47,37 +47,12 @@ public class Ping implements TCMessageSink {
   }
 
   public void ping() throws Exception {
-    SecurityConfig sec = new SecurityConfig() {
-      public boolean isEnabled() {
-        return true;
-      }
-
-      public String getKeyStorePath() {
-
-        return System.getProperty("user.home") + "/.tc/keystore.jks";
-      }
-
-      public String getTrustStorePath() {
-        return System.getProperty("user.home") + "/.tc/truststore.jks";
-      }
-
-      public void changesInItemIgnored(final ConfigItem item) {
-      }
-
-      public void changesInItemForbidden(final ConfigItem item) {
-      }
-
-      public XmlObject getBean() {
-        return null;
-      }
-    };
-
     TCMessageRouter messageRouter = new TCMessageRouterImpl();
     CommunicationsManager comms = new CommunicationsManagerImpl("TestCommsMgr", new NullMessageMonitor(),
         messageRouter, new PlainNetworkStackHarnessFactory(), null,
         new NullConnectionPolicy(), 0,
         new DisabledHealthCheckerConfigImpl(), new TransportHandshakeErrorHandlerForL1(),
-        Collections.EMPTY_MAP, Collections.EMPTY_MAP, new SecurityContext(sec, null));
+        Collections.EMPTY_MAP, Collections.EMPTY_MAP, new SecurityContext(null, null));
     comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
     ClientMessageChannel channel = null;
@@ -123,6 +98,12 @@ public class Ping implements TCMessageSink {
   }
 
   public static void main(String[] args) throws Throwable {
+    //System.setProperty("javax.net.ssl.trustStore", System.getProperty("user.home") + "/.tc/truststore.jks");
+    //System.setProperty("javax.net.ssl.trustStorePassword", "truststorepw");
+
+    System.setProperty("tc.ssl.disableHostnameVerifier", "true");
+    System.setProperty("tc.ssl.trustAllCerts", "true");
+
     Server server = new Server();
 
     Ping ping = new Ping(server.getPort());
