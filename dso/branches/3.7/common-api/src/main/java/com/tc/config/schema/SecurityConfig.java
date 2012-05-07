@@ -6,4 +6,6 @@ package com.tc.config.schema;
 
 public interface SecurityConfig extends Config {
   boolean isEnabled();
+  String getKeyStorePath();
+  String getTrustStorePath();
 }

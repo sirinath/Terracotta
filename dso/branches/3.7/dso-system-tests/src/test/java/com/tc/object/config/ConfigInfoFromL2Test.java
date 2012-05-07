@@ -265,6 +265,10 @@ public class ConfigInfoFromL2Test extends BaseDSOTestCase {
       return this.l2Config.getL2Identifier();
     }
 
+    public String getL2SecurityAlias() {
+      return l2Config.getL2SecurityAlias();
+    }
+
     public SecurityConfig getSecurity() {
       return this.l2Config.getSecurity();
     }

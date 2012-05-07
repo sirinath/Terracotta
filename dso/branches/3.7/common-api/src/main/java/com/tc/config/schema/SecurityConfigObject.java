@@ -24,6 +24,14 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
     return ((Security) this.context.bean()).getEnabled();
   }
 
+  public String getKeyStorePath() {
+    return ((Security) this.context.bean()).getKeystore();
+  }
+
+  public String getTrustStorePath() {
+    return ((Security) this.context.bean()).getTruststore();
+  }
+
   public static void initializeSecurity(Servers servers, DefaultValueProvider defaultValueProvider) throws ConfigurationSetupException {
     try {
       if (!servers.isSetSecurity()) {
