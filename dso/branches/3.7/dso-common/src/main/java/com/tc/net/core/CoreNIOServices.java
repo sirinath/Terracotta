@@ -41,6 +41,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import javax.net.ssl.SSLHandshakeException;
+
 /**
  * The communication thread. Creates {@link Selector selector}, registers {@link SocketChannel} to the selector and does
  * other NIO operations.
@@ -627,7 +629,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
               do {
                 try {
                   channelRead = bufferManager.recv();
-                } catch (IOException e) {
+                } catch (IOException ioe) {
                   channelRead = -1;
                 }
                 if (channelRead == -1) {
@@ -664,6 +666,9 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
                 int sent = 0;
                 try {
                   sent = bufferManager.send();
+                } catch (SSLHandshakeException she) {
+                  logger.error("SSL handshake error: unable to find valid certification path to requested target, closing connection.");
+                  channelWritten = -1;
                 } catch (IOException ioe) {
                   channelWritten = -1;
                 }

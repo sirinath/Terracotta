@@ -41,31 +41,38 @@ public class ServerURL {
     if ("https".equals(theURL.getProtocol())) {
       HttpsURLConnection sslUrlConnection = (HttpsURLConnection) theURL.openConnection();
 
-      // don't verify hostname
-      sslUrlConnection.setHostnameVerifier(new HostnameVerifier() {
-        public boolean verify(String hostname, SSLSession session) {
-          return true;
-        }
-      });
+      if (Boolean.getBoolean("tc.ssl.disableHostnameVerifier")) {
+        // don't verify hostname
+        sslUrlConnection.setHostnameVerifier(new HostnameVerifier() {
+          public boolean verify(String hostname, SSLSession session) {
+            return true;
+          }
+        });
+      }
 
-      // trust all certs
-      TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-        public void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) {
-          //
-        }
+      TrustManager[] trustManagers = null;
+      if (Boolean.getBoolean("tc.ssl.trustAllCerts")) {
+        // trust all certs
+        trustManagers = new TrustManager[] {
+            new X509TrustManager() {
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
+                //
+              }
 
-        public void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) {
-          //
-        }
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
+                //
+              }
 
-        public X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-      } };
+              public X509Certificate[] getAcceptedIssuers() {
+                return null;
+              }
+            }
+        };
+      }
 
       try {
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, trustAllCerts, null);
+        sslContext.init(null, trustManagers, null);
         sslUrlConnection.setSSLSocketFactory(sslContext.getSocketFactory());
       } catch (Exception e) {
         throw new RuntimeException("unable to create SSL connection from " + theURL, e);
