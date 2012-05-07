@@ -5,7 +5,6 @@
 package com.tc.client;
 
 import com.tc.config.schema.SecurityConfig;
-import com.tc.license.LicenseManager;
 import com.tc.net.core.BufferManagerFactory;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,7 +19,6 @@ public class SecurityContext {
   private final BufferManagerFactory bufferManagerFactory;
 
   public SecurityContext(SecurityConfig security, String keyPairAlias) throws Exception {
-    LicenseManager.verifySecurityCapability();
     this.bufferManagerFactory = createBufferManagerFactory(security, keyPairAlias);
   }
 
