@@ -24,6 +24,7 @@ import com.terracottatech.config.Locks;
 import com.terracottatech.config.Modules;
 import com.terracottatech.config.Offheap;
 import com.terracottatech.config.Roots;
+import com.terracottatech.config.Server;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 import com.terracottatech.config.TcProperties;
 import com.terracottatech.config.TransientFields;
@@ -48,6 +49,11 @@ public class TcConfigDefaultInitializationTest extends TCTestCase {
     L1DSOConfigObject.initializeClients(this.config, defaultValueProvider);
     DSOApplicationConfigObject.initializeApplication(this.config, defaultValueProvider);
     config.getServers().getMirrorGroups().getMirrorGroupArray(0).setGroupName("test-group");
+    for (Server server : config.getServers().getServerList()) {
+      server.setSecurityAlias("l2");
+    }
+    config.getServers().getSecurity().setKeystore("/tmp/k");
+    config.getServers().getSecurity().setTruststore("/tmp/t");
   }
 
   public void testDefaultInitialization() throws Exception {
@@ -88,7 +94,7 @@ public class TcConfigDefaultInitializationTest extends TCTestCase {
     for (Method method : methods) {
       if (method.getName().startsWith("isSet")) {
         Class returnTypeOfGetMethod = findReturnTypeOfGet(xmlObject, method.getName());
-        if (isExmpted(returnTypeOfGetMethod)) continue;
+        if (isExempted(returnTypeOfGetMethod)) continue;
         Boolean isSet = (Boolean) method.invoke(xmlObject, new Object[0]);
         Assert.assertTrue("method: " + method.getName(), isSet);
         System.out.println(method.getName() + ": true");
@@ -131,7 +137,7 @@ public class TcConfigDefaultInitializationTest extends TCTestCase {
     throw new AssertionError("can't get the method with method name : " + getMethod);
   }
 
-  private static boolean isExmpted(Class clazz) {
+  private static boolean isExempted(Class clazz) {
     for (Class exemptedElement : exemptedElements) {
       if (exemptedElement.equals(clazz)) return true;
     }
