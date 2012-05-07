@@ -83,6 +83,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
   private final UpdateCheckConfig           updateCheckConfig;
   private final SecurityConfig              securityConfig;
   private final String                      thisL2Identifier;
+  private final String                      thisL2SecurityAlias;
   private final L2ConfigData                myConfigData;
   private final ConfigTCProperties          configTCProperties;
   private final Set<InetAddress>            localInetAddresses;
@@ -150,9 +151,20 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
     if (thisL2Identifier != null) {
       this.thisL2Identifier = thisL2Identifier;
+      Server s = null;
+      if (servers != null) {
+        for (Server server : servers) {
+          if (server.getName().equals(thisL2Identifier)) {
+            s = server;
+            break;
+          }
+        }
+      }
+      this.thisL2SecurityAlias = (s != null ? s.getSecurityAlias() : null);
     } else {
       Server s = autoChooseThisL2(servers);
       this.thisL2Identifier = (s != null ? s.getName() : null);
+      this.thisL2SecurityAlias = (s != null ? s.getSecurityAlias() : null);
     }
     verifyL2Identifier(servers, this.thisL2Identifier);
     this.myConfigData = setupConfigDataForL2(this.thisL2Identifier);
@@ -163,6 +175,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     validateGroups();
     validateDSOClusterPersistenceMode();
     validateHaConfiguration();
+    validateSecurityConfiguration();
   }
 
   public TopologyReloadStatus reloadConfiguration(ServerConnectionValidator serverConnectionValidator,
@@ -200,6 +213,10 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   public String getL2Identifier() {
     return this.thisL2Identifier;
+  }
+
+  public String getL2SecurityAlias() {
+    return this.thisL2SecurityAlias;
   }
 
   public SecurityConfig getSecurity() {
@@ -637,6 +654,12 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                                         + " group(s) set to networked HA and "
                                                                                         + diskbasedHa
                                                                                         + " group(s) set to disk-based HA."); }
+  }
+
+  private void validateSecurityConfiguration() throws ConfigurationSetupException {
+    if (securityConfig.isEnabled() && thisL2SecurityAlias == null) {
+      throw new ConfigurationSetupException("Security is enabled but server " + thisL2Identifier + " lacks an alias to lookup its key pair in the key store.");
+    }
   }
 
   public CommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException {

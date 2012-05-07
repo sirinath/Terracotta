@@ -435,7 +435,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     if (configSetupManager.getSecurity() != null && configSetupManager.getSecurity().isEnabled()) {
       try {
-        this.securityContext = new SecurityContext();
+        this.securityContext = new SecurityContext(configSetupManager.getSecurity(), configSetupManager.getL2SecurityAlias());
       } catch (Exception e) {
         throw new RuntimeException("cannot create security context", e);
       }

@@ -127,7 +127,7 @@ public class DSOContextImpl implements DSOContext {
 
   public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader,
                                                    Map<String, URL> virtualTimJars, Collection<URL> additionalModules,
-                                                   URL bootJarURL, boolean expressRejoinClient, SecurityContext securityContext)
+                                                   URL bootJarURL, boolean expressRejoinClient, boolean secure)
       throws ConfigurationSetupException {
     // XXX: refactor this method to not duplicate createContext() so much
 
@@ -162,6 +162,16 @@ public class DSOContextImpl implements DSOContext {
 
     DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config, HAS_BOOT_JAR);
     RuntimeLoggerImpl runtimeLogger = new RuntimeLoggerImpl(configHelper);
+
+    SecurityContext securityContext = null;
+    if (secure) {
+      try {
+        securityContext = new SecurityContext(config.securityConfig(), null);
+      } catch (Exception e) {
+        throw new ConfigurationSetupException("error creating security context", e);
+      }
+    }
+
     // XXX: what should the appGroup and loaderDesc be? In theory we might want "regular" clients to access this shared
     // state too
     ClassProvider classProvider = new SingleLoaderClassProvider(null, "standalone", loader);
