@@ -143,7 +143,6 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
       initializeDsoPort(server, defaultValueProvider);
       initializeJmxPort(server, defaultValueProvider);
       initializeL2GroupPort(server, defaultValueProvider);
-      initializeSecurityAlias(server, defaultValueProvider);
       // CDV-1220: per our documentation in the schema itself, host is supposed to default to server name or '%i'
       // and name is supposed to default to 'host:dso-port'
       initializeNameAndHost(server, defaultValueProvider);
@@ -210,12 +209,6 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
       l2GrpPort.setBind(server.getBind());
     } else if (!server.getL2GroupPort().isSetBind()) {
       server.getL2GroupPort().setBind(server.getBind());
-    }
-  }
-
-  private static void initializeSecurityAlias(Server server, DefaultValueProvider defaultValueProvider) throws XmlException {
-    if (!server.isSetSecurityAlias()) {
-      server.setSecurityAlias("");
     }
   }
 

@@ -41,12 +41,6 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
         if (!security.isSetEnabled()) {
           security.setEnabled(getDefaultEnabled(servers, defaultValueProvider));
         }
-        if (!security.isSetKeystore()) {
-          security.setKeystore("");
-        }
-        if (!security.isSetTruststore()) {
-          security.setTruststore("");
-        }
       }
 
     } catch (XmlException e) {
@@ -56,10 +50,9 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
 
   private static Security getDefaultSecurity(Servers servers, DefaultValueProvider defaultValueProvider)
       throws XmlException {
+    final boolean defaultEnabled = getDefaultEnabled(servers, defaultValueProvider);
     Security security = Security.Factory.newInstance();
-    security.setEnabled(getDefaultEnabled(servers, defaultValueProvider));
-    security.setKeystore("");
-    security.setTruststore("");
+    security.setEnabled(defaultEnabled);
     return security;
   }
 
