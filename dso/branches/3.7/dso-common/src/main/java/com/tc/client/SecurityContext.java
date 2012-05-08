@@ -14,7 +14,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class SecurityContext {
 
-  private static final String SSL_BUFFER_MANAGER_CLASS_NAME = "com.tc.net.core.ssl.SSLBufferManagerFactory";
+  private static final String        SSL_BUFFER_MANAGER_CLASS_NAME = "com.tc.net.core.ssl.SSLBufferManagerFactory";
 
   private final BufferManagerFactory bufferManagerFactory;
 
@@ -22,10 +22,13 @@ public class SecurityContext {
     this.bufferManagerFactory = createBufferManagerFactory(security, keyPairAlias);
   }
 
-  private BufferManagerFactory createBufferManagerFactory(SecurityConfig security, String keyPairAlias) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+  private BufferManagerFactory createBufferManagerFactory(SecurityConfig security, String keyPairAlias)
+      throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException,
+      InvocationTargetException {
     Class<?> bufferManagerFactoryClass = Class.forName(SSL_BUFFER_MANAGER_CLASS_NAME);
-    Object bufferManagerFactory = bufferManagerFactoryClass.getConstructor(SecurityConfig.class, String.class).newInstance(security, keyPairAlias);
-    return (BufferManagerFactory)bufferManagerFactory;
+    Object localBufferManagerFactory = bufferManagerFactoryClass.getConstructor(SecurityConfig.class, String.class)
+        .newInstance(security, keyPairAlias);
+    return (BufferManagerFactory) localBufferManagerFactory;
   }
 
   public BufferManagerFactory getBufferManagerFactory() {

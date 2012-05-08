@@ -49,18 +49,25 @@ public class Ping implements TCMessageSink {
   public void ping() throws Exception {
     TCMessageRouter messageRouter = new TCMessageRouterImpl();
     CommunicationsManager comms = new CommunicationsManagerImpl("TestCommsMgr", new NullMessageMonitor(),
-        messageRouter, new PlainNetworkStackHarnessFactory(), null,
-        new NullConnectionPolicy(), 0,
-        new DisabledHealthCheckerConfigImpl(), new TransportHandshakeErrorHandlerForL1(),
-        Collections.EMPTY_MAP, Collections.EMPTY_MAP, new SecurityContext(null, null));
+                                                                messageRouter, new PlainNetworkStackHarnessFactory(),
+                                                                null, new NullConnectionPolicy(), 0,
+                                                                new DisabledHealthCheckerConfigImpl(),
+                                                                new TransportHandshakeErrorHandlerForL1(),
+                                                                Collections.EMPTY_MAP, Collections.EMPTY_MAP,
+                                                                new SecurityContext(null, null));
     comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
     ClientMessageChannel channel = null;
     try {
       channel = comms
-          .createClientChannel(new NullSessionManager(), 0, "127.0.0.1", this.port, 3000,
-              new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("127.0.0.1",
-                  this.port, true) }));
+          .createClientChannel(new NullSessionManager(),
+                               0,
+                               "127.0.0.1",
+                               this.port,
+                               3000,
+                               new ConnectionAddressProvider(
+                                                             new ConnectionInfo[] { new ConnectionInfo("127.0.0.1",
+                                                                                                       this.port, true) }));
 
       SequenceGenerator sg = new SequenceGenerator();
 
@@ -98,8 +105,8 @@ public class Ping implements TCMessageSink {
   }
 
   public static void main(String[] args) throws Throwable {
-    //System.setProperty("javax.net.ssl.trustStore", System.getProperty("user.home") + "/.tc/truststore.jks");
-    //System.setProperty("javax.net.ssl.trustStorePassword", "truststorepw");
+    // System.setProperty("javax.net.ssl.trustStore", System.getProperty("user.home") + "/.tc/truststore.jks");
+    // System.setProperty("javax.net.ssl.trustStorePassword", "truststorepw");
 
     System.setProperty("tc.ssl.disableHostnameVerifier", "true");
     System.setProperty("tc.ssl.trustAllCerts", "true");
@@ -140,9 +147,11 @@ public class Ping implements TCMessageSink {
         }
 
         public void changesInItemIgnored(final ConfigItem item) {
+          //
         }
 
         public void changesInItemForbidden(final ConfigItem item) {
+          //
         }
 
         public XmlObject getBean() {
@@ -152,17 +161,17 @@ public class Ping implements TCMessageSink {
 
       TCMessageRouter messageRouter = new TCMessageRouterImpl();
       comms = new CommunicationsManagerImpl("TestCommsMgr", new NullMessageMonitor(), messageRouter,
-          new PlainNetworkStackHarnessFactory(), null, new NullConnectionPolicy(), 0,
-          new DisabledHealthCheckerConfigImpl(), new TransportHandshakeErrorHandlerForL1(), Collections.EMPTY_MAP,
-          Collections.EMPTY_MAP, new SecurityContext(sec, "l2"));
-
+                                            new PlainNetworkStackHarnessFactory(), null, new NullConnectionPolicy(), 0,
+                                            new DisabledHealthCheckerConfigImpl(),
+                                            new TransportHandshakeErrorHandlerForL1(), Collections.EMPTY_MAP,
+                                            Collections.EMPTY_MAP, new SecurityContext(sec, "l2"));
 
       comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
       messageRouter.routeMessageType(TCMessageType.PING_MESSAGE, this);
 
       listener = comms.createListener(new NullSessionManager(), new TCSocketAddress(0), true,
-          new DefaultConnectionIdFactory());
+                                      new DefaultConnectionIdFactory());
       listener.start(Collections.EMPTY_SET);
 
       System.out.println("Server listening on " + listener.getBindPort());
