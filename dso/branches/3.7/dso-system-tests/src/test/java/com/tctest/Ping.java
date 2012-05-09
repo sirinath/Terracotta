@@ -4,13 +4,8 @@
  */
 package com.tctest;
 
-import org.apache.xmlbeans.XmlObject;
-
 import EDU.oswego.cs.dl.util.concurrent.LinkedQueue;
 
-import com.tc.client.SecurityContext;
-import com.tc.config.schema.SecurityConfig;
-import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.exception.TCRuntimeException;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
@@ -39,8 +34,6 @@ import java.util.Collections;
 
 public class Ping implements TCMessageSink {
 
-  private final static boolean SECURE = true;
-
   private final int         port;
   private final LinkedQueue queue = new LinkedQueue();
 
@@ -56,7 +49,7 @@ public class Ping implements TCMessageSink {
         new DisabledHealthCheckerConfigImpl(),
         new TransportHandshakeErrorHandlerForL1(),
         Collections.EMPTY_MAP, Collections.EMPTY_MAP,
-        SECURE ? new SecurityContext(null) : null);
+        null);
     comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
     ClientMessageChannel channel = null;
@@ -69,7 +62,7 @@ public class Ping implements TCMessageSink {
               3000,
               new ConnectionAddressProvider(
                   new ConnectionInfo[] { new ConnectionInfo("127.0.0.1",
-                      this.port, SECURE) }));
+                      this.port, false) }));
 
       SequenceGenerator sg = new SequenceGenerator();
 
@@ -135,30 +128,12 @@ public class Ping implements TCMessageSink {
     private final NetworkListener       listener;
 
     Server() throws Exception {
-      SecurityConfig sec = new SecurityConfig() {
-        public String getSslCertificateUri() {
-          return "jks:l2@" + System.getProperty("user.home") + "/.tc/keystore.jks";
-        }
-
-        public void changesInItemIgnored(final ConfigItem item) {
-          //
-        }
-
-        public void changesInItemForbidden(final ConfigItem item) {
-          //
-        }
-
-        public XmlObject getBean() {
-          return null;
-        }
-      };
-
       TCMessageRouter messageRouter = new TCMessageRouterImpl();
       comms = new CommunicationsManagerImpl("TestCommsMgr", new NullMessageMonitor(), messageRouter,
           new PlainNetworkStackHarnessFactory(), null, new NullConnectionPolicy(), 0,
           new DisabledHealthCheckerConfigImpl(),
           new TransportHandshakeErrorHandlerForL1(), Collections.EMPTY_MAP,
-          Collections.EMPTY_MAP, SECURE ? new SecurityContext(sec) : null);
+          Collections.EMPTY_MAP, null);
 
       comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
