@@ -81,7 +81,7 @@ public class AgentStatisticsManagerTest extends TCTestCase {
     beanServer = ManagementFactory.getPlatformMBeanServer();
     agentSubSystem.registerMBeans(beanServer);
 
-    statisticsManager = (StatisticsManager)MBeanServerInvocationHandler.
+    statisticsManager = MBeanServerInvocationHandler.
       newProxyInstance(beanServer, StatisticsMBeanNames.STATISTICS_MANAGER, StatisticsManager.class, false);
     agentManager = agentSubSystem.getStatisticsManager();
 
@@ -128,7 +128,7 @@ public class AgentStatisticsManagerTest extends TCTestCase {
     String sessionId3 = UUID.getUUID().toString();
     String[] sessions = new String[] { sessionId1, sessionId2, sessionId3 };
 
-    StatisticsEmitterMBean statEmitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
+    StatisticsEmitterMBean statEmitter = MBeanServerInvocationHandler
       .newProxyInstance(beanServer, StatisticsMBeanNames.STATISTICS_EMITTER, StatisticsEmitterMBean.class, false);
 
     List<StatisticData> data = new ArrayList<StatisticData>();
