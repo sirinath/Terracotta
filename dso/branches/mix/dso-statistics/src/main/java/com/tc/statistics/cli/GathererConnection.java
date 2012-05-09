@@ -85,9 +85,9 @@ public class GathererConnection {
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
 
     // setup the mbeans
-    gatherer = (StatisticsLocalGathererMBean) MBeanServerInvocationHandler
+    gatherer = MBeanServerInvocationHandler
         .newProxyInstance(mbsc, StatisticsMBeanNames.STATISTICS_GATHERER, StatisticsLocalGathererMBean.class, true);
-    info = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO,
+    info = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO,
                                                                              TCServerInfoMBean.class, false);
   }
 }

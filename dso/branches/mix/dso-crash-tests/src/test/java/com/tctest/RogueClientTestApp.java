@@ -256,7 +256,7 @@ public class RogueClientTestApp extends AbstractTransparentApp {
       } catch (IOException e) {
         throw new AssertionError(e);
       }
-      dsoMBean = (DSOMBean) MBeanServerInvocationHandler
+      dsoMBean = MBeanServerInvocationHandler
           .newProxyInstance(mbsc, L2MBeanNames.DSO, DSOMBean.class, false);
 
       DSOClientMBean[] clients = getDSOClientMBeans();
@@ -297,7 +297,7 @@ public class RogueClientTestApp extends AbstractTransparentApp {
       ObjectName[] clientObjectNames = dsoMBean.getClients();
       DSOClientMBean[] clients = new DSOClientMBean[clientObjectNames.length];
       for (int i = 0; i < clients.length; i++) {
-        clients[i] = (DSOClientMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, clientObjectNames[i],
+        clients[i] = MBeanServerInvocationHandler.newProxyInstance(mbsc, clientObjectNames[i],
                                                                                     DSOClientMBean.class, false);
       }
       return clients;

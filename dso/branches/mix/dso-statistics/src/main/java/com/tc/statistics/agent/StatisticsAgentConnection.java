@@ -194,7 +194,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
         throw new StatisticsAgentConnectionToNonAgentException();
       }
 
-      statManager = (StatisticsManagerMBean)MBeanServerInvocationHandler
+      statManager = MBeanServerInvocationHandler
         .newProxyInstance(mbeanServerConnection, manager_name, StatisticsManagerMBean.class, false);
 
       return manager_name;
@@ -211,7 +211,7 @@ public class StatisticsAgentConnection implements StatisticsManager {
         throw new StatisticsAgentConnectionToNonAgentException();
       }
 
-      statEmitter = (StatisticsEmitterMBean)MBeanServerInvocationHandler
+      statEmitter = MBeanServerInvocationHandler
         .newProxyInstance(mbeanServerConnection, emitter_name, StatisticsEmitterMBean.class, false);
 
       return emitter_name;
