@@ -52,8 +52,6 @@ public interface L2ConfigurationSetupManager {
 
   String getL2Identifier();
 
-  String getL2SecurityAlias();
-
   SecurityConfig getSecurity();
 
   CommonL2Config commonL2ConfigFor(String name) throws ConfigurationSetupException;

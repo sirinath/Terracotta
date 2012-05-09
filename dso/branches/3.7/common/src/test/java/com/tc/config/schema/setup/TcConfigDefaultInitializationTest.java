@@ -49,11 +49,6 @@ public class TcConfigDefaultInitializationTest extends TCTestCase {
     L1DSOConfigObject.initializeClients(this.config, defaultValueProvider);
     DSOApplicationConfigObject.initializeApplication(this.config, defaultValueProvider);
     config.getServers().getMirrorGroups().getMirrorGroupArray(0).setGroupName("test-group");
-    for (Server server : config.getServers().getServerList()) {
-      server.setSecurityAlias("l2");
-    }
-    config.getServers().getSecurity().setKeystore("/tmp/k");
-    config.getServers().getSecurity().setTruststore("/tmp/t");
   }
 
   public void testDefaultInitialization() throws Exception {

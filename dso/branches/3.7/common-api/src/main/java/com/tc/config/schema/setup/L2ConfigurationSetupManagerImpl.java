@@ -83,7 +83,6 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
   private final UpdateCheckConfig           updateCheckConfig;
   private final SecurityConfig              securityConfig;
   private final String                      thisL2Identifier;
-  private final String                      thisL2SecurityAlias;
   private final L2ConfigData                myConfigData;
   private final ConfigTCProperties          configTCProperties;
   private final Set<InetAddress>            localInetAddresses;
@@ -127,12 +126,6 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       throw new ConfigurationSetupException(e2);
     }
 
-    try {
-      this.securityConfig = getSecurityConfig();
-    } catch (XmlException e2) {
-      throw new ConfigurationSetupException(e2);
-    }
-
     ChildBeanRepository mirrorGroupsRepository = new ChildBeanRepository(serversBeanRepository(), MirrorGroups.class,
                                                                          new ChildBeanFetcher() {
                                                                            public XmlObject getChild(XmlObject parent) {
@@ -148,24 +141,37 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
     Servers serversBean = (Servers) serversBeanRepository().bean();
     Server[] servers = serversBean != null ? serversBean.getServerArray() : null;
+    Server server = null;
 
     if (thisL2Identifier != null) {
       this.thisL2Identifier = thisL2Identifier;
-      Server s = null;
       if (servers != null) {
-        for (Server server : servers) {
-          if (server.getName().equals(thisL2Identifier)) {
-            s = server;
+        for (Server s : servers) {
+          if (s.getName().equals(thisL2Identifier)) {
+            server = s;
             break;
           }
         }
       }
-      this.thisL2SecurityAlias = (s != null ? s.getSecurityAlias() : null);
     } else {
-      Server s = autoChooseThisL2(servers);
-      this.thisL2Identifier = (s != null ? s.getName() : null);
-      this.thisL2SecurityAlias = (s != null ? s.getSecurityAlias() : null);
+      server = autoChooseThisL2(servers);
+      this.thisL2Identifier = (server != null ? server.getName() : null);
     }
+
+    if (server != null) {
+      final Server s = server;
+      ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Security.class,
+                                                                   new ChildBeanFetcher() {
+                                                                     public XmlObject getChild(XmlObject parent) {
+                                                                       return s.getSecurity();
+                                                                     }
+                                                                   });
+      securityConfig = new SecurityConfigObject(createContext(beanRepository, getConfigFilePath()));
+    } else {
+      securityConfig = null;
+    }
+
+
     verifyL2Identifier(servers, this.thisL2Identifier);
     this.myConfigData = setupConfigDataForL2(this.thisL2Identifier);
 
@@ -213,10 +219,6 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   public String getL2Identifier() {
     return this.thisL2Identifier;
-  }
-
-  public String getL2SecurityAlias() {
-    return this.thisL2SecurityAlias;
   }
 
   public SecurityConfig getSecurity() {
@@ -324,23 +326,6 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       }
     }
     return newHaConfig;
-  }
-
-  private SecurityConfig getSecurityConfig() throws XmlException {
-    ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Security.class,
-        new ChildBeanFetcher() {
-          public XmlObject getChild(XmlObject parent) {
-            Security security = ((Servers)parent).getSecurity();
-            if (security == null) {
-              security = Security.Factory.newInstance();
-              security.setEnabled(false);
-            }
-            return security;
-          }
-        });
-
-    return new SecurityConfigObject(createContext(beanRepository, configurationCreator()
-        .directoryConfigurationLoadedFrom()));
   }
 
   private UpdateCheckConfig getUpdateCheckConfig() throws XmlException {
@@ -657,8 +642,9 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
   }
 
   private void validateSecurityConfiguration() throws ConfigurationSetupException {
-    if (securityConfig.isEnabled() && thisL2SecurityAlias == null) {
-      throw new ConfigurationSetupException("Security is enabled but server " + thisL2Identifier + " lacks an alias to lookup its key pair in the key store.");
+    Servers servers = (Servers)serversBeanRepository().bean();
+    if (servers.getSecure() && securityConfig.getSslCertificateUri() == null) {
+      throw new ConfigurationSetupException("Security is enabled but server " + thisL2Identifier + " has no configured SSL certificate.");
     }
   }
 

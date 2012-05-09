@@ -13,7 +13,6 @@ import org.apache.xmlbeans.XmlString;
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
 import com.tc.config.schema.BaseConfigObject;
 import com.tc.config.schema.HaConfigObject;
-import com.tc.config.schema.SecurityConfigObject;
 import com.tc.config.schema.UpdateCheckConfigObject;
 import com.tc.config.schema.context.ConfigContext;
 import com.tc.config.schema.defaults.DefaultValueProvider;
@@ -29,8 +28,10 @@ import com.terracottatech.config.Offheap;
 import com.terracottatech.config.Persistence;
 import com.terracottatech.config.PersistenceMode;
 import com.terracottatech.config.PersistenceMode.Enum;
+import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
+import com.terracottatech.config.Ssl;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.io.File;
@@ -136,6 +137,9 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     if (servers.getServerArray().length == 0) {
       servers.addNewServer();
     }
+    if (!servers.isSetSecure()) {
+      servers.setSecure(false);
+    }
 
     for (int i = 0; i < servers.sizeOfServerArray(); i++) {
       Server server = servers.getServerArray(i);
@@ -152,12 +156,12 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
       initializeIndexDiretory(server, defaultValueProvider, directoryLoadedFrom);
       initializeStatisticsDirectory(server, defaultValueProvider, directoryLoadedFrom);
       initializeDso(server, defaultValueProvider);
+      initializeSecurity(server, defaultValueProvider);
     }
 
     HaConfigObject.initializeHa(servers, defaultValueProvider);
     ActiveServerGroupsConfigObject.initializeMirrorGroups(servers, defaultValueProvider);
     UpdateCheckConfigObject.initializeUpdateCheck(servers, defaultValueProvider);
-    SecurityConfigObject.initializeSecurity(servers, defaultValueProvider);
   }
 
   private static void initializeServerBind(Server server, DefaultValueProvider defaultValueProvider) {
@@ -315,6 +319,20 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     if (!dso.isSetClientReconnectWindow()) {
       dso.setClientReconnectWindow(getDefaultReconnectWindow(server, defaultValueProvider));
     }
+  }
+
+  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) throws XmlException {
+    if (!server.isSetSecurity()) {
+      server.setSecurity(Security.Factory.newInstance());
+    }
+    initializeSsl(server.getSecurity(), defaultValueProvider);
+  }
+
+  private static void initializeSsl(Security security, DefaultValueProvider defaultValueProvider) {
+    if (!security.isSetSsl()) {
+      security.setSsl(Ssl.Factory.newInstance());
+    }
+    security.getSsl().setCertificate(null);
   }
 
   private static void initializePersisitence(Server server, DefaultValueProvider defaultValueProvider)

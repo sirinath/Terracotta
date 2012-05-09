@@ -6,6 +6,7 @@ package com.tc.config.schema;
 
 import org.apache.xmlbeans.QNameSet;
 import org.apache.xmlbeans.SchemaType;
+import org.apache.xmlbeans.XmlBoolean;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlDocumentProperties;
 import org.apache.xmlbeans.XmlObject;
@@ -18,7 +19,6 @@ import org.xml.sax.ext.LexicalHandler;
 import com.tc.exception.ImplementMe;
 import com.terracottatech.config.Ha;
 import com.terracottatech.config.MirrorGroups;
-import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
 import com.terracottatech.config.UpdateCheck;
@@ -74,23 +74,27 @@ public class MockServers implements Servers {
     throw new ImplementMe();
   }
 
-  public Security getSecurity() {
+  public boolean getSecure() {
     throw new ImplementMe();
   }
 
-  public boolean isSetSecurity() {
+  public XmlBoolean xgetSecure() {
     throw new ImplementMe();
   }
 
-  public void setSecurity(final Security security) {
+  public boolean isSetSecure() {
     throw new ImplementMe();
   }
 
-  public Security addNewSecurity() {
+  public void setSecure(boolean secure) {
     throw new ImplementMe();
   }
 
-  public void unsetSecurity() {
+  public void xsetSecure(XmlBoolean secure) {
+    throw new ImplementMe();
+  }
+
+  public void unsetSecure() {
     throw new ImplementMe();
   }
 

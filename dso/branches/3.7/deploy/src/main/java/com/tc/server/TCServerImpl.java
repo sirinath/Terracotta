@@ -425,7 +425,7 @@ public class TCServerImpl extends SEDA implements TCServer {
         consoleLogger.info("Available Max Runtime Memory: " + (Runtime.getRuntime().maxMemory() / 1024 / 1024) + "MB");
       }
 
-      TCServerImpl.this.terracottaConnector = new TerracottaConnector(TCServerImpl.this.configurationSetupManager.getSecurity().isEnabled());
+      TCServerImpl.this.terracottaConnector = new TerracottaConnector(TCServerImpl.this.configurationSetupManager.getSecurity() != null);
       startHTTPServer(commonL2Config, TCServerImpl.this.terracottaConnector);
 
       Stage stage = getStageManager().createStage("dso-http-bridge",
