@@ -332,6 +332,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     if (!security.isSetSsl()) {
       security.setSsl(Ssl.Factory.newInstance());
     }
+    security.getSsl().setCertificate(ParameterSubstituter.substitute(security.getSsl().getCertificate()));
   }
 
   private static void initializePersisitence(Server server, DefaultValueProvider defaultValueProvider)
