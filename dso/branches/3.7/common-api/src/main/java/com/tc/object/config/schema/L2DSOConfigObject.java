@@ -156,6 +156,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
       initializeIndexDiretory(server, defaultValueProvider, directoryLoadedFrom);
       initializeStatisticsDirectory(server, defaultValueProvider, directoryLoadedFrom);
       initializeDso(server, defaultValueProvider);
+      initializeSecurity(server, defaultValueProvider);
     }
 
     HaConfigObject.initializeHa(servers, defaultValueProvider);
@@ -317,6 +318,18 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
 
     if (!dso.isSetClientReconnectWindow()) {
       dso.setClientReconnectWindow(getDefaultReconnectWindow(server, defaultValueProvider));
+    }
+  }
+
+  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) throws XmlException {
+    if (server.isSetSecurity()) {
+      initializeSsl(server.getSecurity(), defaultValueProvider);
+    }
+  }
+
+  private static void initializeSsl(Security security, DefaultValueProvider defaultValueProvider) {
+    if (security.isSetSsl()) {
+      security.getSsl().setCertificate(ParameterSubstituter.substitute(security.getSsl().getCertificate()));
     }
   }
 
