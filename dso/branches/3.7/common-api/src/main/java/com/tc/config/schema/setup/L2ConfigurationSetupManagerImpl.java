@@ -158,7 +158,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       this.thisL2Identifier = (server != null ? server.getName() : null);
     }
 
-    if (server != null) {
+    if (serversBean != null && serversBean.getSecure() && server != null) {
       final Server s = server;
       ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Security.class,
                                                                    new ChildBeanFetcher() {
