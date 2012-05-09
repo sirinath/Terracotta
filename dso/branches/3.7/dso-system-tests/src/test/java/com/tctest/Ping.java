@@ -39,6 +39,8 @@ import java.util.Collections;
 
 public class Ping implements TCMessageSink {
 
+  private final static boolean SECURE = true;
+
   private final int         port;
   private final LinkedQueue queue = new LinkedQueue();
 
@@ -54,7 +56,7 @@ public class Ping implements TCMessageSink {
                                                                 new DisabledHealthCheckerConfigImpl(),
                                                                 new TransportHandshakeErrorHandlerForL1(),
                                                                 Collections.EMPTY_MAP, Collections.EMPTY_MAP,
-                                                                new SecurityContext(null, null));
+                                                                SECURE ? new SecurityContext(null, null) : null);
     comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
     ClientMessageChannel channel = null;
@@ -67,7 +69,7 @@ public class Ping implements TCMessageSink {
                                3000,
                                new ConnectionAddressProvider(
                                                              new ConnectionInfo[] { new ConnectionInfo("127.0.0.1",
-                                                                                                       this.port, true) }));
+                                                                                                       this.port, SECURE) }));
 
       SequenceGenerator sg = new SequenceGenerator();
 
@@ -164,7 +166,7 @@ public class Ping implements TCMessageSink {
                                             new PlainNetworkStackHarnessFactory(), null, new NullConnectionPolicy(), 0,
                                             new DisabledHealthCheckerConfigImpl(),
                                             new TransportHandshakeErrorHandlerForL1(), Collections.EMPTY_MAP,
-                                            Collections.EMPTY_MAP, new SecurityContext(sec, "l2"));
+                                            Collections.EMPTY_MAP, SECURE ? new SecurityContext(sec, "l2") : null);
 
       comms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
 
