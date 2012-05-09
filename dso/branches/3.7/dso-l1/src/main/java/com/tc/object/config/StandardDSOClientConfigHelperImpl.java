@@ -1882,7 +1882,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       ServerInfo[] serverInfos = grpArray[i].getServerInfoArray();
       for (int j = 0; j < serverInfos.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(serverInfos[j].getName()), serverInfos[j]
-            .getDsoPort().intValue(), i * j + j, grpName, configSetupManager.securityConfig().isEnabled());
+            .getDsoPort().intValue(), i * j + j, grpName, configSetupManager.isSecure());
         connInfoFromL2.add(connectionIn);
       }
     }

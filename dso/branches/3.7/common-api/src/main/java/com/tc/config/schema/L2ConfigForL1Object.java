@@ -52,7 +52,7 @@ public class L2ConfigForL1Object implements L2ConfigForL1 {
     this.l2DataByGroupId = new LinkedHashMap();
 
     Servers servers = (Servers) this.l2sContext.bean();
-    boolean securityEnabled = servers.getSecurity() != null && servers.getSecurity().getEnabled();
+    boolean securityEnabled = servers.getSecure();
     Server[] l2Array = servers.getServerArray();
     this.l2sData = new L2Data[l2Array.length];
     for (int i = 0; i < l2Array.length; i++) {

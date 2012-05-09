@@ -18,16 +18,16 @@ public class SecurityContext {
 
   private final BufferManagerFactory bufferManagerFactory;
 
-  public SecurityContext(SecurityConfig security, String keyPairAlias) throws Exception {
-    this.bufferManagerFactory = createBufferManagerFactory(security, keyPairAlias);
+  public SecurityContext(SecurityConfig security) throws Exception {
+    this.bufferManagerFactory = createBufferManagerFactory(security);
   }
 
-  private BufferManagerFactory createBufferManagerFactory(SecurityConfig security, String keyPairAlias)
+  private BufferManagerFactory createBufferManagerFactory(SecurityConfig security)
       throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException,
       InvocationTargetException {
     Class<?> bufferManagerFactoryClass = Class.forName(SSL_BUFFER_MANAGER_CLASS_NAME);
-    Object localBufferManagerFactory = bufferManagerFactoryClass.getConstructor(SecurityConfig.class, String.class)
-        .newInstance(security, keyPairAlias);
+    Object localBufferManagerFactory = bufferManagerFactoryClass.getConstructor(SecurityConfig.class)
+        .newInstance(security);
     return (BufferManagerFactory) localBufferManagerFactory;
   }
 

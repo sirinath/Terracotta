@@ -14,8 +14,6 @@ import com.tc.config.schema.ConfigTCPropertiesFromObject;
 import com.tc.config.schema.IllegalConfigurationChangeHandler;
 import com.tc.config.schema.L2ConfigForL1;
 import com.tc.config.schema.L2ConfigForL1Object;
-import com.tc.config.schema.SecurityConfig;
-import com.tc.config.schema.SecurityConfigObject;
 import com.tc.config.schema.defaults.DefaultValueProvider;
 import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
@@ -28,7 +26,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.DsoClientData;
-import com.terracottatech.config.Security;
 import com.terracottatech.config.Servers;
 import com.terracottatech.config.TcProperties;
 
@@ -43,7 +40,7 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     L1ConfigurationSetupManager {
   private final CommonL1Config     commonL1Config;
   private final L1DSOConfig        dsoL1Config;
-  private final SecurityConfig     securityConfig;
+  private final boolean            secure;
   private final ConfigTCProperties configTCProperties;
   private final boolean            loadedFromTrustedSource;
 
@@ -70,18 +67,7 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                                 }
                                                                               }), null));
 
-    securityConfig = new SecurityConfigObject(createContext(new ChildBeanRepository(serversBeanRepository(),
-                                                                                    Security.class,
-                                                                                    new ChildBeanFetcher() {
-                                                                                      public XmlObject getChild(XmlObject parent) {
-                                                                                        Security security = ((Servers)parent).getSecurity();
-                                                                                        if (security == null) {
-                                                                                          security = Security.Factory.newInstance();
-                                                                                          security.setEnabled(false);
-                                                                                        }
-                                                                                        return security;
-                                                                                      }
-                                                                                    }), null));
+    secure = ((Servers)serversBeanRepository().bean()).getSecure();
 
     overwriteTcPropertiesFromConfig();
   }
@@ -112,8 +98,8 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     return this.dsoL1Config;
   }
 
-  public SecurityConfig securityConfig() {
-    return this.securityConfig;
+  public boolean isSecure() {
+    return this.secure;
   }
 
   private void overwriteTcPropertiesFromConfig() {
