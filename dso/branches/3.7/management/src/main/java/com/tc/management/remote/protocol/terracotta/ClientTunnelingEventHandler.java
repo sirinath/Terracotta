@@ -36,7 +36,7 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
   private Sink                                                       disconnectStageSink;
 
   public ClientTunnelingEventHandler() {
-    l2MBeanServer = (MBeanServer) MBeanServerFactory.findMBeanServer(null).get(0);
+    l2MBeanServer = MBeanServerFactory.findMBeanServer(null).get(0);
     channelIdToJmxConnector = new ConcurrentHashMap<ChannelID, JMXConnector>();
     channelIdToMsgConnection = new ConcurrentHashMap<ChannelID, TunnelingMessageConnection>();
     sinkLock = new Object();

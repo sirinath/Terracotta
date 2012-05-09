@@ -323,29 +323,29 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   }
 
   private void setupL1InfoBean() {
-    l1InfoBean = (L1InfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer, l1InfoBeanName,
+    l1InfoBean = MBeanServerInvocationHandler.newProxyInstance(mbeanServer, l1InfoBeanName,
                                                                              L1InfoMBean.class, false);
   }
 
   private void setupL1OperatorEventsBean() {
-    this.l1OperatorEventsBean = (TerracottaOperatorEventsMBean) MBeanServerInvocationHandler
+    this.l1OperatorEventsBean = MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, l1OperatorEventsBeanName, TerracottaOperatorEventsMBean.class, false);
   }
 
   private void setupInstrumentationLoggingBean() {
-    instrumentationLoggingBean = (InstrumentationLoggingMBean) MBeanServerInvocationHandler
+    instrumentationLoggingBean = MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, instrumentationLoggingBeanName, InstrumentationLoggingMBean.class, false);
   }
 
   private void setupRuntimeLoggingBean() {
-    runtimeLoggingBean = (RuntimeLoggingMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer,
+    runtimeLoggingBean = MBeanServerInvocationHandler.newProxyInstance(mbeanServer,
                                                                                              runtimeLoggingBeanName,
                                                                                              RuntimeLoggingMBean.class,
                                                                                              false);
   }
 
   private void setupRuntimeOutputOptionsBean() {
-    runtimeOutputOptionsBean = (RuntimeOutputOptionsMBean) MBeanServerInvocationHandler
+    runtimeOutputOptionsBean = MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, runtimeOutputOptionsBeanName, RuntimeOutputOptionsMBean.class, false);
   }
 
