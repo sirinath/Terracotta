@@ -18,6 +18,10 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
 
   MetaDataDescriptor createMetaDataDescriptor(String category);
 
+  public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
+                                         Set<String> groupByAttribues, List<NVPair> sortAttributes,
+                                         List<NVPair> aggregators, int maxResults, int batchSize);
+
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys, boolean includeValues,
                                          Set<String> attributeSet, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize);
