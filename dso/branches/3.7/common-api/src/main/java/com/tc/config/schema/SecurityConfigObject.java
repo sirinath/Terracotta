@@ -6,6 +6,7 @@ package com.tc.config.schema;
 
 import com.tc.config.schema.context.ConfigContext;
 import com.terracottatech.config.Security;
+import com.terracottatech.config.Ssl;
 
 public class SecurityConfigObject extends BaseConfigObject implements SecurityConfig {
 
@@ -15,7 +16,11 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
   }
 
   public String getSslCertificateUri() {
-    return ((Security) this.context.bean()).getSsl().getCertificate();
+    Security bean = (Security)this.context.bean();
+    if (bean == null) { return null; }
+    Ssl ssl = bean.getSsl();
+    if (ssl == null) { return null; }
+    return ssl.getCertificate();
   }
 
 }
