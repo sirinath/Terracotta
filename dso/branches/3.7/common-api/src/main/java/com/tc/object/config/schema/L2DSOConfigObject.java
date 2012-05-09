@@ -320,7 +320,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     }
   }
 
-  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) throws XmlException {
+  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) {
     if (server.isSetSecurity()) {
       initializeSsl(server.getSecurity(), defaultValueProvider);
     }
