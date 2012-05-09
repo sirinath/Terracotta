@@ -31,7 +31,6 @@ import com.terracottatech.config.PersistenceMode.Enum;
 import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
-import com.terracottatech.config.Ssl;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.io.File;
