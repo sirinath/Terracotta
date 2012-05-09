@@ -5,10 +5,10 @@ package com.tc.object.bytecode;
 
 import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
-import com.tc.object.metadata.NVPair;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.search.SearchQueryResults;
+import com.terracottatech.search.NVPair;
 
 import java.util.List;
 import java.util.Set;
