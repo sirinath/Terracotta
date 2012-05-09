@@ -100,12 +100,6 @@ public class Ping implements TCMessageSink {
   }
 
   public static void main(String[] args) throws Throwable {
-    // System.setProperty("javax.net.ssl.trustStore", System.getProperty("user.home") + "/.tc/truststore.jks");
-    // System.setProperty("javax.net.ssl.trustStorePassword", "truststorepw");
-
-    System.setProperty("tc.ssl.disableHostnameVerifier", "true");
-    System.setProperty("tc.ssl.trustAllCerts", "true");
-
     Server server = new Server();
 
     Ping ping = new Ping(server.getPort());
