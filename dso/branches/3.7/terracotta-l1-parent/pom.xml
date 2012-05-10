@@ -160,5 +160,9 @@
       <artifactId>libsigar-universal-macosx</artifactId>
       <type>dylib</type>
     </dependency>
+    <dependency>
+      <groupId>com.terracottatech</groupId>
+      <artifactId>search</artifactId>
+    </dependency> 
   </dependencies>
 </project>

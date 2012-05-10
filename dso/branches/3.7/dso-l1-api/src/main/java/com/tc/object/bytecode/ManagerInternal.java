@@ -5,10 +5,10 @@ package com.tc.object.bytecode;
 
 import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
-import com.tc.object.metadata.NVPair;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.search.SearchQueryResults;
+import com.terracottatech.search.NVPair;
 
 import java.util.List;
 import java.util.Set;
@@ -17,6 +17,10 @@ import java.util.concurrent.CountDownLatch;
 public interface ManagerInternal extends Manager, TerracottaLockingInternal {
 
   MetaDataDescriptor createMetaDataDescriptor(String category);
+
+  public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
+                                         Set<String> groupByAttribues, List<NVPair> sortAttributes,
+                                         List<NVPair> aggregators, int maxResults, int batchSize);
 
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys, boolean includeValues,
                                          Set<String> attributeSet, List<NVPair> sortAttributes,

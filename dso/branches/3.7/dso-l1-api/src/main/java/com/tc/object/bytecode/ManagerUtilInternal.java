@@ -7,8 +7,8 @@ package com.tc.object.bytecode;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
-import com.tc.object.metadata.NVPair;
 import com.tc.search.SearchQueryResults;
+import com.terracottatech.search.NVPair;
 
 import java.util.List;
 import java.util.Set;
@@ -37,6 +37,13 @@ public class ManagerUtilInternal {
                                                 int batchSize) {
     return getInternalManager().executeQuery(cachename, queryStack, includeKeys, includeValues, attributeSet,
                                              sortAttributes, aggregators, maxResults, batchSize);
+  }
+
+  public static SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
+                                                Set<String> groupByAttributes, List<NVPair> sortAttributes,
+                                                List<NVPair> aggregators, int maxResults, int batchSize) {
+    return getInternalManager().executeQuery(cachename, queryStack, attributeSet, groupByAttributes, sortAttributes,
+                                             aggregators, maxResults, batchSize);
   }
 
   public static NVPair createNVPair(String name, Object value) {
