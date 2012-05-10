@@ -41,6 +41,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 /**
@@ -629,6 +630,9 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
               do {
                 try {
                   channelRead = bufferManager.recv();
+                } catch (SSLException ssle) {
+                  logger.error("SSL error: " + ssle);
+                  channelRead = -1;
                 } catch (IOException ioe) {
                   channelRead = -1;
                 }
@@ -668,6 +672,9 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
                   sent = bufferManager.send();
                 } catch (SSLHandshakeException she) {
                   logger.error("SSL handshake error: unable to find valid certification path to requested target, closing connection.");
+                  channelWritten = -1;
+                } catch (SSLException ssle) {
+                  logger.error("SSL error: " + ssle);
                   channelWritten = -1;
                 } catch (IOException ioe) {
                   channelWritten = -1;
