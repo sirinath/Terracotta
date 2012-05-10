@@ -412,6 +412,15 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     }
   }
 
+  private void validateSecurityConfig() {
+    if (config.isSecure() && securityContext == null) {
+      throw new TCRuntimeException("client configured as secure but was constructed without securityContext");
+    }
+    if (!config.isSecure() && securityContext != null) {
+      throw new TCRuntimeException("client not configured as secure but was constructed with securityContext");
+    }
+  }
+
   private void validateGroupConfigOrExit() {
     final boolean toCheckTopology = TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.L1_L2_CONFIG_VALIDATION_ENABLED);
@@ -454,10 +463,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   public synchronized void start(CountDownLatch testStartLatch) {
-    if (config.isSecure() && securityContext == null) {
-      throw new TCRuntimeException("client configured as secure but was constructed without securityContext");
-    }
-
+    validateSecurityConfig();
     validateGroupConfigOrExit();
 
     final TCProperties tcProperties = TCPropertiesImpl.getProperties();
