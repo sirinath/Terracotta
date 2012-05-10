@@ -18,6 +18,7 @@ import com.tc.bytes.TCByteBuffer;
 import com.tc.client.ClientMode;
 import com.tc.client.SecurityContext;
 import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.exception.TCRuntimeException;
 import com.tc.handler.CallbackDumpAdapter;
 import com.tc.handler.CallbackDumpHandler;
 import com.tc.io.TCByteBufferOutputStream;
@@ -453,6 +454,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   public synchronized void start(CountDownLatch testStartLatch) {
+    if (config.isSecure() && securityContext == null) {
+      throw new TCRuntimeException("client configured as secure but was constructed without securityContext");
+    }
 
     validateGroupConfigOrExit();
 
