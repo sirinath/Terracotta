@@ -142,7 +142,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
     Servers serversBean = (Servers) serversBeanRepository().bean();
     this.secure = serversBean.getSecure();
-    Server[] servers = serversBean != null ? serversBean.getServerArray() : null;
+    Server[] servers = serversBean.getServerArray();
     Server server = null;
 
     if (thisL2Identifier != null) {
@@ -160,7 +160,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       this.thisL2Identifier = (server != null ? server.getName() : null);
     }
 
-    if (serversBean != null && serversBean.getSecure() && server != null) {
+    if (serversBean.getSecure() && server != null) {
       final Server s = server;
       ChildBeanRepository beanRepository = new ChildBeanRepository(serversBeanRepository(), Security.class,
                                                                    new ChildBeanFetcher() {
@@ -172,7 +172,6 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     } else {
       securityConfig = null;
     }
-
 
     verifyL2Identifier(servers, this.thisL2Identifier);
     this.myConfigData = setupConfigDataForL2(this.thisL2Identifier);
