@@ -61,4 +61,6 @@ public interface L2ConfigurationSetupManager {
   TopologyReloadStatus reloadConfiguration(ServerConnectionValidator serverConnectionValidator,
                                            TerracottaOperatorEventLogger opeventlogger)
       throws ConfigurationSetupException;
+
+  boolean isSecure();
 }

@@ -287,6 +287,10 @@ public class ConfigInfoFromL2Test extends BaseDSOTestCase {
       return this.l2Config.reloadConfiguration(serverConnectionValidator, opEventLogger);
     }
 
+    public boolean isSecure() {
+      return this.l2Config.isSecure();
+    }
+
     public SystemConfig systemConfig() {
       return this.l2Config.systemConfig();
     }
