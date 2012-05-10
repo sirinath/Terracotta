@@ -833,6 +833,10 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
+  public boolean isSecure() {
+    return configSetupManager.isSecure();
+  }
+
   public void addClassReplacement(final String originalClassName, final String replacementClassName,
                                   final URL replacementResource, final ClassReplacementTest test) {
     this.classReplacements.addMapping(originalClassName, replacementClassName, replacementResource, test);
