@@ -87,7 +87,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
                                         DSOClientConfigHelper theConfig,
                                         PreparedComponentsFromL2Connection connectionComponents) {
     ManagerInternal rv = new ManagerImpl(startClient, objectManager, txManager, lockManager, searchRequestManager,
-                                         theConfig, connectionComponents, false, null, null, false, null);
+                                         theConfig, connectionComponents, false, null, null, false);
     rv.registerNamedLoader(this, null);
     return rv;
   }

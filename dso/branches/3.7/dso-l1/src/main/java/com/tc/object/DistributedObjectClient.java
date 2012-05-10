@@ -288,7 +288,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                  final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger) {
     this(config, threadGroup, classProvider, connectionComponents, manager, statisticsAgentSubSystem, dsoCluster,
-         runtimeLogger, ClientMode.DSO_MODE, null);
+         runtimeLogger, ClientMode.DSO_MODE);
   }
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
@@ -296,13 +296,17 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final PreparedComponentsFromL2Connection connectionComponents, final Manager manager,
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                  final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
-                                 final ClientMode clientMode, final SecurityContext securityContext) {
+                                 final ClientMode clientMode) {
     super(threadGroup, clientMode.isExpressRejoinClient() ? QueueFactory.LINKED_BLOCKING_QUEUE
         : QueueFactory.BOUNDED_LINKED_QUEUE);
-    this.securityContext = securityContext;
     Assert.assertNotNull(config);
     this.clientMode = clientMode;
     this.config = config;
+    try {
+      this.securityContext = config.isSecure() ? new SecurityContext(null) : null;
+    } catch (Exception e) {
+      throw new TCRuntimeException("cannot create security context", e);
+    }
     this.classProvider = classProvider;
     this.connectionComponents = connectionComponents;
     this.manager = manager;
