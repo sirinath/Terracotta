@@ -89,6 +89,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   private SystemConfig                      systemConfig;
   private volatile ActiveServerGroupsConfig activeServerGroupsConfig;
+  private final boolean secure;
 
   public L2ConfigurationSetupManagerImpl(ConfigurationCreator configurationCreator, String thisL2Identifier,
                                          DefaultValueProvider defaultValueProvider,
@@ -140,6 +141,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                        this);
 
     Servers serversBean = (Servers) serversBeanRepository().bean();
+    this.secure = serversBean.getSecure();
     Server[] servers = serversBean != null ? serversBean.getServerArray() : null;
     Server server = null;
 
@@ -215,6 +217,10 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                        this);
 
     return TopologyReloadStatus.TOPOLOGY_CHANGE_ACCEPTABLE;
+  }
+
+  public boolean isSecure() {
+    return secure;
   }
 
   public String getL2Identifier() {

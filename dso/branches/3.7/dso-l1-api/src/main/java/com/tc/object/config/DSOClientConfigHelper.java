@@ -304,4 +304,6 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
   L1ConfigurationSetupManager reloadServersConfiguration() throws ConfigurationSetupException;
 
   Collection<ClassAdapterFactory> getAfterDSOAdapters(ClassInfo classInfo);
+
+  boolean isSecure();
 }
