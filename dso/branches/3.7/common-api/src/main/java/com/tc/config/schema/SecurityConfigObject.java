@@ -23,4 +23,22 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
     return ssl.getCertificate();
   }
 
+  public String getKeyChainImplClass() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getKeychain().getClass1();
+  }
+
+  public String getSecretProviderImplClass() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getKeychain().getSecretProvider();
+  }
+
+  public String getUrl() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getKeychain().getUrl();
+  }
+
 }
