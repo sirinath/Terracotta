@@ -23,8 +23,8 @@ public class StandardClientFactory extends AbstractClientFactory {
                                               final Manager manager,
                                               final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                               final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
-                                              final ClientMode clientMode, final SecurityContext securityContext) {
+                                              final ClientMode clientMode) {
     return new DistributedObjectClient(config, threadGroup, classProvider, connectionComponents, manager,
-                                       statisticsAgentSubSystem, dsoCluster, runtimeLogger, clientMode, securityContext);
+                                       statisticsAgentSubSystem, dsoCluster, runtimeLogger, clientMode);
   }
 }

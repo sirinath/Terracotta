@@ -98,7 +98,7 @@ public class DSOContextImpl implements DSOContext {
    */
   public static DSOContext createGlobalContext() throws ConfigurationSetupException {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
-    Manager manager = new ManagerImpl(configHelper, preparedComponentsFromL2Connection, null);
+    Manager manager = new ManagerImpl(configHelper, preparedComponentsFromL2Connection);
     return new DSOContextImpl(configHelper, manager.getClassProvider(), manager, Collections.EMPTY_LIST, false);
   }
 
@@ -119,7 +119,7 @@ public class DSOContextImpl implements DSOContext {
     }
 
     DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config);
-    Manager manager = new ManagerImpl(configHelper, l2Connection, null);
+    Manager manager = new ManagerImpl(configHelper, l2Connection);
     DSOContext context = createContext(configHelper, manager);
     manager.init();
     return context;
@@ -127,7 +127,7 @@ public class DSOContextImpl implements DSOContext {
 
   public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader,
                                                    Map<String, URL> virtualTimJars, Collection<URL> additionalModules,
-                                                   URL bootJarURL, boolean expressRejoinClient, SecurityContext securityContext)
+                                                   URL bootJarURL, boolean expressRejoinClient)
       throws ConfigurationSetupException {
     // XXX: refactor this method to not duplicate createContext() so much
 
@@ -166,7 +166,7 @@ public class DSOContextImpl implements DSOContext {
     // state too
     ClassProvider classProvider = new SingleLoaderClassProvider(null, "standalone", loader);
     Manager manager = new ManagerImpl(true, null, null, null, null, configHelper, l2Connection, true, runtimeLogger,
-                                      classProvider, expressRejoinClient, securityContext);
+                                      classProvider, expressRejoinClient);
 
     Collection<Repository> repos = new ArrayList<Repository>();
     repos.add(new VirtualTimRepository(virtualTimJars));

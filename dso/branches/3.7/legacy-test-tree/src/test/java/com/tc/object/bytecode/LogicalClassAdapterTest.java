@@ -51,7 +51,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
                                                                               new MockTransactionManager(),
                                                                               new MockClientLockManager(),
                                                                               new MockRemoteSearchRequestManager(),
-                                                                              config, null, null));
+                                                                              config, null));
 
     ClassProcessorHelper.setContext(Thread.currentThread().getContextClassLoader(), context);
   }
