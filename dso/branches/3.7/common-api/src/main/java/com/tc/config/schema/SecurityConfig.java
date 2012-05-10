@@ -6,4 +6,7 @@ package com.tc.config.schema;
 
 public interface SecurityConfig extends Config {
   String getSslCertificateUri();
+  String getKeyChainImplClass();
+  String getSecretProviderImplClass();
+  String getUrl();
 }

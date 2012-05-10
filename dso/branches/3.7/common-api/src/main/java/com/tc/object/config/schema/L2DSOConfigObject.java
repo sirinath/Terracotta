@@ -320,9 +320,10 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     }
   }
 
-  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) {
+  private static void initializeSecurity(Server server, DefaultValueProvider defaultValueProvider) throws XmlException {
     if (server.isSetSecurity()) {
       initializeSsl(server.getSecurity(), defaultValueProvider);
+      initializeKeyChain(server.getSecurity(), defaultValueProvider);
     }
   }
 
@@ -330,6 +331,16 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     if (security.isSetSsl()) {
       security.getSsl().setCertificate(ParameterSubstituter.substitute(security.getSsl().getCertificate()));
     }
+  }
+
+  private static void initializeKeyChain(final Security security, final DefaultValueProvider defaultValueProvider) throws XmlException {
+    final String defaultKeyChainImpl =
+        ((XmlString)defaultValueProvider.defaultFor(security.schemaType(), "keychain/class")).getStringValue();
+
+    if(!security.getKeychain().isSetClass1()) {
+      security.getKeychain().setClass1(defaultKeyChainImpl);
+    }
+    security.getKeychain().setUrl(ParameterSubstituter.substitute(security.getKeychain().getUrl()));
   }
 
   private static void initializePersisitence(Server server, DefaultValueProvider defaultValueProvider)
