@@ -324,6 +324,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     if (server.isSetSecurity()) {
       initializeSsl(server.getSecurity(), defaultValueProvider);
       initializeKeyChain(server.getSecurity(), defaultValueProvider);
+      initializeAuth(server.getSecurity(), defaultValueProvider);
     }
   }
 
@@ -341,6 +342,22 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
       security.getKeychain().setClass1(defaultKeyChainImpl);
     }
     security.getKeychain().setUrl(ParameterSubstituter.substitute(security.getKeychain().getUrl()));
+  }
+
+  private static void initializeAuth(final Security security, final DefaultValueProvider defaultValueProvider) throws XmlException {
+    final String defaultRealm =
+        ((XmlString)defaultValueProvider.defaultFor(security.schemaType(), "auth/realm")).getStringValue();
+    final String defaultUser =
+        ((XmlString)defaultValueProvider.defaultFor(security.schemaType(), "auth/user")).getStringValue();
+
+    if(!security.getAuth().isSetRealm()) {
+      security.getAuth().setRealm(defaultRealm);
+    }
+    if(!security.getAuth().isSetUser()) {
+      security.getAuth().setUser(defaultUser);
+    }
+
+    security.getAuth().setUrl(ParameterSubstituter.substitute(security.getAuth().getUrl()));
   }
 
   private static void initializePersisitence(Server server, DefaultValueProvider defaultValueProvider)

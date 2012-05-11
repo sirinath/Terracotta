@@ -8,5 +8,8 @@ public interface SecurityConfig extends Config {
   String getSslCertificateUri();
   String getKeyChainImplClass();
   String getSecretProviderImplClass();
-  String getUrl();
+  String getKeyChainUrl();
+  String getRealmImplClass();
+  String getRealmUrl();
+  String getUser();
 }
