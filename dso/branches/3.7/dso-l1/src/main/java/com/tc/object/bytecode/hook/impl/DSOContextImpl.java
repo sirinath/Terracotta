@@ -14,7 +14,6 @@ import com.tc.aspectwerkz.transform.WeavingStrategy;
 import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.bundles.Repository;
 import com.tc.bundles.VirtualTimRepository;
-import com.tc.client.SecurityContext;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -348,8 +347,8 @@ public class DSOContextImpl implements DSOContext {
   private static final long MAX_HTTP_FETCH_TIME       = 30 * 1000; // 30 seconds
   private static final long HTTP_FETCH_RETRY_INTERVAL = 1 * 1000; // 1 second
 
-  private static String getServerConfigMode(String serverHost, int httpPort, boolean secure) throws MalformedURLException,
-      TCTimeoutException, IOException {
+  private static String getServerConfigMode(String serverHost, int httpPort, boolean secure)
+      throws MalformedURLException, TCTimeoutException, IOException {
 
     String protocol = "http";
     if (secure) {
