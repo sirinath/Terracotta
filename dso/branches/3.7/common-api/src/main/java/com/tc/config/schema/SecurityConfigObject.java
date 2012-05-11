@@ -35,10 +35,28 @@ public class SecurityConfigObject extends BaseConfigObject implements SecurityCo
     return bean.getKeychain().getSecretProvider();
   }
 
-  public String getUrl() {
+  public String getKeyChainUrl() {
     final Security bean = (Security)this.context.bean();
     if(bean == null) { return null; }
     return bean.getKeychain().getUrl();
+  }
+
+  public String getRealmImplClass() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getAuth().getRealm();
+  }
+
+  public String getRealmUrl() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getAuth().getUrl();
+  }
+
+  public String getUser() {
+    final Security bean = (Security)this.context.bean();
+    if(bean == null) { return null; }
+    return bean.getAuth().getUser();
   }
 
 }
