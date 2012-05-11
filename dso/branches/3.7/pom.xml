@@ -268,5 +268,41 @@
         <module>devwork/quartz</module>
       </modules>
     </profile>     
+    
+    <profile>
+      <id>management-core</id>
+      <activation>
+        <file>
+          <exists>devwork/management-core</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/management-core</module>
+      </modules>
+    </profile>     
+
+    <profile>
+      <id>management-ehcache</id>
+      <activation>
+        <file>
+          <exists>devwork/management-ehcache</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/management-ehcache</module>
+      </modules>
+    </profile>     
+
+    <profile>
+      <id>management-ehcache-impl</id>
+      <activation>
+        <file>
+          <exists>devwork/management-ehcache-impl</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/management-ehcache-impl</module>
+      </modules>
+    </profile>     
   </profiles>
 </project>
