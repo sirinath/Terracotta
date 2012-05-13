@@ -234,6 +234,18 @@
     </profile>         
     
     <profile>
+      <id>fast-restartable-store</id>
+      <activation>
+        <file>
+          <exists>devwork/fast-restartable-store</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/fast-restartable-store</module>
+      </modules>
+    </profile>  
+
+    <profile>
       <id>ehcache-core</id>
       <activation>
         <file>
@@ -302,6 +314,18 @@
       </activation>      
       <modules>
         <module>devwork/management-ehcache-impl</module>
+      </modules>
+    </profile>     
+
+    <profile>
+      <id>offheap-store</id>
+      <activation>
+        <file>
+          <exists>devwork/offheap-store</exists>
+        </file>
+      </activation>      
+      <modules>
+        <module>devwork/offheap-store</module>
       </modules>
     </profile>     
   </profiles>
