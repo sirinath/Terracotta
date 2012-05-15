@@ -45,24 +45,29 @@ public class ServerStat {
     connect();
   }
 
-  private void connect() {
-    if (jmxc != null) {
+  private static void closeQuietly(JMXConnector connector) {
+    if (connector != null) {
       try {
-        jmxc.close();
+        connector.close();
       } catch (IOException e) {
         // ignore
       }
     }
+  }
+
+  private void connect() {
+    closeQuietly(jmxc);
     try {
       jmxc = CommandLineBuilder.getJMXConnector(username, password, host, port);
       mbsc = jmxc.getMBeanServerConnection();
       infoBean = (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO,
-                                                                                   TCServerInfoMBean.class, false);
+                                                               TCServerInfoMBean.class, false);
       connected = true;
     } catch (Exception e) {
       String rootCauseMessage = e.getMessage() != null ? e.getMessage() : e.getCause().getMessage();
       errorMessage = "Failed to connect to " + host + ":" + port + ". "
                      + (rootCauseMessage != null ? rootCauseMessage : "");
+      closeQuietly(jmxc);
       connected = false;
     }
   }
@@ -93,6 +98,15 @@ public class ServerStat {
       sb.append(host + ".error: " + errorMessage).append(NEWLINE);
     }
     return sb.toString();
+  }
+
+  /**
+   * Dispose any active JMX Connection properly
+   */
+  public void dispose() {
+    closeQuietly(jmxc);
+    connected = false;
+    errorMessage = "jmx connection was closed";
   }
 
   public static void main(String[] args) {
@@ -156,6 +170,7 @@ public class ServerStat {
       int jmxPort = server.getJmxPort().getIntValue() == 0 ? DEFAULT_JMX_PORT : server.getJmxPort().getIntValue();
       ServerStat stat = new ServerStat(username, password, host, jmxPort);
       System.out.println(stat.toString());
+      stat.dispose();
     }
   }
 
@@ -186,5 +201,6 @@ public class ServerStat {
     }
     ServerStat stat = new ServerStat(username, password, host, port);
     System.out.println(stat.toString());
+    stat.dispose();
   }
 }
