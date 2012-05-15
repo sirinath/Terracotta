@@ -263,6 +263,33 @@ public final class CachedModulesTest extends TestCase {
     assertNull(modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.6.1"));
   }
 
+  public void testBaseTCVersion() {
+    testConfig.setTcVersion("1.0.0");
+    Modules modules = load("/base-tc-version.xml", "1.0.0");
+    assertEquals(1, modules.listAvailable().size());
+    Module m = modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.6.0");
+    assertTrue(m.isLatest());
+    assertNull(modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.7.0"));
+    assertNull(modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.8.0"));
+
+    for (String ver : new String[] { "3.6.0", "3.6.1" }) {
+      testConfig.setTcVersion(ver);
+      modules = load("/base-tc-version.xml", ver);
+      assertEquals(2, modules.listAvailable().size());
+      m = modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.7.0");
+      assertTrue(m.isLatest());
+      assertNull(modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.8.0"));
+    }
+
+    for (String ver : new String[] { "3.7.0", "3.7.1" }) {
+      testConfig.setTcVersion(ver);
+      modules = load("/base-tc-version.xml", ver);
+      assertEquals(3, modules.listAvailable().size());
+      m = modules.getAvailable("org.terracotta.modules", "tim-ehcache-2.x", "1.8.0");
+      assertTrue(m.isLatest());
+    }
+  }
+
   private Modules load(String testData, String tcVersion) {
     return load(testData, tcVersion, "1.0.0");
   }
