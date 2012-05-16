@@ -1167,10 +1167,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     TCTimerService.getInstance().shutdown();
 
-    if (globalLocalCacheManager != null) {
-      globalLocalCacheManager.shutdown();
-    }
-
     if (this.counterManager != null) {
       try {
         this.counterManager.shutdown();
@@ -1215,6 +1211,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       getStageManager().stopAll();
     } catch (final Throwable t) {
       logger.error("Error stopping stage manager", t);
+    }
+
+    if (globalLocalCacheManager != null) {
+      globalLocalCacheManager.shutdown();
     }
 
     if (this.objectManager != null) {
