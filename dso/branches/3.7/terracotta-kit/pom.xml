@@ -336,7 +336,19 @@
                       <runIf>{{ "${no.extra}" != "true" }}</runIf>
                       <targetPath>${rootDir}/ehcache/licenses</targetPath>
                       <file>${ehcache-core.tclicense.url}</file>
-                    </resource>            
+                    </resource>
+                     <resource>
+                      <targetPath>${rootDir}/tmc</targetPath>
+                      <directory>${rootDir}/ehcache/tmc</directory>
+                      <preservePath>true</preservePath>
+                      <!-- move does not really work; it will move the files at the root, but not the dirs... -->
+                      <!-- move>true</move-->
+                    </resource>
+                    <resource>
+                      <directory>${rootDir}/ehcache/tmc/</directory>
+                      <clean>true</clean>
+                      <cleanEmptyDirectories>true</cleanEmptyDirectories>
+                    </resource>  
                     
                     <!-- ehcache terracotta -->
                     <resource>
