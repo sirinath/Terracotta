@@ -348,7 +348,17 @@
                       <directory>${rootDir}/ehcache/tmc/</directory>
                       <clean>true</clean>
                       <cleanEmptyDirectories>true</cleanEmptyDirectories>
-                    </resource>  
+                    </resource>
+                    <resource>
+                      <targetPath>${rootDir}/bin</targetPath>
+                      <directory>${rootDir}/tmc/bin</directory>
+                      <includes>
+                       <include>add-tc-agent.*</include>
+                       <include>keychain.*</include>
+                       <include>usermanagement.*</include>
+                       <include>management-cli-common.*</include>
+                      </includes>
+                    </resource>
                     
                     <!-- ehcache terracotta -->
                     <resource>
