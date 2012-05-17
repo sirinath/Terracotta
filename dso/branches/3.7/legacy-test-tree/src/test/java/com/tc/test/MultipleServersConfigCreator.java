@@ -154,6 +154,15 @@ public class MultipleServersConfigCreator {
           l2.setOffHeapEnabled(offHeapEnabled);
           l2.setOffHeapMaxDataSize(offHeapMaxSize);
         }
+        if (configFactory.isSecurityEnabled()) {
+          l2.setSecurityEnabled(true);
+          l2.setSecurityCertificateUri(configFactory.getSecuritySslCertificateUri());
+          l2.setSecurityKeychainUrl(configFactory.getSecurityKeychainUrl());
+          l2.setSecurityKeychainImpl(configFactory.getSecurityKeychainImpl());
+          l2.setSecuritySecretProviderImpl(configFactory.getSecuritySecretProviderImpl());
+          l2.setSecurityAuthUrl(configFactory.getSecurityAuthUrl());
+          l2.setSecurityAuthImpl(configFactory.getSecurityAuthImpl());
+        }
         l2.setGCInterval(gcIntervalInSec);
         l2s[serverIndex] = l2;
         serverIndex++;

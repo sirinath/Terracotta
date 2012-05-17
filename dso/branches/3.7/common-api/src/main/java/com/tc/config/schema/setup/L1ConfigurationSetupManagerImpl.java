@@ -40,9 +40,9 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     L1ConfigurationSetupManager {
   private final CommonL1Config     commonL1Config;
   private final L1DSOConfig        dsoL1Config;
-  private final boolean            secure;
   private final ConfigTCProperties configTCProperties;
   private final boolean            loadedFromTrustedSource;
+  private volatile boolean         secure;
 
   public L1ConfigurationSetupManagerImpl(ConfigurationCreator configurationCreator,
                                          DefaultValueProvider defaultValueProvider,
@@ -70,6 +70,12 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     secure = ((Servers)serversBeanRepository().bean()).getSecure();
 
     overwriteTcPropertiesFromConfig();
+  }
+
+  public void setSecure(boolean secure) {
+    this.secure = secure;
+    Servers servers = (Servers)serversBeanRepository().bean();
+    servers.setSecure(secure);
   }
 
   public void setupLogging() {

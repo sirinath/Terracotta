@@ -81,7 +81,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
   private final Map                         l2ConfigData;
   private final HaConfigSchema              haConfig;
   private final UpdateCheckConfig           updateCheckConfig;
-  private final SecurityConfig              securityConfig;
+  private volatile SecurityConfig           securityConfig;
   private final String                      thisL2Identifier;
   private final L2ConfigData                myConfigData;
   private final ConfigTCProperties          configTCProperties;
@@ -89,7 +89,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   private SystemConfig                      systemConfig;
   private volatile ActiveServerGroupsConfig activeServerGroupsConfig;
-  private final boolean secure;
+  private volatile boolean                  secure;
 
   public L2ConfigurationSetupManagerImpl(ConfigurationCreator configurationCreator, String thisL2Identifier,
                                          DefaultValueProvider defaultValueProvider,
@@ -183,6 +183,11 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     validateDSOClusterPersistenceMode();
     validateHaConfiguration();
     validateSecurityConfiguration();
+  }
+
+  public void setSecurityConfig(SecurityConfig securityConfig) {
+    this.secure = securityConfig != null;
+    this.securityConfig = securityConfig;
   }
 
   public TopologyReloadStatus reloadConfiguration(ServerConnectionValidator serverConnectionValidator,
