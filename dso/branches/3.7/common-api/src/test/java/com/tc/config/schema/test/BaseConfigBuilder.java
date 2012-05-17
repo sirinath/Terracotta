@@ -205,8 +205,14 @@ public abstract class BaseConfigBuilder {
     Assert.assertNotBlank(propertyName);
 
     if (isSet(propertyName)) {
-//      return openElement(tagName) + getProperty(propertyName) + closeElement(tagName);
-      return indent() + "<" + tagName + ">" + getProperty(propertyName) + "</" + tagName + ">";
+      if ("servers".equals(propertyName)) {
+        L2SConfigBuilder servers = (L2SConfigBuilder)this.setProperties.get(propertyName);
+        boolean secure = servers.getL2s()[0].isSecurityEnabled();
+        return indent() + "<" + tagName + " secure=\"" + secure + "\">" + getProperty(propertyName) + "</" + tagName + ">";
+      } else {
+//        return openElement(tagName) + getProperty(propertyName) + closeElement(tagName);
+        return indent() + "<" + tagName + ">" + getProperty(propertyName) + "</" + tagName + ">";
+      }
     }
     else return "";
   }

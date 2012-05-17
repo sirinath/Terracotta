@@ -49,7 +49,9 @@ import com.terracottatech.config.TcConfigDocument;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -218,6 +220,16 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     setExtraJvmArgs(jvmArgs);
 
+    if (configFactory().isSecurityEnabled()) {
+      String hostnameVerifier = System.getProperty("tc.ssl.disableHostnameVerifier");
+      String trustAll = System.getProperty("tc.ssl.trustAllCerts");
+      String secret = System.getProperty("SecretProvider.secret");
+
+      if (secret != null) { jvmArgs.add("-DSecretProvider.secret=" + secret); }
+      if (hostnameVerifier != null) { jvmArgs.add("-Dtc.ssl.disableHostnameVerifier=" + hostnameVerifier); }
+      if (trustAll != null) { jvmArgs.add("-Dtc.ssl.trustAllCerts=" + trustAll); }
+    }
+
     RestartTestHelper helper = null;
     PortChooser portChooser = new PortChooser();
     if ((isCrashy() && canRunCrash()) || useExternalProcess()) {
@@ -328,7 +340,60 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
-    // do nothing
+    setupSecurityIfNeeded(configFactory);
+  }
+
+  private void setupSecurityIfNeeded(TestConfigurationSetupManagerFactory configFactory) {
+    if (!Boolean.getBoolean("tc.test.runSecure")) {
+      System.out.println("XXX: running test in unsecured mode");
+      return;
+    }
+    System.out.println("XXX: running test in secure mode");
+
+    try {
+      final String SECRET = "lala";
+      final String KEYSTORE_PW = "keystorepw";
+
+      System.setProperty("SecretProvider.secret", SECRET);
+      System.setProperty("tc.ssl.disableHostnameVerifier", "true");
+      System.setProperty("tc.ssl.trustAllCerts", "true");
+
+      String keystoreUri = "jks:l2@" + getClass().getResource("/keystore.jks").toURI().getPath();
+      String keychainUrl = "file://" + createKeyChainFile(SECRET.getBytes(), new URI(keystoreUri), KEYSTORE_PW);
+      String authUrl = "file://" + System.getProperty("user.dir") + "/authentication.ini";
+      String secretProviderImpl = "org.terracotta.security.SystemPropertySecretProviderBackEnd";
+      String keychainImpl = "com.terracotta.management.keychain.FileStoreKeyChain";
+      String realmImpl = "org.apache.shiro.realm.text.IniRealm";
+
+      configFactory.setSecurityConfig(keystoreUri, keychainUrl, keychainImpl, secretProviderImpl, authUrl, realmImpl);
+    } catch (Exception e) {
+      throw new RuntimeException("cannot setup security", e);
+    }
+  }
+
+  private static String createKeyChainFile(byte[] secret, URI uri, String password) throws Exception {
+    final File file = new File(System.getProperty("user.dir") + "/keychain.tkc");
+    if(file.exists()) {
+      if(!file.delete()) {
+        throw new RuntimeException("Cannot delete file: " + file);
+      }
+    }
+
+    Class<?> fileStoreKeyChainClass = Class.forName("com.terracotta.management.keychain.FileStoreKeyChain");
+    Method createNewKeyStoreMethod = fileStoreKeyChainClass.getMethod("createNewKeyStore", Class.forName("com.terracotta.management.keychain.crypto.EnigmaMachine"), File.class);
+    Object keyChain = createNewKeyStoreMethod.invoke(fileStoreKeyChainClass, Class.forName("com.terracotta.management.keychain.crypto.AesEnigmaMachine").newInstance(), file);
+
+    Class<?> keyChainClass = Class.forName("com.terracotta.management.keychain.KeyChain");
+    Method unlockMethod = keyChainClass.getMethod("unlock", byte[].class);
+    unlockMethod.invoke(keyChain, secret);
+
+    Method storePasswordMethod = keyChainClass.getMethod("storePassword", byte[].class, URI.class, byte[].class);
+    storePasswordMethod.invoke(keyChain, secret, uri, password.getBytes());
+
+    Method lockMethod = keyChainClass.getMethod("lock");
+    lockMethod.invoke(keyChain);
+
+    return file.getAbsolutePath();
   }
 
   public File makeTmpDir(Class klass) {

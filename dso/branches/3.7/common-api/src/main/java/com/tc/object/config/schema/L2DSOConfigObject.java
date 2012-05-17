@@ -21,9 +21,11 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.Assert;
+import com.terracottatech.config.Auth;
 import com.terracottatech.config.BindPort;
 import com.terracottatech.config.DsoServerData;
 import com.terracottatech.config.GarbageCollection;
+import com.terracottatech.config.Keychain;
 import com.terracottatech.config.Offheap;
 import com.terracottatech.config.Persistence;
 import com.terracottatech.config.PersistenceMode;
@@ -31,6 +33,7 @@ import com.terracottatech.config.PersistenceMode.Enum;
 import com.terracottatech.config.Security;
 import com.terracottatech.config.Server;
 import com.terracottatech.config.Servers;
+import com.terracottatech.config.Ssl;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 
 import java.io.File;
@@ -49,6 +52,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
 
   private final Persistence       persistence;
   private final Offheap           offHeapConfig;
+  private final Security          securityConfig;
   private final GarbageCollection garbageCollection;
   private final DsoServerData     dso;
   private final BindPort          dsoPort;
@@ -85,10 +89,25 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     } else {
       this.offHeapConfig = Offheap.Factory.newInstance();
     }
+    if (server.isSetSecurity()) {
+      this.securityConfig = server.getSecurity();
+      if (!securityConfig.isSetSsl()) {
+        securityConfig.setSsl(Ssl.Factory.newInstance());
+      }
+    } else {
+      this.securityConfig = Security.Factory.newInstance();
+      securityConfig.setSsl(Ssl.Factory.newInstance());
+      securityConfig.setKeychain(Keychain.Factory.newInstance());
+      securityConfig.setAuth(Auth.Factory.newInstance());
+    }
   }
 
   public Offheap offHeapConfig() {
     return this.offHeapConfig;
+  }
+
+  public Security securityConfig() {
+    return this.securityConfig;
   }
 
   public BindPort dsoPort() {
