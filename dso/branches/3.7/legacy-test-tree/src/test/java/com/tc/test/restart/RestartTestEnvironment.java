@@ -155,8 +155,8 @@ public class RestartTestEnvironment {
     }
 
     L2ConfigBuilder l2 = new L2ConfigBuilder();
-    if (configFactory.isSecurityEnabled()) {
-      l2.setSecurityEnabled(true);
+    if (configFactory != null) {
+      l2.setSecurityEnabled(configFactory.isSecurityEnabled());
       l2.setSecurityCertificateUri(configFactory.getSecuritySslCertificateUri());
       l2.setSecurityKeychainUrl(configFactory.getSecurityKeychainUrl());
       l2.setSecurityKeychainImpl(configFactory.getSecurityKeychainImpl());
