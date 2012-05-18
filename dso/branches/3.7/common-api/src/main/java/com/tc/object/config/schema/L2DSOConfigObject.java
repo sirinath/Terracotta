@@ -91,9 +91,6 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     }
     if (server.isSetSecurity()) {
       this.securityConfig = server.getSecurity();
-      if (!securityConfig.isSetSsl()) {
-        securityConfig.setSsl(Ssl.Factory.newInstance());
-      }
     } else {
       this.securityConfig = Security.Factory.newInstance();
       securityConfig.setSsl(Ssl.Factory.newInstance());
@@ -348,9 +345,7 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
   }
 
   private static void initializeSsl(Security security, DefaultValueProvider defaultValueProvider) {
-    if (security.isSetSsl()) {
-      security.getSsl().setCertificate(ParameterSubstituter.substitute(security.getSsl().getCertificate()));
-    }
+    security.getSsl().setCertificate(ParameterSubstituter.substitute(security.getSsl().getCertificate()));
   }
 
   private static void initializeKeyChain(final Security security, final DefaultValueProvider defaultValueProvider) throws XmlException {
