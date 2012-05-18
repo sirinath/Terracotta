@@ -525,10 +525,12 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
 
       @Override
       public void changesInItemIgnored(final ConfigItem item) {
+        //
       }
 
       @Override
       public void changesInItemForbidden(final ConfigItem item) {
+        //
       }
 
       @Override
