@@ -99,7 +99,6 @@ public class JMXConnectionLeakTest extends BaseDSOTestCase {
 
   private void waitTillBecomeActive() throws Exception {
     CallableWaiter.waitOnCallable(new Callable<Boolean>() {
-      @Override
       public Boolean call() throws Exception {
         return serverMBeanRetriever.getTCServerInfoMBean().isActive();
       }
