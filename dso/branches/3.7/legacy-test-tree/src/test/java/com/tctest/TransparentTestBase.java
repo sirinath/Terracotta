@@ -387,8 +387,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     Method unlockMethod = keyChainClass.getMethod("unlock", byte[].class);
     unlockMethod.invoke(keyChain, secret);
 
-    Method storePasswordMethod = keyChainClass.getMethod("storePassword", byte[].class, URI.class, byte[].class);
-    storePasswordMethod.invoke(keyChain, secret, uri, password.getBytes());
+    Class<?> keyNameClass = Class.forName("com.terracotta.management.keychain.KeyName");
+    Class<?> uriKeyNameClass = Class.forName("com.terracotta.management.keychain.URIKeyName");
+    Method storePasswordMethod = keyChainClass.getMethod("storePassword", byte[].class, keyNameClass, byte[].class);
+    storePasswordMethod.invoke(keyChain, secret, uriKeyNameClass.getConstructor(URI.class).newInstance(uri), password.getBytes());
 
     Method lockMethod = keyChainClass.getMethod("lock");
     lockMethod.invoke(keyChain);
