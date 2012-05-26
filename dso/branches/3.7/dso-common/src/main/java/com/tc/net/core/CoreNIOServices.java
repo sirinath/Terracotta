@@ -671,7 +671,8 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
                 try {
                   sent = bufferManager.send();
                 } catch (SSLHandshakeException she) {
-                  logger.error("SSL handshake error: unable to find valid certification path to requested target, closing connection.");
+                  logger
+                      .error("SSL handshake error: unable to find valid certification path to requested target, closing connection.");
                   channelWritten = -1;
                 } catch (SSLException ssle) {
                   logger.error("SSL error: " + ssle);
@@ -684,7 +685,7 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
                   break;
                 }
                 channelWritten += sent;
-                this.bytesWritten.add(channelWritten);
+                this.bytesWritten.add(sent);
               }
             }
 
