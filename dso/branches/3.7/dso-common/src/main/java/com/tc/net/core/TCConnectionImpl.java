@@ -65,7 +65,6 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   private volatile BufferManager             bufferManager;
   private volatile PipeSocket                pipeSocket;
 
-
   private final BufferManagerFactory         bufferManagerFactory;
   private final AtomicBoolean                transportEstablished        = new AtomicBoolean(false);
   private final LinkedList<TCNetworkMessage> writeMessages               = new LinkedList<TCNetworkMessage>();
@@ -400,13 +399,14 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   }
 
   private static int forwardBuffer(final ByteBuffer source, final ByteBuffer dest) {
-    int forwarded = 0;
-    while (source.hasRemaining() && dest.limit() != dest.position()) {
-      byte b = source.get();
-      dest.put(b);
-      forwarded++;
+    int size = Math.min(dest.remaining(), source.remaining());
+    if (size > 0) {
+      ByteBuffer tmpBuf = source.duplicate();
+      tmpBuf.limit(tmpBuf.position() + size);
+      dest.put(tmpBuf);
+      source.position(source.position() + size);
     }
-    return forwarded;
+    return size;
   }
 
   public int doWriteInternal(final ByteBuffer dest) {
