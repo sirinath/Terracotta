@@ -55,6 +55,10 @@ public abstract class ServerCrashingTestBase extends TransparentTestBase {
     adminPort = pc.chooseRandomPort();
     groupPort = pc.chooseRandomPort();
     configFile = getTempFile("config-file.xml");
+    if(Boolean.getBoolean("tc.test.runSecure")) {
+      setupSecurityIfNeeded();
+      setupKeyChain();
+    }
     writeConfigFile();
 
     setupConfigLogDataStatisticsPaths(configFactory());

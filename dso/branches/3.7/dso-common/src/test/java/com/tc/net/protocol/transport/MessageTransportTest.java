@@ -268,7 +268,7 @@ public class MessageTransportTest extends TCTestCase {
   }
 
   private void createClientTransport(int maxReconnectTries) throws Exception {
-    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, 0, false);
+    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, 0);
     final ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
                                                                             connManager,
                                                                             new ConnectionAddressProvider(

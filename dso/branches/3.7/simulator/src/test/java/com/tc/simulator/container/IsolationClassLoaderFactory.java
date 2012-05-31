@@ -3,8 +3,10 @@
  */
 package com.tc.simulator.container;
 
+import com.tc.client.AbstractClientFactory;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L1ConfigurationSetupManager;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.TestClientConfigHelperFactory;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.ConfigVisitor;
@@ -14,14 +16,18 @@ import com.tc.simulator.app.ApplicationConfig;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class IsolationClassLoaderFactory {
+
+  private final static Lock lock = new ReentrantLock();
 
   private final TestClientConfigHelperFactory  factory;
   private final Class                          applicationClass;
   private final Map                            optionalAttributes;
   private final ConfigVisitor                  configVisitor;
-  private final L1ConfigurationSetupManager l1ConfigManager;
+  private final L1ConfigurationSetupManager    l1ConfigManager;
   private final Map                            adapterMap;
 
   public IsolationClassLoaderFactory(TestClientConfigHelperFactory factory, Class applicationClass,
@@ -39,10 +45,24 @@ public class IsolationClassLoaderFactory {
       throws ConfigurationSetupException {
     boolean usesAdapters = false;
 
+    final TCSecurityManager clientSecurityManager;
+    if (Boolean.getBoolean("tc.test.runSecure")) {
+      if (System.getProperty("SecretProvider.secret") == null) {
+        System.setProperty("SecretProvider.secret", "lala");
+      }
+      lock.lock(); // Stupid hack to let one VM create multiple SecurityManagers...
+      try {
+        clientSecurityManager = AbstractClientFactory.getFactory().createClientSecurityManager();
+      } finally {
+        lock.unlock();
+      }
+    } else {
+      clientSecurityManager = null;
+    }
     IsolationClassLoader classloader = new IsolationClassLoader(
                                                                 createClientConfigHelper(),
                                                                 new PreparedComponentsFromL2Connection(
-                                                                                                       this.l1ConfigManager));
+                                                                                                       this.l1ConfigManager, clientSecurityManager), clientSecurityManager);
     if (adapterMap != null) {
       if (adapterMap.size() > 0) {
         usesAdapters = true;

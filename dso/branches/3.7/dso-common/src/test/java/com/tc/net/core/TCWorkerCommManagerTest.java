@@ -53,7 +53,7 @@ public class TCWorkerCommManagerTest extends TCTestCase {
                                                                    new TransportNetworkStackHarnessFactory(),
                                                                    new NullConnectionPolicy());
 
-    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, serverPort, false);
+    final ConnectionInfo connInfo = new ConnectionInfo(TCSocketAddress.LOOPBACK_IP, serverPort);
     ClientConnectionEstablisher cce = new ClientConnectionEstablisher(
                                                                       commsMgr.getConnectionManager(),
                                                                       new ConnectionAddressProvider(
@@ -277,7 +277,7 @@ public class TCWorkerCommManagerTest extends TCTestCase {
                              port,
                              1000,
                              new ConnectionAddressProvider(
-                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port, false) }));
+                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port) }));
     return clientMsgCh;
   }
 

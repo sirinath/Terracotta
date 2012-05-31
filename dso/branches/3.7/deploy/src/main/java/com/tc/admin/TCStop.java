@@ -105,7 +105,7 @@ public class TCStop {
       ConfigurationSetupManagerFactory factory = new StandardConfigurationSetupManagerFactory(
                                                                                               args,
                                                                                               StandardConfigurationSetupManagerFactory.ConfigMode.L2,
-                                                                                              changeHandler);
+                                                                                              changeHandler, null);
 
       String name = null;
       if (nameSpecified) {

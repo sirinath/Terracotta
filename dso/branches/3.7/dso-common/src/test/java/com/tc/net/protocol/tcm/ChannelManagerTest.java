@@ -145,7 +145,7 @@ public class ChannelManagerTest extends TestCase {
                                new ConnectionAddressProvider(
                                                              new ConnectionInfo[] { new ConnectionInfo(
                                                                                                        "localhost",
-                                                                                                       lsnr.getBindPort(), false) }));
+                                                                                                       lsnr.getBindPort()) }));
       channel.open();
       assertTrue(channel.isConnected());
 
@@ -211,7 +211,7 @@ public class ChannelManagerTest extends TestCase {
                                new ConnectionAddressProvider(
                                                              new ConnectionInfo[] { new ConnectionInfo(
                                                                                                        "localhost",
-                                                                                                       lsnr.getBindPort(), false) }));
+                                                                                                       lsnr.getBindPort()) }));
       clientChannel.open();
 
       while (!clientChannel.isConnected()) {
@@ -309,7 +309,7 @@ public class ChannelManagerTest extends TestCase {
       channel = clientComms
           .createClientChannel(sessionManager, -1, TCSocketAddress.LOOPBACK_IP, proxyPort, 3000,
                                new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("localhost",
-                                                                                                       proxyPort, false) }));
+                                                                                                       proxyPort) }));
       channel.open();
 
       while (!channelManager.getChannels()[0].isConnected()) {
@@ -382,7 +382,7 @@ public class ChannelManagerTest extends TestCase {
       channel = clientComms
           .createClientChannel(sessionManager, -1, TCSocketAddress.LOOPBACK_IP, proxyPort, 3000,
                                new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo("localhost",
-                                                                                                       proxyPort, false) }));
+                                                                                                       proxyPort) }));
       channel.open();
 
       while (!channelManager.getChannels()[0].isConnected()) {

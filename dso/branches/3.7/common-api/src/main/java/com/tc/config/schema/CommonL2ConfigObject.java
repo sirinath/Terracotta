@@ -29,9 +29,15 @@ public class CommonL2ConfigObject extends BaseConfigObject implements CommonL2Co
   private final String   accessFile;
   private final boolean  httpAuthentication;
   private final String   userRealmFile;
+  private final boolean  secured;
 
   public CommonL2ConfigObject(ConfigContext context) {
+    this(context, false);
+  }
+
+  public CommonL2ConfigObject(ConfigContext context, boolean secured) {
     super(context);
+    this.secured = secured;
     context.ensureRepositoryProvides(Server.class);
 
     Server server = (Server) context.bean();
@@ -140,4 +146,7 @@ public class CommonL2ConfigObject extends BaseConfigObject implements CommonL2Co
     return userRealmFile;
   }
 
+  public boolean isSecure() {
+    return secured;
+  }
 }

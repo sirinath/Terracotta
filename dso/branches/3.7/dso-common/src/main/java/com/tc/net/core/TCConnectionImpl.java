@@ -11,13 +11,13 @@ import EDU.oswego.cs.dl.util.concurrent.SynchronizedLong;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.bytes.TCByteBufferFactory;
-import com.tc.client.SecurityContext;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NIOWorkarounds;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.event.TCConnectionEventCaller;
 import com.tc.net.core.event.TCConnectionEventListener;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.net.protocol.TCNetworkMessage;
 import com.tc.net.protocol.TCProtocolAdaptor;
 import com.tc.net.protocol.transport.WireProtocolGroupMessageImpl;
@@ -114,13 +114,13 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
   // for creating unconnected client connections
   TCConnectionImpl(final TCConnectionEventListener listener, final TCProtocolAdaptor adaptor,
                    final TCConnectionManagerImpl managerJDK14, final CoreNIOServices nioServiceThread,
-                   final SocketParams socketParams, final SecurityContext securityContext) {
-    this(listener, adaptor, null, managerJDK14, nioServiceThread, socketParams, securityContext);
+                   final SocketParams socketParams, final TCSecurityManager securityManager) {
+    this(listener, adaptor, null, managerJDK14, nioServiceThread, socketParams, securityManager);
   }
 
   TCConnectionImpl(final TCConnectionEventListener listener, final TCProtocolAdaptor adaptor, final SocketChannel ch,
                    final TCConnectionManagerImpl parent, final CoreNIOServices nioServiceThread,
-                   final SocketParams socketParams, final SecurityContext securityContext) {
+                   final SocketParams socketParams, final TCSecurityManager securityManager) {
 
     Assert.assertNotNull(parent);
     Assert.assertNotNull(adaptor);
@@ -134,8 +134,8 @@ final class TCConnectionImpl implements TCConnection, TCChannelReader, TCChannel
 
     this.channel = ch;
 
-    if (securityContext != null) {
-      this.bufferManagerFactory = securityContext.getBufferManagerFactory();
+    if (securityManager != null) {
+      this.bufferManagerFactory = securityManager.getBufferManagerFactory();
     } else {
       this.bufferManagerFactory = new ClearTextBufferManagerFactory();
     }

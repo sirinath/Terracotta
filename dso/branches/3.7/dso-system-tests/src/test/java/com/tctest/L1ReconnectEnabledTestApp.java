@@ -7,10 +7,13 @@ import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.properties.ReconnectConfig;
+import com.tc.security.PwProvider;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
+
+import java.net.URI;
 
 public class L1ReconnectEnabledTestApp extends AbstractTransparentApp {
 
@@ -52,7 +55,7 @@ public class L1ReconnectEnabledTestApp extends AbstractTransparentApp {
     try {
       DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(factory
           .getL1TVSConfigurationSetupManager());
-      ReconnectConfig l1ReconnectConfig = configHelper.getL1ReconnectProperties();
+      ReconnectConfig l1ReconnectConfig = configHelper.getL1ReconnectProperties(null);
 
       // verify
       Assert.assertEquals(true, l1ReconnectConfig.getReconnectEnabled());

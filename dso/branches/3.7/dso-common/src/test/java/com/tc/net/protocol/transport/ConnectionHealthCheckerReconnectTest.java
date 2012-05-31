@@ -10,6 +10,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
+import com.tc.net.core.SecurityInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
@@ -158,7 +159,7 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
     ClientMessageChannel clientMsgCh = commsMgr
         .createClientChannel(new NullSessionManager(), 0, serverLsnr.getBindAddress().getHostAddress(), proxyPort,
                              1000, new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(serverLsnr
-                                 .getBindAddress().getHostAddress(), proxyPort, false) }));
+                                 .getBindAddress().getHostAddress(), proxyPort) }));
 
     return clientMsgCh;
   }

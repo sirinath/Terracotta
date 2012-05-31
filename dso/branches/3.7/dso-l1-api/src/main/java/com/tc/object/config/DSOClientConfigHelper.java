@@ -15,6 +15,7 @@ import com.tc.aspectwerkz.reflect.MemberInfo;
 import com.tc.config.schema.CommonL1Config;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L1ConfigurationSetupManager;
+import com.tc.net.core.SecurityInfo;
 import com.tc.object.Portability;
 import com.tc.object.bytecode.ClassAdapterFactory;
 import com.tc.object.bytecode.SessionConfiguration;
@@ -25,6 +26,7 @@ import com.tc.object.config.schema.DSORuntimeOutputOptions;
 import com.tc.object.config.schema.InstrumentedClass;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.properties.ReconnectConfig;
+import com.tc.security.PwProvider;
 import com.terracottatech.config.Modules;
 
 import java.io.File;
@@ -280,9 +282,9 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
 
   boolean reflectionEnabled();
 
-  public ReconnectConfig getL1ReconnectProperties() throws ConfigurationSetupException;
+  public ReconnectConfig getL1ReconnectProperties(final PwProvider securityManager) throws ConfigurationSetupException;
 
-  public void validateGroupInfo() throws ConfigurationSetupException;
+  public void validateGroupInfo(final PwProvider pwProvider) throws ConfigurationSetupException;
 
   boolean useResolveLockWhenClearing(Class clazz);
 
@@ -305,5 +307,5 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
 
   Collection<ClassAdapterFactory> getAfterDSOAdapters(ClassInfo classInfo);
 
-  boolean isSecure();
+  SecurityInfo getSecurityInfo();
 }

@@ -40,4 +40,6 @@ public interface CommonL2Config extends Config, StatisticsConfig {
   boolean httpAuthentication();
 
   String httpAuthenticationUserRealmFile();
+
+  boolean isSecure();
 }

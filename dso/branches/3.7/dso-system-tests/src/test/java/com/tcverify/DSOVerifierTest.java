@@ -67,7 +67,7 @@ public class DSOVerifierTest extends TCTestCase {
     config = new StandardConfigurationSetupManagerFactory(new String[] {
         StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, configFile.getAbsolutePath() },
                                                              StandardConfigurationSetupManagerFactory.ConfigMode.L2,
-                                                             new FatalIllegalConfigurationChangeHandler());
+                                                             new FatalIllegalConfigurationChangeHandler(), null);
 
     server = new TCServerImpl(config.createL2TVSConfigurationSetupManager(null));
     server.start();

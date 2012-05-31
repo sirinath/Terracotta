@@ -119,7 +119,7 @@ public class RestartTestEnvironment {
     config = new StandardConfigurationSetupManagerFactory(new String[] {
         StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, this.configFile.getAbsolutePath() },
                                                           StandardConfigurationSetupManagerFactory.ConfigMode.L2,
-                                                          new MockIllegalConfigurationChangeHandler());
+                                                          new MockIllegalConfigurationChangeHandler(), null);
   }
 
   private void writeL2Config() throws Exception {

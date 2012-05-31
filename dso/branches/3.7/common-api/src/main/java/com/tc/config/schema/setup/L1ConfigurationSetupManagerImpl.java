@@ -19,6 +19,7 @@ import com.tc.config.schema.repository.ChildBeanFetcher;
 import com.tc.config.schema.repository.ChildBeanRepository;
 import com.tc.config.schema.utils.XmlObjectComparator;
 import com.tc.logging.TCLogging;
+import com.tc.net.core.SecurityInfo;
 import com.tc.object.config.schema.L1DSOConfig;
 import com.tc.object.config.schema.L1DSOConfigObject;
 import com.tc.properties.TCProperties;
@@ -26,7 +27,6 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
 import com.terracottatech.config.Client;
 import com.terracottatech.config.DsoClientData;
-import com.terracottatech.config.Servers;
 import com.terracottatech.config.TcProperties;
 
 import java.io.File;
@@ -40,18 +40,19 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     L1ConfigurationSetupManager {
   private final CommonL1Config     commonL1Config;
   private final L1DSOConfig        dsoL1Config;
+  private final SecurityInfo       securityInfo;
   private final ConfigTCProperties configTCProperties;
   private final boolean            loadedFromTrustedSource;
-  private volatile boolean         secure;
 
   public L1ConfigurationSetupManagerImpl(ConfigurationCreator configurationCreator,
                                          DefaultValueProvider defaultValueProvider,
                                          XmlObjectComparator xmlObjectComparator,
-                                         IllegalConfigurationChangeHandler illegalConfigChangeHandler)
+                                         IllegalConfigurationChangeHandler illegalConfigChangeHandler, final SecurityInfo securityInfo)
       throws ConfigurationSetupException {
     super(configurationCreator, defaultValueProvider, xmlObjectComparator, illegalConfigChangeHandler);
 
     Assert.assertNotNull(configurationCreator);
+    this.securityInfo = securityInfo;
 
     runConfigurationCreator(true);
     loadedFromTrustedSource = configurationCreator().loadedFromTrustedSource();
@@ -67,15 +68,7 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
                                                                                 }
                                                                               }), null));
 
-    secure = ((Servers)serversBeanRepository().bean()).getSecure();
-
     overwriteTcPropertiesFromConfig();
-  }
-
-  public void setSecure(boolean secure) {
-    this.secure = secure;
-    Servers servers = (Servers)serversBeanRepository().bean();
-    servers.setSecure(secure);
   }
 
   public void setupLogging() {
@@ -104,10 +97,6 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
     return this.dsoL1Config;
   }
 
-  public boolean isSecure() {
-    return this.secure;
-  }
-
   private void overwriteTcPropertiesFromConfig() {
     TCProperties tcProps = TCPropertiesImpl.getProperties();
 
@@ -121,5 +110,9 @@ public class L1ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
 
   public void reloadServersConfiguration() throws ConfigurationSetupException {
     configurationCreator().reloadServersConfiguration(serversBeanRepository(), true, false);
+  }
+
+  public SecurityInfo getSecurityInfo() {
+    return this.securityInfo;
   }
 }

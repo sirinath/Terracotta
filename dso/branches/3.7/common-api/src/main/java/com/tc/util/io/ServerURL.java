@@ -4,9 +4,20 @@
  */
 package com.tc.util.io;
 
+import sun.misc.BASE64Encoder;
+
+import com.tc.exception.TCRuntimeException;
+import com.tc.net.core.SecurityInfo;
+import com.tc.security.PwProvider;
+import com.tc.security.TCAuthenticationException;
+import com.tc.util.Assert;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.cert.X509Certificate;
@@ -23,23 +34,46 @@ import javax.net.ssl.X509TrustManager;
  */
 public class ServerURL {
 
-  private final URL theURL;
-  private final int timeout;
+  private final URL          theURL;
+  private final int          timeout;
+  private final SecurityInfo securityInfo;
 
-  public ServerURL(String protocol, String host, int port, String file) throws MalformedURLException {
-    this(protocol, host, port, file, -1);
+  public ServerURL(String host, int port, String file, SecurityInfo securityInfo) throws MalformedURLException {
+    this(host, port, file, -1, securityInfo);
   }
 
-  public ServerURL(String protocol, String host, int port, String file, int timeout) throws MalformedURLException {
+  public ServerURL(String host, int port, String file, int timeout, SecurityInfo securityInfo) throws MalformedURLException {
     this.timeout = timeout;
-    this.theURL = new URL(protocol, host, port, file);
+    this.securityInfo = securityInfo;
+    this.theURL = new URL(securityInfo.isSecure() ? "https" : "http", host, port, file);
   }
 
   public InputStream openStream() throws IOException {
-    URLConnection urlConnection;
+    return this.openStream(null);
+  }
 
-    if ("https".equals(theURL.getProtocol())) {
+  public InputStream openStream(PwProvider pwProvider) throws IOException {
+      URLConnection urlConnection;
+    if(securityInfo.isSecure()) {
+      Assert.assertNotNull("Secured URL '" + theURL + "', yet PwProvider instance", pwProvider);
+    }
+    String uri = null;
+
+    if (securityInfo.isSecure()) {
       HttpsURLConnection sslUrlConnection = (HttpsURLConnection) theURL.openConnection();
+      if (securityInfo.getUsername() != null) {
+        uri = "tc://" + securityInfo.getUsername() + "@" + theURL.getHost() + ":" + theURL.getPort();
+        final char[] passwordTo;
+        try {
+          final URI theURI = new URI(uri);
+          passwordTo = pwProvider.getPasswordFor(theURI);
+        } catch (URISyntaxException e) {
+          throw new TCRuntimeException("Couldn't create URI to connect to " + uri, e);
+        }
+        Assert.assertNotNull("No password for " + theURL + " found!", passwordTo);
+        sslUrlConnection.addRequestProperty("Authorization", "Basic " + new BASE64Encoder().encode((securityInfo.getUsername() + ":" + new String(passwordTo))
+            .getBytes()));
+      }
 
       if (Boolean.getBoolean("tc.ssl.disableHostnameVerifier")) {
         // don't verify hostname
@@ -88,7 +122,16 @@ public class ServerURL {
       urlConnection.setReadTimeout(timeout);
     }
 
-    return urlConnection.getInputStream();
+    try {
+      return urlConnection.getInputStream();
+    } catch (IOException e) {
+      if (urlConnection instanceof HttpURLConnection
+          && ((HttpURLConnection)urlConnection).getResponseCode() == 401) {
+        throw new TCAuthenticationException("Invalid credentials connecting to " + (uri != null ? uri : urlConnection.getURL()), e);
+      } else {
+        throw e;
+      }
+    }
   }
 
   @Override

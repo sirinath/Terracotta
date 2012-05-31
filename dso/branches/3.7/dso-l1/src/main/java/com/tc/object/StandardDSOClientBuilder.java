@@ -4,7 +4,6 @@
 package com.tc.object;
 
 import com.tc.async.api.Sink;
-import com.tc.client.SecurityContext;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -17,6 +16,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingEventHandler;
 import com.tc.net.GroupID;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.CommunicationsManager;
@@ -117,11 +117,11 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                            Map<TCMessageType, Class> messageTypeClassMapping,
                                                            Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
                                                            ReconnectionRejectedHandler reconnectionRejectediHandler,
-                                                           SecurityContext securityContext) {
+                                                           TCSecurityManager securityManager) {
     return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, messageRouter,
                                          stackHarnessFactory, null, connectionPolicy, 0, aConfig,
                                          new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping,
-                                         messageTypeFactoryMapping, reconnectionRejectediHandler, securityContext);
+                                         messageTypeFactoryMapping, reconnectionRejectediHandler, securityManager);
   }
 
   public TunnelingEventHandler createTunnelingEventHandler(final ClientMessageChannel ch, final DSOMBeanConfig config) {

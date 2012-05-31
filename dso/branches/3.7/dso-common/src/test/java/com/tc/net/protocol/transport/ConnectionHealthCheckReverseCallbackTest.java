@@ -115,7 +115,7 @@ public class ConnectionHealthCheckReverseCallbackTest extends TCTestCase {
     ConnectionAddressProvider addrProvider = new ConnectionAddressProvider(
                                                                            new ConnectionInfo[] { new ConnectionInfo(
                                                                                                                      host,
-                                                                                                                     proxyPort, false) });
+                                                                                                                     proxyPort) });
 
     clientComms.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     channel = clientComms.createClientChannel(new NullSessionManager(), -1, host, proxyPort, 30000, addrProvider);

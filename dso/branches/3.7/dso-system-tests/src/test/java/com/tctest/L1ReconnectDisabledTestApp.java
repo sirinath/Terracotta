@@ -52,7 +52,7 @@ public class L1ReconnectDisabledTestApp extends AbstractTransparentApp {
     try {
       DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(factory
           .getL1TVSConfigurationSetupManager());
-      ReconnectConfig l1ReconnectConfig = configHelper.getL1ReconnectProperties();
+      ReconnectConfig l1ReconnectConfig = configHelper.getL1ReconnectProperties(null);
 
       // verify
       Assert.assertEquals(false, l1ReconnectConfig.getReconnectEnabled());

@@ -35,6 +35,7 @@ import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.net.core.ConnectionInfo;
+import com.tc.net.core.SecurityInfo;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
@@ -67,6 +68,7 @@ import com.tc.object.tools.BootJar;
 import com.tc.object.tools.BootJarException;
 import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.properties.ReconnectConfig;
+import com.tc.security.PwProvider;
 import com.tc.util.Assert;
 import com.tc.util.ClassUtils;
 import com.tc.util.ClassUtils.ClassSpec;
@@ -833,8 +835,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     }
   }
 
-  public boolean isSecure() {
-    return configSetupManager.isSecure();
+  public SecurityInfo getSecurityInfo() {
+    return configSetupManager.getSecurityInfo();
   }
 
   public void addClassReplacement(final String originalClassName, final String replacementClassName,
@@ -1862,9 +1864,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return null;
   }
 
-  public void validateGroupInfo() throws ConfigurationSetupException {
-    PreparedComponentsFromL2Connection connectionComponents = new PreparedComponentsFromL2Connection(configSetupManager);
-    ServerGroups serverGroupsFromL2 = new ConfigInfoFromL2Impl(configSetupManager).getServerGroupsFromL2()
+  public void validateGroupInfo(final PwProvider pwProvider) throws ConfigurationSetupException {
+    PreparedComponentsFromL2Connection connectionComponents = new PreparedComponentsFromL2Connection(configSetupManager, pwProvider);
+    ServerGroups serverGroupsFromL2 = new ConfigInfoFromL2Impl(configSetupManager, pwProvider).getServerGroupsFromL2()
         .getServerGroups();
 
     ConnectionInfoConfig[] connectionInfoItems = connectionComponents.createConnectionInfoConfigItemByGroup();
@@ -1874,7 +1876,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       for (int j = 0; j < connectionInfo.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(connectionInfo[j].getHostname()),
                                                          connectionInfo[j].getPort(), i * j + j,
-                                                         connectionInfo[j].getGroupName(), connectionInfo[j].isSecure());
+                                                         connectionInfo[j].getGroupName()); // We don't care about security info here
         connInfoFromL1.add(connectionIn);
       }
     }
@@ -1886,7 +1888,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       ServerInfo[] serverInfos = grpArray[i].getServerInfoArray();
       for (int j = 0; j < serverInfos.length; j++) {
         ConnectionInfo connectionIn = new ConnectionInfo(getIpAddressOfServer(serverInfos[j].getName()), serverInfos[j]
-            .getDsoPort().intValue(), i * j + j, grpName, configSetupManager.isSecure());
+            .getDsoPort().intValue(), i * j + j, grpName); // No security info neither, only carrying to compare the hosts, ports & groups
         connInfoFromL2.add(connectionIn);
       }
     }
@@ -1956,9 +1958,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
     return address.getHostAddress();
   }
 
-  private void setupL1ReconnectProperties() throws ConfigurationSetupException {
+  private void setupL1ReconnectProperties(PwProvider pwProvider) throws ConfigurationSetupException {
 
-    L1ReconnectPropertiesDocument l1ReconnectPropFromL2 = new ConfigInfoFromL2Impl(configSetupManager)
+    L1ReconnectPropertiesDocument l1ReconnectPropFromL2 = new ConfigInfoFromL2Impl(configSetupManager, pwProvider)
         .getL1ReconnectPropertiesFromL2();
 
     boolean l1ReconnectEnabled = l1ReconnectPropFromL2.getL1ReconnectProperties().getL1ReconnectEnabled();
@@ -1972,9 +1974,9 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
                                                        l1ReconnectMaxdelayedacks, l1ReconnectSendwindow);
   }
 
-  public synchronized ReconnectConfig getL1ReconnectProperties() throws ConfigurationSetupException {
+  public synchronized ReconnectConfig getL1ReconnectProperties(final PwProvider securityManager) throws ConfigurationSetupException {
     if (l1ReconnectConfig == null) {
-      setupL1ReconnectProperties();
+      setupL1ReconnectProperties(securityManager);
     }
     return l1ReconnectConfig;
   }
