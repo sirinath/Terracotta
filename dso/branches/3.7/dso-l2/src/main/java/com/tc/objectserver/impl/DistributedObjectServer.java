@@ -412,7 +412,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private SearchRequestManager                   searchRequestManager;
 
   private final CallbackDumpHandler              dumpHandler      = new CallbackDumpHandler();
-  protected final TCSecurityManager              tcSecurityManager;
+  private final TCSecurityManager                tcSecurityManager;
 
   // used by a test
   public DistributedObjectServer(final L2ConfigurationSetupManager configSetupManager, final TCThreadGroup threadGroup,
