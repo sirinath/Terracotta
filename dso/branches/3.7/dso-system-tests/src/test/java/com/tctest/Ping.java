@@ -62,7 +62,7 @@ public class Ping implements TCMessageSink {
               3000,
               new ConnectionAddressProvider(
                   new ConnectionInfo[] { new ConnectionInfo("127.0.0.1",
-                      this.port, false) }));
+                      this.port) }));
 
       SequenceGenerator sg = new SequenceGenerator();
 

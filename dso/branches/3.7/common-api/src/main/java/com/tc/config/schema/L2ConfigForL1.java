@@ -15,11 +15,15 @@ import com.tc.util.stringification.OurStringBuilder;
  */
 public interface L2ConfigForL1 {
   public static class L2Data {
-    private final String host;
-    private final int    dsoPort;
-    private int          groupId = -1;
-    private String       groupName;
-    private boolean      secure;
+    private final String  host;
+    private final int     dsoPort;
+    private int           groupId = -1;
+    private String        groupName;
+    private final boolean secure;
+
+    public L2Data(String host, int dsoPort) {
+      this(host, dsoPort, false);
+    }
 
     public L2Data(String host, int dsoPort, boolean secure) {
       Assert.assertNotBlank(host);

@@ -88,7 +88,7 @@ public class LazyHandshakeTest extends TCTestCase {
         .createClientChannel(new NullSessionManager(), 0, listener.getBindAddress().getHostAddress(), proxyPort,
                              (int) PROXY_SYNACK_DELAY,
                              new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(listener
-                                 .getBindAddress().getHostAddress(), proxyPort, false) }));
+                                 .getBindAddress().getHostAddress(), proxyPort) }));
   }
 
   protected void tearDown() throws Exception {

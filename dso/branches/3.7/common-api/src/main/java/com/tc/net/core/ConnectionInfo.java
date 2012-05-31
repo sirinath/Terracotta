@@ -13,19 +13,27 @@ public class ConnectionInfo implements java.io.Serializable {
   private final int                    port;
   private final int                    groupId;
   private final String                 groupName;
-  private final boolean                secure;
+  private final SecurityInfo           securityInfo;
 
-  public ConnectionInfo(String hostname, int port, boolean secure) {
-    this(hostname, port, 0, null, secure);
+  public ConnectionInfo(String hostname, int port) {
+    this(hostname, port, new SecurityInfo());
   }
 
-  public ConnectionInfo(String hostname, int port, int groupId, String groupName, boolean secure) {
+  public ConnectionInfo(String hostname, int port, SecurityInfo securityInfo) {
+    this(hostname, port, 0, null, securityInfo);
+  }
+
+  public ConnectionInfo(String hostname, int port, int groupId, String groupName) {
+    this(hostname, port, groupId, groupName, new SecurityInfo());
+  }
+
+  public ConnectionInfo(String hostname, int port, int groupId, String groupName, SecurityInfo securityInfo) {
     Assert.assertNotNull(hostname);
     this.hostname = hostname;
     this.port = port;
     this.groupId = groupId;
     this.groupName = groupName;
-    this.secure = secure;
+    this.securityInfo = securityInfo;
   }
 
   public String getHostname() {
@@ -44,20 +52,15 @@ public class ConnectionInfo implements java.io.Serializable {
     return groupName;
   }
 
-  public boolean isSecure() {
-    return secure;
-  }
-
   public boolean equals(Object o) {
     if (o == this) return true;
     if (o instanceof ConnectionInfo) {
       ConnectionInfo other = (ConnectionInfo) o;
       if (groupName == null) {
-        return this.hostname.equals(other.getHostname()) && this.port == other.getPort()
-               && this.secure == other.secure;
+        return this.hostname.equals(other.getHostname()) && this.port == other.getPort();
       } else {
         return this.hostname.equals(other.getHostname()) && this.port == other.getPort()
-               && this.groupName.equals(other.groupName) && this.secure == other.secure;
+               && this.groupName.equals(other.groupName);
       }
     }
     return false;
@@ -71,5 +74,9 @@ public class ConnectionInfo implements java.io.Serializable {
 
   public String toString() {
     return (s == null ? (s = hostname + ":" + port + (groupName != null ? ":" + groupName : "")) : s);
+  }
+
+  public SecurityInfo getSecurityInfo() {
+    return securityInfo;
   }
 }

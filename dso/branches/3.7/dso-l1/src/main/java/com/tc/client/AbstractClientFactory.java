@@ -5,6 +5,7 @@
 package com.tc.client;
 
 import com.tc.lang.TCThreadGroup;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
@@ -29,5 +30,7 @@ public abstract class AbstractClientFactory extends AbstractFactory {
                                                        Manager manager,
                                                        StatisticsAgentSubSystem statisticsAgentSubSystem,
                                                        DsoClusterInternal dsoCluster, RuntimeLogger runtimeLogger,
-                                                       ClientMode clientMode);
+                                                       ClientMode clientMode, TCSecurityManager securityManager);
+
+  public abstract TCSecurityManager createClientSecurityManager();
 }

@@ -57,7 +57,7 @@ public class OOOReconnectTimeoutTest extends TCTestCase {
                              port,
                              1000,
                              new ConnectionAddressProvider(
-                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port, false) }));
+                                                           new ConnectionInfo[] { new ConnectionInfo("localhost", port) }));
     return clientMsgCh;
   }
 

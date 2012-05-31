@@ -22,7 +22,7 @@ public class ConfigFileValidator {
     factory = new StandardConfigurationSetupManagerFactory(
                                                               args,
                                                               StandardConfigurationSetupManagerFactory.ConfigMode.L2,
-                                                              new FatalIllegalConfigurationChangeHandler());
+                                                              new FatalIllegalConfigurationChangeHandler(), null);
     L2ConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(null);
     description = manager.describeSources();
   }

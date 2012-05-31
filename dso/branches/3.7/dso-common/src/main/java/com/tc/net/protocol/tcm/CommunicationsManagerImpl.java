@@ -6,7 +6,6 @@ package com.tc.net.protocol.tcm;
 
 import com.tc.async.api.Sink;
 import com.tc.async.impl.NullSink;
-import com.tc.client.SecurityContext;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -20,6 +19,7 @@ import com.tc.net.core.TCConnection;
 import com.tc.net.core.TCConnectionManager;
 import com.tc.net.core.TCConnectionManagerImpl;
 import com.tc.net.core.TCListener;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.net.protocol.NetworkStackHarness;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.transport.ConnectionHealthChecker;
@@ -133,9 +133,9 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
-                                   SecurityContext securityContext) {
+                                   TCSecurityManager securityManager) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, null, connectionPolicy, workerCommCount, config,
-         transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping, securityContext);
+         transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping, securityManager);
     this.serverID = serverID;
   }
 
@@ -146,10 +146,10 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
-                                   SecurityContext securityContext) {
+                                   TCSecurityManager securityManager) {
     this(commsMgrName, monitor, messageRouter, stackHarnessFactory, connMgr, connectionPolicy, workerCommCount,
          healthCheckerConf, transportHandshakeErrorHandler, messageTypeClassMapping, messageTypeFactoryMapping,
-         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR, securityContext);
+         ReconnectionRejectedHandler.DEFAULT_BEHAVIOUR, securityManager);
   }
 
   /**
@@ -165,7 +165,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                    TransportHandshakeErrorHandler transportHandshakeErrorHandler,
                                    Map<TCMessageType, Class> messageTypeClassMapping,
                                    Map<TCMessageType, GeneratedMessageFactory> messageTypeFactoryMapping,
-                                   ReconnectionRejectedHandler reconnectionRejectedHandler, SecurityContext securityContext) {
+                                   ReconnectionRejectedHandler reconnectionRejectedHandler, TCSecurityManager securityManager) {
     this.commsMgrName = commsMgrName;
     this.monitor = monitor;
     this.messageRouter = messageRouter;
@@ -181,7 +181,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
 
     Assert.assertNotNull(commsMgrName);
     if (null == connMgr) {
-      this.connectionManager = new TCConnectionManagerImpl(commsMgrName, workerCommCount, healthCheckerConfig, securityContext);
+      this.connectionManager = new TCConnectionManagerImpl(commsMgrName, workerCommCount, healthCheckerConfig, securityManager);
     } else {
       this.connectionManager = connMgr;
     }

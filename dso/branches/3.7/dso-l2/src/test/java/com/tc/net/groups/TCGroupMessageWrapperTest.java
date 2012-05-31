@@ -150,7 +150,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
                              lsnr.getBindPort(),
                              3000,
                              new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(LOCALHOST, lsnr
-                                 .getBindPort(), false) }));
+                                 .getBindPort()) }));
     channel.open();
 
     assertTrue(channel.isConnected());

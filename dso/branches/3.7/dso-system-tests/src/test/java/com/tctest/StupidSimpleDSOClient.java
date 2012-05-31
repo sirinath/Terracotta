@@ -59,11 +59,11 @@ public class StupidSimpleDSOClient {
     factory = new StandardConfigurationSetupManagerFactory(
                                                               args,
                                                               StandardConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
-                                                              new FatalIllegalConfigurationChangeHandler());
+                                                              new FatalIllegalConfigurationChangeHandler(), null);
     L1ConfigurationSetupManager configManager = factory.getL1TVSConfigurationSetupManager();
     PreparedComponentsFromL2Connection components = new PreparedComponentsFromL2Connection(configManager);
     IsolationClassLoader classLoader = new IsolationClassLoader(new StandardDSOClientConfigHelperImpl(configManager),
-                                                                components);
+                                                                components, null);
 
     Class clientClass = classLoader.loadClass(StupidSimpleDSOClient.class.getName());
     final Object client = clientClass.newInstance();

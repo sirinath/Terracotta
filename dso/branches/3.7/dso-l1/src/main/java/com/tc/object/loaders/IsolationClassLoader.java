@@ -9,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.RemoteSearchRequestManager;
 import com.tc.object.bytecode.ManagerImpl;
@@ -41,28 +42,31 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
 
   private final ManagerInternal       manager;
   private final DSOClientConfigHelper config;
+  private final TCSecurityManager     securityManager;
   private final Map                   onLoadErrors;
   private final Map                   adapters      = new HashMap();
 
-  public IsolationClassLoader(DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents) {
-    this(config, true, null, null, null, null, connectionComponents);
+  public IsolationClassLoader(DSOClientConfigHelper config, PreparedComponentsFromL2Connection connectionComponents, TCSecurityManager securityManager) {
+    this(config, true, null, null, null, null, connectionComponents, securityManager);
   }
 
   public IsolationClassLoader(DSOClientConfigHelper config, ClientObjectManager objectManager,
                               ClientTransactionManager txManager, ClientLockManager lockManager,
                               RemoteSearchRequestManager searchRequestManager) {
-    this(config, false, objectManager, txManager, lockManager, searchRequestManager, null);
+    this(config, false, objectManager, txManager, lockManager, searchRequestManager, null, null);
   }
 
   private IsolationClassLoader(DSOClientConfigHelper config, boolean startClient, ClientObjectManager objectManager,
                                ClientTransactionManager txManager, ClientLockManager lockManager,
                                RemoteSearchRequestManager searchRequestManager,
-                               PreparedComponentsFromL2Connection connectionComponents) {
+                               PreparedComponentsFromL2Connection connectionComponents, TCSecurityManager securityManager) {
     super(getSystemURLS(), null);
     this.config = config;
+    this.securityManager = securityManager;
     this.manager = createManager(startClient, objectManager, txManager, lockManager, searchRequestManager, config,
                                  connectionComponents);
     this.onLoadErrors = new HashMap();
+
   }
 
   public void init() {
@@ -87,7 +91,7 @@ public class IsolationClassLoader extends URLClassLoader implements NamedClassLo
                                         DSOClientConfigHelper theConfig,
                                         PreparedComponentsFromL2Connection connectionComponents) {
     ManagerInternal rv = new ManagerImpl(startClient, objectManager, txManager, lockManager, searchRequestManager,
-                                         theConfig, connectionComponents, false, null, null, false);
+                                         theConfig, connectionComponents, false, null, null, false, securityManager);
     rv.registerNamedLoader(this, null);
     return rv;
   }

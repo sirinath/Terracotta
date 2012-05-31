@@ -14,7 +14,7 @@ public class ConnectionAddressIteratorTest extends TestCase {
   }
   
   public final void testOne() {
-    final ConnectionInfo[] cis = new ConnectionInfo[] { new ConnectionInfo("1", 1, false) };
+    final ConnectionInfo[] cis = new ConnectionInfo[] { new ConnectionInfo("1", 1) };
     ConnectionAddressIterator i = new ConnectionAddressIterator(cis);
     assertTrue(i.hasNext());
     assertTrue(i.hasNext()); // multi calls to hasNext should not change state
@@ -24,7 +24,7 @@ public class ConnectionAddressIteratorTest extends TestCase {
     assertNull(i.next());
   }
   public final void testMany() {
-    final ConnectionInfo[] cis = new ConnectionInfo[] { new ConnectionInfo("1", 1, false), new ConnectionInfo("2", 2, false), new ConnectionInfo("3", 3, false) };
+    final ConnectionInfo[] cis = new ConnectionInfo[] { new ConnectionInfo("1", 1), new ConnectionInfo("2", 2), new ConnectionInfo("3", 3) };
     ConnectionAddressIterator iter = new ConnectionAddressIterator(cis);
     for (int i = 0; i < cis.length; i++) {
       assertTrue(iter.hasNext());

@@ -254,7 +254,7 @@ public class MessageChannelTest extends TCTestCase {
 
     this.setUpClientReceiveSink();
     this.clientChannel = createClientMessageChannel(clComms, -1, lsnr1.getBindPort(), new ConnectionInfo[] {
-        new ConnectionInfo("localhost", lsnr1.getBindPort(), false), new ConnectionInfo("localhost", lsnr2.getBindPort(), false) });
+        new ConnectionInfo("localhost", lsnr1.getBindPort()), new ConnectionInfo("localhost", lsnr2.getBindPort()) });
 
     try {
       clientChannel.open();
@@ -531,7 +531,7 @@ public class MessageChannelTest extends TCTestCase {
 
   private ClientMessageChannel createClientMessageChannel(int maxReconnectTries) {
     return createClientMessageChannel(clientComms, maxReconnectTries, lsnr.getBindPort(),
-                                      new ConnectionInfo[] { new ConnectionInfo("localhost", lsnr.getBindPort(), false) });
+                                      new ConnectionInfo[] { new ConnectionInfo("localhost", lsnr.getBindPort()) });
   }
 
   private ClientMessageChannel createClientMessageChannel(CommunicationsManager clComms, int maxReconnectTries,

@@ -44,6 +44,7 @@ import com.tctest.runner.DistributedTestRunnerConfig;
 import com.tctest.runner.PostAction;
 import com.tctest.runner.TestGlobalIdGenerator;
 import com.tctest.runner.TransparentAppConfig;
+import com.terracottatech.config.BindPort;
 import com.terracottatech.config.TcConfigDocument;
 
 import java.io.File;
@@ -68,6 +69,9 @@ import javax.management.remote.JMXConnector;
 import junit.framework.AssertionFailedError;
 
 public abstract class TransparentTestBase extends BaseDSOTestCase implements TransparentTestIface, TestConfigurator {
+
+  private static final String               SECRET                          = "lala";
+  private static final String               KEYSTORE_PW                     = "keystorepw";
 
   public static final int                   DEFAULT_CLIENT_COUNT            = 2;
   public static final int                   DEFAULT_INTENSITY               = 10;
@@ -270,6 +274,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       setupProxyConnect(helper, portChooser);
     }
 
+    if (Boolean.getBoolean("tc.test.runSecure")) {
+      setupKeyChain();
+    }
+
     this.doSetUp(this);
 
     if (isCrashy() && canRunCrash()) {
@@ -340,10 +348,10 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
   }
 
   protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
-    setupSecurityIfNeeded(configFactory);
+    setupSecurityIfNeeded();
   }
 
-  private void setupSecurityIfNeeded(TestConfigurationSetupManagerFactory configFactory) {
+  protected void setupSecurityIfNeeded() {
     if (!Boolean.getBoolean("tc.test.runSecure")) {
       System.out.println("XXX: running test in unsecured mode");
       return;
@@ -351,27 +359,33 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     System.out.println("XXX: running test in secure mode");
 
     try {
-      final String SECRET = "lala";
-      final String KEYSTORE_PW = "keystorepw";
 
       System.setProperty("SecretProvider.secret", SECRET);
       System.setProperty("tc.ssl.disableHostnameVerifier", "true");
       System.setProperty("tc.ssl.trustAllCerts", "true");
 
+      final File file = new File(System.getProperty("user.dir") + "/keychain.tkc");
       String keystoreUri = "jks:l2@" + getClass().getResource("/keystore.jks").toURI().getPath();
-      String keychainUrl = "file://" + createKeyChainFile(SECRET.getBytes(), new URI(keystoreUri), KEYSTORE_PW);
-      String authUrl = "file://" + System.getProperty("user.dir") + "/authentication.ini";
+      String keychainUrl = "file://" + file.getAbsolutePath();
+
+      String authUrl = "file://" + System.getProperty("user.dir") + "/test-classes/authentication.ini";
       String secretProviderImpl = "org.terracotta.security.SystemPropertySecretProviderBackEnd";
       String keychainImpl = "com.terracotta.management.keychain.FileStoreKeyChain";
-      String realmImpl = "org.apache.shiro.realm.text.IniRealm";
+      String realmImpl = "com.tc.net.core.security.ShiroIniRealm";
 
-      configFactory.setSecurityConfig(keystoreUri, keychainUrl, keychainImpl, secretProviderImpl, authUrl, realmImpl);
+      configFactory().setSecurityConfig(keystoreUri, keychainUrl, keychainImpl, secretProviderImpl, authUrl, realmImpl);
     } catch (Exception e) {
       throw new RuntimeException("cannot setup security", e);
     }
   }
 
-  private static String createKeyChainFile(byte[] secret, URI uri, String password) throws Exception {
+
+  protected void setupKeyChain() throws Exception {
+    setupKeyChain(dsoPort);
+  }
+
+  protected void setupKeyChain(final int port) throws Exception {
+
     final File file = new File(System.getProperty("user.dir") + "/keychain.tkc");
     if(file.exists()) {
       if(!file.delete()) {
@@ -379,6 +393,20 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
       }
     }
 
+    // TODO Shouldn't we add an entry for each active L2 here ? Also, really do localhost _and_ ip ?
+    insertEntries(file, SECRET.getBytes(),
+        new URI[] {
+            new URI(configFactory().getSecuritySslCertificateUri()),
+            new URI("tc://test@" + InetAddress.getLocalHost().getHostAddress() + ":" + port),
+            new URI("tc://test@localhost:" + port)
+        }, new String[] {
+        KEYSTORE_PW,
+        "en6er",
+        "en6er"
+    });
+  }
+
+  private static void insertEntries(File file, byte[] secret, URI[] uris, String passwords[]) throws Exception {
     Class<?> fileStoreKeyChainClass = Class.forName("com.terracotta.management.keychain.FileStoreKeyChain");
     Method createNewKeyStoreMethod = fileStoreKeyChainClass.getMethod("createNewKeyStore", Class.forName("com.terracotta.management.keychain.crypto.EnigmaMachine"), File.class);
     Object keyChain = createNewKeyStoreMethod.invoke(fileStoreKeyChainClass, Class.forName("com.terracotta.management.keychain.crypto.AesEnigmaMachine").newInstance(), file);
@@ -390,12 +418,14 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     Class<?> keyNameClass = Class.forName("com.terracotta.management.keychain.KeyName");
     Class<?> uriKeyNameClass = Class.forName("com.terracotta.management.keychain.URIKeyName");
     Method storePasswordMethod = keyChainClass.getMethod("storePassword", byte[].class, keyNameClass, byte[].class);
-    storePasswordMethod.invoke(keyChain, secret, uriKeyNameClass.getConstructor(URI.class).newInstance(uri), password.getBytes());
+    for (int i = 0, urisLength = uris.length; i < urisLength; i++) {
+      System.err.println("  => Adding password for " + uris[i] + " to keyChain");
+      storePasswordMethod.invoke(keyChain, secret, uriKeyNameClass.getConstructor(URI.class)
+          .newInstance(uris[i]), passwords[i].getBytes());
+    }
 
     Method lockMethod = keyChainClass.getMethod("lock");
     lockMethod.invoke(keyChain);
-
-    return file.getAbsolutePath();
   }
 
   public File makeTmpDir(Class klass) {

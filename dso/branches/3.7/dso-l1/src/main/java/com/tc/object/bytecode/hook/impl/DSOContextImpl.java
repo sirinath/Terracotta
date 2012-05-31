@@ -14,6 +14,7 @@ import com.tc.aspectwerkz.transform.WeavingStrategy;
 import com.tc.bundles.EmbeddedOSGiRuntime;
 import com.tc.bundles.Repository;
 import com.tc.bundles.VirtualTimRepository;
+import com.tc.client.AbstractClientFactory;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
@@ -23,6 +24,8 @@ import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
+import com.tc.net.core.SecurityInfo;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
@@ -97,8 +100,12 @@ public class DSOContextImpl implements DSOContext {
    */
   public static DSOContext createGlobalContext() throws ConfigurationSetupException {
     DSOClientConfigHelper configHelper = getGlobalConfigHelper();
-    Manager manager = new ManagerImpl(configHelper, preparedComponentsFromL2Connection);
+    Manager manager = new ManagerImpl(configHelper, preparedComponentsFromL2Connection, null);
     return new DSOContextImpl(configHelper, manager.getClassProvider(), manager, Collections.EMPTY_LIST, false);
+  }
+
+  public static TCSecurityManager createSecurityManager() {
+    return AbstractClientFactory.getFactory().createClientSecurityManager();
   }
 
   public static DSOContext createContext(String configSpec) throws ConfigurationSetupException {
@@ -106,19 +113,19 @@ public class DSOContextImpl implements DSOContext {
                                                                                                     (String[]) null,
                                                                                                     StandardConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
                                                                                                     new FatalIllegalConfigurationChangeHandler(),
-                                                                                                    configSpec);
+                                                                                                    configSpec, null);
 
     L1ConfigurationSetupManager config = factory.getL1TVSConfigurationSetupManager();
     config.setupLogging();
     PreparedComponentsFromL2Connection l2Connection;
     try {
-      l2Connection = validateMakeL2Connection(config);
+      l2Connection = validateMakeL2Connection(config, null);
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
 
     DSOClientConfigHelper configHelper = new StandardDSOClientConfigHelperImpl(config);
-    Manager manager = new ManagerImpl(configHelper, l2Connection);
+    Manager manager = new ManagerImpl(configHelper, l2Connection, null);
     DSOContext context = createContext(configHelper, manager);
     manager.init();
     return context;
@@ -126,7 +133,7 @@ public class DSOContextImpl implements DSOContext {
 
   public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader,
                                                    Map<String, URL> virtualTimJars, Collection<URL> additionalModules,
-                                                   URL bootJarURL, boolean expressRejoinClient)
+                                                   URL bootJarURL, boolean expressRejoinClient, TCSecurityManager securityManager, SecurityInfo securityInfo)
       throws ConfigurationSetupException {
     // XXX: refactor this method to not duplicate createContext() so much
 
@@ -146,13 +153,13 @@ public class DSOContextImpl implements DSOContext {
                                                                                                     (String[]) null,
                                                                                                     StandardConfigurationSetupManagerFactory.ConfigMode.EXPRESS_L1,
                                                                                                     new FatalIllegalConfigurationChangeHandler(),
-                                                                                                    configSpec);
+                                                                                                    configSpec, securityManager);
 
-    L1ConfigurationSetupManager config = factory.getL1TVSConfigurationSetupManager();
+    L1ConfigurationSetupManager config = factory.getL1TVSConfigurationSetupManager(securityInfo);
     config.setupLogging();
     PreparedComponentsFromL2Connection l2Connection;
     try {
-      l2Connection = validateMakeL2Connection(config);
+      l2Connection = validateMakeL2Connection(config, securityManager);
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
@@ -165,8 +172,7 @@ public class DSOContextImpl implements DSOContext {
     // state too
     ClassProvider classProvider = new SingleLoaderClassProvider(null, "standalone", loader);
     Manager manager = new ManagerImpl(true, null, null, null, null, configHelper, l2Connection, true, runtimeLogger,
-                                      classProvider, expressRejoinClient);
-
+                                      classProvider, expressRejoinClient, securityManager);
     Collection<Repository> repos = new ArrayList<Repository>();
     repos.add(new VirtualTimRepository(virtualTimJars));
     DSOContext context = createContext(configHelper, manager, repos, expressRejoinClient);
@@ -308,7 +314,7 @@ public class DSOContextImpl implements DSOContext {
     if (staticConfigHelper == null) {
       StandardConfigurationSetupManagerFactory factory = new StandardConfigurationSetupManagerFactory(
                                                                                                       StandardConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
-                                                                                                      new FatalIllegalConfigurationChangeHandler());
+                                                                                                      new FatalIllegalConfigurationChangeHandler(), null);
 
       logger.debug("Created StandardTVSConfigurationSetupManagerFactory.");
       L1ConfigurationSetupManager config = factory.getL1TVSConfigurationSetupManager();
@@ -316,7 +322,7 @@ public class DSOContextImpl implements DSOContext {
       logger.debug("Created L1TVSConfigurationSetupManager.");
 
       try {
-        preparedComponentsFromL2Connection = validateMakeL2Connection(config);
+        preparedComponentsFromL2Connection = validateMakeL2Connection(config, null);
       } catch (Exception e) {
         throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
       }
@@ -326,13 +332,13 @@ public class DSOContextImpl implements DSOContext {
     return staticConfigHelper;
   }
 
-  private static PreparedComponentsFromL2Connection validateMakeL2Connection(L1ConfigurationSetupManager config)
+  private static PreparedComponentsFromL2Connection validateMakeL2Connection(L1ConfigurationSetupManager config, final TCSecurityManager securityManager)
       throws UnknownHostException, IOException, TCTimeoutException {
     L2Data[] l2Data = config.l2Config().l2Data();
     Assert.assertNotNull(l2Data);
 
     if (false && !config.loadedFromTrustedSource()) {
-      String serverConfigMode = getServerConfigMode(l2Data[0].host(), l2Data[0].dsoPort(), l2Data[0].secure());
+      String serverConfigMode = getServerConfigMode(l2Data[0].host(), l2Data[0].dsoPort(), config.getSecurityInfo());
 
       if (serverConfigMode != null && serverConfigMode.equals(ConfigurationModel.PRODUCTION)) {
         String text = "Configuration constraint violation: "
@@ -341,20 +347,16 @@ public class DSOContextImpl implements DSOContext {
       }
     }
 
-    return new PreparedComponentsFromL2Connection(config);
+    return new PreparedComponentsFromL2Connection(config, securityManager);
   }
 
   private static final long MAX_HTTP_FETCH_TIME       = 30 * 1000; // 30 seconds
   private static final long HTTP_FETCH_RETRY_INTERVAL = 1 * 1000; // 1 second
 
-  private static String getServerConfigMode(String serverHost, int httpPort, boolean secure)
+  private static String getServerConfigMode(String serverHost, int httpPort, SecurityInfo securityInfo)
       throws MalformedURLException, TCTimeoutException, IOException {
 
-    String protocol = "http";
-    if (secure) {
-      protocol = "https";
-    }
-    ServerURL theURL = new ServerURL(protocol, serverHost, httpPort, "/config?query=mode");
+    ServerURL theURL = new ServerURL(serverHost, httpPort, "/config?query=mode", securityInfo);
 
     long startTime = System.currentTimeMillis();
     long lastTrial = 0;

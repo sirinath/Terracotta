@@ -9,6 +9,7 @@ import org.terracotta.groupConfigForL1.ServerGroupsDocument;
 import com.tc.admin.common.MBeanServerInvocationProxy;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.net.core.SecurityInfo;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.server.TCServerImpl;
 import com.tc.test.JMXUtils;
@@ -64,21 +65,16 @@ public class GroupInfoFromHttpSystemTest extends BaseDSOTestCase {
   }
 
   public void testGetGroupInfo() throws Exception {
-    testGroupInfoForServer(dsoPort_1, false, true);
-    testGroupInfoForServer(dsoPort_2, false, false);
+    testGroupInfoForServer(dsoPort_1, true);
+    testGroupInfoForServer(dsoPort_2, false);
     server_1.stop();
     waitTillBecomeActive(jmxPort_2);
-    testGroupInfoForServer(dsoPort_1, false, false);
-    testGroupInfoForServer(dsoPort_2, false, true);
+    testGroupInfoForServer(dsoPort_1, false);
+    testGroupInfoForServer(dsoPort_2, true);
   }
 
-  private void testGroupInfoForServer(int dsoPort, boolean secure, boolean shouldPass) throws MalformedURLException {
-    String protocol = "http";
-    if (secure) {
-      protocol = "https";
-    }
-
-    ServerURL theURL = new ServerURL(protocol, "localhost", dsoPort, TCServerImpl.GROUP_INFO_SERVLET_PATH);
+  private void testGroupInfoForServer(int dsoPort, boolean shouldPass) throws MalformedURLException {
+    ServerURL theURL = new ServerURL("localhost", dsoPort, TCServerImpl.GROUP_INFO_SERVLET_PATH, new SecurityInfo());
     InputStream l1PropFromL2Stream = null;
     System.out.println("Trying to get groupinfo from " + theURL.toString());
     int trials = 0;

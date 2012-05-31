@@ -2351,7 +2351,7 @@ public class BootJarTool {
       factory = new StandardConfigurationSetupManagerFactory(
                                                              cmdLine,
                                                              StandardConfigurationSetupManagerFactory.ConfigMode.CUSTOM_L1,
-                                                             new FatalIllegalConfigurationChangeHandler());
+                                                             new FatalIllegalConfigurationChangeHandler(), null);
       final boolean verbose = cmdLine.hasOption("v");
       final TCLogger logger = verbose ? CustomerLogging.getConsoleLogger() : new NullTCLogger();
       final L1ConfigurationSetupManager config = factory.createL1TVSConfigurationSetupManager(logger);

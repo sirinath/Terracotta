@@ -387,7 +387,7 @@ public class L2ConfigurationSetupManagerImpl extends BaseConfigurationSetupManag
       findMyL2Bean(); // To get the exception in case things are screwed up
       this.beanRepository = new ChildBeanRepository(serversBeanRepository(), Server.class, new BeanFetcher());
       this.commonL2Config = new CommonL2ConfigObject(createContext(this.beanRepository, configurationCreator()
-          .directoryConfigurationLoadedFrom()));
+          .directoryConfigurationLoadedFrom()), secure);
       this.dsoL2Config = new L2DSOConfigObject(createContext(this.beanRepository, configurationCreator()
           .directoryConfigurationLoadedFrom()));
     }

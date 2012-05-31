@@ -17,6 +17,7 @@ import com.tc.net.GroupID;
 import com.tc.net.core.ConnectionInfo;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
+import com.tc.security.PwProvider;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.io.ServerURL;
 import com.terracottatech.config.L1ReconnectPropertiesDocument;
@@ -49,13 +50,19 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
 
   private final long             connectRetryInterval;
   private final ConnectionInfo[] connections;
+  private final PwProvider       pwProvider;
 
   public ConfigInfoFromL2Impl(final L1ConfigurationSetupManager configSetupManager) {
-    this(getConnectionsFromL1Config(configSetupManager));
+    this(configSetupManager, null);
   }
 
-  public ConfigInfoFromL2Impl(final ConnectionInfo[] connections) {
+  public ConfigInfoFromL2Impl(final L1ConfigurationSetupManager configSetupManager, PwProvider pwProvider) {
+    this(getConnectionsFromL1Config(configSetupManager), pwProvider);
+  }
+
+  public ConfigInfoFromL2Impl(final ConnectionInfo[] connections, PwProvider pwProvider) {
     this.connections = connections;
+    this.pwProvider = pwProvider;
 
     long interval = RECONNECT_WAIT_INTERVAL;
     if (RECONNECT_WAIT_INTERVAL < MIN_RETRY_INTERVAL_MILLS) {
@@ -80,7 +87,7 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
     for (L2Data l2 : l2s) {
       l2.setGroupId(0);
     }
-    ConnectionInfoConfig connectInfo = new ConnectionInfoConfig(l2s);
+    ConnectionInfoConfig connectInfo = new ConnectionInfoConfig(l2s, configSetupManager.getSecurityInfo());
     return connectInfo.getConnectionInfos();
   }
 
@@ -260,14 +267,10 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
     for (int i = 0; i < connections.length; i++) {
       ConnectionInfo ci = connections[i];
       try {
-        String protocol = "http";
-        if (ci.isSecure()) {
-          protocol = "https";
-        }
-        theURL = new ServerURL(protocol, ci.getHostname(), ci.getPort(), httpPathExtension);
+        theURL = new ServerURL(ci.getHostname(), ci.getPort(), httpPathExtension, ci.getSecurityInfo());
         String text = "Trying to get " + message + " from " + theURL.toString();
         logger.info(text);
-        propFromL2Stream = theURL.openStream();
+        propFromL2Stream = theURL.openStream(pwProvider);
         if (propFromL2Stream != null) return propFromL2Stream;
       } catch (IOException e) {
         String text = "Can't connect to [" + ci + "].";

@@ -21,6 +21,7 @@ import com.tc.config.schema.beanfactory.TerracottaDomainConfigurationDocumentBea
 import com.tc.config.schema.dynamic.ConfigItem;
 import com.tc.config.schema.repository.MutableBeanRepository;
 import com.tc.config.schema.setup.StandardConfigurationSetupManagerFactory.ConfigMode;
+import com.tc.net.core.SecurityInfo;
 import com.tc.object.config.schema.DSOApplicationConfig;
 import com.tc.object.config.schema.L1DSOConfig;
 import com.tc.object.config.schema.L2DSOConfig;
@@ -486,7 +487,6 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
     l2DSOConfig().securityConfig().getKeychain().setSecretProvider(secretProviderImpl);
     l2DSOConfig().securityConfig().getAuth().setUrl(authUrl);
     l2DSOConfig().securityConfig().getAuth().setRealm(realmImpl);
-    sampleL1Manager.setSecure(true);
     sampleL2Manager.setSecurityConfig(new SecurityConfig() {
       @Override
       public String getSslCertificateUri() {
@@ -653,7 +653,7 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
     this(null, illegalConfigurationChangeHandler);
   }
 
-  public L1ConfigurationSetupManager getL1TVSConfigurationSetupManager() {
+  public L1ConfigurationSetupManager getL1TVSConfigurationSetupManager(SecurityInfo securityInfo) {
     return this.sampleL1Manager;
   }
 
@@ -675,10 +675,18 @@ public class TestConfigurationSetupManagerFactory extends BaseConfigurationSetup
       System.setProperty(ConfigurationSetupManagerFactory.CONFIG_FILE_PROPERTY_NAME, l2sSpec.toString());
     }
 
+    final SecurityInfo securityInfo;
+    if(Boolean.getBoolean("tc.test.runSecure")) {
+      securityInfo = new SecurityInfo(Boolean.getBoolean("tc.test.runSecure"), "test");
+    } else {
+      securityInfo = new SecurityInfo();
+    }
+
     L1ConfigurationSetupManagerImpl configSetupManager = new L1ConfigurationSetupManagerImpl(configCreator,
                                                                                              this.defaultValueProvider,
                                                                                              this.xmlObjectComparator,
-                                                                                             this.illegalChangeHandler);
+                                                                                             this.illegalChangeHandler,
+                                                                                             securityInfo);
 
     return configSetupManager;
   }
