@@ -10,7 +10,6 @@ import com.tc.logging.TCLogging;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.core.ConnectionAddressProvider;
 import com.tc.net.core.ConnectionInfo;
-import com.tc.net.core.SecurityInfo;
 import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
@@ -101,6 +100,7 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
     ((CommunicationsManagerImpl) serverComms).getMessageRouter().routeMessageType(TCMessageType.PING_MESSAGE,
                                                                                   new TCMessageSink() {
 
+                                                                                    @Override
                                                                                     public void putMessage(TCMessage message)
                                                                                         throws UnsupportedMessageTypeException {
 
@@ -145,6 +145,7 @@ public class ConnectionHealthCheckerReconnectTest extends TCTestCase {
     commsMgr.addClassMapping(TCMessageType.PING_MESSAGE, PingMessage.class);
     clientMessageRouter.routeMessageType(TCMessageType.PING_MESSAGE, new TCMessageSink() {
 
+      @Override
       public void putMessage(TCMessage message) throws UnsupportedMessageTypeException {
         PingMessage pingMsg = (PingMessage) message;
         try {

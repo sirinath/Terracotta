@@ -7,13 +7,10 @@ import com.tc.object.config.ConfigVisitor;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.properties.ReconnectConfig;
-import com.tc.security.PwProvider;
 import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tctest.runner.AbstractTransparentApp;
-
-import java.net.URI;
 
 public class L1ReconnectEnabledTestApp extends AbstractTransparentApp {
 
@@ -36,6 +33,7 @@ public class L1ReconnectEnabledTestApp extends AbstractTransparentApp {
     config.addIncludePattern(testClass + "$*");
   }
 
+  @Override
   public void run() {
     try {
       testL1ReconnectConfig();

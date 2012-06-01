@@ -44,7 +44,6 @@ import com.tctest.runner.DistributedTestRunnerConfig;
 import com.tctest.runner.PostAction;
 import com.tctest.runner.TestGlobalIdGenerator;
 import com.tctest.runner.TransparentAppConfig;
-import com.terracottatech.config.BindPort;
 import com.terracottatech.config.TcConfigDocument;
 
 import java.io.File;
@@ -606,6 +605,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return mode;
   }
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     // Nothing here, by default
   }
@@ -614,6 +614,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return TestConfigObject.TRANSPARENT_TESTS_MODE_CRASH.equals(mode());
   }
 
+  @Override
   public DistributedTestRunnerConfig getRunnerConfig() {
     return this.runnerConfig;
   }
@@ -622,6 +623,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     this.possibleApplicationConfigBuilder = builder;
   }
 
+  @Override
   public TransparentAppConfig getTransparentAppConfig() {
     return this.transparentAppConfig;
   }
@@ -650,10 +652,12 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     return false;
   }
 
+  @Override
   public void initializeTestRunner() throws Exception {
     initializeTestRunner(false);
   }
 
+  @Override
   public void initializeTestRunner(boolean isMutateValidateTest) throws Exception {
     initializeTestRunner(isMutateValidateTest, transparentAppConfig, runnerConfig);
     loadPostActions();
@@ -747,6 +751,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
   private Thread executeDuringRunningCluster() {
     Thread t = new Thread(new Runnable() {
+      @Override
       public void run() {
         try {
           duringRunningCluster();
