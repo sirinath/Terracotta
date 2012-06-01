@@ -32,6 +32,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * @author Ludovic Orban
  */
+@SuppressWarnings("restriction")
 public class ServerURL {
 
   private final URL          theURL;
@@ -78,6 +79,7 @@ public class ServerURL {
       if (Boolean.getBoolean("tc.ssl.disableHostnameVerifier")) {
         // don't verify hostname
         sslUrlConnection.setHostnameVerifier(new HostnameVerifier() {
+          @Override
           public boolean verify(String hostname, SSLSession session) {
             return true;
           }
@@ -89,14 +91,17 @@ public class ServerURL {
         // trust all certs
         trustManagers = new TrustManager[] {
             new X509TrustManager() {
+              @Override
               public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
                 //
               }
 
+              @Override
               public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
                 //
               }
 
+              @Override
               public X509Certificate[] getAcceptedIssuers() {
                 return null;
               }
