@@ -4,25 +4,20 @@
  */
 package com.tctest.jdk15;
 
-import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
-import com.tc.util.runtime.Vm;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
-import com.terracottatech.config.PersistenceMode;
 
 /*
  * Test case for CDV-253
  */
 
-public class HashMapBatchTxnTest extends TransparentTestBase {
+public class HashMapBatchTxnTempSwapTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 2;
 
-  public HashMapBatchTxnTest() {
-    // MNK-362
-    if (Vm.isIBM()) {
-      //disableAllUntil("2007-12-04");
-    }
+  public HashMapBatchTxnTempSwapTest() {
+    // DEV-7491
+    disableTest();
   }
 
   @Override
@@ -36,8 +31,4 @@ public class HashMapBatchTxnTest extends TransparentTestBase {
     return HashMapBatchTxnTestApp.class;
   }
 
-  @Override
-  protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
-    configFactory.setPersistenceMode(PersistenceMode.PERMANENT_STORE);
-  }
 }
