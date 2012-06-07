@@ -91,6 +91,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
   private NetworkListener                                                   callbackportListener      = null;
   private final TransportHandshakeErrorHandler                              handshakeErrHandler;
   private final String                                                      commsMgrName;
+  private final TCSecurityManager                                           securityManager;
 
   /**
    * Create a communications manager. This implies that one or more network handling threads will be started on your
@@ -178,6 +179,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     this.messageTypeClassMapping.putAll(messageTypeClassMapping);
     this.messageTypeFactoryMapping.putAll(messageTypeFactoryMapping);
     this.reconnectionRejectedHandler = reconnectionRejectedHandler;
+    this.securityManager = securityManager;
 
     Assert.assertNotNull(commsMgrName);
     if (null == connMgr) {
@@ -267,7 +269,7 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
     }
 
     ClientMessageChannelImpl rv = new ClientMessageChannelImpl(msgFactory, this.messageRouter, sessionProvider,
-                                                               new GroupID(addressProvider.getGroupId()));
+                                                               new GroupID(addressProvider.getGroupId()), addressProvider.getSecurityInfo(), securityManager);
     if (transportFactory == null) transportFactory = new MessageTransportFactoryImpl(transportMessageFactory,
                                                                                      connectionHealthChecker,
                                                                                      connectionManager,
@@ -384,7 +386,8 @@ public class CommunicationsManagerImpl implements CommunicationsManager {
                                                                 this.transportMessageFactory, connectionIdFactory,
                                                                 this.connectionPolicy,
                                                                 new WireProtocolAdaptorFactoryImpl(httpSink),
-                                                                wireProtocolMessageSink, licenseLock, this.commsMgrName);
+                                                                wireProtocolMessageSink, licenseLock, this.commsMgrName,
+                                                                this.securityManager);
     return connectionManager.createListener(addr, stackProvider, Constants.DEFAULT_ACCEPT_QUEUE_DEPTH, resueAddr);
   }
 

@@ -142,6 +142,10 @@ public class HydrateHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    public NetworkStackID open(char[] password) {
+      throw new ImplementMe();
+    }
+
     public Object removeAttachment(String key) {
       throw new ImplementMe();
     }

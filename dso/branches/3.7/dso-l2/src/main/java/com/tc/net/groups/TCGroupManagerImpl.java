@@ -530,7 +530,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
     return groupResponse;
   }
 
-  private void openChannel(ConnectionAddressProvider addrProvider, ChannelEventListener listener)
+  private void openChannel(ConnectionAddressProvider addrProvider, ChannelEventListener listener, final char[] password)
       throws TCTimeoutException, UnknownHostException, MaxConnectionsExceededException, IOException,
       CommStackMismatchException {
 
@@ -549,7 +549,7 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
                                                                              addrProvider);
 
     channel.addListener(listener);
-    channel.open();
+    channel.open(password);
 
     handshake(channel);
     return;
@@ -557,14 +557,21 @@ public class TCGroupManagerImpl implements GroupManager, ChannelManagerEventList
 
   public void openChannel(String hostname, int port, ChannelEventListener listener) throws TCTimeoutException,
       UnknownHostException, MaxConnectionsExceededException, IOException, CommStackMismatchException {
+    final char[] password;
     final SecurityInfo securityInfo;
-    // TODO this is lame...
-    if(securityManager != null) {
+    if (isSecured()) {
       securityInfo = new SecurityInfo(true, securityManager.getIntraL2Username());
+      password = securityManager.getPasswordForTC(securityInfo.getUsername(), hostname, port);
     } else {
+      password = null;
       securityInfo = new SecurityInfo();
     }
-    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port, securityInfo) }), listener);
+    openChannel(new ConnectionAddressProvider(new ConnectionInfo[] { new ConnectionInfo(hostname, port, securityInfo) }), listener, password);
+  }
+
+  private boolean isSecured() {
+    // TODO this is lame... see com.tc.server.TCServerImpl#TCServerImpl line 48 though...
+    return securityManager != null;
   }
 
   /*

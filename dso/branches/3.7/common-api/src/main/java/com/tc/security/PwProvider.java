@@ -7,4 +7,6 @@ import java.net.URI;
 */
 public interface PwProvider {
   char[] getPasswordFor(URI uri);
+
+  char[] getPasswordForTC(String user, String host, int port);
 }
