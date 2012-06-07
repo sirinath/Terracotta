@@ -844,7 +844,14 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     while (maxConnectRetries <= 0 || i < maxConnectRetries) {
       try {
         DSO_LOGGER.debug("Trying to open channel....");
-        this.channel.open();
+        final char[] pw;
+        if(config.getSecurityInfo().hasCredentials()) {
+          Assert.assertNotNull(securityManager);
+          pw = securityManager.getPasswordForTC(config.getSecurityInfo().getUsername(), serverHost, serverPort);
+        } else {
+          pw = null;
+        }
+        this.channel.open(pw);
         DSO_LOGGER.debug("Channel open");
         break;
       } catch (final TCTimeoutException tcte) {

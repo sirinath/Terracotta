@@ -43,4 +43,9 @@ public class ServerMessageChannelImpl extends AbstractMessageChannel implements 
     throw new UnsupportedOperationException("Server channels don't support open()");
   }
 
+  @Override
+  public NetworkStackID open(char[] password) {
+    throw new UnsupportedOperationException("Server channels don't support open()");
+  }
+
 }
