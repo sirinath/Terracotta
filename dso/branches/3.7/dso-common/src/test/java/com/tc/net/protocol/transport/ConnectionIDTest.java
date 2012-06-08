@@ -4,8 +4,6 @@
  */
 package com.tc.net.protocol.transport;
 
-import com.tc.test.TCTestCase;
-
 import junit.framework.TestCase;
 
 public class ConnectionIDTest extends TestCase {
