@@ -395,7 +395,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
     // TODO Shouldn't we add an entry for each active L2 here ? Also, really do localhost _and_ ip ?
     insertEntries(file, SECRET.getBytes(),
         new URI[] {
-            new URI(configFactory().getSecuritySslCertificateUri()),
+            new URI(sanitizeWindowsJKS(configFactory().getSecuritySslCertificateUri())),
             new URI("tc://test@" + InetAddress.getLocalHost().getHostAddress() + ":" + port),
             new URI("tc://test@localhost:" + port)
         }, new String[] {
@@ -403,6 +403,13 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
         "en6er",
         "en6er"
     });
+  }
+
+  private static String sanitizeWindowsJKS(String securitySslCertificateUri) {
+    if(Os.isWindows()) {
+      securitySslCertificateUri = securitySslCertificateUri.replace(File.separatorChar, '/');
+    }
+    return securitySslCertificateUri;
   }
 
   private static void insertEntries(File file, byte[] secret, URI[] uris, String passwords[]) throws Exception {
