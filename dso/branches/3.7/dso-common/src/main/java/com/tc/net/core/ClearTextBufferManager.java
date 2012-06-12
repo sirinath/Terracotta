@@ -9,6 +9,8 @@ import com.tc.logging.TCLogging;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.GatheringByteChannel;
+import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -29,26 +31,58 @@ class ClearTextBufferManager implements BufferManager {
     }
   }
 
-  public ByteBuffer getSendBuffer() {
-    return sendBuffer;
-  }
-
-  public ByteBuffer getRecvBuffer() {
-    return recvBuffer;
-  }
-
-  public int send() throws IOException {
+  @Override
+  public int sendFromBuffer() throws IOException {
     sendBuffer.flip();
-    int written = channel.write(sendBuffer);
+    int written = this.channel.write(sendBuffer);
     sendBuffer.compact();
     return written;
   }
 
-  public int recv() throws IOException {
-    return channel.read(recvBuffer);
+  @Override
+  public int recvToBuffer() throws IOException {
+    return this.channel.read(recvBuffer);
   }
 
+  @Override
   public void close() {
     //
+  }
+
+  @Override
+  public int forwardFromReadBuffer(ByteBuffer dest) {
+    recvBuffer.flip();
+    int forwarded = forwardBuffer(recvBuffer, dest);
+    recvBuffer.compact();
+    return forwarded;
+  }
+
+  @Override
+  public int forwardFromReadBuffer(GatheringByteChannel gbc) throws IOException {
+    recvBuffer.flip();
+    int forwarded = gbc.write(recvBuffer);
+    recvBuffer.compact();
+    return forwarded;
+  }
+
+  @Override
+  public int forwardToWriteBuffer(ByteBuffer src) {
+    return forwardBuffer(src, sendBuffer);
+  }
+
+  @Override
+  public int forwardToWriteBuffer(ScatteringByteChannel sbc) throws IOException {
+    return sbc.read(sendBuffer);
+  }
+
+  private static int forwardBuffer(final ByteBuffer source, final ByteBuffer dest) {
+    int size = Math.min(dest.remaining(), source.remaining());
+    if (size > 0) {
+      ByteBuffer tmpBuf = source.duplicate();
+      tmpBuf.limit(tmpBuf.position() + size);
+      dest.put(tmpBuf);
+      source.position(source.position() + size);
+    }
+    return size;
   }
 }

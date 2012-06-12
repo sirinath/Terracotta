@@ -22,7 +22,6 @@ import com.tc.util.runtime.Os;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
@@ -40,9 +39,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 
 /**
  * The communication thread. Creates {@link Selector selector}, registers {@link SocketChannel} to the selector and does
@@ -622,71 +618,17 @@ class CoreNIOServices implements TCListenerEventListener, TCConnectionEventListe
             }
 
             if (isReader() && key.isValid() && key.isReadable()) {
+              int read;
               TCChannelReader reader = (TCChannelReader) key.attachment();
-              BufferManager bufferManager = reader.getBufferManager();
-              ByteBuffer buffer = bufferManager.getRecvBuffer();
-
-              int channelRead;
               do {
-                try {
-                  channelRead = bufferManager.recv();
-                } catch (SSLException ssle) {
-                  logger.error("SSL error: " + ssle);
-                  channelRead = -1;
-                } catch (IOException ioe) {
-                  channelRead = -1;
-                }
-                if (channelRead == -1) {
-                  reader.closeRead();
-                  break;
-                }
-
-                buffer.flip();
-                while (buffer.hasRemaining()) {
-                  int read = reader.doRead(buffer);
-                  if (read == -1) {
-                    reader.closeRead();
-                    break;
-                  }
-                  this.bytesRead.add(read);
-                }
-                buffer.clear();
-              } while (channelRead != 0 && key.isValid() && key.isReadable());
+                read = reader.doRead();
+                this.bytesRead.add(read);
+              } while ((read != 0) && key.isReadable());
             }
 
             if (key.isValid() && !isReader() && key.isWritable()) {
-              TCChannelWriter writer = (TCChannelWriter) key.attachment();
-              BufferManager bufferManager = writer.getBufferManager();
-              ByteBuffer buffer = bufferManager.getSendBuffer();
-
-              int written = writer.doWrite(buffer);
-              if (written == -1) {
-                writer.closeWrite();
-                break;
-              }
-
-              int channelWritten = 0;
-              while (channelWritten != written) {
-                int sent = 0;
-                try {
-                  sent = bufferManager.send();
-                } catch (SSLHandshakeException she) {
-                  logger
-                      .error("SSL handshake error: unable to find valid certification path to requested target, closing connection.");
-                  channelWritten = -1;
-                } catch (SSLException ssle) {
-                  logger.error("SSL error: " + ssle);
-                  channelWritten = -1;
-                } catch (IOException ioe) {
-                  channelWritten = -1;
-                }
-                if (channelWritten == -1) {
-                  writer.closeWrite();
-                  break;
-                }
-                channelWritten += sent;
-                this.bytesWritten.add(sent);
-              }
+              int written = ((TCChannelWriter) key.attachment()).doWrite();
+              this.bytesWritten.add(written);
             }
 
             TCConnection conn = (TCConnection) key.attachment();

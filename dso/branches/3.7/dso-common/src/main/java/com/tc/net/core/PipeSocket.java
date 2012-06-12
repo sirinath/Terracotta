@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
+import java.nio.channels.Pipe.SinkChannel;
+import java.nio.channels.Pipe.SourceChannel;
 
 /**
  * @author Ludovic Orban
@@ -28,16 +28,12 @@ public class PipeSocket extends Socket {
     this.outputPipe.source().configureBlocking(false);
   }
 
-  public int addToReceiveBuffer(ByteBuffer buffer) throws IOException {
-    return inputPipe.sink().write(buffer);
+  public SourceChannel getOutputPipeSourceChannel() {
+    return outputPipe.source();
   }
 
-  public int getFromSendBuffer(ByteBuffer buffer) throws IOException {
-    try {
-      return outputPipe.source().read(buffer);
-    } catch (AsynchronousCloseException e) {
-      return -1;
-    }
+  public SinkChannel getInputPipeSinkChannel() {
+    return inputPipe.sink();
   }
 
   @Override
