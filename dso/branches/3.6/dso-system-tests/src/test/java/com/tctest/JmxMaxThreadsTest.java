@@ -21,6 +21,7 @@ public class JmxMaxThreadsTest extends TransparentTestBase {
   private int              port;
   private int              jmxPort;
   private File             configFile;
+  private int              groupPort;
 
   @Override
   protected Class getApplicationClass() {
@@ -40,7 +41,7 @@ public class JmxMaxThreadsTest extends TransparentTestBase {
     PortChooser pc = new PortChooser();
     port = pc.chooseRandomPort();
     jmxPort = pc.chooseRandomPort();
-    int groupPort = pc.chooseRandomPort();
+    groupPort = pc.chooseRandomPort();
     configFile = getTempFile("tc-config.xml");
 
     writeConfigFile();
@@ -55,7 +56,7 @@ public class JmxMaxThreadsTest extends TransparentTestBase {
 
   private synchronized void writeConfigFile() {
     try {
-      TerracottaConfigBuilder builder = createConfig(port, jmxPort);
+      TerracottaConfigBuilder builder = createConfig(port, jmxPort, groupPort);
       FileOutputStream out = new FileOutputStream(configFile);
       IOUtils.copy(new StringInputStream(builder.toString()), out);
       out.close();
@@ -64,11 +65,12 @@ public class JmxMaxThreadsTest extends TransparentTestBase {
     }
   }
 
-  public static TerracottaConfigBuilder createConfig(int port, int adminPort) {
+  public static TerracottaConfigBuilder createConfig(int port, int adminPort, int groupPort) {
     TerracottaConfigBuilder out = new TerracottaConfigBuilder();
 
     out.getServers().getL2s()[0].setDSOPort(port);
     out.getServers().getL2s()[0].setJMXPort(adminPort);
+    out.getServers().getL2s()[0].setL2GroupPort(groupPort);
     out.getServers().getL2s()[0].setPersistenceMode(L2ConfigBuilder.PERSISTENCE_MODE_PERMANENT_STORE);
 
     return out;
