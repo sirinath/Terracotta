@@ -153,8 +153,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     } else if (msg instanceof IndexSyncCompleteAckMessage) {
       NodeID nodeID = msg.messageFrom();
       logger.info("Received IndexSyncCompleteAckMessage from " + nodeID);
-      this.passiveSyncStateManager.indexSyncComplete(nodeID);
-      moveNodeToPassiveStandByIfPossible(nodeID);
+      indexesInSyncOnNode(nodeID);
     } else {
       throw new AssertionError("ReplicatedObjectManagerImpl : Received wrong message type :" + msg.getClass().getName()
                                + " : " + msg);
@@ -294,6 +293,11 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     } else {
       this.indexSyncRequestSink.add(new SyncIndexesRequest(nodeID));
     }
+  }
+
+  public void indexesInSyncOnNode(NodeID node) {
+    this.passiveSyncStateManager.indexSyncComplete(node);
+    moveNodeToPassiveStandByIfPossible(node);
   }
 
   public void indexSyncCompleteFor(NodeID nodeID) {
