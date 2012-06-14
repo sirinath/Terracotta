@@ -105,8 +105,9 @@ import javax.management.MBeanServer;
 public class StandardDSOServerBuilder implements DSOServerBuilder {
   private final HaConfig          haConfig;
   private final GroupID           thisGroupID;
-  private final TCSecurityManager securityManager;
-  protected final TCLogger logger;
+
+  protected final TCSecurityManager securityManager;
+  protected final TCLogger          logger;
 
   public StandardDSOServerBuilder(final HaConfig haConfig, final TCLogger logger, final TCSecurityManager securityManager) {
     this.logger = logger;
