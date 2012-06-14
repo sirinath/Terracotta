@@ -28,6 +28,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -59,6 +60,8 @@ public class ExtraProcessServerControl extends ServerControlBase {
   private StreamCopier         errCopier;
   private final boolean        useIdentifier;
   private String               stopperOutput;
+
+  public  Collection<String>  additionalArgs = new ArrayList<String>();
 
   // constructor 1: used by container tests
   public ExtraProcessServerControl(String host, int dsoPort, int adminPort, String configFileLoc, boolean mergeOutput) {
@@ -308,13 +311,16 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
 
   protected List<String> getMainClassArguments() {
+    final List<String> args = new ArrayList<String>();
     if (serverName != null && !serverName.equals("")) {
-      return Arrays.asList(StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, this.configFileLoc,
-                           StandardConfigurationSetupManagerFactory.SERVER_NAME_ARGUMENT_WORD, serverName, "-force");
+      args.addAll(Arrays.asList(StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, this.configFileLoc,
+          StandardConfigurationSetupManagerFactory.SERVER_NAME_ARGUMENT_WORD, serverName, "-force"));
     } else {
-      return Arrays.asList(StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, this.configFileLoc,
-                           "-force");
+      args.addAll(Arrays.asList(StandardConfigurationSetupManagerFactory.CONFIG_SPEC_ARGUMENT_WORD, this.configFileLoc,
+                           "-force"));
     }
+    args.addAll(additionalArgs);
+    return args;
   }
 
   public void writeOutputTo(OutputStream outputStream) {
