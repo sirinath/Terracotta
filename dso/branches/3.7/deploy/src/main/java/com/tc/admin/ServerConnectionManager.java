@@ -173,7 +173,13 @@ public class ServerConnectionManager implements NotificationListener {
 
   public String[] getCredentials() {
     Map<String, Object> connEnv = getConnectionEnvironment();
-    return (String[]) connEnv.get("jmx.remote.credentials");
+    final Object o = connEnv.get("jmx.remote.credentials");
+    if(secured.get()) { // need to put back in a String[], as this isn't encapsulated any better
+      final Object[] creds = (Object[]) o;
+      return new String[] { (String) creds[0],  new String((char[]) creds[1]) };
+    } else {
+      return (String[]) o;
+    }
   }
 
   static void cacheCredentials(ServerConnectionManager scm, String[] credentials) {
