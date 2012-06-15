@@ -8,6 +8,9 @@ import com.tc.net.protocol.tcm.ChannelID;
 
 public class ConnectionID {
 
+  private static final char        DOT_PLACEHOLDER = ' ';
+  private static final char        DOT             = '.';
+
   private final long               channelID;
   private final String             serverID;
   private final String             jvmID;
@@ -62,7 +65,7 @@ public class ConnectionID {
     String username = null;
     char[] password = null;
     if (idx3 != idx4 - 1) {
-      username = compositeID.substring(idx3 + 1, idx4);
+      username = compositeID.substring(idx3 + 1, idx4).replace(DOT_PLACEHOLDER, DOT);
       password = compositeID.substring(idx4 + 1).toCharArray();
     }
 
@@ -180,7 +183,7 @@ public class ConnectionID {
     if (withCredentials) {
       sb.append(SEP);
       if(username != null) {
-        sb.append(username);
+        sb.append(username.replace(DOT, DOT_PLACEHOLDER));
       }
       sb.append(SEP);
       if(password != null) {

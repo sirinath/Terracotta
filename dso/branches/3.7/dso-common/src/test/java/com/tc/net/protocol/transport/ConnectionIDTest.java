@@ -29,6 +29,17 @@ public class ConnectionIDTest extends TestCase {
       assertEquals(true, connectionID.isSecured());
       assertEquals("alex", connectionID.getUsername());
       assertEquals("secret..!", new String(connectionID.getPassword()));
+
+      final String jvm2 = new ConnectionID("jvm2", 12, VALID_SERVER_ID, "alex.snaps", "secret..!").getID(true);
+//      assertEquals("12." + VALID_SERVER_ID + ".jvm2.alex snaps.secret..!", jvm2);
+      connectionID = ConnectionID.parse(jvm2);
+      assertEquals(12, connectionID.getChannelID());
+      assertEquals(VALID_SERVER_ID, connectionID.getServerID());
+      assertEquals("jvm2", connectionID.getJvmID());
+      assertEquals(false, connectionID.isJvmIDNull());
+      assertEquals(true, connectionID.isSecured());
+      assertEquals("alex.snaps", connectionID.getUsername());
+      assertEquals("secret..!", new String(connectionID.getPassword()));
     } catch (InvalidConnectionIDException e) {
       fail(e.getMessage());
     }
