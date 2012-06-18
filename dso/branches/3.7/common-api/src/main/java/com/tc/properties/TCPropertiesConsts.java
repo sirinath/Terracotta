@@ -294,6 +294,7 @@ public interface TCPropertiesConsts {
    * tcgroupcomm.reconnect.sendWindow     - Max outstanding messages before ack received
    * tcgroupcomm.reconnect.enabled        - Enable L2-L2 reconnect
    * send.timeout.millis                  - Number of milliseconds to retry sending a message
+   * dirtydb.backup.enabled               - Creates BackUp of DirtyDB only If it is set to true.
    * </code>
    ********************************************************************************************************************/
   public static final String L2_NHA_TCGROUPCOMM_HANDSHAKE_TIMEOUT                           = "l2.nha.tcgroupcomm.handshake.timeout";
@@ -309,6 +310,7 @@ public interface TCPropertiesConsts {
   public static final String L2_NHA_DIRTYDB_AUTODELETE                                      = "l2.nha.dirtydb.autoDelete";
   public static final String L2_NHA_DIRTYDB_ROLLING                                         = "l2.nha.dirtydb.rolling";
   public static final String L2_NHA_AUTORESTART                                             = "l2.nha.autoRestart";
+  public static final String L2_NHA_DIRTYDB_BACKUP_ENABLED                                  = "l2.nha.dirtydb.backup.enabled";
 
   /*********************************************************************************************************************
    * <code>
