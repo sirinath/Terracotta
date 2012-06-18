@@ -15,6 +15,8 @@ import com.tc.object.logging.RuntimeLogger;
 import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tcclient.cluster.DsoClusterInternal;
 
+import java.util.Map;
+
 public class StandardClientFactory extends AbstractClientFactory {
 
   @Override
@@ -30,7 +32,7 @@ public class StandardClientFactory extends AbstractClientFactory {
   }
 
   @Override
-  public TCSecurityManager createClientSecurityManager() {
+  public TCSecurityManager createClientSecurityManager(Map<String, Object> env) {
     return null;
   }
 }

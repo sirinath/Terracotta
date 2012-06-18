@@ -16,6 +16,8 @@ import com.tc.statistics.StatisticsAgentSubSystem;
 import com.tc.util.factory.AbstractFactory;
 import com.tcclient.cluster.DsoClusterInternal;
 
+import java.util.Map;
+
 public abstract class AbstractClientFactory extends AbstractFactory {
   private static String FACTORY_SERVICE_ID            = "com.tc.client.ClientFactory";
   private static Class  STANDARD_CLIENT_FACTORY_CLASS = StandardClientFactory.class;
@@ -32,5 +34,5 @@ public abstract class AbstractClientFactory extends AbstractFactory {
                                                        DsoClusterInternal dsoCluster, RuntimeLogger runtimeLogger,
                                                        ClientMode clientMode, TCSecurityManager securityManager);
 
-  public abstract TCSecurityManager createClientSecurityManager();
+  public abstract TCSecurityManager createClientSecurityManager(Map<String, Object> env);
 }

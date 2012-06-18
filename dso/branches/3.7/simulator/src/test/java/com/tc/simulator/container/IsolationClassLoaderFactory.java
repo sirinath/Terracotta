@@ -52,7 +52,7 @@ public class IsolationClassLoaderFactory {
       }
       lock.lock(); // Stupid hack to let one VM create multiple SecurityManagers...
       try {
-        clientSecurityManager = AbstractClientFactory.getFactory().createClientSecurityManager();
+        clientSecurityManager = AbstractClientFactory.getFactory().createClientSecurityManager(null);
       } finally {
         lock.unlock();
       }
