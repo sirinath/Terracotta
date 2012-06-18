@@ -104,8 +104,8 @@ public class DSOContextImpl implements DSOContext {
     return new DSOContextImpl(configHelper, manager.getClassProvider(), manager, Collections.EMPTY_LIST, false);
   }
 
-  public static TCSecurityManager createSecurityManager() {
-    return AbstractClientFactory.getFactory().createClientSecurityManager();
+  public static TCSecurityManager createSecurityManager(Map<String, Object> env) {
+    return AbstractClientFactory.getFactory().createClientSecurityManager(env);
   }
 
   public static DSOContext createContext(String configSpec) throws ConfigurationSetupException {
