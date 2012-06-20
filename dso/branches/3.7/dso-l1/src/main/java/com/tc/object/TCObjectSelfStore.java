@@ -3,6 +3,7 @@
 package com.tc.object;
 
 import com.tc.invalidation.Invalidations;
+import com.tc.net.NodeID;
 import com.tc.object.servermap.localcache.AbstractLocalCacheStoreValue;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStore;
 
@@ -35,7 +36,7 @@ public interface TCObjectSelfStore {
   /**
    * Handshake manager tries to get hold of all the objects present in the local caches
    */
-  public void addAllObjectIDsToValidate(Invalidations invalidations);
+  public void addAllObjectIDsToValidate(Invalidations invalidations, NodeID remoteID);
 
   void shutdown();
 }

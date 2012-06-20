@@ -88,6 +88,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   /**
    * TODO: Maybe change to getValue()
    */
+  @Override
   public synchronized Object getMappingForKey(final ObjectID oid, final Object portableKey) {
     assertSameGroupID(oid);
     waitUntilRunning();
@@ -100,6 +101,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return result.get(portableKey);
   }
 
+  @Override
   public synchronized void getMappingForAllKeys(final Map<ObjectID, Set<Object>> mapIdToKeysMap, Map<Object, Object> rv) {
     Set<AbstractServerMapRequestContext> contextsToWaitFor = new HashSet<AbstractServerMapRequestContext>();
     for (Entry<ObjectID, Set<Object>> entry : mapIdToKeysMap.entrySet()) {
@@ -116,6 +118,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     waitForResults(contextsToWaitFor, rv);
   }
 
+  @Override
   public synchronized Set getAllKeys(ObjectID mapID) {
     assertSameGroupID(mapID);
     waitUntilRunning();
@@ -134,6 +137,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
                                                                                  + this.groupID + " id : " + oid); }
   }
 
+  @Override
   public synchronized long getAllSize(final ObjectID[] mapIDs) {
     for (ObjectID mapId : mapIDs) {
       assertSameGroupID(mapId);
@@ -315,6 +319,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     return this.outstandingRequests.get(requestID);
   }
 
+  @Override
   public synchronized void addResponseForKeyValueMapping(final SessionID sessionID, final ObjectID mapID,
                                                          final Collection<ServerMapGetValueResponse> responses,
                                                          final NodeID nodeID) {
@@ -330,6 +335,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
+  @Override
   public synchronized void addResponseForGetAllSize(final SessionID sessionID, final GroupID gID,
                                                     final ServerMapRequestID requestID, final Long size,
                                                     final NodeID nodeID) {
@@ -345,6 +351,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
+  @Override
   public synchronized void addResponseForGetAllKeys(final SessionID sessionID, final ObjectID mapID,
                                                     final ServerMapRequestID requestID, final Set keys,
                                                     final NodeID nodeID) {
@@ -360,6 +367,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
+  @Override
   public synchronized void objectNotFoundFor(final SessionID sessionID, final ObjectID mapID,
                                              final ServerMapRequestID requestID, final NodeID nodeID) {
     waitUntilRunning();
@@ -400,6 +408,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     }
   }
 
+  @Override
   public synchronized void pause(final NodeID remote, final int disconnected) {
     if (isStopped()) { return; }
     assertNotPaused("Attempt to pause while PAUSED");
@@ -407,14 +416,16 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
+  @Override
   public synchronized void initializeHandshake(final NodeID thisNode, final NodeID remoteNode,
                                                final ClientHandshakeMessage handshakeMessage) {
     if (isStopped()) { return; }
     assertPaused("Attempt to init handshake while not PAUSED");
     this.state = State.STARTING;
-    globalLocalCacheManager.addAllObjectIDsToValidate(handshakeMessage.getObjectIDsToValidate());
+    globalLocalCacheManager.addAllObjectIDsToValidate(handshakeMessage.getObjectIDsToValidate(), remoteNode);
   }
 
+  @Override
   public synchronized void unpause(final NodeID remote, final int disconnected) {
     if (isStopped()) { return; }
     assertNotRunning("Attempt to unpause while not PAUSED");
@@ -423,6 +434,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
     notifyAll();
   }
 
+  @Override
   public void shutdown() {
     this.state = State.STOPPED;
     synchronized (this) {
@@ -562,6 +574,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   /**
    * Flush all entries for invalidated objectId's
    */
+  @Override
   public void processInvalidations(Invalidations invalidations) {
     // NOTE: if this impl changes, check RemoteServerMapManagerGroupImpl
     Set<ObjectID> mapIDs = invalidations.getMapIds();
@@ -575,6 +588,7 @@ public class RemoteServerMapManagerImpl implements RemoteServerMapManager {
   /**
    * Flush all local entries corresponding for the lock that is about to be flushed
    */
+  @Override
   public void preTransactionFlush(LockID lockID, ServerLockLevel level) {
     // NOTE: if this impl changes, check RemoteServerMapManagerGroupImpl
     if (lockID == null) { throw new AssertionError("ID cannot be null"); }
