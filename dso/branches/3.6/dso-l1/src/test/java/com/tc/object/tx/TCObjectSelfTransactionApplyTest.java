@@ -110,47 +110,38 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
       return this.lastAccessed;
     }
 
-    @Override
     public int getArraySize() {
       return 0;
     }
 
-    @Override
     public DNACursor getCursor() {
       return null;
     }
 
-    @Override
     public String getDefiningLoaderDescription() {
       return null;
     }
 
-    @Override
     public ObjectID getObjectID() throws DNAException {
       return oid;
     }
 
-    @Override
     public ObjectID getParentObjectID() throws DNAException {
       return null;
     }
 
-    @Override
     public String getTypeName() {
       return null;
     }
 
-    @Override
     public long getVersion() {
       return 0;
     }
 
-    @Override
     public boolean hasLength() {
       return false;
     }
 
-    @Override
     public boolean isDelta() {
       return true;
     }
@@ -160,19 +151,16 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
   private class MyTCObjectSelfStore implements TCObjectSelfStore {
     private final HashMap<ObjectID, byte[]> oidtoSerialized = new HashMap<ObjectID, byte[]>();
 
-    @Override
     public void addAllObjectIDs(Set oids) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void addAllObjectIDsToValidate(Invalidations invalidations, NodeID remoteNode) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public boolean addTCObjectSelf(L1ServerMapLocalCacheStore store, AbstractLocalCacheStoreValue localStoreValue,
                                    Object tcoself, boolean isNew) {
       try {
@@ -194,47 +182,39 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
       }
     }
 
-    @Override
     public void addTCObjectSelfTemp(TCObjectSelf obj) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public boolean contains(ObjectID objectID) {
       throw new ImplementMe();
     }
 
-    @Override
     public void initializeTCObjectSelfIfRequired(TCObjectSelf tcoSelf) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void initializeTCObjectSelfStore(TCObjectSelfCallback callback) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void removeTCObjectSelf(AbstractLocalCacheStoreValue localStoreValue) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void removeTCObjectSelfTemp(TCObjectSelf value, boolean notifyServer) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public int size() {
       throw new ImplementMe();
     }
 
-    @Override
     public void removeObjectById(ObjectID oid) {
       try {
         oidtoSerialized.remove(oid);
@@ -243,7 +223,6 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
       }
     }
 
-    @Override
     public Object getById(ObjectID oid) {
       try {
         byte[] serialized = oidtoSerialized.get(oid);
@@ -262,7 +241,6 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
       }
     }
 
-    @Override
     public void shutdown() {
       throw new ImplementMe();
 

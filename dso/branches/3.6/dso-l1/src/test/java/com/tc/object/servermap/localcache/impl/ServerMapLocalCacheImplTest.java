@@ -771,22 +771,18 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       this.latch2 = latch2;
     }
 
-    @Override
     public void addDmiDescriptor(DmiDescriptor dd) {
       throw new ImplementMe();
     }
 
-    @Override
     public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
       throw new ImplementMe();
     }
 
-    @Override
     public void addNotify(Notify notify) {
       throw new ImplementMe();
     }
 
-    @Override
     public void addTransactionCompleteListener(TransactionCompleteListener l) {
       if (latch1 == null) {
         callDefault(l);
@@ -802,7 +798,6 @@ public class ServerMapLocalCacheImplTest extends TestCase {
 
     public void callLatched(final TransactionCompleteListener l) {
       Runnable runnable = new Runnable() {
-        @Override
         public void run() {
           try {
             latch1.await();
@@ -820,146 +815,119 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       t.start();
     }
 
-    @Override
     public void arrayChanged(TCObject source, int startPos, Object array, int length) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void createObject(TCObject source) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void createRoot(String name, ObjectID rootID) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void fieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public List getAllLockIDs() {
       throw new ImplementMe();
     }
 
-    @Override
     public Map getChangeBuffers() {
       throw new ImplementMe();
     }
 
-    @Override
     public List getDmiDescriptors() {
       throw new ImplementMe();
     }
 
-    @Override
     public TxnType getEffectiveType() {
       throw new ImplementMe();
     }
 
-    @Override
     public LockID getLockID() {
       throw new ImplementMe();
     }
 
-    @Override
     public TxnType getLockType() {
       throw new ImplementMe();
     }
 
-    @Override
     public Map getNewRoots() {
       throw new ImplementMe();
     }
 
-    @Override
     public List getNotifies() {
       throw new ImplementMe();
     }
 
-    @Override
     public int getNotifiesCount() {
       throw new ImplementMe();
     }
 
-    @Override
     public Collection getReferencesOfObjectsInTxn() {
       throw new ImplementMe();
     }
 
-    @Override
     public SequenceID getSequenceID() {
       throw new ImplementMe();
     }
 
-    @Override
     public List getTransactionCompleteListeners() {
       throw new ImplementMe();
     }
 
-    @Override
     public TransactionID getTransactionID() {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean hasChanges() {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean hasChangesOrNotifies() {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean isConcurrent() {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean isNull() {
       throw new ImplementMe();
     }
 
-    @Override
     public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void logicalInvoke(TCObject source, int method, Object[] parameters, String methodName) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void setAlreadyCommitted() {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void setSequenceID(SequenceID sequenceID) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void setTransactionContext(TransactionContext transactionContext) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void setTransactionID(TransactionID tid) {
       throw new ImplementMe();
 
@@ -975,7 +943,6 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       this.globalLocalCacheManager = globalLocalCacheManagerParam;
     }
 
-    @Override
     public void recallLocks(Set<LockID> locks) {
       this.lockIds = locks;
       for (LockID id : lockIds) {
@@ -983,7 +950,6 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       }
     }
 
-    @Override
     public void recallLocksInline(Set<LockID> locks) {
       this.lockIds = locks;
       for (LockID id : lockIds) {
@@ -1035,66 +1001,54 @@ public class ServerMapLocalCacheImplTest extends TestCase {
   private static class TxnCompleteSink implements Sink {
     L1ServerMapTransactionCompletionHandler completionHandler = new L1ServerMapTransactionCompletionHandler();
 
-    @Override
     public void add(EventContext context) {
       completionHandler.handleEvent(context);
     }
 
-    @Override
     public boolean addLossy(EventContext context) {
       throw new ImplementMe();
     }
 
-    @Override
     public void addMany(Collection contexts) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public void clear() {
       throw new ImplementMe();
 
     }
 
-    @Override
     public AddPredicate getPredicate() {
       throw new ImplementMe();
     }
 
-    @Override
     public void setAddPredicate(AddPredicate predicate) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public int size() {
       throw new ImplementMe();
     }
 
-    @Override
     public void enableStatsCollection(boolean enable) {
       throw new ImplementMe();
 
     }
 
-    @Override
     public Stats getStats(long frequency) {
       throw new ImplementMe();
     }
 
-    @Override
     public Stats getStatsAndReset(long frequency) {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean isStatsCollectionEnabled() {
       throw new ImplementMe();
     }
 
-    @Override
     public void resetStats() {
       throw new ImplementMe();
 
@@ -1112,7 +1066,6 @@ public class ServerMapLocalCacheImplTest extends TestCase {
     public MySink() {
       handler = new L1ServerMapCapacityEvictionHandler();
       Runnable runnable = new Runnable() {
-        @Override
         public void run() {
           while (true) {
             EventContext context;
@@ -1135,7 +1088,6 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       t1.start();
     }
 
-    @Override
     public void add(EventContext context) {
       try {
         q.put(context);
@@ -1145,57 +1097,46 @@ public class ServerMapLocalCacheImplTest extends TestCase {
       }
     }
 
-    @Override
     public boolean addLossy(EventContext context) {
       throw new ImplementMe();
     }
 
-    @Override
     public void addMany(Collection contexts) {
       throw new ImplementMe();
     }
 
-    @Override
     public void clear() {
       throw new ImplementMe();
     }
 
-    @Override
     public AddPredicate getPredicate() {
       throw new ImplementMe();
     }
 
-    @Override
     public void setAddPredicate(AddPredicate predicate) {
       throw new ImplementMe();
     }
 
-    @Override
     public int size() {
       throw new ImplementMe();
     }
 
-    @Override
     public void enableStatsCollection(boolean enable) {
       throw new ImplementMe();
     }
 
-    @Override
     public Stats getStats(long frequency) {
       throw new ImplementMe();
     }
 
-    @Override
     public Stats getStatsAndReset(long frequency) {
       throw new ImplementMe();
     }
 
-    @Override
     public boolean isStatsCollectionEnabled() {
       throw new ImplementMe();
     }
 
-    @Override
     public void resetStats() {
       throw new ImplementMe();
     }
