@@ -4,30 +4,38 @@
  */
 package com.tctest;
 
-//import com.tc.util.runtime.Vm;
+import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
+import com.tc.test.restart.RestartTestHelper;
 
 public class LinkedBlockingQueueCrashTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 8;
-  
-  public LinkedBlockingQueueCrashTest() {
-    //if (Vm.isIBM()) {
-    //  disableAllUntil("2007-08-30");
-    //}
-  }
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return LinkedBlockingQueueCrashTestApp.class;
   }
 
+  @Override
   protected boolean canRunCrash() {
     return true;
   }
 
- 
+  @Override
+  protected void customizeRestartTestHelper(RestartTestHelper helper) {
+    super.customizeRestartTestHelper(helper);
+    helper.getServerCrasherConfig().setRestartInterval(60 * 1000);
+  }
+
+  @Override
+  protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
+    super.setupConfig(configFactory);
+    configFactory.l2DSOConfig().getDso().setClientReconnectWindow(45);
+  }
 }
