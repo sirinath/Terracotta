@@ -11,14 +11,13 @@ import com.tc.simulator.app.ApplicationConfig;
 import com.tc.simulator.listener.ListenerProvider;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.ThreadUtil;
-import com.tc.util.runtime.Vm;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
 public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
-  int                                     BATCHSIZE    = (Vm.isIBM()) ? 400 : 1000;
+  int                                     BATCHSIZE    = 400;
   int                                     BATCHES      = 80;
 
   private final CyclicBarrier             barrier;
@@ -29,6 +28,7 @@ public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   public void run() {
     try {
       testHashMapBatchTxn();
@@ -58,8 +58,10 @@ public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
         synchronized (hashmap_root) {
           System.out.println("XXX Batching(client=0) " + batch);
           int id = BATCHSIZE * batch;
+          // the below line means create 400 maps in a txn
+          // each map contains 10-18 entries
           for (int i = 0; i < BATCHSIZE; ++i) {
-            HashMap<Integer, Integer> submap = generateNewHashMap(id, 10 + (id % 10));
+            HashMap<Integer, Integer> submap = generateNewHashMap(id, 10 + (i % 10));
             hashmap_root.put(Integer.valueOf(id), submap);
             ++id;
           }
@@ -70,7 +72,7 @@ public class HashMapBatchTxnTestApp extends AbstractTransparentApp {
           System.out.println("XXX Batching(client=1) " + (batch + 1));
           int id = BATCHSIZE * batch + BATCHSIZE;
           for (int i = 0; i < BATCHSIZE; ++i) {
-            HashMap<Integer, Integer> submap = generateNewHashMap(id, 10 + (id % 10));
+            HashMap<Integer, Integer> submap = generateNewHashMap(id, 10 + (i % 10));
             hashmap_root.put(Integer.valueOf(id), submap);
             ++id;
           }
