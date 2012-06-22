@@ -7,6 +7,8 @@ package com.tctest.jdk15;
 import com.tctest.TransparentTestBase;
 import com.tctest.TransparentTestIface;
 
+import java.util.ArrayList;
+
 /*
  * Test case for CDV-253
  */
@@ -15,11 +17,6 @@ public class HashMapBatchTxnTempSwapTest extends TransparentTestBase {
 
   private static final int NODE_COUNT = 2;
 
-  public HashMapBatchTxnTempSwapTest() {
-    // DEV-7491
-    disableTest();
-  }
-
   @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT);
@@ -27,8 +24,19 @@ public class HashMapBatchTxnTempSwapTest extends TransparentTestBase {
   }
 
   @Override
+  protected void setExtraJvmArgs(ArrayList jvmArgs) {
+    super.setExtraJvmArgs(jvmArgs);
+    jvmArgs.add("-Dcom.tc.l2.db.factory.name=com.tc.objectserver.storage.derby.DerbyDBFactory");
+  }
+
+  @Override
   protected Class getApplicationClass() {
     return HashMapBatchTxnTestApp.class;
+  }
+
+  @Override
+  protected boolean useExternalProcess() {
+    return true;
   }
 
 }
