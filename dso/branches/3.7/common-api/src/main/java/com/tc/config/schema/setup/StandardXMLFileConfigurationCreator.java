@@ -170,7 +170,7 @@ public class StandardXMLFileConfigurationCreator implements ConfigurationCreator
     ConfigurationSource[] out = new ConfigurationSource[components.length];
 
     for (int i = 0; i < components.length; ++i) {
-      String thisComponent = components[i];
+      String thisComponent = components[i].trim();
       ConfigurationSource source = attemptToCreateServerSource(thisComponent);
 
       if (source == null) source = attemptToCreateResourceSource(thisComponent);
