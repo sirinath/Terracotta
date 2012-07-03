@@ -27,6 +27,7 @@ public class HashMapBatchTxnTempSwapTest extends TransparentTestBase {
   protected void setExtraJvmArgs(ArrayList jvmArgs) {
     super.setExtraJvmArgs(jvmArgs);
     jvmArgs.add("-Dcom.tc.l2.db.factory.name=com.tc.objectserver.storage.derby.DerbyDBFactory");
+    jvmArgs.add("-Xmx256m");
   }
 
   @Override
