@@ -33,7 +33,7 @@ public abstract class MultipleServersTransparentTestBase extends TransparentTest
   }
 
   protected boolean canRun() {
-    return super.canRun() || isMultipleServerTest();
+    return isMultipleServerTest();
   }
 
   @Override
