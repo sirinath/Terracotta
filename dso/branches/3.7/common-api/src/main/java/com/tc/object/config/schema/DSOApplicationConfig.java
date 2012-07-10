@@ -20,8 +20,6 @@ public interface DSOApplicationConfig extends Config {
 
   Lock[] locks();
 
-  Root[] roots();
-
   AdditionalBootJarClasses additionalBootJarClasses();
 
   boolean supportSharingThroughReflection();
