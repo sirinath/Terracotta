@@ -15,19 +15,17 @@ import com.tc.util.Assert;
 import com.terracottatech.config.AdditionalBootJarClasses;
 import com.terracottatech.config.Application;
 import com.terracottatech.config.DsoApplication;
-import com.terracottatech.config.Root;
 import com.terracottatech.config.Roots;
 import com.terracottatech.config.TcConfigDocument.TcConfig;
 import com.terracottatech.config.TransientFields;
 import com.terracottatech.config.WebApplications;
 
 public class DSOApplicationConfigObject extends BaseConfigObject implements DSOApplicationConfig {
-  private final InstrumentedClass[]                instrumentedClasses;
-  private final TransientFields                    transientFields;
-  private final com.tc.object.config.schema.Root[] roots;
-  private final AdditionalBootJarClasses           additionalBootJarClasses;
-  private final boolean                            supportSharingThroughReflection;
-  private final WebApplications                    webApplications;
+  private final InstrumentedClass[]      instrumentedClasses;
+  private final TransientFields          transientFields;
+  private final AdditionalBootJarClasses additionalBootJarClasses;
+  private final boolean                  supportSharingThroughReflection;
+  private final WebApplications          webApplications;
 
   public DSOApplicationConfigObject(ConfigContext context) {
     super(context);
@@ -47,9 +45,12 @@ public class DSOApplicationConfigObject extends BaseConfigObject implements DSOA
     if (!dsoApplication.isSetRoots()) {
       dsoApplication.addNewRoots();
     }
-    this.roots = translateRoots(dsoApplication.getRoots());
-    if (LicenseManager.enterpriseEdition() && roots.length > 0) {
-      LicenseManager.verifyRootCapability();
+
+    if (LicenseManager.enterpriseEdition()) {
+      Roots roots = dsoApplication.getRoots();
+      if (roots != null && roots.sizeOfRootArray() > 0) {
+        LicenseManager.verifyRootCapability();
+      }
     }
 
     if (!dsoApplication.isSetTransientFields()) {
@@ -87,27 +88,12 @@ public class DSOApplicationConfigObject extends BaseConfigObject implements DSOA
     return ConfigTranslationHelper.translateLocks(dsoApplication.getLocks());
   }
 
-  public com.tc.object.config.schema.Root[] roots() {
-    return this.roots;
-  }
-
   public AdditionalBootJarClasses additionalBootJarClasses() {
     return this.additionalBootJarClasses;
   }
 
   public boolean supportSharingThroughReflection() {
     return this.supportSharingThroughReflection;
-  }
-
-  private static com.tc.object.config.schema.Root[] translateRoots(Roots roots) {
-
-    com.tc.object.config.schema.Root[] out;
-    Root[] theRoots = roots.getRootArray();
-    out = new com.tc.object.config.schema.Root[theRoots == null ? 0 : theRoots.length];
-    for (int i = 0; i < out.length; ++i) {
-      out[i] = new com.tc.object.config.schema.Root(theRoots[i].getRootName(), theRoots[i].getFieldName());
-    }
-    return out;
   }
 
   public static void initializeApplication(TcConfig config, DefaultValueProvider defaultValueProvider)
