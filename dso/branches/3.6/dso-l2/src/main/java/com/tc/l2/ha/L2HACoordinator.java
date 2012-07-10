@@ -372,6 +372,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                                 L2HAZapNodeRequestProcessor.COMMUNICATION_ERROR,
                                 "Error publishing reset counter for " + nodeID
                                     + L2HAZapNodeRequestProcessor.getErrorString(ge));
+      rObjectManager.clear(nodeID);
       throw new SequenceGeneratorException(ge);
     }
   }
