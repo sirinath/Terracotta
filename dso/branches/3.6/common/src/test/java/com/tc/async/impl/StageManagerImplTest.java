@@ -4,6 +4,7 @@
  */
 package com.tc.async.impl;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
 
 import com.tc.async.api.EventContext;
@@ -14,7 +15,6 @@ import com.tc.lang.ThrowableHandler;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.util.concurrent.QueueFactory;
-import com.tc.util.concurrent.ThreadUtil;
 
 import junit.framework.TestCase;
 
@@ -60,7 +60,7 @@ public class StageManagerImplTest extends TestCase {
     }
   }
 
-  public void testStage() {
+  public void testStage() throws Exception {
     stageManager.createStage("testStage", testEventHandler, 1, 3);
     Stage s = stageManager.getStage("testStage");
     assertTrue(s != null);
@@ -71,13 +71,13 @@ public class StageManagerImplTest extends TestCase {
     assertTrue(s.getSink().size() == 2);
     assertTrue(testEventHandler.getContexts().size() == 0);
     s.start(new ConfigurationContextImpl(null));
-    ThreadUtil.reallySleep(1000);
+    testEventHandler.waitForEventContextCount(2, 60, SECONDS);
     assertTrue(s.getSink().size() == 0);
     assertTrue(testEventHandler.getContexts().size() == 2);
     stageManager.stopAll();
   }
 
-  public void testMultiThreadedStage() {
+  public void testMultiThreadedStage() throws Exception {
     stageManager.createStage("testStage2", testEventHandler, 3, 1, 30);
     Stage s = stageManager.getStage("testStage2");
     assertTrue(s != null);
@@ -96,13 +96,13 @@ public class StageManagerImplTest extends TestCase {
     assertTrue(testEventHandler.getContexts().size() == 0);
 
     s.start(new ConfigurationContextImpl(null));
-    ThreadUtil.reallySleep(1000);
+    testEventHandler.waitForEventContextCount(8, 60, SECONDS);
     assertTrue(s.getSink().size() == 0);
     assertTrue(testEventHandler.getContexts().size() == 8);
     stageManager.stopAll();
   }
 
-  public void testMultiThreadedContext() {
+  public void testMultiThreadedContext() throws Exception {
     stageManager.createStage("testStage2", testEventHandler, 3, 1, 30);
     Stage s = stageManager.getStage("testStage2");
     assertTrue(s != null);
@@ -121,13 +121,13 @@ public class StageManagerImplTest extends TestCase {
     assertTrue(testEventHandler.getContexts().size() == 0);
 
     s.start(new ConfigurationContextImpl(null));
-    ThreadUtil.reallySleep(1000);
+    testEventHandler.waitForEventContextCount(8, 60, SECONDS);
     assertTrue(s.getSink().size() == 0);
     assertTrue(testEventHandler.getContexts().size() == 8);
     stageManager.stopAll();
   }
 
-  public void testMultiThreadedContextExtended() {
+  public void testMultiThreadedContextExtended() throws Exception {
     stageManager.createStage("testStage2", testEventHandler, 3, 1, 10);
     Stage s = stageManager.getStage("testStage2");
     assertTrue(s != null);
@@ -149,7 +149,7 @@ public class StageManagerImplTest extends TestCase {
     assertTrue(testEventHandler.getContexts().size() == 0);
 
     s.start(new ConfigurationContextImpl(null));
-    ThreadUtil.reallySleep(1000);
+    testEventHandler.waitForEventContextCount(9, 60, SECONDS);
     assertTrue(s.getSink().size() == 0);
     assertTrue(testEventHandler.getContexts().size() == 9);
     stageManager.stopAll();
