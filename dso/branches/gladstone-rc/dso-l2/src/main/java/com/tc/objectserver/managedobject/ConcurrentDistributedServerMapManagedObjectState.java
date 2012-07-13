@@ -276,6 +276,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     } else if (value instanceof ObjectID) {
       // Invalidate the value so that the VM that initiated this call can remove it from the local cache.
       removedValueFromMap(mapID, applyInfo, (ObjectID) value);
+      addKeyPresentForValue(applyInfo, (ObjectID) value);
     }
   }
 
@@ -314,10 +315,12 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
    * EvictableMap interface
    */
 
+  @Override
   public int getMaxTotalCount() {
     return this.targetMaxTotalCount;
   }
 
+  @Override
   public int getSize() {
     return this.references.size();
   }
@@ -326,20 +329,24 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     return new HashSet(this.references.keySet());
   }
 
+  @Override
   public int getTTISeconds() {
     return this.maxTTISeconds;
   }
 
+  @Override
   public int getTTLSeconds() {
     return this.maxTTLSeconds;
   }
 
+  @Override
   public void evictionCompleted() {
     this.evictionStatus = EvictionStatus.NOT_INITIATED;
   }
 
   // TODO:: This implementation could be better, could use LinkedHashMap to increase the chances of getting the
   // right samples, also should it return a sorted Map ? Are objects with lower OIDs having more changes to be evicted ?
+  @Override
   public Map getRandomSamples(final int count,
                               final ClientObjectReferenceSet serverMapEvictionClientObjectRefSet) {
     if (evictionStatus == EvictionStatus.SAMPLED) {
@@ -374,6 +381,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     return samples;
   }
 
+  @Override
   public String getCacheName() {
     return cacheName;
   }
