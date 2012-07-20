@@ -3,6 +3,7 @@
  */
 package com.tc.object.config;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.terracotta.groupConfigForL1.GroupnameId;
 import org.terracotta.groupConfigForL1.GroupnameIdMapDocument;
@@ -20,6 +21,8 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.concurrent.ThreadUtil;
 import com.terracottatech.config.L1ReconnectPropertiesDocument;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -267,7 +270,15 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
         logger.info(text);
         connection = theURL.openConnection();
         propFromL2Stream = connection.getInputStream();
-        if (propFromL2Stream != null) return propFromL2Stream;
+        if (propFromL2Stream != null) {
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          try {
+            IOUtils.copy(propFromL2Stream, baos);
+          } finally {
+            propFromL2Stream.close();
+          }
+          return new ByteArrayInputStream(baos.toByteArray());
+        }
       } catch (IOException e) {
         String text = "Can't connect to [" + ci + "].";
         boolean tryAgain = (i < connections.length - 1);
@@ -277,5 +288,4 @@ public class ConfigInfoFromL2Impl implements ConfigInfoFromL2 {
     }
     return null;
   }
-
 }
