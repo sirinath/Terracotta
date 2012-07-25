@@ -30,8 +30,8 @@ import java.util.List;
  */
 public class DMIRaceTest extends TransparentTestBase {
 
-  private static final int NODE_COUNT = 6;
-  private static final int PRODUCERS  = 3;
+  private static final int NODE_COUNT = 4;
+  private static final int PRODUCERS  = 2;
 
   public DMIRaceTest() {
     //
@@ -55,7 +55,7 @@ public class DMIRaceTest extends TransparentTestBase {
 
   public static class App extends AbstractErrorCatchingTransparentApp {
 
-    private static final int    DURATION = 4 * 60 * 1000;
+    private static final int    DURATION = 2 * 60 * 1000;
     private static final long   END      = System.currentTimeMillis() + DURATION;
 
     private final CyclicBarrier barrier;
