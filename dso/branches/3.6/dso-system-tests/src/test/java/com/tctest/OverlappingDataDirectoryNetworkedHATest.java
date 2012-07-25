@@ -35,6 +35,10 @@ public class OverlappingDataDirectoryNetworkedHATest extends BaseDSOTestCase {
 
     jmxPort_1 = configBuilder.getJmxPort(0);
 
+    configBuilder.setServerData(new File(getTempDirectory(), "data").getAbsolutePath());
+    configBuilder.setServerLogs(0, new File(getTempDirectory(), "server1-logs").getAbsolutePath());
+    configBuilder.setServerLogs(1, new File(getTempDirectory(), "server2-logs").getAbsolutePath());
+
     server_1 = createServer("server1");
     server_2 = createServer("server2");
 
