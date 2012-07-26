@@ -12,8 +12,8 @@
   <properties>
     <tc-maven-plugin.version>1.8.3-SNAPSHOT</tc-maven-plugin.version>
     <terracotta-session.version>1.2.3-SNAPSHOT</terracotta-session.version>
-    <ehcache-core.version>2.5.3-SNAPSHOT</ehcache-core.version>
-    <ehcache-terracotta.version>2.5.3-SNAPSHOT</ehcache-terracotta.version>
+    <ehcache-core.version>2.5.4-SNAPSHOT</ehcache-core.version>
+    <ehcache-terracotta.version>2.5.4-SNAPSHOT</ehcache-terracotta.version>
   </properties>
 
   <dependencies>
