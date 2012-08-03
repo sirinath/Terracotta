@@ -4,7 +4,6 @@
  */
 package com.tctest;
 
-import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.test.restart.RestartTestHelper;
 
@@ -37,7 +36,7 @@ public class TransparentVectorTest extends TransparentTestBase {
   }
 
   @Override
-  protected void customizeRestartTestHelper(RestartTestHelper helper) throws ConfigurationSetupException {
+  protected void customizeRestartTestHelper(RestartTestHelper helper) {
     super.customizeRestartTestHelper(helper);
     helper.getServerCrasherConfig().setRestartInterval(45 * 1000);
   }
