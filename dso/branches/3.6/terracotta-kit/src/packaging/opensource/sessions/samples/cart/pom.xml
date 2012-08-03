@@ -5,15 +5,15 @@
 
   <groupId>org.terracotta.samples.sessions</groupId>
   <artifactId>cart</artifactId>
-  <version>3.6.3-SNAPSHOT</version>
+  <version>3.6.4-SNAPSHOT</version>
   <name>Cart</name>
   <packaging>war</packaging>
 
   <properties>
-    <tc-maven-plugin.version>1.8.3-SNAPSHOT</tc-maven-plugin.version>
-    <terracotta-session.version>1.2.3-SNAPSHOT</terracotta-session.version>
+    <tc-maven-plugin.version>1.8.4-SNAPSHOT</tc-maven-plugin.version>
+    <terracotta-session.version>1.2.4-SNAPSHOT</terracotta-session.version>
     <toolkit-api>1.5</toolkit-api>
-    <toolkit-runtime.version>4.3.0-SNAPSHOT</toolkit-runtime.version>
+    <toolkit-runtime.version>4.4.0-SNAPSHOT</toolkit-runtime.version>
   </properties>
   
   <dependencies>
