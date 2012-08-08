@@ -10,24 +10,28 @@ import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 
 public class TransparentSetTest extends ActivePassiveTransparentTestBase implements TestConfigurator {
-  private static final int NODE_COUNT           = 3;
-  private static final int EXECUTION_COUNT      = 3;
+  private static final int NODE_COUNT           = 2;
+  private static final int EXECUTION_COUNT      = 2;
   private static final int LOOP_ITERATION_COUNT = 400;
 
+  @Override
   protected Class getApplicationClass() {
     return TransparentSetTestApp.class;
   }
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     t.getTransparentAppConfig().setClientCount(NODE_COUNT).setApplicationInstancePerClientCount(EXECUTION_COUNT)
         .setIntensity(LOOP_ITERATION_COUNT);
     t.initializeTestRunner();
   }
 
+  @Override
   protected boolean canRunCrash() {
     return true;
   }
 
+  @Override
   public void setupActivePassiveTest(ActivePassiveTestSetupManager setupManager) {
     setupManager.setServerCount(2);
     setupManager.setServerCrashMode(MultipleServersCrashMode.CONTINUOUS_ACTIVE_CRASH);
