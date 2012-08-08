@@ -39,4 +39,6 @@ public interface TCObjectSelfStore {
   public void addAllObjectIDsToValidate(Invalidations invalidations, NodeID remoteID);
 
   void shutdown();
+
+  void removeTCObjectSelf(TCObjectSelf value);
 }
