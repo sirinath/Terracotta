@@ -41,7 +41,8 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
   private static final long END           = System.currentTimeMillis() + TEST_DURATION;
 
   public NewObjectMemoryManagerRaceTest() {
-    super(1, new String[] { "-Xmx512m" }); // only need 1 node
+    super(1, new String[] { "-Xmx512m", "-Dcom.tc.l2.cachemanager.criticalThreshold=35",
+        "-Dcom.tc.l2.cachemanager.threshold=30" }); // only need 1 node
   }
 
   @Override
@@ -349,6 +350,11 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
       }
     }
 
+  }
+
+  @Override
+  protected boolean useExternalProcess() {
+    return true;
   }
 
 }
