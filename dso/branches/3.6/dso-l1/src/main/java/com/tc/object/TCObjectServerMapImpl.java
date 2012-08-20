@@ -29,8 +29,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObject, TCObjectServerMap<L> {
@@ -105,6 +105,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param key Key Object
    * @param value Object in the mapping
    */
+
   public void doLogicalPut(final TCServerMap map, final L lockID, final Object key, final Object value) {
     synchronized (localLock) {
       ObjectID valueObjectID = invokeLogicalPut(map, key, value);
@@ -126,6 +127,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param key Key Object
    * @param value Object in the mapping
    */
+
   public void doLogicalPutUnlocked(TCServerMap map, Object key, Object value) {
     synchronized (localLock) {
       ObjectID valueObjectID = invokeLogicalPut(map, key, value);
@@ -189,6 +191,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param lockID, lock under which this entry is removed
    * @param key Key Object
    */
+
   public void doLogicalRemove(final TCServerMap map, final L lockID, final Object key) {
     synchronized (localLock) {
       invokeLogicalRemove(map, key);
@@ -203,6 +206,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param map ServerTCMap
    * @param key Key Object
    */
+
   public void doLogicalRemoveUnlocked(TCServerMap map, Object key) {
     synchronized (localLock) {
       invokeLogicalRemove(map, key);
@@ -222,6 +226,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param key Key Object
    * @return
    */
+
   public boolean doLogicalRemoveUnlocked(TCServerMap map, Object key, Object value) {
     synchronized (localLock) {
       AbstractLocalCacheStoreValue item = getValueUnlockedFromCache(key);
@@ -252,6 +257,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param lockID Lock under which this call is made
    * @return value Object in the mapping, null if no mapping present.
    */
+
   public Object getValue(final TCServerMap map, final L lockID, final Object key) {
     if (!isCacheInitialized()) { return null; }
     AbstractLocalCacheStoreValue item = this.cache.getLocalValueStrong(key);
@@ -265,8 +271,8 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       Object value = getValueForKeyFromServer(map, key, false);
 
       if (value != null) {
-        addStrongValueToCache(this.manager.generateLockIdentifier(lockID), key, value, objectManager
-            .lookupExistingObjectID(value), MapOperationType.GET);
+        addStrongValueToCache(this.manager.generateLockIdentifier(lockID), key, value,
+                              objectManager.lookupExistingObjectID(value), MapOperationType.GET);
       }
       return value;
     }
@@ -292,6 +298,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    *        but not shared, it is not supported.
    * @return value Object in the mapping, null if no mapping present.
    */
+
   public Object getValueUnlocked(TCServerMap map, Object key) {
     AbstractLocalCacheStoreValue item = getValueUnlockedFromCache(key);
     if (item != null) { return item.getValueObject(); }
@@ -369,8 +376,8 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       boolean notifyServerForRemove = false;
       if (value instanceof TCObjectSelf) {
         if (localCacheEnabled || mapOperation.isMutateOperation()) {
-          if (!this.tcObjectSelfStore.addTCObjectSelf(serverMapLocalStore, localCacheValue, value, mapOperation
-              .isMutateOperation())) { return; }
+          if (!this.tcObjectSelfStore.addTCObjectSelf(serverMapLocalStore, localCacheValue, value,
+                                                      mapOperation.isMutateOperation())) { return; }
         } else {
           notifyServerForRemove = true;
         }
@@ -523,6 +530,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param map ServerTCMap
    * @return set Set return snapshot of keys
    */
+
   public Set keySet(final TCServerMap map) {
     final TCObject tcObject = map.__tc_managed();
     if (tcObject == null) { throw new UnsupportedOperationException("keySet is not supported in a non-shared ServerMap"); }
@@ -540,6 +548,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * @param maps ServerTCMap[]
    * @return long for size of map.
    */
+
   public long getAllSize(final TCServerMap[] maps) {
     final ObjectID[] mapIDs = new ObjectID[maps.length];
     for (int i = 0; i < maps.length; ++i) {
@@ -560,6 +569,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   /**
    * unpin all pinned keys
    */
+
   public void unpinAll() {
     if (!isCacheInitialized()) { return; }
     cache.unpinAll();
@@ -568,6 +578,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   /**
    * check the key is pinned or not
    */
+
   public boolean isPinned(Object key) {
     if (!isCacheInitialized()) { return false; }
     return cache.isPinned(key);
@@ -576,6 +587,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   /**
    * pin or unpin the key
    */
+
   public void setPinned(Object key, boolean pinned) {
     if (!isCacheInitialized()) { return; }
     cache.setPinned(key, pinned);
@@ -594,6 +606,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * 
    * @param map ServerTCMap
    */
+
   public void clearLocalCache(final TCServerMap map) {
     synchronized (localLock) {
       if (!isCacheInitialized()) { return; }
@@ -627,6 +640,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   /**
    * Called by the memory manager
    */
+
   @Override
   protected int clearReferences(final Object pojo, final int toClear) {
     // if this method is called, means there is a bug in the code, throwing AssertionError
@@ -779,5 +793,13 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     if (isCacheInitialized()) {
       this.cache.recalculateSize(key);
     }
+  }
+
+  public void checkInObject(Object key, Object value) {
+    this.cache.checkInObject(key, value);
+  }
+
+  public Object checkOutObject(Object key, Object value) {
+    return this.cache.checkOutObject(key, value);
   }
 }

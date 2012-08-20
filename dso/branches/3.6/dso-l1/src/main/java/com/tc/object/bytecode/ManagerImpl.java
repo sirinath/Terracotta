@@ -55,6 +55,7 @@ import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.MetaDataDescriptorImpl;
 import com.tc.object.metadata.NVPair;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.object.tx.UnlockedSharedObjectException;
 import com.tc.operatorevent.TerracottaOperatorEvent;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
@@ -1019,5 +1020,9 @@ public class ManagerImpl implements ManagerInternal {
   public void fireOperatorEvent(EventType eventLevel, EventSubsystem eventSubsystem, String eventMessage) {
     TerracottaOperatorEvent opEvent = new TerracottaOperatorEventImpl(eventLevel, eventSubsystem, eventMessage, "");
     TerracottaOperatorEventLogging.getEventLogger().fireOperatorEvent(opEvent);
+  }
+
+  public void addTransactionCompleteListener(TransactionCompleteListener listener) {
+    txManager.getCurrentTransaction().addTransactionCompleteListener(listener);
   }
 }
