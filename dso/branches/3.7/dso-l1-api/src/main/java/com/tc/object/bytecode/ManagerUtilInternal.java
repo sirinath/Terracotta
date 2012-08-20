@@ -7,6 +7,8 @@ package com.tc.object.bytecode;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.tx.TransactionCompleteListener;
+import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.search.SearchQueryResults;
 import com.terracottatech.search.NVPair;
 
@@ -129,5 +131,9 @@ public class ManagerUtilInternal {
 
   public static void verifyCapability(String capability) {
     getInternalManager().verifyCapability(capability);
+  }
+
+  public static void addTransactionCompleteListener(TransactionCompleteListener listener) {
+    getInternalManager().addTransactionCompleteListener(listener);
   }
 }

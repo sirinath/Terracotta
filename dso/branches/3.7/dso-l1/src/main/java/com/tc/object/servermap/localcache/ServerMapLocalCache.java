@@ -136,4 +136,8 @@ public interface ServerMapLocalCache {
 
   void recalculateSize(Object key);
 
+  void checkInObject(Object key, Object value);
+
+  Object checkOutObject(Object key, Object value);
+
 }
