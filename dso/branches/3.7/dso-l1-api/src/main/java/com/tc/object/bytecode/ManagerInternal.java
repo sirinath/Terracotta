@@ -7,6 +7,7 @@ import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
+import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.search.SearchQueryResults;
 import com.terracottatech.search.NVPair;
 
@@ -35,5 +36,7 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
   void stopImmediate();
 
   void initForTests(CountDownLatch latch);
+
+  void addTransactionCompleteListener(TransactionCompleteListener listener);
 
 }

@@ -13,6 +13,7 @@ import com.tc.object.locks.Notify;
 import com.tc.object.locks.UnclusteredLockID;
 import com.tc.object.logging.InstrumentationLogger;
 import com.tc.object.metadata.MetaDataDescriptor;
+import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.properties.TCProperties;
@@ -411,6 +412,10 @@ public class NullManagerInternal implements ManagerInternal {
 
   @Override
   public void stopImmediate() {
+    //
+  }
+
+  public void addTransactionCompleteListener(TransactionCompleteListener listener) {
     //
   }
 
