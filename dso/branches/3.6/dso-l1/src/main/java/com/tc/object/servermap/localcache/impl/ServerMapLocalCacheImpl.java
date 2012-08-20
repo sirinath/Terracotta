@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -75,7 +76,7 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   private final Manager                                        manager;
   private final ServerMapLocalCacheRemoveCallback              removeCallback;
 
-  private final Map<ObjectID, Object>                          removedObjectIDs             = new ConcurrentHashMap<ObjectID, Object>();
+  private final ConcurrentMap<ObjectID, Object>                removedObjectIDs             = new ConcurrentHashMap<ObjectID, Object>();
   private final Map<ObjectID, Object>                          oidsForWhichTxnAreInProgress = new ConcurrentHashMap<ObjectID, Object>();
 
   private final ConcurrentHashMap                    pendingTransactionEntries;
@@ -83,6 +84,8 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
 
   private final ReentrantReadWriteLock[]             locks;
   private final TCConcurrentMultiMap<LockID, ValueOIDKeyTuple> lockIDMappings;
+
+  private final ConcurrentHashMap<ObjectID, Integer> checkedOutObjects            = new ConcurrentHashMap<ObjectID, Integer>();
 
   /**
    * Not public constructor, should be created only by the global local cache manager
@@ -585,6 +588,21 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     if (removed != null) {
       ObjectID objectID = removed.getValueObjectId();
       if (isRemoteRemovePossible(objectID)) {
+        removedObjectIDs.remove(objectID);
+        removeCallback.removedElement(removed);
+      }
+    }
+  }
+
+  private void remoteRemoveObjectIfPossible(TCObjectSelf removed) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("XXX remoteRemoveObjectIfPossible " + removed);
+    }
+
+    if (removed != null) {
+      ObjectID objectID = removed.getObjectID();
+      if (isRemoteRemovePossible(objectID)) {
+        removedObjectIDs.remove(objectID);
         removeCallback.removedElement(removed);
       }
     }
@@ -596,8 +614,8 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   private boolean isRemoteRemovePossible(ObjectID objectId) {
     if (ObjectID.NULL_ID.equals(objectId)) { return false; }
 
-    if (oidsForWhichTxnAreInProgress.containsKey(objectId)) {
-      removedObjectIDs.put(objectId, NULL_VALUE);
+    if (oidsForWhichTxnAreInProgress.containsKey(objectId) || checkedOutObjects.containsKey(objectId)) {
+      removedObjectIDs.putIfAbsent(objectId, NULL_VALUE);
       return false;
     } else {
       return true;
@@ -615,7 +633,7 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     try {
       final ObjectID objectId = value.getValueObjectId();
       oidsForWhichTxnAreInProgress.remove(objectId);
-      if (removedObjectIDs.remove(objectId) != null) {
+      if (removedObjectIDs.containsKey(objectId)) {
         remoteRemoveObjectIfPossible(value);
       }
 
@@ -802,5 +820,43 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
       return "ValueOIDKeyTuple [key=" + key + ", valueObjectID=" + valueObjectID + "]";
     }
 
+  }
+
+  public void checkInObject(Object key, Object valueParam) {
+    if (valueParam == null || !(valueParam instanceof TCObjectSelf)) { return; }
+    ObjectID oidParam = ((TCObjectSelf) valueParam).getObjectID();
+
+    ReentrantReadWriteLock lock = getLock(key);
+    lock.writeLock().lock();
+    try {
+      if (checkedOutObjects.get(oidParam) != null && checkedOutObjects.get(oidParam).intValue() == 1) {
+        checkedOutObjects.remove(oidParam);
+        if (removedObjectIDs.containsKey(oidParam)) {
+          remoteRemoveObjectIfPossible((TCObjectSelf) valueParam);
+        }
+      }
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  public Object checkOutObject(Object key, Object valueParam) {
+    if (valueParam == null || !(valueParam instanceof TCObjectSelf)) { return null; }
+    ObjectID oidParam = ((TCObjectSelf) valueParam).getObjectID();
+
+    ReentrantReadWriteLock lock = getLock(key);
+    lock.writeLock().lock();
+    try {
+      AbstractLocalCacheStoreValue value = getLocalValue(key);
+      if (value == null || !value.getValueObjectId().equals(oidParam)) { return null; }
+
+      Integer checkedOutCount = checkedOutObjects.get(oidParam);
+      checkedOutCount = checkedOutCount == null ? 1 : checkedOutCount + 1;
+
+      checkedOutObjects.put(oidParam, checkedOutCount);
+      return value.getValueObject();
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 }
