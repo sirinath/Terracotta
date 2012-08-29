@@ -239,6 +239,7 @@ public class DSOContextImpl implements DSOContext {
       }
     }
     getClassResource("non.existent.Class", getClass().getClassLoader(), true);
+    logger.info("DSOContext created with expressRejoinClient=" + expressRejoinClient);
   }
 
   private void resolveClasses() {
