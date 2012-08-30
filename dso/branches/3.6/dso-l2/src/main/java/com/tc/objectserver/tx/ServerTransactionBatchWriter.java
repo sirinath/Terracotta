@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * This transaction Batch writer is used at the server side to create transactions
@@ -72,6 +73,7 @@ public class ServerTransactionBatchWriter {
     writeLockIDs(out, txn.getLockIDs());
     writeRootsMap(out, txn.getNewRoots());
     writeNotifies(out, txn.getNotifies());
+    writeIgnoredBroadcastIds(out, txn.getIgnoredBroadcastObjectIDs());
     writeDMIDescriptors(out, txn.getDmiDescriptors());
     writeHighWaterMarks(out, txn.getHighWaterMarks());
     writeDNAs(out, txn.getChanges());
@@ -195,6 +197,13 @@ public class ServerTransactionBatchWriter {
       if (serverTransaction.getTransactionType() == TxnType.SYNC_WRITE) { return true; }
     }
     return false;
+  }
+
+  private void writeIgnoredBroadcastIds(final TCByteBufferOutputStream out, final Set<ObjectID> ignoredOids) {
+    out.writeInt(ignoredOids.size());
+    for (ObjectID element : ignoredOids) {
+      out.writeLong(element.toLong());
+    }
   }
 
 }
