@@ -216,6 +216,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+      return Collections.EMPTY_SET;
+    }
+
   }
 
   private static class TestServerConfigurationContext implements ServerConfigurationContext {
@@ -620,11 +624,10 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
-    public void initialize(final List chges, final ObjectStringSerializer serializer, final LockID[] lids,
-                           final long cid, final TransactionID txID, final NodeID commitID,
-                           final GlobalTransactionID gtx, final TxnType txnType,
-                           final GlobalTransactionID lowGlobalTransactionIDWatermark, final Collection notifies,
-                           final Map newRoots, final DmiDescriptor[] dmis) {
+    public void initialize(List chges, ObjectStringSerializer aSerializer, LockID[] lids, long cid, TransactionID txID,
+                           NodeID commitID, GlobalTransactionID gtx, TxnType txnType,
+                           GlobalTransactionID lowGlobalTransactionIDWatermark, Collection notifies, Map newRoots,
+                           DmiDescriptor[] dmis, Invalidations inlineInvalidateObjectIDs) {
       //
     }
 
@@ -646,7 +649,8 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, ApplyTransactionInfo references,
                                                          NodeID clientID, Set<ObjectID> objectIDs,
-                                                         Invalidations invalidateObjectIDs) {
+                                                         Set<ObjectID> ignoreIDs, Invalidations invalidateObjectIDs,
+                                                         Invalidations invalidateObjectIDs2) {
       final ArrayList<DNA> list = new ArrayList<DNA>();
       final ObjectID dateID = new ObjectID(1);
       list.add(new TestDateDNA("java.util.Date", dateID));

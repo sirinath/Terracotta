@@ -5,6 +5,7 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.invalidation.Invalidations;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -69,7 +70,8 @@ public class BroadcastTransactionMessageTest extends TestCase {
                                                        State.WAITER));
     }
     this.msg.initialize(changes, serializer, lockIDs, cid, txID, clientID, gtx, txnType,
-                        lowGlobalTransactionIDWatermark, notified, new HashMap(), DmiDescriptor.EMPTY_ARRAY);
+                        lowGlobalTransactionIDWatermark, notified, new HashMap(), DmiDescriptor.EMPTY_ARRAY,
+                        new Invalidations());
     this.msg.dehydrate();
 
     TCByteBuffer[] data = this.out.toArray();

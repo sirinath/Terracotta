@@ -49,14 +49,17 @@ public class ClientStateManagerTest extends TestCase {
     ClientID cid1 = new ClientID(1);
     stateManager.startupNode(cid1);
     assertTrue(stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid1,
-                                                                lookupObjectIDs, new Invalidations()).size() == 0);
+                                                                lookupObjectIDs, new ObjectIDSet(),
+                                                                new Invalidations(), new Invalidations()).size() == 0);
     assertEquals(0, lookupObjectIDs.size());
 
     stateManager.startupNode(cid0);
     stateManager.addReference(cid0, new ObjectID(4));
     stateManager.addAllReferencedIdsTo(testSet);
-    assertEquals(0, stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid1,
-                                                                     lookupObjectIDs, new Invalidations()).size());
+    assertEquals(0,
+                 stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid1,
+                                                                  lookupObjectIDs, new ObjectIDSet(),
+                                                                  new Invalidations(), new Invalidations()).size());
     assertEquals(0, lookupObjectIDs.size());
     assertEquals(1, testSet.size());
 
@@ -65,27 +68,35 @@ public class ClientStateManagerTest extends TestCase {
     stateManager.addAllReferencedIdsTo(testSet);
     assertEquals(2, testSet.size());
 
-    assertEquals(0, stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid1,
-                                                                     lookupObjectIDs, new Invalidations()).size());
+    assertEquals(0,
+                 stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid1,
+                                                                  lookupObjectIDs, new ObjectIDSet(),
+                                                                  new Invalidations(), new Invalidations()).size());
     assertEquals(0, lookupObjectIDs.size());
-    assertEquals(0, stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid0,
-                                                                     lookupObjectIDs, new Invalidations()).size());
+    assertEquals(0,
+                 stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid0,
+                                                                  lookupObjectIDs, new ObjectIDSet(),
+                                                                  new Invalidations(), new Invalidations()).size());
     assertEquals(0, lookupObjectIDs.size());
 
     stateManager.addReference(cid0, new ObjectID(0));
     stateManager.addAllReferencedIdsTo(testSet);
     assertEquals(3, testSet.size());
 
-    assertEquals(1, stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid0,
-                                                                     lookupObjectIDs, new Invalidations()).size());
+    assertEquals(1,
+                 stateManager.createPrunedChangesAndAddObjectIDTo(changes, new ApplyTransactionInfo(), cid0,
+                                                                  lookupObjectIDs, new ObjectIDSet(),
+                                                                  new Invalidations(), new Invalidations()).size());
     assertEquals(0, lookupObjectIDs.size());
 
     ApplyTransactionInfo backReferences = new ApplyTransactionInfo();
     backReferences.addBackReference(new ObjectID(2), new ObjectID(0));
     backReferences.addBackReference(new ObjectID(3), new ObjectID(0));
 
-    assertEquals(1, stateManager.createPrunedChangesAndAddObjectIDTo(changes, backReferences, cid0, lookupObjectIDs,
-                                                                     new Invalidations()).size());
+    assertEquals(1,
+                 stateManager.createPrunedChangesAndAddObjectIDTo(changes, backReferences, cid0, lookupObjectIDs,
+                                                                  new ObjectIDSet(), new Invalidations(),
+                                                                  new Invalidations()).size());
     assertEquals(2, lookupObjectIDs.size());
 
     stateManager.shutdownNode(cid1);
@@ -168,7 +179,8 @@ public class ClientStateManagerTest extends TestCase {
     // Client ID 1 asserts
     Invalidations invalidationsForClient = new Invalidations();
     stateManager.createPrunedChangesAndAddObjectIDTo(Collections.EMPTY_LIST, applyTransactionInfo, cid1,
-                                                     new ObjectIDSet(), invalidationsForClient);
+                                                     new ObjectIDSet(), new ObjectIDSet(), invalidationsForClient,
+                                                     new Invalidations());
     oidSetInvalidated = invalidationsForClient.getObjectIDSetForMapId(mapid1);
     Assert.assertEquals(50, oidSetInvalidated.size());
     for (int i = 1; i <= 50; i++) {
@@ -178,7 +190,8 @@ public class ClientStateManagerTest extends TestCase {
     // Client ID 2 asserts
     invalidationsForClient = new Invalidations();
     stateManager.createPrunedChangesAndAddObjectIDTo(Collections.EMPTY_LIST, applyTransactionInfo, cid2,
-                                                     new ObjectIDSet(), invalidationsForClient);
+                                                     new ObjectIDSet(), new ObjectIDSet(), invalidationsForClient,
+                                                     new Invalidations());
     oidSetInvalidated = invalidationsForClient.getObjectIDSetForMapId(mapid2);
     Assert.assertEquals(75, oidSetInvalidated.size());
     for (int i = 101; i <= 175; i++) {
@@ -188,7 +201,8 @@ public class ClientStateManagerTest extends TestCase {
     // Client ID 3 asserts
     invalidationsForClient = new Invalidations();
     stateManager.createPrunedChangesAndAddObjectIDTo(Collections.EMPTY_LIST, applyTransactionInfo, cid3,
-                                                     new ObjectIDSet(), invalidationsForClient);
+                                                     new ObjectIDSet(), new ObjectIDSet(), invalidationsForClient,
+                                                     new Invalidations());
     oidSetInvalidated = invalidationsForClient.getObjectIDSetForMapId(mapid2);
     Assert.assertEquals(25, oidSetInvalidated.size());
     for (int i = 151; i <= 175; i++) {

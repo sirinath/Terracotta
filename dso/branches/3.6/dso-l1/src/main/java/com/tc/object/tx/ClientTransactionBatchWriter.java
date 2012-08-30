@@ -629,6 +629,12 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
         n.serializeTo(this.output);
       }
 
+      final Set<ObjectID> ignoredOids = txn.getIgnoredBroadcastObjectIDs();
+      this.output.writeInt(ignoredOids.size());
+      for (ObjectID element : ignoredOids) {
+        this.output.writeLong(element.toLong());
+      }
+
       final List dmis = txn.getDmiDescriptors();
       this.output.writeInt(dmis.size());
       for (final Iterator i = dmis.iterator(); i.hasNext();) {

@@ -45,7 +45,9 @@ public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintab
   public List<DNA> createPrunedChangesAndAddObjectIDTo(final Collection<DNA> changes,
                                                        final ApplyTransactionInfo applyInfo, final NodeID id,
                                                        final Set<ObjectID> lookupObjectIDs,
-                                                       final Invalidations invalidationsForClient) {
+                                                       final Set<ObjectID> ignoreBroadcast,
+                                                       final Invalidations invalidationsForClient,
+                                                       final Invalidations inlineInvalidationsForClient) {
     final ClientStateImpl clientState = getClientState(id);
     if (clientState == null) {
       this.logger.warn(": createPrunedChangesAndAddObjectIDTo : Client state is NULL (probably due to disconnect) : "
@@ -61,7 +63,11 @@ public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintab
         final ObjectID oid = dna.getObjectID();
         if (clientState.containsReference(oid)) {
           if (dna.isDelta() && !applyInfo.isBroadcastIgnoredFor(oid)) {
-            prunedChanges.add(dna);
+            if (!ignoreBroadcast.contains(oid)) {
+              prunedChanges.add(dna);
+            } else {
+              inlineInvalidationsForClient.add(ObjectID.NULL_ID, oid);
+            }
           } else {
             // This new Object must have already been sent as a part of a different lookup. So ignoring this change.
           }

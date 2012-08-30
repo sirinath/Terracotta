@@ -79,13 +79,13 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   private final ConcurrentMap<ObjectID, Object>                removedObjectIDs             = new ConcurrentHashMap<ObjectID, Object>();
   private final Map<ObjectID, Object>                          oidsForWhichTxnAreInProgress = new ConcurrentHashMap<ObjectID, Object>();
 
-  private final ConcurrentHashMap                    pendingTransactionEntries;
-  private final ConcurrentHashMap                    keyToListeners;
+  private final ConcurrentHashMap                              pendingTransactionEntries;
+  private final ConcurrentHashMap                              keyToListeners;
 
-  private final ReentrantReadWriteLock[]             locks;
+  private final ReentrantReadWriteLock[]                       locks;
   private final TCConcurrentMultiMap<LockID, ValueOIDKeyTuple> lockIDMappings;
 
-  private final ConcurrentHashMap<ObjectID, Integer> checkedOutObjects            = new ConcurrentHashMap<ObjectID, Integer>();
+  private final ConcurrentHashMap<ObjectID, Integer>           checkedOutObjects            = new ConcurrentHashMap<ObjectID, Integer>();
 
   /**
    * Not public constructor, should be created only by the global local cache manager
@@ -833,6 +833,11 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
         checkedOutObjects.remove(oidParam);
         if (removedObjectIDs.containsKey(oidParam)) {
           remoteRemoveObjectIfPossible((TCObjectSelf) valueParam);
+        }
+      } else {
+        Integer i = checkedOutObjects.get(oidParam);
+        if (i != null) {
+          checkedOutObjects.put(oidParam, i.intValue() - 1);
         }
       }
     } finally {

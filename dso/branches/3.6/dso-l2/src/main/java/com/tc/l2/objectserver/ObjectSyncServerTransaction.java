@@ -5,6 +5,7 @@
 package com.tc.l2.objectserver;
 
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -23,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ObjectSyncServerTransaction implements ServerTransaction {
 
@@ -133,6 +135,10 @@ public class ObjectSyncServerTransaction implements ServerTransaction {
 
   public long[] getHighWaterMarks() {
     return EMPTY_LONG_ARRAY;
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return Collections.EMPTY_SET;
   }
 
 }

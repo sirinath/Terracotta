@@ -797,7 +797,9 @@ public class ObjectRequestManagerTest extends TestCase {
 
     public List<DNA> createPrunedChangesAndAddObjectIDTo(final Collection<DNA> changes,
                                                          final ApplyTransactionInfo references, final NodeID clientID,
-                                                         final Set<ObjectID> objectIDs, final Invalidations invalidIDs) {
+                                                         final Set<ObjectID> objectIDs, Set<ObjectID> ignoreIDs,
+                                                         Invalidations invalidateObjectIDs,
+                                                         Invalidations invalidateObjectIDs2) {
       throw new NotImplementedException(TestClientStateManager.class);
     }
 

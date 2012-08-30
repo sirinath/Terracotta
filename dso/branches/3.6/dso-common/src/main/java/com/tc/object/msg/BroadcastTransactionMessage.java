@@ -4,6 +4,7 @@
  */
 package com.tc.object.msg;
 
+import com.tc.invalidation.Invalidations;
 import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.TCMessage;
 import com.tc.object.dmi.DmiDescriptor;
@@ -22,7 +23,7 @@ public interface BroadcastTransactionMessage extends TCMessage {
   public void initialize(List chges, ObjectStringSerializer aSerializer, LockID[] lids, long cid, TransactionID txID,
                          NodeID commitID, GlobalTransactionID gtx, TxnType txnType,
                          GlobalTransactionID lowGlobalTransactionIDWatermark, Collection notifies, Map newRoots,
-                         DmiDescriptor[] dmis);
+                         DmiDescriptor[] dmis, Invalidations inlineInvalidateObjectIDs);
 
   public List getLockIDs();
 

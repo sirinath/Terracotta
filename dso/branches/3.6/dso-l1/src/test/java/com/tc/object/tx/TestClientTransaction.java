@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class TestClientTransaction implements ClientTransaction {
 
@@ -164,6 +165,14 @@ public class TestClientTransaction implements ClientTransaction {
 
   public List getTransactionCompleteListeners() {
     return txnListener;
+  }
+
+  public void ignoreBroadcastFor(ObjectID objectID) {
+    throw new UnsupportedOperationException();
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    throw new UnsupportedOperationException();
   }
 
 }
