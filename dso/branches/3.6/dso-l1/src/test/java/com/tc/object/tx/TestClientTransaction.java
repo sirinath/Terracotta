@@ -172,7 +172,7 @@ public class TestClientTransaction implements ClientTransaction {
   }
 
   public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
-    throw new UnsupportedOperationException();
+    return Collections.EMPTY_SET;
   }
 
 }
