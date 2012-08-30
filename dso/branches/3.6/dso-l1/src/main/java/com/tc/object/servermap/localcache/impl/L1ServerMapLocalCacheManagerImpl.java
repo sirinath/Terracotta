@@ -6,6 +6,8 @@ package com.tc.object.servermap.localcache.impl;
 import com.tc.async.api.Sink;
 import com.tc.exception.TCRuntimeException;
 import com.tc.invalidation.Invalidations;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
@@ -36,11 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class L1ServerMapLocalCacheManagerImpl implements L1ServerMapLocalCacheManager {
-  private final Object                                                           NULL_VALUE          = new Object();
-
+  private static final TCLogger                                                  LOGGER              = TCLogging
+                                                                                                         .getLogger(L1ServerMapLocalCacheManagerImpl.class);
   private static final boolean                                                   PINNING_ENABLED     = TCPropertiesImpl
                                                                                                          .getProperties()
                                                                                                          .getBoolean(TCPropertiesConsts.L1_LOCKMANAGER_PINNING_ENABLED);
+
+  private final Object                                                           NULL_VALUE          = new Object();
 
   /**
    * For invalidations
@@ -171,26 +175,27 @@ public class L1ServerMapLocalCacheManagerImpl implements L1ServerMapLocalCacheMa
 
     if (ObjectID.NULL_ID.equals(mapID)) {
       for (ServerMapLocalCache cache : localCaches.keySet()) {
-        for (ObjectID id : set) {
-          boolean success = cache.removeEntriesForObjectId(id);
-          if (!success) {
-            invalidationsFailed.add(id);
-          }
-        }
+        removeFromCache(set, invalidationsFailed, cache);
       }
     } else {
       ServerMapLocalCache cache = mapIdTolocalCache.get(mapID);
       if (cache != null) {
-        for (ObjectID id : set) {
-          boolean success = cache.removeEntriesForObjectId(id);
-          if (!success) {
-            invalidationsFailed.add(id);
-          }
-        }
+        removeFromCache(set, invalidationsFailed, cache);
       }
     }
-
     return invalidationsFailed;
+  }
+
+  private void removeFromCache(Set<ObjectID> set, ObjectIDSet invalidationsFailed, ServerMapLocalCache cache) {
+    for (ObjectID id : set) {
+      boolean success = cache.removeEntriesForObjectId(id);
+      if (!success) {
+        invalidationsFailed.add(id);
+      }
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("invalidation received for " + id + " and success " + success);
+      }
+    }
   }
 
   /**
