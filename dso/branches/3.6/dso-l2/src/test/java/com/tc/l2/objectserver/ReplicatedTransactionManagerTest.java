@@ -246,7 +246,8 @@ public class ReplicatedTransactionManagerTest extends TestCase {
       }
       ServerTransaction tx = new ServerTransactionImpl(batchID, txID, sequenceID, lockIDs, this.clientID, dnas,
                                                        serializer, newRoots, txnType, notifies,
-                                                       DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1, new long[0]);
+                                                       DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1,
+                                                       new long[0], Collections.EMPTY_SET);
       map.put(tx.getServerTransactionID(), tx);
       try {
         tx.setGlobalTransactionID(this.gtxm.getOrCreateGlobalTransactionID(tx.getServerTransactionID()));

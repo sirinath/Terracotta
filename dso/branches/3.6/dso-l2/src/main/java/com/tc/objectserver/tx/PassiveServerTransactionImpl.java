@@ -5,6 +5,7 @@
 package com.tc.objectserver.tx;
 
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -18,15 +19,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PassiveServerTransactionImpl extends ServerTransactionImpl implements ServerTransaction {
 
   public PassiveServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                       NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
-                                      TxnType transactionType, Collection notifies, DmiDescriptor[] dmis, 
-                                      MetaDataReader [] metaDataReaders, int numApplicationTxn, long[] highWaterMarks) {
+                                      TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
+                                      MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks,
+                                      Set<ObjectID> ignoredOidsForBroadcast) {
     super(batchID, txID, sequenceID, lockIDs, source, dnas, serializer, newRoots, transactionType, notifies, dmis,
-          metaDataReaders, numApplicationTxn, highWaterMarks);
+          metaDataReaders, numApplicationTxn, highWaterMarks, ignoredOidsForBroadcast);
   }
 
   @Override

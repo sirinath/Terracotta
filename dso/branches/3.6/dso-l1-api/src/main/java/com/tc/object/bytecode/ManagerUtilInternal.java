@@ -127,4 +127,10 @@ public class ManagerUtilInternal {
   public static void addTransactionCompleteListener(TransactionCompleteListener listener) {
     getInternalManager().addTransactionCompleteListener(listener);
   }
+
+  public static void skipBroadcastForCurrentTransaction(Object obj) {
+    if (obj instanceof Manageable) {
+      getInternalManager().skipBroadcastForCurrentTransaction(((Manageable) obj).__tc_managed().getObjectID());
+    }
+  }
 }

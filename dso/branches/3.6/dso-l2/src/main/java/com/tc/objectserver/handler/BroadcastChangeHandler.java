@@ -84,10 +84,15 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
       List prunedChanges = Collections.EMPTY_LIST;
       final SortedSet<ObjectID> lookupObjectIDs = new ObjectIDSet();
       final Invalidations invalidateObjectIDs = new Invalidations();
+      final Invalidations inlineInvalidateObjectIDs = new Invalidations();
 
       if (!clientID.equals(committerID)) {
-        prunedChanges = this.clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(), bcc
-            .getApplyInfo(), clientID, lookupObjectIDs, invalidateObjectIDs);
+        prunedChanges = this.clientStateManager.createPrunedChangesAndAddObjectIDTo(bcc.getChanges(),
+                                                                                    bcc.getApplyInfo(), clientID,
+                                                                                    lookupObjectIDs,
+                                                                                    bcc.getIgnoredBroadcastObjectIDs(),
+                                                                                    invalidateObjectIDs,
+                                                                                    inlineInvalidateObjectIDs);
       }
 
       if (!invalidateObjectIDs.isEmpty()) {
@@ -101,7 +106,7 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
       final DmiDescriptor[] prunedDmis = pruneDmiDescriptors(bcc.getDmiDescriptors(), clientID, this.clientStateManager);
       final boolean includeDmi = !clientID.equals(committerID) && prunedDmis.length > 0;
       if (!prunedChanges.isEmpty() || !lookupObjectIDs.isEmpty() || !notifiedWaiters.isEmpty() || !newRoots.isEmpty()
-          || includeDmi) {
+          || includeDmi || !inlineInvalidateObjectIDs.isEmpty()) {
         this.transactionManager.addWaitingForAcknowledgement(committerID, txnID, clientID);
 
         // check here if the client is already not disconnected
@@ -122,8 +127,9 @@ public class BroadcastChangeHandler extends AbstractEventHandler {
         final BroadcastTransactionMessage responseMessage = (BroadcastTransactionMessage) client
             .createMessage(TCMessageType.BROADCAST_TRANSACTION_MESSAGE);
         responseMessage.initialize(prunedChanges, bcc.getSerializer(), bcc.getLockIDs(), getNextChangeIDFor(clientID),
-                                   txnID, committerID, bcc.getGlobalTransactionID(), bcc.getTransactionType(), bcc
-                                       .getLowGlobalTransactionIDWatermark(), notifiedWaiters, newRoots, dmi);
+                                   txnID, committerID, bcc.getGlobalTransactionID(), bcc.getTransactionType(),
+                                   bcc.getLowGlobalTransactionIDWatermark(), notifiedWaiters, newRoots, dmi,
+                                   inlineInvalidateObjectIDs);
 
         responseMessage.send();
 

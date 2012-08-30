@@ -3,6 +3,7 @@
  */
 package com.tc.object.bytecode;
 
+import com.tc.object.ObjectID;
 import com.tc.object.locks.TerracottaLockingInternal;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.metadata.NVPair;
@@ -34,5 +35,7 @@ public interface ManagerInternal extends Manager, TerracottaLockingInternal {
   void initForTests(CountDownLatch latch);
 
   void addTransactionCompleteListener(TransactionCompleteListener listener);
+
+  void skipBroadcastForCurrentTransaction(ObjectID objectID);
 
 }
