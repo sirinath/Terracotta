@@ -40,11 +40,15 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
                                                                      .getProperties()
                                                                      .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED,
                                                                                  true);
+  private static final boolean  INVALIDATE_STRONG_CACHE          = TCPropertiesImpl
+                                                                     .getProperties()
+                                                                     .getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_INVALIDATE_STRONG_CACHE_ENABLED,
+                                                                                 true);
 
   public static final String    MAX_TTI_SECONDS_FIELDNAME        = "maxTTISeconds";
   public static final String    MAX_TTL_SECONDS_FIELDNAME        = "maxTTLSeconds";
   public static final String    TARGET_MAX_TOTAL_COUNT_FIELDNAME = "targetMaxTotalCount";
-  public static final String    INVALIDATE_ON_CHANGE             = "invalidateOnChange";
+  public static final String    IS_EVENTUAL                      = "isEventual";
   public static final String    CACHE_NAME_FIELDNAME             = "cacheName";
   public static final String    LOCAL_CACHE_ENABLED_FIELDNAME    = "localCacheEnabled";
   public static final String    DELETE_VALUE_ON_REMOVE           = "deleteValueOnRemove";
@@ -62,7 +66,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   // This is a transient field tracking the status of the eviction for this CDSM
   private EvictionStatus evictionStatus = EvictionStatus.NOT_INITIATED;
 
-  private boolean        invalidateOnChange;
+  private boolean        isEventual;
   private int            maxTTISeconds;
   private int            maxTTLSeconds;
   private int            targetMaxTotalCount;
@@ -75,7 +79,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     this.maxTTISeconds = in.readInt();
     this.maxTTLSeconds = in.readInt();
     this.targetMaxTotalCount = in.readInt();
-    this.invalidateOnChange = in.readBoolean();
+    this.isEventual = in.readBoolean();
     this.cacheName = in.readUTF();
     this.localCacheEnabled = in.readBoolean();
     this.deleteValueOnRemove = in.readBoolean();
@@ -112,7 +116,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     writer.addPhysicalAction(MAX_TTI_SECONDS_FIELDNAME, Integer.valueOf(this.maxTTISeconds));
     writer.addPhysicalAction(MAX_TTL_SECONDS_FIELDNAME, Integer.valueOf(this.maxTTLSeconds));
     writer.addPhysicalAction(TARGET_MAX_TOTAL_COUNT_FIELDNAME, Integer.valueOf(this.targetMaxTotalCount));
-    writer.addPhysicalAction(INVALIDATE_ON_CHANGE, Boolean.valueOf(this.invalidateOnChange));
+    writer.addPhysicalAction(IS_EVENTUAL, Boolean.valueOf(this.isEventual));
     writer.addPhysicalAction(CACHE_NAME_FIELDNAME, cacheName);
     writer.addPhysicalAction(LOCAL_CACHE_ENABLED_FIELDNAME, localCacheEnabled);
     writer.addPhysicalAction(DELETE_VALUE_ON_REMOVE, deleteValueOnRemove);
@@ -140,8 +144,8 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
           this.maxTTLSeconds = ((Integer) physicalAction.getObject());
         } else if (fieldName.equals(TARGET_MAX_TOTAL_COUNT_FIELDNAME)) {
           this.targetMaxTotalCount = ((Integer) physicalAction.getObject());
-        } else if (fieldName.equals(INVALIDATE_ON_CHANGE)) {
-          this.invalidateOnChange = ((Boolean) physicalAction.getObject());
+        } else if (fieldName.equals(IS_EVENTUAL)) {
+          this.isEventual = ((Boolean) physicalAction.getObject());
         } else if (fieldName.equals(DELETE_VALUE_ON_REMOVE)) {
           this.deleteValueOnRemove = ((Boolean) physicalAction.getObject());
         } else if (fieldName.equals(CACHE_NAME_FIELDNAME)) {
@@ -214,7 +218,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
 
   @Override
   protected void removedValueFromMap(final ObjectID mapID, ApplyTransactionInfo applyInfo, ObjectID old) {
-    if (invalidateOnChange) {
+    if (isEventual || INVALIDATE_STRONG_CACHE) {
       applyInfo.invalidate(mapID, old);
     }
     if (deleteValueOnRemove && ENABLE_DELETE_VALUE_ON_REMOVE) {
@@ -286,7 +290,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     out.writeInt(this.maxTTISeconds);
     out.writeInt(this.maxTTLSeconds);
     out.writeInt(this.targetMaxTotalCount);
-    out.writeBoolean(this.invalidateOnChange);
+    out.writeBoolean(this.isEventual);
     out.writeUTF(this.cacheName);
     out.writeBoolean(localCacheEnabled);
     out.writeBoolean(deleteValueOnRemove);
@@ -301,7 +305,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     if (!(o instanceof ConcurrentDistributedServerMapManagedObjectState)) { return false; }
     final ConcurrentDistributedServerMapManagedObjectState mmo = (ConcurrentDistributedServerMapManagedObjectState) o;
     return super.basicEquals(o) && this.maxTTISeconds == mmo.maxTTISeconds && this.maxTTLSeconds == mmo.maxTTLSeconds
-           && this.invalidateOnChange == mmo.invalidateOnChange && this.targetMaxTotalCount == mmo.targetMaxTotalCount
+           && this.isEventual == mmo.isEventual && this.targetMaxTotalCount == mmo.targetMaxTotalCount
            && this.localCacheEnabled == mmo.localCacheEnabled && this.deleteValueOnRemove == mmo.deleteValueOnRemove;
   }
 
@@ -392,7 +396,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
     int result = super.hashCode();
     result = prime * result + ((cacheName == null) ? 0 : cacheName.hashCode());
     result = prime * result + ((evictionStatus == null) ? 0 : evictionStatus.hashCode());
-    result = prime * result + (invalidateOnChange ? 1231 : 1237);
+    result = prime * result + (isEventual ? 1231 : 1237);
     result = prime * result + (deleteValueOnRemove ? 1231 : 1237);
     result = prime * result + (localCacheEnabled ? 1231 : 1237);
     result = prime * result + maxTTISeconds;

@@ -374,7 +374,7 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
                              Integer.valueOf(0), false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.TARGET_MAX_TOTAL_COUNT_FIELDNAME,
                              Integer.valueOf(0), false);
-    cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.INVALIDATE_ON_CHANGE,
+    cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.IS_EVENTUAL,
                              Boolean.valueOf(false), false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.CACHE_NAME_FIELDNAME, "cash name", false);
     cursor.addPhysicalAction(ConcurrentDistributedServerMapManagedObjectState.LOCAL_CACHE_ENABLED_FIELDNAME,
