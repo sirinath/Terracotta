@@ -41,7 +41,7 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
   private static final long END           = System.currentTimeMillis() + TEST_DURATION;
 
   public NewObjectMemoryManagerRaceTest() {
-    super(1, new String[] { "-Xmx512m" }); // only need 1 node
+    super(1, new String[] { "-Xmx768m" }); // only need 1 node
   }
 
   @Override
@@ -192,8 +192,8 @@ public class NewObjectMemoryManagerRaceTest extends ServerCrashingTestBase {
         jvmArgs.add("-Dcom.tc.l1.cachemanager.sleepInterval=1");
         jvmArgs.add("-Dcom.tc.l1.cachemanager.criticalThreshold=2");
         jvmArgs.add("-Dcom.tc.l1.cachemanager.threshold=1");
-        jvmArgs.add("-Xms512m");
-        jvmArgs.add("-Xmx512m");
+        jvmArgs.add("-Xms768m");
+        jvmArgs.add("-Xmx768m");
 
         ExtraL1ProcessControl client = new ExtraL1ProcessControl(getHostName(), getPort(), External.class,
                                                                  getConfigFilePath(), Collections.EMPTY_LIST,
