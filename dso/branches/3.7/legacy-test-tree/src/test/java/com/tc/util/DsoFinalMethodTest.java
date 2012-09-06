@@ -53,7 +53,8 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
     final TCObject tcObject = new MockTCObject(objectID, this.rootObject);
     final TestObjectFactory objectFactory = new TestObjectFactory();
     final TCObjectSelfStore tcObjectSelfStore = new L1ServerMapLocalCacheManagerImpl(new TestLocksRecallService(),
-                                                                                     new MockSink(), new MockSink());
+                                                                                     new MockSink(), new MockSink(),
+                                                                                     new MockSink());
     objectFactory.peerObject = this.rootObject;
     objectFactory.tcObject = tcObject;
     this.objectManager = new MockClientObjectManagerImpl(new MockRemoteObjectManagerImpl(), configHelper(),
@@ -137,30 +138,37 @@ public class DsoFinalMethodTest extends BaseDSOTestCase {
 
   private static class TestPortability implements Portability {
 
+    @Override
     public NonPortableReason getNonPortableReason(final Class topLevelClass) {
       throw new ImplementMe();
     }
 
+    @Override
     public boolean isInstrumentationNotNeeded(final String name) {
       return false;
     }
 
+    @Override
     public boolean isPortableClass(final Class clazz) {
       return true;
     }
 
+    @Override
     public boolean isClassPhysicallyInstrumented(final Class clazz) {
       throw new ImplementMe();
     }
 
+    @Override
     public boolean isPortableInstance(final Object obj) {
       return true;
     }
 
+    @Override
     public boolean overridesHashCode(final Object obj) {
       throw new ImplementMe();
     }
 
+    @Override
     public boolean overridesHashCode(final Class clazz) {
       throw new ImplementMe();
     }

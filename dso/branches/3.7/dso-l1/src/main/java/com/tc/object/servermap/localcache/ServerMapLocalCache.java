@@ -140,4 +140,8 @@ public interface ServerMapLocalCache {
 
   Object checkOutObject(Object key, Object value);
 
+  boolean registerPinnedEntryInvalidationListener(PinnedEntryInvalidationListener listener);
+
+  boolean unRegisterPinnedEntryInvalidationListener(PinnedEntryInvalidationListener listener);
+
 }
