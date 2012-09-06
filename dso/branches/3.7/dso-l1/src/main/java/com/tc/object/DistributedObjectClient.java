@@ -154,6 +154,7 @@ import com.tc.object.servermap.localcache.L1ServerMapLocalCacheManager;
 import com.tc.object.servermap.localcache.impl.L1ServerMapCapacityEvictionHandler;
 import com.tc.object.servermap.localcache.impl.L1ServerMapLocalCacheManagerImpl;
 import com.tc.object.servermap.localcache.impl.L1ServerMapTransactionCompletionHandler;
+import com.tc.object.servermap.localcache.impl.PinnedEntryFaultHandler;
 import com.tc.object.session.SessionID;
 import com.tc.object.session.SessionManager;
 import com.tc.object.session.SessionManagerImpl;
@@ -280,7 +281,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   private Stage                                      clusterEventsStage;
 
   private L1ServerMapLocalCacheManager               globalLocalCacheManager;
-  private TCSecurityManager                          securityManager;
+  private final TCSecurityManager                    securityManager;
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
                                  final ClassProvider classProvider,
@@ -335,10 +336,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     return new StandardDSOClientBuilder();
   }
 
+  @Override
   public ThreadIDMap getThreadIDMap() {
     return this.threadIDMap;
   }
 
+  @Override
   public void addAllLocksTo(final LockInfoByThreadID lockInfo) {
     if (this.lockManager != null) {
       for (final ClientServerExchangeLockContext c : this.lockManager.getAllLockContexts()) {
@@ -387,6 +390,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       this.txCounter = txCounter;
     }
 
+    @Override
     public void setupComplete(final StatisticsAgentSubSystem subsystem) {
       final StatisticsRetrievalRegistry registry = subsystem.getStatisticsRetrievalRegistry();
 
@@ -482,6 +486,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final int faultCount = this.config.getFaultCount();
 
     final SessionManager sessionManager = new SessionManagerImpl(new SessionManagerImpl.SequenceFactory() {
+      @Override
       public Sequence newSequence() {
         return new SimpleSequence();
       }
@@ -610,13 +615,23 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage capacityEvictionStage = stageManager.createStage(ClientConfigurationContext.CAPACITY_EVICTION_STAGE,
                                                                  l1ServerMapCapacityEvictionHandler, 8, maxSize);
 
+
     L1ServerMapTransactionCompletionHandler completionHandler = new L1ServerMapTransactionCompletionHandler();
     final Stage txnCompleteStage = stageManager
         .createStage(ClientConfigurationContext.LOCAL_CACHE_TXN_COMPLETE_STAGE, completionHandler, TCPropertiesImpl
             .getProperties().getInt(TCPropertiesConsts.L2_LOCAL_CACHE_TXN_COMPLETE_THREADS), TCPropertiesImpl
             .getProperties().getInt(TCPropertiesConsts.L2_LOCAL_CACHE_TXN_COMPLETE_SINK_CAPACITY));
+
+    int pinnedEntryFaultStageThreads = l1Properties.getInt(TCPropertiesConsts.L1_SEDA_PINNED_ENTRY_FAULT_STAGE_THREADS,
+                                                           8);
+    final Stage pinnedEntryFaultStage = stageManager.createStage(ClientConfigurationContext.PINNED_ENTRY_FAULT_STAGE,
+                                                                 new PinnedEntryFaultHandler(),
+                                                                 pinnedEntryFaultStageThreads,
+                                                                 maxSize);
+
     globalLocalCacheManager = new L1ServerMapLocalCacheManagerImpl(locksRecallHelper, capacityEvictionStage.getSink(),
-                                                                   txnCompleteStage.getSink());
+                                                                   txnCompleteStage.getSink(),
+                                                                   pinnedEntryFaultStage.getSink());
     l1ServerMapCapacityEvictionHandler.initialize(globalLocalCacheManager);
 
     final RemoteServerMapManager remoteServerMapManager = this.dsoClientBuilder
@@ -898,6 +913,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Special handling to get the applicator encoding
                                   new GeneratedMessageFactory() {
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final MessageChannel mChannel,
                                                                    final TCMessageHeader msgHeader,
@@ -906,6 +922,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                                       msgHeader, data, encoding);
                                     }
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final TCByteBufferOutputStream output,
                                                                    final MessageChannel mChannel,
@@ -919,6 +936,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Special handling to get the applicator encoding
                                   new GeneratedMessageFactory() {
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final MessageChannel mChannel,
                                                                    final TCMessageHeader msgHeader,
@@ -927,6 +945,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                                         msgHeader, data, encoding);
                                     }
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final TCByteBufferOutputStream output,
                                                                    final MessageChannel mChannel,
@@ -940,6 +959,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     // Special handling to get the applicator encoding
                                   new GeneratedMessageFactory() {
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final MessageChannel mChannel,
                                                                    final TCMessageHeader msgHeader,
@@ -948,6 +968,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                                        msgHeader, data, encoding);
                                     }
 
+                                    @Override
                                     public TCMessage createMessage(final SessionID sid, final MessageMonitor monitor,
                                                                    final TCByteBufferOutputStream output,
                                                                    final MessageChannel mChannel,
@@ -1087,6 +1108,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
   private void setLoggerOnExit() {
     CommonShutDownHook.addShutdownHook(new Runnable() {
+      @Override
       public void run() {
         DSO_LOGGER.info("L1 Exiting...");
       }
@@ -1154,10 +1176,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     return this.tunneledDomainManager;
   }
 
+  @Override
   public void dump() {
     this.dumpHandler.dump();
   }
 
+  @Override
   public void startBeanShell(final int port) {
     try {
       final Interpreter i = new Interpreter();
@@ -1174,11 +1198,13 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     }
   }
 
+  @Override
   public void reloadConfiguration() throws ConfigurationSetupException {
     if (false) { throw new ConfigurationSetupException(); }
     throw new UnsupportedOperationException();
   }
 
+  @Override
   public void addServerConfigurationChangedListeners(final ClusterTopologyChangedListener listener) {
     throw new UnsupportedOperationException();
   }
@@ -1352,6 +1378,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     }
   }
 
+  @Override
   public String[] processArguments() {
     return null;
   }
@@ -1363,6 +1390,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       this.threadGroup = threadGroup;
     }
 
+    @Override
     public void run() {
       while (threadGroup.activeCount() > 0) {
         for (Thread liveThread : getLiveThreads(threadGroup)) {
