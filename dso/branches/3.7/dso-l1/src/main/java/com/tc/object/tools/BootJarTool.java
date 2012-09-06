@@ -197,6 +197,7 @@ import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStoreListener;
 import com.tc.object.servermap.localcache.LocalCacheStoreEventualValue;
 import com.tc.object.servermap.localcache.LocalCacheStoreFullException;
 import com.tc.object.servermap.localcache.LocalCacheStoreStrongValue;
+import com.tc.object.servermap.localcache.PinnedEntryFaultCallback;
 import com.tc.object.servermap.localcache.ServerMapLocalCache;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransaction;
@@ -666,6 +667,7 @@ public class BootJarTool {
       loadTerracottaClass(TCObjectSelfStore.class.getName());
       loadTerracottaClass(LocalCacheStoreEventualValue.class.getName());
       loadTerracottaClass(LocalCacheStoreStrongValue.class.getName());
+      loadTerracottaClass(PinnedEntryFaultCallback.class.getName());
 
       loadTerracottaClass(L1ServerMapLocalCacheStoreListener.class.getName());
 
