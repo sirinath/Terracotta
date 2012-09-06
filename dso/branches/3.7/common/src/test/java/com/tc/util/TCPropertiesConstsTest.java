@@ -30,6 +30,9 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.PRODUCTKEY_PATH);
     exemptedProperties.add(TCPropertiesConsts.PRODUCTKEY_RESOURCE_PATH);
 
+    exemptedProperties.add(TCPropertiesConsts.L1_SEDA_PINNED_ENTRY_FAULT_STAGE_THREADS);
+    exemptedProperties.add(TCPropertiesConsts.L1_SERVERMAPMANAGER_FAULT_INVALIDATED_PINNED_ENTRIES);
+
     exemptedProperties.add(TCPropertiesConsts.L2_CACHEMANAGER_THRESHOLD);
     exemptedProperties.add(TCPropertiesConsts.L2_CACHEMANAGER_CRITICALTHRESHOLD);
 
