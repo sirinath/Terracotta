@@ -573,14 +573,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
   public void callBackOnTxnsInSystemCompletion(final TxnsInSystemCompletionListener l) {
     final TxnsInSystemCompletionListenerCallback callBack = new TxnsInSystemCompletionListenerCallback(l);
-    final Set txnsInSystem = callBack.getTxnsInSystem();
+    final Set<ServerTransactionID> txnsInSystem = callBack.getTxnsInSystem();
     synchronized (this.transactionAccounts) {
       // DEV-1874, MNK-683 :: Register before adding pending server transaction ids to avoid race.
       addTransactionListener(callBack);
-      for (final Object element : this.transactionAccounts.entrySet()) {
-        final Entry entry = (Entry) element;
-        final TransactionAccount client = (TransactionAccount) entry.getValue();
-        client.addAllPendingServerTransactionIDsTo(txnsInSystem);
+      for (final Entry<NodeID, TransactionAccount> entry : this.transactionAccounts.entrySet()) {
+        entry.getValue().addAllPendingServerTransactionIDsTo(txnsInSystem);
       }
     }
     callBack.initializationComplete();
@@ -679,9 +677,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
     private final TxnsInSystemCompletionListener callback;
     private final Set<ServerTransactionID>       txnsInSystem;
-    private boolean                              initialized = false;
-    private int                                  count       = 0;
-    private int                                  lastSize    = -1;
+    private boolean                              initialized    = false;
+    private int                                  count          = 0;
+    private int                                  lastSize       = -1;
+    private boolean                              callbackCalled = false;
 
     public TxnsInSystemCompletionListenerCallback(final TxnsInSystemCompletionListener callback) {
       this.callback = callback;
@@ -696,7 +695,7 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       }
     }
 
-    public Set getTxnsInSystem() {
+    public Set<ServerTransactionID> getTxnsInSystem() {
       return this.txnsInSystem;
     }
 
@@ -740,9 +739,10 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     }
 
     private void callBackIfEmpty() {
-      if (this.txnsInSystem.isEmpty()) {
+      if (this.txnsInSystem.isEmpty() && !callbackCalled) {
         removeTransactionListener(this);
         this.callback.onCompletion();
+        callbackCalled = true;
       }
     }
 
