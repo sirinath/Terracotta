@@ -9,7 +9,23 @@ import com.tc.async.api.EventContext;
 public class L1ServerMapTransactionCompletionHandler extends AbstractEventHandler {
   @Override
   public void handleEvent(EventContext context) {
-    L1ServerMapLocalStoreTransactionCompletionListener txnListener = (L1ServerMapLocalStoreTransactionCompletionListener) context;
-    txnListener.postTransactionCallback();
+    if (context instanceof RunnableEventContext) {
+      ((RunnableEventContext) context).getRunnable().run();
+    } else {
+      L1ServerMapLocalStoreTransactionCompletionListener txnListener = (L1ServerMapLocalStoreTransactionCompletionListener) context;
+      txnListener.postTransactionCallback();
+    }
+  }
+
+  public static class RunnableEventContext implements EventContext {
+    private final Runnable runnable;
+
+    public RunnableEventContext(Runnable runnable) {
+      this.runnable = runnable;
+    }
+
+    public Runnable getRunnable() {
+      return runnable;
+    }
   }
 }
