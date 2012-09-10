@@ -24,6 +24,7 @@ import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStore;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStoreListener;
 import com.tc.object.servermap.localcache.ServerMapLocalCache;
 import com.tc.object.servermap.localcache.ServerMapLocalCacheRemoveCallback;
+import com.tc.object.servermap.localcache.impl.L1ServerMapTransactionCompletionHandler.RunnableEventContext;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.ObjectIDSet;
@@ -324,5 +325,9 @@ public class L1ServerMapLocalCacheManagerImpl implements L1ServerMapLocalCacheMa
 
   public void transactionComplete(L1ServerMapLocalStoreTransactionCompletionListener l1ServerMapLocalStoreTransactionCompletionListener) {
     txnCompleteSink.add(l1ServerMapLocalStoreTransactionCompletionListener);
+  }
+
+  public void transactionComplete(Runnable runnable) {
+    txnCompleteSink.add(new RunnableEventContext(runnable));
   }
 }
