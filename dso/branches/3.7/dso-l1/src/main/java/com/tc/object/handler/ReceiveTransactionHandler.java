@@ -9,6 +9,7 @@ import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.exception.TCClassNotFoundException;
+import com.tc.invalidation.Invalidations;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ClientConfigurationContext;
@@ -19,6 +20,7 @@ import com.tc.object.event.DmiEventContext;
 import com.tc.object.event.DmiManager;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.GlobalTransactionID;
+import com.tc.object.handler.ReceiveInvalidationHandler.InvalidatationContext;
 import com.tc.object.locks.ClientLockManager;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
@@ -54,9 +56,12 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
 
   private volatile boolean                           clientInitialized;
 
+  private final Sink                                 invalidationsSink;
+
   public ReceiveTransactionHandler(ClientIDProvider provider, AcknowledgeTransactionMessageFactory atmFactory,
                                    ClientGlobalTransactionManager gtxManager, SessionManager sessionManager,
-                                   Sink dmiSink, DmiManager dmiManager, CountDownLatch testStartLatch) {
+                                   Sink dmiSink, DmiManager dmiManager, CountDownLatch testStartLatch,
+                                   Sink invalidationsSink) {
     this.cidProvider = provider;
     this.atmFactory = atmFactory;
     this.gtxManager = gtxManager;
@@ -64,6 +69,7 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     this.dmiSink = dmiSink;
     this.dmiManager = dmiManager;
     this.testStartLatch = testStartLatch;
+    this.invalidationsSink = invalidationsSink;
   }
 
   @Override
@@ -82,6 +88,16 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     }
 
     Assert.eval(btm.getLockIDs().size() > 0);
+
+    Invalidations invalidations = btm.getInlineInvalidations();
+    if (!invalidations.isEmpty()) {
+      if (logger.isDebugEnabled()) {
+        logger.debug("Invalidations received .. " + invalidations);
+      }
+
+      invalidationsSink.add(new InvalidatationContext(invalidations));
+    }
+
     GlobalTransactionID lowWaterMark = btm.getLowGlobalTransactionIDWatermark();
     if (!lowWaterMark.isNull()) {
       this.gtxManager.setLowWatermark(lowWaterMark, btm.getSourceNodeID());

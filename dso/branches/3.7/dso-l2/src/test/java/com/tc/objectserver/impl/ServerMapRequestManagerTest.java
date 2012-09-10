@@ -273,7 +273,8 @@ public class ServerMapRequestManagerTest extends TestCase {
 
     public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, ApplyTransactionInfo references,
                                                          NodeID clientID, Set<ObjectID> objectIDs,
-                                                         Invalidations invalidationsForClient) {
+                                                         Set<ObjectID> ignoreIDs, Invalidations invalidateObjectIDs,
+                                                         Invalidations invalidateObjectIDs2) {
       throw new ImplementMe();
     }
 

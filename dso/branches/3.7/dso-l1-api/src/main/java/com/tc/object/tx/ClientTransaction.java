@@ -15,6 +15,7 @@ import com.tc.util.SequenceID;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Hangs on to a grouping of changes to be sent as a batch to the server. Changes are accumulated by the
@@ -240,5 +241,9 @@ public interface ClientTransaction {
    * @return List of TransactionCompleteListeners
    */
   public List getTransactionCompleteListeners();
+
+  public void ignoreBroadcastFor(ObjectID objectID);
+
+  Set<ObjectID> getIgnoredBroadcastObjectIDs();
 
 }

@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class NullClientTransaction extends AbstractClientTransaction {
 
@@ -103,5 +104,13 @@ public class NullClientTransaction extends AbstractClientTransaction {
   @Override
   protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     // do nothing
+  }
+
+  public void ignoreBroadcastFor(ObjectID objectID) {
+    //
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return Collections.EMPTY_SET;
   }
 }

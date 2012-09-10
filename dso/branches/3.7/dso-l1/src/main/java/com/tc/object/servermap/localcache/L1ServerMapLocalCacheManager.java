@@ -63,4 +63,6 @@ public interface L1ServerMapLocalCacheManager extends LocksRecallService, TCObje
   public void transactionComplete(
                                   L1ServerMapLocalStoreTransactionCompletionListener l1ServerMapLocalStoreTransactionCompletionListener);
 
+  public void transactionComplete(Runnable runnable);
+
 }

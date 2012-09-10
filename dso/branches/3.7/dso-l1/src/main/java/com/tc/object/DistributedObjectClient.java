@@ -740,11 +740,17 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage dmiStage = stageManager.createStage(ClientConfigurationContext.DMI_STAGE,
                                                     new DmiHandler(this.dmiManager), 1, maxSize);
 
+    final Stage receiveInvalidationStage = stageManager
+        .createStage(ClientConfigurationContext.RECEIVE_INVALIDATE_OBJECTS_STAGE,
+                     new ReceiveInvalidationHandler(remoteServerMapManager), 1, TCPropertiesImpl.getProperties()
+                         .getInt(TCPropertiesConsts.L2_LOCAL_CACHE_INVALIDATIONS_SINK_CAPACITY));
+
     final Stage receiveTransaction = stageManager
         .createStage(ClientConfigurationContext.RECEIVE_TRANSACTION_STAGE,
                      new ReceiveTransactionHandler(this.channel.getClientIDProvider(), this.channel
                          .getAcknowledgeTransactionMessageFactory(), gtxManager, sessionManager, dmiStage.getSink(),
-                                                   this.dmiManager, testStartLatch), 1, maxSize);
+                                                   this.dmiManager, testStartLatch, receiveInvalidationStage.getSink()),
+                     1, maxSize);
     final Stage oidRequestResponse = stageManager
         .createStage(ClientConfigurationContext.OBJECT_ID_REQUEST_RESPONSE_STAGE, remoteIDProvider, 1, maxSize);
     final Stage transactionResponse = stageManager
@@ -795,10 +801,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ClientConfigurationContext.JMXREMOTE_TUNNEL_STAGE, teh,
                                                                 1, maxSize);
-    final Stage receiveInvalidationStage = stageManager
-        .createStage(ClientConfigurationContext.RECEIVE_INVALIDATE_OBJECTS_STAGE,
-                     new ReceiveInvalidationHandler(remoteServerMapManager), 1, TCPropertiesImpl.getProperties()
-                         .getInt(TCPropertiesConsts.L2_LOCAL_CACHE_INVALIDATIONS_SINK_CAPACITY));
 
     final List<ClientHandshakeCallback> clientHandshakeCallbacks = new ArrayList<ClientHandshakeCallback>();
     clientHandshakeCallbacks.add(this.lockManager);

@@ -67,7 +67,7 @@ public class ServerTransactionFactory {
                                      Collections.EMPTY_MAP, TxnType.NORMAL, Collections.EMPTY_LIST,
                                      NULL_DMI_DESCRIPTOR,
                                      new MetaDataReader[] { createEvictionMetaDataFor(oid, cacheName, candidates) }, 1,
-                                             EMPTY_HIGH_WATER_MARK);
+                                             EMPTY_HIGH_WATER_MARK, Collections.EMPTY_SET);
   }
 
   private MetaDataReader createEvictionMetaDataFor(ObjectID oid, String cacheName, Map candidates) {

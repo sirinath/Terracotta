@@ -1445,7 +1445,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
                                                               DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1,
-                                                              new long[0]);
+                                                              new long[0], Collections.EMPTY_SET);
 
     final List<ServerTransaction> txns = new ArrayList<ServerTransaction>();
     txns.add(stxn1);
@@ -1496,7 +1496,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
                                                               DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1,
-                                                              new long[0]);
+                                                              new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn2);
@@ -1530,7 +1530,7 @@ public class ObjectManagerTest extends TCTestCase {
                                                               new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                               TxnType.NORMAL, new LinkedList(),
                                                               DmiDescriptor.EMPTY_ARRAY, new MetaDataReader[0], 1,
-                                                              new long[0]);
+                                                              new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn3);

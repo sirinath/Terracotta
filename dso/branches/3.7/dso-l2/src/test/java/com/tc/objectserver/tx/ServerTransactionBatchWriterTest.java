@@ -219,7 +219,7 @@ public class ServerTransactionBatchWriterTest extends TestCase {
                                                        this.sourceNodeID, createDNAs(this.startIndex, endIndex),
                                                        new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                        TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                       new MetaDataReader[0], 1, new long[0]));
+                                                       new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET));
       this.startIndex = endIndex + 1;
     }
     return serverTransactions;

@@ -5,6 +5,7 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
+import com.tc.invalidation.Invalidations;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
@@ -55,6 +56,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private final static byte      NOTIFIED              = 10;
   private final static byte      ROOT_NAME_ID_PAIR     = 11;
   private final static byte      DMI_ID                = 12;
+  private final static byte      INLINE_INVALIDATIONS  = 13;
 
   private List                   changes               = new LinkedList();
   private final List             dmis                  = new LinkedList();
@@ -69,6 +71,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private GlobalTransactionID    globalTransactionID;
   private GlobalTransactionID    lowWatermark;
   private ObjectStringSerializer serializer;
+  private Invalidations          inlineInvalidateObjectIDs;
 
   public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                          final TCByteBufferOutputStream out, final MessageChannel channel,
@@ -102,6 +105,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     putNVPair(COMMITTER_ID, this.committerID);
     putNVPair(GLOBAL_TRANSACTION_ID, this.globalTransactionID.toLong());
     putNVPair(LOW_WATERMARK, this.lowWatermark.toLong());
+    putNVPair(INLINE_INVALIDATIONS, inlineInvalidateObjectIDs);
 
     for (Iterator i = this.changes.iterator(); i.hasNext();) {
       DNAImpl dna = (DNAImpl) i.next();
@@ -162,6 +166,9 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
         DmiDescriptor dd = (DmiDescriptor) getObject(new DmiDescriptor());
         this.dmis.add(dd);
         return true;
+      case INLINE_INVALIDATIONS:
+        this.inlineInvalidateObjectIDs = (Invalidations) getObject(new Invalidations());
+        return true;
       default:
         return false;
     }
@@ -170,7 +177,8 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   public void initialize(final List chges, final ObjectStringSerializer aSerializer, final LockID[] lids,
                          final long cid, final TransactionID txID, final NodeID client, final GlobalTransactionID gtx,
                          final TxnType txnType, final GlobalTransactionID lowGlobalTransactionIDWatermark,
-                         final Collection theNotifies, final Map roots, final DmiDescriptor[] dmiDescs) {
+                         final Collection theNotifies, final Map roots, final DmiDescriptor[] dmiDescs,
+                         Invalidations inlineInvalidateObjectIDsParam) {
     Assert.eval(lids.length > 0);
     Assert.assertNotNull(txnType);
 
@@ -179,6 +187,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     this.changeID = cid;
     this.transactionID = txID;
     this.committerID = client;
+    this.inlineInvalidateObjectIDs = inlineInvalidateObjectIDsParam;
     this.transactionType = txnType;
     this.globalTransactionID = gtx;
     this.lowWatermark = lowGlobalTransactionIDWatermark;
@@ -291,4 +300,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     return this.dmis;
   }
 
+  public Invalidations getInlineInvalidations() {
+    return inlineInvalidateObjectIDs;
+  }
 }

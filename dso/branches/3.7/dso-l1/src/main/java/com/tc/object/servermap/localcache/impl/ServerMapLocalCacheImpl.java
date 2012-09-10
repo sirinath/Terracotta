@@ -885,22 +885,34 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   }
 
   @Override
-  public void checkInObject(Object key, Object valueParam) {
+  public void checkInObject(final Object key, final Object valueParam) {
     if (valueParam == null || !(valueParam instanceof TCObjectSelf)) { return; }
-    ObjectID oidParam = ((TCObjectSelf) valueParam).getObjectID();
+    final ObjectID oidParam = ((TCObjectSelf) valueParam).getObjectID();
 
-    ReentrantReadWriteLock lock = getLock(key);
-    lock.writeLock().lock();
-    try {
-      if (checkedOutObjects.get(oidParam) != null && checkedOutObjects.get(oidParam).intValue() == 1) {
-        checkedOutObjects.remove(oidParam);
-        if (removedObjectIDs.containsKey(oidParam)) {
-          remoteRemoveObjectIfPossible((TCObjectSelf) valueParam);
+    Runnable runnable = new Runnable() {
+      @Override
+      public void run() {
+        ReentrantReadWriteLock lock = getLock(key);
+        lock.writeLock().lock();
+        try {
+          if (checkedOutObjects.get(oidParam) != null && checkedOutObjects.get(oidParam).intValue() == 1) {
+            checkedOutObjects.remove(oidParam);
+            if (removedObjectIDs.containsKey(oidParam)) {
+              remoteRemoveObjectIfPossible((TCObjectSelf) valueParam);
+            }
+          } else {
+            Integer i = checkedOutObjects.get(oidParam);
+            if (i != null) {
+              checkedOutObjects.put(oidParam, i.intValue() - 1);
+            }
+          }
+        } finally {
+          lock.writeLock().unlock();
         }
       }
-    } finally {
-      lock.writeLock().unlock();
-    }
+    };
+
+    l1LocalCacheManager.transactionComplete(runnable);
   }
 
   @Override

@@ -30,10 +30,12 @@ import com.tc.util.SequenceID;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Note: If the format of the Transaction Batch changes, then it has to be reflected in three place.<br>
@@ -140,6 +142,12 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
       notifies.add(n);
     }
 
+    final Set<ObjectID> ignoredOids = new HashSet<ObjectID>();
+    final int numIgnoredOids = this.in.readInt();
+    for (int i = 0; i < numIgnoredOids; i++) {
+      ignoredOids.add(new ObjectID(in.readLong()));
+    }
+
     final int dmiCount = this.in.readInt();
     final DmiDescriptor[] dmis = new DmiDescriptor[dmiCount];
     for (int i = 0; i < dmiCount; i++) {
@@ -153,15 +161,15 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     final List dnas = new ArrayList();
     final int numDNA = this.in.readInt();
     final List<MetaDataReader> metaDataReaders = new ArrayList<MetaDataReader>();
-    
+
     for (int i = 0; i < numDNA; i++) {
       final DNAImpl dna = new DNAImpl(this.serializer, true);
       dna.deserializeFrom(this.in);
 
-     if( dna.getMetaDataReader() != DNAImpl.NULL_META_DATA_READER) {
-       metaDataReaders.add(dna.getMetaDataReader());
-     }
-      
+      if (dna.getMetaDataReader() != DNAImpl.NULL_META_DATA_READER) {
+        metaDataReaders.add(dna.getMetaDataReader());
+      }
+
       if (dna.isDelta() && dna.getActionCount() < 1) {
         // This is really unexpected and indicates an error in the client, but the server
         // should not be harmed by it (other than extra processing)
@@ -176,10 +184,10 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.marks.put(txnID, new MarkInfo(this.numTxns - this.txnToRead, start, end));
 
     this.txnToRead--;
-    MetaDataReader [] metaDataReadersArr = metaDataReaders.toArray(new MetaDataReader[metaDataReaders.size()]);
+    MetaDataReader[] metaDataReadersArr = metaDataReaders.toArray(new MetaDataReader[metaDataReaders.size()]);
     return this.txnFactory.createServerTransaction(getBatchID(), txnID, sequenceID, locks, this.source, dnas,
                                                    this.serializer, newRoots, txnType, notifies, dmis,
-                                                   metaDataReadersArr, numApplictionTxn, highwaterMarks);
+                                                   metaDataReadersArr, numApplictionTxn, highwaterMarks, ignoredOids);
   }
 
   public TxnBatchID getBatchID() {

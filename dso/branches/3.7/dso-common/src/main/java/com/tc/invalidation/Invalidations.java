@@ -126,4 +126,9 @@ public class Invalidations implements TCSerializable {
       }
     }
   }
+
+  @Override
+  public String toString() {
+    return "Invalidations [invalidations=" + invalidationsPerCdsm + "]";
+  }
 }

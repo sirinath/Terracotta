@@ -1120,4 +1120,8 @@ public class ManagerImpl implements ManagerInternal {
   public void addTransactionCompleteListener(TransactionCompleteListener listener) {
     txManager.getCurrentTransaction().addTransactionCompleteListener(listener);
   }
+
+  public void skipBroadcastForCurrentTransaction(ObjectID objectID) {
+    txManager.getCurrentTransaction().ignoreBroadcastFor(objectID);
+  }
 }
