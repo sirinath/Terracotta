@@ -52,6 +52,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
 import junit.framework.AssertionFailedError;
@@ -456,6 +457,27 @@ public class TCTestCase extends TestCase {
    */
   protected final void disableTest() {
     disableAllUntil(new Date(Long.MAX_VALUE));
+  }
+
+  /**
+   * Disables the test if the total physical memory on the machine is lower that the specified value
+   * 
+   * @param physicalMemory memory in gigs below which the test should not run on the machine
+   */
+  @SuppressWarnings("restriction")
+  protected void disableIfMemoryLowerThan(int physicalMemory) {
+    try {
+      long gb = 1024 * 1024 * 1024;
+      MBeanServerConnection mbsc = ManagementFactory.getPlatformMBeanServer();
+      com.sun.management.OperatingSystemMXBean osMBean = ManagementFactory
+          .newPlatformMXBeanProxy(mbsc, ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME,
+                                  com.sun.management.OperatingSystemMXBean.class);
+      if (osMBean.getTotalPhysicalMemorySize() < physicalMemory * gb) {
+        disableTest();
+      }
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
   }
 
   protected final ExecutionMode executionMode() {
