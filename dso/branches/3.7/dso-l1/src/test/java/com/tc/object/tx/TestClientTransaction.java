@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class TestClientTransaction implements ClientTransaction {
 
@@ -38,102 +39,127 @@ public class TestClientTransaction implements ClientTransaction {
     super();
   }
 
+  @Override
   public Map getChangeBuffers() {
     return changeBuffers;
   }
 
+  @Override
   public Map getNewRoots() {
     return newRoots;
   }
 
+  @Override
   public LockID getLockID() {
     return lockID;
   }
 
+  @Override
   public List getAllLockIDs() {
     return new ArrayList(allLockIDs);
   }
 
+  @Override
   public TransactionID getTransactionID() {
     return txID;
   }
 
+  @Override
   public void createObject(TCObject source) {
     throw new ImplementMe();
   }
 
+  @Override
   public void createRoot(String name, ObjectID rootID) {
     throw new ImplementMe();
   }
 
+  @Override
   public void fieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
     throw new ImplementMe();
   }
 
+  @Override
   public void logicalInvoke(TCObject source, int method, Object[] parameters, String methodName) {
     throw new ImplementMe();
   }
 
+  @Override
   public boolean hasChangesOrNotifies() {
     return this.hasChangesOrNotifies;
   }
 
+  @Override
   public boolean isNull() {
     throw new ImplementMe();
   }
 
+  @Override
   public void addNotify(Notify notify) {
     this.notifies.add(notify);
   }
 
+  @Override
   public void setSequenceID(SequenceID sequenceID) {
     this.sequenceID = sequenceID;
   }
 
+  @Override
   public void setTransactionID(TransactionID tid) {
     this.txID = tid;
   }
 
+  @Override
   public SequenceID getSequenceID() {
     return this.sequenceID;
   }
 
+  @Override
   public boolean isConcurrent() {
     return false;
   }
 
+  @Override
   public void setTransactionContext(TransactionContext transactionContext) {
     throw new ImplementMe();
   }
 
+  @Override
   public void setAlreadyCommitted() {
     throw new ImplementMe();
   }
 
+  @Override
   public boolean hasChanges() {
     throw new ImplementMe();
   }
 
+  @Override
   public int getNotifiesCount() {
     return notifies.size();
   }
 
+  @Override
   public void arrayChanged(TCObject source, int startPos, Object array, int length) {
     throw new ImplementMe();
   }
 
+  @Override
   public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
     throw new ImplementMe();
   }
 
+  @Override
   public Collection getReferencesOfObjectsInTxn() {
     return Collections.EMPTY_LIST;
   }
 
+  @Override
   public void addDmiDescriptor(DmiDescriptor dd) {
     throw new ImplementMe();
   }
 
+  @Override
   public List getDmiDescriptors() {
     return Collections.EMPTY_LIST;
   }
@@ -142,28 +168,44 @@ public class TestClientTransaction implements ClientTransaction {
     return Collections.EMPTY_LIST;
   }
 
+  @Override
   public void addMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md) {
     throw new ImplementMe();
   }
 
+  @Override
   public List getNotifies() {
     return notifies;
   }
 
+  @Override
   public TxnType getEffectiveType() {
     throw new ImplementMe();
   }
 
+  @Override
   public TxnType getLockType() {
     return txnType;
   }
 
+  @Override
   public void addTransactionCompleteListener(TransactionCompleteListener l) {
     txnListener.add(l);
   }
 
+  @Override
   public List getTransactionCompleteListeners() {
     return txnListener;
+  }
+
+  @Override
+  public void ignoreBroadcastFor(ObjectID objectID) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return Collections.EMPTY_SET;
   }
 
 }

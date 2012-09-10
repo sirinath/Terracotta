@@ -18,10 +18,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Client side transaction : Collects all changes by a single thread under a lock
@@ -33,6 +35,7 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   private Map                                 newRoots;
   private List                                notifies;
   private List                                dmis;
+  private Set<ObjectID>                       ignoreBroadcastIDs;
 
   // used to keep things referenced until the transaction is completely ACKED
   private final Map                           referenced    = new IdentityHashMap();
@@ -60,6 +63,10 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
 
   public List getNotifies() {
     return notifies == null ? Collections.EMPTY_LIST : notifies;
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return ignoreBroadcastIDs == null ? Collections.EMPTY_SET : ignoreBroadcastIDs;
   }
 
   public Map getChangeBuffers() {
@@ -144,6 +151,16 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
       }
 
       notifies.add(notify);
+    }
+  }
+
+  public void ignoreBroadcastFor(ObjectID objectID) {
+    if (!objectID.isNull()) {
+      if (ignoreBroadcastIDs == null) {
+        ignoreBroadcastIDs = new HashSet<ObjectID>();
+      }
+
+      ignoreBroadcastIDs.add(objectID);
     }
   }
 

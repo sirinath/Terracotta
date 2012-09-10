@@ -73,7 +73,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
     List txns = new ArrayList();
     txns.add(stxn1);
 
@@ -105,7 +105,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn2);
@@ -221,7 +221,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
 
     List txns = new ArrayList();
     txns.add(stxn1);
@@ -254,7 +254,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn2);
@@ -334,7 +334,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn3);
@@ -365,7 +365,7 @@ public class TransactionalObjectManagerTest extends TCTestCase {
                                                         new ArrayList(changes.values()),
                                                         new ObjectStringSerializerImpl(), Collections.EMPTY_MAP,
                                                         TxnType.NORMAL, new LinkedList(), DmiDescriptor.EMPTY_ARRAY,
-                                                        new MetaDataReader[0], 1, new long[0]);
+                                                        new MetaDataReader[0], 1, new long[0], Collections.EMPTY_SET);
 
     txns.clear();
     txns.add(stxn4);

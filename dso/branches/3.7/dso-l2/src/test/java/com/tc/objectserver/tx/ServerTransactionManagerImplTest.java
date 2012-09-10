@@ -544,7 +544,7 @@ public class ServerTransactionManagerImplTest extends TestCase {
                                                      Collection notifies, DmiDescriptor[] dmis, int numAppTxns) {
     ServerTransaction txn = new ServerTransactionImpl(txnBatchID, tid, sequenceID, lockIDs, cid, dnas, serializer,
                                                       newRoots, txnType, notifies, dmis, new MetaDataReader[0],
-                                                      numAppTxns, new long[0]);
+                                                      numAppTxns, new long[0], Collections.EMPTY_SET);
     try {
       txn.setGlobalTransactionID(this.gtxm.getOrCreateGlobalTransactionID(txn.getServerTransactionID()));
     } catch (GlobalTransactionIDAlreadySetException e) {

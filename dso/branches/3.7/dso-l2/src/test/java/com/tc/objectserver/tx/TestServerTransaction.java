@@ -6,6 +6,7 @@ package com.tc.objectserver.tx;
 
 import com.tc.exception.ImplementMe;
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -24,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class TestServerTransaction implements ServerTransaction {
 
@@ -162,6 +164,10 @@ public final class TestServerTransaction implements ServerTransaction {
   @Override
   public boolean isEviction() {
     return false;
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    throw new ImplementMe();
   }
 
 }

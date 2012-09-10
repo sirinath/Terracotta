@@ -26,6 +26,7 @@ import com.tc.object.servermap.localcache.PinnedEntryFaultCallback;
 import com.tc.object.servermap.localcache.PinnedEntryInvalidationListener;
 import com.tc.object.servermap.localcache.ServerMapLocalCache;
 import com.tc.object.servermap.localcache.ServerMapLocalCacheRemoveCallback;
+import com.tc.object.servermap.localcache.impl.L1ServerMapTransactionCompletionHandler.RunnableEventContext;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.ObjectIDSet;
@@ -369,6 +370,11 @@ public class L1ServerMapLocalCacheManagerImpl implements L1ServerMapLocalCacheMa
   @Override
   public void transactionComplete(L1ServerMapLocalStoreTransactionCompletionListener l1ServerMapLocalStoreTransactionCompletionListener) {
     txnCompleteSink.add(l1ServerMapLocalStoreTransactionCompletionListener);
+  }
+
+  @Override
+  public void transactionComplete(Runnable runnable) {
+    txnCompleteSink.add(new RunnableEventContext(runnable));
   }
 
   private static class Listener implements PinnedEntryInvalidationListener {

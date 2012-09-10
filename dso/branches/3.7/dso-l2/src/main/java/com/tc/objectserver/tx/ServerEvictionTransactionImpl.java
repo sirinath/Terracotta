@@ -4,6 +4,7 @@
 package com.tc.objectserver.tx;
 
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -16,15 +17,17 @@ import com.tc.util.SequenceID;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ServerEvictionTransactionImpl extends ServerTransactionImpl {
 
   public ServerEvictionTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                        NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
                                        TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
-                                       MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks) {
+                                       MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks,
+                                       Set<ObjectID> ignoredObjectIds) {
     super(batchID, txID, sequenceID, lockIDs, source, dnas, serializer, newRoots, transactionType, notifies, dmis,
-          metaDataReaders, numApplicationTxn, highWaterMarks);
+          metaDataReaders, numApplicationTxn, highWaterMarks, ignoredObjectIds);
   }
 
   @Override

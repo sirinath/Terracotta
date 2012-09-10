@@ -5,6 +5,7 @@
 package com.tc.objectserver.tx;
 
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.MetaDataReader;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents an atomic change to the states of objects on the server
@@ -47,13 +49,14 @@ public class ServerTransactionImpl implements ServerTransaction {
   private final TxnBatchID             batchID;
   private final int                    numApplicationTxn;
   private final long[]                 highWaterMarks;
-
+  private final Set<ObjectID>          ignoredOidsForBroadcast;
   private GlobalTransactionID          globalTxnID;
 
   public ServerTransactionImpl(TxnBatchID batchID, TransactionID txID, SequenceID sequenceID, LockID[] lockIDs,
                                NodeID source, List dnas, ObjectStringSerializer serializer, Map newRoots,
                                TxnType transactionType, Collection notifies, DmiDescriptor[] dmis,
-                               MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks) {
+                               MetaDataReader[] metaDataReaders, int numApplicationTxn, long[] highWaterMarks,
+                               Set<ObjectID> ignoredOidsForBroadcast) {
     this.batchID = batchID;
     this.txID = txID;
     this.seqID = sequenceID;
@@ -69,6 +72,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     this.metaDataReaders = metaDataReaders;
     this.changes = dnas;
     this.serializer = serializer;
+    this.ignoredOidsForBroadcast = ignoredOidsForBroadcast;
     final ObjectIDSet ids = new ObjectIDSet();
     final ObjectIDSet newIDs = new ObjectIDSet();
     boolean added = true;
@@ -214,6 +218,7 @@ public class ServerTransactionImpl implements ServerTransaction {
     return this.highWaterMarks;
   }
 
+  @Override
   public boolean isSearchEnabled() {
     return getMetaDataReaders().length > 0;
   }
@@ -222,4 +227,10 @@ public class ServerTransactionImpl implements ServerTransaction {
   public boolean isEviction() {
     return false;
   }
+
+  @Override
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return ignoredOidsForBroadcast;
+  }
+
 }

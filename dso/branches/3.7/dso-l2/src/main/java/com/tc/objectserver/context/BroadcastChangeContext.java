@@ -1,10 +1,12 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.objectserver.context;
 
 import com.tc.async.api.EventContext;
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.gtx.GlobalTransactionID;
@@ -18,21 +20,21 @@ import com.tc.objectserver.tx.ServerTransaction;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Context need to broadcast the transaction to the interested nodes
- *
+ * 
  * @author steve
  */
 public class BroadcastChangeContext implements EventContext {
-  private final ServerTransaction   tx;
-  private final GlobalTransactionID lowGlobalTransactionIDWatermark;
-  private final NotifiedWaiters     notifiedWaiters;
-  private final ApplyTransactionInfo      applyInfo;
+  private final ServerTransaction    tx;
+  private final GlobalTransactionID  lowGlobalTransactionIDWatermark;
+  private final NotifiedWaiters      notifiedWaiters;
+  private final ApplyTransactionInfo applyInfo;
 
-  public BroadcastChangeContext(ServerTransaction tx,
-                                GlobalTransactionID lowGlobalTransactionIDWatermark, NotifiedWaiters notifiedWaiters,
-                                ApplyTransactionInfo applyInfo) {
+  public BroadcastChangeContext(ServerTransaction tx, GlobalTransactionID lowGlobalTransactionIDWatermark,
+                                NotifiedWaiters notifiedWaiters, ApplyTransactionInfo applyInfo) {
     this.tx = tx;
     this.lowGlobalTransactionIDWatermark = lowGlobalTransactionIDWatermark;
     this.notifiedWaiters = notifiedWaiters;
@@ -58,7 +60,7 @@ public class BroadcastChangeContext implements EventContext {
   public TransactionID getTransactionID() {
     return tx.getTransactionID();
   }
-  
+
   public TxnBatchID getBatchID() {
     return tx.getBatchID();
   }
@@ -82,13 +84,17 @@ public class BroadcastChangeContext implements EventContext {
   public NotifiedWaiters getNewlyPendingWaiters() {
     return notifiedWaiters;
   }
-  
+
   public Map getNewRoots() {
     return tx.getNewRoots();
   }
-  
+
   public DmiDescriptor[] getDmiDescriptors() {
     return tx.getDmiDescriptors();
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return tx.getIgnoredBroadcastObjectIDs();
   }
 
 }

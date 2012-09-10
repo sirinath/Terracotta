@@ -54,7 +54,9 @@ public interface ClientStateManager {
    */
   public List<DNA> createPrunedChangesAndAddObjectIDTo(Collection<DNA> changes, ApplyTransactionInfo references,
                                                        NodeID clientID, Set<ObjectID> objectIDs,
-                                                       Invalidations invalidationsForClient);
+                                                       Set<ObjectID> ignoreBroadcast,
+                                                       Invalidations invalidationsForClient,
+                                                       Invalidations inlineInvalidationsForClient);
 
   public Set<ObjectID> addAllReferencedIdsTo(Set<ObjectID> rescueIds);
 

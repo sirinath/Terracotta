@@ -975,6 +975,15 @@ public class ServerMapLocalCacheImplTest extends TestCase {
 
     }
 
+    public void ignoreBroadcastFor(ObjectID objectID) {
+      throw new ImplementMe();
+
+    }
+
+    public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+      throw new ImplementMe();
+    }
+
   }
 
   private static class TestLocksRecallHelper implements LocksRecallService {

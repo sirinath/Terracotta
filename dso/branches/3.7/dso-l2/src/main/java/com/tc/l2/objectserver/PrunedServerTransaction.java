@@ -5,6 +5,7 @@
 package com.tc.l2.objectserver;
 
 import com.tc.net.NodeID;
+import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.dna.impl.ObjectStringSerializer;
@@ -21,6 +22,7 @@ import com.tc.util.SequenceID;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PrunedServerTransaction implements ServerTransaction {
 
@@ -144,6 +146,7 @@ public class PrunedServerTransaction implements ServerTransaction {
     return EMPTY_LONG_ARRAY;
   }
 
+  @Override
   public boolean isSearchEnabled() {
     return this.orgTxn.isSearchEnabled();
   }
@@ -151,5 +154,9 @@ public class PrunedServerTransaction implements ServerTransaction {
   @Override
   public boolean isEviction() {
     return this.orgTxn.isEviction();
+  }
+
+  public Set<ObjectID> getIgnoredBroadcastObjectIDs() {
+    return this.orgTxn.getIgnoredBroadcastObjectIDs();
   }
 }

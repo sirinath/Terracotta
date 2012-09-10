@@ -419,4 +419,7 @@ public class NullManagerInternal implements ManagerInternal {
     //
   }
 
+  public void skipBroadcastForCurrentTransaction(ObjectID objectID) {
+    //
+  }
 }
