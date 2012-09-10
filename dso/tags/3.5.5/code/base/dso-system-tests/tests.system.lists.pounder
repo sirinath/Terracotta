@@ -1,0 +1,12 @@
+#tests to be pounded
+TransparencySpeedTest
+LinkedQueueTest
+FastReadSlowWriteTest
+SimplePrimitiveArrayTest
+MaxConnectionTest
+ConcurrentHashMapGCTest
+#LinkedBlockingQueueGCTest
+ConcurrentHashMapLoadTest
+FutureTaskTest
+ReentrantReadWriteLockTest
+
