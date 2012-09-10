@@ -46,7 +46,7 @@ set OPTS=%OPTS% -Dsun.rmi.dgc.server.gcInterval=31536000
 set OPTS=%OPTS% -Dtc.install-root=%TC_INSTALL_DIR%
 
 rem set to true if you want Terracotta server uses Derby DB as a store
-set USE_DERBYDB="true"
+set USE_DERBYDB="false"
 
 if %USE_DERBYDB% == "true" (
   set OPTS=%OPTS% -Dcom.tc.l2.db.factory.name=com.tc.objectserver.storage.derby.DerbyDBFactory 
