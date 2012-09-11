@@ -194,7 +194,6 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
       // this is for non literal keys
       // literal keys need to put lock id mapping
       if (mapOperation.isMutateOperation()) {
-        // put a pinned entry for mutate ops, unpinned on txn complete
         this.pendingTransactionEntries.put(valueObjectID, key);
       } else {
         this.localStore.put(valueObjectID, key);
@@ -768,7 +767,6 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
                                                          MapOperationType mapOperation) {
     AbstractLocalCacheStoreValue old;
     if (mapOperation.isMutateOperation()) {
-      // put a pinned entry for mutate ops, unpinned on txn complete
       old = (AbstractLocalCacheStoreValue) this.pendingTransactionEntries.put(key, value);
       if (old != null) {
         cleanupOldMetaMapping(key, value, old, false);
