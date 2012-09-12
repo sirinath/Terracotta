@@ -160,7 +160,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
       this.featureNode = featureNode;
     }
 
-    @Override
     public void presentationReady(boolean ready) {
       handlePresentationReady(featureNode);
     }
@@ -267,7 +266,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     setTearDown(true);
   }
 
-  @Override
   public void handleNotification(Notification notification, Object handback) {
     String type = notification.getType();
     if (notification instanceof MBeanServerNotification) {
@@ -276,7 +274,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
 
       if (type.equals(MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
         SwingUtilities.invokeLater(new Runnable() {
-          @Override
           public void run() {
             if (testRegisterFeature(beanName)) {
               ensureFeatureNodes();
@@ -285,7 +282,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
         });
       } else if (type.equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
         SwingUtilities.invokeLater(new Runnable() {
-          @Override
           public void run() {
             testUnregisterFeature(beanName);
           }
@@ -311,7 +307,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     return myApplicationPanel;
   }
 
-  @Override
   public void hyperlinkUpdate(HyperlinkEvent e) {
     XTextPane textPane = (XTextPane) e.getSource();
     HyperlinkEvent.EventType type = e.getEventType();

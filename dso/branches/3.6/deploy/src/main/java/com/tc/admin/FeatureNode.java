@@ -49,7 +49,6 @@ public class FeatureNode extends ComponentNode implements PropertyChangeListener
     return p != null && p.isReady();
   }
 
-  @Override
   public void propertyChange(PropertyChangeEvent evt) {
     String prop = evt.getPropertyName();
     if (Presentation.PROP_PRESENTATION_READY.equals(prop)) {
