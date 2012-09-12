@@ -44,6 +44,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.relation.MBeanServerNotificationFilter;
 
 public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean, NotificationListener {
 
@@ -78,6 +79,8 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
 
+  private final MBeanRegistrationFilter        registrationFilter;
+
   static {
     final String[] notifTypes = new String[] { TUNNELED_BEANS_REGISTERED };
     final String name = Notification.class.getName();
@@ -109,6 +112,12 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     this.l1OperatorEventsBeanName = getTunneledBeanName(MBeanNames.OPERATOR_EVENTS_PUBLIC);
     this.enterpriseMBeanName = getTunneledBeanName(L1MBeanNames.ENTERPRISE_TC_CLIENT);
     this.l1DumperBeanName = getTunneledBeanName(MBeanNames.L1DUMPER_INTERNAL);
+
+    try {
+      this.registrationFilter = new MBeanRegistrationFilter(getTunneledBeanName(new ObjectName("*:*")));
+    } catch (MalformedObjectNameException mone) {
+      throw new RuntimeException(mone);
+    }
 
     testSetupTunneledBeans();
   }
@@ -164,11 +173,30 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     }
   }
 
+  private static class MBeanRegistrationFilter extends MBeanServerNotificationFilter implements java.io.Serializable {
+    static final long        serialVersionUID = 42L;
+
+    private final ObjectName pattern;
+
+    private MBeanRegistrationFilter(ObjectName pattern) {
+      this.pattern = pattern;
+    }
+
+    @Override
+    public boolean isNotificationEnabled(Notification notif) {
+      if (notif instanceof MBeanServerNotification) {
+        MBeanServerNotification mbsn = (MBeanServerNotification) notif;
+        return pattern.apply(mbsn.getMBeanName());
+      }
+      return false;
+    }
+  }
+
   private void startListeningForTunneledBeans() {
     if (isListeningForTunneledBeans) return;
     try {
-      ObjectName mbsd = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-      mbeanServer.addNotificationListener(mbsd, this, null, null);
+      mbeanServer.addNotificationListener(new ObjectName("JMImplementation:type=MBeanServerDelegate"), this,
+                                          registrationFilter, null);
     } catch (Exception e) {
       throw new RuntimeException("Adding listener to MBeanServerDelegate", e);
     }
@@ -178,8 +206,8 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private void stopListeningForTunneledBeans() {
     if (!isListeningForTunneledBeans) return;
     try {
-      ObjectName mbsd = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-      mbeanServer.removeNotificationListener(mbsd, this, null, null);
+      mbeanServer.removeNotificationListener(new ObjectName("JMImplementation:type=MBeanServerDelegate"), this,
+                                             registrationFilter, null);
     } catch (Exception e) {
       throw new RuntimeException("Removing listener to MBeanServerDelegate", e);
     }
@@ -323,29 +351,29 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   }
 
   private void setupL1InfoBean() {
-    l1InfoBean = MBeanServerInvocationHandler.newProxyInstance(mbeanServer, l1InfoBeanName,
+    l1InfoBean = (L1InfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer, l1InfoBeanName,
                                                                              L1InfoMBean.class, false);
   }
 
   private void setupL1OperatorEventsBean() {
-    this.l1OperatorEventsBean = MBeanServerInvocationHandler
+    this.l1OperatorEventsBean = (TerracottaOperatorEventsMBean) MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, l1OperatorEventsBeanName, TerracottaOperatorEventsMBean.class, false);
   }
 
   private void setupInstrumentationLoggingBean() {
-    instrumentationLoggingBean = MBeanServerInvocationHandler
+    instrumentationLoggingBean = (InstrumentationLoggingMBean) MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, instrumentationLoggingBeanName, InstrumentationLoggingMBean.class, false);
   }
 
   private void setupRuntimeLoggingBean() {
-    runtimeLoggingBean = MBeanServerInvocationHandler.newProxyInstance(mbeanServer,
+    runtimeLoggingBean = (RuntimeLoggingMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer,
                                                                                              runtimeLoggingBeanName,
                                                                                              RuntimeLoggingMBean.class,
                                                                                              false);
   }
 
   private void setupRuntimeOutputOptionsBean() {
-    runtimeOutputOptionsBean = MBeanServerInvocationHandler
+    runtimeOutputOptionsBean = (RuntimeOutputOptionsMBean) MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, runtimeOutputOptionsBeanName, RuntimeOutputOptionsMBean.class, false);
   }
 
@@ -369,34 +397,36 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   }
 
   private void beanRegistered(ObjectName beanName) {
-    if (l1InfoBean == null && matchesClientBeanName(l1InfoBeanName, beanName)) {
-      l1InfoBeanName = beanName;
-      setupL1InfoBean();
-    }
+    if (!haveAllTunneledBeans()) {
+      if (l1InfoBean == null && matchesClientBeanName(l1InfoBeanName, beanName)) {
+        l1InfoBeanName = beanName;
+        setupL1InfoBean();
+      }
 
-    if (instrumentationLoggingBean == null && matchesClientBeanName(instrumentationLoggingBeanName, beanName)) {
-      instrumentationLoggingBeanName = beanName;
-      setupInstrumentationLoggingBean();
-    }
+      if (instrumentationLoggingBean == null && matchesClientBeanName(instrumentationLoggingBeanName, beanName)) {
+        instrumentationLoggingBeanName = beanName;
+        setupInstrumentationLoggingBean();
+      }
 
-    if (runtimeLoggingBean == null && matchesClientBeanName(runtimeLoggingBeanName, beanName)) {
-      runtimeLoggingBeanName = beanName;
-      setupRuntimeLoggingBean();
-    }
+      if (runtimeLoggingBean == null && matchesClientBeanName(runtimeLoggingBeanName, beanName)) {
+        runtimeLoggingBeanName = beanName;
+        setupRuntimeLoggingBean();
+      }
 
-    if (runtimeOutputOptionsBean == null && matchesClientBeanName(runtimeOutputOptionsBeanName, beanName)) {
-      runtimeOutputOptionsBeanName = beanName;
-      setupRuntimeOutputOptionsBean();
-    }
+      if (runtimeOutputOptionsBean == null && matchesClientBeanName(runtimeOutputOptionsBeanName, beanName)) {
+        runtimeOutputOptionsBeanName = beanName;
+        setupRuntimeOutputOptionsBean();
+      }
 
-    if (!isEnterpriseBeanNameSet && matchesClientBeanName(enterpriseMBeanName, beanName)) {
-      enterpriseMBeanName = beanName;
-      isEnterpriseBeanNameSet = true;
-    }
+      if (!isEnterpriseBeanNameSet && matchesClientBeanName(enterpriseMBeanName, beanName)) {
+        enterpriseMBeanName = beanName;
+        isEnterpriseBeanNameSet = true;
+      }
 
-    if (haveAllTunneledBeans()) {
-      stopListeningForTunneledBeans();
-      sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));
+      if (haveAllTunneledBeans()) {
+        stopListeningForTunneledBeans();
+        sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));
+      }
     }
   }
 
