@@ -32,6 +32,8 @@ public class TCPropertiesConstsTest extends TCTestCase {
 
     exemptedProperties.add(TCPropertiesConsts.L1_SEDA_PINNED_ENTRY_FAULT_STAGE_THREADS);
     exemptedProperties.add(TCPropertiesConsts.L1_SERVERMAPMANAGER_FAULT_INVALIDATED_PINNED_ENTRIES);
+    exemptedProperties.add(TCPropertiesConsts.L1_CLUSTEREVENT_EXECUTOR_MAX_THREADS);
+    exemptedProperties.add(TCPropertiesConsts.L1_CLUSTEREVENT_EXECUTOR_MAX_WAIT_SECONDS);
 
     exemptedProperties.add(TCPropertiesConsts.L2_CACHEMANAGER_THRESHOLD);
     exemptedProperties.add(TCPropertiesConsts.L2_CACHEMANAGER_CRITICALTHRESHOLD);
