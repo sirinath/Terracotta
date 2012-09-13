@@ -456,18 +456,17 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     try {
       AbstractLocalCacheStoreValue value = (AbstractLocalCacheStoreValue) localStore.get(key);
       if (value != null && value.getValueObjectId().equals(oid)) {
+        AbstractLocalCacheStoreValue removed = (AbstractLocalCacheStoreValue) localStore.remove(key);
+        if (removed != null) {
+          initiateLockRecall(removeLockIDMetaMapping(key, removed));
+        }
+        remoteRemoveObjectIfPossible(removed);
         if (isPinned(key)) {
           if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("XXX put pinned entry in notifyPinnedEntryInvalidated " + key + " " + oid);
           }
           localStore.setPinned(oid, false);
           notifyPinnedEntryInvalidated(key, value.isEventualConsistentValue());
-        } else {
-          AbstractLocalCacheStoreValue removed = (AbstractLocalCacheStoreValue) localStore.remove(key);
-          if (removed != null) {
-            initiateLockRecall(removeLockIDMetaMapping(key, removed));
-          }
-          remoteRemoveObjectIfPossible(removed);
         }
       }
     } finally {
