@@ -47,29 +47,33 @@ import javax.swing.SwingUtilities;
 
 public class ClusterNode extends ClusterElementNode implements ConnectionListener, ClusterThreadDumpProvider,
     IClusterStatsListener, PropertyChangeListener, PreferenceChangeListener {
-  protected IAdminClientContext adminClientContext;
-  private ClusterPanel          clusterPanel;
-  private ConnectDialog         connectDialog;
-  private JDialog               versionMismatchDialog;
-  private final AtomicBoolean   versionCheckOccurred;
-  private JPopupMenu            popupMenu;
-  private ConnectAction         connectAction;
-  private DisconnectAction      disconnectAction;
-  private DeleteAction          deleteAction;
-  private AutoConnectAction     autoConnectAction;
-  private JCheckBoxMenuItem     autoConnectMenuItem;
+  protected final IAdminClientContext adminClientContext;
+  protected final IClusterModel       clusterModel;
 
-  private boolean               isRecordingClusterStats;
-  private boolean               isProfilingLocks;
+  private ClusterPanel                clusterPanel;
+  private ConnectDialog               connectDialog;
+  private JDialog                     versionMismatchDialog;
+  private final AtomicBoolean         versionCheckOccurred;
+  private JPopupMenu                  popupMenu;
+  private RenameAction                renameAction;
+  private ConnectAction               connectAction;
+  private DisconnectAction            disconnectAction;
+  private DeleteAction                deleteAction;
+  private AutoConnectAction           autoConnectAction;
+  private JCheckBoxMenuItem           autoConnectMenuItem;
 
-  private static final String   CONNECT_ACTION      = "Connect";
-  private static final String   DISCONNECT_ACTION   = "Disconnect";
-  private static final String   DELETE_ACTION       = "Delete";
-  private static final String   AUTO_CONNECT_ACTION = "AutoConnect";
+  private boolean                     isRecordingClusterStats;
+  private boolean                     isProfilingLocks;
 
-  private static final String   HOST                = ServersHelper.HOST;
-  private static final String   PORT                = ServersHelper.PORT;
-  private static final String   AUTO_CONNECT        = ServersHelper.AUTO_CONNECT;
+  private static final String         CONNECT_ACTION      = "Connect";
+  private static final String         DISCONNECT_ACTION   = "Disconnect";
+  private static final String         DELETE_ACTION       = "Delete";
+  private static final String         AUTO_CONNECT_ACTION = "AutoConnect";
+
+  private static final String         NAME                = ServersHelper.NAME;
+  private static final String         HOST                = ServersHelper.HOST;
+  private static final String         PORT                = ServersHelper.PORT;
+  private static final String         AUTO_CONNECT        = ServersHelper.AUTO_CONNECT;
 
   ClusterNode(IAdminClientContext adminClientContext) {
     this(adminClientContext, new ClusterModel(ConnectionContext.DEFAULT_HOST, ConnectionContext.DEFAULT_PORT,
@@ -77,13 +81,13 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
          ConnectionContext.DEFAULT_AUTO_CONNECT);
   }
 
-  public ClusterNode(IAdminClientContext adminClientContext, ClusterModel model, final boolean autoConnect) {
-    super(model);
+  public ClusterNode(IAdminClientContext adminClientContext, ClusterModel clusterModel, final boolean autoConnect) {
+    super(clusterModel);
 
     this.adminClientContext = adminClientContext;
-    ClusterModel clusterModel = getClusterModel();
+    this.clusterModel = clusterModel;
 
-    setLabel(adminClientContext.getString("cluster.node.label"));
+    setClusterName(adminClientContext.getString("cluster.node.label"));
     initMenu(autoConnect);
     setComponent(clusterPanel = createClusterPanel());
     setIcon(ServersHelper.getHelper().getServerIcon());
@@ -99,13 +103,12 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     prefs.addPreferenceChangeListener(this);
   }
 
-  public synchronized ClusterModel getClusterModel() {
-    return (ClusterModel) getClusterElement();
+  public IClusterModel getClusterModel() {
+    return clusterModel;
   }
 
-  public synchronized IServer getActiveCoordinator() {
-    IClusterModel theClusterModel = getClusterModel();
-    return theClusterModel != null ? theClusterModel.getActiveCoordinator() : null;
+  public IServer getActiveCoordinator() {
+    return clusterModel.getActiveCoordinator();
   }
 
   boolean isDBBackupSupported() {
@@ -198,11 +201,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
     @Override
     protected void handleUncaughtError(Exception e) {
-      if (adminClientContext != null) {
-        adminClientContext.log(e);
-      } else {
-        super.handleUncaughtError(e);
-      }
+      adminClientContext.log(e);
     }
   }
 
@@ -216,32 +215,42 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   String[] getConnectionCredentials() {
-    return getClusterModel().getConnectionCredentials();
+    return clusterModel.getConnectionCredentials();
   }
 
   Map<String, Object> getConnectionEnvironment() {
-    return getClusterModel().getConnectionEnvironment();
+    return clusterModel.getConnectionEnvironment();
+  }
+
+  void setClusterName(String name) {
+    setLabel(name);
+    clusterModel.setName(name);
+  }
+
+  String getClusterName() {
+    return clusterModel.getName();
   }
 
   void setHost(String host) {
-    getClusterModel().setHost(host);
+    clusterModel.setHost(host);
   }
 
   String getHost() {
-    return getClusterModel().getHost();
+    return clusterModel.getHost();
   }
 
   void setPort(int port) {
-    getClusterModel().setPort(port);
+    clusterModel.setPort(port);
   }
 
   int getPort() {
-    return getClusterModel().getPort();
+    return clusterModel.getPort();
   }
 
   private void initMenu(boolean autoConnect) {
     popupMenu = new JPopupMenu("Server Actions");
 
+    renameAction = new RenameAction();
     connectAction = new ConnectAction();
     disconnectAction = new DisconnectAction();
     deleteAction = new DeleteAction();
@@ -255,6 +264,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     popupMenu.add(connectAction);
     popupMenu.add(disconnectAction);
     popupMenu.add(new JSeparator());
+    popupMenu.add(renameAction);
     popupMenu.add(deleteAction);
     popupMenu.add(new JSeparator());
 
@@ -267,20 +277,17 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   boolean isConnected() {
-    return getClusterModel().isConnected();
+    return clusterModel.isConnected();
   }
 
   boolean isReady() {
-    return getClusterModel().isReady();
+    return clusterModel.isReady();
   }
 
   ConnectDialog getConnectDialog(ConnectionListener listener) {
     if (connectDialog == null) {
       Frame frame = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, clusterPanel);
-      connectDialog = new ConnectDialog(adminClientContext, frame, getClusterModel(), listener);
-    } else {
-      connectDialog.setClusterModel(getClusterModel());
-      connectDialog.setConnectionListener(listener);
+      connectDialog = new ConnectDialog(adminClientContext, frame, clusterModel, listener);
     }
 
     return connectDialog;
@@ -291,7 +298,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
    */
   void connect() {
     try {
-      getClusterModel().connect();
+      clusterModel.connect();
       beginConnect();
     } catch (Exception e) {
       adminClientContext.log(e);
@@ -300,7 +307,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
   private void beginConnect() throws Exception {
     ConnectDialog cd = getConnectDialog(this);
-    getClusterModel().refreshCachedCredentials();
+    clusterModel.refreshCachedCredentials();
     cd.center();
     cd.setVisible(true);
   }
@@ -315,8 +322,8 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           try {
-            getClusterModel().setJMXConnector(jmxc);
-            getClusterModel().refreshCachedCredentials();
+            clusterModel.setJMXConnector(jmxc);
+            clusterModel.refreshCachedCredentials();
           } catch (IOException ioe) {
             reportConnectError(ioe);
           }
@@ -331,13 +338,13 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   public void handleException() {
     Exception e = connectDialog.getError();
     if (e != null) {
-      getClusterModel().clearConnectionCredentials();
+      clusterModel.clearConnectionCredentials();
       reportConnectError(e);
     }
   }
 
   private void reportConnectError(Exception error) {
-    String msg = getClusterModel().getConnectErrorMessage(error);
+    String msg = clusterModel.getConnectErrorMessage(error);
 
     if (msg != null && clusterPanel != null) {
       boolean autoConnect = isAutoConnect();
@@ -375,7 +382,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
       adminClientContext.getAdminClientController().updateServerPrefs();
       autoConnectMenuItem.setSelected(false);
     }
-    getClusterModel().disconnect();
+    clusterModel.disconnect();
   }
 
   @Override
@@ -384,9 +391,31 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   public void setPreferences(Preferences prefs) {
+    prefs.put(NAME, getClusterName());
     prefs.put(HOST, getHost());
     prefs.putInt(PORT, getPort());
     prefs.putBoolean(AUTO_CONNECT, isAutoConnect());
+  }
+
+  private void rename() {
+    Frame frame = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, clusterPanel);
+    String name = (String) JOptionPane.showInputDialog(clusterPanel, "Enter new name:", frame.getTitle(),
+                                                       JOptionPane.QUESTION_MESSAGE, null, null, getLabel());
+    if (name != null) {
+      setClusterName(name);
+      adminClientContext.getAdminClientController().updateServerPrefs();
+    }
+  }
+
+  private class RenameAction extends XAbstractAction {
+    RenameAction() {
+      super(adminClientContext.getString("rename.label"));
+      setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, MENU_SHORTCUT_KEY_MASK, true));
+    }
+
+    public void actionPerformed(ActionEvent ae) {
+      rename();
+    }
   }
 
   private class ConnectAction extends XAbstractAction {
@@ -456,14 +485,14 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   }
 
   boolean isAutoConnect() {
-    return getClusterModel().isAutoConnect();
+    return clusterModel.isAutoConnect();
   }
 
   void setAutoConnect(boolean autoConnect) {
-    if (autoConnect && !getClusterModel().isConnected()) {
-      getClusterModel().connect();
+    if (autoConnect && !clusterModel.isConnected()) {
+      clusterModel.connect();
     }
-    getClusterModel().setAutoConnect(autoConnect);
+    clusterModel.setAutoConnect(autoConnect);
     adminClientContext.getAdminClientController().updateServerPrefs();
   }
 
@@ -521,19 +550,19 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   private FeaturesNode featuresNode;
 
   protected FeaturesNode createFeaturesNode() {
-    return new FeaturesNode(this, adminClientContext, getClusterModel());
+    return new FeaturesNode(this, adminClientContext, clusterModel);
   }
 
   protected PlatformNode createPlatformNode() {
-    return new PlatformNode(this, adminClientContext, getClusterModel());
+    return new PlatformNode(this, adminClientContext, clusterModel);
   }
 
   protected MonitoringNode createMonitoringNode() {
-    return new MonitoringNode(this, adminClientContext, getClusterModel());
+    return new MonitoringNode(this, adminClientContext, clusterModel);
   }
 
   protected TopologyNode createTopologyNode() {
-    return new TopologyNode(adminClientContext, getClusterModel());
+    return new TopologyNode(adminClientContext, clusterModel);
   }
 
   void handleStarting() {
@@ -616,7 +645,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
   private ScheduledExecutorService scheduledExecutor;
   private ScheduledFuture<?>       monitoringTaskFuture;
   private Runnable                 monitoringActivityTask;
-  private final long               MONITORING_FEEDBACK_MILLIS = 750;
+  private static final long        MONITORING_FEEDBACK_MILLIS = 750;
 
   private synchronized ScheduledExecutorService getScheduledExecutor() {
     if (scheduledExecutor == null) {
@@ -708,7 +737,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
   public ClusterThreadDumpEntry takeThreadDump() {
     ClusterThreadDumpEntry tde = new ClusterThreadDumpEntry(adminClientContext);
-    Map<IClusterNode, Future<String>> map = getClusterModel().takeThreadDump();
+    Map<IClusterNode, Future<String>> map = clusterModel.takeThreadDump();
     Iterator<Map.Entry<IClusterNode, Future<String>>> iter = map.entrySet().iterator();
     while (iter.hasNext()) {
       Map.Entry<IClusterNode, Future<String>> entry = iter.next();
@@ -720,7 +749,7 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
 
   public ClusterThreadDumpEntry takeClusterDump() {
     ClusterThreadDumpEntry tde = new ClusterThreadDumpEntry(adminClientContext);
-    Map<IClusterNode, Future<String>> map = getClusterModel().takeClusterDump();
+    Map<IClusterNode, Future<String>> map = clusterModel.takeClusterDump();
     Iterator<Map.Entry<IClusterNode, Future<String>>> iter = map.entrySet().iterator();
     while (iter.hasNext()) {
       Map.Entry<IClusterNode, Future<String>> entry = iter.next();
@@ -738,40 +767,6 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
           activeCoord.captureClusterStat(SRAThreadDump.ACTION_NAME);
         }
       });
-    }
-  }
-
-  @Override
-  public void tearDown() {
-    testStopMonitoringTask();
-
-    if (connectDialog != null) {
-      connectDialog.tearDown();
-    }
-
-    if (featuresNode != null) {
-      featuresNode.setTearDown(true);
-      if (featuresNode.getParent() == null) {
-        featuresNode.tearDown();
-      }
-    }
-
-    getClusterModel().tearDown();
-
-    super.tearDown();
-
-    synchronized (this) {
-      adminClientContext = null;
-      clusterPanel = null;
-      connectDialog = null;
-      popupMenu = null;
-      connectAction = null;
-      disconnectAction = null;
-      deleteAction = null;
-      autoConnectAction = null;
-      monitoringActivityTask = null;
-      topologyNode = null;
-      featuresNode = null;
     }
   }
 
@@ -826,7 +821,30 @@ public class ClusterNode extends ClusterElementNode implements ConnectionListene
     String key = evt.getKey();
 
     if (key.equals("poll-periods-seconds")) {
-      getClusterModel().setPollPeriod(prefs.getInt(key, 3));
+      clusterModel.setPollPeriod(prefs.getInt(key, 3));
     }
+  }
+
+  @Override
+  public void tearDown() {
+    testStopMonitoringTask();
+
+    Preferences prefs = adminClientContext.getPrefs().node(RuntimeStatsOption.NAME);
+    prefs.removePreferenceChangeListener(this);
+
+    if (connectDialog != null) {
+      connectDialog.tearDown();
+    }
+
+    if (featuresNode != null) {
+      featuresNode.setTearDown(true);
+      if (featuresNode.getParent() == null) {
+        featuresNode.tearDown();
+      }
+    }
+
+    clusterModel.tearDown();
+
+    super.tearDown();
   }
 }

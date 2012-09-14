@@ -12,13 +12,13 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TerracottaOperatorEventImpl implements TerracottaOperatorEvent, Comparable<TerracottaOperatorEventImpl> {
-  private final long                 time;
-  private final String               eventMessage;
-  private final EventType            eventType;
-  private final EventSubsystem       subSystem;
-  private final Map<String, Integer> nodes;
-  private boolean                    isRead = false;
-  private final String               collapseString;
+  private final long                    time;
+  private final String                  eventMessage;
+  private final EventType               eventType;
+  private final EventSubsystem          subSystem;
+  private volatile Map<String, Integer> nodes;
+  private boolean                       isRead = false;
+  private final String                  collapseString;
 
   public TerracottaOperatorEventImpl(EventType eventType, EventSubsystem subSystem, String message,
                                      String collapseString) {
@@ -56,16 +56,16 @@ public class TerracottaOperatorEventImpl implements TerracottaOperatorEvent, Com
   }
 
   public synchronized String getNodeName() {
-    String val = "";
+    StringBuilder val = new StringBuilder();
     for (Entry<String, Integer> node : this.nodes.entrySet()) {
       Assert.assertTrue(node.getValue().intValue() >= 1);
-      val += node.getKey();
+      val.append(node.getKey());
       if (node.getValue().intValue() > 1) {
-        val += "(" + node.getValue().intValue() + ")";
+        val.append("(").append(node.getValue().intValue()).append(")");
       }
-      val += " ";
+      val.append(" ");
     }
-    return val;
+    return val.toString();
   }
 
   public synchronized void addNodeName(String nodeId) {
@@ -136,14 +136,14 @@ public class TerracottaOperatorEventImpl implements TerracottaOperatorEvent, Com
     return toString();
   }
 
-  @Override
-  public TerracottaOperatorEvent clone() {
+  public TerracottaOperatorEvent cloneEvent() {
     Map<String, Integer> nodesCopy;
     synchronized (this) {
       nodesCopy = new HashMap<String, Integer>(this.nodes);
     }
     return new TerracottaOperatorEventImpl(this.eventType, this.subSystem, this.time, this.eventMessage,
                                            this.collapseString, nodesCopy);
+
   }
 
   // STRICTLY FOR TESTS

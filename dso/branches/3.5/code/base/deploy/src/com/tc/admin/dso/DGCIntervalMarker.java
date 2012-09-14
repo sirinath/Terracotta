@@ -3,6 +3,7 @@
  */
 package com.tc.admin.dso;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.jfree.chart.plot.IntervalMarker;
 
 import com.tc.admin.common.ToolTipProvider;
@@ -30,10 +31,7 @@ public class DGCIntervalMarker extends IntervalMarker implements ToolTipProvider
     double endValue;
     long elapsedTime = dgcInfo.getElapsedTime();
     if (dgcInfo.getStatus().equals(GCStats.GC_CANCELED.getName())) {
-      if (elapsedTime == -1) {
-        elapsedTime = System.currentTimeMillis();
-      }
-      endValue = dgcInfo.getStartTime() + elapsedTime;
+      endValue = System.currentTimeMillis();
     } else if (elapsedTime == -1) {
       endValue = dgcInfo.getStartTime() + 100000000;
     } else {
@@ -93,5 +91,21 @@ public class DGCIntervalMarker extends IntervalMarker implements ToolTipProvider
   public String getToolTipText(MouseEvent me) {
     if (fToolTip == null) buildToolTip();
     return fToolTip;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) { return true; }
+    if (!(obj instanceof DGCIntervalMarker)) { return false; }
+    if (!super.equals(obj)) { return false; }
+    DGCIntervalMarker other = (DGCIntervalMarker) obj;
+    return getGCStats().equals(other.getGCStats());
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder();
+    builder.append(getGCStats());
+    return builder.toHashCode();
   }
 }

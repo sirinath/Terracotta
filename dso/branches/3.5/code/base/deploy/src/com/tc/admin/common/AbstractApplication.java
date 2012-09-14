@@ -1,26 +1,29 @@
 /*
- * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
+ * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
+ * notice. All rights reserved.
  */
 package com.tc.admin.common;
 
 import org.apache.commons.io.IOUtils;
 
+import com.tc.logging.JDKLogging;
 import com.tc.util.runtime.Os;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public abstract class AbstractApplication implements IApplication {
   private final String name;
-  
+
   static {
     if (!Boolean.getBoolean("javax.management.remote.debug")) {
-      Logger.getLogger("javax.management.remote").setLevel(Level.OFF);
-      Logger.getLogger("com.sun.jmx.remote.opt.util").setLevel(Level.OFF);
+      JDKLogging.setLevel("javax.management.remote", Level.OFF);
+      JDKLogging.setLevel("com.sun.jmx.remote.opt.util", Level.OFF);
     }
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 
@@ -39,19 +42,19 @@ public abstract class AbstractApplication implements IApplication {
   protected AbstractApplication(String name) {
     this.name = name;
   }
-  
+
   public String getName() {
     return name;
   }
-  
+
   public String[] parseArgs(String[] args) {
     return args;
   }
-  
+
   private File getPrefsFile() {
-    return new File(System.getProperty("user.home"), "."+getName()+".xml");
+    return new File(System.getProperty("user.home"), "." + getName() + ".xml");
   }
-  
+
   public Preferences loadPrefs() {
     FileInputStream fis = null;
 
@@ -71,7 +74,7 @@ public abstract class AbstractApplication implements IApplication {
 
     return Preferences.userNodeForPackage(getClass());
   }
-  
+
   public void storePrefs() {
     FileOutputStream fos = null;
 
@@ -81,12 +84,14 @@ public abstract class AbstractApplication implements IApplication {
       Preferences prefs = getApplicationContext().getPrefs();
       prefs.exportSubtree(fos);
       prefs.flush();
-    } catch (Exception e) {
+    } catch (IOException e) {
+      /**/
+    } catch (BackingStoreException e) {
       /**/
     } finally {
       IOUtils.closeQuietly(fos);
     }
   }
-  
+
   public abstract void start();
 }

@@ -244,4 +244,12 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
   public String[] getProcessArguments() {
     return null;
   }
+
+  public StatisticData getCpuLoad() {
+    return null;
+  }
+
+  public boolean isProduction() {
+    return false;
+  }
 }
