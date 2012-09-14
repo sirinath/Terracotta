@@ -44,7 +44,8 @@ public class PhysicalManagedObjectStateTest extends AbstractTestManagedObjectSta
 
     final ManagedObjectState state = createManagedObjectState(className, cursor);
     System.out.println("state: " + state);
-    assertTrue(state.hasNoReferences());
+    // DEV-8107, just always assume physical objects have references
+    assertFalse(state.hasNoReferences());
   }
 
   public void testObjectPhysicalHasNoReferencesInnerClass() throws Exception {
@@ -70,7 +71,8 @@ public class PhysicalManagedObjectStateTest extends AbstractTestManagedObjectSta
 
     final ManagedObjectState state = createManagedObjectState(className, cursor, ObjectID.NULL_ID);
     System.out.println("state: " + state);
-    assertTrue(state.hasNoReferences());
+    // DEV-8107, just always assume physical objects have references
+    assertFalse(state.hasNoReferences());
   }
 
 }
