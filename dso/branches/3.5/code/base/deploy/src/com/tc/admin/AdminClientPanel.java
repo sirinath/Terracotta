@@ -8,6 +8,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.osgi.framework.Version;
 
 import com.tc.admin.common.AboutDialog;
@@ -88,13 +90,13 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.JPopupMenu.Separator;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.JPopupMenu.Separator;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -1045,7 +1047,6 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
   }
 
   class FeatureSelectorAction extends XAbstractAction implements HyperlinkListener {
-    private boolean      enabled;
     private final Icon   icon;
     private final Icon   disabledIcon;
     private XButton      btn;
@@ -1055,13 +1056,12 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
       super(name);
       icon = new ImageIcon(getClass().getResource(iconPath));
       disabledIcon = new ImageIcon(getClass().getResource(disabledIconPath));
-      enabled = true;
       this.page = page;
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-      this.enabled = enabled;
+      super.setEnabled(enabled);
       btn.setIcon(enabled ? icon : disabledIcon);
     }
 
@@ -1075,7 +1075,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     }
 
     public void actionPerformed(ActionEvent ae) {
-      if (enabled) {
+      if (isEnabled()) {
         XRootNode root = (XRootNode) tree.getModel().getRoot();
         selectNode(root, getName());
       } else {
@@ -1089,6 +1089,8 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
       textPane.setEditorKit(new SyncHTMLEditorKit());
       msg.add(new XScrollPane(textPane));
       textPane.setPreferredSize(new Dimension(550, 280));
+      textPane.setEditable(false);
+      textPane.addHyperlinkListener(this);
       textPane.addPropertyChangeListener("page", new PropertyChangeListener() {
         public void propertyChange(PropertyChangeEvent pce) {
           Frame frame = getFrame();
@@ -1100,8 +1102,6 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      textPane.setEditable(false);
-      textPane.addHyperlinkListener(this);
     }
 
     public void hyperlinkUpdate(HyperlinkEvent e) {
@@ -1194,7 +1194,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
     return adminClientContext.format("get.svt.url", getKitID());
   }
 
-  private class VersionMap implements Comparable {
+  private static class VersionMap implements Comparable {
     final File    versionDir;
     final Version version;
     final String  qualifier;
@@ -1222,6 +1222,27 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
         }
       }
       return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) { return false; }
+      if (obj == this) { return true; }
+      if (obj.getClass() != getClass()) { return false; }
+      VersionMap rhs = (VersionMap) obj;
+      return new EqualsBuilder().appendSuper(super.equals(obj)).append(versionDir, rhs.versionDir)
+          .append(version, rhs.version).append(qualifier, rhs.qualifier).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+      builder.append(versionDir);
+      builder.append(version);
+      if (qualifier != null) {
+        builder.append(qualifier);
+      }
+      return builder.toHashCode();
     }
 
     @Override
@@ -1303,7 +1324,7 @@ public class AdminClientPanel extends XContainer implements AdminClientControlle
         } catch (Exception e) {
           log(e);
         }
-      } catch (Exception e) {
+      } catch (ClassNotFoundException e) {
         BrowserLauncher.openURL(getSvtUrl());
       }
     }

@@ -43,6 +43,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.relation.MBeanServerNotificationFilter;
 
 public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean, NotificationListener {
 
@@ -67,15 +68,17 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private final SampledCounter                 faultRate;
   private final Counter                        pendingTransactions;
   private final SynchronizedLong               sequenceNumber          = new SynchronizedLong(0L);
-  private final SampledCumulativeCounter serverMapGetSizeRequestsCounter;
-  private final SampledCumulativeCounter serverMapGetValueRequestsCounter;
+  private final SampledCumulativeCounter       serverMapGetSizeRequestsCounter;
+  private final SampledCumulativeCounter       serverMapGetValueRequestsCounter;
   private final ClientID                       clientID;
   private final ClientStateManager             stateManager;
 
   private ObjectName                           enterpriseMBeanName;
-  private boolean                              isEnterpriseBeanNameSet     = false;
+  private boolean                              isEnterpriseBeanNameSet = false;
 
   private static final MBeanNotificationInfo[] NOTIFICATION_INFO;
+
+  private final MBeanRegistrationFilter        registrationFilter;
 
   static {
     final String[] notifTypes = new String[] { TUNNELED_BEANS_REGISTERED };
@@ -96,8 +99,10 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     this.flushRate = (SampledCounter) channelStats.getCounter(channel, ChannelStats.OBJECT_FLUSH_RATE);
     this.faultRate = (SampledCounter) channelStats.getCounter(channel, ChannelStats.OBJECT_REQUEST_RATE);
     this.pendingTransactions = channelStats.getCounter(channel, ChannelStats.PENDING_TRANSACTIONS);
-    this.serverMapGetSizeRequestsCounter = (SampledCumulativeCounter) channelStats.getCounter(channel, ChannelStats.SERVER_MAP_GET_SIZE_REQUESTS);
-    this.serverMapGetValueRequestsCounter = (SampledCumulativeCounter) channelStats.getCounter(channel, ChannelStats.SERVER_MAP_GET_VALUE_REQUESTS);
+    this.serverMapGetSizeRequestsCounter = (SampledCumulativeCounter) channelStats
+        .getCounter(channel, ChannelStats.SERVER_MAP_GET_SIZE_REQUESTS);
+    this.serverMapGetValueRequestsCounter = (SampledCumulativeCounter) channelStats
+        .getCounter(channel, ChannelStats.SERVER_MAP_GET_VALUE_REQUESTS);
 
     this.l1InfoBeanName = getTunneledBeanName(L1MBeanNames.L1INFO_PUBLIC);
     this.instrumentationLoggingBeanName = getTunneledBeanName(L1MBeanNames.INSTRUMENTATION_LOGGING_PUBLIC);
@@ -106,6 +111,12 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     this.l1OperatorEventsBeanName = getTunneledBeanName(MBeanNames.OPERATOR_EVENTS_PUBLIC);
     this.enterpriseMBeanName = getTunneledBeanName(L1MBeanNames.ENTERPRISE_TC_CLIENT);
     this.l1DumperBeanName = getTunneledBeanName(MBeanNames.L1DUMPER_INTERNAL);
+
+    try {
+      this.registrationFilter = new MBeanRegistrationFilter(getTunneledBeanName(new ObjectName("*:*")));
+    } catch (MalformedObjectNameException mone) {
+      throw new RuntimeException(mone);
+    }
 
     testSetupTunneledBeans();
   }
@@ -150,7 +161,7 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
       runtimeOutputOptionsBeanName = beanName;
       setupRuntimeOutputOptionsBean();
     }
-    
+
     if ((beanName = queryClientBean(this.l1OperatorEventsBeanName)) != null) {
       this.l1OperatorEventsBeanName = beanName;
       setupL1OperatorEventsBean();
@@ -161,11 +172,30 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     }
   }
 
+  private static class MBeanRegistrationFilter extends MBeanServerNotificationFilter implements java.io.Serializable {
+    static final long        serialVersionUID = 42L;
+
+    private final ObjectName pattern;
+
+    private MBeanRegistrationFilter(ObjectName pattern) {
+      this.pattern = pattern;
+    }
+
+    @Override
+    public boolean isNotificationEnabled(Notification notif) {
+      if (notif instanceof MBeanServerNotification) {
+        MBeanServerNotification mbsn = (MBeanServerNotification) notif;
+        return pattern.apply(mbsn.getMBeanName());
+      }
+      return false;
+    }
+  }
+
   private void startListeningForTunneledBeans() {
     if (isListeningForTunneledBeans) return;
     try {
-      ObjectName mbsd = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-      mbeanServer.addNotificationListener(mbsd, this, null, null);
+      mbeanServer.addNotificationListener(new ObjectName("JMImplementation:type=MBeanServerDelegate"), this,
+                                          registrationFilter, null);
     } catch (Exception e) {
       throw new RuntimeException("Adding listener to MBeanServerDelegate", e);
     }
@@ -175,8 +205,8 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   private void stopListeningForTunneledBeans() {
     if (!isListeningForTunneledBeans) return;
     try {
-      ObjectName mbsd = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-      mbeanServer.removeNotificationListener(mbsd, this, null, null);
+      mbeanServer.removeNotificationListener(new ObjectName("JMImplementation:type=MBeanServerDelegate"), this,
+                                             registrationFilter, null);
     } catch (Exception e) {
       throw new RuntimeException("Removing listener to MBeanServerDelegate", e);
     }
@@ -323,7 +353,7 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
     l1InfoBean = (L1InfoMBean) MBeanServerInvocationHandler.newProxyInstance(mbeanServer, l1InfoBeanName,
                                                                              L1InfoMBean.class, false);
   }
-  
+
   private void setupL1OperatorEventsBean() {
     this.l1OperatorEventsBean = (TerracottaOperatorEventsMBean) MBeanServerInvocationHandler
         .newProxyInstance(mbeanServer, l1OperatorEventsBeanName, TerracottaOperatorEventsMBean.class, false);
@@ -366,34 +396,36 @@ public class DSOClient extends AbstractTerracottaMBean implements DSOClientMBean
   }
 
   private void beanRegistered(ObjectName beanName) {
-    if (l1InfoBean == null && matchesClientBeanName(l1InfoBeanName, beanName)) {
-      l1InfoBeanName = beanName;
-      setupL1InfoBean();
-    }
+    if (!haveAllTunneledBeans()) {
+      if (l1InfoBean == null && matchesClientBeanName(l1InfoBeanName, beanName)) {
+        l1InfoBeanName = beanName;
+        setupL1InfoBean();
+      }
 
-    if (instrumentationLoggingBean == null && matchesClientBeanName(instrumentationLoggingBeanName, beanName)) {
-      instrumentationLoggingBeanName = beanName;
-      setupInstrumentationLoggingBean();
-    }
+      if (instrumentationLoggingBean == null && matchesClientBeanName(instrumentationLoggingBeanName, beanName)) {
+        instrumentationLoggingBeanName = beanName;
+        setupInstrumentationLoggingBean();
+      }
 
-    if (runtimeLoggingBean == null && matchesClientBeanName(runtimeLoggingBeanName, beanName)) {
-      runtimeLoggingBeanName = beanName;
-      setupRuntimeLoggingBean();
-    }
+      if (runtimeLoggingBean == null && matchesClientBeanName(runtimeLoggingBeanName, beanName)) {
+        runtimeLoggingBeanName = beanName;
+        setupRuntimeLoggingBean();
+      }
 
-    if (runtimeOutputOptionsBean == null && matchesClientBeanName(runtimeOutputOptionsBeanName, beanName)) {
-      runtimeOutputOptionsBeanName = beanName;
-      setupRuntimeOutputOptionsBean();
-    }
+      if (runtimeOutputOptionsBean == null && matchesClientBeanName(runtimeOutputOptionsBeanName, beanName)) {
+        runtimeOutputOptionsBeanName = beanName;
+        setupRuntimeOutputOptionsBean();
+      }
 
-    if (!isEnterpriseBeanNameSet && matchesClientBeanName(enterpriseMBeanName, beanName)) {
-      enterpriseMBeanName = beanName;
-      isEnterpriseBeanNameSet = true;
-    }
+      if (!isEnterpriseBeanNameSet && matchesClientBeanName(enterpriseMBeanName, beanName)) {
+        enterpriseMBeanName = beanName;
+        isEnterpriseBeanNameSet = true;
+      }
 
-    if (haveAllTunneledBeans()) {
-      stopListeningForTunneledBeans();
-      sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));
+      if (haveAllTunneledBeans()) {
+        stopListeningForTunneledBeans();
+        sendNotification(new Notification(TUNNELED_BEANS_REGISTERED, this, sequenceNumber.increment()));
+      }
     }
   }
 

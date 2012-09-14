@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 
 import com.tc.admin.common.BrowserLauncher;
 import com.tc.admin.common.ComponentNode;
+import com.tc.admin.common.MBeanRegistrationFilter;
 import com.tc.admin.common.SyncHTMLEditorKit;
 import com.tc.admin.common.XScrollPane;
 import com.tc.admin.common.XTextPane;
@@ -24,9 +25,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.MBeanServerNotification;
+import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -38,10 +39,11 @@ import javax.swing.text.Element;
 import javax.swing.text.html.HTML;
 
 public class FeaturesNode extends ComponentNode implements NotificationListener, HyperlinkListener {
-  protected IAdminClientContext               adminClientContext;
-  protected IClusterModel                     clusterModel;
-  protected ClusterNode                       clusterNode;
-  protected ClusterListener                   clusterListener;
+  protected final IAdminClientContext         adminClientContext;
+  protected final IClusterModel               clusterModel;
+  protected final ClusterNode                 clusterNode;
+  protected final ClusterListener             clusterListener;
+
   protected XScrollPane                       myApplicationPanel;
   protected ClientsNode                       clientsNode;
   protected Map<String, Feature>              activeFeatureMap;
@@ -67,10 +69,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     setIcon(DSOHelper.getHelper().getFeaturesIcon());
   }
 
-  protected synchronized IClusterModel getClusterModel() {
-    return clusterModel;
-  }
-
   private class ClusterListener extends AbstractClusterListener {
     private ClusterListener(IClusterModel clusterModel) {
       super(clusterModel);
@@ -78,9 +76,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
 
     @Override
     protected void handleActiveCoordinator(IServer oldActive, IServer newActive) {
-      IClusterModel theClusterModel = getClusterModel();
-      if (theClusterModel == null) { return; }
-
       if (newActive != null) {
         init();
       }
@@ -88,19 +83,23 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
 
     @Override
     protected void handleUncaughtError(Exception e) {
-      if (adminClientContext != null) {
-        adminClientContext.log(e);
-      } else {
-        super.handleUncaughtError(e);
-      }
+      adminClientContext.log(e);
+    }
+  }
+
+  private static final MBeanRegistrationFilter MBEAN_REGISTRATION_FILTER;
+  static {
+    try {
+      MBEAN_REGISTRATION_FILTER = new MBeanRegistrationFilter("org.terracotta:type=Loader,*");
+    } catch (MalformedObjectNameException e) {
+      throw new RuntimeException(e);
     }
   }
 
   private void addMBeanServerDelegateListener() {
     IServer activeCoord = clusterModel.getActiveCoordinator();
     try {
-      ObjectName on = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-      activeCoord.addNotificationListener(on, this);
+      activeCoord.addNotificationListener(ConnectionContext.MBEAN_SERVER_DELEGATE, this, MBEAN_REGISTRATION_FILTER);
     } catch (Exception e) {
       /**/
     }
@@ -110,8 +109,7 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     IServer activeCoord = clusterModel.getActiveCoordinator();
     if (activeCoord != null) {
       try {
-        ObjectName on = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-        activeCoord.addNotificationListener(on, this);
+        activeCoord.removeNotificationListener(ConnectionContext.MBEAN_SERVER_DELEGATE, this);
       } catch (Exception e) {
         /**/
       }
@@ -136,7 +134,7 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     ensureFeatureNodes();
   }
 
-  private void ensureFeatureNodes() {
+  private synchronized void ensureFeatureNodes() {
     Iterator<Map.Entry<String, Feature>> featureIter = activeFeatureMap.entrySet().iterator();
     while (featureIter.hasNext()) {
       Map.Entry<String, Feature> entry = featureIter.next();
@@ -180,9 +178,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
   }
 
   private void handlePresentationReady(FeatureNode featureNode) {
-    AdminClientPanel acp = (AdminClientPanel) SwingUtilities.getAncestorOfClass(AdminClientPanel.class,
-                                                                                clusterNode.getComponent());
-
     if (featureNode.isPresentationReady()) {
       testAddToParent();
       int i = 0;
@@ -194,14 +189,10 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
       }
       insertChild(featureNode, i);
       adminClientContext.getAdminClientController().expand(this);
-      if (acp != null) {
-        acp.activeFeatureAdded(featureNode.getName());
-      }
+      adminClientContext.getAdminClientController().activeFeatureAdded(featureNode.getName());
     } else if (isNodeChild(featureNode)) {
       removeFeatureNode(featureNode);
-      if (acp != null) {
-        acp.activeFeatureRemoved(featureNode.getName());
-      }
+      adminClientContext.getAdminClientController().activeFeatureRemoved(featureNode.getName());
       testRemoveFromParent();
     }
   }
@@ -240,8 +231,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
   }
 
   protected boolean testUnregisterFeature(ObjectName on) {
-    if (tornDown.get()) { return false; }
-
     if (StringUtils.equals("org.terracotta", on.getDomain()) && StringUtils.equals("Loader", on.getKeyProperty("type"))) {
       String symbolicName = on.getKeyProperty("feature");
       Feature feature = activeFeatureMap.get(symbolicName);
@@ -258,17 +247,12 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
   }
 
   private void tearDownFeature(Feature feature) {
-    AdminClientPanel acp = (AdminClientPanel) SwingUtilities.getAncestorOfClass(AdminClientPanel.class,
-                                                                                clusterNode.getComponent());
-
     FeatureNode featureNode = nodeMap.remove(feature);
     if (featureNode != null) {
       if (isNodeChild(featureNode)) {
         removeChild(featureNode);
       }
-      if (acp != null) {
-        acp.activeFeatureRemoved(featureNode.getName());
-      }
+      adminClientContext.getAdminClientController().activeFeatureRemoved(featureNode.getName());
       featureNode.tearDown();
     }
     if (getParent() != null && getChildCount() == 0) {
@@ -283,17 +267,15 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
   }
 
   public void handleNotification(Notification notification, Object handback) {
-    IClusterModel theClusterModel = getClusterModel();
-    if (theClusterModel == null) { return; }
-
     String type = notification.getType();
     if (notification instanceof MBeanServerNotification) {
       final MBeanServerNotification mbsn = (MBeanServerNotification) notification;
+      final ObjectName beanName = mbsn.getMBeanName();
+
       if (type.equals(MBeanServerNotification.REGISTRATION_NOTIFICATION)) {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
-            if (tornDown.get()) { return; }
-            if (testRegisterFeature(mbsn.getMBeanName())) {
+            if (testRegisterFeature(beanName)) {
               ensureFeatureNodes();
             }
           }
@@ -301,8 +283,7 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
       } else if (type.equals(MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
-            if (tornDown.get()) { return; }
-            testUnregisterFeature(mbsn.getMBeanName());
+            testUnregisterFeature(beanName);
           }
         });
       }
@@ -346,13 +327,9 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
     this.tearDown = tearDown;
   }
 
-  private final AtomicBoolean tornDown = new AtomicBoolean(false);
-
   @Override
   public void tearDown() {
     if (!tearDown) { return; }
-
-    if (!tornDown.compareAndSet(false, true)) { return; }
 
     removeMBeanServerDelegateListener();
 
@@ -364,17 +341,6 @@ public class FeaturesNode extends ComponentNode implements NotificationListener,
         tearDownFeature(feature);
       }
       activeFeatureMap.clear();
-    }
-
-    synchronized (this) {
-      adminClientContext = null;
-      clusterModel = null;
-      clusterListener = null;
-      clusterNode = null;
-      activeFeatureMap = null;
-      nodeMap.clear();
-      nodeMap = null;
-      myApplicationPanel = null;
     }
 
     super.tearDown();

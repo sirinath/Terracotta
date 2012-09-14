@@ -26,8 +26,8 @@ import java.text.MessageFormat;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.WindowConstants;
 import javax.swing.JPopupMenu.Separator;
+import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkListener;
 
 public abstract class HyperlinkFrame extends XFrame implements HyperlinkListener {

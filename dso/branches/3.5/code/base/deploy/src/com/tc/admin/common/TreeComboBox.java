@@ -31,7 +31,6 @@ import javax.swing.AbstractButton;
 import javax.swing.CellRendererPane;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -39,7 +38,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -52,16 +50,15 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-public class TreeComboBox extends JPanel implements TreeWillExpandListener, TreeModelListener {
-  private AbstractButton          triggerButton;
-  private TriggerHandler          triggerHandler;
-  protected JTree                 tree;
-  protected TreeModel             treeModel;
-  protected TreePath              selectionPath;
-  private TreeMouseHandler        treeMouseHandler;
-  private SelectionRenderer       selectionRenderer;
-  private JPopupMenu              popup;
-  private final EventListenerList listenerList;
+public class TreeComboBox extends XContainer implements TreeWillExpandListener, TreeModelListener {
+  private AbstractButton    triggerButton;
+  private TriggerHandler    triggerHandler;
+  protected JTree           tree;
+  protected TreeModel       treeModel;
+  protected TreePath        selectionPath;
+  private TreeMouseHandler  treeMouseHandler;
+  private SelectionRenderer selectionRenderer;
+  private JPopupMenu        popup;
 
   public TreeComboBox() {
     this(null);
@@ -101,16 +98,14 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
     popup.addHierarchyListener(triggerHandler);
     popup.setLayout(new BorderLayout());
     tree = createTree();
-    tree.setLargeModel(true);
     tree.setVisibleRowCount(10);
-    // tree.addTreeWillExpandListener(this);
+    tree.addTreeWillExpandListener(this);
     popup.add(new JScrollPane(tree, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                               ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER));
     tree.addMouseListener(treeMouseHandler);
     tree.addMouseMotionListener(treeMouseHandler);
     tree.setSelectionModel(new TreeSelectionModel());
 
-    this.listenerList = new EventListenerList();
     if (listener != null) {
       this.listenerList.add(ActionListener.class, listener);
     }
@@ -292,7 +287,7 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
     }
   }
 
-  public void reSetToLastSelectedPath() {
+  public void resetToLastSelectedPath() {
     TreePath path = getSelectedPath();
     if (path != null) {
       tree.setSelectionPath(selectionPath = path);
@@ -302,7 +297,7 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
   }
 
   public void setSelectedPath(String nodeName) {
-    XTreeNode node = ((XRootNode) treeModel.getRoot()).findNodeByName(nodeName);
+    XTreeNode node = ((XTreeNode) treeModel.getRoot()).findNodeByName(nodeName);
     if (node != null) {
       setSelectedPath(new TreePath(node.getPath()));
     }
@@ -420,7 +415,7 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
 
   public void reset() {
     treeModel.removeTreeModelListener(this);
-    XRootNode root = (XRootNode) treeModel.getRoot();
+    XTreeNode root = (XTreeNode) treeModel.getRoot();
     root.removeAllChildren();
     root.nodeStructureChanged();
   }
@@ -443,9 +438,12 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
     return button;
   }
 
+  private final XTree sizingTree = new XTree();
+
   protected void treeModelChanged() {
-    expandTree();
-    tree.setLargeModel(false);
+    sizingTree.setModel(treeModel);
+    XTree.expandAll(sizingTree, true);
+    tree.setPreferredSize(sizingTree.getPreferredSize());
     popup.setPreferredSize(null);
     Dimension tps = popup.getPreferredSize();
     Dimension srps = selectionRenderer.getPreferredSize();
@@ -454,7 +452,6 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
     selectionRenderer.setPreferredSize(srps);
     revalidate();
     repaint();
-    tree.setLargeModel(true);
 
     if (popup.isVisible()) {
       showPopup();
@@ -464,10 +461,6 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
   @Override
   public Dimension getMinimumSize() {
     return getPreferredSize();
-  }
-
-  private void expandTree() {
-    XTree.expandAll(tree, true);
   }
 
   public void treeNodesChanged(TreeModelEvent e) {
@@ -486,6 +479,7 @@ public class TreeComboBox extends JPanel implements TreeWillExpandListener, Tree
     treeModelChanged();
   }
 
+  @Override
   public void tearDown() {
     treeModel.removeTreeModelListener(this);
     tree.removeMouseListener(treeMouseHandler);

@@ -5,7 +5,7 @@
 package com.tc.admin;
 
 import com.tc.admin.common.MBeanServerInvocationProxy;
-import com.tc.management.JMXConnectorProxy;
+import com.tc.cli.CommandLineBuilder;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
@@ -27,17 +27,16 @@ import javax.management.remote.JMXConnector;
  * @author Eugene Kuleshov
  */
 public class RootsTool {
-  private ConnectionContext context;
-  private JMXConnector      jmxc;
-  private DSOMBean          dsoBean;
+  private final ConnectionContext context;
+  private JMXConnector            jmxc;
+  private DSOMBean                dsoBean;
 
   public RootsTool(String host, int port) throws Exception {
     context = new ConnectionContext(host, port);
   }
 
   private void connect() throws IOException {
-    jmxc = new JMXConnectorProxy(context.host, context.port);
-
+    jmxc = CommandLineBuilder.getJMXConnector(context.host, context.port);
     context.jmxc = jmxc;
     context.mbsc = jmxc.getMBeanServerConnection();
     dsoBean = MBeanServerInvocationProxy.newMBeanProxy(context.mbsc, L2MBeanNames.DSO, DSOMBean.class, false);
@@ -47,7 +46,7 @@ public class RootsTool {
     jmxc.close();
   }
 
-  private void print(PrintWriter w) throws Exception {
+  public void print(PrintWriter w) throws Exception {
     connect();
     try {
       ObjectName[] rootBeanNames = dsoBean.getRoots();
@@ -55,13 +54,12 @@ public class RootsTool {
         ObjectName objectName = rootBeanNames[i];
         DSORootMBean rootBean = MBeanServerInvocationProxy.newMBeanProxy(context.mbsc, objectName, DSORootMBean.class,
                                                                          false);
-        ManagedObjectFacade facade = rootBean.lookupFacade(10);
+        ManagedObjectFacade facade = rootBean.lookupFacade(Integer.MAX_VALUE);
         String rootId = facade.getObjectId().toString();
         w.println(i + " " + rootBean.getRootName() + " id=" + rootId);
 
         String[] fieldNames = facade.getFields();
-        for (int j = 0; j < fieldNames.length; j++) {
-          String fieldName = fieldNames[i];
+        for (String fieldName : fieldNames) {
           Object fieldValue = facade.getFieldValue(fieldName);
           printValue(w, "  ", fieldName, facade.getFieldType(fieldName), fieldValue, new HashSet());
         }
@@ -80,7 +78,7 @@ public class RootsTool {
         w.println(off + "  " + name + " = null");
         return;
       }
-      facade = dsoBean.lookupFacade(objectId, 10);
+      facade = dsoBean.lookupFacade(objectId, Integer.MAX_VALUE);
       if (facade.isArray()) {
         int arrayLength = facade.getArrayLength();
         if (arrayLength > 0 && facade.isPrimitive("0")) {
@@ -126,8 +124,7 @@ public class RootsTool {
     if (!seen.contains(objectId)) {
       seen.add(objectId);
       String[] fields = facade.getFields();
-      for (int k = 0; k < fields.length; k++) {
-        String fieldName = fields[k];
+      for (String fieldName : fields) {
         String fieldType = facade.getFieldType(fieldName);
         Object fieldValue = facade.getFieldValue(fieldName);
         printValue(w, off + "  ", getShortFieldName(fieldName), fieldType, fieldValue, seen);

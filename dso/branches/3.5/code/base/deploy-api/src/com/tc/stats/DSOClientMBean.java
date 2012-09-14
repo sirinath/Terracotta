@@ -42,9 +42,9 @@ public interface DSOClientMBean extends TerracottaMBean {
   ObjectName getRuntimeOutputOptionsBeanName();
 
   RuntimeOutputOptionsMBean getRuntimeOutputOptionsBean();
-  
+
   ObjectName getL1OperatorEventsBeanName();
-  
+
   ObjectName getEnterpriseTCClientBeanName();
 
   TerracottaOperatorEventsMBean getL1OperatorEventsBean();
@@ -68,7 +68,7 @@ public interface DSOClientMBean extends TerracottaMBean {
   boolean isResident(ObjectID oid);
 
   void killClient();
-  
+
   long getServerMapGetSizeRequestsCount();
 
   long getServerMapGetValueRequestsCount();

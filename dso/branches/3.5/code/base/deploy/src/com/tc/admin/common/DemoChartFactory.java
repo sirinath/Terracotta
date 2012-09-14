@@ -13,6 +13,8 @@ import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.TickUnitSource;
 import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.DefaultDrawingSupplier;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
@@ -25,13 +27,17 @@ import org.jfree.chart.plot.dial.DialValueIndicator;
 import org.jfree.chart.plot.dial.StandardDialFrame;
 import org.jfree.chart.plot.dial.StandardDialRange;
 import org.jfree.chart.plot.dial.StandardDialScale;
+import org.jfree.chart.renderer.xy.StackedXYAreaRenderer2;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
+import org.jfree.chart.urls.StandardXYURLGenerator;
+import org.jfree.chart.urls.XYURLGenerator;
 import org.jfree.data.RangeType;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.general.ValueDataset;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.IntervalXYDataset;
+import org.jfree.data.xy.TableXYDataset;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleInsets;
 
@@ -46,15 +52,13 @@ import java.util.ResourceBundle;
 
 public class DemoChartFactory {
   public static final TickUnitSource DEFAULT_TICKS         = createStandardTickUnits();
+  public static final TickUnitSource DEFAULT_MEMORY_TICKS  = createMemoryTickUnits();
   public static final TickUnitSource DEFAULT_INTEGER_TICKS = createIntegerTickUnits();
   public static final ResourceBundle bundle                = ResourceBundle
                                                                .getBundle("com.tc.admin.common.CommonBundle");
   public static final Font           regularFont           = (Font) bundle.getObject("chart.regular.font");
 
   static {
-    // ChartFactory.setChartTheme(StandardChartTheme.createLegacyTheme());
-    // ChartFactory.setChartTheme(StandardChartTheme.createDarknessTheme());
-
     StandardChartTheme theme = new StandardChartTheme("Terracotta") {
       @Override
       public void apply(JFreeChart chart) {
@@ -163,6 +167,62 @@ public class DemoChartFactory {
     numberAxis.setLabelFont(regularFont);
 
     return chart;
+  }
+
+  public static JFreeChart createStackedXYAreaChart(String header, String xLabel, String yLabel,
+                                                    TableXYDataset dataset, PlotOrientation orientation,
+                                                    boolean createLegend) {
+    JFreeChart chart = createStackedXYAreaChart(header, xLabel, yLabel, dataset, orientation, createLegend, true, false);
+
+    XYPlot plot = (XYPlot) chart.getPlot();
+
+    ValueAxis axis = plot.getDomainAxis();
+    axis.setFixedAutoRange(30000.0);
+    axis.setTickLabelFont(regularFont);
+    axis.setLabelFont(regularFont);
+    if (axis instanceof DateAxis) {
+      ((DateAxis) axis).setDateFormatOverride(new SimpleDateFormat("h:mm:ss"));
+    }
+
+    NumberAxis numberAxis = (NumberAxis) plot.getRangeAxis();
+    numberAxis.setRangeType(RangeType.POSITIVE);
+    numberAxis.setStandardTickUnits(DEFAULT_TICKS);
+    numberAxis.setAutoRangeMinimumSize(10.0);
+    numberAxis.setTickLabelFont(regularFont);
+    numberAxis.setLabelFont(regularFont);
+
+    return chart;
+  }
+
+  public static JFreeChart createStackedXYAreaChart(String title, String xAxisLabel, String yAxisLabel,
+                                                    TableXYDataset dataset, PlotOrientation orientation,
+                                                    boolean legend, boolean tooltips, boolean urls) {
+
+    if (orientation == null) { throw new IllegalArgumentException("Null 'orientation' argument."); }
+    DateAxis xAxis = new DateAxis(xAxisLabel);
+    xAxis.setLowerMargin(0.02);
+    xAxis.setUpperMargin(0.02);
+    NumberAxis yAxis = new NumberAxis(yAxisLabel);
+    XYToolTipGenerator toolTipGenerator = null;
+    if (tooltips) {
+      toolTipGenerator = new StandardXYToolTipGenerator();
+    }
+
+    XYURLGenerator urlGenerator = null;
+    if (urls) {
+      urlGenerator = new StandardXYURLGenerator();
+    }
+    StackedXYAreaRenderer2 renderer = new StackedXYAreaRenderer2(toolTipGenerator, urlGenerator);
+    renderer.setOutline(true);
+    XYPlot plot = new XYPlot(dataset, xAxis, yAxis, renderer);
+    plot.setOrientation(orientation);
+
+    plot.setRangeAxis(yAxis); // forces recalculation of the axis range
+
+    JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
+    ChartFactory.getChartTheme().apply(chart);
+    return chart;
+
   }
 
   public static JFreeChart getXYStepChart(String header, String xLabel, String yLabel, TimeSeries ts, boolean legend) {
@@ -321,12 +381,8 @@ public class DemoChartFactory {
     DecimalFormat df6 = new DecimalFormat("0.00");
     DecimalFormat df7 = new DecimalFormat("0.0");
     DecimalFormat df8 = new DecimalFormat("#,##0");
-    // DecimalFormat df9 = new DecimalFormat("#,###,##0");
-    // DecimalFormat df10 = new DecimalFormat("#,###,###,##0");
-    DecimalFormat tdf = new ThinDecimalFormat();
+    DecimalFormat tdf = ThinDecimalFormat.INSTANCE;
 
-    // we can add the units in any order, the TickUnits collection will
-    // sort them...
     units.add(new NumberTickUnit(0.0000001, df1));
     units.add(new NumberTickUnit(0.000001, df2));
     units.add(new NumberTickUnit(0.00001, df3));
@@ -337,15 +393,15 @@ public class DemoChartFactory {
     units.add(new NumberTickUnit(1, df8));
     units.add(new NumberTickUnit(10, df8));
     units.add(new NumberTickUnit(100, df8));
-    units.add(new NumberTickUnit(1000, /* df8 */tdf));
-    units.add(new NumberTickUnit(10000, /* df8 */tdf));
-    units.add(new NumberTickUnit(100000, /* df8 */tdf));
-    units.add(new NumberTickUnit(1000000, /* df9 */tdf));
-    units.add(new NumberTickUnit(10000000, /* df9 */tdf));
-    units.add(new NumberTickUnit(100000000, /* df9 */tdf));
-    units.add(new NumberTickUnit(1000000000, /* df10 */tdf));
-    units.add(new NumberTickUnit(10000000000.0, /* df10 */tdf));
-    units.add(new NumberTickUnit(100000000000.0, /* df10 */tdf));
+    units.add(new NumberTickUnit(1000, tdf));
+    units.add(new NumberTickUnit(10000, tdf));
+    units.add(new NumberTickUnit(100000, tdf));
+    units.add(new NumberTickUnit(1000000, tdf));
+    units.add(new NumberTickUnit(10000000, tdf));
+    units.add(new NumberTickUnit(100000000, tdf));
+    units.add(new NumberTickUnit(1000000000, tdf));
+    units.add(new NumberTickUnit(10000000000.0, tdf));
+    units.add(new NumberTickUnit(100000000000.0, tdf));
 
     units.add(new NumberTickUnit(0.00000025, df0));
     units.add(new NumberTickUnit(0.0000025, df1));
@@ -357,15 +413,15 @@ public class DemoChartFactory {
     units.add(new NumberTickUnit(2.5, df7));
     units.add(new NumberTickUnit(25, df8));
     units.add(new NumberTickUnit(250, df8));
-    units.add(new NumberTickUnit(2500, /* df8 */tdf));
-    units.add(new NumberTickUnit(25000, /* df8 */tdf));
-    units.add(new NumberTickUnit(250000, /* df8 */tdf));
-    units.add(new NumberTickUnit(2500000, /* df9 */tdf));
-    units.add(new NumberTickUnit(25000000, /* df9 */tdf));
-    units.add(new NumberTickUnit(250000000, /* df9 */tdf));
-    units.add(new NumberTickUnit(2500000000.0, /* df10 */tdf));
-    units.add(new NumberTickUnit(25000000000.0, /* df10 */tdf));
-    units.add(new NumberTickUnit(250000000000.0, /* df10 */tdf));
+    units.add(new NumberTickUnit(2500, tdf));
+    units.add(new NumberTickUnit(25000, tdf));
+    units.add(new NumberTickUnit(250000, tdf));
+    units.add(new NumberTickUnit(2500000, tdf));
+    units.add(new NumberTickUnit(25000000, tdf));
+    units.add(new NumberTickUnit(250000000, tdf));
+    units.add(new NumberTickUnit(2500000000.0, tdf));
+    units.add(new NumberTickUnit(25000000000.0, tdf));
+    units.add(new NumberTickUnit(250000000000.0, tdf));
 
     units.add(new NumberTickUnit(0.0000005, df1));
     units.add(new NumberTickUnit(0.000005, df2));
@@ -377,15 +433,46 @@ public class DemoChartFactory {
     units.add(new NumberTickUnit(5L, df8));
     units.add(new NumberTickUnit(50L, df8));
     units.add(new NumberTickUnit(500L, df8));
-    units.add(new NumberTickUnit(5000L, /* df8 */tdf));
-    units.add(new NumberTickUnit(50000L, /* df8 */tdf));
-    units.add(new NumberTickUnit(500000L, /* df8 */tdf));
-    units.add(new NumberTickUnit(5000000L, /* df9 */tdf));
-    units.add(new NumberTickUnit(50000000L, /* df9 */tdf));
-    units.add(new NumberTickUnit(500000000L, /* df9 */tdf));
-    units.add(new NumberTickUnit(5000000000L, /* df10 */tdf));
-    units.add(new NumberTickUnit(50000000000L, /* df10 */tdf));
-    units.add(new NumberTickUnit(500000000000L, /* df10 */tdf));
+    units.add(new NumberTickUnit(5000L, tdf));
+    units.add(new NumberTickUnit(50000L, tdf));
+    units.add(new NumberTickUnit(500000L, tdf));
+    units.add(new NumberTickUnit(5000000L, tdf));
+    units.add(new NumberTickUnit(50000000L, tdf));
+    units.add(new NumberTickUnit(500000000L, tdf));
+    units.add(new NumberTickUnit(5000000000L, tdf));
+    units.add(new NumberTickUnit(50000000000L, tdf));
+    units.add(new NumberTickUnit(500000000000L, tdf));
+
+    return units;
+  }
+
+  public static TickUnitSource createMemoryTickUnits() {
+    TickUnits units = new TickUnits();
+    DecimalFormat tmf = new ThinMemoryFormat("0");
+
+    long[] bases = { ThinMemoryFormat.BYTE, ThinMemoryFormat.KBYTE, ThinMemoryFormat.MBYTE, ThinMemoryFormat.GBYTE,
+        ThinMemoryFormat.TBYTE };
+
+    for (long base : bases) {
+      // units.add(new NumberTickUnit(1 * base, tmf));
+      // units.add(new NumberTickUnit(8 * base, tmf));
+      // units.add(new NumberTickUnit(16 * base, tmf));
+      // units.add(new NumberTickUnit(32 * base, tmf));
+      // units.add(new NumberTickUnit(64 * base, tmf));
+      // units.add(new NumberTickUnit(128 * base, tmf));
+      // units.add(new NumberTickUnit(256 * base, tmf));
+      // units.add(new NumberTickUnit(512 * base, tmf));
+
+      units.add(new NumberTickUnit(1 * base, tmf));
+      units.add(new NumberTickUnit(2 * base, tmf));
+      units.add(new NumberTickUnit(5 * base, tmf));
+      units.add(new NumberTickUnit(10 * base, tmf));
+      units.add(new NumberTickUnit(20 * base, tmf));
+      units.add(new NumberTickUnit(50 * base, tmf));
+      units.add(new NumberTickUnit(100 * base, tmf));
+      units.add(new NumberTickUnit(200 * base, tmf));
+      units.add(new NumberTickUnit(500 * base, tmf));
+    }
 
     return units;
   }
@@ -408,27 +495,26 @@ public class DemoChartFactory {
     units.add(new NumberTickUnit(1000, df1));
     units.add(new NumberTickUnit(2000, df1));
     units.add(new NumberTickUnit(5000, df1));
-    units.add(new NumberTickUnit(10000, /* df1 */tdf));
-    units.add(new NumberTickUnit(20000, /* df1 */tdf));
-    units.add(new NumberTickUnit(50000, /* df1 */tdf));
-    units.add(new NumberTickUnit(100000, /* df1 */tdf));
-    units.add(new NumberTickUnit(200000, /* df1 */tdf));
-    units.add(new NumberTickUnit(500000, /* df1 */tdf));
-    units.add(new NumberTickUnit(1000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(2000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(5000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(10000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(20000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(50000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(100000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(200000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(500000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(1000000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(2000000000, /* df1 */tdf));
-    units.add(new NumberTickUnit(5000000000.0, /* df1 */tdf));
-    units.add(new NumberTickUnit(10000000000.0, /* df1 */tdf));
+    units.add(new NumberTickUnit(10000, tdf));
+    units.add(new NumberTickUnit(20000, tdf));
+    units.add(new NumberTickUnit(50000, tdf));
+    units.add(new NumberTickUnit(100000, tdf));
+    units.add(new NumberTickUnit(200000, tdf));
+    units.add(new NumberTickUnit(500000, tdf));
+    units.add(new NumberTickUnit(1000000, tdf));
+    units.add(new NumberTickUnit(2000000, tdf));
+    units.add(new NumberTickUnit(5000000, tdf));
+    units.add(new NumberTickUnit(10000000, tdf));
+    units.add(new NumberTickUnit(20000000, tdf));
+    units.add(new NumberTickUnit(50000000, tdf));
+    units.add(new NumberTickUnit(100000000, tdf));
+    units.add(new NumberTickUnit(200000000, tdf));
+    units.add(new NumberTickUnit(500000000, tdf));
+    units.add(new NumberTickUnit(1000000000, tdf));
+    units.add(new NumberTickUnit(2000000000, tdf));
+    units.add(new NumberTickUnit(5000000000.0, tdf));
+    units.add(new NumberTickUnit(10000000000.0, tdf));
 
     return units;
   }
-
 }

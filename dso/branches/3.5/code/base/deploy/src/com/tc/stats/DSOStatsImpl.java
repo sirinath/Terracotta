@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
  * @see DSOStats
  */
 
-public class DSOStatsImpl extends StatsSupport implements DSOStats {
+public class DSOStatsImpl implements DSOStats {
 
   private final DSOGlobalServerStats serverStats;
   private final SampledCounter       faultRate;

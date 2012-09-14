@@ -5,6 +5,7 @@
 package com.tc.admin;
 
 import com.tc.config.schema.L2Info;
+import com.tc.logging.JDKLogging;
 import com.tc.management.JMXConnectorProxy;
 import com.tc.management.beans.L2MBeanNames;
 
@@ -23,9 +24,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.management.AttributeChangeNotification;
+import javax.management.InstanceNotFoundException;
+import javax.management.ListenerNotFoundException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.remote.JMXConnector;
@@ -38,7 +40,7 @@ public class ServerConnectionManager implements NotificationListener {
   private ConnectionListener                 connectListener;
   private JMXConnectorProxy                  jmxConnector;
   private HashMap<String, Object>            connectEnv;
-  private ServerHelper                       serverHelper;
+  private final ServerHelper                 serverHelper;
   private volatile boolean                   connected;
   private volatile boolean                   started;
   private volatile boolean                   active;
@@ -76,7 +78,8 @@ public class ServerConnectionManager implements NotificationListener {
           level = Level.ALL;
         }
       }
-      Logger.getLogger("javax.management.remote").setLevel(level);
+
+      JDKLogging.setLevel("javax.management.remote", level);
     }
   }
 
@@ -100,11 +103,11 @@ public class ServerConnectionManager implements NotificationListener {
     return connectListener;
   }
 
-  public L2Info getL2Info() {
+  public synchronized L2Info getL2Info() {
     return l2Info;
   }
 
-  private synchronized void resetConnectedState() {
+  private void resetConnectedState() {
     active = started = passiveUninitialized = passiveStandby = false;
   }
 
@@ -117,8 +120,10 @@ public class ServerConnectionManager implements NotificationListener {
     cancelActiveServices();
     resetAllState();
 
-    this.l2Info = l2Info;
-    connectCntx = new ConnectionContext(l2Info);
+    synchronized (this) {
+      this.l2Info = l2Info;
+      connectCntx = new ConnectionContext(l2Info);
+    }
 
     try {
       if (isAutoConnect()) {
@@ -129,11 +134,13 @@ public class ServerConnectionManager implements NotificationListener {
   }
 
   public void setHostname(String hostname) {
-    setL2Info(new L2Info(l2Info.name(), hostname, l2Info.jmxPort()));
+    L2Info l2i = getL2Info();
+    setL2Info(new L2Info(l2i.name(), hostname, l2i.jmxPort()));
   }
 
   public void setJMXPortNumber(int port) {
-    setL2Info(new L2Info(l2Info.name(), l2Info.host(), port));
+    L2Info l2i = getL2Info();
+    setL2Info(new L2Info(l2i.name(), l2i.host(), port));
   }
 
   public void setCredentials(String username, String password) {
@@ -398,30 +405,31 @@ public class ServerConnectionManager implements NotificationListener {
     return jmxConnector.getServiceURL();
   }
 
-  public synchronized String getName() {
-    String name = l2Info.name();
-    return name != null ? name : l2Info.host();
+  public String getName() {
+    L2Info l2i = getL2Info();
+    String name = l2i.name();
+    return name != null ? name : l2i.host();
   }
 
-  public synchronized String getHostname() {
-    return l2Info.host();
+  public String getHostname() {
+    return getL2Info().host();
   }
 
-  public synchronized InetAddress getInetAddress() throws UnknownHostException {
-    return l2Info != null ? l2Info.getInetAddress() : null;
+  public InetAddress getInetAddress() throws UnknownHostException {
+    return getL2Info().getInetAddress();
   }
 
-  public synchronized String getCanonicalHostName() throws UnknownHostException {
+  public String getCanonicalHostName() throws UnknownHostException {
     InetAddress result = getInetAddress();
     return result != null ? result.getCanonicalHostName() : "?";
   }
 
-  public synchronized String getHostAddress() throws UnknownHostException {
-    return l2Info.getHostAddress();
+  public String getHostAddress() throws UnknownHostException {
+    return getL2Info().getHostAddress();
   }
 
-  public synchronized int getJMXPortNumber() {
-    return l2Info != null ? l2Info.jmxPort() : -1;
+  public int getJMXPortNumber() {
+    return getL2Info().jmxPort();
   }
 
   private void _setConnected(boolean isConnected) {
@@ -445,15 +453,15 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  public synchronized boolean testIsActive() {
+  public boolean testIsActive() {
     return internalIsActive();
   }
 
-  public synchronized boolean isActive() {
+  public boolean isActive() {
     return active;
   }
 
-  public synchronized boolean canShutdown() {
+  public boolean canShutdown() {
     try {
       return serverHelper.canShutdown(connectCntx);
     } catch (Exception e) {
@@ -461,7 +469,7 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  private synchronized boolean internalIsActive() {
+  private boolean internalIsActive() {
     try {
       return serverHelper.isActive(connectCntx);
     } catch (Exception e) {
@@ -469,7 +477,7 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  public synchronized boolean isStarted() {
+  public boolean isStarted() {
     return started;
   }
 
@@ -481,7 +489,7 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  public synchronized boolean isPassiveUninitialized() {
+  public boolean isPassiveUninitialized() {
     return passiveUninitialized;
   }
 
@@ -493,7 +501,7 @@ public class ServerConnectionManager implements NotificationListener {
     }
   }
 
-  public synchronized boolean isPassiveStandby() {
+  public boolean isPassiveStandby() {
     return passiveStandby;
   }
 
@@ -558,7 +566,12 @@ public class ServerConnectionManager implements NotificationListener {
       if ((active = internalIsActive()) == true) {
         connectCntx.removeNotificationListener(L2MBeanNames.TC_SERVER_INFO, this);
       }
-    } catch (Exception e) {/**/
+    } catch (ListenerNotFoundException e) {
+      /**/
+    } catch (InstanceNotFoundException e) {
+      /**/
+    } catch (IOException e) {
+      /**/
     }
   }
 
@@ -638,7 +651,7 @@ public class ServerConnectionManager implements NotificationListener {
 
   public void dump(String prefix) {
     System.out.println(prefix + this + ":connected=" + connected + ",autoConnect=" + autoConnect + ",started="
-                       + started + ",exception=" + connectException);
+                       + started + ",exception=" + getConnectionException());
   }
 
   void cancelActiveServices() {
@@ -667,12 +680,5 @@ public class ServerConnectionManager implements NotificationListener {
 
   public void tearDown() {
     cancelActiveServices();
-
-    synchronized (this) {
-      serverHelper = null;
-      connectCntx = null;
-      connectListener = null;
-      connectThread = null;
-    }
   }
 }

@@ -82,6 +82,8 @@ public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticCons
 
   StatisticData[] getCpuUsage();
 
+  StatisticData getCpuLoad();
+
   byte[] takeCompressedThreadDump(long requestMillis);
 
   String getEnvironment();
@@ -121,4 +123,6 @@ public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticCons
   void gc();
 
   boolean isEnterprise();
+
+  boolean isProduction();
 }

@@ -25,8 +25,8 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
     tearDownChildren();
 
     if (classInfo != null) {
-      for (int i = 0; i < classInfo.length; i++) {
-        String className = classInfo[i].getClassName();
+      for (DSOClassInfo element : classInfo) {
+        String className = element.getClassName();
         String[] names = className.split("\\.");
         ClassTreeNode node = this;
 
@@ -35,7 +35,7 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
         }
 
         ClassTreeLeaf leaf = node.testGetLeaf(names[names.length - 1]);
-        leaf.setInstanceCount(classInfo[i].getInstanceCount());
+        leaf.setInstanceCount(element.getInstanceCount());
       }
     }
   }
@@ -44,6 +44,7 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
     return (DSOClassInfo[]) getUserObject();
   }
 
+  @Override
   public String getName() {
     return baseLabel;
   }
@@ -70,6 +71,7 @@ public class ClassTreeRoot extends XRootNode implements ClassTreeNode {
     return helper.testGetLeaf(this, name);
   }
 
+  @Override
   public String toString() {
     return getName() + " (" + getInstanceCount() + ")";
   }
