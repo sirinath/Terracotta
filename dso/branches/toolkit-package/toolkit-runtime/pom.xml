@@ -224,10 +224,10 @@
             </configuration>            
           </execution>        
           <execution>
-            <id>add-toolkit-entries</id>
+            <id>process-toolkit-embeddedjars</id>
             <phase>package</phase>
             <goals>
-              <goal>generateZipEntries</goal>
+              <goal>processToolkit</goal>
             </goals>
             <configuration>
               <zipFile>${archive}</zipFile>
