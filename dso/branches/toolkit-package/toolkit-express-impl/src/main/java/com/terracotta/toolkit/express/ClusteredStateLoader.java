@@ -58,7 +58,7 @@ class ClusteredStateLoader extends SecureClassLoader {
 
   @Override
   public InputStream getResourceAsStream(String name) {
-    URL resource = findResourceWithPrefix(name);
+    URL resource = findResourceWithPrefix(name, false);
     if (resource != null) {
       try {
         return resource.openStream();
@@ -73,7 +73,7 @@ class ClusteredStateLoader extends SecureClassLoader {
 
   @Override
   public URL getResource(String name) {
-    URL resource = findResourceWithPrefix(name);
+    URL resource = findResourceWithPrefix(name, false);
     if (resource != null) { return resource; }
     resource = super.getResource(name);
     if (resource != null) { return resource; }
@@ -111,7 +111,8 @@ class ClusteredStateLoader extends SecureClassLoader {
       }
     }
 
-    URL url = findClassWithPrefix(name);
+    // try loading class with prefixes, it could come from embedded jars
+    URL url = findResourceWithPrefix(name, true);
     if (url != null) { return loadClassFromPrefixResource(name, url); }
 
     // last path is to delegate to the app loader and finally to the thread context loader
@@ -132,17 +133,10 @@ class ClusteredStateLoader extends SecureClassLoader {
     }
   }
 
-  private URL findClassWithPrefix(String name) {
+  private URL findResourceWithPrefix(String name, boolean isClassName) {
+    String resource = isClassName ? name.replace('.', '/').concat(".class") : name;
     for (String prefix : embeddedResourcePrefixes) {
-      URL url = appLoader.getResource(prefix + name.replace('.', '/') + ".class");
-      if (url != null) { return url; }
-    }
-    return null;
-  }
-
-  private URL findResourceWithPrefix(String name) {
-    for (String prefix : embeddedResourcePrefixes) {
-      URL url = appLoader.getResource(prefix + name);
+      URL url = appLoader.getResource(prefix + resource);
       if (url != null) { return url; }
     }
     return null;
@@ -161,8 +155,10 @@ class ClusteredStateLoader extends SecureClassLoader {
       out.flush();
 
       String packageName = name.substring(0, name.lastIndexOf('.'));
-      if (Package.getPackage(packageName) == null) {
+      try {
         definePackage(packageName, null, null, null, null, null, null, null);
+      } catch (IllegalArgumentException e) {
+        // package already defined
       }
       Class<?> clazz = defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
           .getCodeSource());
