@@ -156,7 +156,7 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     URL[] urls = new URL[timJars.length + l1Jars.size()];
     System.arraycopy(toURLs(l1Jars), 0, urls, 0, l1Jars.size());
     System.arraycopy(timJars, 0, urls, l1Jars.size(), timJars.length);
-    ClusteredStateLoader loader = new ClusteredStateLoader(urls, appClassLoader);
+    ClusteredStateLoader loader = new ClusteredStateLoader(appClassLoader);
 
     loader.addExtraClass(SpiInit.class.getName(), getClassBytes(SpiInit.class));
     loader.addExtraClass(StandaloneL1Boot.class.getName(), getClassBytes(StandaloneL1Boot.class));

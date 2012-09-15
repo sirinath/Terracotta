@@ -3,9 +3,17 @@
  */
 package com.terracotta.toolkit.express;
 
+import com.terracotta.toolkit.express.loader.Util;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLClassLoader;
+import java.security.SecureClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,12 +31,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <li>Loads classes from its url - (which has urls of jars inside jars)</li>
  * <li>use app loader for everything else.</li>
  */
-class ClusteredStateLoader extends URLClassLoader {
-
+class ClusteredStateLoader extends SecureClassLoader {
+  private static final String       TOOLKIT_CONTENT_RESOURCE = "toolkit-content.txt";
   private static final boolean      USE_APP_JTA_CLASSES;
 
   private final ClassLoader         appLoader;
-  private final Map<String, byte[]> extraClasses = new ConcurrentHashMap<String, byte[]>();
+  private final Map<String, byte[]> extraClasses             = new ConcurrentHashMap<String, byte[]>();
+  private final List<String>        embeddedResourcePrefixes;
 
   static {
     String prop = System.getProperty(ClusteredStateLoader.class.getName() + ".USE_APP_JTA_CLASSES", "true");
@@ -36,9 +45,10 @@ class ClusteredStateLoader extends URLClassLoader {
     USE_APP_JTA_CLASSES = Boolean.valueOf(prop);
   }
 
-  ClusteredStateLoader(URL[] urls, AppClassLoader appLoader) {
-    super(urls, null);
+  ClusteredStateLoader(AppClassLoader appLoader) {
+    super(null);
     this.appLoader = appLoader;
+    this.embeddedResourcePrefixes = loadEmbeddedResourcePrefixes();
   }
 
   void addExtraClass(String name, byte[] classBytes) {
@@ -46,12 +56,15 @@ class ClusteredStateLoader extends URLClassLoader {
   }
 
   @Override
-  protected void addURL(URL url) {
-    super.addURL(url);
-  }
-
-  @Override
   public InputStream getResourceAsStream(String name) {
+    URL resource = findResourceWithPrefix(name);
+    if (resource != null) {
+      try {
+        return resource.openStream();
+      } catch (IOException e) {
+        // ignore
+      }
+    }
     InputStream in = super.getResourceAsStream(name);
     if (in != null) return in;
     return appLoader.getResourceAsStream(name);
@@ -59,7 +72,9 @@ class ClusteredStateLoader extends URLClassLoader {
 
   @Override
   public URL getResource(String name) {
-    URL resource = super.getResource(name);
+    URL resource = findResourceWithPrefix(name);
+    if (resource != null) { return resource; }
+    resource = super.getResource(name);
     if (resource != null) { return resource; }
     return appLoader.getResource(name);
   }
@@ -95,12 +110,8 @@ class ClusteredStateLoader extends URLClassLoader {
       }
     }
 
-    // try with specified urls
-    try {
-      return super.loadClass(name, false);
-    } catch (ClassNotFoundException e) {
-      //
-    }
+    URL url = findClassWithPrefix(name);
+    if (url != null) { return loadClassFromPrefixResource(name, url); }
 
     // last path is to delegate to the app loader and finally to the thread context loader
     // A case where final fallback to the thread context is relevant is when the
@@ -117,6 +128,71 @@ class ClusteredStateLoader extends URLClassLoader {
       }
 
       throw cnfe;
+    }
+  }
+
+  private URL findClassWithPrefix(String name) {
+    for (String prefix : embeddedResourcePrefixes) {
+      URL url = appLoader.getResource(prefix + name.replace('.', '/') + ".class");
+      if (url != null) { return url; }
+    }
+    return null;
+  }
+
+  private URL findResourceWithPrefix(String name) {
+    for (String prefix : embeddedResourcePrefixes) {
+      URL url = appLoader.getResource(prefix + name);
+      if (url != null) { return url; }
+    }
+    return null;
+  }
+
+  private Class<?> loadClassFromPrefixResource(String name, URL url) {
+    byte[] bytes = new byte[4 * 1024];
+    ByteArrayOutputStream out = new ByteArrayOutputStream(32 * 1024);
+    InputStream in = null;
+    try {
+      in = url.openStream();
+      int read;
+      while ((read = in.read(bytes)) != -1) {
+        out.write(bytes, 0, read);
+      }
+      out.flush();
+      // return defineClass(name, out.toByteArray(), 0, out.size(), ClusteredStateLoader.class.getProtectionDomain()
+      // .getCodeSource());
+      return defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
+          .getCodeSource());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      Util.closeQuietly(in);
+      Util.closeQuietly(out);
+    }
+  }
+
+  private List<String> loadEmbeddedResourcePrefixes() {
+    InputStream in = appLoader.getResourceAsStream(TOOLKIT_CONTENT_RESOURCE);
+    if (in == null) throw new RuntimeException("Couldn't load resource entries file at: " + TOOLKIT_CONTENT_RESOURCE);
+    BufferedReader reader = null;
+    try {
+      List<String> entries = new ArrayList<String>();
+      reader = new BufferedReader(new InputStreamReader(in));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        line = line.trim();
+        if (line.length() > 0) {
+          if (line.endsWith("/")) {
+            entries.add(line);
+          } else {
+            entries.add(line + "/");
+          }
+        }
+      }
+      return entries;
+    } catch (IOException ioe) {
+      throw new RuntimeException(ioe);
+    } finally {
+      Util.closeQuietly(in);
     }
   }
 
