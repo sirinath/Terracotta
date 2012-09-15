@@ -447,10 +447,9 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
         remoteRemoveObjectIfPossible(removed);
         if (isPinned(key)) {
           if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("XXX put pinned entry in notifyPinnedEntryInvalidated " + key + " " + oid);
+            LOGGER.debug("XXX key was pinned, unpinning oid now " + key + " " + oid);
           }
           localStore.setPinned(oid, false);
-          notifyPinnedEntryInvalidated(key, value.isEventualConsistentValue());
         }
       }
     } finally {
