@@ -161,8 +161,13 @@ class ClusteredStateLoader extends SecureClassLoader {
       out.flush();
       // return defineClass(name, out.toByteArray(), 0, out.size(), ClusteredStateLoader.class.getProtectionDomain()
       // .getCodeSource());
-      return defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
+      Class<?> clazz = defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
           .getCodeSource());
+      if (clazz.getPackage() == null) {
+        String packageName = name.substring(0, name.lastIndexOf('.'));
+        definePackage(packageName, null, null, null, null, null, null, null);
+      }
+      return clazz;
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
