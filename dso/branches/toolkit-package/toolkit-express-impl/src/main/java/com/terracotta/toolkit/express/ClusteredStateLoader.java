@@ -159,14 +159,13 @@ class ClusteredStateLoader extends SecureClassLoader {
         out.write(bytes, 0, read);
       }
       out.flush();
-      // return defineClass(name, out.toByteArray(), 0, out.size(), ClusteredStateLoader.class.getProtectionDomain()
-      // .getCodeSource());
-      Class<?> clazz = defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
-          .getCodeSource());
-      if (clazz.getPackage() == null) {
-        String packageName = name.substring(0, name.lastIndexOf('.'));
+
+      String packageName = name.substring(0, name.lastIndexOf('.'));
+      if (Package.getPackage(packageName) == null) {
         definePackage(packageName, null, null, null, null, null, null, null);
       }
+      Class<?> clazz = defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
+          .getCodeSource());
       return clazz;
     } catch (IOException e) {
       throw new RuntimeException(e);
