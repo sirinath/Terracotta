@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.SecureClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -188,6 +189,7 @@ class ClusteredStateLoader extends SecureClassLoader {
           }
         }
       }
+      Collections.sort(entries);
       return entries;
     } catch (IOException ioe) {
       throw new RuntimeException(ioe);
