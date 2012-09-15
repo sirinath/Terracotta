@@ -190,7 +190,10 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
         // put a pinned entry for mutate ops, unpinned on txn complete
         this.pendingTransactionEntries.put(valueObjectID, key);
       } else {
-        this.localStore.put(valueObjectID, key);
+        if (isPinned(key)) {
+          localStore.setPinned(valueObjectID, true);
+        }
+        localStore.put(valueObjectID, key);
       }
     }
 
@@ -281,7 +284,21 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
    * pin or unpin the key
    */
   public void setPinned(Object key, boolean pinned) {
-    this.localStore.setPinned(key, pinned);
+    ReentrantReadWriteLock lock = getLock(key);
+    lock.writeLock().lock();
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("XXX setpinned entry  " + key + " " + pinned);
+    }
+    try {
+      // doing get first, because for unpin case, I will not get value if key got evicted just after unpin
+      AbstractLocalCacheStoreValue value = (AbstractLocalCacheStoreValue) localStore.get(key);
+      this.localStore.setPinned(key, pinned);
+      if (value != null && !value.isLiteral()) {
+        this.localStore.setPinned(value.getValueObjectId(), pinned);
+      }
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   public void clearInline() {
@@ -400,7 +417,6 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("XXX entryEvicted " + key + " " + value);
     }
-
     if (key instanceof ObjectID) {
       objectIDMappingEvicted((ObjectID) key, value);
     } else {
@@ -424,14 +440,17 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     try {
       AbstractLocalCacheStoreValue value = (AbstractLocalCacheStoreValue) localStore.get(key);
       if (value != null && value.getValueObjectId().equals(oid)) {
-        if (localStore.isPinned(key)) {
-          localStore.put(oid, key);
-        } else {
-          AbstractLocalCacheStoreValue removed = (AbstractLocalCacheStoreValue) localStore.remove(key);
-          if (removed != null) {
-            initiateLockRecall(removeLockIDMetaMapping(key, removed));
+        AbstractLocalCacheStoreValue removed = (AbstractLocalCacheStoreValue) localStore.remove(key);
+        if (removed != null) {
+          initiateLockRecall(removeLockIDMetaMapping(key, removed));
+        }
+        remoteRemoveObjectIfPossible(removed);
+        if (isPinned(key)) {
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("XXX put pinned entry in notifyPinnedEntryInvalidated " + key + " " + oid);
           }
-          remoteRemoveObjectIfPossible(removed);
+          localStore.setPinned(oid, false);
+          notifyPinnedEntryInvalidated(key, value.isEventualConsistentValue());
         }
       }
     } finally {
@@ -529,7 +548,6 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
 
     ReentrantReadWriteLock lock = getLock(key);
     lock.writeLock().lock();
-
     try {
       key = remove(objectId);
       if (key != null) {
@@ -703,7 +721,7 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
     return this.localStore.containsKeyOffHeap(key);
   }
 
-  public AbstractLocalCacheStoreValue putKeyValueMapping(Object key, AbstractLocalCacheStoreValue value,
+  private AbstractLocalCacheStoreValue putKeyValueMapping(Object key, AbstractLocalCacheStoreValue value,
                                                          MapOperationType mapOperation) {
     AbstractLocalCacheStoreValue old;
     if (mapOperation.isMutateOperation()) {
@@ -729,7 +747,7 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   private void cleanupOldMetaMapping(Object key, AbstractLocalCacheStoreValue value, AbstractLocalCacheStoreValue old,
                                      boolean isRemoveFromInternalStore) {
     if (old == null || old.isValueNull() || old.isLiteral()) {
-      // we dont put any meta mapping for REMOVE when value == null
+      // we don't put any meta mapping for REMOVE when value == null
       // when literal is present then lockid-> key will be present which we don want to remove
       return;
     }
@@ -745,6 +763,9 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
   private Object remove(Object key) {
     Object rv = null;
     if ((rv = this.pendingTransactionEntries.remove(key)) == null) {
+      if (key instanceof ObjectID) {
+        localStore.setPinned(key, false);
+      }
       rv = this.localStore.remove(key);
     }
     return rv;
@@ -752,6 +773,9 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
 
   private Object remove(Object key, boolean fromInternalStore) {
     if (fromInternalStore) {
+      if (key instanceof ObjectID) {
+        localStore.setPinned(key, false);
+      }
       return this.localStore.remove(key);
     } else {
       return this.pendingTransactionEntries.remove(key);
