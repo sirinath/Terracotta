@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -22,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
+  private static final String TOOLKIT_CONTENT_RESOURCE                                         = "/toolkit-content.txt";
   private static final String SPI_INIT                                                         = "com.terracotta.toolkit.express.SpiInit";
   public static final String  SECRET_PROVIDER                                                  = "com.terracotta.express.SecretProvider";
 
@@ -166,31 +166,9 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     }
   }
 
-  private List<URL> loadEmbeddedResourcePrefixes() {
-    InputStream in = TerracottaInternalClientImpl.class.getResourceAsStream("/toolkit-content.txt");
-    if (in == null) throw new RuntimeException("Couldn't load resource entries file at: /toolkit-content.txt");
-    BufferedReader reader = null;
-    try {
-      List<URL> entries = new ArrayList<URL>();
-      reader = new BufferedReader(new InputStreamReader(in));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        line = line.trim();
-        if (line.length() > 0) {
-          entries.add(TerracottaInternalClientImpl.class.getResource("/" + line));
-        }
-      }
-      return entries;
-    } catch (IOException ioe) {
-      throw new RuntimeException(ioe);
-    } finally {
-      Util.closeQuietly(in);
-    }
-  }
-
   private List<String> loadPrefixes() {
-    InputStream in = TerracottaInternalClientImpl.class.getResourceAsStream("/toolkit-content.txt");
-    if (in == null) throw new RuntimeException("Couldn't load resource entries file at: /toolkit-content.txt");
+    InputStream in = TerracottaInternalClientImpl.class.getResourceAsStream(TOOLKIT_CONTENT_RESOURCE);
+    if (in == null) throw new RuntimeException("Couldn't load resource entries file at: " + TOOLKIT_CONTENT_RESOURCE);
     BufferedReader reader = null;
     try {
       List<String> entries = new ArrayList<String>();
@@ -217,16 +195,17 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
   private ClusteredStateLoader createClusteredStateLoader(ClassLoader appLoader) {
     List<String> prefixes = loadPrefixes();
+
+    // we don't need to use embedded ehcache classes if it's already on classpath
     if (!isEmbeddedEhcacheRequired()) {
       for (Iterator<String> it = prefixes.iterator(); it.hasNext();) {
         String prefix = it.next();
         if (prefix.contains("ehcache/")) {
-          System.out.println("XXX: removing entry: " + prefix);
           it.remove();
         }
       }
     }
-    System.out.println("XXX: prefixes: " + prefixes);
+
     ClusteredStateLoader loader = new ClusteredStateLoader(prefixes, appClassLoader);
 
     loader.addExtraClass(SpiInit.class.getName(), getClassBytes(SpiInit.class));
