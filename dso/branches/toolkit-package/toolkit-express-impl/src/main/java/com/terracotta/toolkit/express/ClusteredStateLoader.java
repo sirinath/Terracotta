@@ -5,15 +5,11 @@ package com.terracotta.toolkit.express;
 
 import com.terracotta.toolkit.express.loader.Util;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.SecureClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,10 +42,10 @@ class ClusteredStateLoader extends SecureClassLoader {
     USE_APP_JTA_CLASSES = Boolean.valueOf(prop);
   }
 
-  ClusteredStateLoader(AppClassLoader appLoader) {
+  ClusteredStateLoader(List<String> prefixes, AppClassLoader appLoader) {
     super(null);
     this.appLoader = appLoader;
-    this.embeddedResourcePrefixes = loadEmbeddedResourcePrefixes();
+    this.embeddedResourcePrefixes = prefixes;
   }
 
   void addExtraClass(String name, byte[] classBytes) {
@@ -168,33 +164,6 @@ class ClusteredStateLoader extends SecureClassLoader {
     } finally {
       Util.closeQuietly(in);
       Util.closeQuietly(out);
-    }
-  }
-
-  private List<String> loadEmbeddedResourcePrefixes() {
-    InputStream in = appLoader.getResourceAsStream(TOOLKIT_CONTENT_RESOURCE);
-    if (in == null) throw new RuntimeException("Couldn't load resource entries file at: " + TOOLKIT_CONTENT_RESOURCE);
-    BufferedReader reader = null;
-    try {
-      List<String> entries = new ArrayList<String>();
-      reader = new BufferedReader(new InputStreamReader(in));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        line = line.trim();
-        if (line.length() > 0) {
-          if (line.endsWith("/")) {
-            entries.add(line);
-          } else {
-            entries.add(line + "/");
-          }
-        }
-      }
-      Collections.sort(entries);
-      return entries;
-    } catch (IOException ioe) {
-      throw new RuntimeException(ioe);
-    } finally {
-      Util.closeQuietly(in);
     }
   }
 
