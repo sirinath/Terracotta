@@ -108,13 +108,11 @@ public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintab
       c.lock();
       try {
         c.addReference(objectID);
-
-        for (ObjectReferenceAddListener listener : this.objectRefsAddListener) {
-          listener.objectReferenceAdded(objectID);
-        }
-
       } finally {
         c.unlock();
+      }
+      for (ObjectReferenceAddListener listener : this.objectRefsAddListener) {
+        listener.objectReferenceAdded(objectID);
       }
     } else {
       this.logger.warn(": addReference : Client state is NULL (probably due to disconnect) : " + id);
@@ -211,6 +209,7 @@ public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintab
       this.logger.warn(": addReferences : Client state is NULL (probably due to disconnect) : " + id);
       return Collections.emptySet();
     }
+    final Set<ObjectID> newReferences = new HashSet<ObjectID>();
     c.lock();
     try {
       final Set<ObjectID> refs = c.getReferences();
@@ -219,21 +218,20 @@ public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintab
         return oids;
       }
 
-      final Set<ObjectID> newReferences = new HashSet<ObjectID>();
       for (final ObjectID oid : oids) {
         if (refs.add(oid)) {
           newReferences.add(oid);
         }
       }
 
-      for (ObjectReferenceAddListener listener : this.objectRefsAddListener) {
-        listener.objectReferencesAdded(oids);
-      }
-
-      return newReferences;
     } finally {
       c.unlock();
     }
+    for (ObjectReferenceAddListener listener : this.objectRefsAddListener) {
+      listener.objectReferencesAdded(oids);
+    }
+
+    return newReferences;
   }
 
   public void shutdownNode(final NodeID waitee) {
