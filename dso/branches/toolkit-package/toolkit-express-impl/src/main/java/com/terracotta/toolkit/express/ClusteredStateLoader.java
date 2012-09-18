@@ -5,7 +5,6 @@ package com.terracotta.toolkit.express;
 
 import com.terracotta.toolkit.express.loader.Util;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -29,11 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * <li>use app loader for everything else.</li>
  */
 class ClusteredStateLoader extends SecureClassLoader {
-  private static final String       TOOLKIT_CONTENT_RESOURCE = "toolkit-content.txt";
   private static final boolean      USE_APP_JTA_CLASSES;
 
   private final ClassLoader         appLoader;
-  private final Map<String, byte[]> extraClasses             = new ConcurrentHashMap<String, byte[]>();
+  private final Map<String, byte[]> extraClasses = new ConcurrentHashMap<String, byte[]>();
   private final List<String>        embeddedResourcePrefixes;
 
   static {
@@ -54,7 +52,7 @@ class ClusteredStateLoader extends SecureClassLoader {
 
   @Override
   public InputStream getResourceAsStream(String name) {
-    URL resource = findResourceWithPrefix(name, false);
+    URL resource = findResourceWithPrefix(name);
     if (resource != null) {
       try {
         return resource.openStream();
@@ -69,7 +67,7 @@ class ClusteredStateLoader extends SecureClassLoader {
 
   @Override
   public URL getResource(String name) {
-    URL resource = findResourceWithPrefix(name, false);
+    URL resource = findResourceWithPrefix(name);
     if (resource != null) { return resource; }
     resource = super.getResource(name);
     if (resource != null) { return resource; }
@@ -108,7 +106,7 @@ class ClusteredStateLoader extends SecureClassLoader {
     }
 
     // try loading class with prefixes, it could come from embedded jars
-    URL url = findResourceWithPrefix(name, true);
+    URL url = findClassWithPrefix(name);
     if (url != null) { return loadClassFromPrefixResource(name, url); }
 
     // last path is to delegate to the app loader and finally to the thread context loader
@@ -129,8 +127,17 @@ class ClusteredStateLoader extends SecureClassLoader {
     }
   }
 
-  private URL findResourceWithPrefix(String name, boolean isClassName) {
-    String resource = isClassName ? name.replace('.', '/').concat(".class") : name;
+  private URL findClassWithPrefix(String name) {
+    String resource = name.replace('.', '/').concat(".clazz");
+    for (String prefix : embeddedResourcePrefixes) {
+      URL url = appLoader.getResource(prefix + resource);
+      if (url != null) { return url; }
+    }
+    return null;
+  }
+
+  private URL findResourceWithPrefix(String name) {
+    String resource = name.endsWith(".class") ? name.substring(0, name.lastIndexOf(".class")) + ".clazz" : name;
     for (String prefix : embeddedResourcePrefixes) {
       URL url = appLoader.getResource(prefix + resource);
       if (url != null) { return url; }
@@ -139,31 +146,20 @@ class ClusteredStateLoader extends SecureClassLoader {
   }
 
   private Class<?> loadClassFromPrefixResource(String name, URL url) {
-    byte[] bytes = new byte[4 * 1024];
-    ByteArrayOutputStream out = new ByteArrayOutputStream(32 * 1024);
-    InputStream in = null;
+    String packageName = name.substring(0, name.lastIndexOf('.'));
     try {
-      in = url.openStream();
-      int read;
-      while ((read = in.read(bytes)) != -1) {
-        out.write(bytes, 0, read);
-      }
-      out.flush();
+      definePackage(packageName, null, null, null, null, null, null, null);
+    } catch (IllegalArgumentException e) {
+      // package already defined
+    }
 
-      String packageName = name.substring(0, name.lastIndexOf('.'));
-      try {
-        definePackage(packageName, null, null, null, null, null, null, null);
-      } catch (IllegalArgumentException e) {
-        // package already defined
-      }
-      Class<?> clazz = defineClass(name, out.toByteArray(), 0, out.size(), appLoader.getClass().getProtectionDomain()
+    try {
+      byte[] bytes = Util.extract(url.openStream());
+      Class<?> clazz = defineClass(name, bytes, 0, bytes.length, appLoader.getClass().getProtectionDomain()
           .getCodeSource());
       return clazz;
     } catch (IOException e) {
       throw new RuntimeException(e);
-    } finally {
-      Util.closeQuietly(in);
-      Util.closeQuietly(out);
     }
   }
 
