@@ -544,6 +544,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   private void startHTTPServer(final CommonL2Config commonL2Config, final TerracottaConnector tcConnector)
       throws Exception {
     this.httpServer = new Server();
+    this.httpServer.setSendServerVersion(false);
     this.httpServer.addConnector(tcConnector);
 
     Context context = new Context(null, "/", Context.NO_SESSIONS | Context.SECURITY);
