@@ -231,6 +231,7 @@
             </goals>
             <configuration>
               <zipFile>${archive}</zipFile>
+              <privateClassSuffix>.class_terracotta</privateClassSuffix>
             </configuration>            
           </execution>
         </executions>

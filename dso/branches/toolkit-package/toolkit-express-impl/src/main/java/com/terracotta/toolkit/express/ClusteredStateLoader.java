@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class ClusteredStateLoader extends SecureClassLoader {
   private static final boolean      USE_APP_JTA_CLASSES;
+  private static final String       PRIVATE_CLASS_SUFFIX = ".class_terracotta";
 
   private final ClassLoader         appLoader;
   private final Map<String, byte[]> extraClasses = new ConcurrentHashMap<String, byte[]>();
@@ -128,7 +129,7 @@ class ClusteredStateLoader extends SecureClassLoader {
   }
 
   private URL findClassWithPrefix(String name) {
-    String resource = name.replace('.', '/').concat(".clazz");
+    String resource = name.replace('.', '/').concat(PRIVATE_CLASS_SUFFIX);
     for (String prefix : embeddedResourcePrefixes) {
       URL url = appLoader.getResource(prefix + resource);
       if (url != null) { return url; }
@@ -137,7 +138,8 @@ class ClusteredStateLoader extends SecureClassLoader {
   }
 
   private URL findResourceWithPrefix(String name) {
-    String resource = name.endsWith(".class") ? name.substring(0, name.lastIndexOf(".class")) + ".clazz" : name;
+    String resource = name.endsWith(".class") ? name.substring(0, name.lastIndexOf(".class")) + PRIVATE_CLASS_SUFFIX
+        : name;
     for (String prefix : embeddedResourcePrefixes) {
       URL url = appLoader.getResource(prefix + resource);
       if (url != null) { return url; }
