@@ -1,7 +1,8 @@
 class ExternalResourceResolver
-  def initialize(flavor, repositories, use_local_maven_repo = false)
+  include Maven
+
+  def initialize(flavor, use_local_maven_repo = false)
     @flavor = flavor.to_s.downcase
-    @repositories = repositories
     @use_local_maven_repo = use_local_maven_repo
     @download_util = DownloadUtil.new(Registry[:static_resources].global_cache_directory)
   end
@@ -22,7 +23,7 @@ class ExternalResourceResolver
   private
 
   LOCAL_MAVEN_REPO = "#{ENV['HOME']}/.m2/repository"
-  
+
   def post_actions(dest_dir, actions)
     actions.each do |action|
       next unless (action['kit_edition'] == nil) || (action['kit_edition'] == @flavor)
@@ -43,21 +44,21 @@ class ExternalResourceResolver
     success = false
     result = nil
 
-    candidate_urls = if resource['maven_artifact'] == true
-      artifact_path = maven_artifact_path(resource)
-      repos = (use_local_maven_repo? ? [LOCAL_MAVEN_REPO] : []) + @repositories
-      repos.map {|repo| "#{repo}/#{artifact_path}"}
+    if resource['maven_artifact'] == true
+      settings_xml = File.join(File.dirname(__FILE__), 'maven-settings.xml')
+      dest_file = File.join(dest_dir, maven_artifact_file(resource))
+      maven("dependency:get", '-s', settings_xml,
+            "-Dartifact=#{maven_artifact_string(resource)}",
+            "-Dtransitive=false",
+            "-Ddest=#{dest_file}")
+      result = dest_file
+      success = true
     else
-      [resource['url']]
-    end
-
-    candidate_urls.each do |url|
-      puts "trying #{url}"
+      url = resource['url']
       dest_file = File.join(dest_dir, resource['name'] || File.basename(url))
       result = download(url, dest_file)
       if result
         success = true
-        break
       end
     end
 
@@ -79,7 +80,7 @@ class ExternalResourceResolver
     FileUtils.mkdir_p(exploded_dir)
 
     excludes = options['excludes'] || ''
-    
+
     case archive
     when /\.tar\.gz$/
       ant.untar(:src => archive, :dest => exploded_dir, :compression => "gzip")
@@ -92,7 +93,7 @@ class ExternalResourceResolver
     # recover execution bits
     ant.chmod(:dir => exploded_dir, :perm => "ugo+x",
       :includes => "**/*.sh **/*.bat **/*.exe **/bin/** **/lib/**")
-    
+
     if options['remove_root_folder'] == true
       # assume the zip file contains a root folder
       root_dir = nil
@@ -111,13 +112,24 @@ class ExternalResourceResolver
     FileUtils.rm_rf(tmp_dir)
     FileUtils.remove(archive) if options['delete_archive']
   end
-  
-  def maven_artifact_path(artifact)
+
+  def maven_artifact_file(artifact)
     extension = artifact['type'] || 'jar'
     classifier = artifact['classifier'] ? "-#{artifact['classifier']}" : ''
-    filename = "#{artifact['artifactId']}-#{artifact['version']}#{classifier}.#{extension}"
-  
-    "#{artifact['groupId'].gsub('.', '/')}/#{artifact['artifactId']}/#{artifact['version']}/#{filename}"
+    "#{artifact['artifactId']}-#{artifact['version']}#{classifier}.#{extension}"
+  end
+
+  def maven_artifact_path(artifact)
+    "#{artifact['groupId'].gsub('.', '/')}/#{artifact['artifactId']}/#{artifact['version']}/#{maven_artifact_file(artifact)}"
+  end
+
+  def maven_artifact_string(artifact)
+    coordinates = [artifact['groupId'],
+                   artifact['artifactId'],
+                   artifact['version'],
+                   artifact['type'] || 'jar',
+                   artifact['classifier']]
+    coordinates.compact.join(':')
   end
 
   def download(url, dest_file)

@@ -23,10 +23,7 @@ class BaseCodeTerracottaBuilder <  TerracottaBuilder
 
   def assemble_external_resource(resource_def)
     resource_config = YAML.load_file(File.join(@basedir.to_s, resource_def))
-    default_repos = resource_config['default_repos']
-    puts "Repos for external resources: \n#{default_repos.join("\n")}"
-    resolver = ExternalResourceResolver.new(@flavor, default_repos,
-                                            config_source['maven.useLocalRepo'])
+    resolver = ExternalResourceResolver.new(@flavor, config_source['maven.useLocalRepo'])
     artifacts = resource_config['artifacts']
     artifacts.each do |artifact|
       next if @no_demo && artifact['is_demo'] == true
