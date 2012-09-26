@@ -26,6 +26,7 @@ import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.config.Directories;
+import com.tc.config.HaConfigImpl;
 import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.CommonL2Config;
 import com.tc.config.schema.ConfigurationModel;
@@ -44,6 +45,8 @@ import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
 import com.tc.license.LicenseManager;
+import com.tc.license.LicenseUsageManager;
+import com.tc.license.LicenseUsageManagerImpl;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -104,6 +107,10 @@ public class TCServerImpl extends SEDA implements TCServer {
   public static final String                STATISTICS_GATHERER_SERVLET_PREFIX           = "/statistics-gatherer";
   public static final String                STATISTICS_GATHERER_SERVLET_PATH             = STATISTICS_GATHERER_SERVLET_PREFIX
                                                                                            + "/*";
+  public static final String                LICENSE_SERVLET_PREFIX                       = "/license";
+  public static final String                LICENSE_SERVLET_PATH                         = LICENSE_SERVLET_PREFIX
+                                                                                           + "/*";
+
   public static final String                L1_RECONNECT_PROPERTIES_FROML2_SERVELET_PATH = "/l1reconnectproperties";
 
   public static final String                HTTP_AUTHENTICATION_ROLE_STATISTICS          = "statistics";
@@ -131,6 +138,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   protected final ConnectionPolicy          connectionPolicy;
   private boolean                           shutdown                                     = false;
   protected final TCSecurityManager         securityManager;
+  private final LicenseUsageManager         licenseUsageManager;
 
   /**
    * This should only be used for tests.
@@ -151,8 +159,14 @@ public class TCServerImpl extends SEDA implements TCServer {
     Assert.assertNotNull(manager);
     validateEnterpriseFeatures(manager);
     this.configurationSetupManager = manager;
+    if (new HaConfigImpl(manager).isActiveCoordinatorGroup()) {
+      this.licenseUsageManager = new LicenseUsageManagerImpl();
+    } else {
+      // LicenseUsageManager will work for only Active Server.
+      this.licenseUsageManager = null;
+    }
 
-    if(configurationSetupManager.isSecure()) {
+    if (configurationSetupManager.isSecure()) {
       this.securityManager = createSecurityManager(configurationSetupManager.getSecurity());
     } else {
       this.securityManager = null;
@@ -166,8 +180,8 @@ public class TCServerImpl extends SEDA implements TCServer {
   }
 
   protected TCSecurityManager createSecurityManager(final SecurityConfig securityConfig) {
-    throw new UnsupportedOperationException("Only Terracotta EE supports the security feature, " +
-                                            "you're currently running an OS version");
+    throw new UnsupportedOperationException("Only Terracotta EE supports the security feature, "
+                                            + "you're currently running an OS version");
   }
 
   private void validateEnterpriseFeatures(final L2ConfigurationSetupManager manager) {
@@ -473,7 +487,9 @@ public class TCServerImpl extends SEDA implements TCServer {
         consoleLogger.info("Available Max Runtime Memory: " + (Runtime.getRuntime().maxMemory() / 1024 / 1024) + "MB");
       }
 
-      TCServerImpl.this.terracottaConnector = new TerracottaConnector(TCServerImpl.this.configurationSetupManager.getSecurity() != null);
+      TCServerImpl.this.terracottaConnector = new TerracottaConnector(
+                                                                      TCServerImpl.this.configurationSetupManager
+                                                                          .getSecurity() != null);
       startHTTPServer(commonL2Config, TCServerImpl.this.terracottaConnector);
       Stage stage = getStageManager().createStage("dso-http-bridge",
                                                   new HttpConnectionHandler(TCServerImpl.this.terracottaConnector), 1,
@@ -557,14 +573,14 @@ public class TCServerImpl extends SEDA implements TCServer {
 
     Context context = new Context(null, "/", Context.NO_SESSIONS | Context.SECURITY);
 
-    if(commonL2Config.isSecure()) {
+    if (commonL2Config.isSecure()) {
       final String pathSpec = "/*";
       final TCUserRealm userRealm = new TCUserRealm(securityManager);
       setupBasicAuth(context, pathSpec, userRealm, HTTP_SECURITY_ROLE);
       logger.info("HTTPS Authentication enabled for path '" + pathSpec + "'");
     } else if (commonL2Config.httpAuthentication()) {
-      final HashUserRealm userRealm = new HashUserRealm("Terracotta Statistics Gatherer", commonL2Config
-          .httpAuthenticationUserRealmFile());
+      final HashUserRealm userRealm = new HashUserRealm("Terracotta Statistics Gatherer",
+                                                        commonL2Config.httpAuthenticationUserRealmFile());
       setupBasicAuth(context, STATISTICS_GATHERER_SERVLET_PATH, userRealm, HTTP_AUTHENTICATION_ROLE_STATISTICS);
       logger.info("HTTP Authentication enabled for path '" + STATISTICS_GATHERER_SERVLET_PATH
                   + "', using user realm file '" + commonL2Config.httpAuthenticationUserRealmFile() + "'");
@@ -573,7 +589,9 @@ public class TCServerImpl extends SEDA implements TCServer {
     context.setAttribute(ConfigServlet.CONFIG_ATTRIBUTE, this.configurationSetupManager);
     context.setAttribute(GroupInfoServlet.GROUP_INFO_ATTRIBUTE, this.configurationSetupManager);
     context.setAttribute(GroupIDMapServlet.GROUPID_MAP_ATTRIBUTE, this.configurationSetupManager);
-
+    if (licenseUsageManager != null) {
+      context.setAttribute(LicenseServlet.LICENSE_USAGE_MANAGER_ATTRIBUTE, this.licenseUsageManager);
+    }
     final boolean cvtRestEnabled = TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.CVT_REST_INTERFACE_ENABLED, true);
     if (cvtRestEnabled) {
@@ -606,6 +624,9 @@ public class TCServerImpl extends SEDA implements TCServer {
     createAndAddServlet(servletHandler, ConfigServlet.class.getName(), CONFIG_SERVLET_PATH);
     createAndAddServlet(servletHandler, GroupInfoServlet.class.getName(), GROUP_INFO_SERVLET_PATH);
     createAndAddServlet(servletHandler, GroupIDMapServlet.class.getName(), GROUPID_MAP_SERVLET_PATH);
+    if (new HaConfigImpl(configurationSetupManager).isActiveCoordinatorGroup()) {
+      createAndAddServlet(servletHandler, LicenseServlet.class.getName(), LICENSE_SERVLET_PATH);
+    }
 
     if (cvtRestEnabled) {
       createAndAddServlet(servletHandler, StatisticsGathererServlet.class.getName(), STATISTICS_GATHERER_SERVLET_PATH);
@@ -658,7 +679,8 @@ public class TCServerImpl extends SEDA implements TCServer {
       tcInstallDir = null;
     }
 
-    if (tcInstallDir != null && TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.MANAGEMENT_REST_ENABLED, true)) {
+    if (tcInstallDir != null
+        && TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.MANAGEMENT_REST_ENABLED, true)) {
       // register REST webapp
       File managementDir = new File(tcInstallDir, "management");
 
@@ -829,17 +851,13 @@ public class TCServerImpl extends SEDA implements TCServer {
 
   @Override
   public String getSecurityServiceLocation() {
-    if (configurationSetupManager.getSecurity() == null) {
-      return null;
-    }
+    if (configurationSetupManager.getSecurity() == null) { return null; }
     return configurationSetupManager.getSecurity().getSecurityServiceLocation();
   }
 
   @Override
   public Integer getSecurityServiceTimeout() {
-    if (configurationSetupManager.getSecurity() == null) {
-      return null;
-    }
+    if (configurationSetupManager.getSecurity() == null) { return null; }
     return configurationSetupManager.getSecurity().getSecurityServiceTimeout();
   }
 
@@ -862,7 +880,7 @@ public class TCServerImpl extends SEDA implements TCServer {
 
 class TCUserRealm implements UserRealm {
 
-  private final ConcurrentHashMap<String, Principal> users           = new ConcurrentHashMap<String, Principal>();
+  private final ConcurrentHashMap<String, Principal> users = new ConcurrentHashMap<String, Principal>();
   private final TCSecurityManager                    securityManager;
 
   TCUserRealm(final TCSecurityManager securityManager) {
@@ -881,8 +899,8 @@ class TCUserRealm implements UserRealm {
 
   @Override
   public Principal authenticate(final String username, final Object credentials, final Request request) {
-    final Principal authenticatedUser = securityManager.authenticate(username, ((String)credentials).toCharArray());
-    if(authenticatedUser != null) {
+    final Principal authenticatedUser = securityManager.authenticate(username, ((String) credentials).toCharArray());
+    if (authenticatedUser != null) {
       users.put(authenticatedUser.getName(), authenticatedUser);
     }
     return authenticatedUser;
@@ -918,5 +936,3 @@ class TCUserRealm implements UserRealm {
     users.remove(user.getName());
   }
 }
-
-
