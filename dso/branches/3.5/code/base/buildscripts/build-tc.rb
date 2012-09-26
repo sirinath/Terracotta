@@ -15,6 +15,7 @@ require 'yaml'
 require 'set'
 require 'erb'
 require 'find'
+require 'maven'
 
 require 'buildscripts/cross_platform'
 require 'buildscripts/autorequire'

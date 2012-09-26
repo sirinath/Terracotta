@@ -1,0 +1,57 @@
+<settings xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <interactiveMode>false</interactiveMode>
+
+  <profiles>
+    <profile>
+      <id>terracotta-repositories</id>
+      <repositories>
+        <repository>
+          <id>terracotta-mirror</id>
+          <url>http://nexus.terracotta.lan:8080/content/groups/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>terracotta-public-releases</id>
+          <url>http://www.terracotta.org/download/reflector/releases</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>terracotta-public-snapshots</id>
+          <url>http://www.terracotta.org/download/reflector/snapshots</url>
+          <releases><enabled>false</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>terracotta-mirror</id>
+          <url>http://nexus.terracotta.lan:8080/content/groups/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>terracotta-public-releases</id>
+          <url>http://www.terracotta.org/download/reflector/releases</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>terracotta-public-snapshots</id>
+          <url>http://www.terracotta.org/download/reflector/snapshots</url>
+          <releases><enabled>false</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>terracotta-repositories</activeProfile>
+  </activeProfiles>
+
+</settings>

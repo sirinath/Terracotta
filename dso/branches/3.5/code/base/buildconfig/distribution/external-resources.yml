@@ -1,13 +1,4 @@
 
-default_repos:
-  - http://nexus:8080/content/groups/public
-  - http://kong/repo/snapshots
-  - http://kong/repo/staging
-  - http://kong/repo/releases
-  - http://www.terracotta.org/download/reflector/snapshots
-  - http://www.terracotta.org/download/reflector/releases
-  - http://repo1.maven.org/maven2
-
 artifacts:
 # begin ehcache samples
   - maven_artifact: true
