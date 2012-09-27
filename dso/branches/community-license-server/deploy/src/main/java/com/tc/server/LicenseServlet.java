@@ -7,6 +7,7 @@ import org.mortbay.util.ajax.JSON;
 import org.terracotta.license.License;
 import org.terracotta.license.LicenseException;
 
+import com.tc.license.LicenseServerConstants;
 import com.tc.license.LicenseUsageManager;
 import com.tc.license.LicenseUsageManager.LicenseServerState;
 
@@ -26,18 +27,44 @@ public class LicenseServlet extends RestfulServlet {
     this.licenseUsageManager = (LicenseUsageManager) getServletContext().getAttribute(LICENSE_USAGE_MANAGER_ATTRIBUTE);
   }
 
+  public void methodRegisterNode(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    try {
+      String jvmId = request.getParameter(LicenseServerConstants.JVM_UUID);
+      String machineName = request.getParameter(LicenseServerConstants.MACHINE_NAME);
+      String checksum = request.getParameter(LicenseServerConstants.CHECKSUM);
+      licenseUsageManager.registerNode(jvmId, machineName, checksum);
+
+      sendResponse(response, getSuccessResponseMap());
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
+    }
+  }
+
+  public void methodUnregisterNode(final HttpServletRequest request, final HttpServletResponse response)
+      throws Exception {
+    try {
+      String jvmId = request.getParameter(LicenseServerConstants.JVM_UUID);
+      String checksum = request.getParameter(LicenseServerConstants.CHECKSUM);
+      licenseUsageManager.unregisterNode(jvmId);
+      sendResponse(response, getSuccessResponseMap());
+
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
+    }
+  }
+
   public void methodFetchLicense(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     License license = licenseUsageManager.getLicense();
-    Map<String, String> responseMap = new HashMap<String, String>();
+    Map<String, String> responseMap = getSuccessResponseMap();
     responseMap.put(LicenseServerConstants.LICENSE, license.toString());
-    sendResponse(response, responseMap, true);
+    sendResponse(response, responseMap);
   }
 
   public void methodState(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     LicenseServerState state = licenseUsageManager.getState();
-    Map<String, String> responseMap = new HashMap<String, String>();
+    Map<String, String> responseMap = getSuccessResponseMap();
     responseMap.put(LicenseServerConstants.STATE, state.toString());
-    sendResponse(response, responseMap, true);
+    sendResponse(response, responseMap);
   }
 
   public void methodAllocateL1BigMemory(final HttpServletRequest request, final HttpServletResponse response)
@@ -47,9 +74,9 @@ public class LicenseServlet extends RestfulServlet {
       String cacheName = request.getParameter(LicenseServerConstants.FULLY_QUALIFIED_CACHE_NAME);
       Long memory = Long.parseLong(request.getParameter(LicenseServerConstants.MEMORY));
       licenseUsageManager.allocateL1BigMemory(uuid, cacheName, memory);
-      sendResponse(response, null, true);
+      sendResponse(response, getSuccessResponseMap());
     } catch (Exception e) {
-      sendResponse(response, null, false);
+      sendResponse(response, getFailureResponseMap(e));
     }
   }
 
@@ -59,33 +86,64 @@ public class LicenseServlet extends RestfulServlet {
       String uuid = request.getParameter(LicenseServerConstants.JVM_UUID);
       String cacheName = request.getParameter(LicenseServerConstants.FULLY_QUALIFIED_CACHE_NAME);
       licenseUsageManager.releaseL1BigMemory(uuid, cacheName);
-      sendResponse(response, null, true);
+      sendResponse(response, getSuccessResponseMap());
     } catch (Exception e) {
-      sendResponse(response, null, false);
+      sendResponse(response, getFailureResponseMap(e));
+    }
+  }
+
+  public void methodAllocateL2BigMemory(final HttpServletRequest request, final HttpServletResponse response)
+      throws Exception {
+    try {
+      String uuid = request.getParameter(LicenseServerConstants.JVM_UUID);
+      Long memory = Long.parseLong(request.getParameter(LicenseServerConstants.MEMORY));
+      licenseUsageManager.allocateL2BigMemory(uuid, memory);
+      sendResponse(response, getSuccessResponseMap());
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
+    }
+  }
+
+  public void methodReleaseL2BigMemory(final HttpServletRequest request, final HttpServletResponse response)
+      throws Exception {
+    try {
+      String uuid = request.getParameter(LicenseServerConstants.JVM_UUID);
+      licenseUsageManager.releaseL2BigMemory(uuid);
+      sendResponse(response, getSuccessResponseMap());
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
     }
   }
 
   public void methodReloadLicense(final HttpServletRequest request, final HttpServletResponse response)
-  throws Throwable {
+      throws Throwable {
     try {
       String license = request.getParameter(LicenseServerConstants.LICENSE);
       licenseUsageManager.reloadLicense(license);
+      sendResponse(response, getSuccessResponseMap());
     } catch (Exception e) {
-    sendResponse(response, null, false);
-  }
-    
-  }
-
-  private void sendResponse(final HttpServletResponse response, Map<String, String> attributes, boolean success)
-      throws Exception {
-    final Map<String, String> responseMap = new HashMap<String, String>();
-
-    responseMap.put(LicenseServerConstants.RESPONSE_CODE, success ? LicenseServerConstants.SUCCESS_CODE
-        : LicenseServerConstants.FAILURE_CODE);
-    if (attributes != null) {
-      responseMap.putAll(attributes);
+      sendResponse(response, getFailureResponseMap(e));
     }
+
+  }
+
+  private void sendResponse(final HttpServletResponse response, Map<String, String> attributes)
+      throws Exception {
+    final Map<String, String> responseMap = (attributes == null) ? new HashMap<String, String>() : attributes;
     print(response, JSON.toString(responseMap));
+  }
+
+  private Map<String, String> getSuccessResponseMap() {
+    Map<String, String> paramMap = new HashMap<String, String>();
+    paramMap.put(LicenseServerConstants.RESPONSE_CODE, LicenseServerConstants.SUCCESS_CODE);
+    return paramMap;
+  }
+
+  private Map<String, String> getFailureResponseMap(Exception e) {
+    Map<String, String> paramMap = new HashMap<String, String>();
+    paramMap.put(LicenseServerConstants.RESPONSE_CODE, LicenseServerConstants.FAILURE_CODE);
+    paramMap.put(LicenseServerConstants.FAILURE_MESSAGE, e.getMessage());
+    return paramMap;
   }
 
   public void methodTest(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {

@@ -1,6 +1,7 @@
 package com.tc.license;
 
 import org.terracotta.license.License;
+import org.terracotta.license.LicenseException;
 
 public interface LicenseUsageManager {
 
@@ -8,23 +9,26 @@ public interface LicenseUsageManager {
     UNINITIALIZED, ACTIVE, PASSIVE
   }
 
-  public boolean allocateL1BigMemory(String clientUUID, String fullyQualifiedCacheName, long memoryInBytes);
+  public void registerNode(String jvmId, String machineName, String checksum) throws LicenseException;
 
-  public void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName);
+  public void unregisterNode(String jvmId) throws LicenseException;
 
-  public void allocateL2BigMemory(String serverUUID, long memoryInBytes);
+  public boolean allocateL1BigMemory(String clientUUID, String fullyQualifiedCacheName, long memoryInBytes)
+      throws LicenseException;
 
-  public void releaseL2BigMemory(String serverUUID);
+  public void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName) throws LicenseException;
 
-  public void freeUpAllResources(String UUID);
+  public void allocateL2BigMemory(String serverUUID, long memoryInBytes) throws LicenseException;
 
-  public void l1Joined(String clientUUID);
+  public void releaseL2BigMemory(String serverUUID) throws LicenseException;
 
-  public void l1Removed(String clientUUID);
+  public void l1Joined(String clientUUID) throws LicenseException;
 
-  public boolean verifyCapability(String capability);
+  public void l1Removed(String clientUUID) throws LicenseException;
 
-  public boolean reloadLicense(String license);
+  public boolean verifyCapability(String capability) throws LicenseException;
+
+  public boolean reloadLicense(String license) throws LicenseException;
 
   public License getLicense();
 

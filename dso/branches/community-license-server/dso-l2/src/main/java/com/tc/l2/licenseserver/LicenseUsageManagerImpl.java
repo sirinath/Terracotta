@@ -36,7 +36,10 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   // map of serverUUID,BigMemoryUsed
   private final Map<String, Long>                                     l2BigMemoryUsage = new HashMap<String, Long>();
 
-  private License                                                     license;
+  // map of jvmUUID, NodeName
+  private final Map<String, String>            registeredVMs    = new HashMap<String, String>();
+
+  private License                              license;
 
   private LicenseUsageState                                           licenseUsageState;
   private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners        = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
@@ -47,7 +50,24 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   }
 
   @Override
-  public synchronized boolean allocateL1BigMemory(String clientUUID, String fullyQualifiedCacheName, long memoryInBytes) {
+  public synchronized void registerNode(String jvmId, String machineName, String checksum) throws LicenseException {
+    if (registeredVMs.get(jvmId) != null) { throw new LicenseException("(JVM id =" + jvmId + ", JVM name ="
+                                                                       + machineName
+                                                                         + ") is already registered");
+      }
+    // TODO: Compare jvmId+license with checksum
+    registeredVMs.put(jvmId, machineName);
+  }
+
+  @Override
+  public synchronized void unregisterNode(String jvmId) {
+    if (registeredVMs.get(jvmId) == null) { throw new LicenseException("(JVM id =" + jvmId + ") was already registered"); }
+    freeUpAllResources(jvmId);
+  }
+
+  @Override
+  public synchronized boolean allocateL1BigMemory(String clientUUID, String fullyQualifiedCacheName, long memoryInBytes)
+      throws LicenseException {
     verifyCapability(CAPABILITY_EHCACHE_OFFHEAP);
 
     String licenseLimitString = license.getRequiredProperty(EHCACHE_MAX_OFFHEAP);
@@ -84,7 +104,7 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     long maxOffHeapLicensedInBytes = MemorySizeParser.parse(maxHeapSizeFromLicense);
     long maxOffHeapConfiguredInBytes = MemorySizeParser.parse(memory);
 
-    boolean offHeapSizeAllowed = maxOffHeapConfiguredInBytes <= maxOffHeapLicensedInBytes;
+    boolean offHeapSizeAllowed = maxOffHeapConfiguredInBytes + getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
     if (!offHeapSizeAllowed) { throw new LicenseException(
                                                           "Your license only allows up to "
                                                               + maxHeapSizeFromLicense
@@ -99,9 +119,19 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     l2BigMemoryUsage.remove(serverUUID);
   }
 
-  @Override
-  public synchronized void freeUpAllResources(String UUID) {
-    //
+
+  public synchronized void freeUpAllResources(String jvmId) {
+    registeredVMs.remove(jvmId); // Remove the jvmId from registered VMs
+
+    // Remove offheap allocations.
+    if (l1BigMemoryUsage.containsKey(jvmId)) {
+      l1BigMemoryUsage.remove(jvmId);
+      return;
+    }
+    if (l2BigMemoryUsage.containsKey(jvmId)) {
+      l2BigMemoryUsage.remove(jvmId);
+      return;
+    }
   }
 
   @Override
@@ -136,6 +166,10 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
 
   }
 
+  /**
+   * L1 always asks for aggregate memory. Therefore we exclude the client that made the request for the current
+   * allocation.
+   */
   private long getCurrentL1OffHeapUsage(String excludeClientUUID, String excludeCacheName) {
     long total = 0L;
     for (String client : l1BigMemoryUsage.keySet()) {
@@ -145,6 +179,14 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
         }
         total += entry.getValue();
       }
+    }
+    return total;
+  }
+
+  private long getCurrentL2OffHeapUsage(String excludeClientUUID) {
+    long total = 0L;
+    for (Map.Entry<String, Long> entry : l2BigMemoryUsage.entrySet()) {
+      total += entry.getValue();
     }
     return total;
   }
@@ -189,6 +231,7 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
       throw new AssertionError("Message of Unknown type received :" + msg.getClass().getName());
     }
   }
+
 
   private void licenseUsageStateChanged() {
     for (LicenseUsageStateChangeListener listener : listeners) {
