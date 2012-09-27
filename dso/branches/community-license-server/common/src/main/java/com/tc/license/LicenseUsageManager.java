@@ -22,10 +22,6 @@ public interface LicenseUsageManager {
 
   public void releaseL2BigMemory(String serverUUID) throws LicenseException;
 
-  public void l1Joined(String clientUUID) throws LicenseException;
-
-  public void l1Removed(String clientUUID) throws LicenseException;
-
   public boolean verifyCapability(String capability) throws LicenseException;
 
   public boolean reloadLicense(String license) throws LicenseException;
