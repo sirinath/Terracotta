@@ -20,8 +20,6 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -29,40 +27,30 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChangeListener, GroupMessageListener {
 
-  private LicenseServerState                                          state            = LicenseServerState.UNINITIALIZED;
-
-  // map of <clientUUID,<FQCacheName,BigMemoryUsed>>
-  private final Map<String, Map<String, Long>>                        l1BigMemoryUsage = new HashMap<String, Map<String, Long>>();
-  // map of serverUUID,BigMemoryUsed
-  private final Map<String, Long>                                     l2BigMemoryUsage = new HashMap<String, Long>();
-
-  // map of jvmUUID, NodeName
-  private final Map<String, String>            registeredVMs    = new HashMap<String, String>();
-
-  private License                              license;
-
+  private LicenseServerState                                          state     = LicenseServerState.UNINITIALIZED;
   private LicenseUsageState                                           licenseUsageState;
-  private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners        = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
+  private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
 
   public LicenseUsageManagerImpl(License license) {
-    validateLicense(license);
-    this.license = license;
+    this.licenseUsageState = new LicenseUsageState();
+    licenseUsageState.setLicense(license);
   }
 
   @Override
   public synchronized void registerNode(String jvmId, String machineName, String checksum) throws LicenseException {
-    if (registeredVMs.get(jvmId) != null) { throw new LicenseException("(JVM id =" + jvmId + ", JVM name ="
-                                                                       + machineName
-                                                                         + ") is already registered");
-      }
+    if (licenseUsageState.isVMRegistered(jvmId)) { throw new LicenseException("(JVM id =" + jvmId + ", JVM name ="
+                                                                              + machineName + ") is already registered"); }
     // TODO: Compare jvmId+license with checksum
-    registeredVMs.put(jvmId, machineName);
+    licenseUsageState.registerVM(jvmId, machineName);
+    licenseUsageStateChanged();
   }
 
   @Override
   public synchronized void unregisterNode(String jvmId) {
-    if (registeredVMs.get(jvmId) == null) { throw new LicenseException("(JVM id =" + jvmId + ") was already registered"); }
+    if (!licenseUsageState.isVMRegistered(jvmId)) { throw new LicenseException("(JVM id =" + jvmId
+                                                                               + ") was already registered"); }
     freeUpAllResources(jvmId);
+    licenseUsageStateChanged();
   }
 
   @Override
@@ -70,145 +58,90 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
       throws LicenseException {
     verifyCapability(CAPABILITY_EHCACHE_OFFHEAP);
 
-    String licenseLimitString = license.getRequiredProperty(EHCACHE_MAX_OFFHEAP);
+    String licenseLimitString = licenseUsageState.getLicense().getRequiredProperty(EHCACHE_MAX_OFFHEAP);
     long licenseLimitBytes = MemorySizeParser.parse(licenseLimitString);
 
-    long current = getCurrentL1OffHeapUsage(fullyQualifiedCacheName, fullyQualifiedCacheName);
+    long current = licenseUsageState.getCurrentL1OffHeapUsage(fullyQualifiedCacheName, fullyQualifiedCacheName);
 
-    if ((current + memoryInBytes) > licenseLimitBytes) {
-
-    throw new LicenseException("Attempt to exceed offHeap license limit of " + licenseLimitString + " by addition of "
-                               + memoryInBytes + " bytes for cache [" + fullyQualifiedCacheName + "]"); }
-
-    Map<String, Long> map = l1BigMemoryUsage.get(clientUUID);
-    if (map == null) {
-      map = new HashMap<String, Long>();
-      l1BigMemoryUsage.put(clientUUID, map);
+    if ((current + memoryInBytes) > licenseLimitBytes) { throw new LicenseException(
+                                                                                    "Attempt to exceed offHeap license limit of "
+                                                                                        + licenseLimitString
+                                                                                        + " by addition of "
+                                                                                        + memoryInBytes
+                                                                                        + " bytes for cache ["
+                                                                                        + fullyQualifiedCacheName + "]");
+    //
     }
-    map.put(fullyQualifiedCacheName, memoryInBytes);
+
+    licenseUsageState.allocateL1BM(clientUUID, fullyQualifiedCacheName, memoryInBytes);
+    licenseUsageStateChanged();
     return true;
 
   }
 
   @Override
   public synchronized void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName) {
-    Map<String, Long> map = l1BigMemoryUsage.get(clientUUID);
-    if (map != null) {
-      map.remove(fullyQualifiedCacheName);
-    }
+    licenseUsageState.releaseL1BigMemory( clientUUID,  fullyQualifiedCacheName) ;
+    licenseUsageStateChanged();
   }
 
   public synchronized void allocateL2BigMemory(String serverUUID, String memory) {
     verifyCapability(CAPABILITY_TERRACOTTA_SERVER_ARRAY_OFFHEAP);
-    String maxHeapSizeFromLicense = license.getRequiredProperty(TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP);
+    String maxHeapSizeFromLicense = licenseUsageState.getLicense()
+        .getRequiredProperty(TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP);
     long maxOffHeapLicensedInBytes = MemorySizeParser.parse(maxHeapSizeFromLicense);
     long maxOffHeapConfiguredInBytes = MemorySizeParser.parse(memory);
 
-    boolean offHeapSizeAllowed = maxOffHeapConfiguredInBytes + getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
+    boolean offHeapSizeAllowed = maxOffHeapConfiguredInBytes + licenseUsageState.getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
     if (!offHeapSizeAllowed) { throw new LicenseException(
                                                           "Your license only allows up to "
                                                               + maxHeapSizeFromLicense
                                                               + " in offheap size. Your Terracotta server is configured with "
                                                               + memory); }
-    l2BigMemoryUsage.put(serverUUID, maxOffHeapConfiguredInBytes);
+    licenseUsageState.allocateL2BigMemory(serverUUID, maxOffHeapConfiguredInBytes);
+    licenseUsageStateChanged();
 
   }
 
   @Override
   public synchronized void releaseL2BigMemory(String serverUUID) {
-    l2BigMemoryUsage.remove(serverUUID);
+    licenseUsageState.releaseL2BigMemory(serverUUID);
+    licenseUsageStateChanged();
   }
-
 
   public synchronized void freeUpAllResources(String jvmId) {
-    registeredVMs.remove(jvmId); // Remove the jvmId from registered VMs
-
-    // Remove offheap allocations.
-    if (l1BigMemoryUsage.containsKey(jvmId)) {
-      l1BigMemoryUsage.remove(jvmId);
-      return;
-    }
-    if (l2BigMemoryUsage.containsKey(jvmId)) {
-      l2BigMemoryUsage.remove(jvmId);
-      return;
-    }
-  }
-
-  @Override
-  public synchronized void l1Joined(String clientUUID) {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public synchronized void l1Removed(String clientUUID) {
-    // TODO Auto-generated method stub
-
+    licenseUsageState.unregisterVM(jvmId); // Remove the jvmId from deallocate all available licenses
+    licenseUsageStateChanged();
   }
 
   @Override
   public synchronized boolean verifyCapability(String capability) {
-    return this.license.capabilities().contains(capability);
+    return this.licenseUsageState.getLicense().capabilities().contains(capability);
   }
 
   @Override
   public synchronized boolean reloadLicense(String licenseParam) {
     AbstractLicenseResolverFactory factory = new EnterpriseLicenseResolverFactory();
     License licenseResolved = factory.resolveLicense(new ByteArrayInputStream(licenseParam.getBytes()));
-    validateLicense(licenseResolved);
-    this.license = licenseResolved;
+    licenseUsageState.setLicense(licenseResolved);
+    licenseUsageStateChanged();
     return true;
   }
 
   @Override
   public synchronized void allocateL2BigMemory(String serverUUID, long memoryInBytes) {
     // TODO Auto-generated method stub
-
-  }
-
-  /**
-   * L1 always asks for aggregate memory. Therefore we exclude the client that made the request for the current
-   * allocation.
-   */
-  private long getCurrentL1OffHeapUsage(String excludeClientUUID, String excludeCacheName) {
-    long total = 0L;
-    for (String client : l1BigMemoryUsage.keySet()) {
-      for (Map.Entry<String, Long> entry : l1BigMemoryUsage.get(client).entrySet()) {
-        if (client.equals(excludeClientUUID) && excludeCacheName.equals(excludeCacheName)) {
-          continue;
-        }
-        total += entry.getValue();
-      }
-    }
-    return total;
-  }
-
-  private long getCurrentL2OffHeapUsage(String excludeClientUUID) {
-    long total = 0L;
-    for (Map.Entry<String, Long> entry : l2BigMemoryUsage.entrySet()) {
-      total += entry.getValue();
-    }
-    return total;
+    licenseUsageStateChanged();
   }
 
   @Override
   public synchronized License getLicense() {
-    return license;
+    return licenseUsageState.getLicense();
   }
 
   @Override
   public synchronized LicenseServerState getState() {
     return state;
-  }
-
-  private void validateLicense(License licenseParam) {
-
-    if (licenseParam == null) {
-      throw new LicenseException("Your Terracotta license is null ");
-    } else {
-      if (licenseParam.isExpired()) { throw new LicenseException("Your Terracotta license has expired "
-                                                                 + license.expirationDate()); }
-    }
   }
 
   @Override
@@ -231,7 +164,6 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
       throw new AssertionError("Message of Unknown type received :" + msg.getClass().getName());
     }
   }
-
 
   private void licenseUsageStateChanged() {
     for (LicenseUsageStateChangeListener listener : listeners) {
