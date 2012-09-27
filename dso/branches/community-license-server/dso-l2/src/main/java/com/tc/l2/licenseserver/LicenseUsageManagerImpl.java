@@ -15,6 +15,9 @@ import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
 import com.tc.license.LicenseUsageManager;
+import com.tc.net.NodeID;
+import com.tc.net.groups.GroupMessage;
+import com.tc.net.groups.GroupMessageListener;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -23,7 +26,7 @@ import java.util.Map;
 /**
  * Class to maintain the current state of the cluster in terms of allocated resources and resources available.
  */
-public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChangeListener {
+public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChangeListener, GroupMessageListener {
 
   private LicenseServerState                   state            = LicenseServerState.UNINITIALIZED;
 
@@ -171,6 +174,11 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     } else {
       this.state = LicenseServerState.UNINITIALIZED;
     }
+  }
+
+  @Override
+  public void messageReceived(NodeID fromNode, GroupMessage msg) {
+    //
   }
 
 }
