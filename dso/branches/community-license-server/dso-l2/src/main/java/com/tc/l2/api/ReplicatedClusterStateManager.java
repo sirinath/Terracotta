@@ -4,6 +4,7 @@
  */
 package com.tc.l2.api;
 
+import com.tc.l2.licenseserver.LicenseUsageState;
 import com.tc.net.NodeID;
 import com.tc.net.groups.GroupException;
 import com.tc.util.State;
@@ -22,5 +23,7 @@ public interface ReplicatedClusterStateManager extends DGCIdPublisher {
   public void fireNodeLeftEvent(NodeID nodeID);
 
   public void setCurrentState(State currentState);
+
+  public void publishLicenseUsageState(LicenseUsageState licenseState);
 
 }
