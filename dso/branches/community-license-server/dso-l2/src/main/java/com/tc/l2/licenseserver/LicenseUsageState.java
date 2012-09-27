@@ -12,18 +12,24 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 public class LicenseUsageState implements Serializable {
 
   // map of <clientUUID,<FQCacheName,BigMemoryUsed>>
-  private final Map<String, Map<String, Long>>                        l1BigMemoryUsage = new HashMap<String, Map<String, Long>>();
+  private final Map<String, Map<String, Long>> l1BigMemoryUsage = new HashMap<String, Map<String, Long>>();
   // map of jvmUUID, NodeName
   private final Map<String, String>            registeredVMs    = new HashMap<String, String>();
   // map of serverUUID,BigMemoryUsed
-  private final Map<String, Long>                                     l2BigMemoryUsage = new HashMap<String, Long>();
+  private final Map<String, Long>              l2BigMemoryUsage = new HashMap<String, Long>();
+
+  private final SortedSet<JVMLease>            leaseSet         = new TreeSet<JVMLease>();
 
   private transient License                    license;
   private String                               licenseAsString;
+  public static long                           LEASE_PERIOD     = TimeUnit.HOURS.toMillis(24);
 
   public boolean isVMRegistered(String jvmId) {
     return registeredVMs.containsKey(jvmId);
@@ -31,6 +37,7 @@ public class LicenseUsageState implements Serializable {
 
   public void registerVM(String jvmId, String machineName) {
     registeredVMs.put(jvmId, machineName);
+    leaseSet.add(new JVMLease(jvmId, System.currentTimeMillis() + LEASE_PERIOD));
   }
 
   public void allocateL1BM(String clientUUID, String fullyQualifiedCacheName, long memoryInBytes) {
@@ -56,11 +63,11 @@ public class LicenseUsageState implements Serializable {
 
   public void releaseL2BigMemory(String serverUUID) {
     l2BigMemoryUsage.remove(serverUUID);
-
   }
 
   public void unregisterVM(String jvmId) {
     registeredVMs.remove(jvmId);
+    leaseSet.remove(new JVMLease(jvmId, System.currentTimeMillis()));
     if (l1BigMemoryUsage.containsKey(jvmId)) {
       l1BigMemoryUsage.remove(jvmId);
       return;
@@ -71,7 +78,7 @@ public class LicenseUsageState implements Serializable {
     }
 
   }
-  
+
   /**
    * L1 always asks for aggregate memory. Therefore we exclude the client that made the request for the current
    * allocation.
@@ -121,4 +128,75 @@ public class LicenseUsageState implements Serializable {
                                                                  + license.expirationDate()); }
     }
   }
+
+  public long getNextLeaseExpiryTime() {
+    if (leaseSet.size() == 0) {
+      return System.currentTimeMillis() + LEASE_PERIOD;
+    } else return leaseSet.first().getExpiryTime();
+  }
+
+  public boolean removeAllExpiredLease() {
+    boolean modified = false;
+    while(true){
+      if (leaseSet.size() == 0) { return modified; }
+      JVMLease lease = leaseSet.first();
+      if (lease.getExpiryTime() < System.currentTimeMillis()) {
+        unregisterVM(lease.getExpiredVMId());
+        leaseSet.remove(lease);
+      } else {
+        return modified;
+      }
+
+    }
+  }
+
+
+  public static class JVMLease implements Comparable<JVMLease> {
+
+    private Long         expiryTime;
+    private final String vmId;
+
+    public JVMLease(String vmId, long expiryTime) {
+      this.vmId = vmId;
+      this.expiryTime = expiryTime;
+    }
+
+    public String getExpiredVMId() {
+      return vmId;
+    }
+
+    public long getExpiryTime() {
+      return this.expiryTime;
+    }
+
+    public void renewLease(long newExpiryTime) {
+      this.expiryTime = newExpiryTime;
+    }
+
+    @Override
+    public int compareTo(JVMLease o) {
+      return this.expiryTime.compareTo(o.expiryTime);
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((vmId == null) ? 0 : vmId.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (obj == null) return false;
+      if (getClass() != obj.getClass()) return false;
+      JVMLease other = (JVMLease) obj;
+      if (vmId == null) {
+        if (other.vmId != null) return false;
+      } else if (!vmId.equals(other.vmId)) return false;
+      return true;
+    }
+  }
+
 }
