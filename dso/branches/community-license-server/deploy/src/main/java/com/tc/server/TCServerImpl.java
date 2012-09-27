@@ -19,6 +19,9 @@ import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.webapp.WebAppContext;
+import org.terracotta.license.AbstractLicenseResolverFactory;
+import org.terracotta.license.EnterpriseLicenseResolverFactory;
+import org.terracotta.license.License;
 
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.SEDA;
@@ -39,14 +42,13 @@ import com.tc.config.schema.messaging.http.GroupIDMapServlet;
 import com.tc.config.schema.messaging.http.GroupInfoServlet;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
+import com.tc.l2.licenseserver.LicenseUsageManagerImpl;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.StartupHelper;
 import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.license.LicenseManager;
-import com.tc.license.LicenseUsageManager;
-import com.tc.license.LicenseUsageManagerImpl;
+import com.tc.license.LicenseHelper;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -138,7 +140,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   protected final ConnectionPolicy          connectionPolicy;
   private boolean                           shutdown                                     = false;
   protected final TCSecurityManager         securityManager;
-  private final LicenseUsageManager         licenseUsageManager;
+  protected final LicenseUsageManagerImpl   licenseUsageManager;
 
   /**
    * This should only be used for tests.
@@ -160,7 +162,12 @@ public class TCServerImpl extends SEDA implements TCServer {
     validateEnterpriseFeatures(manager);
     this.configurationSetupManager = manager;
     if (new HaConfigImpl(manager).isActiveCoordinatorGroup()) {
-      this.licenseUsageManager = new LicenseUsageManagerImpl();
+      // ehcache core EE doesn't have any license code in the OSS portion
+      // therefore it's not necessary to rely on AbstractFactory to resolve
+      // EE or OSS factory. We can just simply pick EE version
+      AbstractLicenseResolverFactory factory = new EnterpriseLicenseResolverFactory();
+     License license = factory.resolveLicense();
+      this.licenseUsageManager = new LicenseUsageManagerImpl(license);
     } else {
       // LicenseUsageManager will work for only Active Server.
       this.licenseUsageManager = null;
@@ -178,20 +185,20 @@ public class TCServerImpl extends SEDA implements TCServer {
       throw new RuntimeException("Unable to setup StatisticsGathererSubSystem");
     }
   }
-
+  
   protected TCSecurityManager createSecurityManager(final SecurityConfig securityConfig) {
     throw new UnsupportedOperationException("Only Terracotta EE supports the security feature, "
                                             + "you're currently running an OS version");
   }
 
   private void validateEnterpriseFeatures(final L2ConfigurationSetupManager manager) {
-    if (!LicenseManager.enterpriseEdition()) return;
+    if (!LicenseHelper.enterpriseEdition()) return;
     if (manager.dsoL2Config().getPersistence().isSetOffheap()) {
       Offheap offHeapConfig = manager.dsoL2Config().getPersistence().getOffheap();
-      LicenseManager.verifyServerArrayOffheapCapability(offHeapConfig.getMaxDataSize());
+      LicenseHelper.verifyServerArrayOffheapCapability(offHeapConfig.getMaxDataSize());
     }
     if (manager.commonl2Config().authentication()) {
-      LicenseManager.verifyAuthenticationCapability();
+      LicenseHelper.verifyAuthenticationCapability();
     }
   }
 
@@ -260,7 +267,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   @Override
   public String getDescriptionOfCapabilities() {
     if (ProductInfo.getInstance().isEnterprise()) {
-      return LicenseManager.licensedCapabilities();
+      return LicenseHelper.licensedCapabilities();
     } else {
       return "Open source capabilities";
     }
@@ -561,7 +568,7 @@ public class TCServerImpl extends SEDA implements TCServer {
                                                                   ObjectStatsRecorder objectStatsRecorder,
                                                                   L2State l2State, TCServerImpl serverImpl) {
     return new DistributedObjectServer(configSetupManager, getThreadGroup(), policy, httpSink, serverInfo,
-                                       objectStatsRecorder, l2State, this, this, securityManager);
+                                       objectStatsRecorder, l2State, this, this, securityManager, licenseUsageManager);
   }
 
   private void startHTTPServer(final CommonL2Config commonL2Config, final TerracottaConnector tcConnector)

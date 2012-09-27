@@ -63,7 +63,17 @@ public class LicenseServlet extends RestfulServlet {
     } catch (Exception e) {
       sendResponse(response, null, false);
     }
+  }
 
+  public void methodReloadLicense(final HttpServletRequest request, final HttpServletResponse response)
+  throws Throwable {
+    try {
+      String license = request.getParameter(LicenseServerConstants.LICENSE);
+      licenseUsageManager.reloadLicense(license);
+    } catch (Exception e) {
+    sendResponse(response, null, false);
+  }
+    
   }
 
   private void sendResponse(final HttpServletResponse response, Map<String, String> attributes, boolean success)
