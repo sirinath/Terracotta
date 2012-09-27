@@ -22,20 +22,24 @@ import com.tc.net.groups.GroupMessageListener;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Class to maintain the current state of the cluster in terms of allocated resources and resources available.
  */
 public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChangeListener, GroupMessageListener {
 
-  private LicenseServerState                   state            = LicenseServerState.UNINITIALIZED;
+  private LicenseServerState                                          state            = LicenseServerState.UNINITIALIZED;
 
   // map of <clientUUID,<FQCacheName,BigMemoryUsed>>
-  private final Map<String, Map<String, Long>> l1BigMemoryUsage = new HashMap<String, Map<String, Long>>();
+  private final Map<String, Map<String, Long>>                        l1BigMemoryUsage = new HashMap<String, Map<String, Long>>();
   // map of serverUUID,BigMemoryUsed
-  private final Map<String, Long>              l2BigMemoryUsage = new HashMap<String, Long>();
+  private final Map<String, Long>                                     l2BigMemoryUsage = new HashMap<String, Long>();
 
-  private License                              license;
+  private License                                                     license;
+
+  private LicenseUsageState                                           licenseUsageState;
+  private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners        = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
 
   public LicenseUsageManagerImpl(License license) {
     validateLicense(license);
@@ -178,7 +182,26 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
 
   @Override
   public void messageReceived(NodeID fromNode, GroupMessage msg) {
-    //
+    if (msg instanceof LicenseStateMessage) {
+      LicenseStateMessage licenseStateMessage = (LicenseStateMessage) msg;
+      this.licenseUsageState = licenseStateMessage.getLicenseUsageState();
+    } else {
+      throw new AssertionError("Message of Unknown type received :" + msg.getClass().getName());
+    }
+  }
+
+  private void licenseUsageStateChanged() {
+    for (LicenseUsageStateChangeListener listener : listeners) {
+      listener.licenseStateChanged(licenseUsageState);
+    }
+  }
+
+  public void registerLicenseStateChangeListener(LicenseUsageStateChangeListener listener) {
+    listeners.add(listener);
+  }
+
+  public void unregisterLicenseStateChangeListener(LicenseUsageStateChangeListener listener) {
+    listeners.remove(listener);
   }
 
 }
