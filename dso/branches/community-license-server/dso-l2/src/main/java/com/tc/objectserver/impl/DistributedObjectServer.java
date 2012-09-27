@@ -43,6 +43,7 @@ import com.tc.l2.ha.ZapNodeProcessorWeightGeneratorFactory;
 import com.tc.l2.handler.DestroyableMapHandler;
 import com.tc.l2.licenseserver.LicenseStateMessage;
 import com.tc.l2.licenseserver.LicenseUsageManagerImpl;
+import com.tc.l2.licenseserver.LicenseUsageStateChangeListenerImpl;
 import com.tc.l2.objectserver.L2IndexStateManager;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.objectserver.L2PassiveSyncStateManager;
@@ -1232,6 +1233,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     if (licenseUsageManager != null) {
       this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.licenseUsageManager);
       this.l2Coordinator.getGroupManager().registerForMessages(LicenseStateMessage.class, this.licenseUsageManager);
+      this.licenseUsageManager
+          .registerLicenseStateChangeListener(new LicenseUsageStateChangeListenerImpl(this.l2Coordinator
+              .getReplicatedClusterStateManager()));
     }
 
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.l2Coordinator));
