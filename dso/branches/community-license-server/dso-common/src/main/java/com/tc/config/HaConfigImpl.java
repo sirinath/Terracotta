@@ -7,7 +7,7 @@ import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
-import com.tc.license.LicenseManager;
+import com.tc.license.LicenseHelper;
 import com.tc.net.GroupID;
 import com.tc.net.OrderedGroupIDs;
 import com.tc.net.TCSocketAddress;
@@ -37,7 +37,7 @@ public class HaConfigImpl implements HaConfig {
     ActiveServerGroupsConfig groupsConfig = this.configSetupManager.activeServerGroupsConfig();
     int groupCount = groupsConfig.getActiveServerGroupCount();
     if (isActiveActive()) {
-      LicenseManager.verifyServerStripingCapability();
+      LicenseHelper.verifyServerStripingCapability();
     }
     this.groups = new ServerGroup[groupCount];
     this.groupIDs = new GroupID[groupCount];
@@ -78,6 +78,7 @@ public class HaConfigImpl implements HaConfig {
   /**
    * @throws ConfigurationSetupException
    */
+  @Override
   public ReloadConfigChangeContext reloadConfiguration() throws ConfigurationSetupException {
     ActiveServerGroupsConfig asgsc = this.configSetupManager.activeServerGroupsConfig();
     int grpCount = asgsc.getActiveServerGroupCount();
@@ -117,26 +118,32 @@ public class HaConfigImpl implements HaConfig {
                                + activeServerGroupForThisL2);
   }
 
+  @Override
   public boolean isActiveActive() {
     return this.configSetupManager.activeServerGroupsConfig().getActiveServerGroupCount() > 1;
   }
 
+  @Override
   public boolean isDiskedBasedActivePassive() {
     return this.configSetupManager.haConfig().isDiskBasedActivePassive();
   }
 
+  @Override
   public boolean isNetworkedActivePassive() {
     return this.configSetupManager.haConfig().isNetworkedActivePassive();
   }
 
+  @Override
   public GroupID getActiveCoordinatorGroupID() {
     return this.activeCoordinatorGroupID;
   }
 
+  @Override
   public GroupID getThisGroupID() {
     return this.thisGroupID;
   }
 
+  @Override
   public GroupID[] getGroupIDs() {
     return this.groupIDs;
   }
@@ -174,6 +181,7 @@ public class HaConfigImpl implements HaConfig {
                                            + "] was not added to any group!"); }
   }
 
+  @Override
   public Node getThisNode() {
     return this.thisNode;
   }
@@ -191,18 +199,22 @@ public class HaConfigImpl implements HaConfig {
     return new Node(host, l2.dsoPort().getIntValue(), l2.l2GroupPort().getIntValue());
   }
 
+  @Override
   public boolean isActiveCoordinatorGroup() {
     return this.thisGroupID.equals(this.activeCoordinatorGroupID);
   }
 
+  @Override
   public ClusterInfo getClusterInfo() {
     return nodeStore;
   }
 
+  @Override
   public NodesStore getNodesStore() {
     return nodeStore;
   }
 
+  @Override
   public String getNodeName(String member) {
     for (ServerGroup group : this.groups) {
       if (group.hasMember(member)) { return group.getNode(member).getServerNodeName(); }

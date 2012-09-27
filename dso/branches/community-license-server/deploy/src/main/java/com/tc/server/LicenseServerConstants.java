@@ -14,6 +14,7 @@ public class LicenseServerConstants {
   final static String RESPONSE_CODE              = "response_code";
   final static String SUCCESS_CODE               = "success";
   final static String FAILURE_CODE               = "failure";
+  final static String FAILURE_MESSAGE            = "failure_message";
   final static String LICENSE                    = "license";
   final static String STATE                      = "state";
 

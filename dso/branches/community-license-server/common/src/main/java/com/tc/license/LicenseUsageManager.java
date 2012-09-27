@@ -24,7 +24,7 @@ public interface LicenseUsageManager {
 
   public boolean verifyCapability(String capability);
 
-  public boolean reloadLicense(License license);
+  public boolean reloadLicense(String license);
 
   public License getLicense();
 

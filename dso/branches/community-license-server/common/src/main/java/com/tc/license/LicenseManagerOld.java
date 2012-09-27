@@ -30,11 +30,11 @@ import com.tc.util.ProductInfo;
 import java.io.InputStream;
 import java.util.Date;
 
-public class LicenseManager {
+public class LicenseManagerOld {
 
   private static final TCLogger                       CONSOLE_LOGGER         = CustomerLogging.getConsoleLogger();
   private static final TCLogger                       LOGGER                 = TCLogging
-                                                                                 .getLogger(LicenseManager.class);
+.getLogger(LicenseManagerOld.class);
   public static final String                          EXIT_MESSAGE           = "TERRACOTTA IS EXITING. Contact your Terracotta sales representative to "
                                                                                + "learn how to enable licensed usage of this feature. For more information, "
                                                                                + "visit Terracotta support at http://www.terracotta.org.";

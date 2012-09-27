@@ -41,6 +41,7 @@ import com.tc.l2.ha.StripeIDStateManagerImpl;
 import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.l2.ha.ZapNodeProcessorWeightGeneratorFactory;
 import com.tc.l2.handler.DestroyableMapHandler;
+import com.tc.l2.licenseserver.LicenseUsageManagerImpl;
 import com.tc.l2.objectserver.L2IndexStateManager;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.l2.objectserver.L2PassiveSyncStateManager;
@@ -415,13 +416,14 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   private final CallbackDumpHandler              dumpHandler      = new CallbackDumpHandler();
 
   protected final TCSecurityManager              tcSecurityManager;
+  private final LicenseUsageManagerImpl          licenseUsageManager;
 
   // used by a test
   public DistributedObjectServer(final L2ConfigurationSetupManager configSetupManager, final TCThreadGroup threadGroup,
                                  final ConnectionPolicy connectionPolicy, final TCServerInfoMBean tcServerInfoMBean,
                                  final ObjectStatsRecorder objectStatsRecorder) {
     this(configSetupManager, threadGroup, connectionPolicy, new NullSink(), tcServerInfoMBean, objectStatsRecorder,
-         new L2State(), new SEDA(threadGroup), null, null);
+         new L2State(), new SEDA(threadGroup), null, null, null);
 
   }
 
@@ -429,7 +431,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                  final ConnectionPolicy connectionPolicy, final Sink httpSink,
                                  final TCServerInfoMBean tcServerInfoMBean,
                                  final ObjectStatsRecorder objectStatsRecorder, final L2State l2State, final SEDA seda,
-                                 final TCServer server, final TCSecurityManager securityManager) {
+                                 final TCServer server, final TCSecurityManager securityManager,
+                                 final LicenseUsageManagerImpl licenseUsageManager) {
     // This assertion is here because we want to assume that all threads spawned by the server (including any created in
     // 3rd party libs) inherit their thread group from the current thread . Consider this before removing the assertion.
     // Even in tests, we probably don't want different thread group configurations
@@ -451,6 +454,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.threadGroup = threadGroup;
     this.seda = seda;
     this.serverBuilder = createServerBuilder(this.haConfig, logger, server, configSetupManager.dsoL2Config());
+    this.licenseUsageManager = licenseUsageManager;
   }
 
   protected DSOServerBuilder createServerBuilder(final HaConfig config, final TCLogger tcLogger, final TCServer server,
@@ -463,6 +467,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.serverBuilder;
   }
 
+  @Override
   public void dump() {
     this.dumpHandler.dump();
     this.serverBuilder.dump();
@@ -1171,6 +1176,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.l2Management.findObjectManagementMonitorMBean().registerGCController(new GCControllerImpl(this.objectManager
                                                                                   .getGarbageCollector()));
     this.l2Management.findObjectManagementMonitorMBean().registerObjectIdFetcher(new ObjectIdsFetcher() {
+      @Override
       public Set getAllObjectIds() {
         return DistributedObjectServer.this.objectManager.getAllObjectIDs();
       }
@@ -1220,6 +1226,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     } else {
       this.l2State.setState(StateManager.ACTIVE_COORDINATOR);
       this.l2Coordinator = new L2HADisabledCooridinator(this.groupCommManager, this.persistor.getPersistentStateStore());
+    }
+
+    if (licenseUsageManager != null) {
+      this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.licenseUsageManager);
     }
 
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.l2Coordinator));
@@ -1440,6 +1450,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
   private void setLoggerOnExit() {
     CommonShutDownHook.addShutdownHook(new Runnable() {
+      @Override
       public void run() {
         logger.info("L2 Exiting...");
       }
@@ -1736,10 +1747,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.l1ReconnectConfig;
   }
 
+  @Override
   public void addAllLocksTo(final LockInfoByThreadID lockInfo) {
     // this feature not implemented for server. DEV-1949
   }
 
+  @Override
   public ThreadIDMap getThreadIDMap() {
     return new NullThreadIDMapImpl();
   }
@@ -1748,10 +1761,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.groupCommManager;
   }
 
+  @Override
   public void registerForDump(final CallbackDumpAdapter dumpAdapter) {
     this.dumpHandler.registerForDump(dumpAdapter);
   }
 
+  @Override
   public boolean isAlive(final String name) {
     throw new UnsupportedOperationException();
   }
