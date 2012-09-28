@@ -185,7 +185,6 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
       if (sce.movedToActive()) {
         this.state = LicenseServerState.ACTIVE;
         scheduleLeaseExpiryTimer();
-
       } else if (sce.getCurrentState() == StateManager.PASSIVE_STANDBY) {
         this.state = LicenseServerState.PASSIVE;
         verifyAndConsumeLicenseForThisServer();
@@ -239,8 +238,10 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   }
 
   private void licenseUsageStateChanged() {
-    for (LicenseUsageStateChangeListener listener : listeners) {
-      listener.licenseStateChanged(licenseUsageState);
+    if (state == LicenseServerState.ACTIVE) {
+      for (LicenseUsageStateChangeListener listener : listeners) {
+        listener.licenseStateChanged(licenseUsageState);
+      }
     }
   }
 
