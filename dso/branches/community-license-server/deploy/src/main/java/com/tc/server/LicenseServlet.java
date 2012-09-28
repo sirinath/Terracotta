@@ -134,6 +134,7 @@ public class LicenseServlet extends RestfulServlet {
       Map licenseUsageInfo = licenseUsageManager.getLicenseUsageInfo();
       Map<String, String> responseMap = getSuccessResponseMap();
       responseMap.put(LicenseServerConstants.LICENSE_USAGE_INFO, JSON.toString(licenseUsageInfo));
+      sendResponse(response, responseMap);
     } catch (Exception e) {
       sendResponse(response, getFailureResponseMap(e));
     }
