@@ -5,8 +5,6 @@ import static org.terracotta.license.LicenseConstants.CAPABILITY_TERRACOTTA_SERV
 import static org.terracotta.license.LicenseConstants.EHCACHE_MAX_OFFHEAP;
 import static org.terracotta.license.LicenseConstants.TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.terracotta.license.AbstractLicenseResolverFactory;
 import org.terracotta.license.EnterpriseLicenseResolverFactory;
 import org.terracotta.license.License;
@@ -17,6 +15,9 @@ import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
 import com.tc.license.LicenseUsageManager;
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
@@ -36,8 +37,10 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   private LicenseServerState                                          state           = LicenseServerState.UNINITIALIZED;
   private LicenseUsageState                                           licenseUsageState;
   private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners       = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
-  private static final Logger                                         logger          = LoggerFactory
+  private static final TCLogger                                       logger          = TCLogging
                                                                                           .getLogger(LicenseUsageManagerImpl.class);
+  private static final TCLogger                                       consoleLogger   = CustomerLogging
+                                                                                          .getConsoleLogger();
   private final LicenseValidationCallback                             currentServerValidationCallback;
   private TimerTask                                                   expirationTimerTask;
   private final Timer                                                 expirationTimer = new Timer();
@@ -51,28 +54,27 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   @Override
   public synchronized void registerNode(String jvmId, String machineName, String checksum) throws LicenseException {
     if (licenseUsageState.isVMRegistered(jvmId)) {
-      logger.error("Tried to Register an already Registered Jvm" + "(JVM id =" + jvmId + ", JVM name =" + machineName
-                   + ") is already registered, DENIED!!");
+      audit("Tried to Register an already Registered Jvm" + "(JVM id =" + jvmId + ", JVM name =" + machineName
+            + ") is already registered, DENIED!!");
       throw new LicenseException("(JVM id =" + jvmId + ", JVM name =" + machineName + ") is already registered");
     }
     // TODO: Compare jvmId+license with checksum
     licenseUsageState.registerVM(jvmId, machineName);
     licenseUsageStateChanged();
-    logger.info("SuccessFully Registered (JVM id = " + jvmId + " , JVM Name =" + machineName);
+    audit("SuccessFully Registered (JVM id = " + jvmId + " , JVM Name =" + machineName);
   }
 
   @Override
   public synchronized void unregisterNode(String jvmId) {
     if (!licenseUsageState.isVMRegistered(jvmId)) {
-      logger.error("Tried to UnRegister a Jvm which was not found registered --> (JVM id =" + jvmId + " Jvm Name="
-                   + licenseUsageState.getNameForUUID(jvmId) + ", Action can't be performed");
+      audit("Tried to UnRegister a Jvm which was not found registered --> (JVM id =" + jvmId + " Jvm Name="
+            + licenseUsageState.getNameForUUID(jvmId) + ", Action can't be performed");
       throw new LicenseException("Trying to UnRegister a Jvm which was not found registered --> (JVM id =" + jvmId
                                  + "JVM Name = " + licenseUsageState.getNameForUUID(jvmId));
     }
     freeUpAllResources(jvmId);
     licenseUsageStateChanged();
-    logger.info("JvmId  = " + jvmId + "name = " + licenseUsageState.getNameForUUID(jvmId)
-                + ",Unregistered Successfully");
+    audit("JvmId  = " + jvmId + "name = " + licenseUsageState.getNameForUUID(jvmId) + ",Unregistered Successfully");
   }
 
   @Override
@@ -86,9 +88,9 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     long current = licenseUsageState.getCurrentL1OffHeapUsage(fullyQualifiedCacheName, fullyQualifiedCacheName);
 
     if ((current + memoryInBytes) > licenseLimitBytes) {
-      logger.error("Attempt to exceed offHeap license limit of " + licenseLimitString + " by addition of "
-                   + memoryInBytes + " bytes for cache [" + fullyQualifiedCacheName + "]" + "By Client Name = "
-                   + licenseUsageState.getNameForUUID(clientUUID) + " ClientUUID = " + clientUUID + " ,DENIED!!");
+      audit("Attempt to exceed offHeap license limit of " + licenseLimitString + " by addition of " + memoryInBytes
+            + " bytes for cache [" + fullyQualifiedCacheName + "]" + "By Client Name = "
+            + licenseUsageState.getNameForUUID(clientUUID) + " ClientUUID = " + clientUUID + " ,DENIED!!");
 
       throw new LicenseException("Attempt to exceed offHeap license limit of " + licenseLimitString
                                  + " by addition of " + memoryInBytes + " bytes for cache [" + fullyQualifiedCacheName
@@ -98,9 +100,9 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
 
     licenseUsageState.allocateL1BM(clientUUID, fullyQualifiedCacheName, memoryInBytes);
     licenseUsageStateChanged();
-    logger.info("Allocated " + memoryInBytes + "Bytes to clientUUid = " + clientUUID + "Cache Name = "
-                + fullyQualifiedCacheName + " On L1" + "to Client Name = "
-                + licenseUsageState.getNameForUUID(clientUUID) + " ClientUUID = " + clientUUID);
+    audit("Allocated " + memoryInBytes + "Bytes to clientUUid = " + clientUUID + "Cache Name = "
+          + fullyQualifiedCacheName + " On L1" + "to Client Name = " + licenseUsageState.getNameForUUID(clientUUID)
+          + " ClientUUID = " + clientUUID);
     return true;
   }
 
@@ -108,32 +110,33 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   public synchronized void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName) {
     licenseUsageState.releaseL1BigMemory(clientUUID, fullyQualifiedCacheName);
     licenseUsageStateChanged();
-    logger.info("Released BM from " + fullyQualifiedCacheName + "from Client = " + clientUUID + "L1 Client Name ="
-                + licenseUsageState.getNameForUUID(clientUUID));
+    audit("Released BM from " + fullyQualifiedCacheName + "from Client = " + clientUUID + "L1 Client Name ="
+          + licenseUsageState.getNameForUUID(clientUUID));
   }
 
   @Override
-  public synchronized void allocateL2BigMemory(String serverUUID, long memory) {
+  public synchronized void allocateL2BigMemory(String serverUUID, String memory) {
     verifyCapability(CAPABILITY_TERRACOTTA_SERVER_ARRAY_OFFHEAP);
     String maxHeapSizeFromLicense = licenseUsageState.getLicense()
         .getRequiredProperty(TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP);
     long maxOffHeapLicensedInBytes = MemorySizeParser.parse(maxHeapSizeFromLicense);
+    long memoryRequired = MemorySizeParser.parse(memory);
 
-    boolean offHeapSizeAllowed = memory + licenseUsageState.getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
+    boolean offHeapSizeAllowed = memoryRequired + licenseUsageState.getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
     if (!offHeapSizeAllowed) {
-      logger.error("Your license only allows up to " + maxHeapSizeFromLicense
-                   + " in offheap size. Your Terracotta server is configured with " + memory + " ServerName = "
-                   + licenseUsageState.getNameForUUID(serverUUID) + " serverUUid = " + serverUUID + " asked for "
-                   + memory + " bytes, request can not be FulFilled");
+      audit("Your license only allows up to " + maxHeapSizeFromLicense
+            + " in offheap size. Your Terracotta server is configured with " + memory + " ServerName = "
+            + licenseUsageState.getNameForUUID(serverUUID) + " serverUUid = " + serverUUID + " asked for " + memory
+            + " bytes, request can not be FulFilled");
       throw new LicenseException("Your license only allows up to " + maxHeapSizeFromLicense
                                  + " in offheap size. Your Terracotta server is configured with " + memory
                                  + " ServerName = " + licenseUsageState.getNameForUUID(serverUUID) + " serverUUid = "
                                  + serverUUID + " asked for " + memory + " bytes, request can not be FulFilled");
     }
-    licenseUsageState.allocateL2BigMemory(serverUUID, memory);
+    licenseUsageState.allocateL2BigMemory(serverUUID, memoryRequired);
     licenseUsageStateChanged();
-    logger.info("Allocated " + memory + "Bytes of BM to L2 with ServerUUid = " + serverUUID + " ServerName = "
-                + licenseUsageState.getNameForUUID(serverUUID));
+    audit("Allocated " + memory + "Bytes of BM to L2 with ServerUUid = " + serverUUID + " ServerName = "
+          + licenseUsageState.getNameForUUID(serverUUID));
 
   }
 
@@ -141,8 +144,7 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   public synchronized void releaseL2BigMemory(String serverUUID) {
     licenseUsageState.releaseL2BigMemory(serverUUID);
     licenseUsageStateChanged();
-    logger.info("Released BM from Server = " + serverUUID + "server Name = "
-                + licenseUsageState.getNameForUUID(serverUUID));
+    audit("Released BM from Server = " + serverUUID + "server Name = " + licenseUsageState.getNameForUUID(serverUUID));
 
   }
 
@@ -163,7 +165,7 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     License licenseResolved = factory.resolveLicense(new ByteArrayInputStream(licenseParam.getBytes()));
     licenseUsageState.setLicense(licenseResolved);
     licenseUsageStateChanged();
-    logger.info("License Reloaded SuccessFully");
+    audit("License Reloaded SuccessFully");
     return true;
   }
 
@@ -253,6 +255,16 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   @Override
   public Map getLicenseUsageInfo() {
     return licenseUsageState.getLicenseUsageInfo();
+  }
+
+  public void audit(String message) {
+    logger.warn("LicenseAudit:" + message);
+    consoleLogger.warn("LicenseAudit" + message);
+  }
+
+  @Override
+  public long renewLease(String vmId) {
+    return licenseUsageState.renewLease(vmId);
   }
 
 }

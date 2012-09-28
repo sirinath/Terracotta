@@ -157,16 +157,15 @@ public class RestLicenseHelper {
             reader = new BufferedReader(new InputStreamReader(instream));
             String str = reader.readLine();
             while (str != null) {
-              builder.append(str);
+              builder.append(str + "\n");
               str = reader.readLine();
             }
           } finally {
             instream.close();
             reader.close();
           }
-          executed = true;
         }
-        HashMap<String, String> jsonMap = (HashMap<String, String>) JSON.parse(getStringForm(entity));
+        HashMap<String, String> jsonMap = (HashMap<String, String>) JSON.parse(builder.toString());
         String status = jsonMap.get(LicenseServerConstants.RESPONSE_CODE);
         if (status.equals(LicenseServerConstants.FAILURE_CODE)) {
           String failure_message = jsonMap.get(LicenseServerConstants.FAILURE_MESSAGE);
@@ -184,23 +183,10 @@ public class RestLicenseHelper {
         httpClient.getConnectionManager().shutdown();
       }
     } while (!executed);
-
     return null;
+
   }
 
-  private static String getStringForm(HttpEntity entity) throws IllegalStateException, IOException {
-    StringBuilder builder = new StringBuilder();
-    if (entity != null) {
-      InputStream instream = entity.getContent();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(instream));
-      String str = reader.readLine();
-      while (str != null) {
-        builder.append(str);
-        str = reader.readLine();
-      }
-    }
-    return builder.toString();
-  }
 
   public static void verifyServerStripingCapability() {
     verifyCapability(CAPABILITY_SERVER_STRIPING);
