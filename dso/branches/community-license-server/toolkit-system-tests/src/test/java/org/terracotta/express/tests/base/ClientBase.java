@@ -18,6 +18,7 @@ public abstract class ClientBase extends AbstractClientBase {
 
   public ClientBase(String args[]) {
     super(args);
+    System.setProperty("licenseServerUrl", getTerracottaUrl());
     if (args[0].indexOf('@') != -1) {
       System.setProperty("tc.ssl.disableHostnameVerifier", "true");
       System.setProperty("tc.ssl.trustAllCerts", "true");
