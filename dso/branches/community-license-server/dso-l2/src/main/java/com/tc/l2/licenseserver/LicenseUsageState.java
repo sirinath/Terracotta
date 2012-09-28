@@ -151,7 +151,7 @@ public class LicenseUsageState implements Serializable {
     }
   }
 
-  public static class JVMLease implements Comparable<JVMLease> {
+  public static class JVMLease implements Comparable<JVMLease>, Serializable {
 
     private Long         expiryTime;
     private final String vmId;
