@@ -15,12 +15,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.message.BasicNameValuePair;
 import org.mortbay.util.ajax.JSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +41,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
@@ -97,7 +99,7 @@ public class RestLicenseHelper {
   }
 
   public static License getLicense() {
-    Map<String, Serializable> keyValuePairs = new HashMap<String, Serializable>();
+    Map<String, String> keyValuePairs = new HashMap<String, String>();
     Map<String, String> responseMap = executeQuery(LicenseServerConstants.GET_LICENSE_PATH, keyValuePairs);
     String licenseString = responseMap.get(LicenseServerConstants.LICENSE);
     AbstractLicenseResolverFactory factory = new EnterpriseLicenseResolverFactory();
@@ -124,12 +126,12 @@ public class RestLicenseHelper {
     }
   }
 
-  private static Map<String, String> executeQuery(String servletPath, Map<String, Serializable> keyValuePairs) {
+  private static Map<String, String> executeQuery(String servletPath, Map<String, String> keyValuePairs) {
     HttpResponse response = null;
-    HttpGet httpGet = null;
-    HttpParams params = new BasicHttpParams();
-    for (Entry<String, Serializable> entry : keyValuePairs.entrySet()) {
-      params.setParameter(entry.getKey(), entry.getValue());
+    HttpPost httpGet = null;
+    List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    for (Entry<String, String> entry : keyValuePairs.entrySet()) {
+      nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
     }
     boolean executed = false;
     int serverIndex = 0;
@@ -138,8 +140,8 @@ public class RestLicenseHelper {
       serverIndex = (serverIndex + 1) % licenseServers.length;
       HttpClient httpClient = new DefaultHttpClient();
       try {
-        httpGet = new HttpGet(currentLicenseServerUrl + servletPath);
-        httpGet.setParams(params);
+        httpGet = new HttpPost(currentLicenseServerUrl + servletPath);
+        httpGet.setEntity(new UrlEncodedFormEntity(nvps));
         response = httpClient.execute(httpGet);
         LOGGER.info("tried:" + httpGet.getURI() + "\n" + "status:" + response.getStatusLine());
         if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)) {
@@ -225,7 +227,7 @@ public class RestLicenseHelper {
   public static void verifyServerArrayOffheapCapability(String maxOffHeapConfigured) {
     registerJvmWithLicenseManagerIfRequired(getLicense());
     verifyCapability(CAPABILITY_TERRACOTTA_SERVER_ARRAY_OFFHEAP);
-    Map<String, Serializable> keyValuePairs = new HashMap<String, Serializable>();
+    Map<String, String> keyValuePairs = new HashMap<String, String>();
     keyValuePairs.put(LicenseServerConstants.MEMORY, maxOffHeapConfigured);
     keyValuePairs.put(LicenseServerConstants.JVM_UUID, JVM_ID);
     executeQuery(LicenseServerConstants.REQUEST_L2_BM_PATH, keyValuePairs);
@@ -239,7 +241,7 @@ public class RestLicenseHelper {
   private static void registerJvmWithLicenseManagerIfRequired(License license) {
     if (!vmRegistered) {
       // releasePreviousL2BMUsage();
-      Map<String, Serializable> keyValuePairs = new HashMap<String, Serializable>();
+      Map<String, String> keyValuePairs = new HashMap<String, String>();
       keyValuePairs.put(LicenseServerConstants.JVM_UUID, JVM_ID);
       keyValuePairs.put(LicenseServerConstants.SECRET_CODE, encode(license.signature(), JVM_ID));
       keyValuePairs.put(LicenseServerConstants.JVM_NAME, JVM_NAME);
@@ -258,7 +260,7 @@ public class RestLicenseHelper {
   }
 
   private static void unRegisterJvm(String jvmId) {
-    Map<String, Serializable> keyValuePairs = new HashMap<String, Serializable>();
+    Map<String, String> keyValuePairs = new HashMap<String, String>();
     keyValuePairs.put(LicenseServerConstants.JVM_UUID, jvmId);
     executeQuery(LicenseServerConstants.UNREGISTER_PATH, keyValuePairs);
   }
@@ -309,7 +311,7 @@ public class RestLicenseHelper {
   }
 
   private static long renewBMLease() {
-    Map<String, Serializable> keyValuePairs = new HashMap<String, Serializable>();
+    Map<String, String> keyValuePairs = new HashMap<String, String>();
     keyValuePairs.put(LicenseServerConstants.JVM_UUID, JVM_ID);
     Map<String, String> responseMap = executeQuery(LicenseServerConstants.EXTEND_LEASE_PATH, keyValuePairs);
     long leaseTime = Long.parseLong(responseMap.get(LicenseServerConstants.LEASE_TIME));
