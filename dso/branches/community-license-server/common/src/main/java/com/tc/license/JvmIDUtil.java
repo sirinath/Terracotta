@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.tc.net.protocol.transport;
+package com.tc.license;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;

@@ -31,5 +31,6 @@ public interface LicenseServerConstants {
   final static String MACHINE_NAME               = "machine_name";
   final static String CHECKSUM                   = "checksum";
   static final String LICENSE_USAGE_INFO         = "licenseUsageInfo";
+  static final String REQUEST_L2_BM_PATH         = "allocateL2BigMemory";
 
 }
