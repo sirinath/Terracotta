@@ -11,6 +11,10 @@ public interface LicenseUsageManager {
     UNINITIALIZED, ACTIVE, PASSIVE
   }
 
+  public static interface LicenseValidationCallback {
+    void verifyAndConsumeLicense() throws Exception;
+  }
+
   public void registerNode(String jvmId, String machineName, String checksum) throws LicenseException;
 
   public void unregisterNode(String jvmId) throws LicenseException;

@@ -22,7 +22,7 @@ import com.tc.handler.CallbackDumpAdapter;
 import com.tc.handler.CallbackDumpHandler;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.lang.TCThreadGroup;
-import com.tc.license.LicenseHelper;
+import com.tc.license.LicenseManagerOld;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.ClientIDLoggerProvider;
 import com.tc.logging.CustomerLogging;
@@ -850,7 +850,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       } catch (final MaxConnectionsExceededException e) {
         DSO_LOGGER.fatal(e.getMessage());
         CONSOLE_LOGGER.fatal(e.getMessage());
-        CONSOLE_LOGGER.fatal(LicenseHelper.EXIT_MESSAGE);
+        CONSOLE_LOGGER.fatal(LicenseManagerOld.EXIT_MESSAGE);
         System.exit(1);
       } catch (final CommStackMismatchException e) {
         DSO_LOGGER.fatal(e.getMessage());

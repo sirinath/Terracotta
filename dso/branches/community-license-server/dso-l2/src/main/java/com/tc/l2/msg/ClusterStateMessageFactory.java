@@ -54,5 +54,5 @@ public class ClusterStateMessageFactory {
     msg.initMessage(state);
     return msg;
   }
-
+  
 }

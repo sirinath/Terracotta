@@ -48,7 +48,9 @@ import com.tc.lang.StartupHelper;
 import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.license.LicenseHelper;
+import com.tc.license.LicenseManagerOld;
+import com.tc.license.LicenseUsageManager;
+import com.tc.license.RestLicenseHelper;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -93,6 +95,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -159,7 +163,6 @@ public class TCServerImpl extends SEDA implements TCServer {
 
     this.connectionPolicy = connectionPolicy;
     Assert.assertNotNull(manager);
-    validateEnterpriseFeatures(manager);
     this.configurationSetupManager = manager;
     if (new HaConfigImpl(manager).isActiveCoordinatorGroup()) {
       // ehcache core EE doesn't have any license code in the OSS portion
@@ -167,12 +170,22 @@ public class TCServerImpl extends SEDA implements TCServer {
       // EE or OSS factory. We can just simply pick EE version
       AbstractLicenseResolverFactory factory = new EnterpriseLicenseResolverFactory();
      License license = factory.resolveLicense();
-      this.licenseUsageManager = new LicenseUsageManagerImpl(license);
+      this.licenseUsageManager = new LicenseUsageManagerImpl(license,
+                                                             new LicenseUsageManager.LicenseValidationCallback() {
+                                                               @Override
+                                                               public void verifyAndConsumeLicense() throws Exception {
+                                                                 validateEnterpriseFeatures(configurationSetupManager);
+                                                               }
+                                                             });
     } else {
-      // LicenseUsageManager will work for only Active Server.
+      // LicenseUsageManager will work for only Active Coordinator Server.
+      try {
+        validateEnterpriseFeatures(manager);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
       this.licenseUsageManager = null;
     }
-
     if (configurationSetupManager.isSecure()) {
       this.securityManager = createSecurityManager(configurationSetupManager.getSecurity());
     } else {
@@ -191,15 +204,98 @@ public class TCServerImpl extends SEDA implements TCServer {
                                             + "you're currently running an OS version");
   }
 
-  private void validateEnterpriseFeatures(final L2ConfigurationSetupManager manager) {
-    if (!LicenseHelper.enterpriseEdition()) return;
+  private void validateEnterpriseFeatures(final L2ConfigurationSetupManager manager) throws Exception {
+
+    if (!ProductInfo.getInstance().isEnterprise()) return;
+
+    License license = RestLicenseHelper.getLicense();
+    handleExpiration(license.expirationDate());
     if (manager.dsoL2Config().getPersistence().isSetOffheap()) {
       Offheap offHeapConfig = manager.dsoL2Config().getPersistence().getOffheap();
-      LicenseHelper.verifyServerArrayOffheapCapability(offHeapConfig.getMaxDataSize());
+      RestLicenseHelper.verifyServerArrayOffheapCapability(offHeapConfig.getMaxDataSize());
     }
     if (manager.commonl2Config().authentication()) {
-      LicenseHelper.verifyAuthenticationCapability();
+      RestLicenseHelper.verifyAuthenticationCapability();
     }
+    if (new HaConfigImpl(manager).isActiveActive()) {
+      RestLicenseHelper.verifyServerStripingCapability();
+    }
+  }
+
+  /**
+   * warn users about expired license every hour if it's within 240 hours before the expired time
+   */
+  private void handleExpiration(Date expirationDate) throws Exception {
+    if (expirationDate == null) { return; }
+
+    long currentTime = System.currentTimeMillis();
+    long expiredTime = expirationDate.getTime();
+    long warningMark = expiredTime - (LicenseManagerOld.WARNING_MARK * LicenseManagerOld.HOUR);
+
+    if (currentTime >= expiredTime) {
+      consoleLogger.error(String.format(LicenseManagerOld.EXPIRED_ERROR, expirationDate));
+      System.exit(1);
+    } else {
+      Timer timer = new Timer("Expired L2 timer", true);
+      timer.schedule(new L2ExpiredTask(expirationDate), expirationDate);
+
+      if (currentTime <= warningMark) {
+        timer.scheduleAtFixedRate(new L2ExpiredWarningTask(expirationDate), warningMark - currentTime,
+                                  1 * LicenseManagerOld.HOUR);
+      } else {
+        if (expiredTime - currentTime > LicenseManagerOld.HOUR) {
+          timer.scheduleAtFixedRate(new L2ExpiredWarningTask(expirationDate), 3000, 1 * LicenseManagerOld.HOUR);
+        } else {
+          consoleLogger.warn(getExpiredWarning(expirationDate));
+        }
+      }
+    }
+  }
+
+  private class L2ExpiredTask extends TimerTask {
+    private final Date expiredDate;
+
+    public L2ExpiredTask(Date expiredDate) {
+      this.expiredDate = expiredDate;
+    }
+
+    @Override
+    public void run() {
+      consoleLogger.error(String.format(LicenseManagerOld.EXPIRED_ERROR, this.expiredDate));
+      shutdown();
+    }
+  }
+
+  private class L2ExpiredWarningTask extends TimerTask {
+    private final Date expiredDate;
+
+    public L2ExpiredWarningTask(Date expiredDate) {
+      this.expiredDate = expiredDate;
+    }
+
+    @Override
+    public void run() {
+      consoleLogger.warn(getExpiredWarning(this.expiredDate));
+    }
+  }
+
+  private String getExpiredWarning(Date expiredDate) {
+    long timeleftInMinutes = (expiredDate.getTime() - System.currentTimeMillis()) / 60000;
+    timeleftInMinutes = timeleftInMinutes > 0 ? timeleftInMinutes : 0;
+    int remainingHours = (int) (timeleftInMinutes / 60);
+    int remainingMinutes = (int) (timeleftInMinutes % 60);
+    String timeRemaining;
+    if (remainingHours > 2) {
+      timeRemaining = remainingHours + " hours";
+    } else {
+      if (remainingHours < 1) {
+        timeRemaining = remainingMinutes + " minutes";
+      } else {
+        timeRemaining = remainingHours + " hour and " + remainingMinutes + " minutes";
+      }
+    }
+
+    return String.format(LicenseManagerOld.EXPIRY_WARNING, expiredDate, timeRemaining);
   }
 
   private static OrderedGroupIDs createOrderedGroupIds(List<ActiveServerGroupConfig> groups) {
@@ -267,7 +363,7 @@ public class TCServerImpl extends SEDA implements TCServer {
   @Override
   public String getDescriptionOfCapabilities() {
     if (ProductInfo.getInstance().isEnterprise()) {
-      return LicenseHelper.licensedCapabilities();
+      return RestLicenseHelper.licensedCapabilities();
     } else {
       return "Open source capabilities";
     }

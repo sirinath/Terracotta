@@ -31,10 +31,12 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   private LicenseServerState                                          state     = LicenseServerState.UNINITIALIZED;
   private LicenseUsageState                                           licenseUsageState;
   private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
+  private final LicenseValidationCallback                             currentServerValidationCallback;
 
-  public LicenseUsageManagerImpl(License license) {
+  public LicenseUsageManagerImpl(License license, LicenseValidationCallback licenseValidationCallback) {
     this.licenseUsageState = new LicenseUsageState();
     licenseUsageState.setLicense(license);
+    currentServerValidationCallback = licenseValidationCallback;
   }
 
   @Override
@@ -142,11 +144,26 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   public synchronized void l2StateChanged(StateChangedEvent sce) {
     if (sce.movedToActive()) {
       this.state = LicenseServerState.ACTIVE;
+      scheduleLeaseExpiryTimer();
+      verifyAndConsumeLicenseForThisServer();
     } else if (sce.getCurrentState() == StateManager.PASSIVE_STANDBY) {
       this.state = LicenseServerState.PASSIVE;
+      verifyAndConsumeLicenseForThisServer();
     } else {
       this.state = LicenseServerState.UNINITIALIZED;
     }
+  }
+
+  private void verifyAndConsumeLicenseForThisServer() {
+    try {
+      currentServerValidationCallback.verifyAndConsumeLicense();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void scheduleLeaseExpiryTimer() {
+
   }
 
   @Override

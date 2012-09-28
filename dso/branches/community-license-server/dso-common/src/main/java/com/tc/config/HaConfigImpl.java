@@ -7,7 +7,6 @@ import com.tc.config.schema.ActiveServerGroupConfig;
 import com.tc.config.schema.ActiveServerGroupsConfig;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
-import com.tc.license.LicenseHelper;
 import com.tc.net.GroupID;
 import com.tc.net.OrderedGroupIDs;
 import com.tc.net.TCSocketAddress;
@@ -36,9 +35,6 @@ public class HaConfigImpl implements HaConfig {
     this.configSetupManager = configSetupManager;
     ActiveServerGroupsConfig groupsConfig = this.configSetupManager.activeServerGroupsConfig();
     int groupCount = groupsConfig.getActiveServerGroupCount();
-    if (isActiveActive()) {
-      LicenseHelper.verifyServerStripingCapability();
-    }
     this.groups = new ServerGroup[groupCount];
     this.groupIDs = new GroupID[groupCount];
     for (int i = 0; i < groupCount; i++) {
