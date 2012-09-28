@@ -22,7 +22,10 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 
 import java.io.ByteArrayInputStream;
+import java.util.Date;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -30,12 +33,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChangeListener, GroupMessageListener {
 
-  private LicenseServerState                                          state     = LicenseServerState.UNINITIALIZED;
+  private LicenseServerState                                          state           = LicenseServerState.UNINITIALIZED;
   private LicenseUsageState                                           licenseUsageState;
-  private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
-  private static final Logger                                         logger    = LoggerFactory
-                                                                                    .getLogger(LicenseUsageManagerImpl.class);
+  private final CopyOnWriteArrayList<LicenseUsageStateChangeListener> listeners       = new CopyOnWriteArrayList<LicenseUsageStateChangeListener>();
+  private static final Logger                                         logger          = LoggerFactory
+                                                                                          .getLogger(LicenseUsageManagerImpl.class);
   private final LicenseValidationCallback                             currentServerValidationCallback;
+  private TimerTask                                                   expirationTimerTask;
+  private final Timer                                                 expirationTimer = new Timer();
 
   public LicenseUsageManagerImpl(License license, LicenseValidationCallback licenseValidationCallback) {
     this.licenseUsageState = new LicenseUsageState();
@@ -181,6 +186,7 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     } else if (sce.getCurrentState() == StateManager.PASSIVE_STANDBY) {
       this.state = LicenseServerState.PASSIVE;
       verifyAndConsumeLicenseForThisServer();
+      cancelAlreadyScheduledExpirationTask();
     } else {
       this.state = LicenseServerState.UNINITIALIZED;
     }
@@ -196,6 +202,25 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
 
   private void scheduleLeaseExpiryTimer() {
 
+    cancelAlreadyScheduledExpirationTask();
+    expirationTimerTask = new TimerTask() {
+      @Override
+      public void run() {
+        LicenseUsageManagerImpl.this.removeAllExpiredLease();
+      }
+    };
+    expirationTimer.schedule(expirationTimerTask, new Date(licenseUsageState.getNextLeaseExpiryTime()));
+  }
+
+  private void cancelAlreadyScheduledExpirationTask() {
+    if (expirationTimerTask != null) {
+      expirationTimerTask.cancel();
+    }
+  }
+
+  private void removeAllExpiredLease() {
+    licenseUsageState.removeAllExpiredLease();
+    scheduleLeaseExpiryTimer();
   }
 
   @Override
