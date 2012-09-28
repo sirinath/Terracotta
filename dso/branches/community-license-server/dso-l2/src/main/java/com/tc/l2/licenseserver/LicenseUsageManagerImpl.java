@@ -178,18 +178,21 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   }
 
   @Override
-  public synchronized void l2StateChanged(StateChangedEvent sce) {
-    if (sce.movedToActive()) {
-      this.state = LicenseServerState.ACTIVE;
-      scheduleLeaseExpiryTimer();
-      verifyAndConsumeLicenseForThisServer();
-    } else if (sce.getCurrentState() == StateManager.PASSIVE_STANDBY) {
-      this.state = LicenseServerState.PASSIVE;
-      verifyAndConsumeLicenseForThisServer();
-      cancelAlreadyScheduledExpirationTask();
-    } else {
-      this.state = LicenseServerState.UNINITIALIZED;
+  public void l2StateChanged(StateChangedEvent sce) {
+    synchronized (this) {
+      if (sce.movedToActive()) {
+        this.state = LicenseServerState.ACTIVE;
+        scheduleLeaseExpiryTimer();
+
+      } else if (sce.getCurrentState() == StateManager.PASSIVE_STANDBY) {
+        this.state = LicenseServerState.PASSIVE;
+        verifyAndConsumeLicenseForThisServer();
+        cancelAlreadyScheduledExpirationTask();
+      } else {
+        this.state = LicenseServerState.UNINITIALIZED;
+      }
     }
+    verifyAndConsumeLicenseForThisServer();
   }
 
   private void verifyAndConsumeLicenseForThisServer() {
