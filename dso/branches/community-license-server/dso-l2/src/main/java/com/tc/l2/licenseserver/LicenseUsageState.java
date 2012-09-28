@@ -214,4 +214,8 @@ public class LicenseUsageState implements Serializable {
     return allInfoMap;
   }
 
+  public String getNameForUUID(String UUID) {
+    return registeredVMs.get(UUID);
+  }
+
 }
