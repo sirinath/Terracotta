@@ -9,6 +9,8 @@ public interface LicenseServerConstants {
   final static String JVM_UUID   = "jvm_uuid";
   final static String FULLY_QUALIFIED_CACHE_NAME = "cache_name";
   final static String MEMORY     = "memory";
+  final static String SECRET_CODE                = "secret_code";
+  final static String JVM_NAME                   = "jvm_name";
 
   // Response Attributes
   final static String RESPONSE_CODE              = "response_code";
@@ -26,7 +28,6 @@ public interface LicenseServerConstants {
   final static String EXTEND_LEASE_PATH          = "extendLease";
   final static String REGISTER_PATH              = "registerJVM";
   final static String UNREGISTER_PATH            = "unRegisterJVM";
-
   final static String MACHINE_NAME               = "machine_name";
   final static String CHECKSUM                   = "checksum";
   static final String LICENSE_USAGE_INFO         = "licenseUsageInfo";
