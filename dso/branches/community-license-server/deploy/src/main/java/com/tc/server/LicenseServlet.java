@@ -55,7 +55,7 @@ public class LicenseServlet extends RestfulServlet {
   public void methodFetchLicense(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     License license = licenseUsageManager.getLicense();
     Map<String, String> responseMap = getSuccessResponseMap();
-    responseMap.put(LicenseServerConstants.LICENSE, license.toString());
+    responseMap.put(LicenseServerConstants.LICENSE, license.fullLicenseAsString());
     sendResponse(response, responseMap);
   }
 
@@ -95,7 +95,7 @@ public class LicenseServlet extends RestfulServlet {
       throws Exception {
     try {
       String uuid = request.getParameter(LicenseServerConstants.JVM_UUID);
-      Long memory = Long.parseLong(request.getParameter(LicenseServerConstants.MEMORY));
+      String memory = request.getParameter(LicenseServerConstants.MEMORY);
       licenseUsageManager.allocateL2BigMemory(uuid, memory);
       sendResponse(response, getSuccessResponseMap());
     } catch (Exception e) {
@@ -168,6 +168,18 @@ public class LicenseServlet extends RestfulServlet {
 
   public void methodException(final HttpServletRequest request, final HttpServletResponse response) throws Throwable {
     throw new LicenseException("Something Worng with your License");
+  }
+
+  public void methodExtendLease(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    try {
+      String jvmId = request.getParameter(LicenseServerConstants.JVM_UUID);
+      long extensionDuration = licenseUsageManager.renewLease(jvmId);
+      Map<String, String> responseMap = getSuccessResponseMap();
+      responseMap.put(LicenseServerConstants.LEASE_TIME, new Long(extensionDuration).toString());
+      sendResponse(response, responseMap);
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
+    }
   }
 
 }

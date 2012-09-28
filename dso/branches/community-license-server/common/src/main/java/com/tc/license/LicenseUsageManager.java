@@ -24,7 +24,7 @@ public interface LicenseUsageManager {
 
   public void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName) throws LicenseException;
 
-  public void allocateL2BigMemory(String serverUUID, long memoryInBytes) throws LicenseException;
+  public void allocateL2BigMemory(String serverUUID, String memory) throws LicenseException;
 
   public void releaseL2BigMemory(String serverUUID) throws LicenseException;
 
@@ -34,7 +34,8 @@ public interface LicenseUsageManager {
 
   public License getLicense();
 
-  public LicenseServerState getState();
-
   public Map getLicenseUsageInfo();
+
+  public LicenseServerState getState();
+  public long renewLease(String jvmId);
 }

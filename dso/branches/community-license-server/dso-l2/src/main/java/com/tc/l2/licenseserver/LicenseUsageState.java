@@ -218,4 +218,10 @@ public class LicenseUsageState implements Serializable {
     return registeredVMs.get(UUID);
   }
 
+  public long renewLease(String vmId) {
+    leaseSet.remove(new JVMLease(vmId, 0));
+    leaseSet.add(new JVMLease(vmId, System.currentTimeMillis() + LEASE_PERIOD));
+    return LEASE_PERIOD;
+  }
+
 }
