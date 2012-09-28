@@ -131,7 +131,6 @@ public class RestLicenseHelper {
   private static Map<String, String> executeQuery(String servletPath, Map<String, Serializable> keyValuePairs) {
     HttpResponse response = null;
     HttpGet httpGet = null;
-    HttpClient httpClient = new DefaultHttpClient();
     HttpParams params = new BasicHttpParams();
     for (Entry<String, Serializable> entry : keyValuePairs.entrySet()) {
       params.setParameter(entry.getKey(), entry.getValue());
@@ -140,6 +139,7 @@ public class RestLicenseHelper {
     int serverIndex = 0;
     do {
       String currentLicenseServerUrl = HTTP + licenseServers[serverIndex++] + "/";
+      HttpClient httpClient = new DefaultHttpClient();
       try {
         httpGet = new HttpGet(currentLicenseServerUrl + servletPath);
         httpGet.setParams(params);
