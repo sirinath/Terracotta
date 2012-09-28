@@ -10,6 +10,7 @@ import static org.terracotta.license.LicenseConstants.CAPABILITY_SERVER_STRIPING
 import static org.terracotta.license.LicenseConstants.CAPABILITY_TERRACOTTA_SERVER_ARRAY_OFFHEAP;
 import static org.terracotta.license.LicenseConstants.LICENSE_CAPABILITIES;
 
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.http.HttpEntity;
@@ -53,7 +54,6 @@ public class RestLicenseHelper {
   private static final long       LOG_EXPIRED_LICENSE_PERIOD = 1000L * 60 * 60;
   private static final TCLogger   CONSOLE_LOGGER             = CustomerLogging.getConsoleLogger();
   private static final Logger     LOGGER                     = LoggerFactory.getLogger(RestLicenseHelper.class);
-  private static String           URL_PREFIX                 = getLicenseServerUrl();
   private static final String     HTTP                       = "http://";
   public static final String      LICENSE_SERVER_URL_KEY     = "licenseServerUrl";
   private static final String[]   licenseServers             = getLicenseServerUrls();
@@ -85,10 +85,6 @@ public class RestLicenseHelper {
                                                                                     "Your license key doesn't allow usage of '"
                                                                                         + capability + "' capability"); }
     return false;
-  }
-
-  private static String getLicenseServerUrl() {
-    return System.getProperty(LICENSE_SERVER_URL_KEY, "http://localhost:8080/");
   }
 
   public static License assertLicenseValid() {
@@ -138,14 +134,18 @@ public class RestLicenseHelper {
     boolean executed = false;
     int serverIndex = 0;
     do {
-      String currentLicenseServerUrl = HTTP + licenseServers[serverIndex++] + "/";
+      String currentLicenseServerUrl = HTTP + licenseServers[serverIndex] + "/license/";
+      serverIndex = (serverIndex + 1) % licenseServers.length;
       HttpClient httpClient = new DefaultHttpClient();
       try {
         httpGet = new HttpGet(currentLicenseServerUrl + servletPath);
         httpGet.setParams(params);
         response = httpClient.execute(httpGet);
+        LOGGER.info("tried:" + httpGet.getURI() + "\n" + "status:" + response.getStatusLine());
+        if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)) {
+          continue;
+        }
         HttpEntity entity = response.getEntity();
-        executed = true;
         StringBuilder builder = new StringBuilder();
         if (entity != null) {
           InputStream instream = null;
@@ -162,6 +162,7 @@ public class RestLicenseHelper {
             instream.close();
             reader.close();
           }
+          executed = true;
         }
         HashMap<String, String> jsonMap = (HashMap<String, String>) JSON.parse(getStringForm(entity));
         String status = jsonMap.get(LicenseServerConstants.RESPONSE_CODE);
@@ -173,13 +174,13 @@ public class RestLicenseHelper {
       } catch (ClientProtocolException e) {
         LOGGER.warn(httpGet.getURI() + " got ClientProtocolException Sleeping for 1 sec before retry " + e);
         reallySleep(TimeUnit.SECONDS.toMillis(1L));
+
       } catch (IOException e) {
         LOGGER.warn(httpGet.getURI() + " got IOException Sleeping for 1 sec before retry " + e);
         reallySleep(TimeUnit.SECONDS.toMillis(1L));
       } finally {
         httpClient.getConnectionManager().shutdown();
       }
-      serverIndex = serverIndex % licenseServers.length;
     } while (!executed);
 
     return null;
