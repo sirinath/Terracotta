@@ -3,6 +3,8 @@ package com.tc.license;
 import org.terracotta.license.License;
 import org.terracotta.license.LicenseException;
 
+import java.util.Map;
+
 public interface LicenseUsageManager {
 
   public enum LicenseServerState {
@@ -29,4 +31,6 @@ public interface LicenseUsageManager {
   public License getLicense();
 
   public LicenseServerState getState();
+
+  public Map getLicenseUsageInfo();
 }
