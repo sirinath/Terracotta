@@ -20,6 +20,7 @@ import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 
 import java.io.ByteArrayInputStream;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -76,29 +77,28 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     licenseUsageState.allocateL1BM(clientUUID, fullyQualifiedCacheName, memoryInBytes);
     licenseUsageStateChanged();
     return true;
-
   }
 
   @Override
   public synchronized void releaseL1BigMemory(String clientUUID, String fullyQualifiedCacheName) {
-    licenseUsageState.releaseL1BigMemory( clientUUID,  fullyQualifiedCacheName) ;
+    licenseUsageState.releaseL1BigMemory(clientUUID, fullyQualifiedCacheName);
     licenseUsageStateChanged();
   }
 
-  public synchronized void allocateL2BigMemory(String serverUUID, String memory) {
+  @Override
+  public synchronized void allocateL2BigMemory(String serverUUID, long memory) {
     verifyCapability(CAPABILITY_TERRACOTTA_SERVER_ARRAY_OFFHEAP);
     String maxHeapSizeFromLicense = licenseUsageState.getLicense()
         .getRequiredProperty(TERRACOTTA_SERVER_ARRAY_MAX_OFFHEAP);
     long maxOffHeapLicensedInBytes = MemorySizeParser.parse(maxHeapSizeFromLicense);
-    long maxOffHeapConfiguredInBytes = MemorySizeParser.parse(memory);
 
-    boolean offHeapSizeAllowed = maxOffHeapConfiguredInBytes + licenseUsageState.getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
+    boolean offHeapSizeAllowed = memory + licenseUsageState.getCurrentL2OffHeapUsage(serverUUID) <= maxOffHeapLicensedInBytes;
     if (!offHeapSizeAllowed) { throw new LicenseException(
                                                           "Your license only allows up to "
                                                               + maxHeapSizeFromLicense
                                                               + " in offheap size. Your Terracotta server is configured with "
                                                               + memory); }
-    licenseUsageState.allocateL2BigMemory(serverUUID, maxOffHeapConfiguredInBytes);
+    licenseUsageState.allocateL2BigMemory(serverUUID, memory);
     licenseUsageStateChanged();
 
   }
@@ -126,12 +126,6 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
     licenseUsageState.setLicense(licenseResolved);
     licenseUsageStateChanged();
     return true;
-  }
-
-  @Override
-  public synchronized void allocateL2BigMemory(String serverUUID, long memoryInBytes) {
-    // TODO Auto-generated method stub
-    licenseUsageStateChanged();
   }
 
   @Override
@@ -177,6 +171,11 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
 
   public void unregisterLicenseStateChangeListener(LicenseUsageStateChangeListener listener) {
     listeners.remove(listener);
+  }
+
+  @Override
+  public Map getLicenseUsageInfo() {
+    return licenseUsageState.getLicenseUsageInfo();
   }
 
 }

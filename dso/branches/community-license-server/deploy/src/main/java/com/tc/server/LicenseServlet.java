@@ -44,7 +44,6 @@ public class LicenseServlet extends RestfulServlet {
       throws Exception {
     try {
       String jvmId = request.getParameter(LicenseServerConstants.JVM_UUID);
-      String checksum = request.getParameter(LicenseServerConstants.CHECKSUM);
       licenseUsageManager.unregisterNode(jvmId);
       sendResponse(response, getSuccessResponseMap());
 
@@ -124,11 +123,24 @@ public class LicenseServlet extends RestfulServlet {
     } catch (Exception e) {
       sendResponse(response, getFailureResponseMap(e));
     }
+  }
+
+  /**
+   * To be used only for internal testing purposes. Disabled this Production.
+   */
+  public void methodLicenseUsageInfo(final HttpServletRequest request, final HttpServletResponse response)
+      throws Throwable {
+    try {
+      Map licenseUsageInfo = licenseUsageManager.getLicenseUsageInfo();
+      Map<String, String> responseMap = getSuccessResponseMap();
+      responseMap.put(LicenseServerConstants.LICENSE_USAGE_INFO, JSON.toString(licenseUsageInfo));
+    } catch (Exception e) {
+      sendResponse(response, getFailureResponseMap(e));
+    }
 
   }
 
-  private void sendResponse(final HttpServletResponse response, Map<String, String> attributes)
-      throws Exception {
+  private void sendResponse(final HttpServletResponse response, Map<String, String> attributes) throws Exception {
     final Map<String, String> responseMap = (attributes == null) ? new HashMap<String, String>() : attributes;
     print(response, JSON.toString(responseMap));
   }

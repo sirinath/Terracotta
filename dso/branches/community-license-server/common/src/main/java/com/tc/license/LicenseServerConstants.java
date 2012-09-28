@@ -29,5 +29,6 @@ public interface LicenseServerConstants {
 
   final static String MACHINE_NAME               = "machine_name";
   final static String CHECKSUM                   = "checksum";
+  static final String LICENSE_USAGE_INFO         = "licenseUsageInfo";
 
 }

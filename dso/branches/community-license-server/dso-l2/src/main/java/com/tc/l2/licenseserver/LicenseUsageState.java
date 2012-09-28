@@ -10,6 +10,7 @@ import org.terracotta.license.LicenseException;
 
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -137,7 +138,7 @@ public class LicenseUsageState implements Serializable {
 
   public boolean removeAllExpiredLease() {
     boolean modified = false;
-    while(true){
+    while (true) {
       if (leaseSet.size() == 0) { return modified; }
       JVMLease lease = leaseSet.first();
       if (lease.getExpiryTime() < System.currentTimeMillis()) {
@@ -149,7 +150,6 @@ public class LicenseUsageState implements Serializable {
 
     }
   }
-
 
   public static class JVMLease implements Comparable<JVMLease> {
 
@@ -197,6 +197,21 @@ public class LicenseUsageState implements Serializable {
       } else if (!vmId.equals(other.vmId)) return false;
       return true;
     }
+
+    @Override
+    public String toString() {
+      return "VMID : " + vmId + "LeaseExpiryTime" + new Date(getExpiryTime());
+    }
+  }
+
+  public Map getLicenseUsageInfo() {
+    Map allInfoMap = new HashMap();
+    allInfoMap.put("ClientUsageInfo", l1BigMemoryUsage);
+    allInfoMap.put("L2UsageInfo", l2BigMemoryUsage);
+    allInfoMap.put("RegisteredVM", registeredVMs);
+    allInfoMap.put("LeaseInfo", leaseSet);
+    allInfoMap.put("license", licenseAsString);
+    return allInfoMap;
   }
 
 }
