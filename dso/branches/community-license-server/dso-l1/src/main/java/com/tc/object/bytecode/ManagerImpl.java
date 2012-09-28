@@ -19,7 +19,7 @@ import com.tc.lang.StartupHelper;
 import com.tc.lang.StartupHelper.StartupAction;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
-import com.tc.license.LicenseHelper;
+import com.tc.license.RestLicenseHelper;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.TunneledDomainUpdater;
@@ -1079,7 +1079,7 @@ public class ManagerImpl implements Manager {
 
   @Override
   public void verifyCapability(String capability) {
-    LicenseHelper.verifyCapability(capability);
+    RestLicenseHelper.verifyCapability(capability);
   }
 
   @Override
