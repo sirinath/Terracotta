@@ -258,8 +258,8 @@ public class LicenseUsageManagerImpl implements LicenseUsageManager, StateChange
   }
 
   public void audit(String message) {
-    logger.warn("LicenseAudit:" + message);
-    consoleLogger.warn("LicenseAudit" + message);
+    logger.warn("LicenseAudit: " + message);
+    consoleLogger.warn("LicenseAudit: " + message);
   }
 
   @Override

@@ -8,7 +8,7 @@ public interface LicenseServerConstants {
   // Request Attributes
   final static String JVM_UUID                   = "jvm_uuid";
   final static String FULLY_QUALIFIED_CACHE_NAME = "cache_name";
-  final static String MEMORY     = "memory";
+  final static String MEMORY                     = "memory";
   final static String SECRET_CODE                = "secret_code";
   final static String JVM_NAME                   = "jvm_name";
 
@@ -27,7 +27,7 @@ public interface LicenseServerConstants {
   final static String REQUEST_L1_BM_PATH         = "allocateL1BigMemory";
   final static String EXTEND_LEASE_PATH          = "extendLease";
   final static String REGISTER_PATH              = "registerNode";
-  final static String UNREGISTER_PATH            = "unRegisterNode";
+  final static String UNREGISTER_PATH            = "unregisterNode";
   final static String MACHINE_NAME               = "machine_name";
   final static String CHECKSUM                   = "checksum";
   static final String LICENSE_USAGE_INFO         = "licenseUsageInfo";
