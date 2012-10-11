@@ -7,9 +7,10 @@ package com.tc.test.activepassive;
 import com.tctest.TestState;
 
 public class ActivePassiveServerCrasher implements Runnable {
-  private static boolean                   DEBUG      = false;
+  private static boolean                   DEBUG      = true;
   private final ActivePassiveServerManager serverManger;
   private final long                       serverCrashWaitTimeInSec;
+  private final long                       serverCrashInitialDelaySeconds;
   private final int                        maxCrashCount;
 
   private int                              crashCount = 0;
@@ -17,20 +18,20 @@ public class ActivePassiveServerCrasher implements Runnable {
   private volatile boolean                 done;
 
   public ActivePassiveServerCrasher(ActivePassiveServerManager serverManager, long serverCrashWaitTimeInSec,
-                                    int maxCrashCount, TestState testState) {
+                                    long serverCrashInitialDelaySeconds, int maxCrashCount, TestState testState) {
     this.serverManger = serverManager;
     this.serverCrashWaitTimeInSec = serverCrashWaitTimeInSec;
+    this.serverCrashInitialDelaySeconds = serverCrashInitialDelaySeconds;
     this.maxCrashCount = maxCrashCount;
     this.testState = testState;
   }
 
   public void run() {
+
+    sleep(serverCrashInitialDelaySeconds * 1000);
+
     while (!done) {
-      try {
-        Thread.sleep(serverCrashWaitTimeInSec * 1000);
-      } catch (InterruptedException e1) {
-        serverManger.storeErrors(e1);
-      }
+      sleep(serverCrashWaitTimeInSec * 1000);
 
       synchronized (testState) {
         if (testState.isRunning() && (maxCrashCount - crashCount) > 0 && serverManger.getErrors().isEmpty() && !done) {
@@ -58,6 +59,16 @@ public class ActivePassiveServerCrasher implements Runnable {
           break;
         }
       }
+    }
+  }
+
+  private void sleep(long millis) {
+    debugPrintln("***** ActivePassiveServerCrasher:  Sleeping for " + millis + " millis,  threadID=["
+                 + Thread.currentThread().getName() + "]");
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e1) {
+      serverManger.storeErrors(e1);
     }
   }
 

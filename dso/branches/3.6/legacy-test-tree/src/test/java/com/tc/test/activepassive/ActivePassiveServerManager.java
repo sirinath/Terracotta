@@ -52,6 +52,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   private final int                  serverCount;
   private final String               serverCrashMode;
   private final long                 serverCrashWaitTimeInSec;
+  private final long                 serverCrashInitialDelaySeconds;
   private final String               serverPersistence;
   private final boolean              serverNetworkShare;
   private final String               configFileLocation;
@@ -133,6 +134,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
 
     serverCrashMode = this.setupManger.getServerCrashMode();
     serverCrashWaitTimeInSec = this.setupManger.getServerCrashWaitTimeInSec();
+    serverCrashInitialDelaySeconds = this.setupManger.getServerCrashInitialDelaySeconds();
     maxCrashCount = this.setupManger.getMaxCrashCount();
     serverPersistence = this.setupManger.getServerPersistenceMode();
     serverNetworkShare = this.setupManger.isNetworkShare();
@@ -390,7 +392,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   }
 
   private void startContinuousCrash() {
-    serverCrasher = new ActivePassiveServerCrasher(this, serverCrashWaitTimeInSec, maxCrashCount, testState);
+    serverCrasher = new ActivePassiveServerCrasher(this, serverCrashWaitTimeInSec, serverCrashInitialDelaySeconds,
+                                                   maxCrashCount, testState);
     new Thread(serverCrasher).start();
   }
 
@@ -510,8 +513,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     }
     jmxConnectors[index] = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mBeanServer = jmxConnectors[index].getMBeanServerConnection();
-    return (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mBeanServer, L2MBeanNames.TC_SERVER_INFO,
-                                                                             TCServerInfoMBean.class, true);
+    return MBeanServerInvocationHandler.newProxyInstance(mBeanServer, L2MBeanNames.TC_SERVER_INFO,
+                                                         TCServerInfoMBean.class, true);
   }
 
   public static JMXConnector getJMXConnector(int jmxPort) throws IOException {
@@ -521,16 +524,15 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   public DSOMBean getDsoMBean(int index) throws IOException {
     JMXConnector jmxc = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
-    DSOMBean dsoMBean = (DSOMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.DSO,
-                                                                                 DSOMBean.class, false);
+    DSOMBean dsoMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.DSO, DSOMBean.class, false);
     return dsoMBean;
   }
 
   public DGCMBean getLocalDGCMBean(int index) throws IOException {
     JMXConnector jmxc = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
-    DGCMBean dgcMBean = (DGCMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.LOCAL_DGC_STATS,
-                                                                                 DSOMBean.class, false);
+    DGCMBean dgcMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.LOCAL_DGC_STATS,
+                                                                      DSOMBean.class, false);
     return dgcMBean;
   }
 
@@ -615,8 +617,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
           mbs = jmxConnectors[i].getMBeanServerConnection();
         }
 
-        L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
-                                                                                            L2DumperMBean.class, true);
+        L2DumperMBean mbean = MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
+                                                                            L2DumperMBean.class, true);
         mbean.dumpClusterState();
 
         dumpTaken = true;
@@ -705,8 +707,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
       jmxConnectors[activeIndex] = getJMXConnector(jmxPorts[activeIndex]);
     }
     MBeanServerConnection mbs = jmxConnectors[activeIndex].getMBeanServerConnection();
-    TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
-        .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
+    TCServerInfoMBean mbean = MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO,
+                                                                            TCServerInfoMBean.class, true);
     if (!mbean.isActive()) {
       closeJMXConnector(activeIndex);
       throw new AssertionError("Server[" + servers[activeIndex].getDsoPort() + "] is not an active server as expected!");

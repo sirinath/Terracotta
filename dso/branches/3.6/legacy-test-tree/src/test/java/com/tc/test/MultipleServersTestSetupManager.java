@@ -7,13 +7,14 @@ package com.tc.test;
 public abstract class MultipleServersTestSetupManager {
 
   private int                            serverCount;
-  private long                           serverCrashWaitTimeInSec = 15;
-  private int                            maxCrashCount            = Integer.MAX_VALUE;
+  private long                           serverCrashWaitTimeInSec       = 15;
+  private long                           serverCrashInitialDelaySeconds = 0;
+  private int                            maxCrashCount                  = Integer.MAX_VALUE;
   private MultipleServersSharedDataMode  serversSharedDataMode;
   private MultipleServersPersistenceMode persistenceMode;
   protected MultipleServersCrashMode     crashMode;
-  protected int                          electionTime             = 5;
-  protected int                          reconnectWindow          = 120;
+  protected int                          electionTime                   = 5;
+  protected int                          reconnectWindow                = 120;
 
   public void setServerCount(int count) {
     serverCount = count;
@@ -72,6 +73,16 @@ public abstract class MultipleServersTestSetupManager {
 
   public long getServerCrashWaitTimeInSec() {
     return serverCrashWaitTimeInSec;
+  }
+
+  public void setServerCrashInitialDelaySeconds(long serverCrashInitialDelaySeconds) {
+    if (serverCrashInitialDelaySeconds < 0) { throw new AssertionError(
+                                                                       "Initial delay time should not be a negative number."); }
+    this.serverCrashInitialDelaySeconds = serverCrashInitialDelaySeconds;
+  }
+
+  public long getServerCrashInitialDelaySeconds() {
+    return serverCrashInitialDelaySeconds;
   }
 
   public void setElectionTime(int time) {
