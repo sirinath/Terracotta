@@ -17,7 +17,7 @@
         <include>org.terracotta:${terracotta.artifactId}</include>
       </includes>
       <excludes>
-        <exclude>org.terracotta:terracotta-toolkit-runtime</exclude>
+        <exclude>org.terracotta:${toolkit.artifactId}</exclude>
       </excludes>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <useProjectArtifact>false</useProjectArtifact>
