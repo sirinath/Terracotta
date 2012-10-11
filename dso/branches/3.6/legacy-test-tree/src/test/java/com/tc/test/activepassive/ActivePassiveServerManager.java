@@ -513,8 +513,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     }
     jmxConnectors[index] = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mBeanServer = jmxConnectors[index].getMBeanServerConnection();
-    return MBeanServerInvocationHandler.newProxyInstance(mBeanServer, L2MBeanNames.TC_SERVER_INFO,
-                                                         TCServerInfoMBean.class, true);
+    return (TCServerInfoMBean) MBeanServerInvocationHandler.newProxyInstance(mBeanServer, L2MBeanNames.TC_SERVER_INFO,
+                                                                             TCServerInfoMBean.class, true);
   }
 
   public static JMXConnector getJMXConnector(int jmxPort) throws IOException {
@@ -524,15 +524,16 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   public DSOMBean getDsoMBean(int index) throws IOException {
     JMXConnector jmxc = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
-    DSOMBean dsoMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.DSO, DSOMBean.class, false);
+    DSOMBean dsoMBean = (DSOMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.DSO,
+                                                                                 DSOMBean.class, false);
     return dsoMBean;
   }
 
   public DGCMBean getLocalDGCMBean(int index) throws IOException {
     JMXConnector jmxc = getJMXConnector(jmxPorts[index]);
     MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
-    DGCMBean dgcMBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.LOCAL_DGC_STATS,
-                                                                      DSOMBean.class, false);
+    DGCMBean dgcMBean = (DGCMBean) MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.LOCAL_DGC_STATS,
+                                                                                 DSOMBean.class, false);
     return dgcMBean;
   }
 
@@ -617,8 +618,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
           mbs = jmxConnectors[i].getMBeanServerConnection();
         }
 
-        L2DumperMBean mbean = MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
-                                                                            L2DumperMBean.class, true);
+        L2DumperMBean mbean = (L2DumperMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.DUMPER,
+                                                                                            L2DumperMBean.class, true);
         mbean.dumpClusterState();
 
         dumpTaken = true;
@@ -707,8 +708,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
       jmxConnectors[activeIndex] = getJMXConnector(jmxPorts[activeIndex]);
     }
     MBeanServerConnection mbs = jmxConnectors[activeIndex].getMBeanServerConnection();
-    TCServerInfoMBean mbean = MBeanServerInvocationHandler.newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO,
-                                                                            TCServerInfoMBean.class, true);
+    TCServerInfoMBean mbean = (TCServerInfoMBean) MBeanServerInvocationHandler
+        .newProxyInstance(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, true);
     if (!mbean.isActive()) {
       closeJMXConnector(activeIndex);
       throw new AssertionError("Server[" + servers[activeIndex].getDsoPort() + "] is not an active server as expected!");
