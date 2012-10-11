@@ -145,9 +145,11 @@ public class ActiveActiveServerManager extends MultipleServerManager {
     // Create the groups by getting the server names from the ActivePassiveServerManager
     GroupData[] groups = new GroupData[activePassiveServerManagers.length];
     for (int i = 0; i < groups.length; i++) {
-      groups[i] = new GroupData(activePassiveServerManagers[i].getGroupName(), activePassiveServerManagers[i]
-          .getDsoPorts(), activePassiveServerManagers[i].getJmxPorts(), activePassiveServerManagers[i]
-          .getL2GroupPorts(), activePassiveServerManagers[i].getServerNames());
+      groups[i] = new GroupData(activePassiveServerManagers[i].getGroupName(),
+                                activePassiveServerManagers[i].getDsoPorts(),
+                                activePassiveServerManagers[i].getJmxPorts(),
+                                activePassiveServerManagers[i].getL2GroupPorts(),
+                                activePassiveServerManagers[i].getServerNames());
     }
     return groups;
   }
@@ -192,6 +194,7 @@ public class ActiveActiveServerManager extends MultipleServerManager {
       testSetupManager.setServerCrashMode(new ActivePassiveCrashMode(mode.getMode()));
     }
     testSetupManager.setServerCrashWaitTimeInSec(setupManger.getServerCrashWaitTimeInSec());
+    testSetupManager.setServerCrashInitialDelaySeconds(setupManger.getServerCrashInitialDelaySeconds());
     testSetupManager.setServerPersistenceMode(setupManger.getServerPersistenceMode());
     testSetupManager.setServerShareDataMode(setupManger.getGroupServerShareDataMode(grpIndex));
 
