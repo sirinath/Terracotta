@@ -52,6 +52,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   private final int                  serverCount;
   private final String               serverCrashMode;
   private final long                 serverCrashWaitTimeInSec;
+  private final long                 serverCrashInitialDelaySeconds;
   private final String               serverPersistence;
   private final boolean              serverNetworkShare;
   private final String               configFileLocation;
@@ -133,6 +134,7 @@ public class ActivePassiveServerManager extends MultipleServerManager {
 
     serverCrashMode = this.setupManger.getServerCrashMode();
     serverCrashWaitTimeInSec = this.setupManger.getServerCrashWaitTimeInSec();
+    serverCrashInitialDelaySeconds = this.setupManger.getServerCrashInitialDelaySeconds();
     maxCrashCount = this.setupManger.getMaxCrashCount();
     serverPersistence = this.setupManger.getServerPersistenceMode();
     serverNetworkShare = this.setupManger.isNetworkShare();
@@ -390,7 +392,8 @@ public class ActivePassiveServerManager extends MultipleServerManager {
   }
 
   private void startContinuousCrash() {
-    serverCrasher = new ActivePassiveServerCrasher(this, serverCrashWaitTimeInSec, maxCrashCount, testState);
+    serverCrasher = new ActivePassiveServerCrasher(this, serverCrashWaitTimeInSec, serverCrashInitialDelaySeconds,
+                                                   maxCrashCount, testState);
     new Thread(serverCrasher).start();
   }
 
