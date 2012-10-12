@@ -2064,7 +2064,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     } catch (UnknownHostException e) {
       throw new ConfigurationSetupException("Unknown Host Exception!!Could not resolve IpAddress for this hostName: '"
-                                            + e.getMessage() + "',");
+                                            + e.getMessage() + "'");
     }
     return address.getHostAddress();
   }
