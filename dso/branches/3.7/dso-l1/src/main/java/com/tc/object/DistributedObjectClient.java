@@ -298,7 +298,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final StatisticsAgentSubSystem statisticsAgentSubSystem,
                                  final DsoClusterInternal dsoCluster, final RuntimeLogger runtimeLogger,
                                  final ClientMode clientMode) {
-    this(config, threadGroup, classProvider, connectionComponents, manager, statisticsAgentSubSystem, dsoCluster, runtimeLogger, clientMode, null);
+    this(config, threadGroup, classProvider, connectionComponents, manager, statisticsAgentSubSystem, dsoCluster,
+         runtimeLogger, clientMode, null);
   }
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
@@ -427,12 +428,10 @@ public class DistributedObjectClient extends SEDA implements TCClient {
   }
 
   private void validateSecurityConfig() {
-    if (config.getSecurityInfo().isSecure() && securityManager == null) {
-      throw new TCRuntimeException("client configured as secure but was constructed without securityManager");
-    }
-    if (!config.getSecurityInfo().isSecure() && securityManager != null) {
-      throw new TCRuntimeException("client not configured as secure but was constructed with securityManager");
-    }
+    if (config.getSecurityInfo().isSecure() && securityManager == null) { throw new TCRuntimeException(
+                                                                                                       "client configured as secure but was constructed without securityManager"); }
+    if (!config.getSecurityInfo().isSecure() && securityManager != null) { throw new TCRuntimeException(
+                                                                                                        "client not configured as secure but was constructed with securityManager"); }
   }
 
   private void validateGroupConfigOrExit() {
@@ -615,7 +614,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage capacityEvictionStage = stageManager.createStage(ClientConfigurationContext.CAPACITY_EVICTION_STAGE,
                                                                  l1ServerMapCapacityEvictionHandler, 8, maxSize);
 
-
     L1ServerMapTransactionCompletionHandler completionHandler = new L1ServerMapTransactionCompletionHandler();
     final Stage txnCompleteStage = stageManager
         .createStage(ClientConfigurationContext.LOCAL_CACHE_TXN_COMPLETE_STAGE, completionHandler, TCPropertiesImpl
@@ -626,8 +624,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                            8);
     final Stage pinnedEntryFaultStage = stageManager.createStage(ClientConfigurationContext.PINNED_ENTRY_FAULT_STAGE,
                                                                  new PinnedEntryFaultHandler(),
-                                                                 pinnedEntryFaultStageThreads,
-                                                                 maxSize);
+                                                                 pinnedEntryFaultStageThreads, maxSize);
 
     globalLocalCacheManager = new L1ServerMapLocalCacheManagerImpl(locksRecallHelper, capacityEvictionStage.getSink(),
                                                                    txnCompleteStage.getSink(),
@@ -862,7 +859,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       try {
         DSO_LOGGER.debug("Trying to open channel....");
         final char[] pw;
-        if(config.getSecurityInfo().hasCredentials()) {
+        if (config.getSecurityInfo().hasCredentials()) {
           Assert.assertNotNull(securityManager);
           pw = securityManager.getPasswordForTC(config.getSecurityInfo().getUsername(), serverHost, serverPort);
         } else {
