@@ -34,6 +34,7 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.L2_CACHEMANAGER_CRITICALTHRESHOLD);
 
     exemptedProperties.add(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED);
+    exemptedProperties.add(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_DELETE_DELAY_SECONDS);
     exemptedProperties.add(TCPropertiesConsts.L2_OBJECTMANAGER_INVALIDATE_STRONG_CACHE_ENABLED);
 
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_SKIP_JVMARG_CHECK);
