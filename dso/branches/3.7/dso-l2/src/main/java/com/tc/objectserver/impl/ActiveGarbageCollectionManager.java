@@ -26,30 +26,40 @@ import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.SortedSet;
+import java.util.concurrent.TimeUnit;
 
 public class ActiveGarbageCollectionManager implements GarbageCollectionManager {
-  private static final TCLogger          logger                 = TCLogging.getLogger(GarbageCollectionManager.class);
-  private static final int               OBJECT_RETRY_THRESHOLD = 100000;
-  private static final long              INLINE_GC_INTERVAL     = SECONDS
-                                                                    .toNanos(TCPropertiesImpl
-                                                                        .getProperties()
-                                                                        .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_INTERVAL_SECONDS,
-                                                                                 10));
-  private static final long              MAX_INLINE_GC_OBJECTS  = TCPropertiesImpl
-                                                                    .getProperties()
-                                                                    .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_MAX_OBJECTS,
-                                                                             10000);
-  public static final InlineGCContext    INLINE_GC_CONTEXT      = new InlineGCContext();
-  private ObjectIDSet                    objectsToDelete        = new ObjectIDSet();
-  private ObjectIDSet                    objectsToRetry         = new ObjectIDSet();
-  private long                           lastInlineGCTime       = System.nanoTime();
-  private final Sink                     garbageCollectSink;
-  private final ClientObjectReferenceSet clientObjectReferenceSet;
+  private static final TCLogger                 logger                 = TCLogging
+                                                                           .getLogger(GarbageCollectionManager.class);
+  private static final int                      OBJECT_RETRY_THRESHOLD = 100000;
+  private static final long                     INLINE_GC_INTERVAL     = SECONDS
+                                                                           .toNanos(TCPropertiesImpl
+                                                                               .getProperties()
+                                                                               .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_INTERVAL_SECONDS,
+                                                                                        10));
+  private static final long                     MAX_INLINE_GC_OBJECTS  = TCPropertiesImpl
+                                                                           .getProperties()
+                                                                           .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_MAX_OBJECTS,
+                                                                                    10000);
+  private static final long                     INLINE_DGC_MIN_DELAY   = TCPropertiesImpl
+                                                                           .getProperties()
+                                                                           .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_DELETE_DELAY_SECONDS,
+                                                                                    0);
+  public static final InlineGCContext           INLINE_GC_CONTEXT      = new InlineGCContext();
 
-  private ServerTransactionManager       transactionManager;
-  private GarbageCollector               garbageCollector;
+  private final DelayedReleaseObjectIDSetHolder objectsToDelete        = new DelayedReleaseObjectIDSetHolder(
+                                                                                                             INLINE_DGC_MIN_DELAY,
+                                                                                                             TimeUnit.SECONDS);
+  private ObjectIDSet                           objectsToRetry         = new ObjectIDSet();
+  private long                                  lastInlineGCTime       = System.nanoTime();
+  private final Sink                            garbageCollectSink;
+  private final ClientObjectReferenceSet        clientObjectReferenceSet;
+
+  private ServerTransactionManager              transactionManager;
+  private GarbageCollector                      garbageCollector;
 
   public ActiveGarbageCollectionManager(final Sink garbageCollectSink,
                                         final ClientObjectReferenceSet clientObjectReferenceSet) {
@@ -72,9 +82,8 @@ public class ActiveGarbageCollectionManager implements GarbageCollectionManager 
   }
 
   public synchronized ObjectIDSet nextObjectsToDelete() {
-    if (objectsToDelete.isEmpty()) { return TCCollections.EMPTY_OBJECT_ID_SET; }
-    ObjectIDSet deleteNow = objectsToDelete;
-    objectsToDelete = new ObjectIDSet();
+    ObjectIDSet deleteNow = objectsToDelete.get();
+    if (deleteNow.isEmpty()) { return TCCollections.EMPTY_OBJECT_ID_SET; }
     Iterator<ObjectID> oidIterator = deleteNow.iterator();
     int objectsRetried = 0;
     while (oidIterator.hasNext()) {
@@ -93,11 +102,10 @@ public class ActiveGarbageCollectionManager implements GarbageCollectionManager 
 
   public synchronized void scheduleInlineGarbageCollectionIfNecessary() {
     if (!objectsToDelete.isEmpty() && System.nanoTime() - lastInlineGCTime > INLINE_GC_INTERVAL
-        || objectsToDelete.size() > MAX_INLINE_GC_OBJECTS) {
+        || objectsToDelete.currentBatchSize() >= MAX_INLINE_GC_OBJECTS) {
       if (garbageCollectSink.addLossy(INLINE_GC_CONTEXT)) {
         lastInlineGCTime = System.nanoTime();
       }
-
     }
   }
 
@@ -139,15 +147,63 @@ public class ActiveGarbageCollectionManager implements GarbageCollectionManager 
   public void scheduleInlineCleanupIfNecessary() {
     if (!garbageCollector.isPeriodicEnabled()
         && TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED, true)) {
-      // This delay is here as a failsafe in case there's some aspect of startup we missed. This can be increased in
-      // order to not collide with other stuff in that case.
-      final long delay = 1000 * TCPropertiesImpl.getProperties()
-          .getLong(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_CLEANUP_DELAY_SECONDS, 0);
-      scheduleGarbageCollection(GCType.INLINE_CLEANUP_GC, delay);
+      scheduleGarbageCollection(GCType.INLINE_CLEANUP_GC);
     }
   }
 
   public void l2StateChanged(StateChangedEvent sce) {
     // Do nothing
+  }
+
+  private static class DelayedReleaseObjectIDSetHolder {
+    private final long     delay;
+    private final TimeUnit unit;
+
+    private long           lastReleaseTime;
+    private ObjectIDSet    out;
+    private ObjectIDSet    hold;
+    private ObjectIDSet    in;
+
+    DelayedReleaseObjectIDSetHolder(long delay, TimeUnit unit) {
+      this.delay = delay;
+      this.unit = unit;
+      lastReleaseTime = System.nanoTime();
+      out = new ObjectIDSet();
+      hold = new ObjectIDSet();
+      in = new ObjectIDSet();
+    }
+
+    int currentBatchSize() {
+      return inputSet().size();
+    }
+
+    boolean isEmpty() {
+      return out.isEmpty() && hold.isEmpty() && in.isEmpty();
+    }
+
+    ObjectIDSet get() {
+      ObjectIDSet r = new ObjectIDSet(out);
+      if (System.nanoTime() - lastReleaseTime > unit.toNanos(delay)) {
+        lastReleaseTime = System.nanoTime();
+        out = hold;
+        hold = in;
+        in = new ObjectIDSet();
+      } else {
+        out.clear();
+      }
+      return r;
+    }
+
+    void addAll(Collection<ObjectID> ids) {
+      inputSet().addAll(ids);
+    }
+
+    ObjectIDSet inputSet() {
+      if (delay <= 0) {
+        return out;
+      } else {
+        return in;
+      }
+    }
   }
 }
