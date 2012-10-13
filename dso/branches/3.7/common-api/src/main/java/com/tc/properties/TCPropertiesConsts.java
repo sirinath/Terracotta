@@ -161,7 +161,7 @@ public interface TCPropertiesConsts {
   public static final String L2_OBJECTMANAGER_DGC_INLINE_ENABLED                            = "l2.objectmanager.dgc.inline.enabled";
   public static final String L2_OBJECTMANAGER_DGC_INLINE_INTERVAL_SECONDS                   = "l2.objectmanager.dgc.inline.intervalInSeconds";
   public static final String L2_OBJECTMANAGER_DGC_INLINE_MAX_OBJECTS                        = "l2.objectmanager.dgc.inline.maxObjects";
-  public static final String L2_OBJECTMANAGER_DGC_INLINE_CLEANUP_DELAY_SECONDS              = "l2.objectmanager.dgc.inline.cleanup.delaySeconds";
+  public static final String L2_OBJECTMANAGER_DGC_INLINE_DELETE_DELAY_SECONDS               = "l2.objectmanager.dgc.inline.delete.delaySeconds";
   public static final String L2_DATA_BACKUP_THROTTLE_TIME                                   = "l2.data.backup.throttle.timeInMillis";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_MAPDB_LONGS_PERDISKENTRY         = "l2.objectmanager.loadObjectID.mapsdatabase.longsPerDiskEntry";
   public static final String L2_OBJECTMANAGER_LOADOBJECTID_MEASURE_PERF                     = "l2.objectmanager.loadObjectID.measure.performance";
