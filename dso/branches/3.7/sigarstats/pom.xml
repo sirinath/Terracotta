@@ -69,6 +69,12 @@
     </dependency>
     <dependency>
       <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-sparc64-solaris</artifactId>
+      <type>so</type>
+      <scope>compile</scope>
+    </dependency>    
+    <dependency>
+      <groupId>org.hyperic</groupId>
       <artifactId>libsigar-x86-solaris</artifactId>
       <type>so</type>
       <scope>compile</scope>
