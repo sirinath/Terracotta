@@ -22,11 +22,13 @@ import com.terracottatech.search.AbstractNVPair.SqlDateNVPair;
 import com.terracottatech.search.AbstractNVPair.StringNVPair;
 import com.terracottatech.search.AbstractNVPair.ValueIdNVPair;
 import com.terracottatech.search.NVPair;
+import com.terracottatech.search.NVPairEnum;
 import com.terracottatech.search.ValueID;
 import com.terracottatech.search.ValueType;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 
 public class NVPairSerializer {
 
@@ -40,50 +42,50 @@ public class NVPairSerializer {
 
     switch (type) {
       case BOOLEAN:
-        out.writeBoolean(((BooleanNVPair) nvPair).getValue());
+        out.writeBoolean((Boolean) nvPair.getObjectValue());
         return;
       case BYTE:
-        out.writeByte(((ByteNVPair) nvPair).getValue());
+        out.writeByte((Byte) nvPair.getObjectValue());
         return;
       case BYTE_ARRAY:
-        byte[] val = ((ByteArrayNVPair) nvPair).getValue();
+        byte[] val = (byte[]) nvPair.getObjectValue();
         out.writeInt(val.length);
         out.write(val);
         return;
       case CHAR:
-        out.writeChar(((CharNVPair) nvPair).getValue());
+        out.writeChar((Character) nvPair.getObjectValue());
         return;
       case DATE:
-        out.writeLong(((DateNVPair) nvPair).getValue().getTime());
+        out.writeLong(((Date) nvPair.getObjectValue()).getTime());
         return;
       case DOUBLE:
-        out.writeDouble(((DoubleNVPair) nvPair).getValue());
+        out.writeDouble((Double) nvPair.getObjectValue());
         return;
       case ENUM:
-        EnumNVPair enumPair = (EnumNVPair) nvPair;
+        NVPairEnum enumPair = (NVPairEnum) nvPair;
         stringSerializer.writeString(out, enumPair.getClassName());
         out.writeInt(enumPair.getOrdinal());
         return;
       case FLOAT:
-        out.writeFloat(((FloatNVPair) nvPair).getValue());
+        out.writeFloat((Float) nvPair.getObjectValue());
         return;
       case INT:
-        out.writeInt(((IntNVPair) nvPair).getValue());
+        out.writeInt((Integer) nvPair.getObjectValue());
         return;
       case LONG:
-        out.writeLong(((LongNVPair) nvPair).getValue());
+        out.writeLong((Long) nvPair.getObjectValue());
         return;
       case NULL:
         // no state
         return;
       case SHORT:
-        out.writeShort(((ShortNVPair) nvPair).getValue());
+        out.writeShort((Short) nvPair.getObjectValue());
         return;
       case SQL_DATE:
-        out.writeLong(((SqlDateNVPair) nvPair).getValue().getTime());
+        out.writeLong(((java.sql.Date) nvPair.getObjectValue()).getTime());
         return;
       case STRING:
-        String value = ((StringNVPair) nvPair).getValue();
+        String value = (String) nvPair.getObjectValue();
         try {
           stringSerializer.writeStringBytes(out, value.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException e) {
@@ -91,7 +93,7 @@ public class NVPairSerializer {
         }
         return;
       case VALUE_ID:
-        out.writeLong(((ValueIdNVPair) nvPair).getValue().toLong());
+        out.writeLong(((ValueID) nvPair.getObjectValue()).toLong());
         return;
     }
 
