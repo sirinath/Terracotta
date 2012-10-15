@@ -8,7 +8,6 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionCompleteListener;
-import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.search.SearchQueryResults;
 import com.terracottatech.search.NVPair;
 
