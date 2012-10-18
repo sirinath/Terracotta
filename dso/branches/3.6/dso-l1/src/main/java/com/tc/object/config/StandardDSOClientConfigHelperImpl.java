@@ -1947,7 +1947,8 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
         address = InetAddress.getLocalHost();
       }
     } catch (UnknownHostException e) {
-      throw new ConfigurationSetupException(e.getMessage());
+      throw new ConfigurationSetupException("Unknown Host Exception!!Could not resolve IpAddress for this hostName: '"
+                                            + e.getMessage() + "'");
     }
     return address.getHostAddress();
   }
