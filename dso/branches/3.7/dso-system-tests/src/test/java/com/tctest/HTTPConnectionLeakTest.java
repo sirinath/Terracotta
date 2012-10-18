@@ -10,6 +10,7 @@ import org.hyperic.sigar.NetInterfaceConfig;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 
+import com.tc.lcp.LinkedJavaProcess;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.objectserver.control.ServerMBeanRetriever;
 import com.tc.process.Exec;
@@ -19,8 +20,13 @@ import com.tc.util.CallableWaiter;
 import com.tc.util.TcConfigBuilder;
 import com.tctest.process.ExternalDsoServer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import junit.framework.Assert;
@@ -49,8 +55,8 @@ public class HTTPConnectionLeakTest extends BaseDSOTestCase {
   public void testLeak() throws Exception {
     int initialConnectionCount = getNetInfoEstablishedConnectionsCount(dsoPort);
     System.out.println("http://localhost:" + dsoPort + "/config");
-    for (int i = 0; i < 1000; i++) {
-      fetchConfigViaCurl();
+    for (int i = 0; i < 20; i++) {
+      fetchConfig();
     }
     int finalConnectionCount = getNetInfoEstablishedConnectionsCount(dsoPort);
     System.out.println("initialConnectioncount : " + initialConnectionCount + " finalConnectionCount : "
@@ -58,11 +64,15 @@ public class HTTPConnectionLeakTest extends BaseDSOTestCase {
     Assert.assertEquals(initialConnectionCount, finalConnectionCount);
   }
 
-  private void fetchConfigViaCurl() throws Exception {
-    String[] config = new String[] { "curl", "http://localhost:" + dsoPort + "/config" };
-    Result result = Exec.execute(config);
-    if (result.getExitCode() != 0) { throw new AssertionError("CURL did not executed properly"); }
-
+  private void fetchConfig() throws Exception {
+    List<String> URLsToFetch = new ArrayList<String>();
+    URLsToFetch.add("http://localhost:" + dsoPort + "/config");
+    LinkedJavaProcess fetchURLProcess = new LinkedJavaProcess(URLFetcher.class.getName(), URLsToFetch, null);
+    fetchURLProcess.start();
+    Result result = Exec.execute(fetchURLProcess, fetchURLProcess.getCommand(), null, null, null);
+    if(result.getExitCode() != 0){
+ throw new AssertionError("URLFetcher Exit code is " + result.getExitCode());
+    }
   }
 
   private int getNetInfoEstablishedConnectionsCount(int bindPort) throws SigarException {
@@ -111,5 +121,18 @@ public class HTTPConnectionLeakTest extends BaseDSOTestCase {
     File workDir = new File(getTempDirectory(), subDir);
     workDir.mkdirs();
     return workDir;
+  }
+
+  public static class URLFetcher {
+    public static void main(String[] args) throws Exception {
+      for (String arg : args) {
+        URL configURL = new URL(arg);
+        BufferedReader in = new BufferedReader(new InputStreamReader(configURL.openStream()));
+        String inputLine;
+        while ((inputLine = in.readLine()) != null)
+          System.out.println(inputLine);
+        in.close();
+      }
+    }
   }
 }
