@@ -16,6 +16,7 @@ public class TestConnectionPolicy implements ConnectionPolicy {
   int                                    maxConnections;
   HashMap<String, HashSet<ConnectionID>> clientsByJvm = new HashMap<String, HashSet<ConnectionID>>();
 
+  @Override
   public synchronized boolean connectClient(ConnectionID connID) {
     if (isMaxConnectionsReached()) { return false; }
 
@@ -34,6 +35,7 @@ public class TestConnectionPolicy implements ConnectionPolicy {
     return true;
   }
 
+  @Override
   public synchronized void clientDisconnected(ConnectionID connID) {
 
     HashSet<ConnectionID> jvmClients = clientsByJvm.get(connID.getJvmID());
@@ -47,20 +49,33 @@ public class TestConnectionPolicy implements ConnectionPolicy {
     }
   }
 
+  @Override
   public synchronized boolean isMaxConnectionsReached() {
     if (maxConnectionsExceeded) { return maxConnectionsExceeded; }
     return (clientsByJvm.size() >= maxConnections);
   }
 
+  @Override
   public synchronized int getMaxConnections() {
     return maxConnections;
   }
 
+  @Override
   public int getNumberOfActiveConnections() {
     throw new ImplementMe();
   }
 
+  @Override
   public int getConnectionHighWatermark() {
     throw new ImplementMe();
+  }
+
+  @Override
+  public boolean isConnectAllowed(ConnectionID connID) {
+    HashSet<ConnectionID> jvmClients = clientsByJvm.get(connID.getJvmID());
+
+    if (jvmClients == null) return !isMaxConnectionsReached();
+
+    return true;
   }
 }
