@@ -34,7 +34,7 @@
     <security-core-version>1.0.2-SNAPSHOT</security-core-version>
     <security-keychain-version>1.0.2-SNAPSHOT</security-keychain-version>
     <management.version>1.0.2-SNAPSHOT</management.version>
-    <terracotta-license.version>1.0.5</terracotta-license.version>
+    <terracotta-license.version>1.0.6-SNAPSHOT</terracotta-license.version>
     <derby.version>10.8.2.2</derby.version>
     <tc-config.version>3.7.1-SNAPSHOT</tc-config.version>
     <sleepycat.version>5.0.55</sleepycat.version>
