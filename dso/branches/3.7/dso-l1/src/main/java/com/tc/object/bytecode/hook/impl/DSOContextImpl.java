@@ -4,8 +4,6 @@
  */
 package com.tc.object.bytecode.hook.impl;
 
-import static org.terracotta.license.LicenseConstants.LICENSE_KEY_FILENAME;
-
 import org.apache.commons.io.CopyUtils;
 
 import com.google.common.collect.MapMaker;
@@ -20,7 +18,6 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1ConfigurationSetupManager;
 import com.tc.config.schema.setup.StandardConfigurationSetupManagerFactory;
-import com.tc.license.LicenseManager;
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -136,12 +133,6 @@ public class DSOContextImpl implements DSOContext {
                                                    URL bootJarURL, boolean expressRejoinClient, TCSecurityManager securityManager, SecurityInfo securityInfo)
       throws ConfigurationSetupException {
     // XXX: refactor this method to not duplicate createContext() so much
-
-    // load license via normal methods before attempt to load it from application resource
-    if (LicenseManager.getLicense() == null) {
-      String licenseLocation = LICENSE_KEY_FILENAME;
-      LicenseManager.loadLicenseFromStream(loader.getResourceAsStream(licenseLocation), "resource " + licenseLocation);
-    }
 
     try {
       BootJar.verifyTCVersion(bootJarURL);
