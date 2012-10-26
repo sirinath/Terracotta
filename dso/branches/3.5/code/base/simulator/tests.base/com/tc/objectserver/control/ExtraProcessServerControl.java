@@ -20,7 +20,6 @@ import com.tc.test.TestConfigObject;
 import com.tc.util.runtime.Os;
 import com.tc.util.runtime.Vm;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
@@ -356,32 +355,14 @@ public class ExtraProcessServerControl extends ServerControlBase {
 
   public void attemptShutdown() throws Exception {
     System.out.println("Shutting down server " + this.name + "...");
-    LinkedJavaProcess stopper = createLinkedJavaProcess("com.tc.admin.TCStop", getMainClassArguments(), jvmArgs);
+    List<String> args = new ArrayList<String>(getMainClassArguments());
+    args.add("-force");
+    LinkedJavaProcess stopper = createLinkedJavaProcess("com.tc.admin.TCStop", args, jvmArgs);
     stopper.start();
+    stopper.mergeSTDERR("[TCStop] ");
+    stopper.mergeSTDOUT("[TCStop] ");
 
-    ByteArrayOutputStream stopperLog = null;
-    try {
-      stopperLog = new ByteArrayOutputStream();
-      StreamCopier stdoutCopier = new StreamCopier(stopper.STDOUT(), stopperLog);
-      StreamCopier stderrCopier = new StreamCopier(stopper.STDERR(), stopperLog);
-
-      stdoutCopier.start();
-      stderrCopier.start();
-
-      stdoutCopier.join(60 * 1000);
-      stderrCopier.join(60 * 1000);
-
-      if (stderrCopier.isAlive() || stdoutCopier.isAlive()) {
-        System.err.println("\n" + "TCStop output: " + stopperLog.toString() + "\n");
-      }
-    } finally {
-      if (stopperLog != null) {
-        stopperOutput = stopperLog.toString();
-        stopperLog.close();
-      }
-      stopper.STDIN().close();
-    }
-
+    if (stopper.waitFor() != 0) { throw new AssertionError("TCStop failed with exit code " + stopper.exitValue()); }
   }
 
   public void shutdown() throws Exception {
