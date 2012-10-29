@@ -183,6 +183,8 @@ public interface TCPropertiesConsts {
    *                                      dgc finishes marking
    * stage.sink.capacity                : Capacity of seda stage queue, Integer.MAX_VALUE if not set
    *                                      (experimental, do not change)
+   * cache.transaction.complete.sink.capacity : Capacity of transaction complete stage, Default Integer.MAX_VALUE
+   *                                       (decreasing this might prevent l1 to shutdown)
    * </code>
    ********************************************************************************************************************/
   public static final String L2_SEDA_COMMITSTAGE                                            = "l2.seda.commitstage.threads";
