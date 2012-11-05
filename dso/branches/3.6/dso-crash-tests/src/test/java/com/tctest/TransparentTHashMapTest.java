@@ -36,7 +36,7 @@ public class TransparentTHashMapTest extends TransparentTestBase {
   @Override
   protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
     super.setupConfig(configFactory);
-    configFactory.l2DSOConfig().getDso().setClientReconnectWindow(30);
+    configFactory.l2DSOConfig().getDso().setClientReconnectWindow(20);
   }
 
 }
