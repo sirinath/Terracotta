@@ -4,6 +4,7 @@
  */
 package com.tctest;
 
+import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.util.runtime.Os;
 
 public class TransparentTHashMapTest extends TransparentTestBase {
@@ -30,6 +31,12 @@ public class TransparentTHashMapTest extends TransparentTestBase {
   @Override
   protected boolean canRunCrash() {
     return true;
+  }
+
+  @Override
+  protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
+    super.setupConfig(configFactory);
+    configFactory.l2DSOConfig().getDso().setClientReconnectWindow(30);
   }
 
 }
