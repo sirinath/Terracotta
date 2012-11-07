@@ -27,6 +27,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     super(appId, cfg, listenerProvider);
   }
 
+  @Override
   public void run() {
     try {
       runTest();
@@ -53,7 +54,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual != getParticipantCount()) {
+    if (actual >= getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -71,7 +72,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual != getParticipantCount()) {
+    if (actual >= getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -89,7 +90,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual != getParticipantCount()) {
+    if (actual >= getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -107,7 +108,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual != getParticipantCount()) {
+    if (actual >= getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -123,7 +124,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual != getParticipantCount()) {
+    if (actual >= getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -131,10 +132,9 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
   private static int[][][] makeIntArray() {
     int[][][] ints = new int[6][8][9];
     int count = 0;
-    for (int i = 0; i < ints.length; i++) {
-      int[][] array1 = ints[i];
-      for (int j = 0; j < array1.length; j++) {
-        int[] array2 = array1[j];
+    for (int[][] array1 : ints) {
+      for (int[] element : array1) {
+        int[] array2 = element;
         for (int k = 0; k < array2.length; k++) {
           array2[k] = count++;
         }
@@ -145,8 +145,8 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
 
   private static FooObject[][] makeFooArray() {
     FooObject[][] foos = new FooObject[2][3];
-    for (int i = 0; i < foos.length; i++) {
-      Arrays.fill(foos[i], new FooObject());
+    for (FooObject[] foo : foos) {
+      Arrays.fill(foo, new FooObject());
     }
     return foos;
   }
@@ -174,22 +174,17 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
       System.out.println("XXXXXXX callCount: " + countCall);
       new Exception().printStackTrace();
       // Everything in the "foos" array should be non-null
-      for (int index = 0; index < foos.length; index++) {
-        FooObject[] array = foos[index];
-        for (int j = 0; j < array.length; j++) {
-          FooObject foo = array[j];
+      for (FooObject[] array : foos) {
+        for (FooObject foo : array) {
           if (foo == null) notifyError("foo == null");
         }
       }
 
       // access all the "ints"
       int count = 0;
-      for (int index = 0; index < ints.length; index++) {
-        int[][] array1 = ints[index];
-        for (int j = 0; j < array1.length; j++) {
-          int[] array2 = array1[j];
-          for (int k = 0; k < array2.length; k++) {
-            int val = array2[k];
+      for (int[][] array1 : ints) {
+        for (int[] array2 : array1) {
+          for (int val : array2) {
             if (count++ != val) notifyError("count ++ != val");
           }
         }
@@ -203,22 +198,17 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
         throws Throwable {
       callCount.incrementAndGet();
       // Everything in the "foos" array should be non-null
-      for (int index = 0; index < foos.length; index++) {
-        FooObject[] array = foos[index];
-        for (int j = 0; j < array.length; j++) {
-          FooObject foo = array[j];
+      for (FooObject[] array : foos) {
+        for (FooObject foo : array) {
           if (foo == null) notifyError("foo == null");
         }
       }
 
       // access all the "ints"
       int count = 0;
-      for (int index = 0; index < ints.length; index++) {
-        int[][] array1 = ints[index];
-        for (int j = 0; j < array1.length; j++) {
-          int[] array2 = array1[j];
-          for (int k = 0; k < array2.length; k++) {
-            int val = array2[k];
+      for (int[][] array1 : ints) {
+        for (int[] array2 : array1) {
+          for (int val : array2) {
             if (count++ != val) notifyError("count ++ != val");
           }
         }
