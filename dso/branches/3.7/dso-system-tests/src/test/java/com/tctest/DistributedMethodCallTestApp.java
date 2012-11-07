@@ -54,7 +54,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual >= getParticipantCount()) {
+    if (actual < getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -72,7 +72,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual >= getParticipantCount()) {
+    if (actual < getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -90,7 +90,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual >= getParticipantCount()) {
+    if (actual < getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -108,7 +108,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual >= getParticipantCount()) {
+    if (actual < getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
@@ -124,7 +124,7 @@ public class DistributedMethodCallTestApp extends AbstractTransparentApp {
     }
     sharedBarrier.await();
     final int actual = model.callCount.get();
-    if (actual >= getParticipantCount()) {
+    if (actual < getParticipantCount()) {
       notifyError("Unexpected call count: expected=" + getParticipantCount() + ", actual=" + actual);
     }
   }
