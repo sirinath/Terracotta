@@ -80,6 +80,7 @@
             </goals>
             <configuration>
               <overwrite>false</overwrite>
+              <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
               <includeGroupIds>org.terracotta.internal</includeGroupIds>
               <classifier>sources</classifier>
               <outputDirectory>${project.build.directory}/sources</outputDirectory>
