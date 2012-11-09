@@ -232,6 +232,7 @@
             </goals>
             <configuration>
               <overwrite>false</overwrite>
+              <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
               <includeGroupIds>org.terracotta.internal,org.terracotta.test</includeGroupIds>
               <classifier>test-sources</classifier>
               <excludes>tim-get.properties,**/**TestApp.java</excludes>
