@@ -220,8 +220,7 @@ public abstract class TransparentTestBase extends BaseDSOTestCase implements Tra
 
     RestartTestHelper helper = null;
     PortChooser portChooser = new PortChooser();
-    if ((isCrashy() && canRunCrash()) || useExternalProcess()) {
-      // javaHome is set here only to enforce that java home is defined in the test config
+    if (((isCrashy() && canRunCrash()) || useExternalProcess()) && !isMultipleServerTest()) {      
       // javaHome is set again inside RestartTestEnvironment because how that class is used
       // TODO: clean this up
       setJavaHome();
