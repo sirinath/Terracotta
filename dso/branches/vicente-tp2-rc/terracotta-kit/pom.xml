@@ -97,14 +97,14 @@
     </dependency>     
 
     <!-- quartz -->
-    <dependency>
+    <!-- dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>${quartz.artifactId}</artifactId>
       <version>${quartz.version}</version>
       <classifier>distribution</classifier>
       <type>tar.gz</type>      
       <scope>provided</scope>
-    </dependency>
+    </dependency -->
 
   </dependencies>
 
@@ -372,7 +372,7 @@
                     </resource>
                     
                     <!-- quartz -->
-                    <resource>
+                    <!-- resource>
                       <runIf>{{ "${no.extra}" != "true" }}</runIf>
                       <targetPath>${rootDir}</targetPath>
                       <dependency>
@@ -392,7 +392,7 @@
                       <clean>true</clean>
                       <cleanEmptyDirectories>true</cleanEmptyDirectories>
                       <failIfNotFound>false</failIfNotFound>
-                    </resource>                    
+                    </resource -->
 
                     <!-- 1. remove build-data.txt from terracotta jar and rename it to tc.jar 
                          2. set execution permissions for scripts and library files
