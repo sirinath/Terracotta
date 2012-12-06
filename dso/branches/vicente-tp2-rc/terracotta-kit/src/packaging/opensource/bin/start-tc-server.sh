@@ -55,7 +55,7 @@ done
 start=true
 while "$start"
 do
-${JAVA_COMMAND} -Xms512m -Xmx512m -XX:+HeapDumpOnOutOfMemoryError \
+${JAVA_COMMAND} -Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError \
    -Dcom.sun.management.jmxremote \
    -Dtc.install-root="${TC_INSTALL_DIR}" \
    -Dsun.rmi.dgc.server.gcInterval=31536000000\
