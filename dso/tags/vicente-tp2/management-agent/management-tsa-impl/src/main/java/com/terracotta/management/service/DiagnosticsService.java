@@ -1,0 +1,57 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
+package com.terracotta.management.service;
+
+import org.terracotta.management.ServiceExecutionException;
+
+import com.terracotta.management.resource.ThreadDumpEntity;
+
+import java.util.Collection;
+import java.util.Set;
+
+/**
+ * An interface for service implementations providing TSA diagnostics facilities.
+ *
+ * @author Ludovic Orban
+ */
+public interface DiagnosticsService {
+
+  /**
+   * Get a collection {@link ThreadDumpEntity} objects each representing a server or client
+   * thread dump. All connected servers and clients are included.
+   *
+   * @return a collection {@link ThreadDumpEntity} objects.
+   * @throws ServiceExecutionException
+   */
+  Collection<ThreadDumpEntity> getClusterThreadDump() throws ServiceExecutionException;
+
+  /**
+   * Get a collection {@link ThreadDumpEntity} objects each representing a server
+   * thread dump. Only requested servers are included, or all of them if serverNames is null.
+   *
+   * @param serverNames A set of server names, null meaning all of them.
+   * @return a collection {@link ThreadDumpEntity} objects.
+   * @throws ServiceExecutionException
+   */
+  Collection<ThreadDumpEntity> getServersThreadDump(Set<String> serverNames) throws ServiceExecutionException;
+
+  /**
+   * Get a collection {@link ThreadDumpEntity} objects each representing a client
+   * thread dump. Only requested clients are included, or all of them if clientIds is null.
+   *
+   * @param clientIds A set of client IDs, null meaning all of them.
+   * @return a collection {@link ThreadDumpEntity} objects.
+   * @throws ServiceExecutionException
+   */
+  Collection<ThreadDumpEntity> getClientsThreadDump(Set<String> clientIds) throws ServiceExecutionException;
+
+  /**
+   * Run the Distributed Garbage Collector in the server array.
+   *
+   * @return true if the DGC cycle started, false otherwise.
+   * @throws ServiceExecutionException
+   */
+  boolean runDgc() throws ServiceExecutionException;
+
+}
