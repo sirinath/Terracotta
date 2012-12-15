@@ -6,6 +6,7 @@ package com.tc.objectserver.impl;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.EvictableMap;
 import com.tc.objectserver.api.ServerMapEvictionManager;
+import com.tc.objectserver.context.ServerMapEvictionContext;
 import com.tc.objectserver.l1.impl.ClientObjectReferenceSet;
 import com.tc.objectserver.l1.impl.ClientObjectReferenceSetChangedListener;
 import java.util.Collections;
@@ -58,17 +59,16 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     }
             
     @Override
-    public Map collectEvictonCandidates(final int maxParam, final EvictableMap map, final ClientObjectReferenceSet clients) {
+    public ServerMapEvictionContext collectEvictonCandidates(final int maxParam, String className, final EvictableMap map, final ClientObjectReferenceSet clients) {
    // lets try and get smarter about this in the future but for now, just bring it back to capacity
         final int sample = boundsCheckSampleSize(size - maxParam);
 
         if ( maxParam == 0 ) {
             throw new AssertionError("triggers should never start evicting a pinned cache or store");
         }
-        if ( sample <= 0 ) {
-            return processSample(Collections.<Object,ObjectID>emptyMap());
-        }
-        Map samples = map.getRandomSamples(sample, clients);
+
+        Map samples = ( sample > 0 ) ? map.getRandomSamples(sample, clients) : Collections.<Object,ObjectID>emptyMap();
+
         count = samples.size();
  // didn't get the sample count we wanted.  wait for a clientobjectidset refresh, only once and try it again
         if ( count < size - maxParam ) {
@@ -76,8 +76,8 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
             clientSetCount = clients.size();
             clientSet = clients;
         }
-       
-        return processSample(samples);
+        
+        return createEvictionContext(className, samples);
     } 
     
      @Override
@@ -103,20 +103,19 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
             }
             
             @Override
-            public Map collectEvictonCandidates(int maxParam, EvictableMap map, ClientObjectReferenceSet clients) {
+            public ServerMapEvictionContext collectEvictonCandidates(int maxParam, String className, EvictableMap map, ClientObjectReferenceSet clients) {
                 final int grab = boundsCheckSampleSize(sizeInternal - maxParam);
-                Map sample;
-                if ( grab > 0 ) {
-                    sample = map.getRandomSamples(grab, clients);
-                    clientSetCountInternal = clients.size();
-                } else {
-                    sample = Collections.emptyMap();
-                }
+                Map<Object,ObjectID> sample = ( grab > 0 ) ?
+                    map.getRandomSamples(grab, clients) : Collections.<Object,ObjectID>emptyMap();
+
+                clientSetCountInternal = clients.size();
+                
                 sampleCount = sample.size();
                 if ( sampleCount >= sizeInternal - maxParam ) {
                     clients.removeReferenceSetChangeListener(CapacityEvictionTrigger.this);
                 }
-                return processSample(sample);
+                
+                return createEvictionContext(className, sample);
             }
 
             @Override
