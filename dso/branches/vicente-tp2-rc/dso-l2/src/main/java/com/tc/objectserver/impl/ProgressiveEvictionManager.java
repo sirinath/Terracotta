@@ -4,7 +4,6 @@
 package com.tc.objectserver.impl;
 
 import org.terracotta.corestorage.monitoring.MonitoredResource;
-
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.Sink;
 import com.tc.l2.objectserver.ServerTransactionFactory;
@@ -38,7 +37,6 @@ import com.tc.stats.counter.sampled.derived.SampledRateCounterConfig;
 import com.tc.stats.counter.sampled.derived.SampledRateCounterImpl;
 import com.tc.text.PrettyPrinter;
 import com.tc.util.ObjectIDSet;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -258,7 +257,8 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
                 this.objectManager.releaseReadOnly(mo);
                 return true;
             }
-            ServerMapEvictionContext context = doEviction(triggerParam, ev, className, ev.getCacheName());
+            
+            ServerMapEvictionContext context = doEviction(triggerParam, ev, className);
 
             // Reason for releasing the checked-out object before adding the context to the sink is that we can block on add
             // to the sink because the sink reached max capacity and blocking
@@ -270,14 +270,11 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
             this.objectManager.releaseReadOnly(mo);
             
             if (context != null) {
+                int size = context.getRandomSamples().size();
                 if ( triggerParam instanceof PeriodicEvictionTrigger && ((PeriodicEvictionTrigger)triggerParam).isExpirationOnly() ) {
-                    PeriodicEvictionTrigger periodic = (PeriodicEvictionTrigger)triggerParam;
-                    expirationStats.increment(triggerParam.getCount());
-                    if (periodic.filterRatio() > .5f ) {
-                        scheduleEvictionTrigger(periodic.duplicate());
-                    }
+                    expirationStats.increment(size);
                 } else {
-                    evictionStats.increment(triggerParam.getCount());
+                    evictionStats.increment(size);
                 }
                 this.evictorSink.add(context);
             }
@@ -287,27 +284,20 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
                 logger.debug(triggerParam);
             }
         }
-
+       
         return true;
     }
 
     private ServerMapEvictionContext doEviction(final EvictionTrigger triggerParam, final EvictableMap ev,
-            final String className,
-            final String cacheName) {
+            final String className) {
         int max = ev.getMaxTotalCount();
 
         if (max < 0) {
 //  cache has no count capacity max is MAX_VALUE;
             max = Integer.MAX_VALUE;
         }
-
-        Map samples = triggerParam.collectEvictonCandidates(max, ev, clientObjectReferenceSet);
-
-        if (samples.isEmpty()) {
-            return null;
-        } else {
-            return new ServerMapEvictionContext(triggerParam, samples, className, cacheName);
-        }
+        
+        return triggerParam.collectEvictonCandidates(max, className, ev, clientObjectReferenceSet);
     }
 
     Future<SampledRateCounter> emergencyEviction(final int blowout) {
