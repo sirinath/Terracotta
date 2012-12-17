@@ -4,6 +4,7 @@
  */
 package com.tctest;
 
+import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
 import com.tc.test.MultipleServersCrashMode;
 import com.tc.test.MultipleServersPersistenceMode;
 import com.tc.test.MultipleServersSharedDataMode;
@@ -27,6 +28,12 @@ public class TreeMapActivePassiveTest extends ActivePassiveTransparentTestBase {
   @Override
   protected boolean canRunCrash() {
     return true;
+  }
+
+  @Override
+  protected void setupConfig(TestConfigurationSetupManagerFactory configFactory) {
+    super.setupConfig(configFactory);
+    configFactory.l2DSOConfig().getDso().setClientReconnectWindow(20);
   }
 
   @Override
