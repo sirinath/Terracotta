@@ -36,7 +36,7 @@ public class AggregateIsolatedToolkitTypeRoot<T extends RejoinAwareToolkitObject
   private final WeakValueMap<T>                  isolatedTypes;
   private final PlatformService                  platformService;
   private final String                           rootName;
-  private Set<String>                            currentKeys = Collections.EMPTY_SET;
+  private volatile Set<String>                   currentKeys = Collections.EMPTY_SET;
 
   protected AggregateIsolatedToolkitTypeRoot(String rootName, ToolkitTypeRoot<S>[] roots,
                                              IsolatedToolkitTypeFactory<T, S> isolatedTypeFactory,
@@ -147,8 +147,17 @@ public class AggregateIsolatedToolkitTypeRoot<T extends RejoinAwareToolkitObject
   }
 
   @Override
-  public S lookupClusteredObject(String name) {
-    return getToolkitTypeRoot(name).getClusteredObject(name);
+  public S lookupOrCreateClusteredObject(String name, ToolkitObjectType type, Configuration config) {
+    S rv = getToolkitTypeRoot(name).getClusteredObject(name);
+    if (rv != null) return rv;
+    lock(type, name);
+    try {
+      rv = isolatedTypeFactory.createTCClusteredObject(config);
+      getToolkitTypeRoot(name).addClusteredObject(name, rv);
+      return rv;
+    } finally {
+      unlock(type, name);
+    }
   }
 
   @Override

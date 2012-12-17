@@ -208,6 +208,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       latchState.getLatch().release();
     }
     objectLatchStateMap.clear();
+    rootsHolder.cleanup();
   }
 
   private void checkAndSetstate() {

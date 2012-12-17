@@ -3,9 +3,11 @@
  */
 package com.terracotta.toolkit.collections;
 
+import org.terracotta.toolkit.ToolkitObjectType;
 import org.terracotta.toolkit.collections.ToolkitList;
 import org.terracotta.toolkit.concurrent.locks.ToolkitReadWriteLock;
 
+import com.google.common.base.Preconditions;
 import com.terracotta.toolkit.factory.ToolkitObjectFactory;
 import com.terracotta.toolkit.object.AbstractDestroyableToolkitObject;
 import com.terracotta.toolkit.rejoin.RejoinAwareToolkitObject;
@@ -40,13 +42,10 @@ public class DestroyableToolkitList<E> extends AbstractDestroyableToolkitObject<
 
   @Override
   public void rejoinCompleted() {
-    ToolkitListImpl afterRejoin = lookup.lookupClusteredObject(name);
-    if (afterRejoin != null) {
+    if (!isDestroyed()) {
+      ToolkitListImpl afterRejoin = lookup.lookupOrCreateClusteredObject(name, ToolkitObjectType.LIST, null);
+      Preconditions.checkNotNull(afterRejoin);
       this.list = afterRejoin;
-    } else {
-      // didn't find backing clustered object after rejoin - must have been destroyed
-      // apply destroy locally
-      applyDestroy();
     }
   }
 
