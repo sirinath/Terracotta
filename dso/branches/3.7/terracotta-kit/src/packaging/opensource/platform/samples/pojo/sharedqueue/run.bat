@@ -36,6 +36,6 @@ set JAVA_OPTS=%TC_JAVA_OPTS% -Dcom.sun.management.jmxremote %JAVA_OPTS%
 set CLASSPATH=classes
 set CLASSPATH=%CLASSPATH%;lib\jetty-6.1.1.jar
 set CLASSPATH=%CLASSPATH%;lib\jetty-util-6.1.1.jar
-set CLASSPATH=%CLASSPATH%;lib\servlet-api-2.5-6.1.1.jar
+set CLASSPATH=%CLASSPATH%;lib\gf.javax.servlet-api-3.0.1.jar
 start "sharedqueue" %JAVA_HOME%\bin\java %JAVA_OPTS% -cp %CLASSPATH% demo.sharedqueue.Main %*
 endlocal

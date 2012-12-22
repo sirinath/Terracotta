@@ -42,7 +42,7 @@ set -- -q
 CLASSPATH="${CWD}/classes"
 CLASSPATH="${CLASSPATH}${PATH_SEPARATOR}${CWD}/lib/jetty-6.1.1.jar"
 CLASSPATH="${CLASSPATH}${PATH_SEPARATOR}${CWD}/lib/jetty-util-6.1.1.jar"
-CLASSPATH="${CLASSPATH}${PATH_SEPARATOR}${CWD}/lib/servlet-api-2.5-6.1.1.jar"
+CLASSPATH="${CLASSPATH}${PATH_SEPARATOR}${CWD}/lib/gf.javax.servlet-api-3.0.1.jar"
 
 exec "${JAVA_HOME}/bin/java" ${TC_JAVA_OPTS} ${JAVA_OPTS} \
   -Dcom.sun.management.jmxremote \

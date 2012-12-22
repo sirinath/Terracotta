@@ -18,6 +18,8 @@
       </includes>
       <excludes>
         <exclude>org.terracotta:${toolkit.artifactId}</exclude>
+        <exclude>javax.servlet:servlet-api</exclude>
+        <exclude>org.mortbay.jetty:servlet-api-2.5</exclude>
       </excludes>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <useProjectArtifact>false</useProjectArtifact>
