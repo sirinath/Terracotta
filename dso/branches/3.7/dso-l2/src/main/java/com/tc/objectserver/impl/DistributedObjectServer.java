@@ -462,6 +462,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.serverBuilder;
   }
 
+  @Override
   public void dump() {
     this.dumpHandler.dump();
     this.serverBuilder.dump();
@@ -882,8 +883,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     int queryThreads = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_QUERY_THREADS);
     final Stage searchQueryRequestStage = stageManager
         .createStage(ServerConfigurationContext.SEARCH_QUERY_REQUEST_STAGE, new SearchQueryRequestMessageHandler(),
-                     queryThreads, 1, maxStageSize);
-
+                     queryThreads, maxStageSize);
+    
     final Sink searchEventSink = searchEventStage.getSink();
 
     final TransactionBatchManagerImpl transactionBatchManager = new TransactionBatchManagerImpl(sequenceValidator,
@@ -1166,6 +1167,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.l2Management.findObjectManagementMonitorMBean().registerGCController(new GCControllerImpl(this.objectManager
                                                                                   .getGarbageCollector()));
     this.l2Management.findObjectManagementMonitorMBean().registerObjectIdFetcher(new ObjectIdsFetcher() {
+      @Override
       public Set getAllObjectIds() {
         return DistributedObjectServer.this.objectManager.getAllObjectIDs();
       }
@@ -1435,6 +1437,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
   private void setLoggerOnExit() {
     CommonShutDownHook.addShutdownHook(new Runnable() {
+      @Override
       public void run() {
         logger.info("L2 Exiting...");
       }
@@ -1737,10 +1740,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.l1ReconnectConfig;
   }
 
+  @Override
   public void addAllLocksTo(final LockInfoByThreadID lockInfo) {
     // this feature not implemented for server. DEV-1949
   }
 
+  @Override
   public ThreadIDMap getThreadIDMap() {
     return new NullThreadIDMapImpl();
   }
@@ -1749,10 +1754,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     return this.groupCommManager;
   }
 
+  @Override
   public void registerForDump(final CallbackDumpAdapter dumpAdapter) {
     this.dumpHandler.registerForDump(dumpAdapter);
   }
 
+  @Override
   public boolean isAlive(final String name) {
     throw new UnsupportedOperationException();
   }

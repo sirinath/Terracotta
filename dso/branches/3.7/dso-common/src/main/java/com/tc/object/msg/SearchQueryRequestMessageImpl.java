@@ -272,14 +272,6 @@ public class SearchQueryRequestMessageImpl extends DSOMessageBase implements Sea
    * {@inheritDoc}
    */
   @Override
-  public Object getKey() {
-    return getSourceNodeID();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public ClientID getClientID() {
     return (ClientID) getSourceNodeID();
   }
