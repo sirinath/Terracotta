@@ -100,6 +100,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
                                                Mockito.mock(ServerMapEvictionManager.class), this.lockResponseSink,
                                                this.objectIDRequestSink, this.timer, reconnectTimeout, false, logger);
     this.hm.setStarting(convertToConnectionIds(this.existingUnconnectedClients));
+    this.hm.startReconnectWindow();
   }
 
   private Set convertToConnectionIds(final Set s) {
@@ -114,6 +115,7 @@ public class ServerClientHandshakeManagerTest extends TCTestCase {
   public void testNoUnconnectedClients() throws Exception {
     initHandshakeManager(DEFAULT_RECONNECT_TIMEOUT);
     assertStarted();
+    assertEquals(0, hm.getUnconnectedClientsSize());
   }
 
   public void testTimeout1() throws Exception {
