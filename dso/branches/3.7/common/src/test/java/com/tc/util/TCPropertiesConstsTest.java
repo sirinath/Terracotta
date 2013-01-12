@@ -73,6 +73,7 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.SEARCH_LUCENE_MERGE_FACTOR);
     exemptedProperties.add(TCPropertiesConsts.SEARCH_LUCENE_MAX_BUFFERED_DOCS);
     exemptedProperties.add(TCPropertiesConsts.SEARCH_LUCENE_MAX_MERGE_DOCS);
+    exemptedProperties.add(TCPropertiesConsts.SEARCH_LUCENE_MAX_BOOLEAN_CLAUSES);
   }
 
   private void loadDefaults(String propFile) {
