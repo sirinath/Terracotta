@@ -5,15 +5,15 @@
 
   <groupId>org.terracotta.samples.sessions</groupId>
   <artifactId>townsend</artifactId>
-  <version>3.6.6-SNAPSHOT</version>
+  <version>3.6.7-SNAPSHOT</version>
   <name>Townsend</name>
   <packaging>war</packaging>
 
   <properties>
-    <tc-maven-plugin.version>1.8.6-SNAPSHOT</tc-maven-plugin.version>
-    <terracotta-session.version>1.2.6-SNAPSHOT</terracotta-session.version>
-    <ehcache-core.version>2.5.7-SNAPSHOT</ehcache-core.version>
-    <ehcache-terracotta.version>2.5.7-SNAPSHOT</ehcache-terracotta.version>
+    <tc-maven-plugin.version>1.8.7-SNAPSHOT</tc-maven-plugin.version>
+    <terracotta-session.version>1.2.7-SNAPSHOT</terracotta-session.version>
+    <ehcache-core.version>2.5.8-SNAPSHOT</ehcache-core.version>
+    <ehcache-terracotta.version>2.5.8-SNAPSHOT</ehcache-terracotta.version>
   </properties>
 
   <dependencies>
