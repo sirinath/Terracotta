@@ -100,26 +100,32 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
            + this.bytesWritten + " foldingKeys=" + this.foldingKeys.size();
   }
 
+  @Override
   public TxnBatchID getTransactionBatchID() {
     return this.batchID;
   }
 
+  @Override
   public synchronized boolean isEmpty() {
     return this.transactionData.isEmpty();
   }
 
+  @Override
   public synchronized int numberOfTxnsBeforeFolding() {
     return this.numTxnsBeforeFolding;
   }
 
+  @Override
   public synchronized int byteSize() {
     return this.bytesWritten;
   }
 
+  @Override
   public boolean isNull() {
     return false;
   }
 
+  @Override
   public synchronized TransactionBuffer removeTransaction(final TransactionID txID) {
     final TransactionBufferImpl removed = (TransactionBufferImpl) this.transactionData.remove(txID);
     if (removed == null) { throw new AssertionError("Attempt to remove a transaction that doesn't exist"); }
@@ -318,6 +324,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
     return false;
   }
 
+  @Override
   public synchronized FoldedInfo addTransaction(final ClientTransaction txn, final SequenceGenerator sequenceGenerator,
                                                 final TransactionIDGenerator tidGenerator) {
     if (committed) { throw new AssertionError("Already committed"); }
@@ -349,6 +356,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
   }
 
   // Called from CommitTransactionMessageImpl
+  @Override
   public synchronized TCByteBuffer[] getData() {
     this.committed = true;
     this.foldingKeys.clear();
@@ -381,6 +389,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
    * and reallyRecycle of messages can get stuck waiting for monitor entry at TransactionBatchWriter while Transaction
    * Batch send stage is trying to send messages.
    */
+  @Override
   public void send() {
     final CommitTransactionMessage msg;
     synchronized (this) {
@@ -390,16 +399,19 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
     msg.send();
   }
 
+  @Override
   public synchronized Collection addTransactionIDsTo(final Collection c) {
     c.addAll(this.transactionData.keySet());
     return c;
   }
 
+  @Override
   public synchronized SequenceID getMinTransactionSequence() {
     return this.transactionData.isEmpty() ? SequenceID.NULL_ID : ((TransactionBufferImpl) this.transactionData.values()
         .iterator().next()).getSequenceID();
   }
 
+  @Override
   public Collection addTransactionSequenceIDsTo(final Collection sequenceIDs) {
     for (final Iterator i = this.transactionData.values().iterator(); i.hasNext();) {
       final TransactionBufferImpl tb = ((TransactionBufferImpl) i.next());
@@ -409,6 +421,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
   }
 
   // Called from CommitTransactionMessageImpl recycle on write.
+  @Override
   public synchronized void recycle() {
     for (final Iterator iter = this.batchDataOutputStreams.iterator(); iter.hasNext();) {
       final TCByteBufferOutputStream buffer = (TCByteBufferOutputStream) iter.next();
@@ -418,6 +431,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
     this.outstandingWriteCount--;
   }
 
+  @Override
   public synchronized String dump() {
     final StringBuffer sb = new StringBuffer("TransactionBatchWriter = { \n");
     for (final Iterator i = this.transactionData.entrySet().iterator(); i.hasNext();) {
@@ -463,10 +477,12 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
       this.txnID = txnID;
     }
 
+    @Override
     public TransactionID getFoldedTransactionID() {
       return this.txnID;
     }
 
+    @Override
     public void writeTo(final TCByteBufferOutputStream dest) {
       // XXX: make a writeInt() and writeLong() methods on Mark. Maybe ones that take offsets too
 
@@ -509,6 +525,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
       return this.sequenceID;
     }
 
+    @Override
     public int write(final ClientTransaction txn) {
       // Holding on the object references, this method could be called more than once for folded transactions.
       // By definition on the second and subsequent calls will have repeated object references in it, so put() to the
@@ -606,6 +623,9 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
       if (sid.isNull()) { throw new AssertionError("SequenceID is null: " + txn); }
       this.output.writeLong(sid.toLong());
 
+      // isEviction
+      this.output.writeBoolean(false);
+
       final Collection locks = txn.getAllLockIDs();
       this.output.writeInt(locks.size());
       for (final Iterator i = locks.iterator(); i.hasNext();) {
@@ -664,14 +684,17 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
       }
     }
 
+    @Override
     public int getTxnCount() {
       return this.txnCount;
     }
 
+    @Override
     public void recycle() {
       this.output.recycle();
     }
 
+    @Override
     public void addTransactionCompleteListeners(List transactionCompleteListeners) {
       if (!transactionCompleteListeners.isEmpty()) {
         if (txnCompleteListers == null) {
@@ -681,6 +704,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
       }
     }
 
+    @Override
     public List getTransactionCompleteListeners() {
       return (txnCompleteListers == null ? Collections.EMPTY_LIST : txnCompleteListers);
     }
