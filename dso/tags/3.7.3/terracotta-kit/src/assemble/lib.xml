@@ -15,6 +15,7 @@
       <useTransitiveDependencies>true</useTransitiveDependencies>
       <includes>
         <include>org.terracotta:${terracotta.artifactId}</include>
+        <include>gf-3122:gf.javax.servlet-api</include>
       </includes>
       <excludes>
         <exclude>org.terracotta:${toolkit.artifactId}</exclude>
