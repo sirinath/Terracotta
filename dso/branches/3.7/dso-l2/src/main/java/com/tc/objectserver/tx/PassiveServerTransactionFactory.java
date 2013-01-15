@@ -22,6 +22,7 @@ import java.util.Set;
 public final class PassiveServerTransactionFactory implements ServerTransactionFactory {
 
   public ServerTransaction createServerTransaction(TxnBatchID batchID, TransactionID txnID, SequenceID sequenceID,
+                                                   final boolean isEviction,
                                                    LockID[] locks, NodeID source, List dnas,
                                                    ObjectStringSerializer serializer, Map newRoots, TxnType txnType,
                                                    List notifies, DmiDescriptor[] dmis, MetaDataReader[] readers,
@@ -29,6 +30,14 @@ public final class PassiveServerTransactionFactory implements ServerTransactionF
                                                    Set<ObjectID> ignoredOidsForBroadcast) {
     return new PassiveServerTransactionImpl(batchID, txnID, sequenceID, locks, source, dnas, serializer, newRoots,
                                             txnType, notifies, dmis, readers, numApplicationTxn, highWaterMarks,
-                                            ignoredOidsForBroadcast);
+                                            ignoredOidsForBroadcast)
+    {
+
+      @Override
+      public boolean isEviction() {
+        return isEviction;
+      }
+
+    };
   }
 }
