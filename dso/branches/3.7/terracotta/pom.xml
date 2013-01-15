@@ -41,6 +41,11 @@
       <artifactId>dso-statistics</artifactId>
       <version>${project.version}</version>
     </dependency>    
+    <dependency>
+      <groupId>gf-3122</groupId>
+      <artifactId>gf.javax.servlet-api</artifactId>
+      <version>3.0.1</version>
+    </dependency>
   </dependencies>
 
   <build>
