@@ -253,11 +253,6 @@ public class GCTestObjectManager implements ObjectManager {
   }
 
   @Override
-  public ManagedObject getQuietObjectByID(ObjectID id) {
-    return getObjectByID(id);
-  }
-
-  @Override
   public void deleteObjects(final Set<ObjectID> objectsToDelete) {
     //
   }

@@ -1017,11 +1017,6 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     @Override
-    public ManagedObject getQuietObjectByID(ObjectID id) {
-      return getObjectByID(id);
-    }
-
-    @Override
     public void deleteObjects(final Set<ObjectID> objectsToDelete) {
       //
     }

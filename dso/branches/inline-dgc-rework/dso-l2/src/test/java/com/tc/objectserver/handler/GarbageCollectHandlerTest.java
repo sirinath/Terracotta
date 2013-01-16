@@ -425,11 +425,6 @@ public class GarbageCollectHandlerTest extends TCTestCase {
     }
 
     @Override
-    public ManagedObject getQuietObjectByID(ObjectID id) {
-      throw new ImplementMe();
-    }
-
-    @Override
     public void deleteObjects(Set<ObjectID> objectsToDelete) {
       deletedObjects.addAll(objectsToDelete);
       inlineGCCount.incrementAndGet();
