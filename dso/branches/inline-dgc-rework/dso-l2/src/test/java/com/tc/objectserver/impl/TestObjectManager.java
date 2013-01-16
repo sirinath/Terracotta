@@ -251,9 +251,4 @@ public class TestObjectManager implements ObjectManager, ObjectStatsManager {
   public ManagedObjectFacade lookupFacade(ObjectID id, int limit) {
     return null;
   }
-
-  @Override
-  public ManagedObject getQuietObjectByID(ObjectID id) {
-    return getObjectByID(id);
-  }
 }

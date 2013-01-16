@@ -70,7 +70,7 @@ public interface ServerTransactionManager {
    */
   public void commit(Collection<ManagedObject> objects,
                      Map<String, ObjectID> newRoots, Collection<ServerTransactionID> appliedServerTransactionIDs,
-                     SortedSet<ObjectID> deletedObjects);
+                     SortedSet<ObjectID> deletedObjects, boolean eviction);
 
   /**
    * The broadcast stage is completed. This could potentially trigger an acknowledgment to the originating client.

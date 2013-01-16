@@ -94,7 +94,7 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   @Override
   public void commit(Collection<ManagedObject> objects,
                      Map<String, ObjectID> newRoots, Collection<ServerTransactionID> appliedServerTransactionIDs,
-                     SortedSet<ObjectID> deletedObjects) {
+                     SortedSet<ObjectID> deletedObjects, boolean eviction) {
     // NOP
   }
 

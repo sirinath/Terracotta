@@ -135,9 +135,4 @@ public interface ObjectManager extends ManagedObjectProvider, ObjectManagerMBean
    */
   public ManagedObject getObjectByIDReadOnly(ObjectID id);
 
-  /**
-   * This method does not update the cache hit/miss stats. You may want to use this if you have prefetched the objects.
-   */
-  public ManagedObject getQuietObjectByID(ObjectID id);
-
 }

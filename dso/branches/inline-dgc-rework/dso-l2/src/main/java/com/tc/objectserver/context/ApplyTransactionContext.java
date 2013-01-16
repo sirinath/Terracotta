@@ -33,7 +33,7 @@ public class ApplyTransactionContext implements MultiThreadedEventContext {
   public boolean needsApply() {
     return needsApply;
   }
-
+  
   @Override
   public Object getKey() {
     return txn.getTransactionID();

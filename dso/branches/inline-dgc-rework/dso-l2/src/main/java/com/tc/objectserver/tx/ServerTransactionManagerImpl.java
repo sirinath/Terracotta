@@ -400,9 +400,13 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   public void commit(final Collection<ManagedObject> objects,
                      final Map<String, ObjectID> newRoots,
                      final Collection<ServerTransactionID> appliedServerTransactionIDs,
-                     final SortedSet<ObjectID> deletedObjects) {
+                     final SortedSet<ObjectID> deletedObjects,boolean eviction) {
     this.objectManager.releaseAll(objects);
-    this.garbageCollectionManager.deleteObjects(deletedObjects);
+//    if ( eviction ) {
+        this.objectManager.deleteObjects(deletedObjects);
+//    } else {
+//        this.garbageCollectionManager.deleteObjects(deletedObjects);
+//    }
     fireRootCreatedEvents(newRoots);
     committed(appliedServerTransactionIDs);
     if (this.commitLoggingEnabled) {

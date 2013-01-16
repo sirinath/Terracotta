@@ -125,15 +125,17 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
   }
 
   private CommitContext getCurrentCommitContext(ApplyTransactionContext atc) {
-    if (currentCommitContext.get() != null && currentCommitContext.get().shouldCommitNow()) {
-      currentCommitContext.get().commit();
+      CommitContext current = currentCommitContext.get();
+    if (current != null && current.shouldCommitNow(atc.getTxn().isEviction())) {
+      current.commit();
     }
 
-    if (currentCommitContext.get() == null || currentCommitContext.get().isCommitted()) {
-      currentCommitContext.set(new CommitContext(persistenceTransactionProvider.newTransaction(), atc.getKey()));
-      recycleCommitSink.add(currentCommitContext.get());
+    if (current == null || current.isCommitted()) {
+        current = new CommitContext(persistenceTransactionProvider.newTransaction(), atc.getKey(), atc.getTxn().isEviction());
+      currentCommitContext.set(current);
+      recycleCommitSink.add(current);
     }
-    return currentCommitContext.get();
+    return current;
   }
 
   @Override
@@ -155,13 +157,15 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     private final Collection<ServerTransactionID> serverTransactionIDs = new ArrayList<ServerTransactionID>(TXN_LIMIT_COUNT);
     private final SortedSet<ObjectID> objectsToDelete = new ObjectIDSet();
     private final Object multiThreadKey;
+    private final boolean eviction;
 
     private int numberOfCommits = 0;
     private boolean committed = false;
 
-    private CommitContext(final Transaction transaction, Object multiThreadKey) {
+    private CommitContext(final Transaction transaction, Object multiThreadKey, boolean eviction) {
       this.transaction = transaction;
       this.multiThreadKey = multiThreadKey;
+      this.eviction = eviction;
     }
 
     void releaseOnCommit(Collection<ManagedObject> release) {
@@ -177,12 +181,17 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
       numberOfCommits++;
     }
 
-    boolean shouldCommitNow() {
+    boolean shouldCommitNow(boolean eviction) {
+      if ( eviction != this.eviction ) { return true; }
       return numberOfCommits >= TXN_LIMIT_COUNT;
     }
 
     boolean isCommitted() {
       return committed;
+    }
+    
+    boolean isEviction() {
+        return eviction;
     }
 
     void commit() {
@@ -191,7 +200,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
       }
       committed = true;
       transaction.commit();
-      transactionManager.commit(objectsToRelease, newRoots, serverTransactionIDs, objectsToDelete);
+      transactionManager.commit(objectsToRelease, newRoots, serverTransactionIDs, objectsToDelete,this.eviction);
     }
 
     @Override

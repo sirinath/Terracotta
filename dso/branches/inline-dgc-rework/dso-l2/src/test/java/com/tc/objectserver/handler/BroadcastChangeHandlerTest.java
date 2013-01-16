@@ -888,7 +888,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     public void commit(final Collection<ManagedObject> objects,
                        final Map<String, ObjectID> newRoots,
                        final Collection<ServerTransactionID> appliedServerTransactionIDs,
-                       final SortedSet<ObjectID> deletedObjects) {
+                       final SortedSet<ObjectID> deletedObjects, boolean eviction) {
       throw new ImplementMe();
     }
 
