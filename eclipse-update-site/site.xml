@@ -23,6 +23,10 @@
       <category name="dso"/>
    </feature>
 
+   <feature url="features/org.terracotta.dso_3.6.6.r21965_v130112.jar" id="org.terracotta.dso" version="3.6.6.r21965_v130112">
+      <category name="dso"/>
+   </feature>
+
    <feature url="features/org.terracotta.dso_3.6.5.r21031_v121019.jar" id="org.terracotta.dso" version="3.6.5.r21031_v121019">
       <category name="dso"/>
    </feature>
