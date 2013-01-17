@@ -471,14 +471,13 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
 
     private void disableGCIfPossible() {
       if (!this.disabled) {
-//        this.disabled = ReplicatedObjectManagerImpl.this.objectManager.getGarbageCollector().requestDisableGC();
-          this.disabled = true;
+        this.disabled = ReplicatedObjectManagerImpl.this.objectManager.getGarbageCollector().requestDisableGC();
         logger.info((this.disabled ? "DGC is disabled." : "DGC is not disabled."));
       }
     }
 
     private void disableGC() {
-//      ReplicatedObjectManagerImpl.this.objectManager.getGarbageCollector().waitToDisableGC();
+      ReplicatedObjectManagerImpl.this.objectManager.getGarbageCollector().waitToDisableGC();
       this.disabled = true;
     }
 
