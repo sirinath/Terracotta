@@ -11,8 +11,8 @@ svn co https://svn.terracotta.org/repo/forge/projects/terracotta-ehcache/branche
 svn co https://svn.terracotta.org/repo/forge/enterprise/terracotta-ehcache-ee/branches/tc-3.7 terracotta-ehcache-ee
 svn co https://svn.terracotta.org/repo/forge/projects/terracotta-quartz/branches/tc-3.7 terracotta-quartz
 svn co https://svn.terracotta.org/repo/forge/enterprise/terracotta-quartz-ee/branches/tc-3.7 terracotta-quartz-ee
-svn co https://svn.terracotta.org/repo/forge/projects/terracotta-toolkit/branches/tc-3.7.1 terracotta-toolkit
-svn co https://svn.terracotta.org/repo/forge/enterprise/terracotta-toolkit-ee/branches/tc-3.7.1 terracotta-toolkit-ee
+svn co https://svn.terracotta.org/repo/forge/projects/terracotta-toolkit/branches/tc-3.7.4 terracotta-toolkit
+svn co https://svn.terracotta.org/repo/forge/enterprise/terracotta-toolkit-ee/branches/tc-3.7.4 terracotta-toolkit-ee
 svn co https://svn.terracotta.org/repo/forge/projects/tim-ehcache/branches/tc-3.7 tim-ehcache
 svn co https://svn.terracotta.org/repo/forge/enterprise/tim-ehcache-ee/branches/tc-3.7 tim-ehcache-ee
 svn co https://svn.terracotta.org/repo/forge/projects/tim-quartz/branches/tc-3.7 tim-quartz
