@@ -91,13 +91,13 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
 
   public void testLockManagerNotifyOnNoApply() throws Exception {
     ServerTransaction tx = createServerTransaction();
-    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), false));
+    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), false, 1));
     verifyNotifies(tx);
   }
 
   public void testLockManagerNotifyOnApply() throws Exception {
     ServerTransaction tx = createServerTransaction();
-    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), true));
+    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), true, 1));
     verifyNotifies(tx);
   }
 

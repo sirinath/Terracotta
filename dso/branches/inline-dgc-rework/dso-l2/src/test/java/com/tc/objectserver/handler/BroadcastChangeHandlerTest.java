@@ -395,6 +395,11 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+    @Override
+    public String getName() {
+      throw new ImplementMe();
+    }
+
   }
 
   private static class TestSink implements Sink {
@@ -640,12 +645,6 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     @Override
     public void setLocalNodeID(final NodeID source) {
       throw new ImplementMe();
-    }
-
-    @Override
-    public void reopen() {
-      throw new ImplementMe();
-
     }
 
   }
@@ -969,6 +968,16 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
 
     @Override
     public void callbackOnLowWaterMarkInSystemCompletion(final Runnable r) {
+      //
+    }
+
+    @Override
+    public void pauseTransactions() {
+      //
+    }
+
+    @Override
+    public void unPauseTransactions() {
       //
     }
   }
