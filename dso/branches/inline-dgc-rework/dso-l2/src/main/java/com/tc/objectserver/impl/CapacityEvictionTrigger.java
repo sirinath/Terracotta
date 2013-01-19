@@ -29,7 +29,6 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     private ClientObjectReferenceSet clientSet;
     private boolean repeat = false;
     private boolean restart = false;
-    private boolean waitForClient = false;
 
     public CapacityEvictionTrigger( ObjectID oid) {
         super(oid);
@@ -48,11 +47,15 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
         restart = true;
         max = map.getMaxTotalCount();
         size = map.getSize();
-        if ( max > 0 && size > max ) {
+    // ignore return value, capacity needs to make an independent decision on whether to run
+    
+        super.startEviction(map);
+        if ( max >= 0 && size > max ) {
             if ( !map.isEvicting() ) {
+    // eviction state is set when capacity eviction is intiated outside the trigger
+    // this is the only trigger that does this for now
                 throw new AssertionError("map is not in evicting state");
             }
-            super.startEviction(map);
             return true;
         } else {
             map.evictionCompleted();
@@ -64,26 +67,16 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
             
     @Override
     public ServerMapEvictionContext collectEvictionCandidates(final int maxParam, String className, final EvictableMap map, final ClientObjectReferenceSet clients) {
-   // lets try and get smarter about this in the future but for now, just bring it back to capacity
+        // lets try and get smarter about this in the future but for now, just bring it back to capacity
         final int sample = boundsCheckSampleSize(size - maxParam);
-
-        if ( maxParam == 0 ) {
-            throw new AssertionError("triggers should never start evicting a pinned cache or store");
-        }
-        
         Map samples = ( sample > 0 ) ? map.getRandomSamples(sample, clients) : Collections.<Object,ObjectID>emptyMap();
-
         count = samples.size();
- // didn't get the sample count we wanted.  wait for a clientobjectidset refresh, only once and try it again
+        // didn't get the sample count we wanted.  wait for a clientobjectidset refresh, only once and try it again
         if ( count < size - maxParam ) {
             repeat = true;
             if ( count == 0 ) {
                 restart = false;
-                if ( clientSet == null ) {
-                    clients.addReferenceSetChangeListener(this);
-                    clientSetCount = clients.size();
-                    clientSet = clients;
-                }
+                registerForUpdates(clients);
                 samples = Collections.<Object,ObjectID>emptyMap();
             }
         }
@@ -91,11 +84,21 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
         return createEvictionContext(className, samples);
     } 
     
+    private synchronized void registerForUpdates(ClientObjectReferenceSet clients) {
+        if ( clientSet == null ) {
+            clients.addReferenceSetChangeListener(this);
+            clientSetCount = clients.size();
+            clientSet = clients;
+        }
+    }
+    
     private synchronized void waitForClient() {
-        waitForClient = true;
-        while ( clientSet != null && waitForClient ) {
+        while ( clientSet != null ) {
             try {
-                this.wait();
+                this.wait(2000);
+                if ( clientSet != null ) {
+                    clientSet.refreshClientObjectReferencesNow();
+                }
             } catch ( InterruptedException ie ) {
                 throw new AssertionError(ie);
             }
@@ -103,16 +106,15 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     }
     
     private synchronized void clientUpdated() {
-        waitForClient = false;
+        clientSet.removeReferenceSetChangeListener(this);
+        clientSet = null;
         this.notify();
     }
 
     @Override
     public boolean isValid() {
         if ( repeat ) {
-            if ( clientSet != null ) {
-                waitForClient();
-            }
+            waitForClient();
             return true;
         }
         return super.isValid();

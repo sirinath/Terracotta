@@ -109,8 +109,8 @@ public class AggregateDistributedToolkitTypeRoot<T extends DistributedToolkitTyp
 
   @Override
   public ToolkitObjectStripe<S>[] lookupStripeObjects(final String name, final ToolkitObjectType type,
-                                                              Configuration config) {
-    lock(type, name);
+                                                      Configuration config) {
+    readLock(type, name);
     try {
       ToolkitObjectStripe<S>[] stripeObjects = null;
       // check with first group
@@ -121,7 +121,7 @@ public class AggregateDistributedToolkitTypeRoot<T extends DistributedToolkitTyp
       }
       return stripeObjects;
     } finally {
-      unlock(type, name);
+      readUnlock(type, name);
     }
   }
 
@@ -158,6 +158,14 @@ public class AggregateDistributedToolkitTypeRoot<T extends DistributedToolkitTyp
 
   private void unlock(ToolkitObjectType toolkitObjectType, String name) {
     ToolkitLockingApi.unlock(toolkitObjectType, name, ToolkitLockTypeInternal.WRITE, platformService);
+  }
+
+  private void readLock(ToolkitObjectType toolkitObjectType, String name) {
+    ToolkitLockingApi.lock(toolkitObjectType, name, ToolkitLockTypeInternal.READ, platformService);
+  }
+
+  private void readUnlock(ToolkitObjectType toolkitObjectType, String name) {
+    ToolkitLockingApi.unlock(toolkitObjectType, name, ToolkitLockTypeInternal.READ, platformService);
   }
 
   @Override

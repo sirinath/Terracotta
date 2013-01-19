@@ -35,6 +35,7 @@ import com.tc.object.net.ChannelStats;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.objectserver.api.BackupManager;
 import com.tc.objectserver.api.GarbageCollectionManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
@@ -107,7 +108,7 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
 
   SearchRequestManager createSearchRequestManager(DSOChannelManager channelManager, Sink managedObjectRequestSink);
 
-  GroupManager createGroupCommManager(boolean networkedHA, L2ConfigurationSetupManager configManager,
+  GroupManager createGroupCommManager(L2ConfigurationSetupManager configManager,
                                       StageManager stageManager, ServerID serverNodeID, Sink httpSink,
                                       StripeIDStateManager stripeStateManager, ServerGlobalTransactionManager gtxm);
 
@@ -174,6 +175,13 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                  MBeanServer l2MbeanServer);
 
   Persistor createPersistor(final boolean persistent, final File l2DataPath, final L2State l2State) throws IOException;
+
+  BackupManager createBackupManager(final Persistor persistor,
+                                           final IndexManager indexManager,
+                                           final File backupPath,
+                                           final StageManager stageManager,
+                                           boolean restartable,
+                                           ServerTransactionManager serverTransactionManager);
 
   LongGCLogger createLongGCLogger(long gcTimeOut);
 

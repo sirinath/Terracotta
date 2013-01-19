@@ -35,7 +35,6 @@ import com.tc.net.GroupID;
 import com.tc.net.ServerID;
 import com.tc.net.core.security.TCSecurityManager;
 import com.tc.net.groups.GroupManager;
-import com.tc.net.groups.SingleNodeGroupManager;
 import com.tc.net.groups.StripeIDStateManager;
 import com.tc.net.groups.TCGroupManagerImpl;
 import com.tc.net.protocol.tcm.ChannelManager;
@@ -45,6 +44,7 @@ import com.tc.object.net.ChannelStats;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.persistence.api.PersistentMapStore;
+import com.tc.objectserver.api.BackupManager;
 import com.tc.objectserver.api.GarbageCollectionManager;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.api.ObjectRequestManager;
@@ -136,17 +136,12 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
   }
 
   @Override
-  public GroupManager createGroupCommManager(final boolean networkedHA,
-                                             final L2ConfigurationSetupManager configManager,
+  public GroupManager createGroupCommManager(final L2ConfigurationSetupManager configManager,
                                              final StageManager stageManager, final ServerID serverNodeID,
                                              final Sink httpSink, final StripeIDStateManager stripeStateManager,
                                              final ServerGlobalTransactionManager gtxm) {
-    if (networkedHA) {
-      return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink, this.haConfig.getNodesStore(),
-                                    securityManager);
-    } else {
-      return new SingleNodeGroupManager();
-    }
+    return new TCGroupManagerImpl(configManager, stageManager, serverNodeID, httpSink, this.haConfig.getNodesStore(),
+                                  securityManager);
   }
 
   @Override
@@ -340,5 +335,10 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
 
     if (persistent) throw new UnsupportedOperationException("Restartability is not supported in open source servers.");
     return new Persistor(HeapStorageManagerFactory.INSTANCE);
+  }
+
+  @Override
+  public BackupManager createBackupManager(Persistor persistor, IndexManager indexManager, File backupPath, StageManager stageManager, boolean restartable, ServerTransactionManager serverTransactionManager) {
+    return NullBackupManager.INSTANCE;
   }
 }
