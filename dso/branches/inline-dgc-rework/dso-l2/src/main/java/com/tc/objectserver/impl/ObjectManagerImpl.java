@@ -9,14 +9,7 @@ import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.Destroyable;
-import com.tc.objectserver.api.NoSuchObjectException;
-import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.api.ObjectManagerLookupResults;
-import com.tc.objectserver.api.ObjectManagerStatsListener;
-import com.tc.objectserver.api.ShutdownError;
-import com.tc.objectserver.api.Transaction;
-import com.tc.objectserver.api.TransactionProvider;
+import com.tc.objectserver.api.*;
 import com.tc.objectserver.context.DGCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -34,16 +27,7 @@ import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 import com.tc.util.concurrent.TCConcurrentMultiMap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -95,9 +79,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   private final ObjectManagerConfig                             config;
   private final TransactionProvider                             persistenceTransactionProvider;
 
-  // TODO: Flip this around to ReferencesIDStore? It's highly probable that we'll have more objects with no references
-  private final NoReferencesIDStore                             noReferencesIDStore;
-
   public ObjectManagerImpl(final ObjectManagerConfig config, final ClientStateManager stateManager,
                            final PersistentManagedObjectStore objectStore,
                            final TransactionProvider persistenceTransactionProvider) {
@@ -107,7 +88,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     this.objectStore = objectStore;
     this.persistenceTransactionProvider = persistenceTransactionProvider;
     this.references = new ConcurrentHashMap<ObjectID, ManagedObjectReference>(16384, 0.75f, 256);
-    this.noReferencesIDStore = new NoReferencesIDStoreImpl(config.doGC());
   }
 
   @Override
@@ -563,7 +543,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   @Override
   public Set<ObjectID> getObjectReferencesFrom(final ObjectID id, final boolean cacheOnly) {
-    if (this.noReferencesIDStore.hasNoReferences(id)) { return TCCollections.EMPTY_OBJECT_ID_SET; }
+    if (this.objectStore.hasNoReferences(id)) {
+      return TCCollections.EMPTY_OBJECT_ID_SET;
+    }
     final ManagedObjectReference mor = getReference(id);
     if ((mor == null && cacheOnly) || (mor != null && mor.isNew())) {
       // Object either not in cache or is a new object, return emtpy set
@@ -588,7 +570,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   private void basicRelease(final ManagedObject object) {
     final ManagedObjectReference mor = object.getReference();
-    updateNewFlagAndCreateIfNecessary(object);
+    updateNewFlag(object);
     removeReferenceIfNecessary(mor);
     unmarkReferenced(mor);
     makeUnBlocked(object.getID());
@@ -601,9 +583,8 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     makeUnBlocked(object.getID());
   }
 
-  private void updateNewFlagAndCreateIfNecessary(final ManagedObject object) {
+  private void updateNewFlag(final ManagedObject object) {
     if (object.isNew()) {
-      this.noReferencesIDStore.addToNoReferences(object);
       object.setIsNew(false);
     }
   }

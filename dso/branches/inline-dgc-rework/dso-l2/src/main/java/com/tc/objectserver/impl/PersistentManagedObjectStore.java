@@ -89,10 +89,9 @@ public class PersistentManagedObjectStore {
     return this.objectPersistor.snapshotEvictableObjectIDs();
   }
 
-  public ObjectIDSet getAllMapTypeObjectIDs() {
+  public boolean hasNoReferences(ObjectID id) {
     assertNotInShutdown();
-    throw new UnsupportedOperationException();
-//    return this.objectPersistor.snapshotObjectIDs();
+    return this.objectPersistor.hasNoReferences(id);
   }
 
   public ManagedObject getObjectByID(final ObjectID id) {
@@ -108,10 +107,6 @@ public class PersistentManagedObjectStore {
   public void shutdown() {
     assertNotInShutdown();
     this.inShutdown = true;
-  }
-
-  public boolean inShutdown() {
-    return this.inShutdown;
   }
 
   public PrettyPrinter prettyPrint(PrettyPrinter out) {
