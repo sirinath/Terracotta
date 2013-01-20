@@ -147,16 +147,6 @@ public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectS
     }
   }
 
-  /**
-   * This method returns whether this ManagedObjectState can have references or not. @ return true : The Managed object
-   * represented by this state object will never have any reference to other objects. false : The Managed object
-   * represented by this state object can have references to other objects.
-   */
-  @Override
-  public boolean hasNoReferences() {
-    return true;
-  }
-
   protected static void logInvalidType(final String field, final Object val) {
     logger.error("recieved invalid type (" + safeTypeName(val) + "] for " + field + " field -- ignoring it");
   }

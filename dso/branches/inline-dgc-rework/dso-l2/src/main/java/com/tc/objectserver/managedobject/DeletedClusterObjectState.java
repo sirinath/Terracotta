@@ -51,21 +51,6 @@ public class DeletedClusterObjectState extends AbstractManagedObjectState {
 
   }
 
-  /**
-   * This method returns whether this ManagedObjectState can have references or not. @ return true : The Managed object
-   * represented by this state object will never have any reference to other objects. false : The Managed object
-   * represented by this state object can have references to other objects.
-   */
-  @Override
-  public boolean hasNoReferences() {
-    return true;
-  }
-
-  private static String safeTypeName(final Object obj) {
-    final String type = obj == null ? "null" : obj.getClass().getName();
-    return type;
-  }
-
   @Override
   public ManagedObjectFacade createFacade(final ObjectID objectID, final String className, final int limit) {
     final Map<String, Object> fields = addFacadeFields(new HashMap<String, Object>());
@@ -117,7 +102,6 @@ public class DeletedClusterObjectState extends AbstractManagedObjectState {
     final int prime = 31;
     int result = 1;
     result = prime * result + (int) (classID ^ (classID >>> 32));
-//    result = prime * result + Arrays.hashCode(value);
     return result;
   }
 

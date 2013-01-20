@@ -57,7 +57,7 @@ public enum ManagedObjectStateStaticConfig {
   SERIALIZED_MAP_VALUE(ToolkitTypeNames.SERIALIZED_MAP_VALUE_TYPE, Factory.SERIALIZED_MAP_VALUE_TYPE_FACTORY),
 
   /**
-   * CustomeLifespanSerializedEntry - explicit state factory
+   * CustomLifespanSerializedEntry - explicit state factory
    */
   CUSTOM_LIFESPAN_SERIALIZED_MAP_VALUE(ToolkitTypeNames.CUSTOM_LIFESPAN_SERIALIZED_MAP_VALUE_TYPE,
       Factory.CUSTOM_LIFESPAN_SERIALIZED_MAP_VALUE_TYPE_FACTORY),

@@ -23,7 +23,8 @@ public interface TCPropertiesConsts {
       "l2.objectmanager.loadObjectID.measure.performance", "console.showObjectID", "l2.lfu.debug.enabled",
       "l1.serverarray.objectCreationStrategy.roundRobin.coordinatorLoad", "l2.objectmanager.loadObjectID.fastLoad",
       "ehcache.incoherent.putsBatchSize", "ehcache.incoherent.throttlePutsAtSize", "l2.objectmanager.dgc.young.enabled",
-      "l2.objectmanager.dgc.young.frequencyInMillis", "l2.objectmanager.dgc.enterpriseMarkStageInterval"
+      "l2.objectmanager.dgc.young.frequencyInMillis", "l2.objectmanager.dgc.enterpriseMarkStageInterval",
+      "l2.objectmanager.dgc.faulting.optimization"
   };
 
   /*********************************************************************************************************************
@@ -162,7 +163,6 @@ public interface TCPropertiesConsts {
   public static final String L2_OBJECTMANAGER_PASSIVE_SYNC_THROTTLE_PENDING_MSGS            = "l2.objectmanager.passive.sync.throttle.maxPendingMessages";
   public static final String L2_OBJECTMANAGER_DGC_THROTTLE_TIME                             = "l2.objectmanager.dgc.throttle.timeInMillis";
   public static final String L2_OBJECTMANAGER_DGC_REQUEST_PER_THROTTLE                      = "l2.objectmanager.dgc.throttle.requestsPerThrottle";
-  public static final String L2_OBJECTMANAGER_DGC_FAULTING_OPTIMIZATION                     = "l2.objectmanager.dgc.faulting.optimization";
   public static final String L2_OBJECTMANAGER_DGC_INLINE_ENABLED                            = "l2.objectmanager.dgc.inline.enabled";
   public static final String L2_OBJECTMANAGER_DGC_INLINE_INTERVAL_SECONDS                   = "l2.objectmanager.dgc.inline.intervalInSeconds";
   public static final String L2_OBJECTMANAGER_DGC_INLINE_MAX_OBJECTS                        = "l2.objectmanager.dgc.inline.maxObjects";
