@@ -85,7 +85,7 @@ public class GarbageCollectHandlerTest extends TCTestCase {
     testClientId = new ClientID(1);
     clientStateManager = new ClientStateManagerImpl(logger);
     clientStateManager.startupNode(testClientId);
-    handler = new GarbageCollectHandler(new ObjectManagerConfig(10, true, false, true, false, 10, 10),
+    handler = new GarbageCollectHandler(new ObjectManagerConfig(10, true, true, false),
                                         new GarbageCollectionInfoPublisherImpl());
     gc = new TestGarbageCollector();
     objectManager = new TestObjectManager();
@@ -469,21 +469,6 @@ public class GarbageCollectHandlerTest extends TCTestCase {
 
     @Override
     public void deleteGarbage(DGCResultContext resultContext) {
-      // no-op
-    }
-
-    @Override
-    public void notifyObjectCreated(ObjectID id) {
-      // no-op
-    }
-
-    @Override
-    public void notifyNewObjectInitalized(ObjectID id) {
-      // no-op
-    }
-
-    @Override
-    public void notifyObjectsEvicted(Collection evicted) {
       // no-op
     }
   }
