@@ -129,10 +129,6 @@ public interface TCPropertiesConsts {
    *                                 requests for references from object manager
    * dgc.throttle.requestsPerThrottle - Number of objects for which object references are requested
    *                                 from object manager after which dgc will throttle
-   * dgc.faulting.optimization      - This property will not fault in objects that has no references during DGC mark stage
-   *                                   0 - disable faulting optimization
-   *                                   1 - enabled with standard implementation (continous oids)
-   *                                   2 - enabled with compressed implementation (spare oids)
    * dgc.inline.enabled             - Enables/disable inline dgc of CDSMs.
    * dgc.inline.intervalInSeconds   - Interval in seconds at which to delete objects selected by inline dgc.
    * dgc.inline.maxObjects          - Maximum inline dgc batch size
