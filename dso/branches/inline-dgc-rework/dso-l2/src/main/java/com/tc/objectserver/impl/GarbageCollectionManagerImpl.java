@@ -79,6 +79,7 @@ public class GarbageCollectionManagerImpl implements GarbageCollectionManager {
     @Override
     public void deleteObjects(SortedSet<ObjectID> objects) {
       // Passive doesn't do inline dgc.
+      //TODO::XXX:: Should we Assert here ?
     }
 
     @Override

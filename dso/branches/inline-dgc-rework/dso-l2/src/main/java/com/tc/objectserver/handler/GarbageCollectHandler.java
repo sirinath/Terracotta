@@ -34,9 +34,7 @@ public class GarbageCollectHandler extends AbstractEventHandler {
 
   private final Timer                          timer          = new Timer("GarbageCollectHandler Timer");
   private final boolean                        fullGCEnabled;
-  private final boolean                        youngGCEnabled;
   private final long                           fullGCInterval;
-  private final long                           youngGCInterval;
   private final LifeCycleState                 gcState        = new GCState();
   private final GarbageCollectionInfoPublisher gcPublisher;
   private volatile boolean                     gcRunning      = false;
@@ -48,9 +46,7 @@ public class GarbageCollectHandler extends AbstractEventHandler {
   public GarbageCollectHandler(final ObjectManagerConfig objectManagerConfig,
                                final GarbageCollectionInfoPublisher gcPublisher) {
     this.fullGCEnabled = objectManagerConfig.doGC();
-    this.youngGCEnabled = objectManagerConfig.isYoungGenDGCEnabled();
     this.fullGCInterval = objectManagerConfig.gcThreadSleepTime();
-    this.youngGCInterval = objectManagerConfig.getYoungGenDGCFrequencyInMillis();
     this.gcPublisher = gcPublisher;
   }
 
@@ -123,9 +119,6 @@ public class GarbageCollectHandler extends AbstractEventHandler {
     @Override
     public void start() {
       if (fullGCEnabled) {
-        if (youngGCEnabled) {
-          gcSink.add(new PeriodicGarbageCollectContext(GCType.YOUNG_GEN_GC, youngGCInterval));
-        }
         gcSink.add(new PeriodicGarbageCollectContext(GCType.FULL_GC, fullGCInterval));
         collector.setPeriodicEnabled(true);
       }

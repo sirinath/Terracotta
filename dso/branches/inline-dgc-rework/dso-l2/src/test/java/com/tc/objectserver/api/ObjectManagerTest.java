@@ -12,12 +12,7 @@ import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
 import com.tc.object.TestDNACursor;
-import com.tc.object.dna.api.DNA;
-import com.tc.object.dna.api.DNACursor;
-import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.api.DNAException;
-import com.tc.object.dna.api.LogicalAction;
-import com.tc.object.dna.api.PhysicalAction;
+import com.tc.object.dna.api.*;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.context.DGCResultContext;
@@ -25,11 +20,7 @@ import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.impl.TestManagedObject;
 import com.tc.objectserver.dgc.api.GarbageCollector.GCType;
-import com.tc.objectserver.impl.ObjectInstanceMonitorImpl;
-import com.tc.objectserver.impl.ObjectManagerConfig;
-import com.tc.objectserver.impl.ObjectManagerImpl;
-import com.tc.objectserver.impl.ObjectManagerStatsImpl;
-import com.tc.objectserver.impl.PersistentManagedObjectStore;
+import com.tc.objectserver.impl.*;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
 import com.tc.objectserver.managedobject.ApplyTransactionInfo;
@@ -49,22 +40,8 @@ import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.ThreadUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -1194,7 +1171,7 @@ public class ObjectManagerTest extends TCTestCase {
     public boolean paranoid;
 
     public TestObjectManagerConfig() {
-      super(10000, true, true, true, false, 60000, 1000);
+      super(10000, true, true, true);
     }
 
     @Override

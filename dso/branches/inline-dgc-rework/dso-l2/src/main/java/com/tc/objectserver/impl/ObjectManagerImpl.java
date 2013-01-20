@@ -605,12 +605,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     if (object.isNew()) {
       this.noReferencesIDStore.addToNoReferences(object);
       object.setIsNew(false);
-      fireNewObjectinitialized(object.getID());
     }
-  }
-
-  private void fireNewObjectinitialized(final ObjectID id) {
-    this.collector.notifyNewObjectInitalized(id);
   }
 
   private void removeReferenceIfNecessary(final ManagedObjectReference mor) {
@@ -758,11 +753,6 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     addNewReference(object, false);
 
     this.stats.newObjectCreated();
-    fireObjectCreated(oid);
-  }
-
-  private void fireObjectCreated(final ObjectID id) {
-    this.collector.notifyObjectCreated(id);
   }
 
   public PersistentManagedObjectStore getObjectStore() {
