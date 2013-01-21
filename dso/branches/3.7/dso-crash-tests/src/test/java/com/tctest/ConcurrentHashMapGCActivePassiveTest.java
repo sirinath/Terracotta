@@ -13,7 +13,7 @@ public class ConcurrentHashMapGCActivePassiveTest extends GCAndActivePassiveTest
 
   public ConcurrentHashMapGCActivePassiveTest() {
     // Disabled for MNK-2545
-    timebombTest("2013-01-15");
+    timebombTest("2043-01-15");
   }
 
   @Override
