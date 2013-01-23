@@ -4,11 +4,15 @@
  */
 package com.tc.objectserver.impl;
 
-import bsh.EvalError;
-import bsh.Interpreter;
+import org.apache.commons.io.FileUtils;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.tc.async.api.*;
+import com.tc.async.api.PostInit;
+import com.tc.async.api.SEDA;
+import com.tc.async.api.Sink;
+import com.tc.async.api.Stage;
+import com.tc.async.api.StageManager;
 import com.tc.async.impl.NullSink;
 import com.tc.config.HaConfig;
 import com.tc.config.HaConfigImpl;
@@ -18,7 +22,12 @@ import com.tc.exception.TCRuntimeException;
 import com.tc.exception.TCServerRestartException;
 import com.tc.exception.ZapDirtyDbServerNodeException;
 import com.tc.exception.ZapServerNodeException;
-import com.tc.handler.*;
+import com.tc.handler.CallbackDumpAdapter;
+import com.tc.handler.CallbackDumpHandler;
+import com.tc.handler.CallbackGroupExceptionHandler;
+import com.tc.handler.CallbackZapDirtyDbExceptionAdapter;
+import com.tc.handler.CallbackZapServerNodeExceptionAdapter;
+import com.tc.handler.LockInfoDumpHandler;
 import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
@@ -34,11 +43,22 @@ import com.tc.l2.objectserver.ServerTransactionFactory;
 import com.tc.l2.state.StateSyncManager;
 import com.tc.l2.state.StateSyncManagerImpl;
 import com.tc.lang.TCThreadGroup;
-import com.tc.logging.*;
+import com.tc.logging.CallbackOnExitHandler;
+import com.tc.logging.CallbackOnExitState;
+import com.tc.logging.CustomerLogging;
+import com.tc.logging.DumpHandlerStore;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+import com.tc.logging.ThreadDumpHandler;
 import com.tc.management.L2LockStatsManager;
 import com.tc.management.L2Management;
 import com.tc.management.RemoteJMXProcessor;
-import com.tc.management.beans.*;
+import com.tc.management.beans.L2DumperMBean;
+import com.tc.management.beans.L2MBeanNames;
+import com.tc.management.beans.L2State;
+import com.tc.management.beans.LockStatisticsMonitor;
+import com.tc.management.beans.TCDumper;
+import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitor.ObjectIdsFetcher;
 import com.tc.management.beans.object.ServerDBBackupMBean;
 import com.tc.management.lock.stats.L2LockStatisticsManagerImpl;
@@ -49,7 +69,11 @@ import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
 import com.tc.management.remote.protocol.terracotta.L1JmxReady;
 import com.tc.management.remote.protocol.terracotta.TunneledDomainsChanged;
-import com.tc.net.*;
+import com.tc.net.AddressChecker;
+import com.tc.net.NIOWorkarounds;
+import com.tc.net.NodeID;
+import com.tc.net.ServerID;
+import com.tc.net.TCSocketAddress;
 import com.tc.net.core.security.TCSecurityManager;
 import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
@@ -58,7 +82,16 @@ import com.tc.net.protocol.NetworkStackHarnessFactory;
 import com.tc.net.protocol.PlainNetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OOONetworkStackHarnessFactory;
 import com.tc.net.protocol.delivery.OnceAndOnlyOnceProtocolNetworkLayerFactoryImpl;
-import com.tc.net.protocol.tcm.*;
+import com.tc.net.protocol.tcm.ChannelManager;
+import com.tc.net.protocol.tcm.CommunicationsManager;
+import com.tc.net.protocol.tcm.CommunicationsManagerImpl;
+import com.tc.net.protocol.tcm.HydrateHandler;
+import com.tc.net.protocol.tcm.MessageMonitor;
+import com.tc.net.protocol.tcm.MessageMonitorImpl;
+import com.tc.net.protocol.tcm.NetworkListener;
+import com.tc.net.protocol.tcm.TCMessageRouter;
+import com.tc.net.protocol.tcm.TCMessageRouterImpl;
+import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.transport.ConnectionIDFactory;
 import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfigImpl;
@@ -67,7 +100,46 @@ import com.tc.net.utils.L2Utils;
 import com.tc.object.cache.CacheConfig;
 import com.tc.object.cache.CacheConfigImpl;
 import com.tc.object.config.schema.L2DSOConfig;
-import com.tc.object.msg.*;
+import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
+import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
+import com.tc.object.msg.BroadcastTransactionMessageImpl;
+import com.tc.object.msg.ClientHandshakeAckMessageImpl;
+import com.tc.object.msg.ClientHandshakeMessageImpl;
+import com.tc.object.msg.ClientHandshakeRefusedMessageImpl;
+import com.tc.object.msg.ClusterMembershipMessage;
+import com.tc.object.msg.CommitTransactionMessageImpl;
+import com.tc.object.msg.CompletedTransactionLowWaterMarkMessage;
+import com.tc.object.msg.GetAllKeysServerMapRequestMessageImpl;
+import com.tc.object.msg.GetAllKeysServerMapResponseMessageImpl;
+import com.tc.object.msg.GetAllSizeServerMapRequestMessageImpl;
+import com.tc.object.msg.GetAllSizeServerMapResponseMessageImpl;
+import com.tc.object.msg.GetValueServerMapRequestMessageImpl;
+import com.tc.object.msg.GetValueServerMapResponseMessageImpl;
+import com.tc.object.msg.InvalidateObjectsMessage;
+import com.tc.object.msg.JMXMessage;
+import com.tc.object.msg.KeysForOrphanedValuesMessageImpl;
+import com.tc.object.msg.KeysForOrphanedValuesResponseMessageImpl;
+import com.tc.object.msg.LockRequestMessage;
+import com.tc.object.msg.LockResponseMessage;
+import com.tc.object.msg.NodeMetaDataMessageImpl;
+import com.tc.object.msg.NodeMetaDataResponseMessageImpl;
+import com.tc.object.msg.NodesWithKeysMessageImpl;
+import com.tc.object.msg.NodesWithKeysResponseMessageImpl;
+import com.tc.object.msg.NodesWithObjectsMessageImpl;
+import com.tc.object.msg.NodesWithObjectsResponseMessageImpl;
+import com.tc.object.msg.ObjectIDBatchRequestMessage;
+import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
+import com.tc.object.msg.ObjectNotFoundServerMapResponseMessageImpl;
+import com.tc.object.msg.ObjectsNotFoundMessageImpl;
+import com.tc.object.msg.RequestManagedObjectMessageImpl;
+import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
+import com.tc.object.msg.RequestRootMessageImpl;
+import com.tc.object.msg.RequestRootResponseMessage;
+import com.tc.object.msg.ResourceManagerThrottleMessage;
+import com.tc.object.msg.SearchQueryRequestMessageImpl;
+import com.tc.object.msg.SearchQueryResponseMessageImpl;
+import com.tc.object.msg.ServerMapEvictionBroadcastMessageImpl;
+import com.tc.object.msg.SyncWriteTransactionReceivedMessage;
 import com.tc.object.net.ChannelStatsImpl;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerImpl;
@@ -75,7 +147,17 @@ import com.tc.object.net.DSOChannelManagerMBean;
 import com.tc.object.session.NullSessionManager;
 import com.tc.object.session.SessionManager;
 import com.tc.objectserver.DSOApplicationEvents;
-import com.tc.objectserver.api.*;
+import com.tc.objectserver.api.BackupManager;
+import com.tc.objectserver.api.GarbageCollectionManager;
+import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectRequestManager;
+import com.tc.objectserver.api.ObjectStatsManager;
+import com.tc.objectserver.api.ObjectStatsManagerImpl;
+import com.tc.objectserver.api.ResourceManager;
+import com.tc.objectserver.api.SequenceNames;
+import com.tc.objectserver.api.ServerMapEvictionManager;
+import com.tc.objectserver.api.ServerMapRequestManager;
+import com.tc.objectserver.api.TransactionStore;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManagerImpl;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
@@ -83,28 +165,81 @@ import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.ServerManagementContext;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfoPublisher;
 import com.tc.objectserver.dgc.api.GarbageCollector;
-import com.tc.objectserver.dgc.impl.*;
+import com.tc.objectserver.dgc.impl.DGCOperatorEventPublisher;
+import com.tc.objectserver.dgc.impl.GCControllerImpl;
+import com.tc.objectserver.dgc.impl.GCStatsEventPublisher;
+import com.tc.objectserver.dgc.impl.GarbageCollectionInfoPublisherImpl;
+import com.tc.objectserver.dgc.impl.MarkAndSweepGarbageCollector;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
-import com.tc.objectserver.handler.*;
+import com.tc.objectserver.handler.ApplyTransactionChangeHandler;
+import com.tc.objectserver.handler.BroadcastChangeHandler;
+import com.tc.objectserver.handler.ChannelLifeCycleHandler;
+import com.tc.objectserver.handler.ClientChannelOperatorEventlistener;
+import com.tc.objectserver.handler.ClientHandshakeHandler;
+import com.tc.objectserver.handler.ClientLockStatisticsHandler;
+import com.tc.objectserver.handler.GarbageCollectHandler;
+import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
+import com.tc.objectserver.handler.InvalidateObjectsHandler;
+import com.tc.objectserver.handler.JMXEventsHandler;
+import com.tc.objectserver.handler.LowWaterMarkCallbackHandler;
+import com.tc.objectserver.handler.ManagedObjectRequestHandler;
+import com.tc.objectserver.handler.ProcessTransactionHandler;
+import com.tc.objectserver.handler.RequestLockUnLockHandler;
+import com.tc.objectserver.handler.RequestObjectIDBatchHandler;
+import com.tc.objectserver.handler.RequestRootHandler;
+import com.tc.objectserver.handler.RespondToObjectRequestHandler;
+import com.tc.objectserver.handler.RespondToRequestLockHandler;
+import com.tc.objectserver.handler.RespondToServerMapRequestHandler;
+import com.tc.objectserver.handler.ServerClusterMetaDataHandler;
+import com.tc.objectserver.handler.ServerMapCapacityEvictionHandler;
+import com.tc.objectserver.handler.ServerMapEvictionBroadcastHandler;
+import com.tc.objectserver.handler.ServerMapEvictionHandler;
+import com.tc.objectserver.handler.ServerMapRequestHandler;
+import com.tc.objectserver.handler.SyncWriteTransactionReceivedHandler;
+import com.tc.objectserver.handler.TransactionAcknowledgementHandler;
+import com.tc.objectserver.handler.TransactionLookupHandler;
+import com.tc.objectserver.handler.TransactionLowWaterMarkHandler;
+import com.tc.objectserver.handler.ValidateObjectsHandler;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
-import com.tc.objectserver.l1.impl.*;
+import com.tc.objectserver.l1.impl.ClientObjectReferenceSet;
+import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
+import com.tc.objectserver.l1.impl.InvalidateObjectManagerImpl;
+import com.tc.objectserver.l1.impl.TransactionAcknowledgeAction;
+import com.tc.objectserver.l1.impl.TransactionAcknowledgeActionImpl;
 import com.tc.objectserver.locks.LockManagerImpl;
 import com.tc.objectserver.managedobject.ConcurrentDistributedServerMapManagedObjectState;
 import com.tc.objectserver.managedobject.ManagedObjectChangeListenerProviderImpl;
 import com.tc.objectserver.managedobject.ManagedObjectStateFactory;
 import com.tc.objectserver.metadata.MetaDataManager;
 import com.tc.objectserver.mgmt.ObjectStatsRecorder;
-import com.tc.objectserver.persistence.*;
+import com.tc.objectserver.persistence.ClientStatePersistor;
+import com.tc.objectserver.persistence.OffheapStatsImpl;
+import com.tc.objectserver.persistence.Persistor;
+import com.tc.objectserver.persistence.TransactionPersistor;
 import com.tc.objectserver.search.IndexHACoordinator;
 import com.tc.objectserver.search.SearchEventHandler;
 import com.tc.objectserver.search.SearchQueryRequestMessageHandler;
 import com.tc.objectserver.search.SearchRequestManager;
 import com.tc.objectserver.storage.api.OffheapStats;
-import com.tc.objectserver.tx.*;
-import com.tc.operatorevent.*;
-import com.tc.properties.*;
+import com.tc.objectserver.tx.CommitTransactionMessageRecycler;
+import com.tc.objectserver.tx.ServerTransactionManagerConfig;
+import com.tc.objectserver.tx.ServerTransactionManagerImpl;
+import com.tc.objectserver.tx.TransactionBatchManagerImpl;
+import com.tc.objectserver.tx.TransactionFilter;
+import com.tc.objectserver.tx.TransactionalObjectManagerImpl;
+import com.tc.objectserver.tx.TransactionalStagesCoordinatorImpl;
+import com.tc.operatorevent.DsoOperatorEventHistoryProvider;
+import com.tc.operatorevent.TerracottaOperatorEventFactory;
+import com.tc.operatorevent.TerracottaOperatorEventHistoryProvider;
+import com.tc.operatorevent.TerracottaOperatorEventLogger;
+import com.tc.operatorevent.TerracottaOperatorEventLogging;
+import com.tc.properties.L1ReconnectConfigImpl;
+import com.tc.properties.ReconnectConfig;
+import com.tc.properties.TCProperties;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.runtime.TCMemoryManagerImpl;
 import com.tc.runtime.logging.LongGCLogger;
 import com.tc.runtime.logging.MemoryOperatorEventListener;
@@ -118,26 +253,45 @@ import com.tc.stats.counter.sampled.SampledCumulativeCounter;
 import com.tc.stats.counter.sampled.SampledCumulativeCounterConfig;
 import com.tc.stats.counter.sampled.derived.SampledRateCounter;
 import com.tc.stats.counter.sampled.derived.SampledRateCounterConfig;
-import com.tc.util.*;
+import com.tc.util.Assert;
+import com.tc.util.CommonShutDownHook;
+import com.tc.util.Events;
+import com.tc.util.PortChooser;
+import com.tc.util.ProductInfo;
+import com.tc.util.SequenceValidator;
+import com.tc.util.StartupLock;
+import com.tc.util.TCTimeoutException;
 import com.tc.util.UUID;
 import com.tc.util.runtime.LockInfoByThreadID;
 import com.tc.util.runtime.NullThreadIDMapImpl;
 import com.tc.util.runtime.ThreadIDMap;
-import com.tc.util.sequence.*;
+import com.tc.util.sequence.BatchSequence;
+import com.tc.util.sequence.DGCSequenceProvider;
+import com.tc.util.sequence.MutableSequence;
+import com.tc.util.sequence.ObjectIDSequence;
+import com.tc.util.sequence.Sequence;
 import com.tc.util.sequence.SequenceGenerator;
 import com.tc.util.startuplock.FileNotCreatedException;
 import com.tc.util.startuplock.LocationNotCreatedException;
 import com.terracottatech.config.Offheap;
-import org.apache.commons.io.FileUtils;
 
-import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
-import javax.management.remote.JMXConnectorServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+
+import javax.management.MBeanServer;
+import javax.management.NotCompliantMBeanException;
+import javax.management.remote.JMXConnectorServer;
+
+import bsh.EvalError;
+import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -384,7 +538,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                      this.persistor
                                                                                          .getPersistentStateStore()));
 
-    PersistenceTransactionProvider transactionStorePTP = this.persistor.getPersistenceTransactionProvider();
     MutableSequence gidSequence;
     TransactionPersistor transactionPersistor = this.persistor.getTransactionPersistor();
     gidSequence = this.persistor.getGlobalTransactionIDSequence();
@@ -591,8 +744,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                             new LowWaterMarkCallbackHandler(), 1, maxStageSize);
     final ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator,
                                                                                        transactionStore,
-                                                                                       transactionStorePTP,
-                                                                                       gidSequenceProvider,
+        gidSequenceProvider,
                                                                                        globalTransactionIDSequence,
                                                                                        lwmCallbackStage.getSink());
 
@@ -624,7 +776,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                                      channelManager);
 
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
-                             maxStageSize);
+        maxStageSize);
 
     // Lookup stage should never be blocked trying to add to apply stage
     int applyStageThreads = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_SEDA_APPLY_STAGE_THREADS, 8);
@@ -653,7 +805,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                      changesPerBroadcast,
                                                                                      invalidateObjMgr);
     stageManager.createStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, broadcastChangeHandler, 1,
-                             maxStageSize);
+        maxStageSize);
     final Stage requestLock = stageManager.createStage(ServerConfigurationContext.REQUEST_LOCK_STAGE,
                                                        new RequestLockUnLockHandler(), stageWorkerThreadCount, 1,
                                                        maxStageSize);
@@ -707,7 +859,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     toInit.add(this.serverMapEvictor);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapEvictor));
     stageManager.createStage(ServerConfigurationContext.SERVER_MAP_EVICTION_BROADCAST_STAGE,
-                             new ServerMapEvictionBroadcastHandler(broadcastCounter), 1, maxStageSize);
+        new ServerMapEvictionBroadcastHandler(broadcastCounter), 1, maxStageSize);
     stageManager.createStage(ServerConfigurationContext.SERVER_MAP_EVICTION_PROCESSOR_STAGE,
                              new ServerMapEvictionHandler(this.serverMapEvictor), 8, TCPropertiesImpl.getProperties()
                                  .getInt(TCPropertiesConsts.L2_SEDA_EVICTION_PROCESSORSTAGE_SINK_SIZE));
@@ -741,15 +893,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                           new JMXEventsHandler(appEvents), 1, maxStageSize);
 
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
-                                                                 new ClientConnectEventHandler(), 1, maxStageSize);
+        new ClientConnectEventHandler(), 1, maxStageSize);
 
     final Stage jmxRemoteDisconnectStage = stageManager
         .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(), 1,
-                     maxStageSize);
+            maxStageSize);
 
     cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,
-                                                                cteh, 1, maxStageSize);
+        cteh, 1, maxStageSize);
 
     final Stage clientLockStatisticsRespondStage = stageManager
         .createStage(ServerConfigurationContext.CLIENT_LOCK_STATISTICS_RESPOND_STAGE,
@@ -759,9 +911,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                 new ServerClusterMetaDataHandler(), 1, maxStageSize);
 
     initRouteMessages(messageRouter, processTx, rootRequest, requestLock, objectRequestStage, oidRequest,
-                      transactionAck, clientHandshake, txnLwmStage, jmxEventsStage, jmxRemoteTunnelStage,
-                      clientLockStatisticsRespondStage, clusterMetaDataStage, serverMapRequestStage,
-                      searchQueryRequestStage);
+        transactionAck, clientHandshake, txnLwmStage, jmxEventsStage, jmxRemoteTunnelStage,
+        clientLockStatisticsRespondStage, clusterMetaDataStage, serverMapRequestStage,
+        searchQueryRequestStage);
 
     long reconnectTimeout = l2DSOConfig.clientReconnectWindow();
 
@@ -825,7 +977,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                                      transactionBatchManager,
                                                                                                      this.transactionManager,
                                                                                                      host, serverPort);
-    this.indexHACoordinator = this.serverBuilder.createIndexHACoordinator(this.configSetupManager, searchEventSink);
+    this.indexHACoordinator = this.serverBuilder.createIndexHACoordinator(this.configSetupManager, searchEventSink,
+        persistor.getStorageManager());
 
     SequenceGenerator indexSequenceGenerator = new SequenceGenerator();
 

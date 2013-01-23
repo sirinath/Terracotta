@@ -1,11 +1,23 @@
 package com.terracotta.management.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.Configuration;
+import net.sf.ehcache.config.TerracottaClientConfiguration;
+import net.sf.ehcache.config.TerracottaConfiguration;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
+import org.slf4j.LoggerFactory;
 import org.terracotta.test.util.TestBaseUtil;
 import org.terracotta.tests.base.AbstractClientBase;
 import org.terracotta.tests.base.AbstractTestBase;
 import org.terracotta.toolkit.ToolkitFactory;
 
+import com.tc.config.test.schema.ConfigHelper;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.test.config.model.TestConfig;
 
@@ -75,28 +87,45 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
     String clientBase = TestBaseUtil.jarFor(AbstractTsaAgentTestBase.class);
     String l2Mbean = TestBaseUtil.jarFor(L2MBeanNames.class);
     String jsonParser = TestBaseUtil.jarFor(JSONValue.class);
-    return makeClasspath(expressRuntime, clientBase, l2Mbean, jsonParser);
+    String ehCache = TestBaseUtil.jarFor(CacheManager.class);
+    String slf4J = TestBaseUtil.jarFor(LoggerFactory.class);
+    return makeClasspath(expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J);
   }
 
   public abstract static class AbstractTsaClient extends AbstractClientBase {
 
 
+    protected static final String TSA_TEST_CACHE = "tsaTest";
+
     @Override
     protected final void doTest() throws Throwable {
       // wait for the TSA agent to finish up initialization
-      for (int i = 0; i < 5; i++) {
+      boolean initSuccessful =  false;
+      System.out.println("Starting test for " + getTerracottaUrl());
+      for (int i = 0; i < 10; i++) {
         try {
-          httpGet("http://" + this.getTerracottaUrl() + "/tc-management-api/agents");
+          for (int j = 0; j < getGroupData(0).getServerCount(); j++) {
+            httpGet("http://" + ConfigHelper.HOST + ":" + getGroupData(0).getTsaGroupPort(j) + "/tc-management-api/agents");
+          }
+          initSuccessful = true;
           break;
         } catch (IOException ioe) {
           Thread.sleep(1000);
         }
       }
+      assertThat("Server initialization issue", initSuccessful, is(true));
 
       doTsaTest();
     }
 
     protected abstract void doTsaTest() throws Throwable;
+
+    protected JSONArray getTsaJSONArrayContent(String host, int port, String path) throws IOException {
+      String result = httpGet("http://" + host + ":" + port + path);
+      System.out.println("Server ");
+      System.out.println(result);
+      return (JSONArray)JSONValue.parse(result);
+    }
 
     protected String httpGet(String urlString) throws IOException {
       URL url = new URL(urlString);
@@ -126,6 +155,22 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     public AbstractTsaClient(String[] args) {
       super(args);
+    }
+
+    protected CacheManager createCacheManager(String host, String port) {Configuration configuration = new Configuration();
+      TerracottaClientConfiguration terracottaClientConfiguration = new TerracottaClientConfiguration();
+      terracottaClientConfiguration.url(host, port);
+
+      configuration.addTerracottaConfig(terracottaClientConfiguration);
+
+      configuration.addDefaultCache(new CacheConfiguration("default", 100).eternal(false));
+
+      CacheConfiguration cacheConfiguration = new CacheConfiguration(TSA_TEST_CACHE, 100).eternal(false)
+          .terracotta(new TerracottaConfiguration());
+
+      configuration.addCache(cacheConfiguration);
+
+      return new CacheManager(configuration);
     }
   }
 

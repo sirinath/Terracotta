@@ -4,9 +4,11 @@
 package com.terracotta.toolkit;
 
 import net.sf.ehcache.CacheManager;
+
 import org.terracotta.toolkit.ToolkitFeature;
 import org.terracotta.toolkit.ToolkitFeatureType;
 import org.terracotta.toolkit.ToolkitFeatureTypeInternal;
+import org.terracotta.toolkit.builder.ToolkitCacheConfigBuilder;
 import org.terracotta.toolkit.builder.ToolkitStoreConfigBuilder;
 import org.terracotta.toolkit.cache.ToolkitCache;
 import org.terracotta.toolkit.cluster.ClusterInfo;
@@ -28,6 +30,7 @@ import org.terracotta.toolkit.internal.ToolkitLogger;
 import org.terracotta.toolkit.internal.ToolkitProperties;
 import org.terracotta.toolkit.internal.concurrent.locks.ToolkitLockTypeInternal;
 import org.terracotta.toolkit.monitoring.OperatorEventLevel;
+import org.terracotta.toolkit.store.ToolkitConfigFields;
 import org.terracotta.toolkit.store.ToolkitConfigFields.Consistency;
 import org.terracotta.toolkit.store.ToolkitStore;
 
@@ -99,9 +102,12 @@ public class TerracottaToolkit implements ToolkitInternal {
   private ToolkitProperties                                       toolkitProperties;
   protected final PlatformService                                 platformService;
   private final ClusterInfo                                       clusterInfoInstance;
+  protected final boolean                                         isNonStop;
 
-  public TerracottaToolkit(TerracottaL1Instance tcClient, ToolkitCacheManagerProvider toolkitCacheManagerProvider) {
+  public TerracottaToolkit(TerracottaL1Instance tcClient, ToolkitCacheManagerProvider toolkitCacheManagerProvider,
+                           boolean isNonStop) {
     this.tcClient = tcClient;
+    this.isNonStop = isNonStop;
     this.platformService = PlatformServiceProvider.getPlatformService();
     clusterInfoInstance = new TerracottaClusterInfo(platformService);
     SerializationStrategy strategy = createSerializationStrategy();
@@ -257,7 +263,7 @@ public class TerracottaToolkit implements ToolkitInternal {
   @Override
   public <V> ToolkitCache<String, V> getCache(String name, Configuration configuration, Class<V> klazz) {
     if (configuration == null) {
-      configuration = new ToolkitStoreConfigBuilder().build();
+      configuration = new ToolkitCacheConfigBuilder().build();
     }
     return clusteredCacheFactory.getOrCreate(name, configuration);
   }
