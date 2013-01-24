@@ -9,7 +9,7 @@ public class TxReorderingTest extends TransparentTestBase {
   private static final int NODE_COUNT = 2;
 
   public TxReorderingTest() {
-    timebombTest("2013-01-15");
+    timebombTest("2033-01-15");
   }
 
   @Override
