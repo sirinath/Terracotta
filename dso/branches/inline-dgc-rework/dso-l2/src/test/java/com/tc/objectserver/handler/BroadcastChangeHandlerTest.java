@@ -868,6 +868,13 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
       throw new ImplementMe();
     }
 
+        @Override
+        public void cleanup(Set<ObjectID> deletedObjects) {
+      throw new ImplementMe();
+        }
+    
+    
+
     @Override
     public void broadcasted(final NodeID waiter, final TransactionID requestID) {
       //
@@ -886,8 +893,7 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     @Override
     public void commit(final Collection<ManagedObject> objects,
                        final Map<String, ObjectID> newRoots,
-                       final Collection<ServerTransactionID> appliedServerTransactionIDs,
-                       final SortedSet<ObjectID> deletedObjects, boolean eviction) {
+                       final Collection<ServerTransactionID> appliedServerTransactionIDs) {
       throw new ImplementMe();
     }
 

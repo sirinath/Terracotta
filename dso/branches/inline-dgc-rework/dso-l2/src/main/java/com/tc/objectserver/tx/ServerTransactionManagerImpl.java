@@ -391,6 +391,11 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
 
     this.gtxm.commit(null, stxnID);
   }
+  
+  @Override
+  public void cleanup(Set<ObjectID> delete) {
+      this.objectManager.deleteObjects(delete);
+  }
 
   @Override
   public void skipApplyAndCommit(final ServerTransaction txn) {
@@ -414,14 +419,8 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
   @Override
   public void commit(final Collection<ManagedObject> objects,
                      final Map<String, ObjectID> newRoots,
-                     final Collection<ServerTransactionID> appliedServerTransactionIDs,
-                     final SortedSet<ObjectID> deletedObjects,boolean objectDeletable) {
+                     final Collection<ServerTransactionID> appliedServerTransactionIDs) {
     this.objectManager.releaseAll(objects);
-    if ( objectDeletable ) {
-        this.objectManager.deleteObjects(deletedObjects);
-    } else {
-        this.garbageCollectionManager.deleteObjects(deletedObjects);
-    }
     fireRootCreatedEvents(newRoots);
     committed(appliedServerTransactionIDs);
     if (this.commitLoggingEnabled) {

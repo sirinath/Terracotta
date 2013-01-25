@@ -80,6 +80,12 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
     // do nothing
   }
 
+    @Override
+    public boolean setDeleted() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+
   public void commit() {
     return;
   }
@@ -126,11 +132,6 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
   @Override
   public boolean isNew() {
     return this.isNew;
-  }
-
-  @Override
-  public boolean isNewInDB() {
-    return false;
   }
 
   public void setTransientState(final ManagedObjectStateFactory stateFactory) {
