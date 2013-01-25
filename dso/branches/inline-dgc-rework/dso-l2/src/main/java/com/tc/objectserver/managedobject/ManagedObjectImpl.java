@@ -50,12 +50,12 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   private final static byte                IS_DIRTY_OFFSET          = 2;
   private final static byte                REFERENCED_OFFSET        = 4;
   private final static byte                REMOVE_ON_RELEASE_OFFSET = 8;
-  private final static byte                IS_DB_NEW_OFFSET         = 32;
+  private final static byte                DELETED_OFFSET           = 16;
 
-  private final static byte                INITIAL_FLAG_VALUE       = IS_DIRTY_OFFSET | IS_NEW_OFFSET
-                                                                      | IS_DB_NEW_OFFSET;
+  private final static byte                INITIAL_FLAG_VALUE       = IS_DIRTY_OFFSET | IS_NEW_OFFSET;
 
   private static final long                UNINITIALIZED_VERSION    = -1;
+  private static final long                DELETED_VERSION    = Long.MAX_VALUE;
 
   private final ObjectID                   id;
   private long                             version                  = UNINITIALIZED_VERSION;
@@ -94,11 +94,10 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   }
 
   private void setBasicIsDirty(final boolean isDirty) {
-    if (isDirty) {
-      setFlag(IS_DIRTY_OFFSET, isDirty);
-    } else {
-      setFlag(IS_DIRTY_OFFSET | IS_DB_NEW_OFFSET, isDirty);
+    if ( isDirty && isDeleted() ) {
+        throw new AssertionError("cannot dirty a deleted object");
     }
+    setFlag(IS_DIRTY_OFFSET, isDirty);
   }
 
   private synchronized boolean compareAndSetFlag(final int offset, final boolean expected, final boolean value) {
@@ -123,13 +122,31 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   }
 
   @Override
-  public boolean isNewInDB() {
-    return getFlag(IS_DB_NEW_OFFSET);
-  }
-
-  @Override
   public void setIsNew(final boolean isNew) {
     setBasicIsNew(isNew);
+  }
+  
+  private boolean isDeleted() {
+      return getFlag(DELETED_OFFSET);
+  }
+  
+  @Override
+  public synchronized boolean setDeleted() {
+    this.flags = Conversion.setFlag(this.flags, DELETED_OFFSET, true);
+    this.version = DELETED_VERSION;
+    this.state = new DeletedClusterObjectState(ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.ordinal());
+    this.flags = Conversion.setFlag(this.flags, IS_DIRTY_OFFSET, false);
+    this.flags = Conversion.setFlag(this.flags, REMOVE_ON_RELEASE_OFFSET, true);
+// if already referenced, someone else owns it, can't de-reference
+    if ( (this.flags & REFERENCED_OFFSET) == REFERENCED_OFFSET ) {
+        return false;
+    }
+// if new, someone else needs this for population (will NOOP)
+    if ( (this.flags & IS_NEW_OFFSET) == IS_NEW_OFFSET ) {
+        return false;
+    }    
+    this.flags = Conversion.setFlag(this.flags, REFERENCED_OFFSET, true);
+    return true;
   }
 
   @Override
@@ -161,8 +178,13 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   public void apply(final DNA dna, final TransactionID txnID, final ApplyTransactionInfo applyInfo,
                     final ObjectInstanceMonitor instanceMonitor, final boolean ignoreIfOlderDNA) {
     final boolean isUninitialized = isUninitialized();
+    final boolean isDeleted = isDeleted();
 
     final long dna_version = dna.getVersion();
+    if ( isDeleted ) {
+//  already deleted, no applies
+        return;
+    }
     if (dna_version <= this.version) {
       if (ignoreIfOlderDNA) {
         logger.info("Ignoring apply of an old DNA for " + getClassname() + " id = " + this.id + " current version = "
@@ -287,7 +309,20 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   @Override
   public boolean isRemoveOnRelease() {
     // Serialized entries are always remove on release
-    return (state != null && state instanceof TDCSerializedEntryManagedObjectState) || getFlag(REMOVE_ON_RELEASE_OFFSET);
+    return (
+                
+            (state != null && 
+                (
+                    state instanceof TDCSerializedEntryManagedObjectState 
+                    || 
+                    state instanceof DeletedClusterObjectState
+                ))
+           )
+           || 
+           getFlag(REMOVE_ON_RELEASE_OFFSET)
+           ||
+           getFlag(DELETED_OFFSET);
+
   }
   
   @Override

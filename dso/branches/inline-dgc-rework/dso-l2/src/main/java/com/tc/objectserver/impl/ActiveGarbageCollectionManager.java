@@ -159,8 +159,7 @@ public class ActiveGarbageCollectionManager implements GarbageCollectionManager 
 
   @Override
   public void scheduleInlineCleanupIfNecessary() {
-    if (!garbageCollector.isPeriodicEnabled()
-        && TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_DGC_INLINE_ENABLED, true)) {
+    if (!garbageCollector.isPeriodicEnabled()) {
       // This delay is here as a failsafe in case there's some aspect of startup we missed. This can be increased in
       // order to not collide with other stuff in that case.
       final long delay = 1000 * TCPropertiesImpl.getProperties()

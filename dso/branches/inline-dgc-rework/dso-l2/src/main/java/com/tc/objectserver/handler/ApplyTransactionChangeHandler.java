@@ -36,10 +36,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeSet;
 
 /**
  * Applies all the changes in a transaction then releases the objects and passes the changes off to be broadcast to the
@@ -91,6 +89,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     if (atc.needsApply()) {
       transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
+      transactionManager.cleanup(applyInfo.getObjectIDsToDelete());
       txnObjectMgr.applyTransactionComplete(applyInfo);
     } else {
       transactionManager.skipApplyAndCommit(txn);
@@ -130,17 +129,17 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
   private void commit(ApplyTransactionContext atc, ApplyTransactionInfo applyInfo) {
     if (atc.needsApply()) {
-      commit(applyInfo.getObjectsToRelease(), atc.getTxn().getNewRoots(), atc.getTxn().getServerTransactionID(),
-             applyInfo.getObjectIDsToDelete(), atc.getTxn().getObjectIDs().isEmpty());
+      commit(applyInfo.getObjectsToRelease(), atc.getTxn().getNewRoots(), 
+              atc.getTxn().getServerTransactionID(), atc.getTxn().getObjectIDs().isEmpty());
     } else {
       commit(applyInfo.getObjectsToRelease());
     }
   }
 
   private void commit(Collection<ManagedObject> objectsToRelease, Map<String, ObjectID> moreRoots,
-                      ServerTransactionID stxID, SortedSet<ObjectID> moreObjectsToDelete,
+                      ServerTransactionID stxID,
                       boolean done) {
-    if (localCommitContext.get().commit(objectsToRelease, moreRoots, stxID, moreObjectsToDelete, done)) {
+    if (localCommitContext.get().commit(objectsToRelease, moreRoots, stxID, done)) {
       localCommitContext.set(null);
     }
   }
@@ -166,12 +165,11 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     private final Transaction transaction = persistenceTransactionProvider.newTransaction();
     private final Map<String, ObjectID> newRoots = new HashMap<String, ObjectID>();
     private final Collection<ServerTransactionID> stxIDs = new HashSet<ServerTransactionID>();
-    private final SortedSet<ObjectID> objectsToDelete = new TreeSet<ObjectID>();
 
     public boolean commit(Collection<ManagedObject> objectsToRelease, boolean done) {
       if (done || !objectsToRelease.isEmpty()) {
         transaction.commit();
-        transactionManager.commit(objectsToRelease, newRoots, stxIDs, objectsToDelete, true);
+        transactionManager.commit(objectsToRelease, newRoots, stxIDs);
         return true;
       } else {
         return false;
@@ -179,11 +177,10 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     }
 
     public boolean commit(Collection<ManagedObject> objectsToRelease, Map<String, ObjectID> moreRoots,
-                          ServerTransactionID stxID, SortedSet<ObjectID> moreObjectsToDelete,
+                          ServerTransactionID stxID,
                           boolean done) {
       stxIDs.add(stxID);
       newRoots.putAll(moreRoots);
-      objectsToDelete.addAll(moreObjectsToDelete);
       return commit(objectsToRelease, done);
     }
   }

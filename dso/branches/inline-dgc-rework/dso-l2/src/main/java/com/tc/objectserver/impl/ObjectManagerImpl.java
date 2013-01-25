@@ -480,29 +480,23 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     postRelease();
   }
 
-  private SortedSet<ObjectID> removeAllObjectsByID(final Set<ObjectID> toDelete) {
-    SortedSet<ObjectID> referenced = null;
+  private void removeAllObjectsByID(final Set<ObjectID> toDelete) {
     this.lock.readLock().lock();
     try {
       for (final ObjectID id : toDelete) {
         ManagedObjectReference ref = this.references.get(id);
         if (ref != null) {
-          if ( !ref.isNew() && markReferenced(ref)) {
+          if (ref.setDeleted()) {
+              this.checkedOutCount.incrementAndGet();
             removeReferenceAndDestroyIfNecessary(id);
             unmarkReferenced(ref);
             makeUnBlocked(id);
-          } else {
-            if (referenced == null) {
-              referenced = new ObjectIDSet();
-            }
-            referenced.add(id);
-          }
-       }
-     }
+          } 
+        }
+      }
     } finally {
       this.lock.readLock().unlock();
     }
-    return referenced;
   }
 
   @Override
@@ -671,50 +665,12 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   @Override
   public void deleteObjects(final Set<ObjectID> toDelete) {
-//    Assert.assertTrue(this.collector.isDelete());
-    Transaction t = persistenceTransactionProvider.newTransaction();
-    SortedSet<ObjectID> notDeleted = removeAllObjectsByID(toDelete);
-    if ( notDeleted != null ) {
-        toDelete.removeAll(notDeleted);
-        lookupAndDelete((ObjectIDSet)notDeleted);
-    }
-    this.objectStore.removeAllObjectsByID(toDelete);
-    
-    t.commit();
+    removeAllObjectsByID(toDelete);
+    this.objectStore.removeAllObjectsByID(toDelete);    
     // Process pending, since we disabled process pending while GC pause was initiate.
     processPendingLookups();
   }
   
-  private void lookupAndDelete(final ObjectIDSet toDelete) {
-    assertNotInShutdown();
-
-    final ObjectManagerResultsContext waitContext = new ObjectManagerResultsContext() {
-
-          @Override
-          public ObjectIDSet getLookupIDs() {
-              return toDelete;
-          }
-
-          @Override
-          public ObjectIDSet getNewObjectIDs() {
-              return TCCollections.EMPTY_OBJECT_ID_SET;
-          }
-
-          @Override
-          public void setResults(ObjectManagerLookupResults results) {
-              Map<ObjectID,ManagedObject> map = results.getObjects();
-              releaseAll(map.values());
-              deleteObjects(map.keySet());
-              if (  !results.getLookupPendingObjectIDs().isEmpty() || !results.getMissingObjectIDs().isEmpty() ) {
-                  throw new AssertionError("deletion is not complete");
-              }
-          }
-        
-    };
-    final ObjectManagerLookupContext context = new ObjectManagerLookupContext(waitContext, AccessLevel.READ_WRITE);
-    basicLookupObjectsFor(ClientID.NULL_ID, context, -1);
-  }
-
   private void flushAllAndCommit(final Transaction persistenceTransaction, final Collection managedObjects) {
     this.objectStore.commitAllObjects(persistenceTransaction, managedObjects);
     persistenceTransaction.commit();
