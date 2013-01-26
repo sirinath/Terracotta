@@ -34,99 +34,122 @@ public class TestServerTransactionManager implements ServerTransactionManager {
   public final ArrayList              incomingTxnContexts = new ArrayList();
   public final List                   incomingTxns        = new ArrayList();
 
+  @Override
   public void shutdownNode(NodeID deadClient) {
     this.shutdownClientCalls.put(deadClient);
   }
 
+  @Override
   public void addWaitingForAcknowledgement(NodeID waiter, TransactionID requestID, NodeID waitee) {
     throw new ImplementMe();
 
   }
 
+  @Override
   public boolean isWaiting(NodeID waiter, TransactionID requestID) {
     throw new ImplementMe();
   }
 
+  @Override
   public void acknowledgement(NodeID waiter, TransactionID requestID, NodeID waitee) {
     throw new ImplementMe();
   }
 
+  @Override
   public void broadcasted(NodeID waiter, TransactionID requestID) {
     // NOP
   }
 
+  @Override
   public void skipApplyAndCommit(ServerTransaction txn) {
     this.skipCalls.put(txn);
   }
 
+  @Override
   public void addTransactionListener(ServerTransactionListener listener) {
     // NOP
   }
 
+  @Override
   public void removeTransactionListener(ServerTransactionListener listener) {
     // NOP
   }
 
+  @Override
   public void apply(ServerTransaction txn, Map objects, ApplyTransactionInfo includeIDs,
                     ObjectInstanceMonitor instanceMonitor) {
     // NOP
   }
 
-  public void incomingTransactions(NodeID nodeID, Set txnIDs, Collection txns, boolean relayed) {
-    this.incomingTxnContexts.add(new Object[] { nodeID, txnIDs, Boolean.valueOf(relayed) });
-    this.incomingTxns.addAll(txns);
+  @Override
+  public void incomingTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, boolean relayed) {
+    this.incomingTxnContexts.add(new Object[] { nodeID, txns, Boolean.valueOf(relayed) });
+    this.incomingTxns.addAll(txns.values());
   }
 
+  @Override
   public void transactionsRelayed(NodeID node, Set serverTxnIDs) {
     throw new ImplementMe();
   }
 
+  @Override
   public void commit(PersistenceTransactionProvider ptxp, Collection<ManagedObject> objects,
                      Map<String, ObjectID> newRoots, Collection<ServerTransactionID> appliedServerTransactionIDs,
                      SortedSet<ObjectID> deletedObjects) {
     // NOP
   }
 
+  @Override
   public void setResentTransactionIDs(NodeID source, Collection transactionIDs) {
     // NOP
   }
 
+  @Override
   public void start(Set cids) {
     // NOP
   }
 
+  @Override
   public void goToActiveMode() {
     throw new ImplementMe();
   }
 
+  @Override
   public void callBackOnTxnsInSystemCompletion(TxnsInSystemCompletionListener l) {
     throw new ImplementMe();
   }
 
+  @Override
   public void nodeConnected(NodeID nodeID) {
     throw new ImplementMe();
   }
 
+  @Override
   public int getTotalPendingTransactionsCount() {
     throw new ImplementMe();
   }
 
+  @Override
   public void objectsSynched(NodeID node, ServerTransactionID tid) {
     throw new ImplementMe();
   }
 
+  @Override
   public void callBackOnResentTxnsInSystemCompletion(TxnsInSystemCompletionListener l) {
     throw new ImplementMe();
   }
 
+  @Override
   public long getTotalNumOfActiveTransactions() {
     throw new ImplementMe();
   }
 
+  @Override
   public void processingMetaDataCompleted(NodeID sourceID, TransactionID txnID) {
     throw new ImplementMe();
   }
 
+  @Override
   public void processMetaData(ServerTransaction txn, ApplyTransactionInfo applyInfo) {
     //
   }

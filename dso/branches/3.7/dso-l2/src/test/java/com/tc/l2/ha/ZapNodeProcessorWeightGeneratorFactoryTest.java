@@ -6,21 +6,25 @@ package com.tc.l2.ha;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCRuntimeException;
 import com.tc.l2.ha.WeightGeneratorFactory.WeightGenerator;
+import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.net.core.TCConnection;
 import com.tc.object.msg.CommitTransactionMessage;
 import com.tc.object.net.MockChannelManager;
+import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.object.tx.TxnBatchID;
+import com.tc.objectserver.tx.ServerTransaction;
+import com.tc.objectserver.tx.TestServerTransaction;
 import com.tc.objectserver.tx.TestServerTransactionManager;
 import com.tc.objectserver.tx.TransactionBatchContext;
 import com.tc.objectserver.tx.TransactionBatchManager;
 import com.tc.test.TCTestCase;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -151,11 +155,12 @@ public class ZapNodeProcessorWeightGeneratorFactoryTest extends TCTestCase {
   }
 
   private void addTxnCount(TestWGServerTransactionManager mgr, int count) {
-    Set txnIDs = new HashSet();
+    Map<ServerTransactionID, ServerTransaction> txnIDs = new HashMap<ServerTransactionID, ServerTransaction>();
     for (int i = 0; i < count; ++i) {
-      txnIDs.add(new TransactionID(i));
+      ServerTransactionID id = new ServerTransactionID(new ClientID(i), new TransactionID(i));
+      txnIDs.put(id, new TestServerTransaction(id, TxnBatchID.NULL_BATCH_ID));
     }
-    mgr.incomingTransactions(ServerID.NULL_ID, txnIDs, null, false);
+    mgr.incomingTransactions(ServerID.NULL_ID, txnIDs, false);
   }
 
   private void setServerActive(TestWGServerTransactionManager mgr, boolean active) {
@@ -169,6 +174,7 @@ public class ZapNodeProcessorWeightGeneratorFactoryTest extends TCTestCase {
       activeChannels = channels;
     }
 
+    @Override
     public TCConnection[] getAllActiveClientConnections() {
       return new TCConnection[activeChannels];
     }
@@ -177,31 +183,38 @@ public class ZapNodeProcessorWeightGeneratorFactoryTest extends TCTestCase {
   private static class TestTransactionBatchManager implements TransactionBatchManager {
     private final List<TransactionBatchListener> txnListeners = new CopyOnWriteArrayList<TransactionBatchListener>();
 
+    @Override
     public void addTransactionBatch(CommitTransactionMessage ctm) {
       fireBatchTxnEvent(ctm);
     }
 
+    @Override
     public boolean batchComponentComplete(NodeID committerID, TransactionID txnID) {
       throw new ImplementMe();
     }
 
+    @Override
     public void defineBatch(NodeID node, int numTxns) {
       throw new ImplementMe();
     }
 
+    @Override
     public void nodeConnected(NodeID nodeID) {
       throw new ImplementMe();
     }
 
+    @Override
     public void notifyServerHighWaterMark(NodeID nodeID, long serverHighWaterMark) {
       throw new ImplementMe();
 
     }
 
+    @Override
     public void processTransactions(TransactionBatchContext batchContext) {
       throw new ImplementMe();
     }
 
+    @Override
     public void registerForBatchTransaction(TransactionBatchListener listener) {
       txnListeners.add(listener);
     }
@@ -212,6 +225,7 @@ public class ZapNodeProcessorWeightGeneratorFactoryTest extends TCTestCase {
       }
     }
 
+    @Override
     public void shutdownNode(NodeID nodeID) {
       throw new ImplementMe();
     }
@@ -220,16 +234,18 @@ public class ZapNodeProcessorWeightGeneratorFactoryTest extends TCTestCase {
 
   private static class TestWGServerTransactionManager extends TestServerTransactionManager {
     private boolean    isActive          = false;
-    private AtomicLong numOfTransactions = new AtomicLong(0);
+    private final AtomicLong numOfTransactions = new AtomicLong(0);
 
-    public void incomingTransactions(NodeID nodeID, Set txnIDs, Collection txns, boolean relayed) {
-      if (isActive) this.numOfTransactions.addAndGet(txnIDs.size());
+    @Override
+    public void incomingTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, boolean relayed) {
+      if (isActive) this.numOfTransactions.addAndGet(txns.size());
     }
 
     public void setActive(boolean active) {
       isActive = active;
     }
 
+    @Override
     public long getTotalNumOfActiveTransactions() {
       return numOfTransactions.get();
     }

@@ -8,14 +8,15 @@ import com.tc.l2.context.StateChangedEvent;
 import com.tc.lang.Recyclable;
 import com.tc.net.NodeID;
 import com.tc.object.gtx.GlobalTransactionID;
+import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.tx.ServerTransaction;
 
-import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public class NonReplicatedTransactionManager implements ReplicatedTransactionManager {
 
-  public void addCommitedTransactions(NodeID nodeID, Set txnIDs, Collection txns, Recyclable message) {
+  public void addCommittedTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, Recyclable message) {
     throw new AssertionError("Shouldn't be called");
   }
 

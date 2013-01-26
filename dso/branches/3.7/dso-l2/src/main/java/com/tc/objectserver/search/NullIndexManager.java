@@ -42,8 +42,15 @@ public class NullIndexManager implements IndexManager {
     //
   }
 
+  @Override
   public void insert(String indexName, String key, ValueID value, List<NVPair> attributes, ObjectID segmentOid,
                      MetaDataProcessingContext metaDataContext) {
+    //
+  }
+
+  @Override
+  public void putIfAbsent(String indexName, String key, ValueID value, List<NVPair> attributes, ObjectID segmentOid,
+                          MetaDataProcessingContext metaDataContext) {
     //
   }
 

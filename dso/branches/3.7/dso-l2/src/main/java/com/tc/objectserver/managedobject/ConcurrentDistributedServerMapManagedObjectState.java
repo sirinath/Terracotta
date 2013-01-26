@@ -232,13 +232,19 @@ public class ConcurrentDistributedServerMapManagedObjectState extends Concurrent
   }
 
   @Override
+  protected void removeKeyPresentForValue(ApplyTransactionInfo applyInfo, ObjectID value) {
+    if (applyInfo.isSearchEnabled()) applyInfo.removeKeyPresentForValue(value);
+  }
+
+  @Override
   protected void clearedMap(ApplyTransactionInfo applyInfo, Collection values) {
     // Does not need to be batched here since deletion batching will happen in the lower layers.
-    if (deleteValueOnRemove && ENABLE_DELETE_VALUE_ON_REMOVE) {
-      for (Object o : values) {
-        if (o instanceof ObjectID) {
+    for (Object o : values) {
+      if (o instanceof ObjectID) {
+        if (deleteValueOnRemove && ENABLE_DELETE_VALUE_ON_REMOVE) {
           applyInfo.deleteObject((ObjectID) o);
         }
+        applyInfo.removeKeyPresentForValue((ObjectID) o);
       }
     }
   }
