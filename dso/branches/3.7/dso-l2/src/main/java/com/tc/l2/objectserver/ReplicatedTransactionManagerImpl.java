@@ -25,6 +25,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.impl.VersionizedDNAWrapper;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.msg.MessageRecycler;
+import com.tc.object.tx.ServerTransactionID;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionManager;
@@ -80,30 +81,36 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     this.objectSyncAckManager = objectSyncAckManager;
   }
 
+  @Override
   public synchronized void init(Set knownObjectIDs) {
     if (delegate == passiveUninitTxnMgr) {
       passiveUninitTxnMgr.addKnownObjectIDs(knownObjectIDs);
     } else {
-      logger.info("Not initing with known Ids since not in UNINITIALIED state : " + knownObjectIDs.size());
+      logger.info("Not initing with known Ids since not in UNINITIALIZED state : " + knownObjectIDs.size());
     }
   }
 
+  @Override
   public synchronized void clearTransactionsBelowLowWaterMark(GlobalTransactionID lowGlobalTransactionIDWatermark) {
     delegate.clearTransactionsBelowLowWaterMark(lowGlobalTransactionIDWatermark);
   }
 
-  public synchronized void addCommitedTransactions(NodeID nodeID, Set txnIDs, Collection txns, Recyclable message) {
-    delegate.addCommitedTransactions(nodeID, txnIDs, txns, message);
+  @Override
+  public synchronized void addCommittedTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, Recyclable message) {
+    delegate.addCommittedTransactions(nodeID, txns, message);
   }
 
+  @Override
   public synchronized void addObjectSyncTransaction(ServerTransaction txn) {
     delegate.addObjectSyncTransaction(txn);
   }
 
+  @Override
   public void messageReceived(final NodeID fromNode, GroupMessage msg) {
     ObjectSyncResetMessage osr = (ObjectSyncResetMessage) msg;
     Assert.assertTrue(osr.getType() == ObjectSyncResetMessage.REQUEST_RESET);
     objectsSyncSink.setAddPredicate(new AddPredicate() {
+      @Override
       public boolean accept(EventContext context) {
         GroupMessage gp = (GroupMessage) context;
         return fromNode.equals(gp.messageFrom());
@@ -132,12 +139,14 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     }
   }
 
+  @Override
   public void publishResetRequest(NodeID nodeID) throws GroupException {
     ObjectSyncResetMessage osr = (ObjectSyncResetMessage) groupManager
         .sendToAndWaitForResponse(nodeID, ObjectSyncResetMessageFactory.createObjectSyncResetRequestMessage());
     validateResponse(nodeID, osr);
   }
 
+  @Override
   public synchronized void l2StateChanged(StateChangedEvent sce) {
     if (sce.getCurrentState().equals(StateManager.ACTIVE_COORDINATOR)) {
       passiveUninitTxnMgr.clear(); // Release Memory
@@ -148,21 +157,24 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     }
   }
 
-  private void addIncommingTransactions(NodeID nodeID, Set txnIDs, Collection txns) {
-    transactionManager.incomingTransactions(nodeID, txnIDs, txns, false);
+  private void addIncomingTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns) {
+    transactionManager.incomingTransactions(nodeID, txns, false);
   }
 
   private static final class NullPassiveTransactionManager implements PassiveTransactionManager {
 
-    public void addCommitedTransactions(NodeID nodeID, Set txnIDs, Collection txns, Recyclable message) {
+    @Override
+    public void addCommittedTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, Recyclable message) {
       // There could still be some messages in the queue that arrives after the node becomes ACTIVE
       logger.warn("NullPassiveTransactionManager :: Ignoring commit Txn Messages from " + nodeID);
     }
 
+    @Override
     public void addObjectSyncTransaction(ServerTransaction txn) {
       throw new AssertionError("Recd. ObjectSyncTransaction while in ACTIVE state : " + txn);
     }
 
+    @Override
     public void clearTransactionsBelowLowWaterMark(GlobalTransactionID lowGlobalTransactionIDWatermark) {
       // There could still be some messages in the queue that arrives after the node becomes ACTIVE
       logger.warn("Ignoring LowWaterMark recd. while in ACTIVE state : " + lowGlobalTransactionIDWatermark);
@@ -172,11 +184,13 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
 
   private final class PassiveStandbyTransactionManager implements PassiveTransactionManager {
 
-    public void addCommitedTransactions(NodeID nodeID, Set txnIDs, Collection txns, Recyclable message) {
-      recycler.addMessage(message, txnIDs);
-      addIncommingTransactions(nodeID, txnIDs, txns);
+    @Override
+    public void addCommittedTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, Recyclable message) {
+      recycler.addMessage(message, txns.keySet());
+      addIncomingTransactions(nodeID, txns);
     }
 
+    @Override
     public void addObjectSyncTransaction(ServerTransaction txn) {
       // XXX::NOTE:: This is possible when there are 2 or more passive servers in standby and when the active crashes.
       // One of them will become passive and it is possible that the one became active has some objects that is missing
@@ -188,6 +202,7 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
       objectSyncAckManager.ackObjectSyncTxn(txn.getServerTransactionID());
     }
 
+    @Override
     public void clearTransactionsBelowLowWaterMark(GlobalTransactionID lowGlobalTransactionIDWatermark) {
       gtxm.clearCommitedTransactionsBelowLowWaterMark(lowGlobalTransactionIDWatermark);
     }
@@ -198,26 +213,27 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     ObjectIDSet           existingOIDs = new ObjectIDSet();
     PendingChangesAccount pca          = new PendingChangesAccount();
 
-    // NOTE::XXX:: MEssages are not REcylced in Passive Uninitialized state because of complicated pruning
+    // NOTE::XXX:: Messages are not Recylced in Passive Uninitialized state because of complicated pruning
     // code. Messages may have to live longer than Txn acks.
-    public void addCommitedTransactions(NodeID nodeID, Set txnIDs, Collection txns, Recyclable message) {
-      Assert.assertEquals(txnIDs.size(), txns.size());
-      LinkedHashMap prunedTransactionsMap = pruneTransactions(txns);
-      Collection prunedTxns = prunedTransactionsMap.values();
-      addIncommingTransactions(nodeID, prunedTransactionsMap.keySet(), prunedTxns);
+    @Override
+    public void addCommittedTransactions(NodeID nodeID, Map<ServerTransactionID, ServerTransaction> txns, Recyclable message) {
+      LinkedHashMap<ServerTransactionID, ServerTransaction> prunedTransactionsMap = pruneTransactions(txns.values());
+      addIncomingTransactions(nodeID, prunedTransactionsMap);
     }
 
+    @Override
     public void clearTransactionsBelowLowWaterMark(GlobalTransactionID lowGlobalTransactionIDWatermark) {
-      pca.clearTransactionsBelowLowWaterMark(lowGlobalTransactionIDWatermark);
+      // We don't want to do this anymore. The only way to get relayed metadata in current impl is to keep committed txns in pending account
+      // until they are needed - which shouldn't be a long time, i.e. until all the maps have been synced over with object sync
+      // pca.clearTransactionsBelowLowWaterMark(lowGlobalTransactionIDWatermark);
       gtxm.clearCommitedTransactionsBelowLowWaterMark(lowGlobalTransactionIDWatermark);
     }
 
-    // TODO::Recycle msg after use. Messgaes may have to live longer than Txn acks.
-    private LinkedHashMap pruneTransactions(Collection txns) {
-      LinkedHashMap m = new LinkedHashMap();
+    // TODO::Recycle msg after use. Messages may have to live longer than Txn acks.
+    private LinkedHashMap<ServerTransactionID, ServerTransaction> pruneTransactions(Collection<ServerTransaction> txns) {
+      LinkedHashMap<ServerTransactionID, ServerTransaction> m = new LinkedHashMap<ServerTransactionID, ServerTransaction>();
 
-      for (Iterator i = txns.iterator(); i.hasNext();) {
-        ServerTransaction st = (ServerTransaction) i.next();
+      for (ServerTransaction st : txns) {
         List changes = st.getChanges();
         List prunedChanges = new ArrayList(changes.size());
         ObjectIDSet oids = new ObjectIDSet();
@@ -265,18 +281,18 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     public void addKnownObjectIDs(Set knownObjectIDs) {
       if (existingOIDs.size() < knownObjectIDs.size()) {
         ObjectIDSet old = existingOIDs;
-        existingOIDs = new ObjectIDSet(knownObjectIDs); // This is optimizeded for ObjectIDSet2
+        existingOIDs = new ObjectIDSet(knownObjectIDs); // This is optimized for ObjectIDSet2
         existingOIDs.addAll(old);
       } else {
         existingOIDs.addAll(knownObjectIDs);
       }
     }
 
+    @Override
     public void addObjectSyncTransaction(ServerTransaction txn) {
       ServerTransaction newTxn = createCompoundTransactionFrom(txn);
       if (newTxn != null) {
-        addIncommingTransactions(txn.getSourceID(), Collections.singleton(txn.getServerTransactionID()),
-                                 Collections.singleton(newTxn));
+        addIncomingTransactions(txn.getSourceID(), Collections.singletonMap(newTxn.getServerTransactionID(), newTxn));
       } else {
         logger
             .warn("Not adding Txn " + txn.getServerTransactionID() + " to queue since all changes have been ignored.");
@@ -294,11 +310,11 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
       for (Iterator i = changes.iterator(); i.hasNext();) {
         DNA dna = (DNA) i.next();
         ObjectID oid = dna.getObjectID();
+        // Now add if there are more changes pending
+        List moreChanges = pca.getAnyPendingChangesForAndClear(oid);
         if (existingOIDs.add(oid)) {
           compoundChanges.add(dna);
           oids.add(dna.getObjectID());
-          // Now add if there are more changes pending
-          List moreChanges = pca.getAnyPendingChangesForAndClear(oid);
           long lastVersion = Long.MIN_VALUE;
           for (Iterator j = moreChanges.iterator(); j.hasNext();) {
             PendingRecord pr = (PendingRecord) j.next();
@@ -306,21 +322,21 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
             // XXX:: This should be true since we maintain the order in the List.
             Assert.assertTrue(lastVersion < version);
             compoundChanges.add(new VersionizedDNAWrapper(pr.getChange(), version));
+
             lastVersion = version;
             modified = true;
           }
         } else {
           // XXX::Note:: This is a possible condition in the 3'rd PASSIVE which is initializing when the ACTIVE crashes.
-          // The new ACTIVE might resend the same Object, but we dont want to pass it thru since technically if we
-          // didint miss any client transaction, we will have the same state. Also if the object sync transaction from
+          // The new ACTIVE might resend the same Object, but we don't want to pass it thru since technically if we
+          // didn't miss any client transaction, we will have the same state. Also if the object sync transaction from
           // the new passive arrives before the transaction containing a change to this object, then we might apply full
           // DNA on old object. Coming to think of it, it might happen even in 1 PASSIVE case, since the ACTIVE computes
-          // the diff only after sending a few txns, which migh contain some new objects.
+          // the diff only after sending a few txns, which might contain some new objects.
           if (logger.isDebugEnabled()) {
             logger.debug("Ignoring ObjectSyncTransaction for " + oid + " dna = " + dna + " since its already present");
           }
           modified = true;
-          List moreChanges = pca.getAnyPendingChangesForAndClear(oid);
           Assert.assertTrue(moreChanges.isEmpty());
         }
       }
@@ -335,8 +351,8 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
 
   private static final class PendingChangesAccount {
 
-    HashMap oid2Changes = new HashMap();
-    TreeMap gid2Changes = new TreeMap();
+    Map<ObjectID, TLinkedList>                    oid2Changes = new HashMap<ObjectID, TLinkedList>();
+    TreeMap<GlobalTransactionID, IdentityHashMap> gid2Changes = new TreeMap<GlobalTransactionID, IdentityHashMap>();
 
     public void addToPending(ServerTransaction st, DNA dna) {
       PendingRecord pr = new PendingRecord(dna, st.getGlobalTransactionID());
@@ -353,7 +369,7 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     }
 
     public void clearTransactionsBelowLowWaterMark(GlobalTransactionID lowWaterMark) {
-      Map lowerThanLWM = gid2Changes.headMap(lowWaterMark);
+      Map<GlobalTransactionID, IdentityHashMap> lowerThanLWM = gid2Changes.headMap(lowWaterMark);
       for (Iterator i = lowerThanLWM.values().iterator(); i.hasNext();) {
         IdentityHashMap pendingChangesForTxn = (IdentityHashMap) i.next();
         for (Iterator j = pendingChangesForTxn.keySet().iterator(); j.hasNext();) {
@@ -380,19 +396,19 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     }
 
     private IdentityHashMap getPendingChangesSetFor(GlobalTransactionID gid) {
-      return (IdentityHashMap) gid2Changes.get(gid);
+      return gid2Changes.get(gid);
     }
 
     private TLinkedList getPendingChangesListFor(ObjectID objectID) {
-      return (TLinkedList) oid2Changes.get(objectID);
+      return oid2Changes.get(objectID);
     }
 
     private TLinkedList removePendingChangesFor(ObjectID oid) {
-      return (TLinkedList) oid2Changes.remove(oid);
+      return oid2Changes.remove(oid);
     }
 
     private IdentityHashMap getOrCreatePendingChangesSetFor(GlobalTransactionID gid) {
-      IdentityHashMap m = (IdentityHashMap) gid2Changes.get(gid);
+      IdentityHashMap m = gid2Changes.get(gid);
       if (m == null) {
         m = new IdentityHashMap();
         gid2Changes.put(gid, m);
@@ -401,7 +417,7 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
     }
 
     private TLinkedList getOrCreatePendingChangesListFor(ObjectID oid) {
-      TLinkedList l = (TLinkedList) oid2Changes.get(oid);
+      TLinkedList l = oid2Changes.get(oid);
       if (l == null) {
         l = new TLinkedList();
         oid2Changes.put(oid, l);
@@ -432,20 +448,29 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
       return this.gid;
     }
 
+    @Override
     public TLinkable getNext() {
       return next;
     }
 
+    @Override
     public TLinkable getPrevious() {
       return prev;
     }
 
+    @Override
     public void setNext(TLinkable n) {
       this.next = n;
     }
 
+    @Override
     public void setPrevious(TLinkable p) {
       this.prev = p;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("DNA: %s, GID: %s", dna, gid);
     }
 
   }

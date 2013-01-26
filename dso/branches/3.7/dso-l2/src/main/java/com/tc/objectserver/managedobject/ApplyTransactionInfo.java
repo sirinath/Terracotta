@@ -183,4 +183,8 @@ public class ApplyTransactionInfo {
   public boolean isSearchEnabled() {
     return isSearchEnabled;
   }
+
+  public void removeKeyPresentForValue(ObjectID value) {
+    keyPresentForValue.remove(value);
+  }
 }
