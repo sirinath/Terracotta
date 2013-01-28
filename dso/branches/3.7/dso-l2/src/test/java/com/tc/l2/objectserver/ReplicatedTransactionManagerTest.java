@@ -151,21 +151,25 @@ public class ReplicatedTransactionManagerTest extends TestCase {
     // to the transactionalObjectManager
     assertTrue(this.txnMgr.incomingTxns.size() == 1);
     gotTxn = (ServerTransaction) this.txnMgr.incomingTxns.remove(0);
-    List changes = gotTxn.getChanges();
-    assertEquals(5, changes.size());
-    DNA dna = (DNA) changes.get(0);
+    List<DNA> changes = gotTxn.getChanges();
+    assertEquals(6, changes.size());
+    DNA dna = changes.get(0);
     assertEquals(new ObjectID(7), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
-    dna = (DNA) changes.get(1);
+    dna = changes.get(1);
+    assertEquals(new ObjectID(7), dna.getObjectID());
+    assertTrue(dna.getVersion() > changes.get(0).getVersion());
+    assertTrue(dna.isDelta());
+    dna = changes.get(2);
     assertEquals(new ObjectID(8), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
-    dna = (DNA) changes.get(2);
+    dna = changes.get(3);
     assertEquals(new ObjectID(8), dna.getObjectID());
     assertTrue(dna.isDelta()); // Change to that object
-    dna = (DNA) changes.get(3);
+    dna = changes.get(4);
     assertEquals(new ObjectID(9), dna.getObjectID());
     assertFalse(dna.isDelta()); // New object
-    dna = (DNA) changes.get(4);
+    dna = changes.get(5);
     assertEquals(new ObjectID(9), dna.getObjectID());
     assertTrue(dna.isDelta()); // Change to that object
 
