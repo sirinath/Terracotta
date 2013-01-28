@@ -166,7 +166,6 @@ public class ServerTransactionManagerImplTest extends TestCase {
     Map newRoots = Collections.unmodifiableMap(new HashMap());
     TxnType txnType = TxnType.NORMAL;
 
-    HashSet tids = new HashSet();
     for (int i = 0; i < 10; i++) {
       TransactionID tid1 = new TransactionID(i);
       SequenceID sequenceID = new SequenceID(i);
@@ -189,11 +188,11 @@ public class ServerTransactionManagerImplTest extends TestCase {
       ServerTransactionID tid2 = (ServerTransactionID) l2.appliedContext.take();
       assertEquals(tid1, tid2);
       // System.err.println("tid1 = " + tid1 + " tid2 = " + tid2 + " tids = " + tids);
-      assertTrue(tids.contains(tid1));
+      assertTrue(txns.containsKey(tid1));
       tid1 = (ServerTransactionID) l1.completedContext.take();
       tid2 = (ServerTransactionID) l2.completedContext.take();
       assertEquals(tid1, tid2);
-      assertTrue(tids.contains(tid1));
+      assertTrue(txns.containsKey(tid1));
     }
 
     // No more events
@@ -214,7 +213,6 @@ public class ServerTransactionManagerImplTest extends TestCase {
     this.transactionManager.removeTransactionListener(l2);
 
     // more txn
-    tids.clear();
     txns.clear();
     for (int i = 10; i < 20; i++) {
       TransactionID tid1 = new TransactionID(i);
@@ -238,12 +236,12 @@ public class ServerTransactionManagerImplTest extends TestCase {
       ServerTransactionID tid2 = (ServerTransactionID) l2.appliedContext.poll(1000);
       assertNotNull(tid1);
       assertNull(tid2);
-      assertTrue(tids.contains(tid1));
+      assertTrue(txns.containsKey(tid1));
       tid1 = (ServerTransactionID) l1.completedContext.take();
       tid2 = (ServerTransactionID) l2.completedContext.poll(1000);
       assertNotNull(tid1);
       assertNull(tid2);
-      assertTrue(tids.contains(tid1));
+      assertTrue(txns.containsKey(tid1));
     }
   }
 
