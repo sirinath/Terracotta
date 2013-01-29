@@ -35,7 +35,6 @@ public class ManagedObjectPersistor  {
   private final ObjectIDSequence objectIDSequence;
 
   private final ObjectIDSetMaintainer oidSetMaintainer;
-  private volatile Set<ObjectID>   deleted;
 
   public ManagedObjectPersistor(StorageManager storageManager, SequenceManager sequenceManager, final ObjectIDSetMaintainer oidSetMaintainer) {
     this.rootMap = storageManager.getKeyValueStorage(ROOT_DB, String.class, ObjectID.class);
@@ -81,12 +80,7 @@ public class ManagedObjectPersistor  {
       if ( managedObject.getManagedObjectState() instanceof DeletedClusterObjectState ) {
           //  do nothing.  This does not belong in objectdb
       } else {
-        Set<ObjectID> set = this.deleted;
-        if ( set != null && set.contains(managedObject.getID())) {
-          logger.warn("object deleted " + managedObject.getID());
-          } else {
-            objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
-          }
+        objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
       }
     managedObject.setIsDirty(false);
   }
@@ -99,7 +93,6 @@ public class ManagedObjectPersistor  {
 
   public void deleteAllObjects(Set<ObjectID> ids) {
     objectMap.removeAll(ids);
-    deleted = ids;
   }
 
   public Map<String, ObjectID> loadRootNamesToIDs() {
