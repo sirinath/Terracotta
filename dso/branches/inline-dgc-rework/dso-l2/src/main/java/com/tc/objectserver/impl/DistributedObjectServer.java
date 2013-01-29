@@ -742,11 +742,10 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                        globalTransactionIDSequence);
     final Stage lwmCallbackStage = stageManager.createStage(ServerConfigurationContext.LOW_WATERMARK_CALLBACK_STAGE,
                                                             new LowWaterMarkCallbackHandler(), 1, maxStageSize);
-    final ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator,
-                                                                                       transactionStore,
-        gidSequenceProvider,
-                                                                                       globalTransactionIDSequence,
-                                                                                       lwmCallbackStage.getSink());
+    final ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator, transactionStore,
+                                                                                       gidSequenceProvider, globalTransactionIDSequence,
+                                                                                       lwmCallbackStage.getSink(),
+                                                                                       persistor.getPersistenceTransactionProvider());
 
     final TransactionalStagesCoordinatorImpl txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     this.txnObjectManager = new TransactionalObjectManagerImpl(this.objectManager, gtxm, txnStageCoordinator);
