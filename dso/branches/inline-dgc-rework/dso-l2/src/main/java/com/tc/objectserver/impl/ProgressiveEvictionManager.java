@@ -88,7 +88,7 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
   private final SampledCounter                    evictionStats;
   private final ResourceManager                   resourceManager;
   private final EvictionThreshold                 threshold;
-  private final AggregateSampleRateCounter        pulse = new AggregateSampleRateCounter();
+  private final AggregateSampleRateCounter        pulse                               = new AggregateSampleRateCounter();
 
   private final static Future<SampledRateCounter> completedFuture                     = new Future<SampledRateCounter>() {
 
@@ -540,6 +540,7 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
         TerracottaOperatorEventLogging.getEventLogger().fireOperatorEvent(event);
         resetEpoc(System.currentTimeMillis(), reserved.getUsedMemory());
       }
+      log("Throttling Clients at " + level);
       throttle = level;
     }
 
@@ -550,6 +551,7 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
       TerracottaOperatorEvent event = TerracottaOperatorEventFactory.createFullResourceCapacityEvent("pool", reserved
           .getUsedPercentage());
       TerracottaOperatorEventLogging.getEventLogger().fireOperatorEvent(event);
+      log("Stopping Clients");
     }
     
     private boolean shouldNotify() {

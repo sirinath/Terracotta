@@ -51,6 +51,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   private final static byte                REFERENCED_OFFSET        = 4;
   private final static byte                REMOVE_ON_RELEASE_OFFSET = 8;
   private final static byte                DELETED_OFFSET           = 16;
+  private final static byte                APPLYING_OFFSET           = 32;
 
   private final static byte                INITIAL_FLAG_VALUE       = IS_DIRTY_OFFSET | IS_NEW_OFFSET;
 
@@ -62,7 +63,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   private transient ManagedObjectState     state;
 
   // TODO::Split this flag into two so that concurrency is maintained
-  private volatile transient byte          flags                    = INITIAL_FLAG_VALUE;
+  private byte                             flags                    = INITIAL_FLAG_VALUE;
 
   private final ManagedObjectPersistor persistor;
 
@@ -132,7 +133,19 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   
   @Override
   public synchronized boolean setDeleted() {
+    if ( (this.flags & DELETED_OFFSET) == DELETED_OFFSET ) {
+        return false;
+    }
     this.flags = Conversion.setFlag(this.flags, DELETED_OFFSET, true);
+    while ( (this.flags & APPLYING_OFFSET) == APPLYING_OFFSET ) {
+   //  need to wait for apply to finish to make any mutations since delete 
+   //  has not taken the reference.  A race with the apply thread can occur otherwise.
+        try {
+            this.wait();
+        } catch ( InterruptedException ie ) {
+            throw new AssertionError(ie);
+        }
+    }
     this.version = DELETED_VERSION;
     this.state = new DeletedClusterObjectState(ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.ordinal());
     this.flags = Conversion.setFlag(this.flags, IS_DIRTY_OFFSET, false);
@@ -173,61 +186,80 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   public void addObjectReferencesTo(final ManagedObjectTraverser traverser) {
     this.state.addObjectReferencesTo(traverser);
   }
+  
+  private synchronized boolean startApplying() {
+      if ((this.flags & DELETED_OFFSET) == DELETED_OFFSET) {
+          return false;
+      }
+      this.flags = Conversion.setFlag(this.flags, APPLYING_OFFSET, true);
+      return true;
+  }
+  
+  private synchronized void finishApplying() {
+      this.flags = Conversion.setFlag(this.flags, APPLYING_OFFSET, false);
+      if ((this.flags & DELETED_OFFSET) == DELETED_OFFSET) {
+          notify();
+      }
+  }
 
   @Override
   public void apply(final DNA dna, final TransactionID txnID, final ApplyTransactionInfo applyInfo,
                     final ObjectInstanceMonitor instanceMonitor, final boolean ignoreIfOlderDNA) {
     final boolean isUninitialized = isUninitialized();
-    final boolean isDeleted = isDeleted();
 
     final long dna_version = dna.getVersion();
-    if ( isDeleted ) {
+    if ( !startApplying() ) {
 //  already deleted, no applies
         return;
     }
-    if (dna_version <= this.version) {
-      if (ignoreIfOlderDNA) {
-        logger.info("Ignoring apply of an old DNA for " + getClassname() + " id = " + this.id + " current version = "
-                    + this.version + " dna_version = " + dna_version);
-        return;
-      } else {
-        throw new AssertionError("Recd a DNA with version less than or equal to the current version : " + this.version
-                                 + " dna_version : " + dna_version);
-      }
-    }
-    if (dna.isDelta() && isUninitialized) {
-      throw new AssertionError("Uninitalized Object is applied with a delta DNA ! ManagedObjectImpl = " + toString()
-                               + " DNA = " + dna + " TransactionID = " + txnID);
-    } else if (!dna.isDelta() && !isUninitialized) {
-      // New DNA applied on old object - a No No for logical objects.
-      throw new AssertionError("Old Object is applied with a non-delta DNA ! ManagedObjectImpl = " + toString()
-                               + " DNA = " + dna + " TransactionID = " + txnID);
-    }
-    this.version = dna_version;
-    if (isUninitialized) {
-      instanceMonitor.instanceCreated(dna.getTypeName());
-    }
-    final DNACursor cursor = dna.getCursor();
-
-    if (this.state == null) {
-      if (!isUninitialized) {
-        throw new AssertionError("Creating state on an initialized object.");
-      }
-      setState(getStateFactory().createState(this.id, dna.getParentObjectID(), dna.getTypeName(), cursor));
-    }
     try {
-      this.state.apply(this.id, cursor, applyInfo);
-    } catch (final IOException e) {
-      throw new DNAException(e);
-    }
+        if (dna_version <= this.version) {
+          if (ignoreIfOlderDNA) {
+            logger.info("Ignoring apply of an old DNA for " + getClassname() + " id = " + this.id + " current version = "
+                        + this.version + " dna_version = " + dna_version);
+            return;
+          } else {
+            throw new AssertionError("Recd a DNA with version less than or equal to the current version : " + this.version
+                                     + " dna_version : " + dna_version);
+          }
+        }
+        if (dna.isDelta() && isUninitialized) {
+          throw new AssertionError("Uninitalized Object is applied with a delta DNA ! ManagedObjectImpl = " + toString()
+                                   + " DNA = " + dna + " TransactionID = " + txnID);
+        } else if (!dna.isDelta() && !isUninitialized) {
+          // New DNA applied on old object - a No No for logical objects.
+          throw new AssertionError("Old Object is applied with a non-delta DNA ! ManagedObjectImpl = " + toString()
+                                   + " DNA = " + dna + " TransactionID = " + txnID);
+        }
+        this.version = dna_version;
+        if (isUninitialized) {
+          instanceMonitor.instanceCreated(dna.getTypeName());
+        }
+        final DNACursor cursor = dna.getCursor();
 
-    // TODO: Do something about that null.
-    persistor.saveObject(null, this);
-    // Not unsetting isNew() flag on apply, but rather on release
-    // setBasicIsNew(false);
+        if (this.state == null) {
+          if (!isUninitialized) {
+            throw new AssertionError("Creating state on an initialized object.");
+          }
+          setState(getStateFactory().createState(this.id, dna.getParentObjectID(), dna.getTypeName(), cursor));
+        }
+        try {
+          this.state.apply(this.id, cursor, applyInfo);
+        } catch (final IOException e) {
+          throw new DNAException(e);
+        }
+
+        // TODO: Do something about that null.
+        persistor.saveObject(null, this);
+
+        // Not unsetting isNew() flag on apply, but rather on release
+        // setBasicIsNew(false);
+    } finally {
+        finishApplying();
+    }
   }
 
-  private synchronized void setState(final ManagedObjectState newState) {
+  private void setState(final ManagedObjectState newState) {
     if ( Conversion.getFlag(this.flags, DELETED_OFFSET) ) {
         return;
     }
